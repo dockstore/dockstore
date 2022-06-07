@@ -61,7 +61,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -197,7 +196,7 @@ public final class ToolsImplCommon {
                 if (descriptorType.isPresent()) {
                     toolVersion.addDescriptorTypeItem(descriptorType.get());
                 } else {
-                    if (file.getType().equals(FileType.DOCKERFILE)) {
+                    if (file.getType() == FileType.DOCKERFILE) {
                         toolVersion.setContainerfile(true);
                     }
                     // Unhandled file type is apparently ignored
@@ -250,13 +249,13 @@ public final class ToolsImplCommon {
      * @return an Optional openapi descriptor type such as GALAXY("GALAXY") or SMK("SMK");
      */
     public static Optional<DescriptorType> getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage descriptorLanguage) {
-        String descriptorType = descriptorLanguage.getShortName();
         // Tricky case for GALAXY because it doesn't match the rules of the other languages
-        if (StringUtils.equalsAnyIgnoreCase(descriptorType, "gxformat2")) {
+        if (descriptorLanguage == DescriptorLanguage.GXFORMAT2) {
             return Optional.of(DescriptorType.GALAXY);
         }
+        String descriptorType = descriptorLanguage.getShortName();
         return Arrays.stream(DescriptorType.values())
-            .filter(descType -> StringUtils.equalsAnyIgnoreCase(descriptorType, descType.toString())).findFirst();
+            .filter(descType -> descriptorType.equalsIgnoreCase(descType.toString())).findFirst();
     }
 
     /**
