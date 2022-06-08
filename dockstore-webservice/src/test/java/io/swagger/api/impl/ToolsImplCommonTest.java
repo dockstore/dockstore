@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -547,25 +546,5 @@ public class ToolsImplCommonTest {
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
         Assert.assertEquals("There should be one default image when the Tag has none", 1, toolVersion.getImages().size());
         Assert.assertEquals(Long.valueOf(0L), toolVersion.getImages().get(0).getSize());
-    }
-
-    @Test
-    public void getDescriptorTypeFromFileTypeTest() {
-        assertEquals(io.openapi.model.DescriptorType.CWL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_CWL).get());
-        assertEquals(io.openapi.model.DescriptorType.CWL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.CWL_TEST_JSON).get());
-        assertEquals(io.openapi.model.DescriptorType.GALAXY, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_GXFORMAT2).get());
-        assertEquals(io.openapi.model.DescriptorType.GALAXY, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.GXFORMAT2_TEST_FILE).get());
-        assertEquals(io.openapi.model.DescriptorType.SERVICE, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_SERVICE_OTHER).get());
-        assertEquals(io.openapi.model.DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW_CONFIG).get());
-        assertEquals(io.openapi.model.DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW_TEST_PARAMS).get());
-        assertEquals(io.openapi.model.DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW).get());
-    }
-
-    @Test
-    public void getDescriptorTypeFromDescriptorLanguageTest() {
-        assertEquals(io.openapi.model.DescriptorType.SMK, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.SMK).get());
-        assertEquals(io.openapi.model.DescriptorType.CWL, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.CWL).get());
-        assertEquals(io.openapi.model.DescriptorType.GALAXY, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.GXFORMAT2).get());
-        assertEquals(io.openapi.model.DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.NEXTFLOW).get());
     }
 }

@@ -146,6 +146,11 @@ public enum DescriptorLanguage {
     }
 
     public static DescriptorLanguage convertShortStringToEnum(String descriptor) {
+        // Tricky case for GALAXY because it doesn't match the rules of the other languages
+        if (StringUtils.containsIgnoreCase(descriptor, "galaxy")) {
+            return GXFORMAT2;
+        }
+
         final Optional<DescriptorLanguage> first = Arrays.stream(DescriptorLanguage.values())
             .filter(lang -> lang.getShortName().equalsIgnoreCase(descriptor)).findFirst();
         return first.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
