@@ -545,6 +545,19 @@ public class OrganizationIT extends BaseIT {
         }
     }
 
+    @Test
+    public void testUpdateOrganizationDescriptionOpenapi() {
+        final io.dockstore.openapi.client.ApiClient webClientOpenApiUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOpenApiUser);
+
+        io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
+        organization = organizationsApiAdmin.createOrganization(organization);
+
+        organizationsApiAdmin.updateOrganizationDescription("something new", organization.getId());
+        organization = organizationsApiAdmin.getOrganizationById(organization.getId());
+        assertEquals("something new", organization.getDescription());
+    }
+
     /**
      * This tests that you cannot add an organization with a duplicate display name
      */

@@ -422,6 +422,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}/updateTagPaths")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateTagContainerPath", description = "Change the tool paths.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Change the tool paths.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Resets the descriptor paths and dockerfile path of all versions to match the default paths from the tool object passed.", response = Tool.class)
@@ -676,6 +677,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}/publish")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "publish", description = "Publish or unpublish a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Publish or unpublish a tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Tool.class)
