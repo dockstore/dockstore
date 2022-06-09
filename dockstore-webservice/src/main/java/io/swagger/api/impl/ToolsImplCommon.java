@@ -235,7 +235,7 @@ public final class ToolsImplCommon {
         DescriptorLanguage descriptorLanguage;
         try {
             descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(fileType);
-        } catch (Exception e) {
+        } catch (UnsupportedOperationException exception) {
             return Optional.empty();
         }
 
