@@ -9092,6 +9092,7 @@ components:
         type:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - NFL
