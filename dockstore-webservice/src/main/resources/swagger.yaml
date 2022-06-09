@@ -8246,7 +8246,6 @@ definitions:
       type:
         type: "string"
         enum:
-        - "SMK"
         - "CWL"
         - "WDL"
         - "NFL"
@@ -8372,7 +8371,6 @@ definitions:
         items:
           type: "string"
           enum:
-          - "SMK"
           - "CWL"
           - "WDL"
           - "NFL"
