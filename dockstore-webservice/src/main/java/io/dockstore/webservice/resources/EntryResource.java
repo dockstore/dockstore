@@ -103,7 +103,7 @@ import org.slf4j.LoggerFactory;
 @Path("/entries")
 @Api("entries")
 @Produces(MediaType.APPLICATION_JSON)
-@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
+@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = OPENAPI_JWT_SECURITY_DEFINITION_NAME, scheme = "bearer") })
 @Tag(name = "entries", description = ResourceConstants.ENTRIES)
 public class EntryResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Entry> {
 
@@ -420,7 +420,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @UnitOfWork
     @ApiOperation(value = "Create a discourse topic for an entry.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Entry.class)
-    @Operation(description = "Create a discourse topic for an entry.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(description = "Create a discourse topic for an entry.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     public Entry setDiscourseTopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "The id of the entry to add a topic to.", required = true)
             @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true)

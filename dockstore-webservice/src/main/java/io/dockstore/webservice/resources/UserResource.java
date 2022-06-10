@@ -456,7 +456,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork(readOnly = true)
     @Path("/checkUser/{username}")
     @ApiOperation(value = "Check if user with some username exists.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
-    @Operation(operationId = "checkUserExists", description = "Check if user with some username exists.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "checkUserExists", description = "Check if user with some username exists.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "Boolean indicating if a user with the specified username exists", content = @Content(schema = @Schema(implementation = Boolean.class)))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
@@ -1082,7 +1082,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/github/events")
-    @Operation(operationId = "getUserGitHubEvents", description = "Get all of the GitHub Events for the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "getUserGitHubEvents", description = "Get all of the GitHub Events for the logged in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "A list of GitHub Events for the logged in user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = LambdaEvent.class))))
     @ApiOperation(value = "See OpenApi for details")
@@ -1113,7 +1113,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/registries/{gitRegistry}/organizations")
-    @Operation(operationId = "getUserOrganizations", description = "Get all of the organizations for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "getUserOrganizations", description = "Get all of the organizations for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "A list of organizations for a given git registry accessible to the logged in user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class), uniqueItems = true)))
     @ApiOperation(value = "See OpenApi for details")
@@ -1127,7 +1127,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/registries/{gitRegistry}/organizations/{organization}")
-    @Operation(operationId = "getUserOrganizationRepositories", description = "Get all of the repositories for an organization for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "getUserOrganizationRepositories", description = "Get all of the repositories for an organization for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "A list of repositories for an organization for a given git registry accessible to the logged in user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Repository.class))))
     @ApiOperation(value = "See OpenApi for details")

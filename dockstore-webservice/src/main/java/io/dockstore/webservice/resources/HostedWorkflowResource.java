@@ -204,7 +204,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @ApiOperation(nickname = ZIP_UPLOAD_OPERATION_ID, value = ZIP_UPLOAD_DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
     @Deprecated(since = "1.9.0")
-    @Operation(operationId = ZIP_UPLOAD_OPERATION_ID, summary = ZIP_UPLOAD_DESCRIPTION, security = @SecurityRequirement(name = "bearer"), deprecated = true)
+    @Operation(operationId = ZIP_UPLOAD_OPERATION_ID, summary = ZIP_UPLOAD_DESCRIPTION, security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), deprecated = true)
     @ApiResponse(responseCode = "200", description = "successful operation", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Workflow.class)))
     public Workflow addZip(
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth final User user,

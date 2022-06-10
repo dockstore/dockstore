@@ -1983,7 +1983,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @UsernameRenameRequired
     @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
-    @Operation(operationId = "addWorkflow", description = "Adds a workflow for a registry and repository path with defaults set.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "addWorkflow", description = "Adds a workflow for a registry and repository path with defaults set.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public BioWorkflow addWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
         @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
@@ -2035,7 +2035,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
-    @Operation(operationId = "deleteWorkflow", description = "Delete a stubbed workflow for a registry and repository path.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "deleteWorkflow", description = "Delete a stubbed workflow for a registry and repository path.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public void deleteWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
         @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,

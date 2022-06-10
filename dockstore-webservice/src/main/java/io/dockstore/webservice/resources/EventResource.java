@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.jdbi.EventDAO.MAX_LIMIT;
 import static io.dockstore.webservice.jdbi.EventDAO.PAGINATION_RANGE;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -90,7 +91,7 @@ public class EventResource {
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Operation(description = DESCRIPTION, summary = SUMMARY, security = @SecurityRequirement(name = "bearer"))
+    @Operation(description = DESCRIPTION, summary = SUMMARY, security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = SUMMARY, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of events", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Event.class))))

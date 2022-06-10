@@ -769,7 +769,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @ApiOperation(value = orcidSummary, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
         notes = orcidDescription, response = Token.class)
     @Operation(operationId = "addOrcidToken", summary = orcidSummary, description = orcidDescription,
-        security = @SecurityRequirement(name = "bearer"))
+        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added orcid.org token", content = @Content(schema = @Schema(implementation = Token.class)))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = HttpStatusMessageConstants.NOT_FOUND)
