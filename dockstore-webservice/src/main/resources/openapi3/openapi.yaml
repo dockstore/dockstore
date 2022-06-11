@@ -3096,6 +3096,23 @@ paths:
       - bearer: []
       tags:
       - lambdaEvents
+  /metadata/cli-version:
+    get:
+      description: Get Dockstore CLI latest version. NO authentication
+      operationId: getCliVersion
+      responses:
+        default:
+          content:
+            text/html:
+              schema:
+                type: string
+            text/xml:
+              schema:
+                type: string
+          description: default response
+      summary: Get Dockstore CLI latest version.
+      tags:
+      - metadata
   /metadata/config.json:
     get:
       description: "Configuration, NO authentication"

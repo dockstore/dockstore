@@ -2817,6 +2817,22 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/LambdaEvent"
+  /metadata/cli-version:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get Dockstore CLI latest version."
+      description: "Get Dockstore CLI latest version. NO authentication"
+      operationId: "getCliVersion"
+      produces:
+      - "text/html"
+      - "text/xml"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "string"
   /metadata/config.json:
     get:
       tags:

@@ -95,6 +95,10 @@ import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.kohsuke.github.GHRelease;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -412,6 +416,25 @@ public class MetadataResource {
             LOG.error("Error generating config response", e);
             throw new CustomWebApplicationException("Error retrieving config information", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("cli-version")
+    @Operation(summary = "Get Dockstore CLI latest version.", description = "Get Dockstore CLI latest version. NO authentication")
+    @ApiOperation(value = "Get Dockstore CLI latest version.", notes = "Get Dockstore CLI latest version. NO authentication")
+    public String getCliVersion() {
+        GHRelease ghRelease;
+        try {
+            GitHub github = new GitHubBuilder().build();
+            GHRepository repository = github.getRepository("dockstore/dockstore-cli");
+            ghRelease = repository.getLatestRelease();
+        } catch (IOException e) {
+            LOG.info("Could not get CLI version info from GitHub. {}", e);
+            throw new CustomWebApplicationException("Could not get CLI version info from GitHub", HttpStatus.SC_SERVICE_UNAVAILABLE);
+        }
+        return ghRelease.getName();
     }
 
 }
