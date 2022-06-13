@@ -7,8 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * See the end of Section 13.2.1
- * https://docs.jboss.org/hibernate/core/4.3/manual/en-US/html/ch13.html
+ * See https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html#transactions
  */
 public final class TransactionHelper {
 
@@ -27,14 +26,12 @@ public final class TransactionHelper {
 
     public boolean transaction(Runnable runnable) {
         boolean success = false;
-        rollback();
+        commit();
         clear();
         begin();
         try {
             runnable.run();
             success = true;
-        } catch (RollbackException e) {
-            // keep the RollbackException from propagating
         } finally {
             if (success) {
                 commit();
@@ -99,18 +96,16 @@ public final class TransactionHelper {
 
     private void check() {
         if (hasThrown()) {
-            LOG.error("operation on session that has thrown");
-            RuntimeException ex = new RuntimeException("operation on session that has thrown", thrown);
-            thrown = ex;
-            throw thrown;
+            LOG.error("operation on session that has thrown", thrown);
+            throw new RuntimeException("operation on session that has thrown", thrown);
         }
     }
 
     private void handle(String operation, RuntimeException ex) {
         thrown = ex;
         LOG.error(operation + " failed", ex);
-        // The Hibernate docs instruct us to immediately close the session if it throws.
-        // This will keep us from using foobar-ed state.
+        // To prevent us from using foobar-ed state, the Hibernate docs instruct
+        // us to immediately close a session if an operation on it throws.
         try {
             session.close();
         } catch (RuntimeException closeEx) {
@@ -121,8 +116,5 @@ public final class TransactionHelper {
 
     private boolean isActive(Transaction transaction) {
         return transaction != null && transaction.isActive();
-    }
-
-    public static class RollbackException extends RuntimeException {
     }
 }

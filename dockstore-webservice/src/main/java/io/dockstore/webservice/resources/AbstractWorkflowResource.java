@@ -387,7 +387,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 setEventMessage(lambdaEvent, stringMessageWriter.toString());
                 lambdaEventDAO.create(lambdaEvent);
             });
-            
+
             GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
         }
