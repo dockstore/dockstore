@@ -16,8 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.common.DescriptorLanguage.getDefaultDescriptorPath;
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
@@ -120,7 +119,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Timed
     @UnitOfWork
     @UsernameRenameRequired
-    @Operation(operationId = "createHostedWorkflow", description = "Create a hosted workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "createHostedWorkflow", description = "Create a hosted workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted workflow.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Workflow.class)))
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
@@ -188,7 +187,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
     
     @Override
-    @Operation(operationId = "editHostedWorkflow", description = "Non-idempotent operation for creating new revisions of hosted workflows", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "editHostedWorkflow", description = "Non-idempotent operation for creating new revisions of hosted workflows", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "editHostedWorkflow", value = "Non-idempotent operation for creating new revisions of hosted workflows", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
@@ -204,7 +203,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @ApiOperation(nickname = ZIP_UPLOAD_OPERATION_ID, value = ZIP_UPLOAD_DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
     @Deprecated(since = "1.9.0")
-    @Operation(operationId = ZIP_UPLOAD_OPERATION_ID, summary = ZIP_UPLOAD_DESCRIPTION, security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), deprecated = true)
+    @Operation(operationId = ZIP_UPLOAD_OPERATION_ID, summary = ZIP_UPLOAD_DESCRIPTION, security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), deprecated = true)
     @ApiResponse(responseCode = "200", description = "successful operation", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Workflow.class)))
     public Workflow addZip(
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth final User user,
@@ -241,7 +240,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    @Operation(operationId = "deleteHostedWorkflowVersion", description = "Delete a revision of a hosted workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "deleteHostedWorkflowVersion", description = "Delete a revision of a hosted workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "deleteHostedWorkflowVersion", value = "Delete a revision of a hosted workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow deleteHostedVersion(User user, Long entryId, String version) {

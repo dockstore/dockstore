@@ -16,8 +16,7 @@
 
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
@@ -113,7 +112,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/{containerId}/tags")
-    @Operation(operationId = "getTagsByPath", description = "Get tags for a tool by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getTagsByPath", description = "Get tags for a tool by id.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get tags for a tool by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "Set")
     public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId) {
@@ -126,7 +125,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @UnitOfWork
     @Path("/{containerId}/tags")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updateTags", description = "Update the tags linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateTags", description = "Update the tags linked to a tool.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the tags linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> updateTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -170,7 +169,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @UnitOfWork
     @Path("/{containerId}/tags")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "addTags", description = "Add new tags linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "addTags", description = "Add new tags linked to a tool.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add new tags linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> addTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -208,7 +207,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags/{tagId}")
-    @Operation(operationId = "deleteTags", description = "Delete tag linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "deleteTags", description = "Delete tag linked to a tool.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete tag linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public Response deleteTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -256,7 +255,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @UnitOfWork
     @Beta
     @Path("/{containerId}/requestDOI/{tagId}")
-    @Operation(operationId = "requestDOIForToolTag", description = "Request a DOI for this version of a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "requestDOIForToolTag", description = "Request a DOI for this version of a tool.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Request a DOI for this version of a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> requestDOIForToolTag(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -303,7 +302,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @UnitOfWork(readOnly = true)
     @Path("{containerId}/tags/{tagId}/sourcefiles")
     @ApiOperation(value = "Retrieve sourcefiles for a container's version",  hidden = true)
-    @Operation(operationId = "getTagsSourcefiles", description = "Retrieve sourcefiles for a container's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getTagsSourcefiles", description = "Retrieve sourcefiles for a container's version", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public SortedSet<SourceFile> getTagsSourceFiles(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "containerId", description = "Container to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,
             @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,

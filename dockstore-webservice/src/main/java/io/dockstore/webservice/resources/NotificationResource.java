@@ -1,7 +1,6 @@
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Notification;
@@ -74,7 +73,7 @@ public class NotificationResource {
     @UnitOfWork
     @Consumes(MediaType.APPLICATION_JSON)
     @RolesAllowed({"curator", "admin"})
-    @Operation(operationId = "createNotification", description = "Create a notification", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "createNotification", description = "Create a notification", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Create a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
             notes = "Curator/admin only", response = Notification.class)
     public Notification createNotification(@ApiParam(value = "Notification to create", required = true) @Parameter(name = "notification", description = "Notification to create", required = true) Notification notification) {
@@ -87,7 +86,7 @@ public class NotificationResource {
     @Path("/notifications/{id}")
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @Operation(operationId = "deleteNotification", description = "Delete a notification", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "deleteNotification", description = "Delete a notification", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Curator/admin only")
     public void deleteNotification(@ApiParam(value = "Notification to delete", required = true) @PathParam("id") Long id) {
         Notification notification = notificationDAO.findById(id);
@@ -100,7 +99,7 @@ public class NotificationResource {
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updateNotification", description = "Update a notification", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateNotification", description = "Update a notification", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
             notes = "Curator/admin only", response = Notification.class)
     public Notification updateNotification(@ApiParam(value = "Notification to update", required = true) @PathParam("id") long id,

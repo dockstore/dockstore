@@ -1,7 +1,6 @@
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.Utilities;
@@ -76,7 +75,7 @@ import org.slf4j.LoggerFactory;
 @Api("/organizations")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "organizations", description = ResourceConstants.ORGANIZATIONS)
-@SecuritySchemes({@SecurityScheme(type = SecuritySchemeType.HTTP, name = OPENAPI_JWT_SECURITY_DEFINITION_NAME, scheme = "bearer")})
+@SecuritySchemes({@SecurityScheme(type = SecuritySchemeType.HTTP, name = JWT_SECURITY_DEFINITION_NAME, scheme = "bearer")})
 public class CollectionResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Collection> {
 
     private static final String ORGANIZATION_NOT_FOUND_MESSAGE = "Organization not found.";
@@ -116,7 +115,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Path("/collections/{collectionId}/aliases")
     @ApiOperation(nickname = "addCollectionAliases", value = "Add aliases linked to a collection in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Collection.class)
-    @Operation(operationId = "addCollectionAliases", summary = "Add aliases linked to a collection in Dockstore.", description = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "addCollectionAliases", summary = "Add aliases linked to a collection in Dockstore.", description = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
         + "", description = "Successfully added alias to collection", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Collection.class)))
     public Collection addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -141,7 +140,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @UnitOfWork(readOnly = true)
     @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Retrieve a collection by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Collection.class)
-    @Operation(operationId = "getCollectionById", summary = "Retrieve a collection by ID.", description = "Retrieve a collection by ID. Supports optional authentication.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getCollectionById", summary = "Retrieve a collection by ID.", description = "Retrieve a collection by ID. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Collection getCollectionById(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
@@ -181,7 +180,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @UnitOfWork(readOnly = true)
     @Path("{organizationName}/collections/{collectionName}/name")
     @ApiOperation(value = "Retrieve a collection by name.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Collection.class)
-    @Operation(operationId = "getCollectionByName", summary = "Retrieve a collection by name.", description = "Retrieve a collection by name. Supports optional authentication.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getCollectionByName", summary = "Retrieve a collection by name.", description = "Retrieve a collection by name. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Collection getCollectionByName(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization name.", required = true) @Parameter(description = "Organization name.", name = "organizationName", in = ParameterIn.PATH, required = true) @PathParam("organizationName") String organizationName,
         @ApiParam(value = "Collection name.", required = true) @Parameter(description = "Collection name.", name = "collectionName", in = ParameterIn.PATH, required = true) @PathParam("collectionName") String collectionName) {
@@ -235,7 +234,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @UnitOfWork
     @Path("{organizationId}/collections/{collectionId}/entry")
     @ApiOperation(value = "Add an entry to a collection.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Collection.class)
-    @Operation(operationId = "addEntryToCollection", summary = "Add an entry to a collection.", description = "Add an entry to a collection.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "addEntryToCollection", summary = "Add an entry to a collection.", description = "Add an entry to a collection.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Collection addEntryToCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
@@ -277,7 +276,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @UnitOfWork
     @Path("{organizationId}/collections/{collectionId}/entry")
     @ApiOperation(value = "Delete an entry from a collection.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Collection.class)
-    @Operation(operationId = "deleteEntryFromCollection", summary = "Delete an entry to a collection.", description = "Delete an entry to a collection.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "deleteEntryFromCollection", summary = "Delete an entry to a collection.", description = "Delete an entry to a collection.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Collection deleteEntryFromCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
@@ -381,7 +380,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Path("{organizationId}/collections")
     @ApiOperation(value = "Retrieve all collections for an organization.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, responseContainer = "List", response = Collection.class)
-    @Operation(operationId = "getCollectionsFromOrganization", summary = "Retrieve all collections for an organization.", description = "Retrieve all collections for an organization. Supports optional authentication.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getCollectionsFromOrganization", summary = "Retrieve all collections for an organization.", description = "Retrieve all collections for an organization. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<Collection> getCollectionsFromOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Included fields") @Parameter(description = "Included fields.", name = "include", in = ParameterIn.QUERY, required = true) @QueryParam("include") String include) {
@@ -424,7 +423,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Path("{organizationId}/collections")
     @ApiOperation(value = "Create a collection in the given organization.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Collection.class)
-    @Operation(operationId = "createCollection", summary = "Create a collection in the given organization.", description = "Create a collection in the given organization.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "createCollection", summary = "Create a collection in the given organization.", description = "Create a collection in the given organization.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Collection createCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Collection to register.", required = true) @Parameter(description = "Collection to register.", name = "collection", required = true) Collection collection) {
@@ -499,7 +498,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Update a collection.", notes = "Currently only name, display name, description, and topic can be updated.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Collection.class)
-    @Operation(operationId = "updateCollection", summary = "Update a collection.", description = "Update a collection. Currently only name, display name, description, and topic can be updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateCollection", summary = "Update a collection.", description = "Update a collection. Currently only name, display name, description, and topic can be updated.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Collection updateCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Collection to update with.", required = true) @Parameter(description = "Collection to register.", name = "collection", required = true) Collection collection,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
@@ -576,7 +575,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @UnitOfWork
     @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Delete a collection.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, hidden = true)
-    @Operation(operationId = "deleteCollection", summary = "Delete a collection.", description = "Delete a collection.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "deleteCollection", summary = "Delete a collection.", description = "Delete a collection.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully deleted the collection")
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
@@ -612,7 +611,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @UnitOfWork
     @ApiOperation(value = "Update a collection's description.", notes = "Description in markdown", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Collection.class)
-    @Operation(operationId = "updateCollectionDescription", summary = "Update a collection's description.", description = "Update a collection's description. Description in markdown.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateCollectionDescription", summary = "Update a collection's description.", description = "Update a collection's description. Description in markdown.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Collection updateCollectionDescription(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
@@ -644,7 +643,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Path("{organizationId}/collections/{collectionId}/description")
     @ApiOperation(value = "Retrieve a collection description by organization ID and collection ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = String.class)
-    @Operation(operationId = "getCollectionDescription", summary = "Retrieve a collection description by organization ID and collection ID.", description = "Retrieve a collection description by organization ID and collection ID. Supports optional authentication.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getCollectionDescription", summary = "Retrieve a collection description by organization ID and collection ID.", description = "Retrieve a collection description by organization ID and collection ID. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public String getCollectionDescription(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Collection ID", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
