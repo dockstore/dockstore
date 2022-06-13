@@ -1034,6 +1034,26 @@ public class WebhookIT extends BaseIT {
     }
 
     @Test
+    public void testChangingAppToolTopicsOpenapi() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+
+        client.handleGitHubRelease("refs/tags/1.0", installationId, taggedToolRepo, BasicIT.USER_2_USERNAME);
+        io.dockstore.openapi.client.model.Workflow appTool = client.getWorkflowByPath("github.com/" + taggedToolRepoPath, WorkflowSubClass.APPTOOL, "versions,validations");
+
+        io.dockstore.openapi.client.model.PublishRequest publishRequest = new io.dockstore.openapi.client.model.PublishRequest();
+        publishRequest.publish(true);
+
+        client.publish1(appTool.getId(), publishRequest);
+
+        String newTopic = "this is a new topic";
+        appTool.setTopicManual(newTopic);
+        appTool = client.updateWorkflow(appTool.getId(), appTool);
+        assertEquals(appTool.getTopicManual(), newTopic);
+    }
+
+    @Test
     public void testStarAppTool() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);

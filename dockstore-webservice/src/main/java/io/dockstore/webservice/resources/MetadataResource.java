@@ -203,6 +203,7 @@ public class MetadataResource {
         try {
             return rssListener.getCache().get(RSS_KEY, (k) -> getRSS());
         } catch (RuntimeException e) {
+            LOG.error("runtime exception on rss call:", e);
             throw new CustomWebApplicationException("RSS cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
@@ -261,6 +262,7 @@ public class MetadataResource {
             RSSWriter.write(feed, byteArrayOutputStream);
             return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
         } catch (Exception e) {
+            LOG.error("exception on rss call:", e);
             throw new CustomWebApplicationException("Could not write RSS feed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
@@ -274,8 +276,8 @@ public class MetadataResource {
         schema = @Schema(implementation = String.class)))
     @ApiOperation(value = "Returns the file containing runner dependencies.", response = String.class)
     public Response getRunnerDependencies(
-            @Parameter(name = "client_version", description = "The Dockstore client version")
-            @ApiParam(value = "The Dockstore client version") @QueryParam("client_version") String clientVersion,
+            @Parameter(name = "client_version", description = "The Dockstore client version (e.g. 1.13.0)", schema = @Schema(pattern = PipHelper.SEM_VER_STRING))
+            @ApiParam(value = "The Dockstore client version (e.g. 1.13.0)") @QueryParam("client_version") String clientVersion,
             @Parameter(name = "python_version", description = "Python version, only relevant for the cwltool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "2"))
             @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("3") @QueryParam("python_version") String pythonVersion,
             @Parameter(name = "runner", description = "The tool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "cwltool", allowableValues = {"cwltool"}))
@@ -287,6 +289,10 @@ public class MetadataResource {
             return Response.noContent().build();
         }
         boolean unwrap = !("json").equals(output);
+        if (!PipHelper.validateSemVer(clientVersion)) {
+            throw new CustomWebApplicationException(String.format("Invalid value for client version: `%s`. Value must be like `1.13.0`)", clientVersion),
+                                                    HttpStatus.SC_BAD_REQUEST);
+        }
         String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
         try {
             String content = Resources.toString(this.getClass().getClassLoader()
