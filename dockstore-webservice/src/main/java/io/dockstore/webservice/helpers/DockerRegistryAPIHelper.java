@@ -16,8 +16,8 @@
 
 package io.dockstore.webservice.helpers;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.languages.LanguageHandlerInterface.formatImageInfo;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;

@@ -18,10 +18,9 @@ package io.dockstore.webservice.resources;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
 import com.codahale.metrics.annotation.Timed;
@@ -230,7 +229,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/restub")
     @Timed
     @UnitOfWork
-    @Operation(operationId = "restub", summary = "Restub a workflow", description = "Restub a workflow", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "restub", summary = "Restub a workflow", description = "Restub a workflow", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Restub a workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Restubs a full, unpublished workflow.", response = Workflow.class)
     public Workflow restub(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -293,7 +292,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @UsernameRenameRequired
-    @Operation(operationId = "refresh", description = "Refresh one particular workflow.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "refresh", description = "Refresh one particular workflow.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "refresh", value = "Refresh one particular workflow.", notes = "Full refresh", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -308,7 +307,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/refresh/{version}")
     @Timed
     @UnitOfWork
-    @Operation(operationId = "refreshVersion", description = "Refresh one particular workflow version.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "refreshVersion", description = "Refresh one particular workflow version.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "refreshVersion", value = "Refresh one particular workflow version.", notes = "Refresh existing or new version of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
     public Workflow refreshVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -403,7 +402,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}")
-    @Operation(operationId = "getWorkflow", description = "Retrieve a workflow", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflow", description = "Retrieve a workflow", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getWorkflow", value = "Retrieve a workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Workflow getWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -426,7 +425,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @ApiOperation(nickname = "getWorkflowVersions", value = "Return first 200 versions in an entry", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = WorkflowVersion.class, responseContainer = "List")
-    @Operation(operationId = "getWorkflowVersions", description = "Return first 200 versions in an entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowVersions", description = "Return first 200 versions in an entry", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list workflow versions in a workflow", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
@@ -445,7 +444,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/workflowVersions/{workflowVersionId}")
     @UnitOfWork(readOnly = true)
     @ApiOperation(value = "See OpenApi for details", hidden = true)
-    @Operation(operationId = "getWorkflowVersionById", description = "Retrieve a workflow version by ID", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowVersionById", description = "Retrieve a workflow version by ID", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get a workflow version by ID", content = @Content(
         mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = WorkflowVersion.class)))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
@@ -469,7 +468,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/labels")
-    @Operation(operationId = "updateLabels", description = "Update the labels linked to a workflow.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateLabels", description = "Update the labels linked to a workflow.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "updateLabels", value = "Update the labels linked to a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Workflow.class)
     public Workflow updateLabels(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -486,7 +485,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/{workflowId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updateWorkflow", description = "Update the workflow with the given workflow.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateWorkflow", description = "Update the workflow with the given workflow.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "updateWorkflow", value = "Update the workflow with the given workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class,
         notes = "Updates descriptor type (if stub), default workflow path, default file path, and default version")
@@ -520,7 +519,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/defaultVersion")
-    @Operation(operationId = "updateDefaultVersion", description = "Update the default version of a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateDefaultVersion", description = "Update the default version of a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the default version of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class, nickname = "updateWorkflowDefaultVersion")
     public Workflow updateDefaultVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -583,7 +582,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Beta
     @Path("/{workflowId}/requestDOI/{workflowVersionId}")
-    @Operation(operationId = "requestDOIForWorkflowVersion", description = "Request a DOI for this version of a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "requestDOIForWorkflowVersion", description = "Request a DOI for this version of a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Request a DOI for this version of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> requestDOIForWorkflowVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -680,7 +679,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/{workflowId}/resetVersionPaths")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updateWorkflowPath", description = "Reset the workflow paths.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateWorkflowPath", description = "Reset the workflow paths.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Reset the workflow paths.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Resets the workflow paths of all versions to match the default workflow path from the workflow object passed.", response = Workflow.class)
     public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -710,7 +709,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/users")
-    @Operation(operationId = "getUsers", description = "Get users of a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getUsers", description = "Get users of a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getUsers", value = "Get users of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = User.class, responseContainer = "List")
     public List<User> getUsers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -757,7 +756,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/{workflowId}/publish")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "publish", description = "Publish or unpublish a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "publish", description = "Publish or unpublish a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "publish", value = "Publish or unpublish a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
     public Workflow publish(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -808,7 +807,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("shared")
-    @Operation(operationId = "sharedWorkflows", description = "Retrieve all workflows shared with user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "sharedWorkflows", description = "Retrieve all workflows shared with user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Retrieve all workflows shared with user.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, tags = {"workflows"}, response = SharedWorkflows.class, responseContainer = "List")
     public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user) {
@@ -837,7 +836,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}")
-    @Operation(operationId = "getWorkflowByPath", summary = "Get a workflow by path.", description = "Requires full path (including workflow name if applicable).", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowByPath", summary = "Get a workflow by path.", description = "Requires full path (including workflow name if applicable).", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a workflow by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Requires full path (including workflow name if applicable).", response = Workflow.class)
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -946,7 +945,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/permissions")
-    @Operation(operationId = "getWorkflowPermissions", description = "Get all permissions for a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowPermissions", description = "Get all permissions for a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get all permissions for a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -962,7 +961,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/actions")
-    @Operation(operationId = "getWorkflowActions", description = "Gets all actions a user can perform on a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowActions", description = "Gets all actions a user can perform on a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Gets all actions a user can perform on a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Role.Action.class, responseContainer = "List")
     public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -986,7 +985,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "addWorkflowPermission", description = "Set the specified permission for a user on a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "addWorkflowPermission", description = "Set the specified permission for a user on a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Set the specified permission for a user on a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -1007,7 +1006,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
-    @Operation(operationId = "removeWorkflowRole", description = "Remove the specified user role for a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "removeWorkflowRole", description = "Remove the specified user role for a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Remove the specified user role for a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -1027,7 +1026,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork(readOnly = true)
     @Path("/path/entry/{repository}")
     @Operation(operationId = "getEntryByPath", summary = "Get an entry by path.", description = "Requires full path (including entry name if applicable).",
-        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+        security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get an entry by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Requires full path (including entry name if applicable).", response = Entry.class)
     public Entry getEntryByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -1067,7 +1066,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork(readOnly = true)
     @Path("/path/{repository}")
     @Operation(operationId = "getAllWorkflowByPath", summary = "Get a list of workflows by path.", description = "Do not include workflow name.",
-        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+        security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getAllWorkflowByPath", value = "Get a list of workflows by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Do not include workflow name.", response = Workflow.class, responseContainer = "List")
     public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -1109,7 +1108,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/versions")
-    @Operation(operationId = "tags", description = "List the versions for a published workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "tags", description = "List the versions for a published workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "tags", value = "List the versions for a published workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user, @QueryParam("workflowId") long workflowId) {
@@ -1122,7 +1121,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/primaryDescriptor")
-    @Operation(operationId = "primaryDescriptor", description = "Get the primary descriptor file.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "primaryDescriptor", description = "Get the primary descriptor file.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "primaryDescriptor", value = "Get the primary descriptor file.", tags = {
         "workflows"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
@@ -1136,7 +1135,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/descriptor/{relative-path}")
-    @Operation(operationId = "secondaryDescriptorPath", description = "Get the corresponding descriptor file from source control.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "secondaryDescriptorPath", description = "Get the corresponding descriptor file from source control.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "secondaryDescriptorPath", value = "Get the corresponding descriptor file from source control.", tags = {
         "workflows"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
@@ -1150,7 +1149,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/secondaryDescriptors")
-    @Operation(operationId = "secondaryDescriptors", description = "Get the corresponding descriptor documents from source control.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "secondaryDescriptors", description = "Get the corresponding descriptor documents from source control.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "secondaryDescriptors", value = "Get the corresponding descriptor documents from source control.", tags = {
         "workflows"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
@@ -1164,7 +1163,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/testParameterFiles")
-    @Operation(operationId = "getTestParameterFiles", description = "Get the corresponding test parameter files.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getTestParameterFiles", description = "Get the corresponding test parameter files.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getTestParameterFiles", value = "Get the corresponding test parameter files.", tags = {
         "workflows"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
@@ -1180,7 +1179,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
-    @Operation(operationId = "addTestParameterFiles", description = "Add test parameter files for a given version.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "addTestParameterFiles", description = "Add test parameter files for a given version.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "addTestParameterFiles", value = "Add test parameter files for a given version.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -1226,7 +1225,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
-    @Operation(operationId = "deleteTestParameterFiles", description = "Delete test parameter files for a given version.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "deleteTestParameterFiles", description = "Delete test parameter files for a given version.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "deleteTestParameterFiles", value = "Delete test parameter files for a given version.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -1272,7 +1271,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/manualRegister")
     @UsernameRenameRequired
     @SuppressWarnings("checkstyle:ParameterNumber")
-    @Operation(operationId = "manualRegister", description = "Manually register a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "manualRegister", description = "Manually register a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Manually register a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Manually register workflow (public or private).", response = Workflow.class)
     public Workflow manualRegister(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -1330,7 +1329,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/{workflowId}/workflowVersions")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updateWorkflowVersion", description = "Update the workflow versions linked to a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateWorkflowVersion", description = "Update the workflow versions linked to a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the workflow versions linked to a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Updates workflow path, reference, and hidden attributes.", response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> updateWorkflowVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -1421,7 +1420,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork()
     @Path("/{workflowId}/dag/{workflowVersionId}")
-    @Operation(operationId = "getWorkflowDag", description = "Get the DAG for a given workflow version.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowDag", description = "Get the DAG for a given workflow version.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the DAG for a given workflow version.", response = String.class, notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public String getWorkflowDag(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
@@ -1467,7 +1466,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork()
     @Path("/{workflowId}/tools/{workflowVersionId}")
-    @Operation(operationId = "getTableToolContent", description = "Get the Tools for a given workflow version.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getTableToolContent", description = "Get the Tools for a given workflow version.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the Tools for a given workflow version.", notes = OPTIONAL_AUTH_MESSAGE, response = String.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public String getTableToolContent(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
@@ -1519,7 +1518,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork(readOnly = true)
     @Path("{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles")
     @ApiOperation(value = "See OpenApi for details", hidden = true)
-    @Operation(operationId = "getWorkflowVersionsSourcefiles", description = "Retrieve sourcefiles for an entry's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowVersionsSourcefiles", description = "Retrieve sourcefiles for an entry's version", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public SortedSet<SourceFile> getWorkflowVersionsSourceFiles(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
@@ -1589,7 +1588,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UsernameRenameRequired
     @Path("/{workflowId}/star")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "starEntry", description = "Star a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "starEntry", description = "Star a workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "starEntry", value = "Star a workflow.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public void starEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
@@ -1627,7 +1626,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/descriptorType")
     @Timed
     @UnitOfWork
-    @Operation(operationId = "updateDescriptorType", summary = "Changes the descriptor type of an unpublished, invalid workflow.", description = "Use with caution. This deletes all the workflowVersions, only use if there's nothing worth keeping in the workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateDescriptorType", summary = "Changes the descriptor type of an unpublished, invalid workflow.", description = "Use with caution. This deletes all the workflowVersions, only use if there's nothing worth keeping in the workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public Workflow updateLanguage(
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -1663,7 +1662,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
     @Operation(description = "Language parser calls this endpoint to update parsed information for this version",
-        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+        security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public void postParsedInformation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH)
@@ -1692,7 +1691,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{entryId}/registerCheckerWorkflow/{descriptorType}")
-    @Operation(operationId = "registerCheckerWorkflow", description = "Register a checker workflow and associates it with the given tool/workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "registerCheckerWorkflow", description = "Register a checker workflow and associates it with the given tool/workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Register a checker workflow and associates it with the given tool/workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Entry.class)
     @SuppressWarnings("checkstyle:MagicNumber")
@@ -1933,7 +1932,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/zip/{workflowVersionId}")
-    @Operation(operationId = "getWorkflowZip", description = "Download a ZIP file of a workflow and all associated files.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowZip", description = "Download a ZIP file of a workflow and all associated files.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Download a ZIP file of a workflow and all associated files.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     @Produces("application/zip")
@@ -1967,7 +1966,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("{alias}/aliases")
-    @Operation(operationId = "getWorkflowByAlias", description = "Retrieves a workflow by alias.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowByAlias", description = "Retrieves a workflow by alias.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Retrieves a workflow by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Workflow.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public Workflow getWorkflowByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
@@ -1983,7 +1982,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @UsernameRenameRequired
     @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
-    @Operation(operationId = "addWorkflow", description = "Adds a workflow for a registry and repository path with defaults set.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "addWorkflow", description = "Adds a workflow for a registry and repository path with defaults set.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public BioWorkflow addWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
         @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
@@ -2035,7 +2034,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
-    @Operation(operationId = "deleteWorkflow", description = "Delete a stubbed workflow for a registry and repository path.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "deleteWorkflow", description = "Delete a stubbed workflow for a registry and repository path.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public void deleteWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
         @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
@@ -2090,7 +2089,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
-    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -2110,7 +2109,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
-    @Operation(description = "Handle the installation of our GitHub app onto a repository or organization.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @Operation(description = "Handle the installation of our GitHub app onto a repository or organization.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
     @ApiOperation(value = "Handle the installation of our GitHub app onto a repository or organization.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class, responseContainer = "List")
     public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -2139,7 +2138,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
-    @Operation(description = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @Operation(description = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
     @ApiOperation(value = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Response.class)
     public Response handleGitHubBranchDeletion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -2158,7 +2157,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors")
     @UnitOfWork(readOnly = true)
     @ApiOperation(value = "See OpenApi for details", hidden = true)
-    @Operation(operationId = "getWorkflowVersionOrcidAuthors", description = "Retrieve ORCID author information for a workflow version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowVersionOrcidAuthors", description = "Retrieve ORCID author information for a workflow version", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Retrieve ORCID author information for a workflow version", content = @Content(
         mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = OrcidAuthorInformation.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")

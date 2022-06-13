@@ -1,8 +1,7 @@
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.Utilities;
@@ -59,7 +58,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
     @Timed
     @UnitOfWork
     @Path("workflow-versions/{workflowVersionId}")
-    @Operation(operationId = "addAliases", description = "Add aliases linked to a workflow version in Dockstore.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "addAliases", description = "Add aliases linked to a workflow version in Dockstore.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "addAliases", value = "Add aliases linked to a workflow version in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Aliases are alphanumerical (case-insensitive "
         + "and may contain internal hyphens), given in a comma-delimited list.", response = WorkflowVersion.class)
@@ -73,7 +72,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("workflow-versions/{alias}")
-    @Operation(operationId = "getWorkflowVersionPathInfoByAlias", description = "Retrieves workflow version path information by alias.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getWorkflowVersionPathInfoByAlias", description = "Retrieves workflow version path information by alias.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Retrieves workflow version path information by alias.", notes = OPTIONAL_AUTH_MESSAGE,
         response = WorkflowVersion.WorkflowVersionPathInfo.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public WorkflowVersion.WorkflowVersionPathInfo getWorkflowVersionPathInfoByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,

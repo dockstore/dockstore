@@ -15,7 +15,7 @@
  */
 package io.dockstore.webservice.resources.proposedGA4GH;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.User;
@@ -104,7 +104,7 @@ public class ToolsExtendedApi {
     @ApiOperation(value = ToolsIndexGet.SUMMARY, notes = ToolsIndexGet.DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Integer.class)
     @ApiResponses(value = {@ApiResponse(code = HttpStatus.SC_OK, message = ToolsIndexGet.OK_RESPONSE)})
-    @Operation(operationId = ToolsIndexGet.SUMMARY, summary = ToolsIndexGet.SUMMARY, description = ToolsIndexGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = {
+    @Operation(operationId = ToolsIndexGet.SUMMARY, summary = ToolsIndexGet.SUMMARY, description = ToolsIndexGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = ToolsIndexGet.OK_RESPONSE, content = @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = Integer.class)))
     })
@@ -174,7 +174,7 @@ public class ToolsExtendedApi {
         @ApiResponse(code = HttpStatus.SC_OK, message = VerifyTestParameterFilePost.OK_RESPONSE, response = Map.class),
         @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = VerifyTestParameterFilePost.NOT_FOUND_RESPONSE, response = Error.class),
         @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = VerifyTestParameterFilePost.UNAUTHORIZED_RESPONSE, response = Error.class)})
-    @Operation(operationId = "verifyTestParameterFilePost", summary = VerifyTestParameterFilePost.SUMMARY, description = VerifyTestParameterFilePost.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = {
+    @Operation(operationId = "verifyTestParameterFilePost", summary = VerifyTestParameterFilePost.SUMMARY, description = VerifyTestParameterFilePost.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = VerifyTestParameterFilePost.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
