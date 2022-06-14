@@ -519,18 +519,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
                         addValidationsToMessage(workflow, version, messageWriter);
-
-                        if (publish != null && workflow.getIsPublished() != publish) {
-                            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
-                            try {
-                                publishWorkflow(workflow, publish, user);
-                            } catch (CustomWebApplicationException ex) {
-                                LOG.warn("Could not set publish state from YML.", ex);
-                                lambdaEvent.setSuccess(false);
-                                lambdaEvent.setMessage(ex.getMessage());
-                            }
-                            lambdaEventDAO.create(lambdaEvent);
-                        }
+                        publishWorkflowAndLog(workflow, publish, user, repository, gitReference);
                     });
                 }
             } catch (RuntimeException ex) {
@@ -541,6 +530,20 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 messageWriter.println(message);
                 messageWriter.println("Entry skipped.");
             }
+        }
+    }
+
+    private void publishWorkflowAndLog(Workflow workflow, final Boolean publish, User user, String repository, String gitReference) {
+        if (publish != null && workflow.getIsPublished() != publish) {
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
+            try {
+                publishWorkflow(workflow, publish, user);
+            } catch (CustomWebApplicationException ex) {
+                LOG.warn("Could not set publish state from YML.", ex);
+                lambdaEvent.setSuccess(false);
+                lambdaEvent.setMessage(ex.getMessage());
+            }
+            lambdaEventDAO.create(lambdaEvent);
         }
     }
 
