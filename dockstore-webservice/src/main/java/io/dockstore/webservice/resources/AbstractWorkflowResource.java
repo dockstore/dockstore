@@ -407,9 +407,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return
      */
     private int statusCodeForLambda(Exception ex) {
+        // 5xx tells lambda to retry. Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
         if (isGitHubRateLimitError(ex)) {
-            // 5xx tells lambda to retry. Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
             LOG.info("GitHub rate limit hit, signaling lambda to retry.");
+            return HttpStatus.SC_INTERNAL_SERVER_ERROR;
+        }
+        if (isServerError(ex)) {
+            LOG.info("Server error, signaling lambda to retry.");
             return HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return LAMBDA_FAILURE;
@@ -422,6 +426,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT)) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    private boolean isServerError(Exception ex) {
+        if (ex instanceof CustomWebApplicationException) {
+            final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
+            final int code = ((CustomWebApplicationException)ex).getResponse().getStatus();
+            return code >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return false;
     }
@@ -487,40 +500,39 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         for (Workflowish wf : yamlWorkflows) {
             try {
-                transactionHelper.transaction(() -> {
-                    if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
-                        return;
-                    }
-                    String subclass = wf.getSubclass().toString();
-                    if (workflowType == AppTool.class && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
-                        throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
-                    }
-
-                    final String workflowName = workflowType == Service.class ? "" : wf.getName();
-                    final Boolean publish = wf.getPublish();
-                    final var defaultVersion = wf.getLatestTagAsDefault();
-                    final List<YamlAuthor> yamlAuthors = wf.getAuthors();
-
-                    // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
-                    User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
-
-                    Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
-                    WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
-
-                    addValidationsToMessage(workflow, version, messageWriter);
-
-                    if (publish != null && workflow.getIsPublished() != publish) {
-                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
-                        try {
-                            publishWorkflow(workflow, publish, user);
-                        } catch (CustomWebApplicationException ex) {
-                            LOG.warn("Could not set publish state from YML.", ex);
-                            lambdaEvent.setSuccess(false);
-                            lambdaEvent.setMessage(ex.getMessage());
+                if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+                    transactionHelper.transaction(() -> {
+                        String subclass = wf.getSubclass().toString();
+                        if (workflowType == AppTool.class && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
+                            throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
                         }
-                        lambdaEventDAO.create(lambdaEvent);
-                    }
-                });
+
+                        final String workflowName = workflowType == Service.class ? "" : wf.getName();
+                        final Boolean publish = wf.getPublish();
+                        final var defaultVersion = wf.getLatestTagAsDefault();
+                        final List<YamlAuthor> yamlAuthors = wf.getAuthors();
+
+                        // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
+                        User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
+
+                        Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
+                        WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+
+                        addValidationsToMessage(workflow, version, messageWriter);
+
+                        if (publish != null && workflow.getIsPublished() != publish) {
+                            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
+                            try {
+                                publishWorkflow(workflow, publish, user);
+                            } catch (CustomWebApplicationException ex) {
+                                LOG.warn("Could not set publish state from YML.", ex);
+                                lambdaEvent.setSuccess(false);
+                                lambdaEvent.setMessage(ex.getMessage());
+                            }
+                            lambdaEventDAO.create(lambdaEvent);
+                        }
+                    });
+                }
             } catch (RuntimeException ex) {
                 rethrowIfNecessary(ex, transactionHelper);  // emerge from the loop early on certain exceptions
                 final String message = String.format("Error processing %s %s in .dockstore.yml:\n%s",
@@ -536,9 +548,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         transactionHelper.rethrow(ex);
         if (ex instanceof CustomWebApplicationException) {
             int code = ((CustomWebApplicationException)ex).getResponse().getStatus();
-            if (code == LAMBDA_FAILURE || code == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+            if (code == LAMBDA_FAILURE) {
                 throw ex;
             }
+        }
+        if (isGitHubRateLimitError(ex) || isServerError(ex))  {
+            throw ex;
         }
     }
 
