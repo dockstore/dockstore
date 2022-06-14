@@ -54,4 +54,11 @@ public class DescriptorLanguageTest {
             DescriptorLanguage.getTestFileTypeFromDescriptorLanguageString(DescriptorLanguage.NEXTFLOW.toString()));
     }
 
+    @Test
+    public void testgetDescriptorLanguage() {
+        Assert.assertEquals(DescriptorLanguage.CWL, DescriptorLanguage.getDescriptorLanguage(DescriptorLanguage.FileType.DOCKSTORE_CWL));
+        Assert.assertEquals(DescriptorLanguage.CWL, DescriptorLanguage.getDescriptorLanguage(FileType.CWL_TEST_JSON));
+        Assert.assertEquals(DescriptorLanguage.SERVICE, DescriptorLanguage.getDescriptorLanguage(FileType.DOCKSTORE_SERVICE_OTHER));
+        Assert.assertEquals(DescriptorLanguage.NEXTFLOW, DescriptorLanguage.getDescriptorLanguage(DescriptorLanguage.FileType.NEXTFLOW));
+    }
 }

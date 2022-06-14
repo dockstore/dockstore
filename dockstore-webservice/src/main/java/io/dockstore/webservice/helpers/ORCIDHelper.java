@@ -1,6 +1,6 @@
 package io.dockstore.webservice.helpers;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
