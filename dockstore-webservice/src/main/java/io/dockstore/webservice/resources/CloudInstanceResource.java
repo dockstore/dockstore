@@ -1,6 +1,6 @@
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.core.CloudInstance;
@@ -59,7 +59,7 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @UnitOfWork
     @Path("/{cloudInstanceId}")
     @RolesAllowed({ "admin" })
-    @Operation(operationId = "deleteCloudInstance", summary = "Delete a public cloud instance, admin only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "deleteCloudInstance", summary = "Delete a public cloud instance, admin only", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
@@ -72,7 +72,7 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @RolesAllowed({ "admin" })
-    @Operation(operationId = "postCloudInstance", summary = "Add a new public cloud instance, admin only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "postCloudInstance", summary = "Add a new public cloud instance, admin only", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
