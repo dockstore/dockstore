@@ -42,7 +42,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
-import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -84,7 +83,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -111,7 +109,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static FileDAO fileDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
-    private static TRSListener trsListener = null;
     private static EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO> workflowHelper;
     private static BioWorkflowDAO bioWorkflowDAO;
     private static VersionDAO versionDAO;
@@ -150,10 +147,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     public static void setVersionDAO(VersionDAO versionDAO) {
         ToolsApiServiceImpl.versionDAO = versionDAO;
-    }
-
-    public static void setTrsListener(TRSListener listener) {
-        ToolsApiServiceImpl.trsListener = listener;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
@@ -325,14 +318,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
         final String relativePath = value.getUriInfo().getRequestUri().getPath();
 
-        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(descriptorType).append(registry).append(organization).append(name)
-            .append(toolname).append(description).append(author).append(checker).append(offset).append(actualLimit).append(relativePath)
-            .append(user.orElseGet(User::new).getId()).build();
-        final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
-        if (trsResponses.isPresent()) {
-            return trsResponses.get().build();
-        }
-
         int offsetInteger = 0;
         if (offset != null) {
             offsetInteger = Integer.parseInt(offset);
@@ -397,7 +382,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } catch (URISyntaxException | MalformedURLException e) {
             throw new CustomWebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
         }
-        trsListener.loadTRSResponse(hashcode, responseBuilder);
         return responseBuilder.build();
     }
 

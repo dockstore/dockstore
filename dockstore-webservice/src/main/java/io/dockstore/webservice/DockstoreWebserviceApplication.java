@@ -75,7 +75,6 @@ import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener;
-import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
@@ -325,8 +324,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final PublicStateManager publicStateManager = PublicStateManager.getInstance();
         publicStateManager.reset();
         publicStateManager.setConfig(configuration);
-        final TRSListener trsListener = new TRSListener();
-        publicStateManager.addListener(trsListener);
 
         environment.jersey().property(CommonProperties.FEATURE_AUTO_DISCOVERY_DISABLE, true);
         environment.jersey().register(new JsonProcessingExceptionMapper(true));
@@ -421,7 +418,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setFileDAO(fileDAO);
         ToolsApiServiceImpl.setVersionDAO(versionDAO);
         ToolsApiServiceImpl.setConfig(configuration);
-        ToolsApiServiceImpl.setTrsListener(trsListener);
 
         ToolsApiExtendedServiceImpl.setStateManager(publicStateManager);
         ToolsApiExtendedServiceImpl.setToolDAO(toolDAO);
