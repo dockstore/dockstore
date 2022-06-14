@@ -24,7 +24,7 @@ public final class TransactionHelper {
         this(factory.getCurrentSession());
     }
 
-    public boolean transaction(Runnable runnable) {
+    public void transaction(Runnable runnable) {
         boolean success = false;
         commit();
         clear();
@@ -39,7 +39,6 @@ public final class TransactionHelper {
                 rollback();
             }
         }
-        return success;
     }
 
     public void clear() {
