@@ -420,7 +420,6 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork(readOnly = true)
     @Path("cli-version")
     @Operation(summary = "Get Dockstore CLI latest version.", description = "Get Dockstore CLI latest version. NO authentication")
     @ApiOperation(value = "Get Dockstore CLI latest version.", notes = "Get Dockstore CLI latest version. NO authentication")
