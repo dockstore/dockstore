@@ -146,6 +146,11 @@ public enum DescriptorLanguage {
     }
 
     public static DescriptorLanguage convertShortStringToEnum(String descriptor) {
+        // Tricky case for GALAXY because it doesn't match the rules of the other languages
+        if (StringUtils.containsIgnoreCase(descriptor, "galaxy")) {
+            return GXFORMAT2;
+        }
+
         final Optional<DescriptorLanguage> first = Arrays.stream(DescriptorLanguage.values())
             .filter(lang -> lang.getShortName().equalsIgnoreCase(descriptor)).findFirst();
         return first.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
@@ -211,6 +216,15 @@ public enum DescriptorLanguage {
         for (DescriptorLanguage lang : DescriptorLanguage.values()) {
             if (lang.getFileType() == fileType || lang.getTestParamType() == fileType) {
                 return lang;
+            }
+            // include FileTypes that aren't primary descriptors or test param files
+            switch (fileType) {
+            case NEXTFLOW:
+                return DescriptorLanguage.NEXTFLOW;
+            case DOCKSTORE_SERVICE_OTHER:
+                return DescriptorLanguage.SERVICE;
+            default:
+                break;
             }
         }
         throw new UnsupportedOperationException("Unknown language");
