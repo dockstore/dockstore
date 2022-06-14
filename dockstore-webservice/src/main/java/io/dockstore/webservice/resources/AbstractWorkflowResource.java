@@ -350,7 +350,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
 
-        boolean isSuccessful = false;
+        boolean isSuccessful = true;
 
         StringWriter stringWriter = new StringWriter();
         PrintWriter messageWriter = new PrintWriter(stringWriter);
@@ -364,13 +364,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             checkDuplicateNames(dockstoreYaml12.getWorkflows(), dockstoreYaml12.getTools());
 
             List<Service12> services = dockstoreYaml12.getService() != null ? List.of(dockstoreYaml12.getService()) : List.of();
-            createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter);
-            createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
-            createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, AppTool.class, messageWriter);
-            isSuccessful = true;
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, AppTool.class, messageWriter);
 
         } catch (Exception ex) {
 
+            isSuccessful = false;
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + generateMessageFromException(ex);
             LOG.info(msg, ex);
             messageWriter.println(msg);
@@ -390,6 +390,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
+        }
+
+        if (!isSuccessful) {
+            throw new CustomWebApplicationException("At least one entry in .dockstore.yml could not be registered.", LAMBDA_FAILURE);
         }
     }
 
@@ -493,12 +497,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param dockstoreYml
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
-    private void createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, String installationId, String username,
+    private boolean createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, String installationId, String username,
             final SourceFile dockstoreYml, Class workflowType, PrintWriter messageWriter) {
 
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
 
+        boolean isSuccessful = true;
         TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
 
         for (Workflowish wf : yamlWorkflows) {
@@ -526,7 +531,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     });
                 }
             } catch (RuntimeException ex) {
-                rethrowIfNecessary(ex, transactionHelper);  // emerge from the loop early on certain exceptions
+                isSuccessful = false;
+                rethrowIfNecessary(ex, transactionHelper);  // emerge from this loop early on certain exceptions
                 final String message = String.format("Error processing %s %s in .dockstore.yml:\n%s",
                     computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
                 LOG.error(message, ex);
@@ -534,6 +540,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 messageWriter.println("Entry skipped.");
             }
         }
+
+        return isSuccessful;
     }
 
     private void publishWorkflowAndLog(Workflow workflow, final Boolean publish, User user, String repository, String gitReference) {
