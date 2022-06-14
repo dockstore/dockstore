@@ -352,8 +352,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         boolean isSuccessful = false;
 
-        StringWriter stringMessageWriter = new StringWriter();
-        PrintWriter messageWriter = new PrintWriter(stringMessageWriter);
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter messageWriter = new PrintWriter(stringWriter);
 
         try {
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
@@ -384,14 +384,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             new TransactionHelper(sessionFactory).transaction(() -> {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
                 lambdaEvent.setSuccess(finalIsSuccessful);
-                setEventMessage(lambdaEvent, stringMessageWriter.toString());
+                setEventMessage(lambdaEvent, stringWriter.toString());
                 lambdaEventDAO.create(lambdaEvent);
             });
 
             GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
         }
-
     }
 
     private void setEventMessage(LambdaEvent lambdaEvent, String message) {
@@ -409,11 +408,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private int statusCodeForLambda(Exception ex) {
         // 5xx tells lambda to retry. Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
         if (isGitHubRateLimitError(ex)) {
-            LOG.info("GitHub rate limit hit, signaling lambda to retry.");
+            LOG.info("GitHub rate limit hit, signaling lambda to retry.", ex);
             return HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         if (isServerError(ex)) {
-            LOG.info("Server error, signaling lambda to retry.");
+            LOG.info("Server error, signaling lambda to retry.", ex);
+            return HttpStatus.SC_INTERNAL_SERVER_ERROR;
+        }
+        if (!(ex instanceof CustomWebApplicationException)) {
+            LOG.info("Unexpected exception, signaling lambda to retry.", ex);
             return HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return LAMBDA_FAILURE;
@@ -548,14 +551,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private void rethrowIfNecessary(RuntimeException ex, TransactionHelper transactionHelper) {
-        transactionHelper.rethrow(ex);
-        if (ex instanceof CustomWebApplicationException) {
-            int code = ((CustomWebApplicationException)ex).getResponse().getStatus();
-            if (code == LAMBDA_FAILURE) {
-                throw ex;
-            }
-        }
-        if (isGitHubRateLimitError(ex) || isServerError(ex))  {
+        if (ex == transactionHelper.thrown() || isGitHubRateLimitError(ex) || isServerError(ex))  {
             throw ex;
         }
     }
@@ -603,7 +599,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
         // so return a generic one.
         if (ex instanceof ClassCastException) {
-            return "Unexpected input encountered";
+            return "Could not parse input.";
         }
         return ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
     }

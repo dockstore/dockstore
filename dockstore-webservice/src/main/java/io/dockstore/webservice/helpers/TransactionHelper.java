@@ -83,28 +83,24 @@ public final class TransactionHelper {
         }
     }
 
-    public boolean hasThrown() {
-        return thrown != null;
-    }
-
-    public void rethrow(Exception ex) {
-        if (ex == thrown) {
-            throw thrown;
-        }
+    public RuntimeException thrown() {
+        return thrown;
     }
 
     private void check() {
-        if (hasThrown()) {
+        if (thrown != null) {
             LOG.error("operation on session that has thrown", thrown);
-            throw new RuntimeException("operation on session that has thrown", thrown);
+            thrown = new RuntimeException("operation on session that has thrown");
+            throw thrown;
         }
     }
 
     private void handle(String operation, RuntimeException ex) {
         thrown = ex;
         LOG.error(operation + " failed", ex);
-        // To prevent us from using foobar-ed state, the Hibernate docs instruct
-        // us to immediately close a session if an operation on it throws.
+        // To prevent us from interacting with foobared state, the
+        // Hibernate docs instruct us to immediately close a session
+        // if an operation on the session has thrown.
         try {
             session.close();
         } catch (RuntimeException closeEx) {
