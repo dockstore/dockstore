@@ -7,7 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * See https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html#transactions
+ * Provides a clean, easy-to-use interface to Hibernate transactions.
+ * For more information on Hibernate transactions, see:
+ * https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html#transactions
  */
 public final class TransactionHelper {
 
@@ -24,6 +26,12 @@ public final class TransactionHelper {
         this(factory.getCurrentSession());
     }
 
+    /**
+     * Executes the specified runnable, and either commit the database transaction
+     * when the runnable returns, or roll back the database transaction if the
+     * runnable throws.  Prior to execution of the runnable, any previous transaction
+     * is committed, the session is cleared, and a new transaction is started.
+     */
     public void transaction(Runnable runnable) {
         boolean success = false;
         commit();

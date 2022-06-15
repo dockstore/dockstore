@@ -370,6 +370,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         } catch (Exception ex) {
 
+            // If an exception propagates to here, log something helpful and abort .dockstore.yml processing.
             isSuccessful = false;
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + generateMessageFromException(ex);
             LOG.info(msg, ex);
@@ -380,6 +381,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         } finally {
 
+            // Make an entry in the github apps logs.
             final boolean finalIsSuccessful = isSuccessful;
             new TransactionHelper(sessionFactory).transaction(() -> {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
@@ -417,10 +419,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
         if (isServerError(ex)) {
             LOG.info("Server error, signaling lambda to retry.", ex);
-            return HttpStatus.SC_INTERNAL_SERVER_ERROR;
-        }
-        if (!(ex instanceof CustomWebApplicationException)) {
-            LOG.info("Unexpected exception, signaling lambda to retry.", ex);
             return HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return LAMBDA_FAILURE;
@@ -509,6 +507,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         for (Workflowish wf : yamlWorkflows) {
             try {
                 if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+                    // Update the workflow version in its own database transaction.
                     transactionHelper.transaction(() -> {
                         String subclass = wf.getSubclass().toString();
                         if (workflowType == AppTool.class && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
@@ -531,8 +530,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     });
                 }
             } catch (RuntimeException ex) {
+                // If there was a problem updating the workflow (an exception was thrown), either:
+                // a) rethrow certain exceptions to abort .dockstore.yml parsing, or
+                // b) log something helpful and move on to the next workflow.
                 isSuccessful = false;
-                rethrowIfNecessary(ex, transactionHelper);  // emerge from this loop early on certain exceptions
+                rethrowIfFatal(ex, transactionHelper);
                 final String message = String.format("Error processing %s %s in .dockstore.yml:\n%s",
                     computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
                 LOG.error(message, ex);
@@ -558,8 +560,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    private void rethrowIfNecessary(RuntimeException ex, TransactionHelper transactionHelper) {
-        if (ex == transactionHelper.thrown() || isGitHubRateLimitError(ex) || isServerError(ex))  {
+    private void rethrowIfFatal(RuntimeException ex, TransactionHelper transactionHelper) {
+        if (ex == transactionHelper.thrown()) {
+            LOG.error("Database transaction error: " + ex.getMessage());
+            throw new CustomWebApplicationException("database transaction error", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        if (isGitHubRateLimitError(ex) || isServerError(ex))  {
             throw ex;
         }
     }
