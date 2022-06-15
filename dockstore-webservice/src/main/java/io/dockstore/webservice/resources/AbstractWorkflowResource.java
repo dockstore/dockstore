@@ -438,7 +438,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private boolean isServerError(Exception ex) {
         if (ex instanceof CustomWebApplicationException) {
             final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
-            final int code = ((CustomWebApplicationException)ex).getResponse().getStatus();
+            final int code = customWebAppEx.getResponse().getStatus();
             return code >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return false;
@@ -491,7 +491,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId Installation id needed to setup GitHub apps
-     * @param user User that triggered action
+     * @param username Name of user that triggered action
      * @param dockstoreYml
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
