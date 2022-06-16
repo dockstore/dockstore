@@ -404,7 +404,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @return number of tools, number of workflows we're working with
      * @throws UnsupportedEncodingException
      */
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private NumberOfEntityTypes getEntries(List<Entry<?, ?>> all, String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, Optional<User> user, int actualLimit, int offset) throws UnsupportedEncodingException {
         long numTools = 0;
@@ -499,7 +499,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @deprecated
      */
     @Deprecated
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private Entry<?, ?> filterOldSchool(Entry<?, ?> entry, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker) {
         if (entry instanceof Tool) {

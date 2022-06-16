@@ -706,7 +706,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param existingDefaults Optional mapping of existing versions
      * @return Version with updated sourcefiles
      */
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private WorkflowVersion setupWorkflowFilesForVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, DescriptorLanguage.FileType identifiedType, Workflow workflow, Map<String, WorkflowVersion> existingDefaults) {
         // Grab workflow file from github
         try {

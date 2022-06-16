@@ -318,7 +318,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
     }
 
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     @Override
     public Response setSourceFileMetadata(String type, String id, String versionId, String platform, String platformVersion, String relativePath, Boolean verified,
         String metadata) {

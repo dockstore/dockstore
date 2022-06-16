@@ -68,7 +68,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdVersionsVersionIdContainerfileGet(id, versionId, securityContext, value, user));
     }
 
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     @Override
     public Response toolsGet(String id, String alias, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
