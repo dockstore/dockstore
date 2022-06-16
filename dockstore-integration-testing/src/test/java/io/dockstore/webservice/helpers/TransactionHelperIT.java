@@ -17,7 +17,7 @@
 package io.dockstore.webservice.helpers;
 
 import io.dockstore.client.cli.BaseIT;
-import io.dockstore.common.NonConfidentialTest;
+import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -32,7 +32,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-@Category(NonConfidentialTest.class)
+@Category(ConfidentialTest.class)
 public class TransactionHelperIT extends BaseIT {
 
     @Rule
