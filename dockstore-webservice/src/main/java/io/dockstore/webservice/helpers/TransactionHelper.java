@@ -7,8 +7,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Provides a clean, easy-to-use interface to Hibernate transactions.
- * For more information on Hibernate transactions, see:
+ * Provides a clean interface to Hibernate transactions.
+ *
+ * <p>The easiest way to use this class is via the transaction() method,
+ * which begins a transaction, executes a runnable, and either commits
+ * or rolls back the transaction, depending upon whether the runnable
+ * ran to completion, or threw.
+ *
+ * <p> Under the hood, the transaction() method calls various methods
+ * that implement various primitive transaction/session operations,
+ * which you can also call directly to implement a particular behavior.
+ *
+ * <p>The commit() and rollback() primitives must be called on
+ * a transaction that is open.  Only the first call has any effect on
+ * a given transaction, the subsequent commit()s or rollbacks() on that
+ * transaction are ignored.
+ *
+ * <p> If any of the primitives throw, the exception is saved and
+ * accessible via the thrown() method.  Any subsequent call to a
+ * primitive will immediately throw an exception.
+ *
+ * <p> For more information on Hibernate transactions, see:
  * https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html#transactions
  */
 public final class TransactionHelper {
@@ -27,10 +46,12 @@ public final class TransactionHelper {
     }
 
     /**
-     * Executes the specified runnable, and either commit the database transaction
-     * when the runnable returns, or roll back the database transaction if the
-     * runnable throws.  Prior to execution of the runnable, any previous transaction
-     * is committed, the session is cleared, and a new transaction is started.
+     * Begin a transaction, execute the specified runnable, and either commit
+     * the database transaction when the runnable returns, or roll back the
+     * database transaction if the runnable throws.  Prior to the transaction,
+     * any previous transaction is committed and the session is cleared.
+     * To rollback the previous transaction, call rollback() before calling
+     * transaction().
      */
     public void transaction(Runnable runnable) {
         boolean success = false;
