@@ -447,7 +447,10 @@ public class MetadataResource {
         String cliLatestVersion = ghRelease.getName();
         cliInfo.setCliLatestDockstoreScriptDownloadUrl(DOCKSTORE_CLI_RELEASES_URL + "/download/" + cliLatestVersion + "/dockstore");
         cliInfo.setCliLatestVersion(cliLatestVersion);
+        // Get the latest unstable version
+        // If there is no unstable version return an empty string as the latest unstable version
         String cliLatestUnstableVersion = getLatestUnstableVersion(allReleases).orElse("");
+        cliInfo.setCliLatestUnstableDockstoreScriptDownloadUrl(DOCKSTORE_CLI_RELEASES_URL + "/download/" + cliLatestUnstableVersion + "/dockstore");
         cliInfo.setCliLatestUnstableVersion(cliLatestUnstableVersion);
         return cliInfo;
     }
@@ -456,7 +459,8 @@ public class MetadataResource {
      * This method will return the latest unstable version
      * Assumes the first unstable version in the array is the latest unstable version
      *
-     * @return String the latest unstable version
+     * @param allReleases a PagedIterable of GHRelease objects for releases
+     * @return An Optional String of the latest unstable version
      */
     private static Optional<String> getLatestUnstableVersion(PagedIterable<GHRelease> allReleases) {
         try {

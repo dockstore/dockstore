@@ -7357,6 +7357,8 @@ components:
       properties:
         cliLatestDockstoreScriptDownloadUrl:
           type: string
+        cliLatestUnstableDockstoreScriptDownloadUrl:
+          type: string
         cliLatestUnstableVersion:
           type: string
         cliLatestVersion:

@@ -8,6 +8,8 @@ public class CLIInfo {
 
     private String cliLatestDockstoreScriptDownloadUrl;
 
+    private String cliLatestUnstableDockstoreScriptDownloadUrl;
+
     private String cliLatestVersion;
 
     private String cliLatestUnstableVersion;
@@ -15,6 +17,11 @@ public class CLIInfo {
     @JsonProperty
     public String getCliLatestDockstoreScriptDownloadUrl() {
         return cliLatestDockstoreScriptDownloadUrl;
+    }
+
+    @JsonProperty
+    public String getCliLatestUnstableDockstoreScriptDownloadUrl() {
+        return cliLatestUnstableDockstoreScriptDownloadUrl;
     }
 
     @JsonProperty
@@ -29,6 +36,10 @@ public class CLIInfo {
 
     public void setCliLatestDockstoreScriptDownloadUrl(String cliLatestDockstoreScriptDownloadUrl) {
         this.cliLatestDockstoreScriptDownloadUrl = cliLatestDockstoreScriptDownloadUrl;
+    }
+
+    public void setCliLatestUnstableDockstoreScriptDownloadUrl(String cliLatestUnstableDockstoreScriptDownloadUrl) {
+        this.cliLatestUnstableDockstoreScriptDownloadUrl = cliLatestUnstableDockstoreScriptDownloadUrl;
     }
 
     public void setCliLatestVersion(String cliLatestVersion) {
