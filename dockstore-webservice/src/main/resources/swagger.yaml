@@ -2817,22 +2817,21 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/LambdaEvent"
-  /metadata/cli-version:
+  /metadata/cli-info:
     get:
       tags:
       - "metadata"
-      summary: "Get Dockstore CLI latest version."
-      description: "Get Dockstore CLI latest version. NO authentication"
+      summary: "Get Dockstore CLI information."
+      description: "Get Dockstore CLI information. NO authentication"
       operationId: "getCliVersion"
       produces:
-      - "text/html"
-      - "text/xml"
+      - "application/json"
       parameters: []
       responses:
         200:
           description: "successful operation"
           schema:
-            type: "string"
+            $ref: "#/definitions/CLIInfo"
   /metadata/config.json:
     get:
       tags:
@@ -6505,6 +6504,15 @@ definitions:
           format: "int64"
           readOnly: true
       description: "This describes one workflow in the dockstore"
+  CLIInfo:
+    type: "object"
+    properties:
+      cliLatestDockstoreScriptDownloadUrl:
+        type: "string"
+      cliLatestUnstableVersion:
+        type: "string"
+      cliLatestVersion:
+        type: "string"
   CategorySummary:
     type: "object"
     properties:

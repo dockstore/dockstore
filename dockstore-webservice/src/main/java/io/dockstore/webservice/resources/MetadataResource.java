@@ -28,6 +28,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.api.CLIInfo;
 import io.dockstore.webservice.api.Config;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
@@ -76,6 +77,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -99,6 +102,7 @@ import org.kohsuke.github.GHRelease;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.PagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,6 +126,8 @@ public class MetadataResource {
     private final DockstoreWebserviceConfiguration config;
     private final SitemapListener sitemapListener;
     private final RSSListener rssListener;
+
+    private static final String DOCKSTORE_CLI_RELEASES_URL = "https://github.com/dockstore/dockstore-cli/releases";
 
     public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
         this.toolDAO = new ToolDAO(sessionFactory);
@@ -420,20 +426,44 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @Path("cli-version")
-    @Operation(summary = "Get Dockstore CLI latest version.", description = "Get Dockstore CLI latest version. NO authentication")
-    @ApiOperation(value = "Get Dockstore CLI latest version.", notes = "Get Dockstore CLI latest version. NO authentication")
-    public String getCliVersion() {
+    @Path("cli-info")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get Dockstore CLI information.", description = "Get Dockstore CLI information. NO authentication")
+    @ApiOperation(value = "Get Dockstore CLI information.", notes = "Get Dockstore CLI information. NO authentication")
+    public CLIInfo getCliVersion() {
         GHRelease ghRelease;
+        PagedIterable<GHRelease> allReleases;
+        CLIInfo cliInfo = new CLIInfo();
         try {
             GitHub github = new GitHubBuilder().build();
             GHRepository repository = github.getRepository("dockstore/dockstore-cli");
             ghRelease = repository.getLatestRelease();
+            allReleases = repository.listReleases();
         } catch (IOException e) {
-            LOG.info("Could not get CLI version info from GitHub. {}", e);
-            throw new CustomWebApplicationException("Could not get CLI version info from GitHub", HttpStatus.SC_SERVICE_UNAVAILABLE);
+            LOG.info("Could not get CLI releases information from GitHub. ", e);
+            throw new CustomWebApplicationException("Could not get CLI  releases information info from GitHub",
+                    HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
-        return ghRelease.getName();
+        String cliLatestVersion = ghRelease.getName();
+        cliInfo.setCliLatestDockstoreScriptDownloadUrl(DOCKSTORE_CLI_RELEASES_URL + "/download/" + cliLatestVersion + "/dockstore");
+        cliInfo.setCliLatestVersion(cliLatestVersion);
+        String cliLatestUnstableVersion = getLatestUnstableVersion(allReleases).orElse("");
+        cliInfo.setCliLatestUnstableVersion(cliLatestUnstableVersion);
+        return cliInfo;
     }
 
+    /**
+     * This method will return the latest unstable version
+     * Assumes the first unstable version in the array is the latest unstable version
+     *
+     * @return String the latest unstable version
+     */
+    private static Optional<String> getLatestUnstableVersion(PagedIterable<GHRelease> allReleases) {
+        try {
+            return Optional.of(Arrays.stream(allReleases.toArray()).filter(GHRelease::isPrerelease).findFirst().orElseThrow().getName());
+        } catch (IOException | NoSuchElementException e) {
+            LOG.info("Could not get latest unstable GHRelease information. ", e);
+            return Optional.empty();
+        }
+    }
 }
