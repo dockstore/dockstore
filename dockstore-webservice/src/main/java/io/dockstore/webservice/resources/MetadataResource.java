@@ -20,6 +20,9 @@ import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY
 import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
 
 import com.codahale.metrics.annotation.Timed;
+import com.github.zafarkhaja.semver.UnexpectedCharacterException;
+import com.github.zafarkhaja.semver.expr.LexerException;
+import com.github.zafarkhaja.semver.expr.UnexpectedTokenException;
 import com.google.common.io.Resources;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.PipHelper;
@@ -77,7 +80,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -448,26 +450,56 @@ public class MetadataResource {
         cliInfo.setCliLatestDockstoreScriptDownloadUrl(DOCKSTORE_CLI_RELEASES_URL + "/download/" + cliLatestVersion + "/dockstore");
         cliInfo.setCliLatestVersion(cliLatestVersion);
         // Get the latest unstable version
-        // If there is no unstable version return an empty string as the latest unstable version
-        String cliLatestUnstableVersion = getLatestUnstableVersion(allReleases).orElse("");
-        cliInfo.setCliLatestUnstableDockstoreScriptDownloadUrl(DOCKSTORE_CLI_RELEASES_URL + "/download/" + cliLatestUnstableVersion + "/dockstore");
-        cliInfo.setCliLatestUnstableVersion(cliLatestUnstableVersion);
+        // If there is no unstable version return a null as the latest unstable version
+        Optional<String> cliLatestUnstableVersion = getLatestUnstableVersion(allReleases, cliLatestVersion);
+        if (cliLatestUnstableVersion.isPresent()) {
+            cliInfo.setCliLatestUnstableDockstoreScriptDownloadUrl(DOCKSTORE_CLI_RELEASES_URL + "/download/" + cliLatestUnstableVersion.get() + "/dockstore");
+            cliInfo.setCliLatestUnstableVersion(cliLatestUnstableVersion.get());
+        } else {
+            cliInfo.setCliLatestUnstableDockstoreScriptDownloadUrl(null);
+            cliInfo.setCliLatestUnstableVersion(null);
+        }
         return cliInfo;
     }
 
     /**
-     * This method will return the latest unstable version
-     * Assumes the first unstable version in the array is the latest unstable version
+     * This method will return the prerelease version that is greater than the latest version if there is one
+     * If there isn't a prerelease version greater than the latest release then don't return one
+     * since we don't want to downgrade to an older untested version
      *
      * @param allReleases a PagedIterable of GHRelease objects for releases
+     * @param latestRelease the semantic variable string of the latest release
      * @return An Optional String of the latest unstable version
      */
-    private static Optional<String> getLatestUnstableVersion(PagedIterable<GHRelease> allReleases) {
-        try {
-            return Optional.of(Arrays.stream(allReleases.toArray()).filter(GHRelease::isPrerelease).findFirst().orElseThrow().getName());
-        } catch (IOException | NoSuchElementException e) {
-            LOG.info("Could not get latest unstable GHRelease information. ", e);
-            return Optional.empty();
+    private static Optional<String> getLatestUnstableVersion(PagedIterable<GHRelease> allReleases, String latestRelease) {
+        for (GHRelease preRelease : allReleases) {
+            if (preRelease.isPrerelease() && preReleaseVersionIsGreaterThanLatest(preRelease.getName(), latestRelease)) {
+                return Optional.of(preRelease.getName());
+            }
         }
+        return Optional.empty();
     }
+
+    /**
+     * Check if the input prerelease is greater than the latest release
+     * @param preReleaseSemVer semantic version string of a prerelease
+     * @param latestReleaseSemVer semantic version string of the latest release
+     * @return whether the input semantic version string is greater
+     */
+    public static boolean preReleaseVersionIsGreaterThanLatest(String preReleaseSemVer, String latestReleaseSemVer) {
+        com.github.zafarkhaja.semver.Version latestReleaseSemVerValue;
+        com.github.zafarkhaja.semver.Version preReleaseSemVerValue;
+        try {
+            latestReleaseSemVerValue = com.github.zafarkhaja.semver.Version.valueOf(latestReleaseSemVer);
+            preReleaseSemVerValue = com.github.zafarkhaja.semver.Version.valueOf(preReleaseSemVer);
+        } catch (IllegalArgumentException | UnexpectedCharacterException | LexerException | UnexpectedTokenException ex) {
+            // https://github.com/zafarkhaja/jsemver#exception-handling
+            // if semVer cannot parse the version string it is probably not a good version string
+            // In general return false since we cannot determine if the unstable version is greater
+            // than the latest published version
+            return false;
+        }
+        return preReleaseSemVerValue.greaterThan(latestReleaseSemVerValue);
+    }
+
 }
