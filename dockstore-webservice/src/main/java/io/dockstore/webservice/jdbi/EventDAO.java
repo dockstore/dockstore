@@ -49,6 +49,14 @@ public class EventDAO extends AbstractDAO<Event> {
         return list(query);
     }
 
+    public List<Event> findEventsForInitiatorUser(long initiatorUser, Integer offset, Integer limit) {
+        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByInitiatorUserId")
+            .setParameter("initiatorUser", initiatorUser)
+            .setFirstResult(offset)
+            .setMaxResults(limit);
+        return list(query);
+    }
+
     public long countAllEventsForOrganization(long organizationId) {
         final Query query = namedQuery("io.dockstore.webservice.core.Event.countAllForOrganization")
                 .setParameter("organizationId", organizationId);
@@ -136,7 +144,7 @@ public class EventDAO extends AbstractDAO<Event> {
     public <T extends Entry> void publishEvent(boolean publish, User user, T entry) {
         final Builder builder = entry.getEventBuilder()
             .withType(publish ? EventType.PUBLISH_ENTRY : EventType.UNPUBLISH_ENTRY)
-            .withUser(user);
+            .withUser(user).withInitiatorUser(user);
         final Event event = builder.build();
         create(event);
     }

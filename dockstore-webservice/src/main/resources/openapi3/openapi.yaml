@@ -2440,6 +2440,7 @@ paths:
           - STARRED_ENTRIES
           - STARRED_ORGANIZATION
           - ALL_STARRED
+          - PROFILE
       - in: query
         name: limit
         schema:
@@ -2488,6 +2489,7 @@ paths:
           - STARRED_ENTRIES
           - STARRED_ORGANIZATION
           - ALL_STARRED
+          - PROFILE
       - in: query
         name: limit
         schema:

@@ -146,6 +146,10 @@ public class EventResource {
                 .findAllByOrganizationIdsOrEntryIds(organizationIDs2, entryIDs2, offset, limit);
             eagerLoadEventEntries(allByOrganizationIdsOrEntryIds);
             return allByOrganizationIdsOrEntryIds;
+        case PROFILE:
+            List<Event> eventsByUserID = this.eventDAO.findEventsForInitiatorUser(user.getId(), offset, limit);
+            eagerLoadEventEntries(eventsByUserID);
+            return eventsByUserID;
         default:
             return Collections.emptyList();
         }
