@@ -198,8 +198,9 @@ To add copyright headers to all files with IntelliJ
 2. Create a new copyright profile matching existing copyright header found on all files, name it Dockstore (Settings -> Copyright -> Copyright Profiles -> Add New)
 3. Set the default project copyright to Dockstore (Settings -> Copyright)
 
-### Setting up a Mac with Apple silicon for Dockstore development
-Install IntelliJ (Be sure to click on the dropdown and select '.dmg (Apple Silicon)')
+### Setting up a Mac for Dockstore development
+Install IntelliJ _(if on Apple Silicon, select the .dmg (Apple Silicon), otherwise suggest .dmg(Intel)_
+
 https://www.jetbrains.com/idea/download/#section=mac
 
 Add the Scala plugin to IntelliJ
@@ -265,13 +266,14 @@ Install jq
 ```
 brew install jq
 ```
-#### See if webservice builds
+#### Build the webservice
 (cd to where you cloned the dockstore/dockstore repo)
 ```
 ./mvnw clean install
 ```
 
-#### See if UI builds
+#### Build the UI
+(cd to where you cloned the dockstore/dockstore-ui2 repo)
 
 Set up UI requirements
 NOTE: You must use the --legacy-peer-deps switch due to using npm version 8.11.0 (> npm 6) 
