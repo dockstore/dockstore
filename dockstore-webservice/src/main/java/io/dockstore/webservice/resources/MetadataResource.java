@@ -28,6 +28,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.PipHelper;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -40,6 +41,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.RSSListener;
@@ -82,8 +84,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedSet;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -94,6 +100,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import okhttp3.Cache;
+import okhttp3.OkHttpClient;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -104,7 +111,10 @@ import org.kohsuke.github.GHRelease;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.HttpConnector;
 import org.kohsuke.github.PagedIterable;
+import org.kohsuke.github.extras.ImpatientHttpConnector;
+import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -437,8 +447,15 @@ public class MetadataResource {
         PagedIterable<GHRelease> allReleases;
         CLIInfo cliInfo = new CLIInfo();
         try {
-            GitHub github = new GitHubBuilder().build();
-            GHRepository repository = github.getRepository("dockstore/dockstore-cli");
+            OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+            builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), null));
+            builder.cache(DockstoreWebserviceApplication.getCache(null));
+            OkHttpClient build = builder.build();
+            ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
+            HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
+            GitHub gitHub = GitHubBuilder.fromEnvironment().withConnector(okHttp3Connector).build();
+
+            GHRepository repository = gitHub.getRepository("dockstore/dockstore-cli");
             ghRelease = repository.getLatestRelease();
             allReleases = repository.listReleases();
         } catch (IOException e) {
@@ -472,12 +489,13 @@ public class MetadataResource {
      * @return An Optional String of the latest unstable version
      */
     private static Optional<String> getLatestUnstableVersion(PagedIterable<GHRelease> allReleases, String latestRelease) {
-        for (GHRelease preRelease : allReleases) {
-            if (preRelease.isPrerelease() && preReleaseVersionIsGreaterThanLatest(preRelease.getName(), latestRelease)) {
-                return Optional.of(preRelease.getName());
-            }
-        }
-        return Optional.empty();
+        // https://stackoverflow.com/questions/24511052/how-to-convert-an-iterator-to-a-stream
+        Stream<GHRelease> targetStream = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(allReleases.iterator(), Spliterator.ORDERED), false);
+        return Optional.of(targetStream
+                .filter(GHRelease::isPrerelease)
+                .filter(g -> preReleaseVersionIsGreaterThanLatest(g.getName(), latestRelease))
+                .findFirst().orElseThrow().getName());
     }
 
     /**
