@@ -82,6 +82,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.Spliterator;
@@ -492,10 +493,15 @@ public class MetadataResource {
         // https://stackoverflow.com/questions/24511052/how-to-convert-an-iterator-to-a-stream
         Stream<GHRelease> targetStream = StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(allReleases.iterator(), Spliterator.ORDERED), false);
-        return Optional.of(targetStream
-                .filter(GHRelease::isPrerelease)
-                .filter(g -> preReleaseVersionIsGreaterThanLatest(g.getName(), latestRelease))
-                .findFirst().orElseThrow().getName());
+        try {
+            return Optional.of(targetStream
+                    .filter(GHRelease::isPrerelease)
+                    .filter(g -> preReleaseVersionIsGreaterThanLatest(g.getName(), latestRelease))
+                    .findFirst().orElseThrow().getName());
+            // orElseThrow throws a NoSuchElementException if there is no prerelease
+        } catch (NullPointerException | NoSuchElementException e) {
+            return Optional.empty();
+        }
     }
 
     /**
