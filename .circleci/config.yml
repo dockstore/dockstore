@@ -168,8 +168,7 @@ jobs:
             unzip wdl-parsing.zip
             cd wdl-parsing
             # docker pull amazon/aws-sam-cli-build-image-java11
-            # cannot seem to `sam build --use-container` using local jdk and mvn instead
-            sam build --use-container --debug
+            sam build --debug
       - run:
           name: run sam-cli
           command: |
