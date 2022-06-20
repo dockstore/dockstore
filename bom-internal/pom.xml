@@ -1061,7 +1061,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib</artifactId>
-                <version>1.3.71</version>
+                <version>1.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
