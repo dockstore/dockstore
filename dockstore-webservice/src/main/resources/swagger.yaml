@@ -6580,6 +6580,8 @@ definitions:
         type: "string"
       documentationUrl:
         type: "string"
+      elwaziImportUrl:
+        type: "string"
       featuredContentUrl:
         type: "string"
       featuredNewsUrl:
