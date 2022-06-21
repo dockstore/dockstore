@@ -363,6 +363,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             checkDuplicateNames(dockstoreYaml12.getWorkflows(), dockstoreYaml12.getTools());
 
+            // Process the service (if present) and the blocks of workflows and apptools.
+            // '&=' does not short-circuit, ensuring that all of the blocks are processed.
+            // 'isSuccessful &= x()' is equivalent to 'isSuccessful = isSuccesful & x()'.
             List<Service12> services = dockstoreYaml12.getService() != null ? List.of(dockstoreYaml12.getService()) : List.of();
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter);
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
@@ -395,14 +398,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         if (!isSuccessful) {
-            throw new CustomWebApplicationException("At least one entry in .dockstore.yml could not be registered.", LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("At least one entry in .dockstore.yml could not be processed.", LAMBDA_FAILURE);
         }
     }
 
     private void setEventMessage(LambdaEvent lambdaEvent, String message) {
-        message = StringUtils.stripEnd(message, "\n");
-        if (StringUtils.isNotEmpty(message)) {
-            lambdaEvent.setMessage(message);
+        String strippedMessage = StringUtils.stripEnd(message, "\n");
+        if (StringUtils.isNotEmpty(strippedMessage)) {
+            lambdaEvent.setMessage(strippedMessage);
         }
     }
 

@@ -32,6 +32,9 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+/**
+ * Test the TransactionHelper class.
+ */
 @Category(ConfidentialTest.class)
 public class TransactionHelperIT extends BaseIT {
 

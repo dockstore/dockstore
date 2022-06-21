@@ -1226,7 +1226,7 @@ public class WebhookIT extends BaseIT {
         return testingPostgres.runSelectStatement("select count(*) from " + tableName, long.class);
     }
 
-    private void shouldThrowError(Runnable runnable) {
+    private void shouldThrowLambdaError(Runnable runnable) {
         try {
             runnable.run();
             fail("should have thrown");
@@ -1240,7 +1240,6 @@ public class WebhookIT extends BaseIT {
     public void testMultiEntryAllGood() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
@@ -1252,17 +1251,16 @@ public class WebhookIT extends BaseIT {
     public void testMultiEntryOneBroken() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // test one broken tool
-        shouldThrowError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/broken-tool", installationId));
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/broken-tool", installationId));
         assertEquals(2, countWorkflows());
         assertEquals(1, countTools());
 
         // test one broken workflow
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        shouldThrowError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/broken-workflow", installationId));
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/broken-workflow", installationId));
         assertEquals(1, countWorkflows());
         assertEquals(2, countTools());
     }
@@ -1271,23 +1269,22 @@ public class WebhookIT extends BaseIT {
     public void testMultiEntrySameName() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // test tool-tool name collision
-        shouldThrowError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-tool-tool", installationId));
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-tool-tool", installationId));
         assertEquals(0, countWorkflows() + countTools());
 
         // test workflow-workflow name collision
-        shouldThrowError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-workflow-workflow", installationId));
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-workflow-workflow", installationId));
         assertEquals(0, countWorkflows() + countTools());
 
         // test tool-workflow name collision
-        shouldThrowError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-tool-workflow", installationId));
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-tool-workflow", installationId));
         assertEquals(0, countWorkflows() + countTools());
 
         // test no names
-        shouldThrowError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/no-names", installationId));
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/no-names", installationId));
         assertEquals(0, countWorkflows() + countTools());
     }
 }
