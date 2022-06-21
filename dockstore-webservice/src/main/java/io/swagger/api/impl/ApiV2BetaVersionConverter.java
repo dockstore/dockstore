@@ -16,6 +16,7 @@
 package io.swagger.api.impl;
 
 import com.google.common.collect.Lists;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.openapi.model.Checksum;
 import io.openapi.model.ImageData;
 import io.swagger.model.DescriptorType;
@@ -105,6 +106,8 @@ public final class ApiV2BetaVersionConverter {
         Tool betaTool = new Tool();
         try {
             BeanUtils.copyProperties(betaTool, tool);
+            betaTool.setUrl(betaTool.getUrl().replace(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL, DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA));
+            betaTool.setCheckerUrl(betaTool.getCheckerUrl().replace(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL, DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA));
             betaTool.setToolname(tool.getName());
             betaTool.setHasChecker(tool.isHasChecker());
             Set<String> authors = new HashSet<>();
@@ -138,6 +141,7 @@ public final class ApiV2BetaVersionConverter {
         ToolVersion betaToolVersion = new ToolVersion();
         try {
             BeanUtils.copyProperties(betaToolVersion, toolVersion);
+            betaToolVersion.setUrl(betaToolVersion.getUrl().replace(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL, DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA));
             // look like it has issues converting enums
             betaToolVersion.setDescriptorType(Lists.newArrayList());
             toolVersion.getDescriptorType().forEach(type -> betaToolVersion.getDescriptorType().add(DescriptorType.fromValue(type.name())));
