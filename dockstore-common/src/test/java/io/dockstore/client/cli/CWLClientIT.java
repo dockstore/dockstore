@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.io.Resources;
@@ -63,9 +64,9 @@ public class CWLClientIT {
         final CWL cwl = new CWL();
         final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile());
         final Map<String, String> typeMap = cwl.extractCWLTypes(output.getLeft());
-        assertTrue(typeMap.size() == 3);
-        assertTrue("int".equals(typeMap.get("mem_gb")));
-        assertTrue("File".equals(typeMap.get("bam_input")));
+        assertEquals(3, typeMap.size());
+        assertEquals("int", typeMap.get("mem_gb"));
+        assertEquals("File", typeMap.get("bam_input"));
     }
 
     @Test
