@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.DockstoreWebserviceApplication.getOkHttpClient;
 import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY;
 import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
 
@@ -28,7 +29,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.PipHelper;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -41,7 +41,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.RSSListener;
@@ -82,7 +81,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.Spliterator;
@@ -448,10 +446,7 @@ public class MetadataResource {
         PagedIterable<GHRelease> allReleases;
         CLIInfo cliInfo = new CLIInfo();
         try {
-            OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
-            builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), null));
-            builder.cache(DockstoreWebserviceApplication.getCache(null));
-            OkHttpClient build = builder.build();
+            OkHttpClient build = getOkHttpClient();
             ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
             HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
             GitHub gitHub = GitHubBuilder.fromEnvironment().withConnector(okHttp3Connector).build();
@@ -493,15 +488,11 @@ public class MetadataResource {
         // https://stackoverflow.com/questions/24511052/how-to-convert-an-iterator-to-a-stream
         Stream<GHRelease> targetStream = StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(allReleases.iterator(), Spliterator.ORDERED), false);
-        try {
-            return Optional.of(targetStream
-                    .filter(GHRelease::isPrerelease)
-                    .filter(g -> preReleaseVersionIsGreaterThanLatest(g.getName(), latestRelease))
-                    .findFirst().orElseThrow().getName());
-            // orElseThrow throws a NoSuchElementException if there is no prerelease
-        } catch (NullPointerException | NoSuchElementException e) {
-            return Optional.empty();
-        }
+        return targetStream
+                .filter(GHRelease::isPrerelease)
+                .findFirst()
+                .filter(g -> preReleaseVersionIsGreaterThanLatest(g.getName(), latestRelease))
+                .map(g -> g.getName());
     }
 
     /**
