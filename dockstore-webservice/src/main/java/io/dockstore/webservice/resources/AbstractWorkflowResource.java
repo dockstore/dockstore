@@ -361,7 +361,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
 
-            checkDuplicateNames(dockstoreYaml12.getWorkflows(), dockstoreYaml12.getTools());
+            checkDuplicateNames(dockstoreYaml12.getWorkflows(), dockstoreYaml12.getTools(), dockstoreYaml12.getService());
 
             // Process the service (if present) and the blocks of workflows and apptools.
             // '&=' does not short-circuit, ensuring that all of the blocks are processed.
@@ -470,7 +470,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return lambdaEvent;
     }
 
-    private void checkDuplicateNames(List<? extends Workflowish> workflows, List<? extends Workflowish> tools) {
+    private void checkDuplicateNames(List<? extends Workflowish> workflows, List<? extends Workflowish> tools, Service12 service) {
         List<Workflowish> entries = new ArrayList<>();
         entries.addAll(workflows);
         entries.addAll(tools);
@@ -485,6 +485,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     String.format("At least two workflows or tools have the same name '%s'.", name);
                 throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             }
+        }
+        if (service != null && names.contains("")) {
+            throw new CustomWebApplicationException("A service always has no name, so any workflows or tools must be named.", LAMBDA_FAILURE);
         }
     }
 

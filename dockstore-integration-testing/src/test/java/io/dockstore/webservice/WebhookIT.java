@@ -1286,5 +1286,8 @@ public class WebhookIT extends BaseIT {
         // test no names
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/no-names", installationId));
         assertEquals(0, countWorkflows() + countTools());
+
+        // test service and unnamed workflows
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/service-and-unnamed-workflow", installationId));
     }
 }
