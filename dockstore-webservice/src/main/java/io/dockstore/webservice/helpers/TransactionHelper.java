@@ -126,10 +126,10 @@ public final class TransactionHelper {
 
     private void handle(String operation, RuntimeException ex) {
         thrown = ex;
-        LOG.error(operation + " failed", ex);
+        LOG.error("{} failed", operation, ex);
         // To prevent us from interacting with foobared state, the
         // Hibernate docs instruct us to immediately close a session
-        // if an operation on the session has thrown.
+        // if a previous operation on the session has thrown.
         try {
             session.close();
         } catch (RuntimeException closeEx) {

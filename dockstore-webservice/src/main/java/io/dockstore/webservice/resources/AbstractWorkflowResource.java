@@ -499,7 +499,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
     private boolean createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, String installationId, String username,
-            final SourceFile dockstoreYml, Class workflowType, PrintWriter messageWriter) {
+            final SourceFile dockstoreYml, Class<?> workflowType, PrintWriter messageWriter) {
 
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
@@ -538,7 +538,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 // b) log something helpful and move on to the next workflow.
                 isSuccessful = false;
                 rethrowIfFatal(ex, transactionHelper);
-                final String message = String.format("Error processing %s %s in .dockstore.yml:\n%s",
+                final String message = String.format("Error processing %s %s in .dockstore.yml:%n%s",
                     computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
                 LOG.error(message, ex);
                 messageWriter.println(message);
@@ -565,7 +565,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     private void rethrowIfFatal(RuntimeException ex, TransactionHelper transactionHelper) {
         if (ex == transactionHelper.thrown()) {
-            LOG.error("Database transaction error: " + ex.getMessage());
+            LOG.error("Database transaction error: {} ", ex.getMessage());
             throw new CustomWebApplicationException("database transaction error", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         if (isGitHubRateLimitError(ex) || isServerError(ex))  {
@@ -573,7 +573,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    private String computeTermFromClass(Class workflowType) {
+    private String computeTermFromClass(Class<?> workflowType) {
         if (workflowType == AppTool.class) {
             return "tool";
         }
@@ -589,7 +589,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private void addValidationsToMessage(Workflow workflow, WorkflowVersion version, PrintWriter messageWriter) {
         List<Validation> validations = version.getValidations().stream().filter(v -> !v.isValid()).collect(Collectors.toList());
         if (!validations.isEmpty()) {
-            messageWriter.printf("In version '%s' of %s '%s':\n", version.getName(), workflow.getEntryType().getTerm(), computeFullWorkflowName(workflow));
+            messageWriter.printf("In version '%s' of %s '%s':%n", version.getName(), workflow.getEntryType().getTerm(), computeFullWorkflowName(workflow));
             validations.forEach(validation -> addValidationToMessage(validation, messageWriter));
         }
     }
@@ -597,7 +597,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private void addValidationToMessage(Validation validation, PrintWriter messageWriter) {
         try {
             JSONObject json = new JSONObject(validation.getMessage());
-            json.keySet().forEach(key -> messageWriter.printf("- File '%s': %s\n", key, json.get(key)));
+            json.keySet().forEach(key -> messageWriter.printf("- File '%s': %s%n", key, json.get(key)));
         } catch (JSONException ex) {
             LOG.info("Exception processing validation message JSON", ex);
         }
