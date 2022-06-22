@@ -783,7 +783,7 @@
             <id>bitbucket-tests</id>
             <!-- run all tests involving bitbucket -->
             <properties>
-                <skipTests>false</skipTests>
+                <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.BitBucketTest</groups>
                 <!-- Found through trial and error -->
@@ -796,7 +796,7 @@
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
-                <excludeGroups>io.dockstore.common.LanguageParsingTest, io.dockstore.common.BitBucketTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.LanguageParsingTest</excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
             <build>
