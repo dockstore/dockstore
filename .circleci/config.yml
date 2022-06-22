@@ -210,6 +210,9 @@ jobs:
             sudo apt install openssl -y
             bash scripts/decrypt.sh
       - run:
+          name: Generate test lists
+          command: bash scripts/generate-test-lists.sh
+      - run:
           name: build
           command: ./mvnw -B clean install -DskipTests
       - run:
@@ -222,9 +225,6 @@ jobs:
       - run:
           name: copy m2 manually
           command: cp -r ~/.m2 .
-      - run:
-          name: Generate test lists
-          command: bash scripts/generate-test-lists.sh
       - persist_to_workspace:
           root: .
           paths:
