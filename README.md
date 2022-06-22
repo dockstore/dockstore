@@ -198,6 +198,101 @@ To add copyright headers to all files with IntelliJ
 2. Create a new copyright profile matching existing copyright header found on all files, name it Dockstore (Settings -> Copyright -> Copyright Profiles -> Add New)
 3. Set the default project copyright to Dockstore (Settings -> Copyright)
 
+### Setting up a Mac for Dockstore development
+Install Docker (Be sure to click on 'Mac with Apple chip' if you have Apple silicon)
+https://docs.docker.com/desktop/mac/install/
+
+Install Brew
+https://brew.sh/
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git
+https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
+```
+git
+```
+_(If that doesn't work install git manually https://git-scm.com/download/mac)_
+
+
+Setup git user information
+```
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
+```
+[Read about git token requirements](https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/)
+
+[Setup personal access token for git CLI](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+
+[It's helpful to cache your git personal access token](https://docs.github.com/en/get-started/getting-started-with-git/caching-your-github-credentials-in-git)
+
+Install Hubflow
+https://datasift.github.io/gitflow/TheHubFlowTools.html
+```
+git clone https://github.com/datasift/gitflow
+cd gitflow
+sudo ./install.sh
+```
+
+Install JDK 17
+https://formulae.brew.sh/formula/openjdk@17
+```
+brew install openjdk@17
+```
+Download and install node.js
+https://github.com/nvm-sh/nvm
+```
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+```
+Install git secrets
+https://github.com/awslabs/git-secrets
+```
+brew install git-secrets
+```
+Install wget
+```
+brew install wget
+```
+
+Install jq
+```
+brew install jq
+```
+#### Build the webservice
+(cd to where you cloned the dockstore/dockstore repo)
+```
+./mvnw clean install
+```
+
+#### Build the UI
+(cd to where you cloned the dockstore/dockstore-ui2 repo)
+
+Set up UI requirements
+NOTE: You must use the --legacy-peer-deps switch due to using npm version 8.11.0 (> npm 6) 
+for reasons mentioned in [this post](https://stackoverflow.com/questions/66239691/what-does-npm-install-legacy-peer-deps-do-exactly-when-is-it-recommended-wh)
+```
+npm ci --legacy-peer-deps
+```
+Run prebuild
+```
+npm run prebuild
+```
+
+Run build
+```
+npm run build
+```
+#### Optional
+Install IntelliJ _(if on Apple Silicon, select the .dmg (Apple Silicon), otherwise select .dmg(Intel)_
+
+https://www.jetbrains.com/idea/download/#section=mac
+
+Add the Scala plugin to IntelliJ
+https://www.jetbrains.com/help/idea/managing-plugins.html
+
+
+
 ### Legacy Material
 
 Additional documentation on developing Dockstore is available at [legacy.md](https://github.com/dockstore/dockstore/blob/develop/legacy.md)
