@@ -156,7 +156,7 @@ jobs:
       - install-postgres
       - setup_postgres
       - setup_integration_test
-      - save_test_results    
+      - save_test_results
   language-parsing-tests:
     parallelism: 4
     executor: machine_integration_test_exec
@@ -169,7 +169,7 @@ jobs:
       - run:
           name: install pip dependencies
           command: scripts/install-tests.sh
-      - run: 
+      - run:
           name: build sam-cli
           command: |
             # workaround https://github.com/aws/aws-sam-cli/issues/3791#issuecomment-1096604840
@@ -271,7 +271,7 @@ jobs:
           command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp
       - run:
           name: send coverage for unit tests
-          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"      
+          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
       - run:
           name: run the non-confidential integration tests
           command: |
@@ -446,10 +446,10 @@ commands:
       - run:
           name: run integration test
           command: |
-          TESTS_TO_RUN=$(cat temp/test-lists/$TEST_LIST | circleci tests split --split-by=timings | tr '\n' ',')
-          echo $TESTS_TO_RUN
-          ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
-          clean verify -Dit.test=$TESTS_TO_RUN
+            TESTS_TO_RUN=$(cat temp/test-lists/$TEST_LIST | circleci tests split --split-by=timings | tr '\n' ',')
+            echo $TESTS_TO_RUN
+            ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
+            clean verify -Dit.test=$TESTS_TO_RUN
 
       - run:
           name: send coverage
