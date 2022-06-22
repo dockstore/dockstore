@@ -92,9 +92,11 @@ workflows:
           context: sonarcloud
 jobs:
   regression-integration-tests:
+    parallelism: 4
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: regression-integration-tests
+      TEST_LIST: regressionIT.txt
     steps:
       - setup_machine
       - setup_test
@@ -106,9 +108,11 @@ jobs:
       - setup_integration_test
       - save_test_results
   integration-tests:
+    parallelism: 4
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: integration-tests
+      TEST_LIST: integration-tests.txt
     steps:
       - setup_remote_docker:
           version: 19.03.13
@@ -118,9 +122,11 @@ jobs:
       - setup_integration_test
       - save_test_results
   tool-integration-tests:
+    parallelism: 4
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: tool-integration-tests
+      TEST_LIST: toolIT.txt
     steps:
       - setup_test
       - install-postgres
@@ -128,9 +134,11 @@ jobs:
       - setup_integration_test
       - save_test_results
   workflow-integration-tests:
+    parallelism: 4
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: workflow-integration-tests
+      TEST_LIST: workflowIT.txt
     steps:
       - setup_test
       - install-postgres
@@ -138,9 +146,11 @@ jobs:
       - setup_integration_test
       - save_test_results
   bitbucket-tests:
+    parallelism: 4
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: bitbucket-tests
+      TEST_LIST: bitbucketIT.txt
     steps:
       - setup_test
       - install-postgres
@@ -148,9 +158,11 @@ jobs:
       - setup_integration_test
       - save_test_results    
   language-parsing-tests:
+    parallelism: 4
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: language-parsing-tests
+      TEST_LIST: language-parsingIT.txt
     steps:
       - setup_machine
       - install-pip
@@ -210,6 +222,9 @@ jobs:
       - run:
           name: copy m2 manually
           command: cp -r ~/.m2 .
+      - run:
+          name: Generate test lists
+          command: bash scripts/generate-test-lists.sh
       - persist_to_workspace:
           root: .
           paths:
@@ -430,7 +445,12 @@ commands:
             python3 -V
       - run:
           name: run integration test
-          command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
+          command: |
+          TESTS_TO_RUN=$(cat temp/test-lists/$TEST_LIST | circleci tests split --split-by=timings | tr '\n' ',')
+          echo $TESTS_TO_RUN
+          ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
+          clean verify -Dit.test=$TESTS_TO_RUN
+
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
