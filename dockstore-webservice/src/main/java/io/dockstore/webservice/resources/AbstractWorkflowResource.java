@@ -363,9 +363,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             checkDuplicateNames(dockstoreYaml12.getWorkflows(), dockstoreYaml12.getTools(), dockstoreYaml12.getService());
 
-            // Process the service (if present) and the blocks of workflows and apptools.
-            // '&=' does not short-circuit, ensuring that all of the blocks are processed.
-            // 'isSuccessful &= x()' is equivalent to 'isSuccessful = isSuccesful & x()'.
+            // Process the service (if present) and the lists of workflows and apptools.
+            // '&=' does not short-circuit, ensuring that all of the lists are processed.
+            // 'isSuccessful &= x()' is equivalent to 'isSuccessful = isSuccessful & x()'.
             List<Service12> services = dockstoreYaml12.getService() != null ? List.of(dockstoreYaml12.getService()) : List.of();
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter);
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
