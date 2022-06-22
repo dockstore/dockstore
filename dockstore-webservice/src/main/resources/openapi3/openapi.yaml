@@ -3096,6 +3096,20 @@ paths:
       - BEARER: []
       tags:
       - lambdaEvents
+  /metadata/cli-info:
+    get:
+      description: Get Dockstore CLI information. NO authentication
+      operationId: getCliVersion
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CLIInfo'
+          description: default response
+      summary: Get Dockstore CLI information.
+      tags:
+      - metadata
   /metadata/config.json:
     get:
       description: "Configuration, NO authentication"
@@ -7338,6 +7352,17 @@ components:
           parent_id:
             type: integer
             format: int64
+    CLIInfo:
+      type: object
+      properties:
+        cliLatestDockstoreScriptDownloadUrl:
+          type: string
+        cliLatestUnstableDockstoreScriptDownloadUrl:
+          type: string
+        cliLatestUnstableVersion:
+          type: string
+        cliLatestVersion:
+          type: string
     Category:
       type: object
       description: Category of entries
