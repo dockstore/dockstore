@@ -703,6 +703,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String terraImportUrl;
         private String bdCatalystTerraImportUrl;
         private String bdCatalystSevenBridgesImportUrl;
+        private String elwaziImportUrl;
 
         private String gitHubAuthUrl;
         private String gitHubRedirectPath;
@@ -788,6 +789,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setBdCatalystSevenBridgesImportUrl(String bdCatalystSevenBridgesImportUrl) {
             this.bdCatalystSevenBridgesImportUrl = bdCatalystSevenBridgesImportUrl;
+        }
+
+        public String getElwaziImportUrl() {
+            return elwaziImportUrl;
+        }
+
+        public void setElwaziImportUrl(String elwaziImportUrl) {
+            this.elwaziImportUrl = elwaziImportUrl;
         }
 
         public String getGitHubAuthUrl() {
