@@ -32,6 +32,7 @@ import io.dockstore.openapi.client.model.ToolVersion;
 import io.openapi.model.Service;
 import java.util.List;
 import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -398,4 +399,14 @@ public class GA4GHV2FinalIT extends GA4GHIT {
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
+
+    @Test
+    public void testGetHeaderLinksContainFilters() throws Exception {
+        Response response = checkedResponse(baseURL + "tools?toolClass=Tool&limit=1");
+        MultivaluedMap<String, Object> headers = response.getHeaders();
+        Assert.assertTrue(headers.get("self_link").toString().contains("toolClass=Tool"));
+        Assert.assertTrue(headers.get("last_page").toString().contains("toolClass=Tool"));
+        Assert.assertTrue(headers.get("next_page").toString().contains("toolClass=Tool"));
+    }
+
 }
