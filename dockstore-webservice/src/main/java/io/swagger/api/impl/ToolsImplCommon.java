@@ -426,7 +426,7 @@ public final class ToolsImplCommon {
         String basePath = MoreObjects.firstNonNull(config.getExternalConfig().getBasePath(), "/");
         // Example without the replace: "/api/" + "/api/ga4gh/v2" + "/tools/" = "/api//api/ga4gh/v2/tools"
         // Example with the replace: "/api/api/ga4gh/v2/tools"
-        String baseURI = basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA.replaceFirst("/", "") + "/tools/";
+        String baseURI = basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL.replaceFirst("/", "") + "/tools/";
         URI uri = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port, baseURI, null, null);
         return uri.toString();
     }
