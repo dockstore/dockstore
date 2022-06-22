@@ -449,7 +449,7 @@ commands:
             TESTS_TO_RUN=$(cat temp/test-lists/$TEST_LIST | circleci tests split --split-by=timings | tr '\n' ',')
             echo $TESTS_TO_RUN
             ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
-            clean verify -Dit.test=$TESTS_TO_RUN
+            clean verify -Dit.test=$TESTS_TO_RUN -DfailIfNoTests=false
 
       - run:
           name: send coverage
