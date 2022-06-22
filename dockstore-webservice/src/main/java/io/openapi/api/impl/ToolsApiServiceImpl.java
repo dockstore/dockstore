@@ -370,7 +370,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         responseBuilder.header("current_limit", actualLimit);
         responseBuilder.header("self_link", createUrlString(scheme, hostname, port, path, query));
         if (startIndex + actualLimit < numEntries.sum()) {
-            responseBuilder.header("next_page", createUrlString(scheme, hostname, port, path, positionQuery(query, actualLimit, offsetInteger + 1)));
+            responseBuilder.header("next_page", createUrlString(scheme, hostname, port, path, positionQuery(query, actualLimit, offsetInteger + 1L)));
         }
         final long numPages = numEntries.sum() / actualLimit;
         responseBuilder.header("last_page", createUrlString(scheme, hostname, port, path, positionQuery(query, actualLimit, numPages)));
@@ -546,12 +546,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
         }
         return entry;
-    }
-
-    private void handleParameter(String parameter, String queryName, List<String> filters) {
-        if (parameter != null) {
-            filters.add(queryName + "=" + parameter);
-        }
     }
 
     /**
