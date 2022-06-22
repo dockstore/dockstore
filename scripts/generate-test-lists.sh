@@ -91,3 +91,4 @@ generate_test_list
 # Convert remaining list of ITs from file paths to java class paths.
 FILE_TO_CHANGE="$PREFIX"/"$REMAINING_TEST_FILE"
 make_file_names_fully_qualified_class_paths
+
