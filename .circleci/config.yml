@@ -56,6 +56,12 @@ workflows:
             - build
           context:
             - sonarcloud
+      - non-confidential-tests:
+          <<: *common_filters
+          requires:
+            - build
+          context:
+            - sonarcloud
       - workflow-integration-tests:
           <<: *common_filters
           requires:
@@ -326,7 +332,6 @@ jobs:
           path: /tmp/artifacts
 
   non-confidential-tests: # runs not using Workflows must have a `build` job as entry point
-    parallelism: 4
     parameters:
       aws_bucket:
         type: string
