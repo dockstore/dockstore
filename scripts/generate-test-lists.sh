@@ -40,8 +40,8 @@ function make_file_names_fully_qualified_class_paths {
 
 
 # This functions consumes $REMAINING_TEST_FILE and determines which of those files have the listed Junit category (CATEGORY) in them
-# such as BitBucketTest.class, it then removes those test from REMAINING_TEST_FILE and adds them to OUTPUT_TEST_FILE
-# Note: Does not currently check for comments
+# such as BitBucketTest.class, it then removes those test from $REMAINING_TEST_FILE and adds them to $OUTPUT_TEST_FILE
+# Note: Does not acknowledge comments
 function generate_test_list {
   # Reset or create temp file
   : > "$PREFIX"/temp.txt
