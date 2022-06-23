@@ -160,7 +160,6 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: language-parsing-tests
-      TEST_LIST: language-parsingIT.txt
     steps:
       - setup_machine
       - install-pip
