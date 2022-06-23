@@ -375,6 +375,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final long numPages = numEntries.sum() / actualLimit;
         responseBuilder.header("last_page", createUrlString(scheme, hostname, port, path, positionQuery(encodedQuery, actualLimit, numPages)));
 
+        trsListener.loadTRSResponse(hashcode, responseBuilder);
         return responseBuilder.build();
     }
 
