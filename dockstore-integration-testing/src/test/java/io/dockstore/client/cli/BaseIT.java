@@ -46,6 +46,7 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.SortedMap;
@@ -256,6 +257,16 @@ public class BaseIT {
             "test", "wdl", "/test.json");
         return ownerWorkflowApi.refresh(workflow.getId(), false);
     }
+
+    static WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, Workflow workflow, String versionName) {
+        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+        version.setFrozen(true);
+        workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "images");
+        return workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+    }
+
+
 
     @Rule
     public final TestRule watcher = new TestWatcher() {
