@@ -363,40 +363,57 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final String hostname = config.getExternalConfig().getHostname();
         final int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
         final String path = ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + relativePath;
-        final String query = value.getUriInfo().getRequestUri().getQuery();
+        final String encodedQuery = value.getUriInfo().getRequestUri().getRawQuery();
 
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
         responseBuilder.header("current_offset", offset);
         responseBuilder.header("current_limit", actualLimit);
-        responseBuilder.header("self_link", createUrlString(scheme, hostname, port, path, query));
+        responseBuilder.header("self_link", createUrlString(scheme, hostname, port, path, encodedQuery));
         if (startIndex + actualLimit < numEntries.sum()) {
-            responseBuilder.header("next_page", createUrlString(scheme, hostname, port, path, positionQuery(query, actualLimit, offsetInteger + 1L)));
+            responseBuilder.header("next_page", createUrlString(scheme, hostname, port, path, positionQuery(encodedQuery, actualLimit, offsetInteger + 1L)));
         }
         final long numPages = numEntries.sum() / actualLimit;
-        responseBuilder.header("last_page", createUrlString(scheme, hostname, port, path, positionQuery(query, actualLimit, numPages)));
+        responseBuilder.header("last_page", createUrlString(scheme, hostname, port, path, positionQuery(encodedQuery, actualLimit, numPages)));
 
         return responseBuilder.build();
     }
 
-    private String createUrlString(String scheme, String hostname, int port, String path, String query) {
+    private String createUrlString(String scheme, String hostname, int port, String path, String encodedQuery) {
+        String url;
         try {
-            return new URI(scheme, null, hostname, port, path, query, null).normalize().toURL().toString();
+            url = new URI(scheme, null, hostname, port, path, null, null).normalize().toURL().toString();
         } catch (URISyntaxException | MalformedURLException e) {
             throw new CustomWebApplicationException("Could not create url string", HttpStatus.SC_BAD_REQUEST);
         }
+        // The URI constructor tries to encode the query string that it is
+        // passed, and there's no way to stop it, so we add it here instead.
+        if (encodedQuery != null) {
+            url += '?';
+            url += encodedQuery;
+        }
+        return url;
     }
 
-    private String positionQuery(String query, long limit, long offset) {
+    private String positionQuery(String encodedQuery, long limit, long offset) {
+        // For more sophisticated query string processing, the
+        // https://hc.apache.org/httpcomponents-client-5.1.x/
+        // library may be of use.
         List<String> resultNameValues = new ArrayList<>();
-        if (query != null) {
-            for (String nameValue: query.split("&")) {
+        // Split the query string into name=value pairs at the
+        // ampersands, then copy each name=value pair unchanged, except
+        // for the "limit" and "offset" pairs, which we omit. We will
+        // add them back at the end.
+        if (encodedQuery != null) {
+            for (String nameValue: encodedQuery.split("&")) {
                 if (!nameValue.startsWith("limit=") && !nameValue.startsWith("offset=")) {
                     resultNameValues.add(nameValue);
                 }
             }
         }
+        // Add name=value pairs that set the value of "limit" and "offset".
         resultNameValues.add("limit=" + limit);
         resultNameValues.add("offset=" + offset);
+        // Reassemble the name=value pairs into a query string.
         return String.join("&", resultNameValues);
     }
 
