@@ -113,6 +113,11 @@ CATEGORY=LanguageParsingTest.class
 OUTPUT_TEST_FILE=language-parsing-tests.txt
 generate_test_list
 
-# Convert remaining list of Testss from file paths to java class paths.
+# Get non-confidential Tests
+CATEGORY=NonConfidentialTest.class
+OUTPUT_TEST_FILE=non-confidential-tests.txt
+generate_test_list
+
+# Convert remaining list of Tests from file paths to java class paths.
 FILE_TO_CHANGE="$PREFIX"/"$REMAINING_TEST_FILE"
 make_file_names_fully_qualified_class_paths
