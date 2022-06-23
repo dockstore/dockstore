@@ -61,7 +61,6 @@ import org.apache.commons.io.IOUtils;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -550,7 +549,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
             awesomeWorkflow.size() == 1 && awesomeWorkflow.get(0).getAliases().size() == 3);
         // add a few new aliases
         entry = genericApi.addAliases(workflow.getId(), "foobar, another workflow");
-        Assert.assertTrue("entry is missing expected aliases",
+        assertTrue("entry is missing expected aliases",
             entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 5);
 
         // try to add duplicates; this is not allowed

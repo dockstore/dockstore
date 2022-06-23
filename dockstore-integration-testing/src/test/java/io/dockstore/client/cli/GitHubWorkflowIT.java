@@ -36,8 +36,6 @@ import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.jdbi.FileDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -51,7 +49,6 @@ import java.util.Optional;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -80,8 +77,6 @@ public class GitHubWorkflowIT extends BaseIT {
     public final ExpectedException thrown = ExpectedException.none();
 
 
-    private WorkflowDAO workflowDAO;
-    private WorkflowVersionDAO workflowVersionDAO;
     private FileDAO fileDAO;
 
     @Before
@@ -89,8 +84,6 @@ public class GitHubWorkflowIT extends BaseIT {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
 
-        this.workflowDAO = new WorkflowDAO(sessionFactory);
-        this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
 
         // used to allow us to use workflowDAO outside of the web service
@@ -469,26 +462,26 @@ public class GitHubWorkflowIT extends BaseIT {
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", BIOWORKFLOW, null);
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId(), true);
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
-            Assert.assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
-            Assert.assertEquals("Peter Amstutz", workflow.getAuthor());
-            Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+            assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
+            assertEquals("Peter Amstutz", workflow.getAuthor());
+            assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         });
-        Assert.assertEquals("Default branch should've been set to get metadata", "master", workflow.getDefaultVersion());
-        Assert.assertEquals("peter.amstutz@curoverse.com", workflow.getEmail());
-        Assert.assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
-        Assert.assertEquals("Peter Amstutz", workflow.getAuthor());
-        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
-        Assert.assertEquals("Default version should've been set to get metadata", "master", workflow.getDefaultVersion());
+        assertEquals("Default branch should've been set to get metadata", "master", workflow.getDefaultVersion());
+        assertEquals("peter.amstutz@curoverse.com", workflow.getEmail());
+        assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
+        assertEquals("Peter Amstutz", workflow.getAuthor());
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+        assertEquals("Default version should've been set to get metadata", "master", workflow.getDefaultVersion());
         Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersion.isPresent());
         WorkflowVersion workflowVersion = optionalWorkflowVersion.get();
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
-        Assert.assertEquals(2, sourceFiles.size());
-        Assert.assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().equals("/cwl/v1.1/cat-job.json")));
-        Assert.assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().equals("/cwl/v1.1/metadata.cwl")));
+        assertEquals(2, sourceFiles.size());
+        assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().equals("/cwl/v1.1/cat-job.json")));
+        assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().equals("/cwl/v1.1/metadata.cwl")));
         // Check validation works.  It is invalid because this is a tool and not a workflow.
-        Assert.assertFalse(workflowVersion.isValid());
+        assertFalse(workflowVersion.isValid());
 
         userWorkflowsApi
             .manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/count-lines1-wf.cwl", "count-lines1-wf", "cwl",
@@ -496,13 +489,13 @@ public class GitHubWorkflowIT extends BaseIT {
         final Workflow workflowByPathGithub2 = userWorkflowsApi
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/count-lines1-wf", BIOWORKFLOW, null);
         final Workflow workflow2 = userWorkflowsApi.refresh(workflowByPathGithub2.getId(), false);
-        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         Optional<WorkflowVersion> optionalWorkflowVersion2 = workflow2.getWorkflowVersions().stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersion2.isPresent());
         WorkflowVersion workflowVersion2 = optionalWorkflowVersion2.get();
         // Check validation works.  It should be valid
-        Assert.assertTrue(workflowVersion2.isValid());
+        assertTrue(workflowVersion2.isValid());
         userWorkflowsApi.publish(workflowByPathGithub2.getId(), CommonTestUtilities.createPublishRequest(true));
     }
 

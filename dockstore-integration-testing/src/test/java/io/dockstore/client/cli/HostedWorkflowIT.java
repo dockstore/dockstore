@@ -49,9 +49,7 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -78,7 +76,6 @@ public class HostedWorkflowIT extends BaseIT {
     @Before
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
-        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
 
 
         // used to allow us to use workflowDAO outside of the web service
@@ -167,7 +164,7 @@ public class HostedWorkflowIT extends BaseIT {
             workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
             fail("Shouldn't be able to hide the default version.");
         } catch (ApiException ex) {
-            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+            assertEquals("You cannot hide the default version.", ex.getMessage());
         }
 
         file.setContent("cwlVersion: v1.0\n\n" + "class: Workflow");
@@ -180,7 +177,7 @@ public class HostedWorkflowIT extends BaseIT {
             workflowsApi.updateWorkflowDefaultVersion(hostedWorkflow.getId(), hostedVersion.getName());
             fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
-            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+            assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
         }
     }
 
