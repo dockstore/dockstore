@@ -44,7 +44,7 @@ function make_file_names_fully_qualified_class_paths {
 function generate_test_list {
   # Reset or create temp file
   : > "$PREFIX"/temp.txt
-  grep -l "$CATEGORY" $(cat "$PREFIX"/"$REMAINING_TEST_FILE") > "$PREFIX"/"$OUTPUT_TEST_FILE"
+  grep -l "[^(//)]$CATEGORY" $(cat "$PREFIX"/"$REMAINING_TEST_FILE") > "$PREFIX"/"$OUTPUT_TEST_FILE"
   grep -v -x -f "$PREFIX"/"$OUTPUT_TEST_FILE" "$PREFIX"/"$REMAINING_TEST_FILE" > "$PREFIX"/temp.txt
   cp "$PREFIX"/temp.txt "$PREFIX"/"$REMAINING_TEST_FILE"
 
