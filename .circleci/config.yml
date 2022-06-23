@@ -260,7 +260,7 @@ jobs:
       - restore_cache:
           key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
       - attach_workspace:
-          at: temp/test-lists
+          at: attached
       - install-postgres
       - install-git-secrets
       - setup_postgres
@@ -273,9 +273,8 @@ jobs:
       - run:
           name: run the actual tests
           command: |
-            pwd
             TEST_LIST_UNIT_TESTS=unit-tests.txt
-            TESTS_TO_RUN=$(cat temp/test-lists/$TEST_LIST_UNIT_TESTS | circleci tests split --split-by=timings | tr '\n' ',')
+            TESTS_TO_RUN=$(cat attached/temp/test-lists/$TEST_LIST_UNIT_TESTS | circleci tests split --split-by=timings | tr '\n' ',')
             echo $TESTS_TO_RUN
             ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate  -Punit-tests,coverage -ntp \
             clean test -Dtest=$TESTS_TO_RUN -DfailIfNoTests=false
@@ -293,7 +292,7 @@ jobs:
               export SKIP_SIGNATURE_CHECK=true
             fi
             TEST_LIST_NON_CONFIDENTIAL=non-confidentialIT.txt
-            TESTS_TO_RUN=$(cat temp/test-lists/$TEST_LIST_NON_CONFIDENTIAL | circleci tests split --split-by=timings | tr '\n' ',')
+            TESTS_TO_RUN=$(cat attached/temp/test-lists/$TEST_LIST_NON_CONFIDENTIAL | circleci tests split --split-by=timings | tr '\n' ',')
             echo $TESTS_TO_RUN
             ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp \
             clean verify -Dit.test=$TESTS_TO_RUN -DfailIfNoTests=false
