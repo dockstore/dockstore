@@ -41,11 +41,11 @@ function make_file_names_fully_qualified_class_paths {
 
 # This functions consumes $REMAINING_TEST_FILE and determines which of those files have the listed Junit category (CATEGORY) in them
 # such as BitBucketTest.class, it then removes those test from REMAINING_TEST_FILE and adds them to OUTPUT_TEST_FILE
-# Note: It will not match the category if it is commented out with // style comments, but not /* */ style
+# Note: Does not currently check for comments
 function generate_test_list {
   # Reset or create temp file
   : > "$PREFIX"/temp.txt
-  grep -l "[^(//)]$CATEGORY" $(cat "$PREFIX"/"$REMAINING_TEST_FILE") > "$PREFIX"/"$OUTPUT_TEST_FILE"
+  grep -l "$CATEGORY" $(cat "$PREFIX"/"$REMAINING_TEST_FILE") > "$PREFIX"/"$OUTPUT_TEST_FILE"
   grep -v -x -f "$PREFIX"/"$OUTPUT_TEST_FILE" "$PREFIX"/"$REMAINING_TEST_FILE" > "$PREFIX"/temp.txt
   cp "$PREFIX"/temp.txt "$PREFIX"/"$REMAINING_TEST_FILE"
 
