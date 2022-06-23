@@ -316,6 +316,7 @@ jobs:
           command: ./mvnw sonar:sonar
 
 
+
   non-confidential-tests: # runs not using Workflows must have a `build` job as entry point
     parameters:
       aws_bucket:
