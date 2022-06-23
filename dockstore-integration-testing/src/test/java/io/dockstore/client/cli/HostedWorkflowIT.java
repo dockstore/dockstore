@@ -31,9 +31,6 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.jdbi.FileDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -41,7 +38,6 @@ import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
@@ -79,18 +75,11 @@ public class HostedWorkflowIT extends BaseIT {
     public final ExpectedException thrown = ExpectedException.none();
 
 
-    private WorkflowDAO workflowDAO;
-    private WorkflowVersionDAO workflowVersionDAO;
-    private FileDAO fileDAO;
-
     @Before
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
 
-        this.workflowDAO = new WorkflowDAO(sessionFactory);
-        this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
-        this.fileDAO = new FileDAO(sessionFactory);
 
         // used to allow us to use workflowDAO outside of the web service
         Session session = application.getHibernate().getSessionFactory().openSession();
@@ -107,7 +96,6 @@ public class HostedWorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
-        User user = usersApi.getUser();
 
         Workflow workflow = manualRegisterAndPublish(workflowApi, DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "", "cwl", SourceControl.GITHUB,
             "/Dockstore.cwl", false);
@@ -147,7 +135,7 @@ public class HostedWorkflowIT extends BaseIT {
             workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), version.getName());
             fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
-            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+            assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
         }
 
         // Set the default version to a non-hidden version
@@ -161,7 +149,7 @@ public class HostedWorkflowIT extends BaseIT {
             workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
             fail("Should not be able to hide a default version");
         } catch (ApiException ex) {
-            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+            assertEquals("You cannot hide the default version.", ex.getMessage());
         }
 
         // Test same for hosted workflows
