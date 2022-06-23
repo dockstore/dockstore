@@ -293,6 +293,10 @@ public class BasicIT extends BaseIT {
         List<Event> eventsForFirstClient = client2EventsApi.getUserEvents(user.getId(), EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
         assertEquals("The user should return 1 starred entry", 1, eventsForFirstClient.size());
 
+        // Get user initiated events by user id
+        List<Event> profileEventsForFirstClient = client2EventsApi.getUserEvents(user.getId(), EventSearchType.PROFILE.toString(), 10, 0);
+        assertTrue("The user events should be all intiiated by the client", !profileEventsForFirstClient.isEmpty() && profileEventsForFirstClient.stream().allMatch(e -> Objects.equals(e.getInitiatorUser().getId(), user.getId())));
+
         // Get the identified event
         Event event2 = eventsForFirstClient.get(0);
 
