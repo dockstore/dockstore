@@ -133,7 +133,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   workflow-integration-tests:
-    parallelism: 3
+    parallelism: 2
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: workflow-integration-tests
