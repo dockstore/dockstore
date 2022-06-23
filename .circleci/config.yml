@@ -275,7 +275,7 @@ jobs:
           command: |
             pwd
             TEST_LIST_UNIT_TESTS=unit-tests.txt
-            TESTS_TO_RUN=$(cat project/temp/test-lists/$TEST_LIST_UNIT_TESTS | circleci tests split --split-by=timings | tr '\n' ',')
+            TESTS_TO_RUN=$(cat temp/test-lists/$TEST_LIST_UNIT_TESTS | circleci tests split --split-by=timings | tr '\n' ',')
             echo $TESTS_TO_RUN
             ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate  -Punit-tests,coverage -ntp \
             clean test -Dtest=$TESTS_TO_RUN -DfailIfNoTests=false
