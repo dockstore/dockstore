@@ -423,20 +423,6 @@ jobs:
       - run:
           name: SonarCloud scan - coverage
           command: ./mvnw sonar:sonar
-      - run:
-          name: Make jar directory
-          command: mkdir /tmp/artifacts
-      - run:
-          name: Move jars
-          command: cp dockstore-webservice/target/dockstore*[^s].jar /tmp/artifacts
-      - run:
-          name: Move swagger.yaml
-          command: |
-            cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
-            cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
-      - run:
-          name: Move cache miss log
-          command: cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
 
