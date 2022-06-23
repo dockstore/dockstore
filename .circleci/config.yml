@@ -239,6 +239,7 @@ jobs:
           environment:
             TESTING_PROFILE: automated-review
   unit_test: # runs not using Workflows must have a `build` job as entry point
+    parallelism: 4
     parameters:
       aws_bucket:
         type: string
