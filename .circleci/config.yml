@@ -360,9 +360,6 @@ jobs:
             ./mvnw -v
             python3 -V
       - run:
-          name: build
-          command:  ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -DskipTests clean install
-      - run:
           name: run the non-confidential integration tests
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
