@@ -325,6 +325,8 @@ jobs:
           key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
           paths:
             - /tmp/dockstore-web-cache
+      - attach_workspace:
+          at: attached
       - run:
           name: Save test results
           command: |
