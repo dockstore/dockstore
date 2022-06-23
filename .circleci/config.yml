@@ -353,14 +353,15 @@ jobs:
       - install-postgres
       - install-git-secrets
       - setup_postgres
-      - attach_workspace:
-            at: .
       - run: # Useful for verifying versions
           name: Java/Maven/Python versions
           command: |
             java -version
             ./mvnw -v
             python3 -V
+      - run:
+          name: build
+          command:  ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -DskipTests clean install
       - run:
           name: run the non-confidential integration tests
           command: |
