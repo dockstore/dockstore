@@ -26,7 +26,6 @@ set -o pipefail
 # This prefix ensure that the test lists do not interfere with anything else
 PREFIX=temp/test-lists
 
-REMAINING_TEST_FILE=integration-tests.txt
 
 
 mkdir -p "$PREFIX"
@@ -54,8 +53,14 @@ function generate_test_list {
 }
 
 
-# Get list of all Integration Tests
-find . -name "*IT.java" -or -name "IT*.java" -or -name "*ITCase.java" > "$PREFIX"/"$REMAINING_TEST_FILE"
+#####################################
+# Get list of all Integration Tests #
+#####################################
+REMAINING_TEST_FILE=integration-tests.txt
+
+# Using same wild card patterns the Failsafe Plugin uses
+# https://maven.apache.org/surefire/maven-failsafe-plugin/examples/inclusion-exclusion.html
+find . -name "*IT\.java" -or -name "IT*\.java" -or -name "*ITCase\.java" > "$PREFIX"/"$REMAINING_TEST_FILE"
 
 
 # Get BitBucket ITs
@@ -92,3 +97,22 @@ generate_test_list
 FILE_TO_CHANGE="$PREFIX"/"$REMAINING_TEST_FILE"
 make_file_names_fully_qualified_class_paths
 
+
+##############################
+# Get list of all Unit Tests #
+##############################
+REMAINING_TEST_FILE=unit-tests.txt
+
+# Using same wild card patterns the Surefire Plugin uses
+# https://maven.apache.org/surefire/maven-surefire-plugin/examples/inclusion-exclusion.html
+find . -name "Test*\.java" -or -name "*Test\.java" -or -name "*Tests\.java" -or -name "*TestCase\.java" > "$PREFIX"/"$REMAINING_TEST_FILE"
+
+
+# Get Language Parsing Tests
+CATEGORY=LanguageParsingTest.class
+OUTPUT_TEST_FILE=language-parsing-tests.txt
+generate_test_list
+
+# Convert remaining list of Testss from file paths to java class paths.
+FILE_TO_CHANGE="$PREFIX"/"$REMAINING_TEST_FILE"
+make_file_names_fully_qualified_class_paths
