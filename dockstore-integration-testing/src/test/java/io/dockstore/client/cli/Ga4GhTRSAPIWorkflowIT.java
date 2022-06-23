@@ -577,29 +577,5 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         Assert.assertNotNull("Should retrieve the workflow by alias", aliasWorkflow);
     }
 
-    /**
-     * Tests GA4GH endpoint. Ideally this would be in GA4GH*IT, but because we're manually registering
-     * the workflow, putting it here
-     */
-    @Test
-    public void testGa4ghEndpointForComplexWdlWorkflow() {
-        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
-        Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
-        ownerWorkflowApi.publish(refresh.getId(), CommonTestUtilities.createPublishRequest(true));
-        final List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(refresh.getWorkflowVersions().stream()
-            .filter(workflowVersion -> GATK_SV_TAG.equals(workflowVersion.getName())).findFirst().get().getId());
-        final Ga4GhApi ga4GhApi = new Ga4GhApi(ownerWebClient);
-        final List<ToolFile> files = ga4GhApi
-            .toolsIdVersionsVersionIdTypeFilesGet("WDL", "#workflow/" + refresh.getFullWorkflowPath(), GATK_SV_TAG);
-        Assert.assertEquals(1, files.stream().filter(f -> f.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR).count());
-        Assert.assertEquals(sourceFiles.size() - 1, files.stream().filter(f -> f.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR).count());
-        files.forEach(file -> {
-            final String path = file.getPath();
-            // TRS paths are relative
-            Assert.assertTrue(sourceFiles.stream().anyMatch(sf -> sf.getAbsolutePath().equals("/" + path)));
-        });
-    }
-
 
 }
