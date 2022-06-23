@@ -353,6 +353,8 @@ jobs:
       - install-postgres
       - install-git-secrets
       - setup_postgres
+      - attach_workspace:
+            at: .
       - run: # Useful for verifying versions
           name: Java/Maven/Python versions
           command: |
