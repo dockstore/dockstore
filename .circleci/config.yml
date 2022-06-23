@@ -350,8 +350,6 @@ jobs:
       - checkout
       - restore_cache:
           key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
-      - attach_workspace:
-          at: attached
       - install-postgres
       - install-git-secrets
       - setup_postgres
