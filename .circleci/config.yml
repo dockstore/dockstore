@@ -207,6 +207,8 @@ jobs:
       - run:
           name: Generate test lists
           command: bash scripts/generate-test-lists.sh
+      - store_artifacts:
+        path: temp/test-lists
       - run:
           name: build
           command: ./mvnw -B clean install -DskipTests
