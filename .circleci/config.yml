@@ -56,12 +56,6 @@ workflows:
             - build
           context:
             - sonarcloud
-      - non-confidential-tests:
-          <<: *common_filters
-          requires:
-            - build
-          context:
-            - sonarcloud
       - workflow-integration-tests:
           <<: *common_filters
           requires:
@@ -98,7 +92,6 @@ workflows:
           context: sonarcloud
 jobs:
   regression-integration-tests:
-    parallelism: 4
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: regression-integration-tests
@@ -114,7 +107,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   integration-tests:
-    parallelism: 4
+    parallelism: 5
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: integration-tests
@@ -128,7 +121,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   tool-integration-tests:
-    parallelism: 4
+    parallelism: 3
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: tool-integration-tests
@@ -140,7 +133,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   workflow-integration-tests:
-    parallelism: 4
+    parallelism: 5
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: workflow-integration-tests
@@ -152,7 +145,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   bitbucket-tests:
-    parallelism: 4
+    parallelism: 2
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: bitbucket-tests
@@ -164,7 +157,6 @@ jobs:
       - setup_integration_test
       - save_test_results
   language-parsing-tests:
-    parallelism: 4
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: language-parsing-tests
@@ -285,10 +277,9 @@ jobs:
           name: send coverage for unit tests
           command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
       - when:
-          - condition:
-            - equal: [ $CIRCLE_NODE_INDEX, 0 ]
-          - steps:
-              - run:
+          condition: $CIRCLE_NODE_INDEX == 0
+          steps:
+            - run:
                 name: run the non-confidential integration tests
                 command: |
                   # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
@@ -300,9 +291,9 @@ jobs:
                   fi
                   ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
                   # ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
-              - run:
-                  name: send coverage for non-confidential integration tests
-                  command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
+            - run:
+                name: send coverage for non-confidential integration tests
+                command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
