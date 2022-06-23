@@ -259,6 +259,8 @@ jobs:
       - install-postgres
       - install-git-secrets
       - setup_postgres
+      - attach_workspace:
+          at: attached
       - run: # Useful for verifying versions
           name: Java/Maven/Python versions
           command: |
@@ -325,8 +327,6 @@ jobs:
           key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
           paths:
             - /tmp/dockstore-web-cache
-      - attach_workspace:
-          at: attached
       - run:
           name: Save test results
           command: |
