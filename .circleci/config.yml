@@ -244,8 +244,8 @@ jobs:
             fi
           environment:
             TESTING_PROFILE: automated-review
+
   unit_test: # runs not using Workflows must have a `build` job as entry point
-    parallelism: 4
     parameters:
       aws_bucket:
         type: string
@@ -264,8 +264,6 @@ jobs:
       - checkout
       - restore_cache:
           key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
-      - attach_workspace:
-          at: attached
       - install-postgres
       - install-git-secrets
       - setup_postgres
@@ -286,80 +284,25 @@ jobs:
       - run:
           name: send coverage for unit tests
           command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
-      - run:
-          name: clean the cache
-          command: |
-            rm -rf ~/.m2/repository/io/dockstore
-            rm -rf ~/.m2/repository/.cache/download-maven-plugin directory
-      - save_cache: # saves the project dependencies
-          paths:
-            - ~/.m2
-          key: dockstore-java-{{ checksum "pom.xml" }}
-      - save_cache:
-          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
-          paths:
-            - /tmp/dockstore-web-cache
-      - run:
-          name: Save test results
-          command: |
-            mkdir -p ~/junit/
-            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/junit/ \;
-          when: always
-      - store_test_results:
-          path: ~/junit
-      - store_artifacts:
-          path: ~/junit
-      - store_artifacts:
-          path: keysmap.list
-      - run:
-          name: SonarCloud scan - coverage
-          command: ./mvnw sonar:sonar
-
-
-
-  non-confidential-tests: # runs not using Workflows must have a `build` job as entry point
-    parameters:
-      aws_bucket:
-        type: string
-        default: "${AWS_BUCKET}"
-    docker: # run the steps with Docker
-      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
-        environment:
-          PGHOST: 127.0.0.1
-      - image: cimg/postgres:13.3
-        environment:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: postgres
-          POSTGRES_HOST_AUTH_METHOD: trust
-          POSTGRES_PASSWORD: postgres
-    steps: # a collection of executable commands
-      - checkout
-      - restore_cache:
-          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
-      - install-postgres
-      - install-git-secrets
-      - setup_postgres
-      - run: # Useful for verifying versions
-          name: Java/Maven/Python versions
-          command: |
-            java -version
-            ./mvnw -v
-            python3 -V
-      - run:
-          name: run the non-confidential integration tests
-          command: |
-            # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
-            /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
-            export SKIP_SIGNATURE_CHECK=false
-            if [[ -z "${CIRCLE_TAG}" ]]; then
-              # If it is a branch, skip the signature check
-              export SKIP_SIGNATURE_CHECK=true
-            fi
-            ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
-            # ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
-      - run:
-          name: send coverage for non-confidential integration tests
-          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
+      - when:
+          - condition:
+            - equal: [ $CIRCLE_NODE_INDEX, 0 ]
+          - steps:
+              - run:
+                name: run the non-confidential integration tests
+                command: |
+                  # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
+                  /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
+                  export SKIP_SIGNATURE_CHECK=false
+                  if [[ -z "${CIRCLE_TAG}" ]]; then
+                    # If it is a branch, skip the signature check
+                    export SKIP_SIGNATURE_CHECK=true
+                  fi
+                  ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
+                  # ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
+              - run:
+                  name: send coverage for non-confidential integration tests
+                  command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
@@ -406,8 +349,202 @@ jobs:
       - run:
           name: SonarCloud scan - coverage
           command: ./mvnw sonar:sonar
+      - run:
+          name: Make jar directory
+          command: mkdir /tmp/artifacts
+      - run:
+          name: Move jars
+          command: cp dockstore-webservice/target/dockstore*[^s].jar /tmp/artifacts
+      - run:
+          name: Move swagger.yaml
+          command: |
+            cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
+            cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
+      - run:
+          name: Move cache miss log
+          command: cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
+
+#  unit_test: # runs not using Workflows must have a `build` job as entry point
+#    parallelism: 4
+#    parameters:
+#      aws_bucket:
+#        type: string
+#        default: "${AWS_BUCKET}"
+#    docker: # run the steps with Docker
+#      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
+#        environment:
+#          PGHOST: 127.0.0.1
+#      - image: cimg/postgres:13.3
+#        environment:
+#          POSTGRES_USER: postgres
+#          POSTGRES_DB: postgres
+#          POSTGRES_HOST_AUTH_METHOD: trust
+#          POSTGRES_PASSWORD: postgres
+#    steps: # a collection of executable commands
+#      - checkout
+#      - restore_cache:
+#          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+#      - attach_workspace:
+#          at: attached
+#      - install-postgres
+#      - install-git-secrets
+#      - setup_postgres
+#      - run: # Useful for verifying versions
+#          name: Java/Maven/Python versions
+#          command: |
+#            java -version
+#            ./mvnw -v
+#            python3 -V
+#      - run:
+#          name: run the actual tests
+#          command: |
+#            TEST_LIST_UNIT_TESTS=unit-tests.txt
+#            TESTS_TO_RUN=$(cat attached/temp/test-lists/$TEST_LIST_UNIT_TESTS | circleci tests split --split-by=timings | tr '\n' ',')
+#            echo $TESTS_TO_RUN
+#            ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate  -Punit-tests,coverage -ntp \
+#            clean test -Dtest=$TESTS_TO_RUN -DfailIfNoTests=false
+#      - run:
+#          name: send coverage for unit tests
+#          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
+#      - run:
+#          name: clean the cache
+#          command: |
+#            rm -rf ~/.m2/repository/io/dockstore
+#            rm -rf ~/.m2/repository/.cache/download-maven-plugin directory
+#      - save_cache: # saves the project dependencies
+#          paths:
+#            - ~/.m2
+#          key: dockstore-java-{{ checksum "pom.xml" }}
+#      - save_cache:
+#          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+#          paths:
+#            - /tmp/dockstore-web-cache
+#      - run:
+#          name: Save test results
+#          command: |
+#            mkdir -p ~/junit/
+#            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/junit/ \;
+#          when: always
+#      - store_test_results:
+#          path: ~/junit
+#      - store_artifacts:
+#          path: ~/junit
+#      - store_artifacts:
+#          path: keysmap.list
+#      - run:
+#          name: SonarCloud scan - coverage
+#          command: ./mvnw sonar:sonar
+#
+#
+#
+#  non-confidential-tests: # runs not using Workflows must have a `build` job as entry point
+#    parameters:
+#      aws_bucket:
+#        type: string
+#        default: "${AWS_BUCKET}"
+#    docker: # run the steps with Docker
+#      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
+#        environment:
+#          PGHOST: 127.0.0.1
+#      - image: cimg/postgres:13.3
+#        environment:
+#          POSTGRES_USER: postgres
+#          POSTGRES_DB: postgres
+#          POSTGRES_HOST_AUTH_METHOD: trust
+#          POSTGRES_PASSWORD: postgres
+#    steps: # a collection of executable commands
+#      - checkout
+#      - restore_cache:
+#          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+#      - install-postgres
+#      - install-git-secrets
+#      - setup_postgres
+#      - run: # Useful for verifying versions
+#          name: Java/Maven/Python versions
+#          command: |
+#            java -version
+#            ./mvnw -v
+#            python3 -V
+#      - run:
+#          name: run the non-confidential integration tests
+#          command: |
+#            # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
+#            /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
+#            export SKIP_SIGNATURE_CHECK=false
+#            if [[ -z "${CIRCLE_TAG}" ]]; then
+#              # If it is a branch, skip the signature check
+#              export SKIP_SIGNATURE_CHECK=true
+#            fi
+#            ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
+#            # ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
+#      - run:
+#          name: send coverage for non-confidential integration tests
+#          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
+#      - run:
+#          name: check that JPA classes are consistent with migrations
+#          command: |
+#            scripts/check_migrations.sh
+#          environment:
+#            TESTING_PROFILE: automated-review
+#      - run:
+#          name: check generated THIRD-PARTY-LICENCES.txt matches checked-in file
+#          command: |
+#            scripts/check-licenses.sh
+#          environment:
+#            TESTING_PROFILE: automated-review
+#      - run:
+#          name: Run git-secrets scan on dockstore repository
+#          # Needs to be after a build so that the correct configuration is set
+#          # by the exec-maven plugin
+#          command: |
+#            git secrets --scan
+#      - run:
+#          name: clean the cache
+#          command: |
+#            rm -rf ~/.m2/repository/io/dockstore
+#            rm -rf ~/.m2/repository/.cache/download-maven-plugin directory
+#      - save_cache: # saves the project dependencies
+#          paths:
+#            - ~/.m2
+#          key: dockstore-java-{{ checksum "pom.xml" }}
+#      - save_cache:
+#          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+#          paths:
+#            - /tmp/dockstore-web-cache
+#      - run:
+#          name: Save test results
+#          command: |
+#            mkdir -p ~/junit/
+#            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/junit/ \;
+#          when: always
+#      - store_test_results:
+#          path: ~/junit
+#      - store_test_results:
+#          path: ~/junit
+#      - store_artifacts:
+#          path: keysmap.list
+#      - run:
+#          name: SonarCloud scan - coverage
+#          command: ./mvnw sonar:sonar
+#      - run:
+#          name: Make jar directory
+#          command: mkdir /tmp/artifacts
+#      - run:
+#          name: Move jars
+#          command: cp dockstore-webservice/target/dockstore*[^s].jar /tmp/artifacts
+#      - run:
+#          name: Move swagger.yaml
+#          command: |
+#            cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
+#            cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
+#      - run:
+#          name: Move cache miss log
+#          command: cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
+#      - store_artifacts:
+#          path: /tmp/artifacts
+
 
 commands:
   install-postgres:
@@ -506,10 +643,15 @@ commands:
       - run:
           name: run integration test
           command: |
-            TESTS_TO_RUN=$(cat temp/test-lists/$TEST_LIST | circleci tests split --split-by=timings | tr '\n' ',')
-            echo $TESTS_TO_RUN
-            ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
-            clean verify -Dit.test=$TESTS_TO_RUN -DfailIfNoTests=false
+            if [ $CIRCLE_NODE_TOTAL != 1 ]
+            then
+              TESTS_TO_RUN=$(cat temp/test-lists/$TEST_LIST | circleci tests split --split-by=timings | tr '\n' ',')
+              echo $TESTS_TO_RUN
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
+              clean verify -Dit.test=$TESTS_TO_RUN -DfailIfNoTests=false
+            else
+              /mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage clean install -ntp 
+            fi
 
       - run:
           name: send coverage
