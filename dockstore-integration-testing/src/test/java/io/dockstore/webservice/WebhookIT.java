@@ -106,6 +106,7 @@ public class WebhookIT extends BaseIT {
     private final String taggedToolRepo = "dockstore-testing/tagged-apptool";
     private final String taggedToolRepoPath = "dockstore-testing/tagged-apptool/md5sum";
     private final String authorsRepo = "DockstoreTestUser2/test-authors";
+    private final String multiEntryRepo = "dockstore-testing/multi-entry";
     private FileDAO fileDAO;
 
     @Before
@@ -1158,7 +1159,7 @@ public class WebhookIT extends BaseIT {
             client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/duplicate-paths", installationId);
             fail("Should not be able to create a workflow and apptool with the same path.");
         } catch (ApiException ex) {
-            assertTrue(ex.getMessage().contains("with the same path already exists."));
+            assertTrue(ex.getMessage().contains("have no name"));
         }
 
         // Check that the database trigger created an entry in fullworkflowpath table
@@ -1174,9 +1175,6 @@ public class WebhookIT extends BaseIT {
         } catch (Exception ex) {
             assertTrue(ex.getMessage().contains("duplicate key value violates"));
         }
-
-        // Should be able to have service with duplicate name
-        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/addService", installationId);
     }
 
     @Test
@@ -1211,5 +1209,82 @@ public class WebhookIT extends BaseIT {
         organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null);
         Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
+    }
+
+    private long countTools() {
+        return countTableRows("apptool");
+    }
+
+    private long countWorkflows() {
+        return countTableRows("workflow");
+    }
+
+    private long countTableRows(String tableName) {
+        return testingPostgres.runSelectStatement("select count(*) from " + tableName, long.class);
+    }
+
+    private void shouldThrowLambdaError(Runnable runnable) {
+        try {
+            runnable.run();
+            fail("should have thrown");
+        } catch (ApiException ex) {
+            assertEquals(LAMBDA_ERROR, ex.getCode());
+        }
+    }
+
+    // the "multi-entry" repo has four .dockstore.yml entries
+    @Test
+    public void testMultiEntryAllGood() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
+        assertEquals(2, countWorkflows());
+        assertEquals(2, countTools());
+    }
+
+    @Test
+    public void testMultiEntryOneBroken() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        // test one broken tool
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/broken-tool", installationId));
+        assertEquals(2, countWorkflows());
+        assertEquals(1, countTools());
+
+        // test one broken workflow
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/broken-workflow", installationId));
+        assertEquals(1, countWorkflows());
+        assertEquals(2, countTools());
+    }
+
+    @Test
+    public void testMultiEntrySameName() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        // test tool-tool name collision
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-tool-tool", installationId));
+        assertEquals(0, countWorkflows() + countTools());
+
+        // test workflow-workflow name collision
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-workflow-workflow", installationId));
+        assertEquals(0, countWorkflows() + countTools());
+
+        // test tool-workflow name collision
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-tool-workflow", installationId));
+        assertEquals(0, countWorkflows() + countTools());
+
+        // test no names
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/no-names", installationId));
+        assertEquals(0, countWorkflows() + countTools());
+
+        // test service and unnamed workflows
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/service-and-unnamed-workflow", installationId));
     }
 }
