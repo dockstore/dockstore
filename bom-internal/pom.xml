@@ -61,7 +61,6 @@ POM as their parent.
         <cwlavro.version>2.0.4.7</cwlavro.version>
         <okhttp.version>4.7.0</okhttp.version>
         <slf4j.version>1.7.32</slf4j.version>
-        <swagger-ui.version>4.12.0</swagger-ui.version>
         <httpcomponents.version>4.5.13</httpcomponents.version>
         <httpcore.version>4.4.14</httpcore.version>
         <httpasyncclient.version>4.1.4</httpasyncclient.version>
