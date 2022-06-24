@@ -458,9 +458,9 @@ commands:
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
-      - run:
-          name: SonarCloud scan - coverage
-          command: ./mvnw sonar:sonar
+#      - run:
+#          name: SonarCloud scan - coverage
+#          command: ./mvnw sonar:sonar
   save_test_results:
     steps:
       - save_cache:
