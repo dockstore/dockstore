@@ -24,11 +24,7 @@ set -o nounset
 set -o pipefail
 
 # This prefix ensure that the test lists do not interfere with anything else
-PREFIX=temp/test-lists
-
-
-
-mkdir -p "$PREFIX"
+BASE_PREFIX=temp/test-lists
 
 # This function changes file names in $FILE_TO_CHANGE to fully qualified class paths. For example,
 # ./dockstore-integration-testing/src/test/java/io/dockstore/client/cli/BitBucketGitHubWorkflowIT.java
@@ -57,6 +53,12 @@ function generate_test_list {
 #####################################
 # Get list of all Integration Tests #
 #####################################
+
+# Modify prefix for integration tests
+PREFIX="$BASE_PREFIX""/IT"
+mkdir -p "$PREFIX"
+
+
 REMAINING_TEST_FILE=integration-tests.txt
 
 # Using same wild card patterns the Failsafe Plugin uses
@@ -66,32 +68,32 @@ find . -name "*IT\.java" -or -name "IT*\.java" -or -name "*ITCase\.java" > "$PRE
 
 # Get BitBucket ITs
 CATEGORY=BitBucketTest.class
-OUTPUT_TEST_FILE=bitbucketIT.txt
+OUTPUT_TEST_FILE=bitbucket.txt
 generate_test_list
 
 # Get Regression ITs
 CATEGORY=RegressionTest.class
-OUTPUT_TEST_FILE=regressionIT.txt
+OUTPUT_TEST_FILE=regression.txt
 generate_test_list
 
 # Get Workflow ITs
 CATEGORY=WorkflowTest.class
-OUTPUT_TEST_FILE=workflowIT.txt
+OUTPUT_TEST_FILE=workflow.txt
 generate_test_list
 
 # Get Tool  ITs
 CATEGORY=ToolTest.class
-OUTPUT_TEST_FILE=toolIT.txt
+OUTPUT_TEST_FILE=tool.txt
 generate_test_list
 
 # Get non-confidential ITs
 CATEGORY=NonConfidentialTest.class
-OUTPUT_TEST_FILE=non-confidentialIT.txt
+OUTPUT_TEST_FILE=non-confidential.txt
 generate_test_list
 
 # Get Language Parsing ITs
 CATEGORY=LanguageParsingTest.class
-OUTPUT_TEST_FILE=language-parsingIT.txt
+OUTPUT_TEST_FILE=language-parsing.txt
 generate_test_list
 
 # Convert remaining list of ITs from file paths to java class paths.
