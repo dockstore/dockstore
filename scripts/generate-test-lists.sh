@@ -34,16 +34,18 @@ function make_file_names_fully_qualified_class_paths {
   sed -i 's+.*java/++g; s+/+.+g; s+\.java$++g' "$FILE_TO_CHANGE"
 }
 
+# The temporary file used in the following function
+TEMP=temp_for_categorising_tests.txt
 
 # This functions consumes $REMAINING_TEST_FILE and determines which of those files have the listed Junit category (CATEGORY) in them
 # such as BitBucketTest.class, it then removes those test from $REMAINING_TEST_FILE and adds them to $OUTPUT_TEST_FILE
 # Note: Does not acknowledge comments
 function generate_test_list {
   # Reset or create temp file
-  : > "$PREFIX"/temp.txt
+  : > "$PREFIX"/"$TEMP"
   grep -l "$CATEGORY" $(cat "$PREFIX"/"$REMAINING_TEST_FILE") > "$PREFIX"/"$OUTPUT_TEST_FILE"
-  grep -v -x -f "$PREFIX"/"$OUTPUT_TEST_FILE" "$PREFIX"/"$REMAINING_TEST_FILE" > "$PREFIX"/temp.txt
-  cp "$PREFIX"/temp.txt "$PREFIX"/"$REMAINING_TEST_FILE"
+  grep -v -x -f "$PREFIX"/"$OUTPUT_TEST_FILE" "$PREFIX"/"$REMAINING_TEST_FILE" > "$PREFIX"/"$TEMP"
+  cp "$PREFIX"/"$TEMP" "$PREFIX"/"$REMAINING_TEST_FILE"
 
   FILE_TO_CHANGE="$PREFIX"/"$OUTPUT_TEST_FILE"
   make_file_names_fully_qualified_class_paths
