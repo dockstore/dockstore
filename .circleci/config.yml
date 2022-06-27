@@ -498,9 +498,9 @@ commands:
           name: Rename and move coverage reports
           command: |
             mkdir coverage
-            cp ./reports/target/site/jacoco-aggregate/jacoco.xml coverage/"$CIRCLE_JOB"-"$CIRCLE_NODE_INDEX".xml
+            cp ./reports/target/site/jacoco-aggregate/jacoco.xml coverage/${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.xml
       - persist_to_workspace:
           root: coverage
           paths:
-          - /"$CIRCLE_JOB"-"$CIRCLE_NODE_INDEX".xml
+          - ${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.xml
 
