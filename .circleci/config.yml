@@ -92,6 +92,7 @@ workflows:
             - language-parsing-tests
             - tool-integration-tests
             - integration-tests
+            - regression-integration-tests
           context: sonarcloud
 jobs:
   regression-integration-tests:
