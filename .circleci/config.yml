@@ -354,15 +354,15 @@ jobs:
       - store_artifacts:
           path: /tmp/artifacts
 
-sonar-cloud:
-  executor: integration_test_exec
-  steps:
-    - setup_test
-    - run:
-        name: SonarCloud scan - coverage
-        command: | # DELETE SECOND LINE
-          ./mvnw sonar:sonar -Dsonar.coverage.jacoco.xmlReportPaths=coverage/*
-          echo coverage/* 
+  sonar-cloud:
+    executor: integration_test_exec
+    steps:
+      - setup_test
+      - run:
+          name: SonarCloud scan - coverage
+          command: | # DELETE SECOND LINE
+            ./mvnw sonar:sonar -Dsonar.coverage.jacoco.xmlReportPaths=coverage/*
+            echo coverage/* 
 
 commands:
   install-postgres:
