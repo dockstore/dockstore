@@ -247,10 +247,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return list(this.currentSession().getNamedQuery("Entry.getCollectionToolsWithVersions").setParameter("collectionId", collectionId));
     }
 
-    public List<CollectionEntry> getCollectionEntries(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionEntries").setParameter("collectionId", collectionId));
-    }
-
     public List<T> findAllPublished(Integer offset, Integer limit, String filter, String sortCol, String sortOrder) {
         return findAllPublished(offset, limit, filter, sortCol, sortOrder, typeOfT);
     }
@@ -265,11 +261,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         int primitiveOffset = (offset != null) ? offset : 0;
         TypedQuery<T> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
         return typedQuery.getResultList();
-    }
-
-    @Deprecated
-    public List<T> findAllPublished() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
     }
 
     public long countAllHosted(long userid) {
