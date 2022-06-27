@@ -331,11 +331,6 @@ jobs:
           path: ~/junit
       - store_artifacts:
           path: keysmap.list
-      - run:
-          name: Jacoco Directories
-          command: |
-            find -name "jacoco.xml"
-            find -name "jacoco-it.xml"
       - persist_coverage
       - run:
           name: Make jar directory
@@ -373,7 +368,7 @@ jobs:
         command: | # DELETE SECOND LINE
           reports=$(echo coverage/* | tr ' ' ',')
           ./mvnw sonar:sonar -Dsonar.coverage=$reports
-          echo coverage/* 
+          echo $reports
 
 commands:
   install-postgres:
