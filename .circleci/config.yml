@@ -355,8 +355,9 @@ jobs:
           path: /tmp/artifacts
 
   sonar-cloud:
-    executor: integration_test_exec
-    steps:
+    docker: # run the steps with Docker
+      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
+      steps:
       - setup_test
       - attach_workspace:
           at: .
@@ -365,6 +366,9 @@ jobs:
           key: dockstore-java-{{ checksum "pom.xml" }}
       - restore_cache:
           key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+      - run:
+          name: manually copy back .m2
+          command: cp -r .m2 ~/.m2
       - run:
           name: SonarCloud scan - coverage
           command: | # DELETE SECOND LINE
