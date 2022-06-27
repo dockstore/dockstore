@@ -358,10 +358,18 @@ jobs:
     executor: integration_test_exec
     steps:
       - setup_test
+      - attach_workspace:
+          at: .
+      - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          key: dockstore-java-{{ checksum "pom.xml" }}
+      - restore_cache:
+          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
       - run:
           name: SonarCloud scan - coverage
           command: | # DELETE SECOND LINE
-            ./mvnw sonar:sonar -Dsonar.coverage.jacoco.xmlReportPaths=coverage/*
+            reports=$(echo coverage/* | tr ' ' ',')
+            ./mvnw sonar:sonar -Dsonar.coverage.jacoco.xmlReportPaths=$reports
             echo coverage/* 
 
 commands:
@@ -500,7 +508,7 @@ commands:
             mkdir coverage
             cp ./reports/target/site/jacoco-aggregate/jacoco.xml coverage/${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.xml
       - persist_to_workspace:
-          root: coverage
+          root: .
           paths:
-          - .
+          - coverage
 
