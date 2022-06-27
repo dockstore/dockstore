@@ -366,13 +366,13 @@ jobs:
     - restore_cache:
         key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
     - run:
-        name: manually copy back .m2
-        command: cp -r .m2 ~/.m2
+        name: build
+        command: ./mvnw clean install -DskipTests
     - run:
         name: SonarCloud scan - coverage
         command: | # DELETE SECOND LINE
           reports=$(echo coverage/* | tr ' ' ',')
-          ./mvnw sonar:sonar -Dsonar.coverage.jacoco.xmlReportPaths=$reports
+          ./mvnw sonar:sonar -Dsonar.coverage=$reports
           echo coverage/* 
 
 commands:

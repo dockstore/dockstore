@@ -383,6 +383,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    public String getMainBranch() {
+        return "This does not have coverage";
+    }
+
     @Override
     public boolean checkSourceCodeValidity() {
         //TODO
