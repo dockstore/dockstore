@@ -358,7 +358,6 @@ jobs:
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps:
-    - setup_test
     - attach_workspace:
         at: .
     - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
