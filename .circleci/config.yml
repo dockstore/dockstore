@@ -500,7 +500,7 @@ commands:
             mkdir coverage
             cp ./reports/target/site/jacoco-aggregate/jacoco.xml coverage/"$CIRCLE_JOB"-"$CIRCLE_NODE_INDEX".xml
       - persist_to_workspace:
-          root: /coverage
+          root: coverage
           paths:
-          - coverage/*
+          - "$CIRCLE_JOB"-"$CIRCLE_NODE_INDEX".xml
 
