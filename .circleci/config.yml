@@ -502,5 +502,5 @@ commands:
       - persist_to_workspace:
           root: coverage
           paths:
-          - ${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.xml
+          - .
 
