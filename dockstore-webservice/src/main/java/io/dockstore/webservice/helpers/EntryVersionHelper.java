@@ -85,7 +85,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     default Entry updateDefaultVersionHelper(String version, long id, User user) {
         Entry entry = getDAO().findById(id);
         checkEntry(entry);
-        checkUser(user, entry);
+        checkWrite(user, entry);
         if (version != null) {
             if (!entry.checkAndSetDefaultVersion(version)) {
                 throw new CustomWebApplicationException("Given version does not exist.", HttpStatus.SC_NOT_FOUND);
@@ -159,7 +159,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     default T updateLabels(User user, Long containerId, String labelStrings, LabelDAO labelDAO) {
         T c = getDAO().findById(containerId);
         checkEntry(c);
-        checkUserCanUpdate(user, c);
+        checkWrite(user, c);
 
         EntryLabelHelper<T> labeller = new EntryLabelHelper<>(labelDAO);
         T entry = labeller.updateLabels(c, labelStrings);
@@ -242,20 +242,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
         T entry = getDAO().findById(workflowId);
         checkEntry(entry);
-        checkOptionalAuthRead(user, entry);
+        checkRead(user, entry);
 
-        // tighten permissions for hosted tools and workflows
-        if (!user.isPresent() || AuthenticatedResourceInterface.userCannotRead(user.get(), entry)) {
-            if (!entry.getIsPublished()) {
-                if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
-                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-                }
-                if (entry instanceof Workflow && ((Workflow)entry).getMode() == WorkflowMode.HOSTED) {
-                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-                }
-            }
-            this.filterContainersForHiddenTags(entry);
-        }
         Version tagInstance = null;
 
         Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();

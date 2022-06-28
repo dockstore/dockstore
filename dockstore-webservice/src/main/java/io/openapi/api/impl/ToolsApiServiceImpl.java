@@ -247,7 +247,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return entry;
         }
         if (entry != null && user.isPresent()) {
-            checkUser(user.get(), entry);
+            checkRead(user.get(), entry);
             return entry;
         }
         return null;
@@ -602,8 +602,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
 
             boolean showHiddenVersions = false;
-            if (user.isPresent() && !AuthenticatedResourceInterface
-                    .userCannotRead(user.get(), entry)) {
+            if (user.isPresent() && canRead(user.get(), entry)) {
                 showHiddenVersions = true;
             }
 

@@ -36,7 +36,7 @@ public interface StarrableResourceInterface extends AuthenticatedResourceInterfa
     default void starEntryHelper(Entry<?, ?> entry, User user, String entryType, String entryPath) {
         checkEntry(entry);
         if (!entry.getIsPublished()) {
-            checkCanRead(user, entry);
+            checkRead(user, entry);
         }
         Set<User> starredUsers = entry.getStarredUsers();
         if (!starredUsers.contains(user)) {

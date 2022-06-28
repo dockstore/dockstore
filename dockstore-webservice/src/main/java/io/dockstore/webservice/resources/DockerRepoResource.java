@@ -222,7 +222,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
-        checkUserOwnsEntry(user, tool);
+        checkOwner(user, tool);
         checkNotHosted(tool);
         // Update user data
         User dbUser = userDAO.findById(user.getId());
@@ -297,7 +297,7 @@ public class DockerRepoResource
         @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
-        checkUser(user, tool);
+        checkRead(user, tool);
 
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -340,7 +340,7 @@ public class DockerRepoResource
         Tool foundTool = toolDAO.findById(containerId);
         checkEntry(foundTool);
         checkNotHosted(foundTool);
-        checkUserOwnsEntry(user, foundTool);
+        checkOwner(user, foundTool);
 
         // Don't need to check for duplicate tool because the tool path can't be updated
 
@@ -434,7 +434,7 @@ public class DockerRepoResource
         //use helper to check the user and the entry
         checkEntry(foundTool);
         checkNotHosted(foundTool);
-        checkUserOwnsEntry(user, foundTool);
+        checkOwner(user, foundTool);
 
         //update the tool path in all workflowVersions
         Set<Tag> tags = foundTool.getWorkflowVersions();
@@ -460,8 +460,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
-
-        checkUser(user, tool);
+        checkRead(user, tool);
         return new ArrayList<>(tool.getUsers());
     }
 
@@ -656,7 +655,7 @@ public class DockerRepoResource
     public Response deleteContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        checkUserOwnsEntry(user, tool);
+        checkOwner(user, tool);
         Tool deleteTool = new Tool();
         deleteTool.setId(tool.getId());
         deleteTool.setActualDefaultVersion(null);
@@ -686,7 +685,7 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
 
-        checkUserOwnsEntry(user, tool);
+        checkOwner(user, tool);
 
         if (tool.getIsPublished() == request.getPublish()) {
             return tool;
@@ -790,7 +789,7 @@ public class DockerRepoResource
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, true);
         filterContainersForHiddenTags(tools);
-        checkEntry(tools);
+        checkRead(null, tools);
         return tools;
     }
 
@@ -805,8 +804,7 @@ public class DockerRepoResource
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, false);
-        checkEntry(tools);
-        AuthenticatedResourceInterface.checkUserAccessEntries(user, tools);
+        checkRead(user, tools);
         return tools;
     }
 
@@ -823,7 +821,7 @@ public class DockerRepoResource
         @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findByPath(path, false);
         checkEntry(tool);
-        checkUser(user, tool);
+        checkRead(user, tool);
 
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -874,7 +872,7 @@ public class DockerRepoResource
         Tool repository = toolDAO.findById(containerId);
         checkEntry(repository);
 
-        checkUser(user, repository);
+        checkRead(user, repository);
 
         return new ArrayList<>(repository.getWorkflowVersions());
     }
@@ -954,9 +952,9 @@ public class DockerRepoResource
      * @param tool
      */
     @Override
-    public void checkCanRead(User user, Entry tool) {
+    public void checkRead(User user, Entry tool) {
         try {
-            checkUser(user, tool);
+            EntryVersionHelper.super.checkRead(user, tool);
         } catch (CustomWebApplicationException ex) {
             LOG.info("permissions are not yet tool aware");
             // should not throw away exception
@@ -983,7 +981,7 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
         checkNotHosted(tool);
-        checkUserCanUpdate(user, tool);
+        checkWrite(user, tool);
         Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
@@ -1018,7 +1016,7 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
         checkNotHosted(tool);
-        checkUserCanUpdate(user, tool);
+        checkWrite(user, tool);
         Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
@@ -1196,7 +1194,7 @@ public class DockerRepoResource
         } else {
             checkEntry(tool);
             if (user.isPresent()) {
-                checkUser(user.get(), tool);
+                checkRead(user.get(), tool);
             } else {
                 throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
                     HttpStatus.SC_FORBIDDEN);
@@ -1228,7 +1226,7 @@ public class DockerRepoResource
         @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
         final Tool tool = this.toolDAO.findByAlias(alias);
         checkEntry(tool);
-        optionalUserCheckEntry(user, tool);
+        checkRead(user, tool);
         return tool;
     }
 }

@@ -60,7 +60,7 @@ public final class AliasHelper {
         }
 
         Workflow workflow = getWorkflow(workflowDAO, workflowVersionId);
-        authenticatedResourceInterface.checkUserCanUpdate(user, workflow);
+        authenticatedResourceInterface.checkWrite(user, workflow);
         return workflowVersion;
     }
 

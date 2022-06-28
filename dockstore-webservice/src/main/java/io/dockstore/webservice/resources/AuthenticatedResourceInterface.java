@@ -36,216 +36,87 @@ public interface AuthenticatedResourceInterface {
 
     Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
 
-    /**
-     * Check if admin or if container belongs to user
-     *
-     * @param user the user that is requesting something
-     * @param list
-     */
-    static void checkUserAccessEntries(User user, List<? extends Entry> list) {
-        for (Entry entry : list) {
-            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                    HttpStatus.SC_FORBIDDEN);
-            }
-        }
+    default void checkRead(Optional<User> user, Entry<?, ?> entry) {
+        checkRead(user.orElse(null), entry);
     }
 
-    /**
-     * Check if tool is null
-     *
-     * @param entry entry to check permissions for
-     */
-    default void checkEntry(Entry entry) {
-        if (entry == null) {
-            throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
-        }
+    default void checkRead(User user, List<? extends Entry<?, ?>> entries) {
+        entries.forEach(entry -> checkRead(user, entry));
     }
 
-    /**
-     * Check if tool is null
-     *
-     * @param entry entry to check permissions for
-     */
-    default void checkEntry(List<? extends Entry> entry) {
-        if (entry == null) {
-            throw new CustomWebApplicationException("No entries provided", HttpStatus.SC_BAD_REQUEST);
-        }
-        entry.forEach(this::checkEntry);
+    default void checkRead(User user, Entry<?, ?> entry) {
+        throwIfNot(canRead(user, entry), "Cannot read entry", HttpStatus.SC_FORBIDDEN);
     }
 
-    /**
-     * Check if admin
-     *
-     * @param user the user that is requesting something
-     */
+    default void checkWrite(User user, Entry<?, ?> entry) {
+        throwIfNot(canWrite(user, entry), "Cannot write entry", HttpStatus.SC_FORBIDDEN);
+    }
+
+    default void checkShare(User user, Entry<?, ?> entry) {
+        throwIfNot(canShare(user, entry), "Cannot share entry", HttpStatus.SC_FORBIDDEN);
+    }
+
+    default void checkOwner(User user, Entry<?, ?> entry) {
+        throwIfNot(isOwner(user, entry), "xxxxxxx ", HttpStatus.SC_FORBIDDEN);
+    }
+
     default void checkAdmin(User user) {
-        if (!user.getIsAdmin()) {
-            throw new CustomWebApplicationException("Forbidden: you need to be an admin to perform this operation.",
-                HttpStatus.SC_FORBIDDEN);
-        }
+        throwIfNot(isAdmin(user), "xxxxxx", HttpStatus.SC_FORBIDDEN);
     }
 
-    /**
-     * Check if admin or if tool belongs to user
-     *
-     * @param user the user that is requesting something
-     * @param entry entry to check permissions for
-     */
-    default void checkUser(User user, Entry entry) {
-        if (userCannotRead(user, entry)) {
-            throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                    HttpStatus.SC_FORBIDDEN);
-        }
+    default void checkCurate(User user) {
+        throwIfNot(isAdmin(user) || isCurator(user), "xxx", HttpStatus.SC_FORBIDDEN);
     }
 
-    /**
-     * Check if admin or correct user
-     *
-     * @param user the user that is requesting something
-     * @param id
-     */
-    default void checkUser(User user, long id) {
-        if (!user.getIsAdmin() && user.getId() != id) {
-            throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
-        }
+    default void checkUser(User user, long userId) {
+        throwIfNot(user != null && user.getId() == userId, "sdfsd", HttpStatus.SC_FORBIDDEN);
     }
 
-    /**
-     * Check if user is null
-     *
-     * @param user user to check if null
-     */
-    default void checkUserExists(User user) {
-        if (user == null) {
-            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
-        }
+    default void checkEntry(Entry<?, ?> entry) {
+        throwIfNot(entry != null, "xxxxx", HttpStatus.SC_FORBIDDEN);
     }
 
-    /**
-     * Check if entry belongs to user
-     *
-     * @param user the user that is requesting something
-     * @param entry entry to check permissions for
-     */
-    default void checkUserOwnsEntry(User user, Entry entry) {
-        if (entry.getUsers().stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-            throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                    HttpStatus.SC_FORBIDDEN);
-        }
+    default void checkExists(User user) {
+        throwIfNot(user != null, "xxxxx", HttpStatus.SC_FORBIDDEN);
     }
 
-    static boolean userCannotRead(User user, Entry entry) {
-        return !user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId());
-    }
-
-    /**
-     * Checks if a user can read an entry. Default implementation
-     * is to invoke <code>checkUser</code>. Implmenations that support
-     * more nuanched sharing should override.
-     * @param user the user that is requesting something
-     * @param entry entry to check permissions for()
-     */
-    default void checkUserCanRead(User user, Entry entry) {
-        checkUser(user, entry);
-    }
-
-    /**
-     * Checks if a user can modify an entry. Default implementation
-     * is to invoke <code>checkUser</code>. Implementations that support
-     * more nuanced sharing should override.
-     *
-     * @param user the user that is requesting something
-     * @param entry entry to check permissions for()
-     */
-    default void checkUserCanUpdate(User user, Entry entry) {
-        checkUserOwnsEntry(user, entry);
-    }
-
-    /**
-     * Checks if a user can delete an entry. Default implementation
-     * is to invoke <code>checkUser</code>. Implementations that support
-     * more nuanced sharing should override.
-     *
-     * @param user the user that is requesting something
-     * @param entry entry to check permissions for()
-     */
-    default void checkUserCanDelete(User user, Entry entry) {
-        checkUser(user, entry);
-    }
-
-    /**
-     * Checks is a user can share an entry. Default implementation
-     * is to invoke <code>checkUser</code>. Implmentations that support
-     * more nuanced sharing should override.
-     *
-     * @param user the user that is requesting something
-     * @param entry entry to check permissions for()
-     */
-    default void checkUserCanShare(User user, Entry entry) {
-        checkUser(user, entry);
-    }
-
-    /**
-     * Override for resources that are permissions aware.
-     * Currently done for WorkflowResource
-     * @param user the user that is requesting something
-     * @param entry entry to check permissions for()
-     */
-    default void checkCanRead(User user, Entry entry) {
-        throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-            HttpStatus.SC_FORBIDDEN);
-    }
-
-    /**
-     * This method checks that a workflow can be read in two situations
-     * 1) A published workflow
-     * 2) A workflow that is unpublished but that I have access to
-     *
-     * @param user the user that is requesting something
-     * @param entry entry to check permissions for()
-     */
-    default void checkOptionalAuthRead(Optional<User> user, Entry entry) {
-        if (entry.getIsPublished()) {
-            checkEntry(entry);
-        } else {
-            checkEntry(entry);
-            if (user.isPresent()) {
-                checkCanRead(user.get(), entry);
-            } else {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                    HttpStatus.SC_FORBIDDEN);
-            }
-        }
-    }
-
-    /**
-     * Check if organization is null
-     *
-     * @param organization organization to check permissions for
-     */
     default void checkOrganization(Organization organization) {
-        if (organization == null) {
-            throw new CustomWebApplicationException("Organization not found", HttpStatus.SC_NOT_FOUND);
-        }
-
+        throwIfNot(organization != null, "xxxxx", HttpStatus.SC_FORBIDDEN);
     }
 
-    /**
-     * Only passes if entry is published or if user has correct credentials
-     * @param user Optional user
-     * @param entry Entry to check
-     */
-    default void optionalUserCheckEntry(Optional<User> user, Entry entry) {
-        if (!entry.getIsPublished()) {
-            if (user.isEmpty()) {
-                throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
-            } else {
-                checkUser(user.get(), entry);
-            }
-        }
+    default boolean canRead(User user, Entry<?, ?> entry) {
+        return isPublished(entry) || isOwner(user, entry);
     }
 
+    default boolean canWrite(User user, Entry<?, ?> entry) {
+        return isOwner(user, entry);
+    }
+
+    default boolean canShare(User user, Entry<?, ?> entry) {
+        return isPublished(entry);
+    }
+
+    default boolean isPublished(Entry<?, ?> entry) {
+        return entry != null && entry.getIsPublished();
+    }
+
+    default boolean isOwner(User user, Entry<?, ?> entry) {
+        return user != null && entry != null && entry.getUsers().stream().noneMatch(u -> u.getId() == user.getId());
+    }
+
+    default boolean isAdmin(User user) {
+        return user != null && user.getIsAdmin();
+    }
+
+    default boolean isCurator(User user) {
+        return user != null && user.isCurator();
+    }
+
+    static void throwIfNot(boolean condition, String message, int status) {
+        if (!condition) {
+            throw new CustomWebApplicationException(message, status);
+        }
+    }
     /**
      * Check if token is null
      *

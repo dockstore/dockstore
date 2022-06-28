@@ -135,31 +135,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    public void checkUserCanRead(User user, Entry entry) {
-        checkUserCanDoAction(user, entry, Role.Action.READ);
-    }
-
-    @Override
-    public void checkUserCanUpdate(User user, Entry entry) {
-        checkUserCanDoAction(user, entry, Role.Action.WRITE);
-    }
-
-    @Override
-    public void checkUserCanDelete(User user, Entry entry) {
-        checkUserCanDoAction(user, entry, Role.Action.DELETE);
-    }
-
-    private void checkUserCanDoAction(User user, Entry entry, Role.Action action) {
-        try {
-            checkUserOwnsEntry(user, entry); // Checks if owner, which has all permissions.
-        } catch (CustomWebApplicationException ex) {
-            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, action)) {
-                throw ex;
-            }
-        }
-    }
-
-    @Override
     protected void checkForDuplicatePath(Workflow workflow) {
         MutablePair<String, Entry> duplicate = getEntryDAO().findEntryByPath(workflow.getWorkflowPath(), false);
         if (duplicate != null) {
@@ -212,7 +187,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         final Workflow workflow = getEntryDAO().findById(entryId);
         checkEntry(workflow);
         checkHosted(workflow);
-        checkUserCanUpdate(user, workflow);
+        checkWrite(user, workflow);
         checkVersionLimit(user, workflow);
         final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromInputStream(payload, workflow.getFileType());
         final WorkflowVersion version = getVersion(workflow);

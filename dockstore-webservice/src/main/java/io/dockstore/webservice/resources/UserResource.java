@@ -229,7 +229,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         @Parameter(name = "include", description = USER_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = USER_INCLUDE_MESSAGE) @QueryParam("include") String include) {
         @SuppressWarnings("deprecation")
         User user = userDAO.findByUsername(username);
-        checkUserExists(user);
+        checkExists(user);
         checkUser(authUser, user.getId());
 
         initializeAdditionalFields(include, user);
@@ -248,7 +248,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(authUser, userId);
         User user = userDAO.findById(userId);
-        checkUserExists(user);
+        checkExists(user);
         return user;
     }
 
@@ -442,7 +442,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUser(authUser, authUser.getId());
 
         User targetUser = userDAO.findById(targetUserId);
-        checkUserExists(targetUser);
+        checkExists(targetUser);
 
         if (isBanned) {
             invalidateTokensForUser(targetUser);
@@ -486,7 +486,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
         User fetchedUser = userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkExists(fetchedUser);
         return tokenDAO.findByUserId(userId);
     }
 
@@ -504,7 +504,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         User fetchedUser = userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkExists(fetchedUser);
 
         // get live entity
         final List<Tool> immutableList = toolDAO.findMyEntriesPublished(userId);
@@ -528,7 +528,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         User fetchedUser = userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkExists(fetchedUser);
 
         // get live entity
         final List<Workflow> immutableList = workflowDAO.findMyEntriesPublished(userId);
@@ -563,7 +563,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
 
         checkUser(authUser, userId);
         User fetchedUser = userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkExists(fetchedUser);
 
         // Check if the user has tokens for the organization they're refreshing
         checkToolTokens(authUser, userId, organization);
@@ -627,7 +627,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkExists(fetchedUser);
         return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()));
     }
 
@@ -644,7 +644,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkExists(fetchedUser);
         List<Workflow> appTools = appToolDAO.findMyEntries(fetchedUser.getId()).stream().map(AppTool.class::cast).collect(Collectors.toList());
         EntryVersionHelper.stripContentFromEntries(appTools, this.userDAO);
         return appTools;
@@ -682,7 +682,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkExists(fetchedUser);
         return getStrippedServices(fetchedUser);
     }
 
@@ -720,7 +720,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User byId = this.userDAO.findById(userId);
-        checkUserExists(byId);
+        checkExists(byId);
         List<Tool> tools = getTools(byId);
         EntryVersionHelper.stripContentFromEntries(tools, this.userDAO);
         return tools;
@@ -932,7 +932,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Limits getUserLimits(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         User user = userDAO.findById(userId);
-        checkUserExists(user);
+        checkExists(user);
         Limits limits = new Limits();
         limits.setHostedEntryCountLimit(user.getHostedEntryCountLimit());
         limits.setHostedEntryVersionLimit(user.getHostedEntryVersionsLimit());
@@ -954,7 +954,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Limits to set for a user", required = true) Limits limits) {
         User user = userDAO.findById(userId);
-        checkUserExists(user);
+        checkExists(user);
         user.setHostedEntryCountLimit(limits.getHostedEntryCountLimit());
         user.setHostedEntryVersionsLimit(limits.getHostedEntryVersionLimit());
         // User could be cached by Dockstore or Google token -- invalidate all
@@ -1013,7 +1013,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId,
             @ApiParam(name = "emptyBody", value = APPEASE_SWAGGER_PATCH) @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
         final User user = userDAO.findById(authUser.getId());
-        checkUserExists(user);
+        checkExists(user);
         if (!Objects.equals(userId, user.getId())) {
             throw new CustomWebApplicationException("The user id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -1054,7 +1054,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                                  @Parameter(name = "User ID", required = true) @PathParam("userId") Long userID,
                                  @Parameter(name = "Set privilege for a user", required = true) PrivilegeRequest privilegeRequest) {
         User targetUser = userDAO.findById(userID);
-        checkUserExists(targetUser);
+        checkExists(targetUser);
 
         // This ensures that the user cannot modify their own privileges.
         if (authUser.getId() == targetUser.getId()) {
@@ -1155,7 +1155,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to get cloud instances for", required = true) long userId) {
         final User user = userDAO.findById(userId);
         checkUser(authUser, userId);
-        checkUserExists(user);
+        checkExists(user);
         Set<CloudInstance> cloudInstances = user.getCloudInstances();
         cloudInstances.forEach(e -> Hibernate.initialize(e.getSupportedLanguages()));
         return cloudInstances;
@@ -1177,7 +1177,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @Parameter(description = "Cloud instance to add to the user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
         final User user = userDAO.findById(userId);
         checkUser(authUser, userId);
-        checkUserExists(user);
+        checkExists(user);
         CloudInstance cloudInstanceToBeAdded = new CloudInstance();
         cloudInstanceToBeAdded.setPartner(cloudInstanceBody.getPartner());
         cloudInstanceToBeAdded.setUrl(cloudInstanceBody.getUrl());
@@ -1207,7 +1207,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = CLOUD_INSTANCE_ID_DESCRIPTION, required = true) long cloudInstanceId) {
         final User user = userDAO.findById(userId);
         checkUser(authUser, userId);
-        checkUserExists(user);
+        checkExists(user);
         boolean deleted = user.getCloudInstances().removeIf(cloudInstance -> cloudInstance.getId() == cloudInstanceId);
         if (!deleted) {
             throw new CustomWebApplicationException("ID of cloud instance does not exist", HttpStatus.SC_NOT_FOUND);
@@ -1231,7 +1231,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @Parameter(description = "Cloud instance to replace for a user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
         final User user = userDAO.findById(userId);
         checkUser(authUser, userId);
-        checkUserExists(user);
+        checkExists(user);
         Optional<CloudInstance> optionalExistingCloudInstance = user.getCloudInstances().stream()
                 .filter(cloudInstance -> cloudInstance.getId() == cloudInstanceId).findFirst();
         if (optionalExistingCloudInstance.isPresent()) {

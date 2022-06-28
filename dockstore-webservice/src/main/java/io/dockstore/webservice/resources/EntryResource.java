@@ -203,7 +203,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkEntry(entry);
 
-        checkEntryPermissions(user, entry);
+        checkRead(user, entry);
 
         List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
         return verifiedVersions;
@@ -221,7 +221,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkEntry(entry);
 
-        checkEntryPermissions(user, entry);
+        checkRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -230,15 +230,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
         return sourceFiles.stream().map(sourceFile -> sourceFile.getType()).collect(Collectors.toCollection(TreeSet::new));
-    }
-
-    public void checkEntryPermissions(final Optional<User> user, final Entry<? extends Entry, ? extends Version> entry) {
-        if (!entry.getIsPublished()) {
-            if (user.isEmpty()) {
-                throw new CustomWebApplicationException("This entry is not published.", HttpStatus.SC_NOT_FOUND);
-            }
-            checkUser(user.get(), entry);
-        }
     }
 
     @GET
@@ -253,7 +244,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkEntry(entry);
 
-        checkEntryPermissions(user, entry);
+        checkRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -280,7 +271,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @Parameter(description = "Optional version ID of the entry version to export.", name = "versionId", in = ParameterIn.QUERY) @QueryParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkEntry(entry);
-        checkEntryPermissions(Optional.of(user), entry);
+        checkRead(Optional.of(user), entry);
         List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
         String putCode;
         User nonCachedUser = this.userDAO.findById(user.getId());
@@ -538,7 +529,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public Entry getAndCheckResource(User user, Long id) {
         Entry<? extends Entry, ? extends Version> c = toolDAO.getGenericEntryById(id);
         checkEntry(c);
-        checkUserCanUpdate(user, c);
+        checkWrite(user, c);
         return c;
     }
 
