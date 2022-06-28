@@ -172,24 +172,24 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             clearIndex();
             int totalProcessed = 0;
             LOG.info("Starting GA4GH batch processing");
-            totalProcessed += processDAO(toolDAO);
+            totalProcessed += indexDAO(toolDAO);
             LOG.info("Processed {} tools", totalProcessed);
-            totalProcessed += processDAO(workflowDAO);
+            totalProcessed += indexDAO(workflowDAO);
             LOG.info("Processed {} tools and workflows", totalProcessed);
-            totalProcessed += processDAO(appToolDAO);
+            totalProcessed += indexDAO(appToolDAO);
             LOG.info("Processed {} tools, workflows, and apptools", totalProcessed);
             return Response.ok().entity(totalProcessed).build();
         }
         return Response.ok().entity(0).build();
     }
 
-    private int processDAO(EntryDAO entryDAO) {
+    private int indexDAO(EntryDAO entryDAO) {
         int processed = 0;
         List<? extends Entry> published;
         do {
             published = entryDAO.findAllPublished(processed, ES_BATCH_INSERT_SIZE, null, "gitUrl", "asc");
             processed += published.size();
-            processBatch(published);
+            indexBatch(published);
         } while (published.size() == ES_BATCH_INSERT_SIZE);
         return processed;
     }
@@ -201,30 +201,25 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             // Delete previous indices
             deleteIndex(client, TOOLS_INDEX);
             deleteIndex(client, WORKFLOWS_INDEX);
-
-            // Get mapping for tools index
-            URL urlTools = Resources.getResource("queries/mapping_tool.json");
-            String textTools = Resources.toString(urlTools, StandardCharsets.UTF_8);
-
-            // Get mapping for workflows index
-            URL urlWorkflows = Resources.getResource("queries/mapping_workflow.json");
-            String textWorkflows = Resources.toString(urlWorkflows, StandardCharsets.UTF_8);
-
-            // Create indices
-            CreateIndexRequest toolsRequest = new CreateIndexRequest(TOOLS_INDEX);
-            toolsRequest.source(textTools, XContentType.JSON);
-            CreateIndexRequest workflowsRequest = new CreateIndexRequest(WORKFLOWS_INDEX);
-            workflowsRequest.source(textWorkflows, XContentType.JSON);
-            client.indices().create(toolsRequest, RequestOptions.DEFAULT);
-            client.indices().create(workflowsRequest, RequestOptions.DEFAULT);
-
+            createIndex("queries/mapping_tool.json", TOOLS_INDEX, client);
+            createIndex("queries/mapping_workflow.json", WORKFLOWS_INDEX, client);
         } catch (IOException | RuntimeException e) {
             LOG.error("Could not clear elastic search index", e);
             throw new CustomWebApplicationException("Search indexing failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
-    private void processBatch(List<? extends Entry> published) {
+    private void createIndex(String resourceName, String nameOfIndex, RestHighLevelClient client) throws IOException {
+        // Get mapping for index
+        URL urlTools = Resources.getResource(resourceName);
+        String textTools = Resources.toString(urlTools, StandardCharsets.UTF_8);
+        // Create indices
+        CreateIndexRequest toolsRequest = new CreateIndexRequest(nameOfIndex);
+        toolsRequest.source(textTools, XContentType.JSON);
+        client.indices().create(toolsRequest, RequestOptions.DEFAULT);
+    }
+
+    private void indexBatch(List<? extends Entry> published) {
         // Populate index
         if (!published.isEmpty()) {
             publicStateManager.bulkUpsert((List<Entry>) published);
