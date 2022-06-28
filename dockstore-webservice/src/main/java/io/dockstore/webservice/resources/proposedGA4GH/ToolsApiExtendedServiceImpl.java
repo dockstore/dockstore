@@ -171,14 +171,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
             clearIndex();
             int totalProcessed = 0;
-            final String processed = "Processed ";
             LOG.info("Starting GA4GH batch processing");
             totalProcessed += processDAO(toolDAO);
-            LOG.info(String.format("%s%d tools", processed, totalProcessed));
+            LOG.info("Processed {} tools", totalProcessed);
             totalProcessed += processDAO(workflowDAO);
-            LOG.info(String.format("%s%d tools and workflows", processed, totalProcessed));
+            LOG.info("Processed {} tools and workflows", totalProcessed);
             totalProcessed += processDAO(appToolDAO);
-            LOG.info(String.format("%s%d tools, workflows, and apptools", processed, totalProcessed));
+            LOG.info("Processed {} tools, workflows, and apptools", totalProcessed);
             return Response.ok().entity(totalProcessed).build();
         }
         return Response.ok().entity(0).build();
