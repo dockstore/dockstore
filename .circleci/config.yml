@@ -366,10 +366,7 @@ jobs:
         command: ./mvnw clean install -DskipTests
     - run:
         name: SonarCloud scan - coverage
-        command: | # DELETE SECOND LINE
-          reports=$(echo coverage/* | tr ' ' ',')
-          ./mvnw sonar:sonar -Dsonar.coverage=$reports
-          echo $reports
+        command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
 
 commands:
   install-postgres:
