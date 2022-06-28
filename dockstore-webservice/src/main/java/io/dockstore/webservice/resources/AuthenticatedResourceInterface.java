@@ -57,31 +57,31 @@ public interface AuthenticatedResourceInterface {
     }
 
     default void checkOwner(User user, Entry<?, ?> entry) {
-        throwIfNot(isOwner(user, entry), "xxxxxxx ", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(isOwner(user, entry), "checkOwner", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkAdmin(User user) {
-        throwIfNot(isAdmin(user), "xxxxxx", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(isAdmin(user), "checkAdmin", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkCurate(User user) {
-        throwIfNot(isAdmin(user) || isCurator(user), "xxx", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(isAdmin(user) || isCurator(user), "checkCurate", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkUser(User user, long userId) {
-        throwIfNot(user != null && user.getId() == userId, "sdfsd", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(user != null && user.getId() == userId, "checkUserId", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkEntry(Entry<?, ?> entry) {
-        throwIfNot(entry != null, "xxxxx", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(entry != null, "checkEntry", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkExists(User user) {
-        throwIfNot(user != null, "xxxxx", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(user != null, "checkExists", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkOrganization(Organization organization) {
-        throwIfNot(organization != null, "xxxxx", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(organization != null, "checkOrganization", HttpStatus.SC_FORBIDDEN);
     }
 
     default boolean canRead(User user, Entry<?, ?> entry) {
@@ -101,7 +101,7 @@ public interface AuthenticatedResourceInterface {
     }
 
     default boolean isOwner(User user, Entry<?, ?> entry) {
-        return user != null && entry != null && entry.getUsers().stream().noneMatch(u -> u.getId() == user.getId());
+        return user != null && entry != null && entry.getUsers().stream().anyMatch(u -> u.getId() == user.getId());
     }
 
     default boolean isAdmin(User user) {
