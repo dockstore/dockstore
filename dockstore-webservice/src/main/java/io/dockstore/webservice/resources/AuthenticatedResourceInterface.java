@@ -45,43 +45,43 @@ public interface AuthenticatedResourceInterface {
     }
 
     default void checkRead(User user, Entry<?, ?> entry) {
-        throwIfNot(canRead(user, entry), "Cannot read entry", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(canRead(user, entry), "Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkWrite(User user, Entry<?, ?> entry) {
-        throwIfNot(canWrite(user, entry), "Cannot write entry", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(canWrite(user, entry), "Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkShare(User user, Entry<?, ?> entry) {
-        throwIfNot(canShare(user, entry), "Cannot share entry", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(canShare(user, entry), "Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkOwner(User user, Entry<?, ?> entry) {
-        throwIfNot(isOwner(user, entry), "checkOwner", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(isOwner(user, entry), "Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkAdmin(User user) {
-        throwIfNot(isAdmin(user), "checkAdmin", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(isAdmin(user), "Forbidden: you need to be an admin to perform this operation.", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkCurate(User user) {
-        throwIfNot(isAdmin(user) || isCurator(user), "checkCurate", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(isAdmin(user) || isCurator(user), "Forbidden: you need to be a curator or an admin to perform this operation.", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkUser(User user, long userId) {
-        throwIfNot(user != null && user.getId() == userId, "checkUserId", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(user != null && user.getId() == userId, "Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkEntry(Entry<?, ?> entry) {
-        throwIfNot(entry != null, "checkEntry", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(entry != null, "Entry not found.", HttpStatus.SC_NOT_FOUND);
     }
 
     default void checkExists(User user) {
-        throwIfNot(user != null, "checkExists", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(user != null, "User not found.", HttpStatus.SC_NOT_FOUND);
     }
 
     default void checkOrganization(Organization organization) {
-        throwIfNot(organization != null, "checkOrganization", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(organization != null, "Organization not found.", HttpStatus.SC_NOT_FOUND);
     }
 
     default boolean canRead(User user, Entry<?, ?> entry) {
@@ -93,7 +93,7 @@ public interface AuthenticatedResourceInterface {
     }
 
     default boolean canShare(User user, Entry<?, ?> entry) {
-        return isPublished(entry);
+        return isOwner(user, entry);
     }
 
     default boolean isPublished(Entry<?, ?> entry) {
