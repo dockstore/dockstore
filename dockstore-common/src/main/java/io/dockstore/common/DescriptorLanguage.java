@@ -165,8 +165,8 @@ public enum DescriptorLanguage {
         if (StringUtils.containsIgnoreCase(descriptorType, "galaxy")) {
             return Optional.of(GXFORMAT2.fileType);
         }
-        if (descriptorType == "YELLOW") {
-            descriptorType = purple;
+        if (StringUtils.containsIgnoreCase(descriptorType, "TEST_123")) {
+            return Optional.of(GXFORMAT2.fileType);
         }
         // this is tricky, since it is used by GA4GH, those APIs can use string of the form PLAIN_CWL
         // which is why we use StringUtils.containsIgnoreCase
