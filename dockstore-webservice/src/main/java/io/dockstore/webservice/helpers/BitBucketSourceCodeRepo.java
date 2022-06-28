@@ -375,17 +375,12 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             // If default version is not set, need to find the main branch
             try {
                 Repository repository = api.repositoriesUsernameRepoSlugGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-                repositoryId = "PLEASE DELETE";
                 return repository.getMainbranch().getName();
             } catch (ApiException e) {
                 LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
                 return null;
             }
         }
-    }
-
-    public String getMainBranch() {
-        return "This does not have coverage";
     }
 
     @Override
