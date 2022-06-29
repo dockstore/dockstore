@@ -1127,7 +1127,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
         @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFile(workflowId, tag, fileType, user, fileDAO);
+        return getSourceFile(workflowId, tag, fileType, user, fileDAO, versionDAO);
     }
 
     @GET
@@ -1142,7 +1142,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") DescriptorLanguage language) {
         final FileType fileType = language.getFileType();
-        return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO);
+        return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO, versionDAO);
     }
 
     @GET
@@ -1156,7 +1156,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
         final FileType fileType = language.getFileType();
-        return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO);
+        return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO, versionDAO);
     }
 
 
@@ -1175,7 +1175,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         FileType testParameterType = workflow.getTestParameterType();
-        return getAllSourceFiles(workflowId, version, testParameterType, user, fileDAO);
+        return getAllSourceFiles(workflowId, version, testParameterType, user, fileDAO, versionDAO);
     }
 
     @PUT
