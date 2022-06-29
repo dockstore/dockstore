@@ -16,8 +16,7 @@
 # limitations under the License.
 #
 
-# This file generates a list of test files for each profile
-# This file ensures that all tests are run by having a catch all statement at the end
+# This file generates a list of all test files
 
 set -o errexit
 set -o nounset
@@ -34,23 +33,6 @@ function make_file_names_fully_qualified_class_paths {
   sed -i 's+.*java/++g; s+/+.+g; s+\.java$++g' "$FILE_TO_CHANGE"
 }
 
-# The temporary file used in the following function
-TEMP=temp_for_categorising_tests.txt
-
-# This functions consumes $REMAINING_TEST_FILE and determines which of those files have the listed Junit category (CATEGORY) in them
-# such as BitBucketTest.class, it then removes those test from $REMAINING_TEST_FILE and adds them to $OUTPUT_TEST_FILE
-# Note: Does not acknowledge comments
-function generate_test_list {
-  # Reset or create temp file
-  : > "$PREFIX"/"$TEMP"
-  grep -l "$CATEGORY" $(cat "$PREFIX"/"$REMAINING_TEST_FILE") > "$PREFIX"/"$OUTPUT_TEST_FILE"
-  grep -v -x -f "$PREFIX"/"$OUTPUT_TEST_FILE" "$PREFIX"/"$REMAINING_TEST_FILE" > "$PREFIX"/"$TEMP"
-  cp "$PREFIX"/"$TEMP" "$PREFIX"/"$REMAINING_TEST_FILE"
-
-  FILE_TO_CHANGE="$PREFIX"/"$OUTPUT_TEST_FILE"
-  make_file_names_fully_qualified_class_paths
-}
-
 
 #####################################
 # Get list of all Integration Tests #
@@ -61,45 +43,12 @@ PREFIX="$BASE_PREFIX""/IT"
 mkdir -p "$PREFIX"
 
 
-REMAINING_TEST_FILE=integration-tests.txt
-
 # Using same wild card patterns the Failsafe Plugin uses
 # https://maven.apache.org/surefire/maven-failsafe-plugin/examples/inclusion-exclusion.html
-find . -name "*IT\.java" -or -name "IT*\.java" -or -name "*ITCase\.java" > "$PREFIX"/"$REMAINING_TEST_FILE"
+find . -name "*IT\.java" -or -name "IT*\.java" -or -name "*ITCase\.java" > "$PREFIX"/all.txt
 
 
-# Get BitBucket ITs
-CATEGORY=BitBucketTest.class
-OUTPUT_TEST_FILE=bitbucket.txt
-generate_test_list
-
-# Get Regression ITs
-CATEGORY=RegressionTest.class
-OUTPUT_TEST_FILE=regression.txt
-generate_test_list
-
-# Get Workflow ITs
-CATEGORY=WorkflowTest.class
-OUTPUT_TEST_FILE=workflow.txt
-generate_test_list
-
-# Get Tool  ITs
-CATEGORY=ToolTest.class
-OUTPUT_TEST_FILE=tool.txt
-generate_test_list
-
-# Get non-confidential ITs
-CATEGORY=NonConfidentialTest.class
-OUTPUT_TEST_FILE=non-confidential.txt
-generate_test_list
-
-# Get Language Parsing ITs
-CATEGORY=LanguageParsingTest.class
-OUTPUT_TEST_FILE=language-parsing.txt
-generate_test_list
-
-# Convert remaining list of ITs from file paths to java class paths.
-FILE_TO_CHANGE="$PREFIX"/"$REMAINING_TEST_FILE"
+FILE_TO_CHANGE="$PREFIX"/all.txt
 make_file_names_fully_qualified_class_paths
 
 
