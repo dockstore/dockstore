@@ -16,7 +16,7 @@
 
 package io.dockstore.webservice.resources.proposedGA4GH;
 
-import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_RESPONSE;
+import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_REGISTRY_RESPONSE;
 
 import com.google.common.io.Resources;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -329,7 +329,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         try {
             parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            return BAD_DECODE_RESPONSE;
+            return BAD_DECODE_REGISTRY_RESPONSE;
         }
         Entry<?, ?> entry = impl.getEntry(parsedID, Optional.empty());
         Optional<? extends Version<?>> versionOptional;
