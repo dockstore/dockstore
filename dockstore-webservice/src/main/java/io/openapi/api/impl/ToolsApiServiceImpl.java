@@ -602,7 +602,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
 
             boolean showHiddenVersions = false;
-            if (user.isPresent() && canRead(user.get(), entry)) {
+            if (user.isPresent() && isOwner(user.get(), entry)) {
                 showHiddenVersions = true;
             }
 

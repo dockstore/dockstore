@@ -222,7 +222,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
-        checkOwner(user, tool);
+        checkWrite(user, tool);
         checkNotHosted(tool);
         // Update user data
         User dbUser = userDAO.findById(user.getId());
@@ -340,7 +340,7 @@ public class DockerRepoResource
         Tool foundTool = toolDAO.findById(containerId);
         checkEntry(foundTool);
         checkNotHosted(foundTool);
-        checkOwner(user, foundTool);
+        checkWrite(user, foundTool);
 
         // Don't need to check for duplicate tool because the tool path can't be updated
 
@@ -434,7 +434,7 @@ public class DockerRepoResource
         //use helper to check the user and the entry
         checkEntry(foundTool);
         checkNotHosted(foundTool);
-        checkOwner(user, foundTool);
+        checkWrite(user, foundTool);
 
         //update the tool path in all workflowVersions
         Set<Tag> tags = foundTool.getWorkflowVersions();
@@ -460,7 +460,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
-        checkRead(user, tool);
+        checkOwner(user, tool);
         return new ArrayList<>(tool.getUsers());
     }
 
@@ -655,7 +655,7 @@ public class DockerRepoResource
     public Response deleteContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        checkOwner(user, tool);
+        checkWrite(user, tool);
         Tool deleteTool = new Tool();
         deleteTool.setId(tool.getId());
         deleteTool.setActualDefaultVersion(null);
@@ -684,8 +684,7 @@ public class DockerRepoResource
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
-
-        checkOwner(user, tool);
+        checkShare(user, tool);
 
         if (tool.getIsPublished() == request.getPublish()) {
             return tool;
@@ -1186,20 +1185,8 @@ public class DockerRepoResource
         @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
 
         Tool tool = toolDAO.findById(toolId);
-        if (tool == null) {
-            throw new CustomWebApplicationException("could not find tool", HttpStatus.SC_NOT_FOUND);
-        }
-        if (tool.getIsPublished()) {
-            checkEntry(tool);
-        } else {
-            checkEntry(tool);
-            if (user.isPresent()) {
-                checkRead(user.get(), tool);
-            } else {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                    HttpStatus.SC_FORBIDDEN);
-            }
-        }
+        checkEntry(tool);
+        checkRead(user, tool);
 
         Tag tag = tool.getWorkflowVersions().stream().filter(innertag -> innertag.getId() == tagId).findFirst()
             .orElseThrow(() -> new CustomWebApplicationException("Could not find tag", HttpStatus.SC_NOT_FOUND));

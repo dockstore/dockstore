@@ -35,41 +35,45 @@ import org.slf4j.LoggerFactory;
 public interface AuthenticatedResourceInterface {
 
     Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
-
-    default void checkRead(Optional<User> user, Entry<?, ?> entry) {
-        checkRead(user.orElse(null), entry);
-    }
+    String FORBIDDEN_ENTRY_MESSAGE = "Forbidden: you do not have the credentials required to access this entry.";
+    String FORBIDDEN_ADMIN_MESSAGE = "Forbidden: you need to be an admin to perform this operation.";
+    String FORBIDDEN_CURATOR_MESSAGE = "Forbidden: you need to be a curator or an admin to perform this operation.";
+    String FORBIDDEN_ID_MISMATCH_MESSAGE = "Forbidden: please check your credentials.";
 
     default void checkRead(User user, List<? extends Entry<?, ?>> entries) {
         entries.forEach(entry -> checkRead(user, entry));
     }
 
+    default void checkRead(Optional<User> user, Entry<?, ?> entry) {
+        checkRead(user.orElse(null), entry);
+    }
+
     default void checkRead(User user, Entry<?, ?> entry) {
-        throwIfNot(canRead(user, entry), "Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(canRead(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkWrite(User user, Entry<?, ?> entry) {
-        throwIfNot(canWrite(user, entry), "Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(canWrite(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkShare(User user, Entry<?, ?> entry) {
-        throwIfNot(canShare(user, entry), "Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(canShare(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkOwner(User user, Entry<?, ?> entry) {
-        throwIfNot(isOwner(user, entry), "Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkAdmin(User user) {
-        throwIfNot(isAdmin(user), "Forbidden: you need to be an admin to perform this operation.", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(isAdmin(user), FORBIDDEN_ADMIN_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkCurate(User user) {
-        throwIfNot(isAdmin(user) || isCurator(user), "Forbidden: you need to be a curator or an admin to perform this operation.", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(isAdmin(user) || isCurator(user), FORBIDDEN_CURATOR_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkUser(User user, long userId) {
-        throwIfNot(user != null && user.getId() == userId, "Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
+        throwIfNot(user != null && user.getId() == userId, FORBIDDEN_ID_MISMATCH_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     default void checkEntry(Entry<?, ?> entry) {
