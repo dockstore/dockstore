@@ -170,27 +170,31 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     /**
      * Return the primary descriptor (i.e. the dockstore.cwl or dockstore.wdl usually, or a single Dockerfile)
      *
-     * @param entryId  internal id for an entry
-     * @param tag      github reference
-     * @param fileType narrow the file to a specific type
+     * @param entryId    internal id for an entry
+     * @param tag        github reference
+     * @param fileType   narrow the file to a specific type
+     * @param versionDAO
      * @return return the primary descriptor or Dockerfile
      */
-    default SourceFile getSourceFile(long entryId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
-        return getSourceFileByPath(entryId, tag, fileType, null, user, fileDAO);
+    default SourceFile getSourceFile(long entryId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO,
+            VersionDAO versionDAO) {
+        return getSourceFileByPath(entryId, tag, fileType, null, user, fileDAO, versionDAO);
     }
 
     /**
      * If path is null, return the first file with the correct path that matches.
      * If path is not null, return the primary descriptor (i.e. the dockstore.cwl or dockstore.wdl usually, or a single Dockerfile)
      *
-     * @param entryId  internal id for an entry
-     * @param tag      github reference
-     * @param fileType narrow the file to a specific type
-     * @param path     a specific path to a file
+     * @param entryId    internal id for an entry
+     * @param tag        github reference
+     * @param fileType   narrow the file to a specific type
+     * @param path       a specific path to a file
+     * @param versionDAO
      * @return a single file depending on parameters
      */
-    default SourceFile getSourceFileByPath(long entryId, String tag, DescriptorLanguage.FileType fileType, String path, Optional<User> user, FileDAO fileDAO) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType, user, fileDAO);
+    default SourceFile getSourceFileByPath(long entryId, String tag, DescriptorLanguage.FileType fileType, String path, Optional<User> user, FileDAO fileDAO,
+            VersionDAO versionDAO) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType, user, fileDAO, versionDAO);
         for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
             if (path != null) {
                 //db stored paths are absolute, convert relative to absolute
@@ -211,8 +215,9 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType the filetype we want to consider
      * @return a list of SourceFile
      */
-    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user, fileDAO);
+    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user, fileDAO,
+                versionDAO);
         return sourceFiles.entrySet().stream()
             .filter(entry -> entry.getValue().getLeft().getType().equals(fileType) && !entry.getValue().right.primaryDescriptor)
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
@@ -225,102 +230,111 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType the filetype we want to consider
      * @return a list of SourceFile
      */
-    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user, fileDAO);
+    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user, fileDAO,
+                versionDAO);
         return sourceFiles.entrySet().stream().filter(entry -> entry.getValue().getLeft().getType().equals(fileType))
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
     }
 
     /**
      * This returns a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
+     *
      * @param workflowId the database id for a workflow
-     * @param tag the version of the workflow
-     * @param fileType the type of file we're interested in
+     * @param tag        the version of the workflow
+     * @param fileType   the type of file we're interested in
+     * @param versionDAO
      * @return a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
      */
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
-            DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
-        T entry = getDAO().findById(workflowId);
-        checkOptionalAuthRead(user, entry);
-
-        // tighten permissions for hosted tools and workflows
-        if (!user.isPresent() || AuthenticatedResourceInterface.userCannotRead(user.get(), entry)) {
-            if (!entry.getIsPublished()) {
-                if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
-                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-                }
-                if (entry instanceof Workflow && ((Workflow)entry).getMode() == WorkflowMode.HOSTED) {
-                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-                }
+            DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
+        try {
+            if (tag == null) {
+                // This is an assumption made for quay tools. Workflows will not have a latest unless it is created by the user,
+                // and would thus make more sense to use master for workflows.
+                tag = "latest";
             }
-            this.filterContainersForHiddenTags(entry);
-        }
-        Version tagInstance = null;
+            final String finalTagName = tag;
 
-        Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();
+            versionDAO.enableNameFilter(finalTagName);
+            T entry = getDAO().findById(workflowId);
+            checkOptionalAuthRead(user, entry);
 
-        if (tag == null) {
-            // This is an assumption made for quay tools. Workflows will not have a latest unless it is created by the user,
-            // and would thus make more sense to use master for workflows.
-            tag = "latest";
-        }
-        final String finalTagName = tag;
-        tagInstance = entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(finalTagName)).findFirst().orElse(null);
+            // tighten permissions for hosted tools and workflows
+            if (!user.isPresent() || AuthenticatedResourceInterface.userCannotRead(user.get(), entry)) {
+                if (!entry.getIsPublished()) {
+                    if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
+                        throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
+                    }
+                    if (entry instanceof Workflow && ((Workflow)entry).getMode() == WorkflowMode.HOSTED) {
+                        throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
+                    }
+                }
+                this.filterContainersForHiddenTags(entry);
+            }
+            Version tagInstance = null;
 
-        if (tagInstance == null) {
-            throw new CustomWebApplicationException("Invalid or missing tag " + tag + ".", HttpStatus.SC_BAD_REQUEST);
-        }
+            Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();
 
-        if (tagInstance instanceof WorkflowVersion) {
-            final WorkflowVersion workflowVersion = (WorkflowVersion)tagInstance;
-            List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
-            List<SourceFile> filteredTypes = sourceFiles.stream()
-                .filter(file -> Objects.equals(file.getType(), fileType)).collect(Collectors.toList());
-            for (SourceFile file : filteredTypes) {
-                if (fileType == DescriptorLanguage.FileType.CWL_TEST_JSON || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON || fileType == DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
-                    resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
-                } else {
-                    // looks like this takes into account a potentially different workflow path for a specific version of a workflow
-                    final String workflowPath = workflowVersion.getWorkflowPath();
-                    final String workflowVersionPath = workflowVersion.getWorkflowPath();
-                    final String actualPath =
-                        workflowVersionPath == null || workflowVersionPath.isEmpty() ? workflowPath : workflowVersionPath;
-                    boolean isPrimary = file.getType() == fileType && file.getPath().equalsIgnoreCase(actualPath);
+            tagInstance = entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(finalTagName)).findFirst().orElse(null);
+
+            if (tagInstance == null) {
+                throw new CustomWebApplicationException("Invalid or missing tag " + finalTagName + ".", HttpStatus.SC_BAD_REQUEST);
+            }
+
+            if (tagInstance instanceof WorkflowVersion) {
+                final WorkflowVersion workflowVersion = (WorkflowVersion)tagInstance;
+                List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
+                List<SourceFile> filteredTypes = sourceFiles.stream()
+                    .filter(file -> Objects.equals(file.getType(), fileType)).collect(Collectors.toList());
+                for (SourceFile file : filteredTypes) {
+                    if (fileType == DescriptorLanguage.FileType.CWL_TEST_JSON || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON || fileType == DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
+                        resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
+                    } else {
+                        // looks like this takes into account a potentially different workflow path for a specific version of a workflow
+                        final String workflowPath = workflowVersion.getWorkflowPath();
+                        final String workflowVersionPath = workflowVersion.getWorkflowPath();
+                        final String actualPath =
+                            workflowVersionPath == null || workflowVersionPath.isEmpty() ? workflowPath : workflowVersionPath;
+                        boolean isPrimary = file.getType() == fileType && file.getPath().equalsIgnoreCase(actualPath);
+                        resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
+                    }
+                }
+            } else {
+                final Tool tool = (Tool)entry;
+                final Tag toolTag = (Tag)tagInstance;
+                List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(toolTag.getId());
+                List<SourceFile> filteredTypes = sourceFiles.stream().filter(file -> Objects.equals(file.getType(), fileType))
+                    .collect(Collectors.toList());
+                for (SourceFile file : filteredTypes) {
+                    // dockerfile is a special case since there always is only a max of one
+                    if (fileType == DescriptorLanguage.FileType.DOCKERFILE || fileType == DescriptorLanguage.FileType.CWL_TEST_JSON
+                        || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON) {
+                        resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
+                        continue;
+                    }
+
+                    final String toolPath;
+                    String toolVersionPath;
+                    if (fileType == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
+                        toolPath = tool.getDefaultCwlPath();
+                        toolVersionPath = toolTag.getCwlPath();
+                    } else if (fileType == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
+                        toolPath = tool.getDefaultWdlPath();
+                        toolVersionPath = toolTag.getWdlPath();
+                    } else {
+                        throw new CustomWebApplicationException("Format " + fileType + " not valid", HttpStatus.SC_BAD_REQUEST);
+                    }
+
+                    final String actualPath = (toolVersionPath == null || toolVersionPath.isEmpty()) ? toolPath : toolVersionPath;
+                    boolean isPrimary = file.getType() == fileType && actualPath.equalsIgnoreCase(file.getPath());
                     resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
                 }
             }
-        } else {
-            final Tool tool = (Tool)entry;
-            final Tag toolTag = (Tag)tagInstance;
-            List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(toolTag.getId());
-            List<SourceFile> filteredTypes = sourceFiles.stream().filter(file -> Objects.equals(file.getType(), fileType))
-                .collect(Collectors.toList());
-            for (SourceFile file : filteredTypes) {
-                // dockerfile is a special case since there always is only a max of one
-                if (fileType == DescriptorLanguage.FileType.DOCKERFILE || fileType == DescriptorLanguage.FileType.CWL_TEST_JSON
-                    || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON) {
-                    resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
-                    continue;
-                }
-
-                final String toolPath;
-                String toolVersionPath;
-                if (fileType == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
-                    toolPath = tool.getDefaultCwlPath();
-                    toolVersionPath = toolTag.getCwlPath();
-                } else if (fileType == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
-                    toolPath = tool.getDefaultWdlPath();
-                    toolVersionPath = toolTag.getWdlPath();
-                } else {
-                    throw new CustomWebApplicationException("Format " + fileType + " not valid", HttpStatus.SC_BAD_REQUEST);
-                }
-
-                final String actualPath = (toolVersionPath == null || toolVersionPath.isEmpty()) ? toolPath : toolVersionPath;
-                boolean isPrimary = file.getType() == fileType && actualPath.equalsIgnoreCase(file.getPath());
-                resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
-            }
+            return resultMap;
+        } finally {
+            versionDAO.disableNameFilter();
         }
-        return resultMap;
     }
 
     @SuppressWarnings("lgtm[java/path-injection]")
