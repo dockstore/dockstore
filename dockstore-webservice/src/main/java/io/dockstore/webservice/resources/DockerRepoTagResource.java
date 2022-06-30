@@ -308,7 +308,6 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
             @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
         Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
         checkOptionalAuthRead(user, tool);
 
         return getVersionsSourcefiles(containerId, tagId, fileTypes, versionDAO);

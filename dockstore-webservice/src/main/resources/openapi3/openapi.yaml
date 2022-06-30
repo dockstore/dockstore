@@ -2378,6 +2378,8 @@ paths:
           description: Successfully retrieved categories
         "400":
           description: Entry must be published
+      security:
+      - bearer: []
       tags:
       - entries
   /entries/{id}/collections:
@@ -7617,6 +7619,8 @@ components:
         dnaStackImportUrl:
           type: string
         documentationUrl:
+          type: string
+        elwaziImportUrl:
           type: string
         featuredContentUrl:
           type: string

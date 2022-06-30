@@ -29,7 +29,7 @@ public class Service12 extends AbstractYamlService implements Workflowish {
 
     private DescriptorLanguageSubclass subclass;
 
-    @NotNull(message = MISSING_SUBCLASS)
+    @NotNull
     public DescriptorLanguageSubclass getSubclass() {
         return subclass;
     }

@@ -36,6 +36,7 @@ import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -45,6 +46,8 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
+import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.permissions.Role;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -123,9 +126,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
     private final String hostName;
+    private final PermissionsInterface permissionsInterface;
 
-    public EntryResource(SessionFactory sessionFactory, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
+    public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
         DockstoreWebserviceConfiguration configuration) {
+        this.permissionsInterface = permissionsInterface;
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
@@ -177,17 +182,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/{id}/categories")
     @Timed
     @UnitOfWork(readOnly = true)
-    @Operation(operationId = "entryCategories", description = "Get the categories that contain the published entry")
-    @ApiOperation(value = "Get the categories that contain the published entry", notes = "Entry must be published", response = Category.class, responseContainer = "List", hidden = true)
+    @Operation(operationId = "entryCategories", description = "Get the categories that contain the published entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Get the categories that contain the published entry", response = Category.class, responseContainer = "List", hidden = true)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved categories", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Category.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Entry must be published")
-    public List<Category> entryCategories(@Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
+    public List<Category> entryCategories(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
-        if (entry == null || !entry.getIsPublished()) {
-            String msg = "Published entry does not exist.";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
+        checkOptionalAuthRead(user, entry);
         List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
         collectionHelper.evictAndSummarize(categories);
         return categories;
@@ -201,9 +203,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public List<VersionVerifiedPlatform> getVerifiedPlatforms(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "entryId", description = "id of the entry", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-        checkEntry(entry);
 
-        checkEntryPermissions(user, entry);
+        checkOptionalAuthRead(user, entry);
 
         List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
         return verifiedVersions;
@@ -219,9 +220,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
             @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-        checkEntry(entry);
 
-        checkEntryPermissions(user, entry);
+        checkOptionalAuthRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -251,9 +251,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
         @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-        checkEntry(entry);
 
-        checkEntryPermissions(user, entry);
+        checkOptionalAuthRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -545,5 +544,32 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Override
     public Entry getAndCheckResourceByAlias(String alias) {
         throw new UnsupportedOperationException("Use the TRS API for tools and workflows");
+    }
+
+    @Override
+    public void checkCanRead(User user, Entry workflow) {
+        try {
+            checkUser(user, workflow);
+        } catch (CustomWebApplicationException ex) {
+            checkCanReadAcrossEntryTypes(user, workflow, permissionsInterface, ex);
+        }
+    }
+
+    /**
+     * Process permissions for entries that may or may not be workflows
+     * @param user
+     * @param workflow
+     * @param permissionsInterface
+     * @param ex
+     */
+    public static void checkCanReadAcrossEntryTypes(User user, Entry<?, ?> workflow, PermissionsInterface permissionsInterface, CustomWebApplicationException ex) {
+        if (workflow instanceof Workflow) {
+            if (!permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.READ)) {
+                throw ex;
+            }
+        } else {
+            // TODO what will happen here with tools and other stuff? right now, ignore from a SAM POV and pass along exception
+            throw ex;
+        }
     }
 }

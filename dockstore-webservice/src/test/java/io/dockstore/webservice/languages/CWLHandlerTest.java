@@ -38,6 +38,12 @@ import org.mockito.Mockito;
  */
 public class CWLHandlerTest {
 
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
     private Set<String> toValues(Set<FileFormat> formats) {
         return formats.stream().map(FileFormat::getValue).collect(Collectors.toSet());
     }

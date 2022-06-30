@@ -177,11 +177,9 @@ public class WDLHandler implements LanguageHandlerInterface {
                     }
                 });
 
-                // Add authors from descriptor if there are no .dockstore.yml authors
-                if (!newAuthors.isEmpty() && version.getAuthors().isEmpty()) {
-                    for (Author author: newAuthors) {
-                        version.addAuthor(author);
-                    }
+                // Add authors from descriptor
+                for (Author author: newAuthors) {
+                    version.addAuthor(author);
                 }
 
                 if (!Strings.isNullOrEmpty(mainDescription[0])) {

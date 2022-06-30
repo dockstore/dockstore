@@ -18,6 +18,7 @@ package io.dockstore.common.yaml;
 import io.dockstore.common.DescriptorLanguage;
 import java.util.ArrayList;
 import java.util.List;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -33,9 +34,9 @@ public class YamlWorkflow implements Workflowish {
     public static final String NEW_GALAXY_SUBCLASS = "GALAXY";
 
     private String name;
-    @NotNull(message = "Missing property \"subclass\"")
+    @NotNull
     private String subclass;
-    @NotNull(message = "Missing property \"primaryDescriptorPath\"")
+    @NotNull
     private String primaryDescriptorPath;
 
     /**
@@ -89,6 +90,7 @@ public class YamlWorkflow implements Workflowish {
         this.publish = publish;
     }
 
+    @Valid
     public Filters getFilters() {
         return filters;
     }
@@ -97,6 +99,7 @@ public class YamlWorkflow implements Workflowish {
         this.filters = filters;
     }
 
+    @Valid
     public List<YamlAuthor> getAuthors() {
         return authors;
     }
