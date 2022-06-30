@@ -182,14 +182,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/{id}/categories")
     @Timed
     @UnitOfWork(readOnly = true)
-    @Operation(operationId = "entryCategories", description = "Get the categories that contain the published entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get the categories that contain the published entry", response = Category.class, responseContainer = "List", hidden = true)
+    @Operation(operationId = "entryCategories", description = "Get the categories that contain the published entry")
+    @ApiOperation(value = "Get the categories that contain the published entry", notes = "Entry must be published", response = Category.class, responseContainer = "List", hidden = true)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved categories", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Category.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Entry must be published")
-    public List<Category> entryCategories(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
-            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
+    public List<Category> entryCategories(@Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
-        checkOptionalAuthRead(user, entry);
+        if (entry == null || !entry.getIsPublished()) {
+            String msg = "Published entry does not exist.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
         List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
         collectionHelper.evictAndSummarize(categories);
         return categories;
