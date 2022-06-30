@@ -53,6 +53,7 @@ import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
+import org.hibernate.annotations.Filter;
 
 /**
  * This describes one workflow in the dockstore, extending Entry with the fields necessary to describe workflows.
@@ -141,6 +142,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @BatchSize(size = 25)
+    @Filter(name = "versionNameFilter")
     private SortedSet<WorkflowVersion> workflowVersions;
 
     @JsonIgnore

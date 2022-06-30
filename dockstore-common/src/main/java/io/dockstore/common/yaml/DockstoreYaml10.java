@@ -19,8 +19,8 @@ public class DockstoreYaml10 implements DockstoreYaml {
     /**
      * Required, expected to always be "1.0" for now.
      */
-    @NotNull(message = "Missing property \"dockstoreVersion\"")
-    @Pattern(regexp = "1\\.0", message = "dockstoreVersion must be 1.0")
+    @NotNull
+    @Pattern(regexp = "1\\.0", message = "must be \"1.0\"")
     public String dockstoreVersion;
 
     /**
@@ -28,14 +28,14 @@ public class DockstoreYaml10 implements DockstoreYaml {
      *
      * Currently only "workflow" is the only value, but other values will be coming.
      */
-    @NotNull(message = "Missing property \"class\"")
-    @Pattern(regexp = "workflow", message = "The class property value must be \"workflow\"")
+    @NotNull
+    @Pattern(regexp = "workflow")
     public String clazz;
 
     /**
      * Required if the clazz is "workflow".
      */
-    @NotNull(message = "Missing property \"primaryDescriptor\"")
+    @NotNull
     public String primaryDescriptor;
     /**
      * Optional if the clazz is "workflow".

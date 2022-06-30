@@ -366,7 +366,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-            String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
+            String errorMessage = createMessageFromException(ex);
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
             rollbackAndBeginNewTransaction();
@@ -389,6 +389,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
+    }
+
+    private String createMessageFromException(Exception ex) {
+        String message = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
+        if (ex instanceof DockstoreYamlHelper.DockstoreYamlException) {
+            message = DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML + message;
+        }
+        return message;
     }
 
     /**
@@ -624,15 +632,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             WorkflowVersion remoteWorkflowVersion = gitHubSourceCodeRepo
                     .createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
             remoteWorkflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
-            // Add authors
-            addDockstoreYmlAuthorsToVersion(yamlAuthors, remoteWorkflowVersion);
 
             // So we have workflowversion which is the new version, we want to update the version and associated source files
             WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
             WorkflowVersion updatedWorkflowVersion;
             // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
             if (existingWorkflowVersion != null) {
-                // Copy over workflow version level information
+                // Copy over workflow version level information.
+                // Don't copy over non-ORCID and ORCID authors because they are not added to remoteWorkflowVersion. They will be added to the updated workflow version
                 existingWorkflowVersion.setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
                 existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
                 existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
@@ -643,8 +650,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setToolTableJson(null);
                 existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
-                existingWorkflowVersion.setAuthors(remoteWorkflowVersion.getAuthors());
-                existingWorkflowVersion.setOrcidAuthors(remoteWorkflowVersion.getOrcidAuthors());
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
                 updatedWorkflowVersion = existingWorkflowVersion;
             } else {
@@ -655,6 +660,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 updatedWorkflowVersion = remoteWorkflowVersion;
             }
             gitHubSourceCodeRepo.updateVersionMetadata(updatedWorkflowVersion.getWorkflowPath(), updatedWorkflowVersion, workflow.getDescriptorType(), repository);
+            // Add .dockstore.yml authors to updatedWorkflowVersion. We're adding .dockstore.yml authors to updatedWorkflowVersion instead of remoteWorkflowVersion because
+            // updatedWorkflowVersion may contain descriptor authors and we want to overwrite them if .dockstore.yml authors are present.
+            if (!yamlAuthors.isEmpty()) {
+                setDockstoreYmlAuthorsForVersion(yamlAuthors, updatedWorkflowVersion);
+            }
             if (workflow.getLastModified() == null || (updatedWorkflowVersion.getLastModified() != null && workflow.getLastModifiedDate().before(updatedWorkflowVersion.getLastModified()))) {
                 workflow.setLastModified(updatedWorkflowVersion.getLastModified());
             }
@@ -688,11 +698,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Add authors from .dockstore.yml to a version
+     * Sets a version's authors to .dockstore.yml authors. This will overwrite any existing authors in the version.
      * @param yamlAuthors
      * @param version
      */
-    private void addDockstoreYmlAuthorsToVersion(final List<YamlAuthor> yamlAuthors, Version version) {
+    private void setDockstoreYmlAuthorsForVersion(final List<YamlAuthor> yamlAuthors, Version version) {
         final Set<Author> authors = yamlAuthors.stream()
                 .filter(yamlAuthor -> yamlAuthor.getOrcid() == null)
                 .map(yamlAuthor -> {

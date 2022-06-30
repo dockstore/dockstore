@@ -106,6 +106,7 @@ uiConfig:
   dnaStackImportUrl: https://app.dnastack.com/#/app/workflow/import/dockstore
   dnaNexusImportUrl: https://platform.dnanexus.com/panx/tools/import-workflow
   terraImportUrl: https://app.terra.bio/#import-tool/dockstore
+  elwaziImportUrl: https://elwazi.terra.bio/#import-tool/dockstore
 
   gitHubAuthUrl: https://github.com/login/oauth/authorize
   gitHubRedirectPath: /auth/github.com
