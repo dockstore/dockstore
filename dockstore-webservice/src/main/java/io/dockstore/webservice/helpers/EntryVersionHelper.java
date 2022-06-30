@@ -249,7 +249,14 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
             DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
         try {
-            versionDAO.enableNameFilter(tag);
+            if (tag == null) {
+                // This is an assumption made for quay tools. Workflows will not have a latest unless it is created by the user,
+                // and would thus make more sense to use master for workflows.
+                tag = "latest";
+            }
+            final String finalTagName = tag;
+
+            versionDAO.enableNameFilter(finalTagName);
             T entry = getDAO().findById(workflowId);
             checkOptionalAuthRead(user, entry);
 
@@ -269,16 +276,10 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
             Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();
 
-            if (tag == null) {
-                // This is an assumption made for quay tools. Workflows will not have a latest unless it is created by the user,
-                // and would thus make more sense to use master for workflows.
-                tag = "latest";
-            }
-            final String finalTagName = tag;
             tagInstance = entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(finalTagName)).findFirst().orElse(null);
 
             if (tagInstance == null) {
-                throw new CustomWebApplicationException("Invalid or missing tag " + tag + ".", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Invalid or missing tag " + finalTagName + ".", HttpStatus.SC_BAD_REQUEST);
             }
 
             if (tagInstance instanceof WorkflowVersion) {
