@@ -20,7 +20,6 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Lists;
@@ -150,7 +149,6 @@ public class LimitedCRUDClientIT {
         container.setAliases(null);
         hostedTool.setUserIdToOrcidPutCode(null); // Setting it to null to compare with the getContainer endpoint since that one doesn't return orcid put codes
         assertEquals(container, hostedTool);
-        assertNull(container.getUsers());
 
         // test repeated workflow creation up to limit
         for (int i = 1; i < SYSTEM_LIMIT; i++) {

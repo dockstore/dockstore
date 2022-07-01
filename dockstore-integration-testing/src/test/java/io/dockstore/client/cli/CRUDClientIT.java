@@ -127,7 +127,6 @@ public class CRUDClientIT extends BaseIT {
         container.setAliases(null);
         hostedTool.setUserIdToOrcidPutCode(null); // Setting to null to compare with the getContainer endpoint since that one doesn't return orcid put codes
         assertEquals(container, hostedTool);
-        assertNull(container.getUsers());
     }
 
     @Test
