@@ -94,9 +94,9 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     }
 
     @Override
-    public void checkRead(User user, Entry tool) {
+    public void checkCanRead(User user, Entry tool) {
         try {
-            EntryVersionHelper.super.checkRead(user, tool);
+            EntryVersionHelper.super.checkCanRead(user, tool);
         } catch (CustomWebApplicationException ex) {
             LOG.info("permissions are not yet tool aware");
             // should not throw away exception
@@ -159,7 +159,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             }
         }
         Tool result = toolDAO.findById(containerId);
-        checkEntry(result);
+        checkExistsEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
@@ -198,7 +198,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
         }
 
         Tool result = toolDAO.findById(containerId);
-        checkEntry(result);
+        checkExistsEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
@@ -278,7 +278,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
         //        }
         //
         //        Tool result = toolDAO.findById(containerId);
-        //        checkEntry(result);
+        //        checkExistsEntry(result);
         //        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         //        return result.getWorkflowVersions();
     }
@@ -292,8 +292,8 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
      */
     private Tool findToolByIdAndCheckToolAndUser(Long toolId, User user) {
         Tool tool = toolDAO.findById(toolId);
-        checkEntry(tool);
-        checkRead(user, tool);
+        checkExistsEntry(tool);
+        checkCanRead(user, tool);
         return tool;
     }
 
@@ -308,8 +308,8 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
             @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
         Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
-        checkRead(user, tool);
+        checkExistsEntry(tool);
+        checkCanRead(user, tool);
 
         return getVersionsSourcefiles(containerId, tagId, fileTypes, versionDAO);
     }

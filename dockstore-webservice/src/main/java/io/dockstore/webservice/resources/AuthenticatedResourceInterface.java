@@ -40,56 +40,56 @@ public interface AuthenticatedResourceInterface {
     String FORBIDDEN_CURATOR_MESSAGE = "Forbidden: you need to be a curator or an admin to perform this operation.";
     String FORBIDDEN_ID_MISMATCH_MESSAGE = "Forbidden: please check your credentials.";
 
-    default void checkRead(User user, List<? extends Entry<?, ?>> entries) {
-        entries.forEach(entry -> checkRead(user, entry));
+    default void checkCanRead(User user, List<? extends Entry<?, ?>> entries) {
+        entries.forEach(entry -> checkCanRead(user, entry));
     }
 
-    default void checkRead(Optional<User> user, Entry<?, ?> entry) {
-        checkRead(user.orElse(null), entry);
+    default void checkCanRead(Optional<User> user, Entry<?, ?> entry) {
+        checkCanRead(user.orElse(null), entry);
     }
 
-    default void checkRead(User user, Entry<?, ?> entry) {
-        throwIfNot(canRead(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    default void checkCanRead(User user, Entry<?, ?> entry) {
+        throwIf(!canRead(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
-    default void checkWrite(User user, Entry<?, ?> entry) {
-        throwIfNot(canWrite(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    default void checkCanWrite(User user, Entry<?, ?> entry) {
+        throwIf(!canWrite(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
-    default void checkShare(User user, Entry<?, ?> entry) {
-        throwIfNot(canShare(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    default void checkCanShare(User user, Entry<?, ?> entry) {
+        throwIf(!canShare(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
-    default void checkOwner(User user, Entry<?, ?> entry) {
-        throwIfNot(isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    default void checkIsOwner(User user, Entry<?, ?> entry) {
+        throwIf(!isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
-    default void checkAdmin(User user) {
-        throwIfNot(isAdmin(user), FORBIDDEN_ADMIN_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    default void checkIsAdmin(User user) {
+        throwIf(!isAdmin(user), FORBIDDEN_ADMIN_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
-    default void checkCurate(User user) {
-        throwIfNot(isAdmin(user) || isCurator(user), FORBIDDEN_CURATOR_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    default void checkUserId(User user, long userId) {
+        throwIf(user == null || user.getId() != userId, FORBIDDEN_ID_MISMATCH_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
-    default void checkUser(User user, long userId) {
-        throwIfNot(user != null && user.getId() == userId, FORBIDDEN_ID_MISMATCH_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    default void checkExistsEntry(Entry<?, ?> entry) {
+        throwIf(entry == null, "Entry not found.", HttpStatus.SC_NOT_FOUND);
     }
 
-    default void checkEntry(Entry<?, ?> entry) {
-        throwIfNot(entry != null, "Entry not found.", HttpStatus.SC_NOT_FOUND);
+    default void checkExistsUser(User user) {
+        throwIf(user == null, "User not found.", HttpStatus.SC_NOT_FOUND);
     }
 
-    default void checkExists(User user) {
-        throwIfNot(user != null, "User not found.", HttpStatus.SC_NOT_FOUND);
+    default void checkExistsOrganization(Organization organization) {
+        throwIf(organization == null, "Organization not found.", HttpStatus.SC_NOT_FOUND);
     }
 
-    default void checkOrganization(Organization organization) {
-        throwIfNot(organization != null, "Organization not found.", HttpStatus.SC_NOT_FOUND);
+    default void checkExistsToken(Token token) {
+        throwIf(token == null, "Token not found.", HttpStatus.SC_NOT_FOUND);
     }
 
     default boolean canRead(User user, Entry<?, ?> entry) {
-        return isPublished(entry) || isOwner(user, entry);
+        return (entry != null && entry.getIsPublished()) || isOwner(user, entry);
     }
 
     default boolean canWrite(User user, Entry<?, ?> entry) {
@@ -100,10 +100,6 @@ public interface AuthenticatedResourceInterface {
         return isOwner(user, entry);
     }
 
-    default boolean isPublished(Entry<?, ?> entry) {
-        return entry != null && entry.getIsPublished();
-    }
-
     default boolean isOwner(User user, Entry<?, ?> entry) {
         return user != null && entry != null && entry.getUsers().stream().anyMatch(u -> u.getId() == user.getId());
     }
@@ -112,23 +108,9 @@ public interface AuthenticatedResourceInterface {
         return user != null && user.getIsAdmin();
     }
 
-    default boolean isCurator(User user) {
-        return user != null && user.isCurator();
-    }
-
-    static void throwIfNot(boolean condition, String message, int status) {
-        if (!condition) {
+    static void throwIf(boolean condition, String message, int status) {
+        if (condition) {
             throw new CustomWebApplicationException(message, status);
-        }
-    }
-    /**
-     * Check if token is null
-     *
-     * @param token token to check if null
-     */
-    default void checkTokenExists(Token token) {
-        if (token == null) {
-            throw new CustomWebApplicationException("Token not found.", HttpStatus.SC_NOT_FOUND);
         }
     }
 

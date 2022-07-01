@@ -247,7 +247,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return entry;
         }
         if (entry != null && user.isPresent()) {
-            checkRead(user.get(), entry);
+            checkCanRead(user.get(), entry);
             return entry;
         }
         return null;

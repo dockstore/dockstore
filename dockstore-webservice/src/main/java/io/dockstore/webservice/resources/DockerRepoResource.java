@@ -221,8 +221,8 @@ public class DockerRepoResource
     public Tool refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
-        checkWrite(user, tool);
+        checkExistsEntry(tool);
+        checkCanWrite(user, tool);
         checkNotHosted(tool);
         // Update user data
         User dbUser = userDAO.findById(user.getId());
@@ -296,8 +296,8 @@ public class DockerRepoResource
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
-        checkRead(user, tool);
+        checkExistsEntry(tool);
+        checkCanRead(user, tool);
 
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -338,9 +338,9 @@ public class DockerRepoResource
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
         Tool foundTool = toolDAO.findById(containerId);
-        checkEntry(foundTool);
+        checkExistsEntry(foundTool);
         checkNotHosted(foundTool);
-        checkWrite(user, foundTool);
+        checkCanWrite(user, foundTool);
 
         // Don't need to check for duplicate tool because the tool path can't be updated
 
@@ -365,7 +365,7 @@ public class DockerRepoResource
         updateInfo(foundTool, tool);
 
         Tool result = toolDAO.findById(containerId);
-        checkEntry(result);
+        checkExistsEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result;
 
@@ -432,9 +432,9 @@ public class DockerRepoResource
         Tool foundTool = toolDAO.findById(containerId);
 
         //use helper to check the user and the entry
-        checkEntry(foundTool);
+        checkExistsEntry(foundTool);
         checkNotHosted(foundTool);
-        checkWrite(user, foundTool);
+        checkCanWrite(user, foundTool);
 
         //update the tool path in all workflowVersions
         Set<Tag> tags = foundTool.getWorkflowVersions();
@@ -459,8 +459,8 @@ public class DockerRepoResource
     public List<User> getUsers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
-        checkOwner(user, tool);
+        checkExistsEntry(tool);
+        checkIsOwner(user, tool);
         return new ArrayList<>(tool.getUsers());
     }
 
@@ -472,7 +472,7 @@ public class DockerRepoResource
     public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findPublishedById(containerId);
-        checkEntry(tool);
+        checkExistsEntry(tool);
 
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -655,7 +655,7 @@ public class DockerRepoResource
     public Response deleteContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        checkWrite(user, tool);
+        checkCanWrite(user, tool);
         Tool deleteTool = new Tool();
         deleteTool.setId(tool.getId());
         deleteTool.setActualDefaultVersion(null);
@@ -683,8 +683,8 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
-        checkShare(user, tool);
+        checkExistsEntry(tool);
+        checkCanShare(user, tool);
 
         if (tool.getIsPublished() == request.getPublish()) {
             return tool;
@@ -788,7 +788,7 @@ public class DockerRepoResource
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, true);
         filterContainersForHiddenTags(tools);
-        checkRead(null, tools);
+        checkCanRead(null, tools);
         return tools;
     }
 
@@ -803,7 +803,7 @@ public class DockerRepoResource
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, false);
-        checkRead(user, tools);
+        checkCanRead(user, tools);
         return tools;
     }
 
@@ -819,8 +819,8 @@ public class DockerRepoResource
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findByPath(path, false);
-        checkEntry(tool);
-        checkRead(user, tool);
+        checkExistsEntry(tool);
+        checkCanRead(user, tool);
 
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -841,7 +841,7 @@ public class DockerRepoResource
         @Context ContainerRequestContext containerContext) {
         try {
             Tool tool = toolDAO.findByPath(path, true);
-            checkEntry(tool);
+            checkExistsEntry(tool);
 
             if (checkIncludes(include, "validations")) {
                 tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -869,9 +869,9 @@ public class DockerRepoResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Tag.class, responseContainer = "List", hidden = true)
     public List<Tag> tags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user, @QueryParam("containerId") long containerId) {
         Tool repository = toolDAO.findById(containerId);
-        checkEntry(repository);
+        checkExistsEntry(repository);
 
-        checkRead(user, repository);
+        checkCanRead(user, repository);
 
         return new ArrayList<>(repository.getWorkflowVersions());
     }
@@ -951,9 +951,9 @@ public class DockerRepoResource
      * @param tool
      */
     @Override
-    public void checkRead(User user, Entry tool) {
+    public void checkCanRead(User user, Entry tool) {
         try {
-            EntryVersionHelper.super.checkRead(user, tool);
+            EntryVersionHelper.super.checkCanRead(user, tool);
         } catch (CustomWebApplicationException ex) {
             LOG.info("permissions are not yet tool aware");
             // should not throw away exception
@@ -978,9 +978,9 @@ public class DockerRepoResource
         @QueryParam("tagName") String tagName,
         @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL") @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
+        checkExistsEntry(tool);
         checkNotHosted(tool);
-        checkWrite(user, tool);
+        checkCanWrite(user, tool);
         Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
@@ -1013,9 +1013,9 @@ public class DockerRepoResource
         @QueryParam("tagName") String tagName,
         @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL") @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
+        checkExistsEntry(tool);
         checkNotHosted(tool);
-        checkWrite(user, tool);
+        checkCanWrite(user, tool);
         Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
@@ -1069,7 +1069,7 @@ public class DockerRepoResource
     public Set<User> getStarredUsers(
         @ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
+        checkExistsEntry(tool);
         return tool.getStarredUsers();
     }
 
@@ -1185,8 +1185,8 @@ public class DockerRepoResource
         @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
 
         Tool tool = toolDAO.findById(toolId);
-        checkEntry(tool);
-        checkRead(user, tool);
+        checkExistsEntry(tool);
+        checkCanRead(user, tool);
 
         Tag tag = tool.getWorkflowVersions().stream().filter(innertag -> innertag.getId() == tagId).findFirst()
             .orElseThrow(() -> new CustomWebApplicationException("Could not find tag", HttpStatus.SC_NOT_FOUND));
@@ -1212,8 +1212,8 @@ public class DockerRepoResource
     public Tool getToolByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
         final Tool tool = this.toolDAO.findByAlias(alias);
-        checkEntry(tool);
-        checkRead(user, tool);
+        checkExistsEntry(tool);
+        checkCanRead(user, tool);
         return tool;
     }
 }

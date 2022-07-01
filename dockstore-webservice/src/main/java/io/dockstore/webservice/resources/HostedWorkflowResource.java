@@ -184,9 +184,9 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         @ApiParam(value = "hosted entry ID") @Parameter(name = "entryId", description = "hosted entry ID") @PathParam("entryId") final Long entryId,
         @Parameter(name = "file", schema = @Schema(type = "string", format = "binary")) @FormDataParam("file") final InputStream payload) {
         final Workflow workflow = getEntryDAO().findById(entryId);
-        checkEntry(workflow);
+        checkExistsEntry(workflow);
         checkHosted(workflow);
-        checkWrite(user, workflow);
+        checkCanWrite(user, workflow);
         checkVersionLimit(user, workflow);
         final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromInputStream(payload, workflow.getFileType());
         final WorkflowVersion version = getVersion(workflow);

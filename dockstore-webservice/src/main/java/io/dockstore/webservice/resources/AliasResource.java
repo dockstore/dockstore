@@ -88,7 +88,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
 
         long workflowVersionId = workflowVersion.getId();
         Workflow workflow = AliasHelper.getWorkflow(workflowDAO, workflowVersionId);
-        workflowResource.checkRead(user, workflow);
+        workflowResource.checkCanRead(user, workflow);
 
         return new WorkflowVersion.WorkflowVersionPathInfo(workflow.getWorkflowPath(), workflowVersion.getName());
     }

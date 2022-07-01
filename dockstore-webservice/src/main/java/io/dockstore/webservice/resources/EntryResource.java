@@ -201,9 +201,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public List<VersionVerifiedPlatform> getVerifiedPlatforms(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "entryId", description = "id of the entry", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-        checkEntry(entry);
+        checkExistsEntry(entry);
 
-        checkRead(user, entry);
+        checkCanRead(user, entry);
 
         List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
         return verifiedVersions;
@@ -219,9 +219,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
             @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-        checkEntry(entry);
+        checkExistsEntry(entry);
 
-        checkRead(user, entry);
+        checkCanRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -242,9 +242,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
         @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-        checkEntry(entry);
+        checkExistsEntry(entry);
 
-        checkRead(user, entry);
+        checkCanRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -270,8 +270,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @PathParam("entryId") Long entryId,
         @Parameter(description = "Optional version ID of the entry version to export.", name = "versionId", in = ParameterIn.QUERY) @QueryParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-        checkEntry(entry);
-        checkRead(Optional.of(user), entry);
+        checkExistsEntry(entry);
+        checkCanRead(Optional.of(user), entry);
         List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
         String putCode;
         User nonCachedUser = this.userDAO.findById(user.getId());
@@ -528,8 +528,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Override
     public Entry getAndCheckResource(User user, Long id) {
         Entry<? extends Entry, ? extends Version> c = toolDAO.getGenericEntryById(id);
-        checkEntry(c);
-        checkWrite(user, c);
+        checkExistsEntry(c);
+        checkCanWrite(user, c);
         return c;
     }
 
