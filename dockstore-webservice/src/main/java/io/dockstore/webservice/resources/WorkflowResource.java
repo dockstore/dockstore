@@ -763,7 +763,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkExistsEntry(workflow);
-        checkCanShare(user, workflow);
+        if (!isAdmin(user)) {
+            checkCanShare(user, workflow);
+        }
 
         Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());

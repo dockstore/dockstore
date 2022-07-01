@@ -138,8 +138,6 @@ public class LimitedCRUDClientIT {
         hostedTool.getUsers().forEach(user -> {
             assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles());
         });
-        // Setting it to null afterwards to compare with the getContainer endpoint since that one doesn't return user profiles
-        hostedTool.setUsers(null);
 
         assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api

@@ -115,8 +115,6 @@ public class CRUDClientIT extends BaseIT {
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
         assertEquals("One user should belong to this tool, yourself", 1, hostedTool.getUsers().size());
         hostedTool.getUsers().forEach(user -> assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles()));
-        // Setting it to null afterwards to compare with the getContainer endpoint since that one doesn't return users
-        hostedTool.setUsers(null);
 
         assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
