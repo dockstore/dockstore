@@ -51,6 +51,16 @@ public class MetadataIT extends BaseIT {
 
     @Category(MetadataResource.class)
     @Test
+    public void testPrereleaseClientVersion() {
+        String endpoint = "/metadata/runner_dependencies";
+        List<Pair> queryParams = this.queryParams();
+        queryParams.addAll(apiClient.parameterToPairs("", "client_version", "1.13.0-alpha.7"));
+        ApiResponse<Object> response = this.get_request(endpoint, queryParams);
+        Assert.assertEquals(HttpStatus.OK_200, response.getStatusCode());
+    }
+
+    @Category(MetadataResource.class)
+    @Test
     public void testDevelopmentSemanticVersion() {
         String endpoint = "/metadata/runner_dependencies";
         List<Pair> queryParams = this.queryParams();
