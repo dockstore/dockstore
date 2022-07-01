@@ -155,11 +155,13 @@ public class CloudInstanceIT extends BaseIT {
         } catch (ApiException e) {
             Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
         }
-        /*
-        TODO !!! fix
-        memberUserCloudInstances = adminUsersApi.getUserCloudInstances(memberUserId);
-        Assert.assertEquals("Admin can still get a different user's cloud instance", 0, memberUserCloudInstances.size());
-        */
+
+        try {
+            adminUsersApi.getUserCloudInstances(memberUserId);
+            Assert.fail("Should not be able to get a different user's cloud instances");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
+        }
 
         // Check post works
         newCloudInstance.setPartner(ADMIN_PARTNER_1);
