@@ -684,7 +684,9 @@ public class DockerRepoResource
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Tool tool = toolDAO.findById(containerId);
         checkExistsEntry(tool);
-        checkCanShare(user, tool);
+        if (!isAdmin(user)) {
+            checkCanShare(user, tool);
+        }
 
         if (tool.getIsPublished() == request.getPublish()) {
             return tool;
