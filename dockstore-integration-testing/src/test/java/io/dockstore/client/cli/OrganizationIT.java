@@ -2201,7 +2201,7 @@ public class OrganizationIT extends BaseIT {
             organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
             Assert.fail();
         } catch (ApiException ex) {
-            assertEquals("Organization not found", ex.getMessage());
+            assertEquals("Organization not found.", ex.getMessage());
         }
 
         // Approve organization and star it

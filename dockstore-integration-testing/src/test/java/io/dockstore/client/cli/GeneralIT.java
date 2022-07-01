@@ -539,7 +539,7 @@ public class GeneralIT extends BaseIT {
             versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
             fail("Should not be able to verified platforms if not published and doesn't belong to user.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals("This entry is not published.", ex.getMessage());
+            assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
         }
 
         // verified platforms can be viewed by others once published
@@ -615,7 +615,7 @@ public class GeneralIT extends BaseIT {
             fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
             fail("Should not be able to grab a versions file types if not published and doesn't belong to user.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals("This entry is not published.", ex.getMessage());
+            assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
         }
 
         // file types can be viewed by others once published

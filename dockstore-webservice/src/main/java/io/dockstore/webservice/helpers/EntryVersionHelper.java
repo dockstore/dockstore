@@ -24,8 +24,11 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.AbstractDockstoreDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -240,6 +243,19 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         T entry = getDAO().findById(workflowId);
         checkExistsEntry(entry);
         checkCanRead(user, entry);
+
+        // tighten permissions for hosted tools and workflows
+        if (!user.isPresent() || !isOwner(user.get(), entry)) {
+            if (!entry.getIsPublished()) {
+                if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
+                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
+                }
+                if (entry instanceof Workflow && ((Workflow)entry).getMode() == WorkflowMode.HOSTED) {
+                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
+                }
+            }
+            this.filterContainersForHiddenTags(entry);
+        }
 
         Version tagInstance = null;
 
