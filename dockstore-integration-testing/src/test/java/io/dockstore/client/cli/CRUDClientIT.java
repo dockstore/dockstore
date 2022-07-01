@@ -116,6 +116,8 @@ public class CRUDClientIT extends BaseIT {
         assertEquals("One user should belong to this tool, yourself", 1, hostedTool.getUsers().size());
         hostedTool.getUsers().forEach(user -> assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles()));
 
+        hostedTool.getUsers().forEach(user -> user.setUserProfiles(null));
+
         assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
         ContainersApi oldApi = new ContainersApi(webClient);

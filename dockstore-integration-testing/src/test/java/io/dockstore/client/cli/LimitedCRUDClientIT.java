@@ -139,6 +139,8 @@ public class LimitedCRUDClientIT {
             assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles());
         });
 
+        hostedTool.getUsers().forEach(user -> user.setUserProfiles(null));
+
         assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
         ContainersApi oldApi = new ContainersApi(webClient);

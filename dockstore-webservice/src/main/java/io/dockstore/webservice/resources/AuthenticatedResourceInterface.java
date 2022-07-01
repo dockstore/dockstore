@@ -15,8 +15,6 @@
  */
 package io.dockstore.webservice.resources;
 
-import com.github.zafarkhaja.semver.Version;
-import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
@@ -24,13 +22,39 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import java.util.List;
 import java.util.Optional;
-import javax.ws.rs.container.ContainerRequestContext;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Endpoints that use authentication by Dockstore user
+ * AuthenticatedResourceInterface is a mixin that provides methods that are used to control access in Resource handlers.
+ * By using these methods consistently, we centralize access-checking logic and avoid its repetition, allowing us to
+ * easily modify our access policies, if necessary.
+ *
+ * Each of the "check" methods returns on success, and throws an appropriate CustomWebApplicationException on failure.
+ * The most commonly-used "check" methods check if a user is allowed to perform a type of action on a specified entry:
+ *
+ * <ul>
+ * <li>checkCanRead: can the user read the specified entry?
+ * <li>checkCanWrite: can the user write (modify) the specified entry?
+ * <li>checkCanShare: can the user share (publish) the specified entry?
+ * </ul>
+ *
+ * There are a number of "check" utility methods that perform other useful checks:
+ *
+ * <ul>
+ * <li>checkIsOwner: is the user one of the users that controls the specified entry?
+ * <li>checkIsAdmin: does the user have adminitrative privileges?
+ * <li>checkUserId: does the used have the specified user id?
+ * <li>checkExists(X): is the object reference of type X not null?
+ * </ul>
+ *
+ * Additionally, "non-check" methods are defined that correspond to the most commonly-used "check" methods:
+ *
+ *   canRead, canWrite, canShare, isOwner, isAdmin
+ *
+ * Each "non-check" method performs the same check as its partner "check" method, except that rather than returning/throwing,
+ * it returns true/false.
  */
 public interface AuthenticatedResourceInterface {
 
@@ -40,50 +64,105 @@ public interface AuthenticatedResourceInterface {
     String FORBIDDEN_CURATOR_MESSAGE = "Forbidden: you need to be a curator or an admin to perform this operation.";
     String FORBIDDEN_ID_MISMATCH_MESSAGE = "Forbidden: please check your credentials.";
 
+    /**
+     * Check if a user is allowed to read all of the specified entries.
+     * @param user user to be checked, null if user no logged in
+     * @param entries list of entries to be checked
+     */
     default void checkCanRead(User user, List<? extends Entry<?, ?>> entries) {
         entries.forEach(entry -> checkCanRead(user, entry));
     }
 
+    /**
+     * Check if a user is allowed to read the specified entry.
+     * @param user the user to be checked, not set if user not logged in
+     * @param entry entry to be checked
+     */
     default void checkCanRead(Optional<User> user, Entry<?, ?> entry) {
         checkCanRead(user.orElse(null), entry);
     }
 
+    /**
+     * Check if a user is allowed to read the specified entry.
+     * @param user user to be checked, null if user not logged in
+     * @param entry entry to be checked
+     */
     default void checkCanRead(User user, Entry<?, ?> entry) {
         throwIf(!canRead(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
+    /**
+     * Check if a user is allowed to write (modify) the specified entry.
+     * @param user user to be checked, null if user not logged in
+     * @param entry entry to be checked
+     */
     default void checkCanWrite(User user, Entry<?, ?> entry) {
         throwIf(!canWrite(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
+    /**
+     * Check if a user is allowed to share (publish) the specified entry.
+     * @param user user to be checked, null if user not logged in
+     * @param entry entry to be checked
+     */
     default void checkCanShare(User user, Entry<?, ?> entry) {
         throwIf(!canShare(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
+    /**
+     * Check if a user owns (is one of the users that controls) the specified entry.
+     * @param user user to be checked, null if user not logged in
+     * @param entry entry to be checked
+     */
     default void checkIsOwner(User user, Entry<?, ?> entry) {
         throwIf(!isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
+    /**
+     * Check if a user has adminitrative privileges.
+     * @param user user to be checked, null if user not logged in
+     */
     default void checkIsAdmin(User user) {
         throwIf(!isAdmin(user), FORBIDDEN_ADMIN_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
+    /**
+     * Check if a the ID of a user matches the specified ID.
+     * @param user user to be checked, null if user not logged in
+     * @param userId id to match
+     */
     default void checkUserId(User user, long userId) {
         throwIf(user == null || user.getId() != userId, FORBIDDEN_ID_MISMATCH_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
+    /**
+     * Check if a specified entry exists (is not null).
+     * @param entry entry to be checked
+     */
     default void checkExistsEntry(Entry<?, ?> entry) {
         throwIf(entry == null, "Entry not found.", HttpStatus.SC_NOT_FOUND);
     }
 
+    /**
+     * Check if a specified user exists (is not null).
+     * @param user user to be checked
+     */
     default void checkExistsUser(User user) {
         throwIf(user == null, "User not found.", HttpStatus.SC_NOT_FOUND);
     }
 
+    /**
+     * Check if a specified organization exists (is not null).
+     * @param organization organization to be checked
+     */
     default void checkExistsOrganization(Organization organization) {
         throwIf(organization == null, "Organization not found.", HttpStatus.SC_NOT_FOUND);
     }
 
+    /**
+     * Check if a specified token exists (is not null).
+     * @param token token to be checked
+     */
     default void checkExistsToken(Token token) {
         throwIf(token == null, "Token not found.", HttpStatus.SC_NOT_FOUND);
     }
@@ -112,28 +191,5 @@ public interface AuthenticatedResourceInterface {
         if (condition) {
             throw new CustomWebApplicationException(message, status);
         }
-    }
-
-    default void mutateBasedOnUserAgent(Entry entry, ManipulateEntry m, ContainerRequestContext containerContext) {
-        try {
-            final List<String> strings = containerContext.getHeaders().getOrDefault("User-Agent", Lists.newArrayList());
-            strings.forEach(s -> {
-                final String[] split = s.split("/");
-                if (split[0].equals("Dockstore-CLI")) {
-                    Version clientVersion = Version.valueOf(split[1]);
-                    Version v16 = Version.valueOf("1.6.0");
-                    if (clientVersion.lessThanOrEqualTo(v16)) {
-                        m.manipulate(entry);
-                    }
-                }
-            });
-        } catch (Exception e) {
-            LOG.debug("encountered a user agent that we could not parse, meh", e);
-        }
-    }
-
-    @FunctionalInterface
-    interface ManipulateEntry<T extends Entry> {
-        void manipulate(T entry);
     }
 }

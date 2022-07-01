@@ -22,6 +22,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIM
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
@@ -80,6 +81,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
@@ -859,6 +861,24 @@ public class DockerRepoResource
             return tool;
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new CustomWebApplicationException(path + " not found", HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
+    private void mutateBasedOnUserAgent(Entry entry, Consumer<Entry> mutator, ContainerRequestContext containerContext) {
+        try {
+            final List<String> strings = containerContext.getHeaders().getOrDefault("User-Agent", Lists.newArrayList());
+            strings.forEach(s -> {
+                final String[] split = s.split("/");
+                if (split[0].equals("Dockstore-CLI")) {
+                    com.github.zafarkhaja.semver.Version clientVersion = com.github.zafarkhaja.semver.Version.valueOf(split[1]);
+                    com.github.zafarkhaja.semver.Version v16 = com.github.zafarkhaja.semver.Version.valueOf("1.6.0");
+                    if (clientVersion.lessThanOrEqualTo(v16)) {
+                        mutator.accept(entry);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            LOG.debug("encountered a user agent that we could not parse, meh", e);
         }
     }
 
