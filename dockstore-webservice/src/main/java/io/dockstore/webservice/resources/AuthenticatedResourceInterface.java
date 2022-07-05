@@ -27,9 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * AuthenticatedResourceInterface is a mixin that provides methods that are used to control access in Resource handlers.
- * By using these methods consistently, we centralize access-checking logic and avoid its repetition, allowing us to
- * easily modify our access policies, if necessary.
+ * AuthenticatedResourceInterface is a mixin that provides methods used to implement user-level access control in
+ * Resource handlers.  By using these methods consistently, we centralize access-checking logic and avoid its
+ * repetition, allowing us to easily modify our access policies, if necessary.
  *
  * Each of the "check" methods returns on success, and throws an appropriate CustomWebApplicationException on failure.
  * The most commonly-used "check" methods check if a user is allowed to perform a type of action on a specified entry:
