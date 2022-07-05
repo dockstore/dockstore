@@ -461,7 +461,7 @@ public class WorkflowIT extends BaseIT {
         try {
             anonWorkflowApi.getWorkflowZip(100000000L, 1000000L);
         } catch (ApiException ex) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
             success = true;
         }
         assertTrue("should have got " + HttpStatus.SC_BAD_REQUEST, success);
