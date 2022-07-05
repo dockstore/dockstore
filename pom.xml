@@ -45,7 +45,7 @@
         <openapi-annotations-version>2.1.13</openapi-annotations-version>
         <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
         <postgresql.version>42.2.23</postgresql.version>
-        <swagger-ui.version>3.25.0</swagger-ui.version>
+        <swagger-ui.version>4.12.0</swagger-ui.version>
         <maven-surefire.version>3.0.0-M5</maven-surefire.version>
         <maven-failsafe.version>2.22.2</maven-failsafe.version>
 
@@ -73,7 +73,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.11.8</tag>
+        <tag>1.12.0</tag>
     </scm>
 
     <repositories>

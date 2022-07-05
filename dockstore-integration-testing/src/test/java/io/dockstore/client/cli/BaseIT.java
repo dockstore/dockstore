@@ -31,6 +31,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
+import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.resources.WorkflowSubClass;
@@ -45,6 +46,7 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.SortedMap;
@@ -85,7 +87,7 @@ public class BaseIT {
     public static final String BIOWORKFLOW = WorkflowSubClass.BIOWORKFLOW.toString();
     public static final String APPTOOL = WorkflowSubClass.APPTOOL.toString();
 
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
         String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
         String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
@@ -132,7 +134,7 @@ public class BaseIT {
         return tool;
     }
 
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
         String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
         String versionName, boolean toPublish) {
@@ -234,6 +236,36 @@ public class BaseIT {
         assertTrue("Version should now be synced", testBothVersion.isSynced());
         assertEquals("Workflow version path should be set", correctDescriptorPath, testBothVersion.getWorkflowPath());
     }
+
+    static void refreshByOrganizationReplacement(WorkflowsApi workflowApi, io.dockstore.openapi.client.ApiClient openAPIWebClient) {
+        io.dockstore.openapi.client.api.UsersApi openUsersApi = new io.dockstore.openapi.client.api.UsersApi(openAPIWebClient);
+        for (SourceControl control : SourceControl.values()) {
+            List<String> userOrganizations = openUsersApi.getUserOrganizations(control.name());
+            for (String org : userOrganizations) {
+                List<Repository> userOrganizationRepositories = openUsersApi.getUserOrganizationRepositories(control.name(), org);
+                for (Repository repo : userOrganizationRepositories) {
+                    workflowApi.manualRegister(control.name(), repo.getPath(), "/Dockstore.cwl", "",
+                        DescriptorLanguage.CWL.getShortName(), "");
+                }
+            }
+        }
+    }
+
+    static Workflow registerGatkSvWorkflow(WorkflowsApi ownerWorkflowApi) {
+        // Register and refresh workflow
+        Workflow workflow = ownerWorkflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl",
+            "test", "wdl", "/test.json");
+        return ownerWorkflowApi.refresh(workflow.getId(), false);
+    }
+
+    static WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, Workflow workflow, String versionName) {
+        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+        version.setFrozen(true);
+        workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "images");
+        return workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+    }
+
 
 
     @Rule

@@ -148,15 +148,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     LOG.info("Description not found!");
                 }
 
-                // Add authors from descriptor if there are no .dockstore.yml authors
-                if (version.getAuthors().isEmpty()) {
-                    String dctKey = "dct:creator";
-                    String schemaKey = "s:author";
-                    if (map.containsKey(schemaKey)) {
-                        processAuthor(version, map, schemaKey, "s:name", "s:email", "Author not found!");
-                    } else if (map.containsKey(dctKey)) {
-                        processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
-                    }
+                // Add authors from descriptor
+                String dctKey = "dct:creator";
+                String schemaKey = "s:author";
+                if (map.containsKey(schemaKey)) {
+                    processAuthor(version, map, schemaKey, "s:name", "s:email", "Author not found!");
+                } else if (map.containsKey(dctKey)) {
+                    processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
@@ -400,7 +398,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return workflow;
     }
 
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private void processWorkflow(Workflow workflow, Map<String, Map> parentRequirements, Map<String, Map> parentHints, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         Yaml yaml = new Yaml();
         Gson gson = CWL.getTypeSafeCWLToolDocument();

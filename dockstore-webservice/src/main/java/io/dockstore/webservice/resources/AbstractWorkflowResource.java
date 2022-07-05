@@ -9,15 +9,13 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DescriptorLanguageSubclass;
-import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
+import io.dockstore.common.yaml.Workflowish;
 import io.dockstore.common.yaml.YamlAuthor;
-import io.dockstore.common.yaml.YamlWorkflow;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
@@ -47,6 +45,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
+import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -58,6 +57,8 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.swagger.annotations.Api;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -77,7 +78,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.kohsuke.github.GHRateLimit;
@@ -346,73 +346,67 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return List of new and updated workflows
      */
     protected void githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
-        // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
-        User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-        GHRateLimit endRateLimit;
-        boolean isSuccessful = false;
-        try {
 
+        boolean isSuccessful = true;
+
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter messageWriter = new PrintWriter(stringWriter);
+
+        try {
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
-            List<WorkflowAndVersion> updatedWorkflowAndVersions = new ArrayList<>();
-            updatedWorkflowAndVersions.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, user, dockstoreYml));
-            updatedWorkflowAndVersions.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml, false));
-            updatedWorkflowAndVersions.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, user, dockstoreYml, true));
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
-            addValidationsToLambdaEvent(lambdaEvent, updatedWorkflowAndVersions);
-            lambdaEventDAO.create(lambdaEvent);
-            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-            isSuccessful = true;
-            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-        } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
-            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-            String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
-            String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
-            LOG.info(msg, ex);
-            rollbackAndBeginNewTransaction();
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
-            lambdaEvent.setSuccess(false);
-            lambdaEvent.setMessage(errorMessage);
-            lambdaEventDAO.create(lambdaEvent);
-            sessionFactory.getCurrentSession().getTransaction().commit();
-            throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
+
+            checkDuplicateNames(dockstoreYaml12.getWorkflows(), dockstoreYaml12.getTools(), dockstoreYaml12.getService());
+
+            // Process the service (if present) and the lists of workflows and apptools.
+            // '&=' does not short-circuit, ensuring that all of the lists are processed.
+            // 'isSuccessful &= x()' is equivalent to 'isSuccessful = isSuccessful & x()'.
+            List<Service12> services = dockstoreYaml12.getService() != null ? List.of(dockstoreYaml12.getService()) : List.of();
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, AppTool.class, messageWriter);
+
         } catch (Exception ex) {
-            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+
+            // If an exception propagates to here, log something helpful and abort .dockstore.yml processing.
+            isSuccessful = false;
+            String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + generateMessageFromException(ex);
+            LOG.info(msg, ex);
+            messageWriter.println(msg);
+            messageWriter.println("Terminated processing of .dockstore.yml.");
+
+            throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
+
+        } finally {
+
+            // Make an entry in the github apps logs.
+            final boolean finalIsSuccessful = isSuccessful;
+            new TransactionHelper(sessionFactory).transaction(() -> {
+                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
+                lambdaEvent.setSuccess(finalIsSuccessful);
+                setEventMessage(lambdaEvent, stringWriter.toString());
+                lambdaEventDAO.create(lambdaEvent);
+            });
+
+            GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-            String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
-            LOG.error(msg, ex);
-            rollbackAndBeginNewTransaction();
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
-            lambdaEvent.setSuccess(false);
-            lambdaEvent.setMessage(ex.getMessage());
-            lambdaEventDAO.create(lambdaEvent);
-            sessionFactory.getCurrentSession().getTransaction().commit();
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
+
+        if (!isSuccessful) {
+            throw new CustomWebApplicationException("At least one entry in .dockstore.yml could not be processed.", LAMBDA_FAILURE);
         }
     }
 
-    /**
-     * Rollback current DB transaction then start a new one so we can record a lambda event.
-     * https://github.com/dockstore/dockstore/issues/4434
-     */
-    private void rollbackAndBeginNewTransaction() {
-        final Transaction transaction = sessionFactory.getCurrentSession().getTransaction();
-        final boolean isActive = transaction.isActive();
-        final boolean canRollback = transaction.getStatus().canRollback();
-        if (isActive && canRollback) {
-            transaction.rollback();
-        } else {
-            // I don't think this should ever happen
-            LOG.error("Transaction is not active or cannot be rolled back. Active: {}; Can rollback: {}", isActive, canRollback);
+    private void setEventMessage(LambdaEvent lambdaEvent, String message) {
+        String strippedMessage = StringUtils.stripEnd(message, "\n");
+        if (StringUtils.isNotEmpty(strippedMessage)) {
+            lambdaEvent.setMessage(strippedMessage);
         }
-        sessionFactory.getCurrentSession().beginTransaction();
     }
 
     /**
@@ -421,9 +415,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return
      */
     private int statusCodeForLambda(Exception ex) {
+        // 5xx tells lambda to retry. Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
         if (isGitHubRateLimitError(ex)) {
-            // 5xx tells lambda to retry. Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
-            LOG.info("GitHub rate limit hit, signaling lambda to retry.");
+            LOG.info("GitHub rate limit hit, signaling lambda to retry.", ex);
+            return HttpStatus.SC_INTERNAL_SERVER_ERROR;
+        }
+        if (isServerError(ex)) {
+            LOG.info("Server error, signaling lambda to retry.", ex);
             return HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return LAMBDA_FAILURE;
@@ -436,6 +434,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT)) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    private boolean isServerError(Exception ex) {
+        if (ex instanceof CustomWebApplicationException) {
+            final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
+            final int code = customWebAppEx.getResponse().getStatus();
+            return code >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return false;
     }
@@ -463,148 +470,162 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return lambdaEvent;
     }
 
+    private void checkDuplicateNames(List<? extends Workflowish> workflows, List<? extends Workflowish> tools, Service12 service) {
+        List<Workflowish> entries = new ArrayList<>();
+        entries.addAll(workflows);
+        entries.addAll(tools);
+        Set<String> names = new HashSet<>();
+        for (Workflowish entry: entries) {
+            String name = entry.getName();
+            if (name == null) {
+                name = "";
+            }
+            if (!names.add(name)) {
+                String msg = "".equals(name) ? "At least two workflows or tools have no name." :
+                    String.format("At least two workflows or tools have the same name '%s'.", name);
+                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            }
+        }
+        if (service != null && names.contains("")) {
+            throw new CustomWebApplicationException("A service always has no name, so any workflows or tools must be named.", LAMBDA_FAILURE);
+        }
+    }
+
     /**
      * Create or retrieve workflows/GitHub App Tools based on Dockstore.yml, add or update tag version
      * ONLY WORKS FOR v1.2
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId Installation id needed to setup GitHub apps
-     * @param user User that triggered action
+     * @param username Name of user that triggered action
      * @param dockstoreYml
      */
-    @SuppressWarnings("lgtm[java/path-injection]")
-    private List<WorkflowAndVersion> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
-            final SourceFile dockstoreYml, boolean isTool) {
-        List<WorkflowAndVersion> updatedWorkflowAndVersions = new ArrayList<>();
+    @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
+    private boolean createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, String installationId, String username,
+            final SourceFile dockstoreYml, Class<?> workflowType, PrintWriter messageWriter) {
+
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-        try {
-            final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
-            for (YamlWorkflow wf : yamlWorkflows) {
-                if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
-                    continue;
+        final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
+
+        boolean isSuccessful = true;
+        TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
+
+        for (Workflowish wf : yamlWorkflows) {
+            try {
+                if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+                    // Update the workflow version in its own database transaction.
+                    transactionHelper.transaction(() -> {
+                        String subclass = wf.getSubclass().toString();
+                        if (workflowType == AppTool.class && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
+                            throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
+                        }
+
+                        final String workflowName = workflowType == Service.class ? "" : wf.getName();
+                        final Boolean publish = wf.getPublish();
+                        final var defaultVersion = wf.getLatestTagAsDefault();
+                        final List<YamlAuthor> yamlAuthors = wf.getAuthors();
+
+                        // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
+                        User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
+
+                        Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
+                        WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+
+                        addValidationsToMessage(workflow, version, messageWriter);
+                        publishWorkflowAndLog(workflow, publish, user, repository, gitReference);
+                    });
                 }
-
-                String subclass = wf.getSubclass();
-                if (isTool && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
-                    throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
-                }
-
-                String workflowName = wf.getName();
-                Boolean publish = wf.getPublish();
-                final var defaultVersion = wf.getLatestTagAsDefault();
-                final List<YamlAuthor> yamlAuthors = wf.getAuthors();
-
-                Class workflowType = isTool ? AppTool.class : BioWorkflow.class;
-                Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
-                WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
-                updatedWorkflowAndVersions.add(new WorkflowAndVersion(workflow, version));
-
-                if (publish != null && workflow.getIsPublished() != publish) {
-                    LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
-                    try {
-                        publishWorkflow(workflow, publish, user);
-                    } catch (CustomWebApplicationException ex) {
-                        LOG.warn("Could not set publish state from YML.", ex);
-                        lambdaEvent.setSuccess(false);
-                        lambdaEvent.setMessage(ex.getMessage());
-                    }
-                    lambdaEventDAO.create(lambdaEvent);
-                }
+            } catch (RuntimeException ex) {
+                // If there was a problem updating the workflow (an exception was thrown), either:
+                // a) rethrow certain exceptions to abort .dockstore.yml parsing, or
+                // b) log something helpful and move on to the next workflow.
+                isSuccessful = false;
+                rethrowIfFatal(ex, transactionHelper);
+                final String message = String.format("Error processing %s %s in .dockstore.yml:%n%s",
+                    computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
+                LOG.error(message, ex);
+                messageWriter.println(message);
+                messageWriter.println("Entry skipped.");
             }
-        } catch (ClassCastException ex) { // This has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
-            // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
-            // so display a generic one.
-            final String message = "Error processing .dockstore.yml";
-            LOG.error(message, ex);
-            throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
         }
 
-        return updatedWorkflowAndVersions;
+        return isSuccessful;
     }
 
-    private void addValidationsToLambdaEvent(LambdaEvent event, Collection<WorkflowAndVersion> workflowAndVersions) {
-
-        String message = workflowAndVersions.stream().map(workflowAndVersion -> {
-            Set<Validation> validations = workflowAndVersion.getVersionValidations();
-            if (isNotEmpty(validations)) {
-                String subMessage = computeMultiValidationMessage(validations);
-                if (StringUtils.isNotEmpty(subMessage)) {
-                    return String.format("In version '%s' of %s '%s':\n%s", workflowAndVersion.getVersionName(), workflowAndVersion.getWorkflowType().getTerm(), computeWorkflowName(workflowAndVersion), subMessage);
-                }
+    private void publishWorkflowAndLog(Workflow workflow, final Boolean publish, User user, String repository, String gitReference) {
+        if (publish != null && workflow.getIsPublished() != publish) {
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
+            try {
+                publishWorkflow(workflow, publish, user);
+            } catch (CustomWebApplicationException ex) {
+                LOG.warn("Could not set publish state from YML.", ex);
+                lambdaEvent.setSuccess(false);
+                lambdaEvent.setMessage(ex.getMessage());
             }
-            return null;
-        }).filter(StringUtils::isNotEmpty).collect(Collectors.joining("\n"));
-
-        if (StringUtils.isNotEmpty(message)) {
-            event.setMessage(message);
+            lambdaEventDAO.create(lambdaEvent);
         }
     }
 
-    private String computeMultiValidationMessage(Set<Validation> validations) {
-        return validations.stream().filter(v -> !v.isValid()).map(v -> computeValidationMessage(v)).filter(StringUtils::isNotEmpty).collect(Collectors.joining("\n"));
+    private void rethrowIfFatal(RuntimeException ex, TransactionHelper transactionHelper) {
+        if (ex == transactionHelper.thrown()) {
+            LOG.error("Database transaction error: {} ", ex.getMessage());
+            throw new CustomWebApplicationException("database transaction error", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        if (isGitHubRateLimitError(ex) || isServerError(ex))  {
+            throw ex;
+        }
     }
 
-    private String computeValidationMessage(Validation validation) {
+    private String computeTermFromClass(Class<?> workflowType) {
+        if (workflowType == AppTool.class) {
+            return "tool";
+        }
+        if (workflowType == BioWorkflow.class) {
+            return "workflow";
+        }
+        if (workflowType == Service.class) {
+            return "service";
+        }
+        return "entry";
+    }
+
+    private void addValidationsToMessage(Workflow workflow, WorkflowVersion version, PrintWriter messageWriter) {
+        List<Validation> validations = version.getValidations().stream().filter(v -> !v.isValid()).collect(Collectors.toList());
+        if (!validations.isEmpty()) {
+            messageWriter.printf("In version '%s' of %s '%s':%n", version.getName(), workflow.getEntryType().getTerm(), computeFullWorkflowName(workflow));
+            validations.forEach(validation -> addValidationToMessage(validation, messageWriter));
+        }
+    }
+
+    private void addValidationToMessage(Validation validation, PrintWriter messageWriter) {
         try {
             JSONObject json = new JSONObject(validation.getMessage());
-            return json.keySet().stream().map(key -> String.format("- File '%s': %s", key, json.get(key))).collect(Collectors.joining("\n"));
+            json.keySet().forEach(key -> messageWriter.printf("- File '%s': %s%n", key, json.get(key)));
         } catch (JSONException ex) {
             LOG.info("Exception processing validation message JSON", ex);
-            return null;
         }
     }
 
-    private String computeWorkflowName(WorkflowAndVersion workflowAndVersion) {
-        String name = workflowAndVersion.getWorkflowName();
-        String repository = workflowAndVersion.getWorkflowRepository();
+    private String computeFullWorkflowName(Workflow workflow) {
+        return computeFullWorkflowName(workflow.getWorkflowName(), workflow.getRepository());
+    }
+
+    private String computeFullWorkflowName(String name, String repository) {
         return name != null ? String.format("%s/%s", repository, name) : repository;
     }
 
-    private boolean isNotEmpty(Collection<?> c) {
-        return c != null && !c.isEmpty();
-    }
-
-    /**
-     * Create or retrieve services based on Dockstore.yml, add or update tag version
-     * ONLY WORKS FOR v1.1
-     * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
-     * @param installationId installation id needed to set up GitHub Apps
-     * @param user User that triggered action
-     * @param dockstoreYml
-     */
-    @SuppressWarnings("lgtm[java/path-injection]")
-    private List<WorkflowAndVersion> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
-            User user, final SourceFile dockstoreYml) {
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-        if (service != null) {
-            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) { // lgtm[java/path-injection]
-                return List.of();
-            }
-            final DescriptorLanguageSubclass subclass = service.getSubclass();
-            final Boolean publish = service.getPublish();
-            final var defaultVersion = service.getLatestTagAsDefault();
-            final List<YamlAuthor> yamlAuthors = service.getAuthors();
-
-            Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
-            WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
-
-            if (publish != null && workflow.getIsPublished() != publish) {
-                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
-                try {
-                    publishWorkflow(workflow, publish, user);
-                } catch (CustomWebApplicationException ex) {
-                    LOG.warn("Could not set publish state from YML.", ex);
-                    lambdaEvent.setSuccess(false);
-                    lambdaEvent.setMessage(ex.getMessage());
-                }
-                lambdaEventDAO.create(lambdaEvent);
-            }
-
-            return List.of(new WorkflowAndVersion(workflow, version));
+    private String generateMessageFromException(Exception ex) {
+        // ClassCastException has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
+        // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
+        // so return a generic one.
+        if (ex instanceof ClassCastException) {
+            return "Could not parse input.";
         }
-
-        return List.of();
+        String message = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
+        if (ex instanceof DockstoreYamlHelper.DockstoreYamlException) {
+            message = DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML + message;
+        }
+        return message;
     }
 
     /**
@@ -663,7 +684,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflowToUpdate.getUsers().add(user);
         }
 
-        return  workflowToUpdate;
+        return workflowToUpdate;
     }
 
     /**
@@ -681,15 +702,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             WorkflowVersion remoteWorkflowVersion = gitHubSourceCodeRepo
                     .createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
             remoteWorkflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
-            // Add authors
-            addDockstoreYmlAuthorsToVersion(yamlAuthors, remoteWorkflowVersion);
 
             // So we have workflowversion which is the new version, we want to update the version and associated source files
             WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
             WorkflowVersion updatedWorkflowVersion;
             // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
             if (existingWorkflowVersion != null) {
-                // Copy over workflow version level information
+                // Copy over workflow version level information.
+                // Don't copy over non-ORCID and ORCID authors because they are not added to remoteWorkflowVersion. They will be added to the updated workflow version
                 existingWorkflowVersion.setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
                 existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
                 existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
@@ -700,8 +720,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setToolTableJson(null);
                 existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
-                existingWorkflowVersion.setAuthors(remoteWorkflowVersion.getAuthors());
-                existingWorkflowVersion.setOrcidAuthors(remoteWorkflowVersion.getOrcidAuthors());
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
                 updatedWorkflowVersion = existingWorkflowVersion;
             } else {
@@ -712,6 +730,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 updatedWorkflowVersion = remoteWorkflowVersion;
             }
             gitHubSourceCodeRepo.updateVersionMetadata(updatedWorkflowVersion.getWorkflowPath(), updatedWorkflowVersion, workflow.getDescriptorType(), repository);
+            // Add .dockstore.yml authors to updatedWorkflowVersion. We're adding .dockstore.yml authors to updatedWorkflowVersion instead of remoteWorkflowVersion because
+            // updatedWorkflowVersion may contain descriptor authors and we want to overwrite them if .dockstore.yml authors are present.
+            if (!yamlAuthors.isEmpty()) {
+                setDockstoreYmlAuthorsForVersion(yamlAuthors, updatedWorkflowVersion);
+            }
             if (workflow.getLastModified() == null || (updatedWorkflowVersion.getLastModified() != null && workflow.getLastModifiedDate().before(updatedWorkflowVersion.getLastModified()))) {
                 workflow.setLastModified(updatedWorkflowVersion.getLastModified());
             }
@@ -749,11 +772,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Add authors from .dockstore.yml to a version
+     * Sets a version's authors to .dockstore.yml authors. This will overwrite any existing authors in the version.
      * @param yamlAuthors
      * @param version
      */
-    private void addDockstoreYmlAuthorsToVersion(final List<YamlAuthor> yamlAuthors, Version version) {
+    private void setDockstoreYmlAuthorsForVersion(final List<YamlAuthor> yamlAuthors, Version version) {
         final Set<Author> authors = yamlAuthors.stream()
                 .filter(yamlAuthor -> yamlAuthor.getOrcid() == null)
                 .map(yamlAuthor -> {
@@ -938,36 +961,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String msg = "Cannot directly publish/unpublish a checker workflow.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    static class WorkflowAndVersion {
-        private final Workflow workflow;
-        private final WorkflowVersion version;
-
-        WorkflowAndVersion(Workflow workflow, WorkflowVersion version) {
-            this.workflow = workflow;
-            this.version = version;
-        }
-
-        public String getVersionName() {
-            return version.getName();
-        }
-
-        public Set<Validation> getVersionValidations() {
-            return version.getValidations();
-        }
-
-        public EntryType getWorkflowType() {
-            return workflow.getEntryType();
-        }
-
-        public String getWorkflowName() {
-            return workflow.getWorkflowName();
-        }
-
-        public String getWorkflowRepository() {
-            return workflow.getRepository();
         }
     }
 }

@@ -32,8 +32,6 @@ public class MyWorkflows {
         this.description = description;
     }
 
-    public MyWorkflows() { }
-
     public WorkflowMode getMode() {
         return mode;
     }

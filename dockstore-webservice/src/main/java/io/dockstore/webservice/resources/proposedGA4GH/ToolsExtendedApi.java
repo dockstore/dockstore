@@ -182,7 +182,7 @@ public class ToolsExtendedApi {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
             + "", description = VerifyTestParameterFilePost.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
     })
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public Response toolsIdVersionsVersionIdTypeTestsPost(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
         @ApiParam(value = "The type of the underlying descriptor. Allowable values include \"CWL\", \"WDL\", \"NFL\".", required = true) @PathParam("type") String type,
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,

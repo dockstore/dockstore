@@ -23,7 +23,7 @@ import javax.validation.constraints.NotNull;
 public class YamlService11 extends AbstractYamlService {
     private String type;
 
-    @NotNull(message = "Missing property \"type\"")
+    @NotNull
     public String getType() {
         return type;
     }

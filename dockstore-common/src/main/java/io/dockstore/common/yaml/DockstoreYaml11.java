@@ -15,9 +15,9 @@ public class DockstoreYaml11 implements DockstoreYaml {
 
     private YamlService11 service;
 
+    @NotNull
+    @Pattern(regexp = "1\\.1", message = "must be \"1.1\"")
     @Override
-    @NotNull(message = "Property \"version\" is required")
-    @Pattern(regexp = "1.1", message = "The version property value must be 1.1")
     public String getVersion() {
         return version;
     }
@@ -26,7 +26,7 @@ public class DockstoreYaml11 implements DockstoreYaml {
         this.version = version;
     }
 
-    @NotNull(message = "Property \"service\" is required")
+    @NotNull
     public YamlService11 getService() {
         return service;
     }

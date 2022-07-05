@@ -61,6 +61,7 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -134,6 +135,7 @@ public class DockerRepoResource
     private final LabelDAO labelDAO;
     private final FileDAO fileDAO;
     private final FileFormatDAO fileFormatDAO;
+    private final VersionDAO versionDAO;
     private final HttpClient client;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
@@ -154,6 +156,7 @@ public class DockerRepoResource
         this.fileDAO = new FileDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
+        this.versionDAO = new VersionDAO(sessionFactory);
         this.client = client;
 
         this.bitbucketClientID = configuration.getBitbucketClientID();
@@ -908,7 +911,7 @@ public class DockerRepoResource
     public SourceFile dockerfile(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
 
-        return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user, fileDAO);
+        return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user, fileDAO, versionDAO);
     }
 
     // Add for new descriptor types
@@ -921,8 +924,8 @@ public class DockerRepoResource
         "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() -> new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFile(containerId, tag, fileType, user, fileDAO);
+        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        return getSourceFile(containerId, tag, fileType, user, fileDAO, versionDAO);
     }
 
     @GET
@@ -935,8 +938,8 @@ public class DockerRepoResource
     public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() -> new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFileByPath(containerId, tag, fileType, path, user, fileDAO);
+        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        return getSourceFileByPath(containerId, tag, fileType, path, user, fileDAO, versionDAO);
     }
 
     @GET
@@ -949,7 +952,7 @@ public class DockerRepoResource
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
         final FileType fileType = language.getFileType();
-        return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO);
+        return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO, versionDAO);
     }
 
     @GET
@@ -963,7 +966,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor Type", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
         final FileType testParameterType = descriptorLanguage.getTestParamType();
-        return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO);
+        return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO, versionDAO);
     }
 
     /**

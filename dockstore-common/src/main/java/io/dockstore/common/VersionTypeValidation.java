@@ -24,9 +24,7 @@ public class VersionTypeValidation {
     private boolean isValid;
     private Map<String, String> message;
 
-    VersionTypeValidation() {
-        
-    }
+    VersionTypeValidation() {}
 
     /**
      * Map from the file path to the validation (error) message

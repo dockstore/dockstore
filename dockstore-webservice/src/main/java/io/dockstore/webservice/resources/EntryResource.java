@@ -45,6 +45,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
+import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -123,9 +124,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
     private final String hostName;
+    private final PermissionsInterface permissionsInterface;
 
-    public EntryResource(SessionFactory sessionFactory, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
+    public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
         DockstoreWebserviceConfiguration configuration) {
+        this.permissionsInterface = permissionsInterface;
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
@@ -181,13 +184,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @ApiOperation(value = "Get the categories that contain the published entry", notes = "Entry must be published", response = Category.class, responseContainer = "List", hidden = true)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved categories", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Category.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Entry must be published")
-    public List<Category> entryCategories(@Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
+    public List<Category> entryCategories(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+            @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
-        if (entry == null || !entry.getIsPublished()) {
-            String msg = "Published entry does not exist.";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
+        checkExistsEntry(entry);
+        checkCanRead(user, entry);
         List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
         collectionHelper.evictAndSummarize(categories);
         return categories;
@@ -202,7 +203,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Parameter(name = "entryId", description = "id of the entry", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkExistsEntry(entry);
-
         checkCanRead(user, entry);
 
         List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
@@ -220,7 +220,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkExistsEntry(entry);
-
         checkCanRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
@@ -243,7 +242,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkExistsEntry(entry);
-
         checkCanRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
