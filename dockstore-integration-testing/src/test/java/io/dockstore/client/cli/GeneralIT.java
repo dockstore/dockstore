@@ -25,6 +25,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -76,7 +78,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -140,16 +141,16 @@ public class GeneralIT extends BaseIT {
         GitHub gitHub = new GitHubBuilder().withOAuthToken(githubToken).withRateLimitHandler(RateLimitHandler.FAIL).withAbuseLimitHandler(
                 AbuseLimitHandler.FAIL).build();
         LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/md5sum-checker");
-        Assert.assertEquals("Apache License 2.0", licenseInformation.getLicenseName());
+        assertEquals("Apache License 2.0", licenseInformation.getLicenseName());
 
         licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/galaxy-workflows");
-        Assert.assertEquals("MIT License", licenseInformation.getLicenseName());
+        assertEquals("MIT License", licenseInformation.getLicenseName());
 
         licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstoretestuser2/cwl-gene-prioritization");
-        Assert.assertEquals("Other", licenseInformation.getLicenseName());
+        assertEquals("Other", licenseInformation.getLicenseName());
 
         licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/silly-example");
-        Assert.assertNull(licenseInformation.getLicenseName());
+        assertNull(licenseInformation.getLicenseName());
     }
 
     /**
@@ -516,21 +517,21 @@ public class GeneralIT extends BaseIT {
         long workflowVersionId = workflow.getWorkflowVersions().stream().filter(w -> w.getReference().equals("testBoth")).findFirst().get().getId();
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersionId);
         List<VersionVerifiedPlatform> versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
-        Assert.assertEquals(0, versionsVerified.size());
+        assertEquals(0, versionsVerified.size());
 
         testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata, platformversion) VALUES (" + sourceFiles.get(0).getId() + ", true, 'Potato CLI', 'Idaho', '1.0')");
         versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
-        Assert.assertEquals(1, versionsVerified.size());
+        assertEquals(1, versionsVerified.size());
 
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         sourceFiles = fileDAO.findSourceFilesByVersion(tool.getWorkflowVersions().get(0).getId());
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
-        Assert.assertEquals(0, versionsVerified.size());
+        assertEquals(0, versionsVerified.size());
 
         testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFiles.get(0).getId() + ", true, 'Potato CLI', 'Idaho')");
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
-        Assert.assertEquals(1, versionsVerified.size());
+        assertEquals(1, versionsVerified.size());
 
         // check that verified platforms can't be viewed by another user if entry isn't published
         io.dockstore.openapi.client.ApiClient user1Client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
@@ -539,14 +540,15 @@ public class GeneralIT extends BaseIT {
             versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
             fail("Should not be able to verified platforms if not published and doesn't belong to user.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals("This entry is not published.", ex.getMessage());
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
+            assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
         }
 
         // verified platforms can be viewed by others once published
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         workflowApi.publish(workflow.getId(), publishRequest);
         versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
-        Assert.assertEquals(1, versionsVerified.size());
+        assertEquals(1, versionsVerified.size());
     }
 
     @Test
@@ -582,7 +584,7 @@ public class GeneralIT extends BaseIT {
         workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId()).stream().filter(wv -> wv.getName().equals("2")).findFirst().get();
         fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(2, fileTypes.size());
-        assertFalse(fileTypes.get(0) == fileTypes.get(1));
+        assertNotSame(fileTypes.get(0), fileTypes.get(1));
 
         DockstoreTool tool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), DescriptorLanguage.CWL.toString(), "namespace", null);
         SourceFile dockerfile = new SourceFile();
@@ -605,7 +607,7 @@ public class GeneralIT extends BaseIT {
         fileTypes = entriesApi.getVersionsFileTypes(tool.getId(), tool.getWorkflowVersions().get(0).getId());
         assertEquals(5, fileTypes.size());
         // ensure no duplicates
-        SortedSet set = new TreeSet(fileTypes);
+        SortedSet<String> set = new TreeSet<>(fileTypes);
         assertEquals(set.size(), fileTypes.size());
 
         // check that file types can't be viewed by another user if entry isn't published
@@ -615,7 +617,8 @@ public class GeneralIT extends BaseIT {
             fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
             fail("Should not be able to grab a versions file types if not published and doesn't belong to user.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals("This entry is not published.", ex.getMessage());
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
+            assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
         }
 
         // file types can be viewed by others once published
@@ -623,7 +626,7 @@ public class GeneralIT extends BaseIT {
         workflowApi.publish(workflow.getId(), publishRequest);
         fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(2, fileTypes.size());
-        assertFalse(fileTypes.get(0) == fileTypes.get(1));
+        assertNotSame(fileTypes.get(0), fileTypes.get(1));
     }
 
     // Tests 1.10.0 migration where id=adddescriptortypecolumn
@@ -643,7 +646,7 @@ public class GeneralIT extends BaseIT {
 
         tool = toolApi.getContainerByToolPath("quay.io/dockstore2/testrepo2", null);
         assertEquals(2, tool.getDescriptorType().size());
-        assertTrue(tool.getDescriptorType().get(0) != tool.getDescriptorType().get(1));
+        assertNotSame(tool.getDescriptorType().get(0), tool.getDescriptorType().get(1));
     }
 
     @Test
@@ -666,7 +669,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.getContainerByToolPath("quay.io/dockstore2/testrepo2", null);
         tool = toolApi.refresh(tool.getId());
         assertEquals(2, tool.getDescriptorType().size());
-        assertTrue(tool.getDescriptorType().get(0) != tool.getDescriptorType().get(1));
+        assertNotSame(tool.getDescriptorType().get(0), tool.getDescriptorType().get(1));
     }
 
     private void verifyTRSSourceFileConversion(final List<FileWrapper> fileWrappers) {
@@ -697,7 +700,7 @@ public class GeneralIT extends BaseIT {
             tool = toolApi.updateToolDefaultVersion(tool.getId(), tag.getName());
             fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
-            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+            assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
         }
 
         // Set the default version to a non-hidden version
@@ -711,7 +714,7 @@ public class GeneralIT extends BaseIT {
             toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
             fail("Should not be able to hide a default version");
         } catch (ApiException ex) {
-            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+            assertEquals("You cannot hide the default version.", ex.getMessage());
         }
 
         // Test the same for hosted tools
@@ -734,7 +737,7 @@ public class GeneralIT extends BaseIT {
             toolTagsApi.updateTags(hostedTool.getId(), Collections.singletonList(hostedTag));
             fail("Shouldn't be able to hide the default version.");
         } catch (ApiException ex) {
-            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+            assertEquals("You cannot hide the default version.", ex.getMessage());
         }
 
         cwl.setContent("class: CommandLineTool\n\ncwlVersion: v1.0");
@@ -747,7 +750,7 @@ public class GeneralIT extends BaseIT {
             toolApi.updateToolDefaultVersion(hostedTool.getId(), hostedTag.getName());
             fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
-            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+            assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
         }
     }
 
@@ -1427,7 +1430,7 @@ public class GeneralIT extends BaseIT {
                     "insert into version_sourcefile (versionid, sourcefileid) values (" + versionId + ", " + 1234567890 + ")");
                 fail("Insert should have failed to do row-level security");
             } catch (Exception ex) {
-                Assert.assertTrue(ex.getMessage().contains("new row violates row-level"));
+                assertTrue(ex.getMessage().contains("new row violates row-level"));
             }
         });
 
@@ -1510,29 +1513,29 @@ public class GeneralIT extends BaseIT {
 
         // confirm the tool topic settings
         final String topicAutomatic = tool.getTopicAutomatic();
-        Assert.assertEquals("Test repo for dockstore", topicAutomatic);
-        Assert.assertEquals(null, tool.getTopicManual());
-        Assert.assertEquals(TopicSelectionEnum.AUTOMATIC, tool.getTopicSelection());
+        assertEquals("Test repo for dockstore", topicAutomatic);
+        assertNull(tool.getTopicManual());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, tool.getTopicSelection());
 
         // set the automatic topic to a garbage string, change the manual topic, and select it
         final String topicManual = "a user-specified manual topic!";
         final String garbage = "fooooo";
-        Assert.assertEquals(1, testingPostgres.runUpdateStatement(String.format("update tool set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", tool.getId())));
+        assertEquals(1, testingPostgres.runUpdateStatement(String.format("update tool set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", tool.getId())));
 
         // confirm the new topic settings
         tool = toolsApi.getContainer(tool.getId(), null);
-        Assert.assertEquals(garbage, tool.getTopicAutomatic());
-        Assert.assertEquals(topicManual, tool.getTopicManual());
-        Assert.assertEquals(TopicSelectionEnum.MANUAL, tool.getTopicSelection());
+        assertEquals(garbage, tool.getTopicAutomatic());
+        assertEquals(topicManual, tool.getTopicManual());
+        assertEquals(TopicSelectionEnum.MANUAL, tool.getTopicSelection());
 
         // refresh the Tool
         DockstoreTool refreshedTool = toolsApi.refresh(tool.getId());
 
         // make sure the automatic topic was refreshed, and that the manual topic and selection are the same
-        Assert.assertEquals(tool.getId(), refreshedTool.getId());
-        Assert.assertEquals(topicAutomatic, refreshedTool.getTopicAutomatic());
-        Assert.assertEquals(topicManual, refreshedTool.getTopicManual());
-        Assert.assertEquals(TopicSelectionEnum.MANUAL, refreshedTool.getTopicSelection());
+        assertEquals(tool.getId(), refreshedTool.getId());
+        assertEquals(topicAutomatic, refreshedTool.getTopicAutomatic());
+        assertEquals(topicManual, refreshedTool.getTopicManual());
+        assertEquals(TopicSelectionEnum.MANUAL, refreshedTool.getTopicSelection());
     }
 
     /**
@@ -1580,12 +1583,12 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
         DockstoreTool tool = getQuayContainer(gitUrl);
         DockstoreTool toolTest = toolsApi.registerManual(tool);
-        Assert.assertEquals("Should be able to get license after manual register", "Apache License 2.0", toolTest.getLicenseInformation().getLicenseName());
+        assertEquals("Should be able to get license after manual register", "Apache License 2.0", toolTest.getLicenseInformation().getLicenseName());
 
         // Clear license name to mimic old entry that does not have a license associated with it
         testingPostgres.runUpdateStatement("update tool set licensename=null");
         DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
-        Assert.assertEquals("Should be able to get license after refresh", "Apache License 2.0", refresh.getLicenseInformation().getLicenseName());
+        assertEquals("Should be able to get license after refresh", "Apache License 2.0", refresh.getLicenseInformation().getLicenseName());
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS + "' and giturl = '"
@@ -1677,11 +1680,11 @@ public class GeneralIT extends BaseIT {
 
         // Add alias
         Entry entry = entryApi.addAliases(refresh.getId(), "foobar");
-        Assert.assertTrue("Should have alias foobar", entry.getAliases().containsKey("foobar"));
+        assertTrue("Should have alias foobar", entry.getAliases().containsKey("foobar"));
 
         // Get unpublished tool by alias as owner
         DockstoreTool aliasTool = containersApi.getToolByAlias("foobar");
-        Assert.assertNotNull("Should retrieve the tool by alias", aliasTool);
+        assertNotNull("Should retrieve the tool by alias", aliasTool);
 
         // Cannot get tool by alias as other user
         try {
@@ -1705,15 +1708,15 @@ public class GeneralIT extends BaseIT {
 
         // Get published tool by alias as owner
         DockstoreTool publishedAliasTool = containersApi.getToolByAlias("foobar");
-        Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+        assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
 
         // Cannot get tool by alias as other user
         publishedAliasTool = otherUserContainersApi.getToolByAlias("foobar");
-        Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+        assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
 
         // Cannot get tool by alias as anon user
         publishedAliasTool = anonContainersApi.getToolByAlias("foobar");
-        Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+        assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
 
     }
 

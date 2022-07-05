@@ -12,7 +12,9 @@ public class Sha256Converter implements AttributeConverter<List<Checksum>, Strin
 
     @Override
     public String convertToDatabaseColumn(final List<Checksum> attribute) {
-        LOG.error("sha256 column is read-only, should not be writing to the database");
+        // while technically, this should never be called since we should never be re-writing sha256
+        // nonetheless, hibernate seems to stage/simulate deletions even on select queries leading to this being called
+        LOG.debug("sha256 column is read-only, should not be writing to the database");
         return null;
     }
 

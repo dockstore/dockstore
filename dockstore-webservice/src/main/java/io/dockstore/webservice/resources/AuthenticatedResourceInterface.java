@@ -206,10 +206,8 @@ public interface AuthenticatedResourceInterface {
      * @param entry entry to check permissions for()
      */
     default void checkOptionalAuthRead(Optional<User> user, Entry entry) {
-        if (entry.getIsPublished()) {
-            checkEntry(entry);
-        } else {
-            checkEntry(entry);
+        checkEntry(entry);
+        if (!entry.getIsPublished()) {
             if (user.isPresent()) {
                 checkCanRead(user.get(), entry);
             } else {

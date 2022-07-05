@@ -19,13 +19,13 @@ package io.openapi.api.impl;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
+import static io.dockstore.webservice.resources.EntryResource.checkCanReadAcrossEntryTypes;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.SERVICE;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -50,6 +50,7 @@ import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.openapi.api.ToolsApiService;
 import io.openapi.model.Checksum;
@@ -111,6 +112,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
     private static EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO> workflowHelper;
     private static BioWorkflowDAO bioWorkflowDAO;
+    private static PermissionsInterface permissionsInterface;
     private static VersionDAO versionDAO;
 
     public static void setToolDAO(ToolDAO toolDAO) {
@@ -151,6 +153,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         ToolsApiServiceImpl.config = config;
+    }
+
+    public static void setAuthorizer(PermissionsInterface authorizer) {
+        ToolsApiServiceImpl.permissionsInterface = authorizer;
     }
 
     @Override
@@ -247,7 +253,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return entry;
         }
         if (entry != null && user.isPresent()) {
-            checkUser(user.get(), entry);
+            checkCanRead(user.get(), entry);
             return entry;
         }
         return null;
@@ -345,44 +351,62 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
         }
 
+        final String scheme = config.getExternalConfig().getScheme();
+        final String hostname = config.getExternalConfig().getHostname();
+        final int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
+        final String path = ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + relativePath;
+        final String encodedQuery = value.getUriInfo().getRequestUri().getRawQuery();
 
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
         responseBuilder.header("current_offset", offset);
         responseBuilder.header("current_limit", actualLimit);
-        try {
-            int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
-            responseBuilder.header("self_link",
-                new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + relativePath,
-                    value.getUriInfo().getRequestUri().getQuery(), null).normalize().toURL().toString());
-            // construct links to other pages
-            List<String> filters = new ArrayList<>();
-            handleParameter(id, "id", filters);
-            handleParameter(organization, "organization", filters);
-            handleParameter(name, "name", filters);
-            handleParameter(toolname, "toolname", filters);
-            handleParameter(description, "description", filters);
-            handleParameter(author, "author", filters);
-            handleParameter(registry, "registry", filters);
-            handleParameter(String.valueOf(actualLimit), "limit", filters);
-
-            final long numPages = (numEntries.sum()) / actualLimit;
-
-            if (startIndex + actualLimit < numEntries.sum()) {
-                URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + relativePath,
-                    Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
-                responseBuilder.header("next_page", nextPageURI.toURL().toString());
-            }
-            URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + relativePath, Joiner.on('&').join(filters) + "&offset=" + numPages, null)
-                .normalize();
-            responseBuilder.header("last_page", lastPageURI.toURL().toString());
-
-        } catch (URISyntaxException | MalformedURLException e) {
-            throw new CustomWebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
+        responseBuilder.header("self_link", createUrlString(scheme, hostname, port, path, encodedQuery));
+        if (startIndex + actualLimit < numEntries.sum()) {
+            responseBuilder.header("next_page", createUrlString(scheme, hostname, port, path, positionQuery(encodedQuery, actualLimit, offsetInteger + 1L)));
         }
+        final long numPages = numEntries.sum() / actualLimit;
+        responseBuilder.header("last_page", createUrlString(scheme, hostname, port, path, positionQuery(encodedQuery, actualLimit, numPages)));
+
         return responseBuilder.build();
+    }
+
+    private String createUrlString(String scheme, String hostname, int port, String path, String encodedQuery) {
+        String url;
+        try {
+            url = new URI(scheme, null, hostname, port, path, null, null).normalize().toURL().toString();
+        } catch (URISyntaxException | MalformedURLException e) {
+            throw new CustomWebApplicationException("Could not create url string", HttpStatus.SC_BAD_REQUEST);
+        }
+        // The URI constructor tries to encode the query string that it is
+        // passed, and there's no way to stop it, so we add it here instead.
+        if (encodedQuery != null) {
+            url += '?';
+            url += encodedQuery;
+        }
+        return url;
+    }
+
+    private String positionQuery(String encodedQuery, long limit, long offset) {
+        // For more sophisticated query string processing, the
+        // https://hc.apache.org/httpcomponents-client-5.1.x/
+        // library may be of use.
+        List<String> resultNameValues = new ArrayList<>();
+        // Split the query string into name=value pairs at the
+        // ampersands, then copy each name=value pair unchanged, except
+        // for the "limit" and "offset" pairs, which we omit. We will
+        // add them back at the end.
+        if (encodedQuery != null) {
+            for (String nameValue: encodedQuery.split("&")) {
+                if (!nameValue.startsWith("limit=") && !nameValue.startsWith("offset=")) {
+                    resultNameValues.add(nameValue);
+                }
+            }
+        }
+        // Add name=value pairs that set the value of "limit" and "offset".
+        resultNameValues.add("limit=" + limit);
+        resultNameValues.add("offset=" + offset);
+        // Reassemble the name=value pairs into a query string.
+        return String.join("&", resultNameValues);
     }
 
     /**
@@ -533,12 +557,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return entry;
     }
 
-    private void handleParameter(String parameter, String queryName, List<String> filters) {
-        if (parameter != null) {
-            filters.add(queryName + "=" + parameter);
-        }
-    }
-
     /**
      * @param gitUrl       The git formatted url for the repo
      * @param reference    the git tag or branch
@@ -648,12 +666,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     // this only works for test parameters associated with tools
                     List<SourceFile> testSourceFiles = new ArrayList<>();
                     try {
-                        testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO));
+                        testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO, versionDAO));
                     } catch (CustomWebApplicationException e) {
                         LOG.warn("intentionally ignoring failure to get test parameters", e);
                     }
                     try {
-                        testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO));
+                        testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO, versionDAO));
                     } catch (CustomWebApplicationException e) {
                         LOG.warn("intentionally ignoring failure to get source files", e);
                     }
@@ -886,6 +904,16 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private String cleanRelativePath(String relativePath) {
         String cleanRelativePath = StringUtils.removeStart(relativePath, "./");
         return StringUtils.removeStart(cleanRelativePath, "/");
+    }
+
+
+    @Override
+    public void checkCanRead(User user, Entry workflow) {
+        try {
+            checkUser(user, workflow);
+        } catch (CustomWebApplicationException ex) {
+            checkCanReadAcrossEntryTypes(user, workflow, permissionsInterface, ex);
+        }
     }
 
     /**

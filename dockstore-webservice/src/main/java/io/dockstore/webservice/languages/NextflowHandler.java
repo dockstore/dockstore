@@ -79,8 +79,8 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                 version.setDescriptionAndDescriptionSource(configuration.getString("manifest.description"), DescriptionSource.DESCRIPTOR);
                 descriptionInProgress = version.getDescription();
             }
-            // Add authors from descriptor if there are no .dockstore.yml authors
-            if (configuration.containsKey("manifest.author") && version.getAuthors().isEmpty()) {
+            // Add authors from descriptor
+            if (configuration.containsKey("manifest.author")) {
                 String[] authors = configuration.getString("manifest.author").split(",");
                 for (String author : authors) {
                     Author newAuthor = new Author(author.trim());
@@ -281,7 +281,11 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      * @return Input channel name
      */
     private String getInputChannelNameForEXPR(GroovySourceAST exprAST) {
-        return exprAST == null ? null : exprAST.getFirstChild().getFirstChild().getNextSibling().getFirstChild().getText();
+        try {
+            return exprAST.getFirstChild().getFirstChild().getNextSibling().getFirstChild().getText();
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     /**
@@ -292,7 +296,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      */
     private String getProcessValue(GroovySourceAST processAST) {
         try {
-            return processAST == null ? null : processAST.getNextSibling().getFirstChild().getFirstChild().getText();
+            return processAST.getNextSibling().getFirstChild().getFirstChild().getText();
         } catch (NullPointerException e) {
             return null;
         }
@@ -462,6 +466,9 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         try {
             StringBuilder builder = new StringBuilder();
             final List<GroovySourceAST> process = getGroovySourceASTList(mainDescriptor, "helpMessage");
+            if (process == null) {
+                return null;
+            }
             process.forEach(ast -> getHelpMessage(ast, builder, new HashSet<GroovySourceAST>()));
             return builder.toString();
         } catch (IOException | TokenStreamException | RecognitionException e) {
@@ -510,6 +517,9 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      */
     private List<GroovySourceAST> getGroovySourceASTList(String mainDescriptor, String keyword)
         throws RecognitionException, TokenStreamException, IOException {
+        if (mainDescriptor == null) {
+            return null;
+        }
         try (InputStream stream = IOUtils.toInputStream(mainDescriptor, StandardCharsets.UTF_8)) {
             GroovyRecognizer make = GroovyRecognizer.make(new GroovyLexer(stream));
             make.compilationUnit();
@@ -527,77 +537,79 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     private Map<String, List<String>> getCallsToDependencies(String mainDescriptor) {
         //TODO: create proper dependency arrays, for now just list processes sequentially
         Map<String, List<String>> map = new HashMap<>();
-        if (mainDescriptor != null) {
-            try {
-                List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
-                Map<String, List<String>> processNameToInputChannels = new HashMap<>();
-                Map<String, List<String>> processNameToOutputChannels = new HashMap<>();
-
-                processList.forEach((GroovySourceAST processAST) -> {
-                    String processName = getProcessValue(processAST);
-                    if (processName != null) {
-                        // Get a list of all channels that the process depends on
-                        List<String> inputs = getInputDependencyList(processAST);
-                        processNameToInputChannels.put(processName, inputs);
-
-                        // Get a list of all channels that the process writes to
-                        List<String> outputs = getOutputDependencyList(processAST);
-                        processNameToOutputChannels.put(processName, outputs);
-                    }
-                });
-
-                // Create a map of process name to dependent processes
-                processNameToInputChannels.keySet().forEach((String processName) -> {
-                    List<String> dependencies = new ArrayList<>();
-                    processNameToInputChannels.get(processName).forEach((String channelRead) -> {
-                        processNameToOutputChannels.keySet().forEach((String dependentProcessName) -> {
-                            Optional<String> temp = processNameToOutputChannels.get(dependentProcessName).stream().filter(channelWrite -> Objects.equals(channelRead, channelWrite)).findFirst();
-
-                            if (temp.isPresent()) {
-                                dependencies.add(dependentProcessName);
-                            }
-                        });
-                    });
-                    map.put(processName, dependencies);
-                });
-            } catch (IOException | TokenStreamException | RecognitionException e) {
-                LOG.warn("could not parse", e);
+        try {
+            List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
+            if (processList == null) {
+                return map;
             }
+            Map<String, List<String>> processNameToInputChannels = new HashMap<>();
+            Map<String, List<String>> processNameToOutputChannels = new HashMap<>();
+
+            processList.forEach((GroovySourceAST processAST) -> {
+                String processName = getProcessValue(processAST);
+                if (processName != null) {
+                    // Get a list of all channels that the process depends on
+                    List<String> inputs = getInputDependencyList(processAST);
+                    processNameToInputChannels.put(processName, inputs);
+
+                    // Get a list of all channels that the process writes to
+                    List<String> outputs = getOutputDependencyList(processAST);
+                    processNameToOutputChannels.put(processName, outputs);
+                }
+            });
+
+            // Create a map of process name to dependent processes
+            processNameToInputChannels.keySet().forEach((String processName) -> {
+                List<String> dependencies = new ArrayList<>();
+                processNameToInputChannels.get(processName).forEach((String channelRead) -> {
+                    processNameToOutputChannels.keySet().forEach((String dependentProcessName) -> {
+                        Optional<String> temp = processNameToOutputChannels.get(dependentProcessName).stream().filter(channelWrite -> Objects.equals(channelRead, channelWrite)).findFirst();
+
+                        if (temp.isPresent()) {
+                            dependencies.add(dependentProcessName);
+                        }
+                    });
+                });
+                map.put(processName, dependencies);
+            });
+        } catch (IOException | TokenStreamException | RecognitionException e) {
+            LOG.warn("could not parse", e);
         }
         return map;
     }
 
     protected Map<String, DockerParameter> getCallsToDockerMap(String mainDescriptor, String defaultContainer) {
         Map<String, DockerParameter> map = new HashMap<>();
-        if (mainDescriptor != null) {
-            try {
-                List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
-
-                for (GroovySourceAST processAST : processList) {
-                    String processName = getProcessValue(processAST);
-                    if (processName == null) {
-                        continue;
-                    }
-                    GroovySourceAST containerAST = getFirstAstWithKeyword(processAST, "container", false);
-                    String containerName;
-                    if (containerAST != null) {
-                        containerName = containerAST.getNextSibling().getFirstChild().getText();
-                    } else {
-                        containerName = defaultContainer;
-                    }
-
-                    if (containerName != null) {
-                        if (containerName.startsWith("$")) { // Parameterized container name
-                            map.put(processName, new DockerParameter(containerName, DockerImageReference.DYNAMIC));
-                        } else {
-                            map.put(processName, new DockerParameter(containerName, DockerImageReference.LITERAL));
-                        }
-                        LOG.debug("found container: " + containerName + " in process " + processName);
-                    }
-                }
-            } catch (IOException | TokenStreamException | RecognitionException e) {
-                LOG.warn("could not parse", e);
+        try {
+            List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
+            if (processList == null) {
+                return map;
             }
+
+            for (GroovySourceAST processAST : processList) {
+                String processName = getProcessValue(processAST);
+                if (processName == null) {
+                    continue;
+                }
+                GroovySourceAST containerAST = getFirstAstWithKeyword(processAST, "container", false);
+                String containerName;
+                if (containerAST != null) {
+                    containerName = containerAST.getNextSibling().getFirstChild().getText();
+                } else {
+                    containerName = defaultContainer;
+                }
+
+                if (containerName != null) {
+                    if (containerName.startsWith("$")) { // Parameterized container name
+                        map.put(processName, new DockerParameter(containerName, DockerImageReference.DYNAMIC));
+                    } else {
+                        map.put(processName, new DockerParameter(containerName, DockerImageReference.LITERAL));
+                    }
+                    LOG.debug("found container: " + containerName + " in process " + processName);
+                }
+            }
+        } catch (IOException | TokenStreamException | RecognitionException e) {
+            LOG.warn("could not parse", e);
         }
         return map;
     }
