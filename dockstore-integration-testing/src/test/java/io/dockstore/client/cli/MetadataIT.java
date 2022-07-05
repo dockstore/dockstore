@@ -1,7 +1,6 @@
 package io.dockstore.client.cli;
 
 import io.dockstore.common.PipHelper;
-import io.dockstore.webservice.resources.MetadataResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.ApiResponse;
@@ -39,7 +38,6 @@ public class MetadataIT extends BaseIT {
         return queryParams;
     }
 
-    @Category(MetadataResource.class)
     @Test
     public void testValidClientVersion() {
         String endpoint = "/metadata/runner_dependencies";
@@ -49,7 +47,6 @@ public class MetadataIT extends BaseIT {
         Assert.assertEquals(HttpStatus.OK_200, response.getStatusCode());
     }
 
-    @Category(MetadataResource.class)
     @Test
     public void testPrereleaseClientVersion() {
         String endpoint = "/metadata/runner_dependencies";
@@ -59,7 +56,6 @@ public class MetadataIT extends BaseIT {
         Assert.assertEquals(HttpStatus.OK_200, response.getStatusCode());
     }
 
-    @Category(MetadataResource.class)
     @Test
     public void testDevelopmentSemanticVersion() {
         String endpoint = "/metadata/runner_dependencies";
@@ -69,7 +65,6 @@ public class MetadataIT extends BaseIT {
         Assert.assertEquals(HttpStatus.OK_200, response.getStatusCode());
     }
 
-    @Category(MetadataResource.class)
     @Test
     public void testInvalidClientVersion() {
         String endpoint = "/metadata/runner_dependencies";
