@@ -169,7 +169,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response toolsIndexGet(SecurityContext securityContext) {
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
-            clearIndex();
+            clearElasticSearch();
             int totalProcessed = 0;
             LOG.info("Starting GA4GH batch processing");
             totalProcessed += indexDAO(toolDAO);
@@ -190,11 +190,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             published = entryDAO.findAllPublished(processed, ES_BATCH_INSERT_SIZE, null, "gitUrl", "asc");
             processed += published.size();
             indexBatch(published);
+            published.forEach(entryDAO::evict);
         } while (published.size() == ES_BATCH_INSERT_SIZE);
         return processed;
     }
 
-    private void clearIndex() {
+    private void clearElasticSearch() {
         try {
             // FYI. it is real tempting to use a try ... catch with resources to close this client, but it actually permanently messes up the client!
             RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
@@ -211,8 +212,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     private void createIndex(String resourceName, String nameOfIndex, RestHighLevelClient client) throws IOException {
         // Get mapping for index
-        URL urlTools = Resources.getResource(resourceName);
-        String textTools = Resources.toString(urlTools, StandardCharsets.UTF_8);
+        URL urlStuff = Resources.getResource(resourceName);
+        String textTools = Resources.toString(urlStuff, StandardCharsets.UTF_8);
         // Create indices
         CreateIndexRequest toolsRequest = new CreateIndexRequest(nameOfIndex);
         toolsRequest.source(textTools, XContentType.JSON);
