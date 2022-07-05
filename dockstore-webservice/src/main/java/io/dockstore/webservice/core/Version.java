@@ -59,6 +59,9 @@ import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
@@ -80,6 +83,9 @@ import org.hibernate.annotations.UpdateTimestamp;
         ),
         @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
 })
+
+@FilterDef(name = "versionNameFilter", parameters = @ParamDef(name = "name", type = "string"), defaultCondition = "LOWER(:name) = LOWER(name)")
+@Filter(name = "versionNameFilter")
 
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {

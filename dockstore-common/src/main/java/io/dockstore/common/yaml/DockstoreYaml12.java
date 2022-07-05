@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 
 /**
  * The preferred .dockstore.yml since 1.9. Supports workflows, one-step workflows (tools), and services .
@@ -48,7 +49,8 @@ public class DockstoreYaml12 implements DockstoreYaml {
         this.workflows = workflows;
     }
 
-
+    @Valid
+    @NotNull // But may be empty
     public List<YamlWorkflow> getTools() {
         return tools;
     }
@@ -57,6 +59,7 @@ public class DockstoreYaml12 implements DockstoreYaml {
         this.tools = tools;
     }
 
+    @Valid
     public Service12 getService() {
         return service;
     }
@@ -66,6 +69,7 @@ public class DockstoreYaml12 implements DockstoreYaml {
     }
 
     @NotNull
+    @Pattern(regexp = "1\\.2", message = "must be \"1.2\"")
     @Override
     public String getVersion() {
         return version;
