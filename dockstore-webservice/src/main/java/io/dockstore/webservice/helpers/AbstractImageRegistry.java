@@ -148,7 +148,7 @@ public abstract class AbstractImageRegistry {
      * @param dashboardPrefix   A string that prefixes logging statements to indicate that it will be used for Cloudwatch & Grafana.
      * @return The list of tools that have been updated
      */
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
             String organization, final EventDAO eventDAO, final String dashboardPrefix) {
@@ -265,7 +265,7 @@ public abstract class AbstractImageRegistry {
      *
      * @return
      */
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final Token githubToken, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO, String dashboardPrefix) {
 

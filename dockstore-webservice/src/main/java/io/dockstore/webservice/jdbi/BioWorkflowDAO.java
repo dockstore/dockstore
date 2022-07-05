@@ -40,7 +40,7 @@ public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected Root<BioWorkflow> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, CriteriaQuery<?> q) {
 

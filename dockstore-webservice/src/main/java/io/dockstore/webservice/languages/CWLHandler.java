@@ -398,7 +398,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return workflow;
     }
 
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private void processWorkflow(Workflow workflow, Map<String, Map> parentRequirements, Map<String, Map> parentHints, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         Yaml yaml = new Yaml();
         Gson gson = CWL.getTypeSafeCWLToolDocument();

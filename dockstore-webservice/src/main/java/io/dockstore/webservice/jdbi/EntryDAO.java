@@ -277,7 +277,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     // TODO: these methods should be merged with the proprietary version in EntryDAO, but should be a major version refactoring.
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         final CriteriaQuery<Long> q = cb.createQuery(Long.class);
@@ -372,7 +372,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return '%' + value + '%';
     }
 
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public List<T> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, int startIndex, int pageRemaining) {
 
@@ -387,11 +387,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return query.getResultList();
     }
 
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected abstract Root<T> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, CriteriaQuery<?> q);
 
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected Predicate getWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, SourceControlConverter converter, Root<?> entryRoot) {
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));

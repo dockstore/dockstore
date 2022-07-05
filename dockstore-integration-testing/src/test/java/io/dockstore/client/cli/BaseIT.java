@@ -87,7 +87,7 @@ public class BaseIT {
     public static final String BIOWORKFLOW = WorkflowSubClass.BIOWORKFLOW.toString();
     public static final String APPTOOL = WorkflowSubClass.APPTOOL.toString();
 
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
         String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
         String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
@@ -134,7 +134,7 @@ public class BaseIT {
         return tool;
     }
 
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
         String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
         String versionName, boolean toPublish) {
