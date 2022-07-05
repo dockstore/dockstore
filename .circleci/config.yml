@@ -54,8 +54,6 @@ workflows:
           <<: *common_filters
           requires:
             - build
-          context:
-            - sonarcloud
       - workflow-integration-tests:
           <<: *common_filters
           requires:
@@ -65,22 +63,18 @@ workflows:
           <<: *common_filters
           requires:
             - build
-          context: sonarcloud
       - language-parsing-tests:
           <<: *common_filters
           requires:
             - build
-          context: sonarcloud
       - tool-integration-tests:
           <<: *common_filters
           requires:
             - build
-          context: sonarcloud
       - integration-tests:
           <<: *common_filters
           requires:
             - build
-          context: sonarcloud
       - regression-integration-tests:
           filters:
             branches:
@@ -89,6 +83,16 @@ workflows:
                 - /^release.*$/
           requires:
             - build
+      - sonar-cloud:
+          <<: *common_filters
+          requires:
+            - unit_test
+            - workflow-integration-tests
+            - bitbucket-tests
+            - language-parsing-tests
+            - tool-integration-tests
+            - integration-tests
+            - regression-integration-tests
           context: sonarcloud
 jobs:
   regression-integration-tests:
@@ -106,6 +110,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   integration-tests:
+    parallelism: 4
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: integration-tests
@@ -118,6 +123,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   tool-integration-tests:
+    parallelism: 2
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: tool-integration-tests
@@ -128,6 +134,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   workflow-integration-tests:
+    parallelism: 3
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: workflow-integration-tests
@@ -146,7 +153,7 @@ jobs:
       - install-postgres
       - setup_postgres
       - setup_integration_test
-      - save_test_results    
+      - save_test_results
   language-parsing-tests:
     executor: machine_integration_test_exec
     environment:
@@ -157,7 +164,7 @@ jobs:
       - run:
           name: install pip dependencies
           command: scripts/install-tests.sh
-      - run: 
+      - run:
           name: build sam-cli
           command: |
             # workaround https://github.com/aws/aws-sam-cli/issues/3791#issuecomment-1096604840
@@ -198,6 +205,11 @@ jobs:
             sudo apt install openssl -y
             bash scripts/decrypt.sh
       - run:
+          name: Generate test lists
+          command: bash scripts/generate-test-lists.sh
+      - store_artifacts:
+          path: temp/test-lists
+      - run:
           name: build
           command: ./mvnw -B clean install -DskipTests
       - run:
@@ -223,6 +235,7 @@ jobs:
             fi
           environment:
             TESTING_PROFILE: automated-review
+
   unit_test: # runs not using Workflows must have a `build` job as entry point
     parameters:
       aws_bucket:
@@ -256,7 +269,7 @@ jobs:
           command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp
       - run:
           name: send coverage for unit tests
-          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"      
+          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
       - run:
           name: run the non-confidential integration tests
           command: |
@@ -315,9 +328,7 @@ jobs:
           path: ~/junit
       - store_artifacts:
           path: keysmap.list
-      - run:
-          name: SonarCloud scan - coverage
-          command: ./mvnw sonar:sonar
+      - persist_coverage
       - run:
           name: Make jar directory
           command: mkdir /tmp/artifacts
@@ -334,6 +345,25 @@ jobs:
           command: cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
+
+  sonar-cloud:
+    docker: # run the steps with Docker
+      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
+    steps:
+    - attach_workspace:
+        at: .
+    - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
+        # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+        key: dockstore-java-{{ checksum "pom.xml" }}
+    - restore_cache:
+        key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+    - run:
+        name: build
+        command: ./mvnw clean install -DskipTests
+    - run:
+        name: SonarCloud scan - coverage
+        command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
+
 commands:
   install-postgres:
     steps:
@@ -430,13 +460,22 @@ commands:
             python3 -V
       - run:
           name: run integration test
-          command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
+          command: |  # Runs normally if it is not being run in parallel
+            if [ $CIRCLE_NODE_TOTAL != 1 ] 
+            then
+              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
+              echo $TESTS_TO_RUN
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
+              clean verify -Dit.test=$TESTS_TO_RUN -DfailIfNoTests=false
+            else 
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp 
+            fi
+
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
-      - run:
-          name: SonarCloud scan - coverage
-          command: ./mvnw sonar:sonar
+      - persist_coverage
+
   save_test_results:
     steps:
       - save_cache:
@@ -453,3 +492,15 @@ commands:
           path: ~/test-results
       - store_artifacts:
           path: /tmp/dockstore-web-cache.misses.log
+  persist_coverage:
+    steps:
+      - run:
+          name: Rename and move coverage reports
+          command: |
+            mkdir coverage
+            cp ./reports/target/site/jacoco-aggregate/jacoco.xml coverage/${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.xml
+      - persist_to_workspace:
+          root: .
+          paths:
+          - coverage
+
