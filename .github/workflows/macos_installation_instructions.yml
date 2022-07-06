@@ -32,8 +32,8 @@ jobs:
           sudo ./install.sh
       - name: Install JDK 17 https://formulae.brew.sh/formula/openjdk@17
         run: brew install openjdk@17
-      - name: Add OpenJDK to path
-        run: echo 'export PATH="/usr/local/opt/openjdk@17/bin:$PATH"' >> /Users/runner/.bash_profile
+      - name: Made it so compilers can find openjdk@17
+        run: export CPPFLAGS="-I/usr/local/opt/openjdk@17/include"
       - name: Download and install node.js https://github.com/nvm-sh/nvm
         run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
       - name: Install git secrets https://github.com/awslabs/git-secrets
