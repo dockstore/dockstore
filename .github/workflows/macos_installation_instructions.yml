@@ -16,6 +16,10 @@ jobs:
         run: |
           ls
           pwd
+      - name: Find Java version number
+        run: java -version
+        continue-on-error: true
+      - name: Run 'git' to trigger
       - name: Install Brew
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       - name: Find Java version number
