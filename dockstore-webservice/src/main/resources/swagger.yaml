@@ -7900,10 +7900,12 @@ definitions:
         type: "string"
         position: 3
         description: "Path to sourcefile relative to its parent"
+        pattern: "[-a-zA-Z0-9./_]*"
       absolutePath:
         type: "string"
         position: 4
         description: "Absolute path of sourcefile in git repo"
+        pattern: "[-a-zA-Z0-9./_]*"
       frozen:
         type: "boolean"
         position: 5

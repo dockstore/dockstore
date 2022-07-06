@@ -44,8 +44,8 @@ public class JsonLdRetrieverTest {
 
         file.setContent(cwlContent);
         file.setType(DOCKSTORE_CWL);
-        file.setPath("dummy path");
-        file.setAbsolutePath("/dummy path");
+        file.setPath("dummy_path");
+        file.setAbsolutePath("/dummy_path");
         tag.addSourceFile(file);
         tag.setReference("master");
         tag.setName("master");
