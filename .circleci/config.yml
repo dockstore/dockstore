@@ -191,8 +191,8 @@ jobs:
       - setup_integration_test
       - save_test_results
   build:
-    docker: # run the steps with Docker
-      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
+    #docker: # run the steps with Docker
+    #  - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
       - run: #TODO DELETE THIS (I added it so circleci wasn't run unnecessarily)
             name: Generate test lists
