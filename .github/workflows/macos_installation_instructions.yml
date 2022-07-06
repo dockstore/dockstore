@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - feature/SEAB-4529/link-macos-instructions-to-github-action
 
 
 jobs:
