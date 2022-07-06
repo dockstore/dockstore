@@ -8,36 +8,36 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-
-  steps:
-    - name: Install Brew
-      run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    - name: Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
-      run: git
-    - name: Setup git user information
-      run: |
-        git config --global user.email "you@example.com"
-        git config --global user.name "Your Name"
-    - name: Install Hubflow https://datasift.github.io/gitflow/TheHubFlowTools.html
-      run: |
-        git clone https://github.com/datasift/gitflow
-        cd gitflow
-        sudo ./install.sh
-    - name: Install JDK 17 https://formulae.brew.sh/formula/openjdk@17
-      run: brew install openjdk@17
-    - name: Download and install node.js https://github.com/nvm-sh/nvm
-      run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-    - name: Install git secrets https://github.com/awslabs/git-secrets
-      run: brew install git-secrets
-    - name: Install wget
-      run: brew install wget
-    - name: Install jq
-      run: brew install jq
-    - name: Build the webservice
-      run: ./mvnw clean install
-    - name: Build the UI
-      run: npm ci --legacy-peer-deps
-    - name: Run prebuild
-      run: npm run prebuild
-    - name: Run build
-      run: npm run build
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Brew
+        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      - name: Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
+        run: git
+      - name: Setup git user information
+        run: |
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+      - name: Install Hubflow https://datasift.github.io/gitflow/TheHubFlowTools.html
+        run: |
+          git clone https://github.com/datasift/gitflow
+          cd gitflow
+          sudo ./install.sh
+      - name: Install JDK 17 https://formulae.brew.sh/formula/openjdk@17
+        run: brew install openjdk@17
+      - name: Download and install node.js https://github.com/nvm-sh/nvm
+        run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+      - name: Install git secrets https://github.com/awslabs/git-secrets
+        run: brew install git-secrets
+      - name: Install wget
+        run: brew install wget
+      - name: Install jq
+        run: brew install jq
+      - name: Build the webservice
+        run: ./mvnw clean install
+      - name: Build the UI
+        run: npm ci --legacy-peer-deps
+      - name: Run prebuild
+        run: npm run prebuild
+      - name: Run build
+        run: npm run build
