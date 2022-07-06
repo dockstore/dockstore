@@ -3,18 +3,20 @@ package io.dockstore.webservice.core;
 import io.dockstore.webservice.CustomWebApplicationException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.regex.Pattern;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class SourceFileTest {
 
-    private static final List<String> GOOD_PATHS = List.of("/", ".", "-", "_", "abcz", "ABCZ", "01239", "some/good-path/under_score.cwl", ".dockstore.yml");
+    private static final List<String> SAFE_PATHS = List.of("/", ".", "-", "_", "abcz", "ABCZ", "01239", "some/good-path/under_score.cwl", ".dockstore.yml");
 
     /**
      * Generate a list of characters that are not allowed in SourceFile paths, in the range
      * from '\0' to an arbitrary character beyond the range of 8-bit ASCII.
      */
-    private List<Character> computeBadChars() {
+    private List<Character> computeUnsafeChars() {
         List<Character> badChars = new ArrayList<>();
         for (int c = 0; c <= 300; c++) {
             boolean good =
@@ -45,13 +47,28 @@ public class SourceFileTest {
     }
 
     @Test
-    public void testSettingPaths() {
+    public void testSettingPathsUnrestricted() {
+        SourceFile.unrestrictPaths();
+        Random random = new Random(1234);
+        for (int i = 0; i < 10000; i++) {
+            StringBuilder builder = new StringBuilder();
+            for (int j = 0; j < 50; j++) {
+                builder.append((char)random.nextInt());
+            }
+            String randomPath = builder.toString();
+            new SourceFile().setPath(randomPath);
+            new SourceFile().setAbsolutePath("/" + randomPath);
+        }
+    }
 
-        for (String goodPath: GOOD_PATHS) {
+    @Test
+    public void testSettingPathsRestricted() {
+        SourceFile.restrictPaths(Pattern.compile("[-a-zA-Z0-9./_]*"), "Unsafe characters in path.");
+        for (String goodPath: SAFE_PATHS) {
             new SourceFile().setPath(goodPath);
             new SourceFile().setAbsolutePath(goodPath);
 
-            for (char bad: computeBadChars()) {
+            for (char bad: computeUnsafeChars()) {
                 testBadPath(goodPath + bad);
                 testBadPath(bad + goodPath);
                 testBadPath(goodPath + bad + goodPath);
