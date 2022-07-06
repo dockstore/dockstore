@@ -35,8 +35,12 @@ jobs:
           git clone https://github.com/datasift/gitflow
           cd gitflow
           sudo ./install.sh
+      - name: Find install JDK
+        run: /usr/libexec/java_home -V
       - name: Install JDK 17 https://formulae.brew.sh/formula/openjdk@17
         run: brew install openjdk@17
+      - name: Find install JDK
+        run: /usr/libexec/java_home -V
       - name: Find Java version number
         run: java -version
       - name: For the system Java wrappers to find this JDK, symlink it with
