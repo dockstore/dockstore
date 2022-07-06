@@ -16,6 +16,7 @@ jobs:
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       - name: Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
         run: git
+        continue-on-error: true
       - name: Setup git user information
         run: |
           git config --global user.email "you@example.com"
