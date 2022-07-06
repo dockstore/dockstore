@@ -37,7 +37,7 @@ POM as their parent.
 
     <groupId>io.dockstore</groupId>
     <artifactId>bom-internal</artifactId>
-    <version>1.12.0</version>
+    <version>${revision}${changelist}</version>
     <packaging>pom</packaging>
 
     <name>bom-internal</name>
@@ -46,6 +46,11 @@ POM as their parent.
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
+        <revision>1.12</revision>
+        <changelist>.0-SNAPSHOT</changelist>
+
         <dropwizard.version>2.0.25</dropwizard.version>
         <dropwizard-annotations.version>4.2.4</dropwizard-annotations.version>
         <elasticsearch-version>7.10.2</elasticsearch-version>
@@ -1220,4 +1225,36 @@ POM as their parent.
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.2.5</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <!-- enable flattening -->
+                    <execution>
+                        <id>flatten</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <!-- ensure proper cleanup -->
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
