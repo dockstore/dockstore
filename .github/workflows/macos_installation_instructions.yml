@@ -12,6 +12,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Print Working Directory and ls
+        run: |
+          ls
+          pwd
       - name: Install Brew
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       - name: Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
@@ -36,6 +40,10 @@ jobs:
         run: brew install wget
       - name: Install jq
         run: brew install jq
+      - name: Print Working Directory and ls
+        run: |
+          ls
+          pwd
       - name: Build the webservice
         run: ./mvnw clean install
       - name: Build the UI
