@@ -50,6 +50,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.permissions.Role;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.openapi.api.ToolsApiService;
 import io.openapi.model.Checksum;
@@ -256,6 +257,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return entry;
         }
         return null;
+    }
+
+    @Override
+    public void checkCanRead(User user, Entry entry) {
+        try {
+            AuthenticatedResourceInterface.super.checkCanRead(user, entry);
+        } catch (CustomWebApplicationException ex) {
+            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.READ)) {
+                throw ex;
+            }
+        }
     }
 
     @Override
