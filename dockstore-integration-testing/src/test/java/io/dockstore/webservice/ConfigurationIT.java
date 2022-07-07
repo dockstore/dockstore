@@ -25,11 +25,12 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 /**
+ * This integration test provides support to make testing different webservice configurations easier.
  */
-@Category(NonConfidentialTest.class)
+@Category(ConfidentialTest.class)
 public class ConfigurationIT {
 
-    private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
+    private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
 
     private static TestingPostgres testingPostgres;
     @Rule
@@ -47,10 +48,6 @@ public class ConfigurationIT {
         }
     };
 
-    private DropwizardTestSupport<DockstoreWebserviceConfiguration> createSupport(ConfigOverride... overrides) {
-        return new DropwizardTestSupport<DockstoreWebserviceConfiguration>(DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH, overrides);
-    }
-
     private void before(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         // CommonTestUtilities.dropAndRecreateNoTestData(support, DROPWIZARD_CONFIGURATION_FILE_PATH);
         CommonTestUtilities.dropAndCreateWithTestData(support, false, DROPWIZARD_CONFIGURATION_FILE_PATH);
@@ -63,6 +60,16 @@ public class ConfigurationIT {
         support.after();
     }
 
+    /**
+     * Create a Dropwizard test support object in which the configuration is overriden as specified.
+     */
+    private DropwizardTestSupport<DockstoreWebserviceConfiguration> createSupport(ConfigOverride... overrides) {
+        return new DropwizardTestSupport<DockstoreWebserviceConfiguration>(DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH, overrides);
+    }
+
+    /**
+     * Run a specified Runnable in the environment specified by the supplied Dropwizard test support object.
+     */
     private void runWithSupport(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, Runnable runnable) throws Exception {
         before(support);
         try {
