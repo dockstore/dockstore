@@ -12,6 +12,7 @@ import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Workflow;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,6 +32,8 @@ import org.junit.runner.Description;
 public class ConfigurationIT {
 
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
+    private static final String WORKFLOW_REPO = "dockstore-testing/md5sum-checker";
+    private static final String WORKFLOW_PATH = "/md5sum/md5sum-workflow.wdl";
 
     private static TestingPostgres testingPostgres;
     @Rule
@@ -88,24 +91,25 @@ public class ConfigurationIT {
     private void registerWorkflow() {
         ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/md5sum/md5sum-workflow.wdl", "WDL", DescriptorLanguage.WDL.toString(), "/test.json");
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), WORKFLOW_REPO, WORKFLOW_PATH, "", DescriptorLanguage.WDL.toString(), "/test.json");
+        workflowsApi.refresh(workflow.getId(), false);
     }
 
     @Test
     public void testRegisterDefaultConfiguration() throws Exception {
         runWithSupport(createSupport(), this::registerWorkflow);
-        Assert.assertEquals(1L, countSourceFilesWithPath("/md5sum/md5sum-workflow.wdl"));
+        Assert.assertEquals(1L, countSourceFilesWithPath(WORKFLOW_PATH));
     }
 
     @Test
     public void testRegisterLooselyRestrictedSourceFilePaths() throws Exception {
         runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", ".*")), this::registerWorkflow);
-        Assert.assertEquals(1L, countSourceFilesWithPath("/md5sum/md5sum-workflow.wdl"));
+        Assert.assertEquals(1L, countSourceFilesWithPath(WORKFLOW_PATH));
     }
 
     @Test
     public void testRegisterTightlyRestrictedSourceFilePaths() throws Exception {
         runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", "this regex literally only matches itself")), this::registerWorkflow);
-        Assert.assertEquals(0L, countSourceFilesWithPath("/md5sum/md5sum-workflow.wdl"));
+        Assert.assertEquals(0L, countSourceFilesWithPath(WORKFLOW_PATH));
     }
 }
