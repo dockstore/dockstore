@@ -4,8 +4,8 @@ import static io.dockstore.common.CommonTestUtilities.getWebClient;
 
 import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dropwizard.testing.ConfigOverride;
@@ -50,7 +50,7 @@ public class ConfigurationIT {
 
     private void before(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         // CommonTestUtilities.dropAndRecreateNoTestData(support, DROPWIZARD_CONFIGURATION_FILE_PATH);
-        CommonTestUtilities.dropAndCreateWithTestData(support, false, DROPWIZARD_CONFIGURATION_FILE_PATH);
+        CommonTestUtilities.dropAndCreateWithTestData(support, true, DROPWIZARD_CONFIGURATION_FILE_PATH);
         support.before();
         testingPostgres = new TestingPostgres(support);
     }
