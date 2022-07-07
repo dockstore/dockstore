@@ -10,7 +10,7 @@ humanfriendly==8.2
 idna==2.10
 isodate==0.6.0
 lockfile==0.12.2
-lxml==4.5.2
+lxml==4.9.1
 mistune==0.8.4
 mypy-extensions==0.4.3
 networkx==2.5
