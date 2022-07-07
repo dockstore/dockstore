@@ -36,7 +36,7 @@
             <where>name = ''</where>
         </update>
     </changeSet>
-    <changeSet author="ajandu" id="replace_empty_text">
+    <changeSet author="ajandu" id="add_constraints_to_user_profile">
         <!-- Replace any empty strings with NULL, same as above but for all columns except dbcreatedate, dbupdatedate, and id -->
         <sql dbms="postgresql">
             UPDATE user_profile SET company=NULL WHERE company='';
@@ -50,8 +50,6 @@
             UPDATE user_profile SET avatarurl=NULL WHERE avatarurl='';
             UPDATE user_profile SET link=NULL WHERE link='';
         </sql>
-    </changeSet>
-    <changeSet id="add_constraints_to_user_profile" author="ajandu">
         <sql dbms="postgresql">
             ALTER TABLE user_profile ADD CONSTRAINT non_blank_company CHECK (CASE WHEN company IS NOT NULL then character_length(company) > 0 END);
             ALTER TABLE user_profile ADD CONSTRAINT non_blank_email CHECK (CASE WHEN email IS NOT NULL then character_length(email) > 0 END);
