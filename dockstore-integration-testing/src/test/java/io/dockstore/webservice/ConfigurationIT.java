@@ -69,7 +69,7 @@ public class ConfigurationIT {
     }
 
     /**
-     * Run the specified Runnable in the environment corresponding to the supplied Dropwizard test support object.
+     * Run the specified Runnable in the environment corrsponding to the supplied Dropwizard test support object.
      */
     private void runWithSupport(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, Runnable runnable) throws Exception {
         before(support);
@@ -80,8 +80,9 @@ public class ConfigurationIT {
         }
     }
 
-    private long countSourceFiles() {
-        return testingPostgres.runSelectStatement("select count(*) from sourcefile", long.class);
+    private long countSourceFilesWithPath(String path) {
+        // this isn't the most robust way to run a SELECT, but it's good enough for the purposes of this test.
+        return testingPostgres.runSelectStatement(String.format("select count(*) from sourcefile where path = '%s' or absolutepath = '%s'", path, path), long.class);
     }
 
     private void registerWorkflow() {
@@ -92,25 +93,19 @@ public class ConfigurationIT {
 
     @Test
     public void testRegisterDefaultConfiguration() throws Exception {
-        long pre = countSourceFiles();
         runWithSupport(createSupport(), this::registerWorkflow);
-        long post = countSourceFiles();
-        Assert.assertTrue("some SourceFiles should have been created", post > pre);
+        Assert.assertEquals(1L, countSourceFilesWithPath("/md5sum/md5sum-workflow.wdl"));
     }
 
     @Test
     public void testRegisterLooselyRestrictedSourceFilePaths() throws Exception {
-        long pre = countSourceFiles();
         runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", ".*")), this::registerWorkflow);
-        long post = countSourceFiles();
-        Assert.assertTrue("some SourceFiles should have been created", post > pre);
+        Assert.assertEquals(1L, countSourceFilesWithPath("/md5sum/md5sum-workflow.wdl"));
     }
 
     @Test
     public void testRegisterTightlyRestrictedSourceFilePaths() throws Exception {
-        long pre = countSourceFiles();
         runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", "this regex literally only matches itself")), this::registerWorkflow);
-        long post = countSourceFiles();
-        Assert.assertEquals("no SourceFiles should have been created", pre, post);
+        Assert.assertEquals(0L, countSourceFilesWithPath("/md5sum/md5sum-workflow.wdl"));
     }
 }
