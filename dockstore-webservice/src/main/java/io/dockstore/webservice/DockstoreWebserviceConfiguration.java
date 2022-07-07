@@ -148,6 +148,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private String checkUrlLambdaUrl;
 
+    private String sourceFilePathRegex;
+
+    private String sourceFilePathViolationMessage;
+
     @JsonProperty("toolTesterBucket")
     public String getToolTesterBucket() {
         return toolTesterBucket;
@@ -543,6 +547,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setCheckUrlLambdaUrl(String checkUrlLambdaUrl) {
         this.checkUrlLambdaUrl = checkUrlLambdaUrl;
+    }
+
+    public String getSourceFilePathRegex() {
+        return sourceFilePathRegex;
+    }
+
+    public void setSourceFilePathRegex(String sourceFilePathRegex) {
+        this.sourceFilePathRegex = sourceFilePathRegex;
+    }
+
+    public String getSourceFilePathViolationMessage() {
+        return sourceFilePathViolationMessage;
+    }
+
+    public void setSourceFilePathViolationMessage(String sourceFilePathViolationMessage) {
+        this.sourceFilePathViolationMessage = sourceFilePathViolationMessage;
     }
 
     /**

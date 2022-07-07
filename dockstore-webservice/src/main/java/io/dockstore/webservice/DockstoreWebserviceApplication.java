@@ -153,6 +153,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
@@ -316,6 +317,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setBasePath(MoreObjects.firstNonNull(configuration.getExternalConfig().getBasePath(), "/"));
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api,io.openapi.api");
         beanConfig.setScan(true);
+
+        restrictSourceFiles(configuration);
 
         final DefaultPluginManager languagePluginManager = LanguagePluginManager.getInstance(getFilePluginLocation(configuration));
         describeAvailableLanguagePlugins(languagePluginManager);
@@ -513,4 +516,24 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         return hibernate;
     }
 
+    private void restrictSourceFiles(DockstoreWebserviceConfiguration configuration) {
+
+        String regexString = configuration.getSourceFilePathRegex();
+        String violationMessage = configuration.getSourceFilePathViolationMessage();
+
+        if (regexString != null) {
+            Pattern regex;
+            try {
+                regex = Pattern.compile(regexString);
+            } catch (Exception e) {
+                LOG.error("Could not parse SourceFile path regex " + regexString);
+                throw e;
+            }
+            if (violationMessage == null) {
+                violationMessage = "SourceFile path contains unexpected characters.";
+            }
+            LOG.info("Restricting SourceFile paths to the regular expression " + regex);
+            SourceFile.restrictPaths(regex, violationMessage);
+        }
+    }
 }
