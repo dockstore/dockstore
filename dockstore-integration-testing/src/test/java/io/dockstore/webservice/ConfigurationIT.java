@@ -2,7 +2,7 @@ package io.dockstore.webservice;
 
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
 
-import io.dockstore.client.cli.BasicIT;
+import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -49,15 +49,16 @@ public class ConfigurationIT {
     };
 
     private void before(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
-        // CommonTestUtilities.dropAndRecreateNoTestData(support, DROPWIZARD_CONFIGURATION_FILE_PATH);
-        CommonTestUtilities.dropAndCreateWithTestData(support, true, DROPWIZARD_CONFIGURATION_FILE_PATH);
+        CommonTestUtilities.dropAndRecreateNoTestData(support);
         support.before();
         testingPostgres = new TestingPostgres(support);
+        CommonTestUtilities.dropAndCreateWithTestData(support, false);
     }
 
-    private void after(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
+    private void after(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         support.getEnvironment().healthChecks().shutdown();
         support.after();
+        BaseIT.assertNoMetricsLeaks(support);
     }
 
     /**
@@ -80,7 +81,7 @@ public class ConfigurationIT {
     }
 
     private void registerWorkflow() {
-        ApiClient webClient = getWebClient(true, BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/md5sum/md5sum-workflow.wdl", "WDL", DescriptorLanguage.WDL.toString(), "/test.json");
     }
