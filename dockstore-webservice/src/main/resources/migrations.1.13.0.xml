@@ -36,4 +36,31 @@
             <where>name = ''</where>
         </update>
     </changeSet>
+    <changeSet author="ajandu" id="add_constraints_to_user_profile">
+        <!-- Replace any empty strings with NULL, same as above but for all columns except dbcreatedate, dbupdatedate, and id -->
+        <sql dbms="postgresql">
+            UPDATE user_profile SET company=NULL WHERE company='';
+            UPDATE user_profile SET email=NULL WHERE email='';
+            UPDATE user_profile SET location=NULL WHERE location='';
+            UPDATE user_profile SET name=NULL WHERE name='';
+            UPDATE user_profile SET token_type=NULL WHERE token_type='';
+            UPDATE user_profile SET username=NULL WHERE username='';
+            UPDATE user_profile SET onlineprofileid=NULL WHERE onlineprofileid='';
+            UPDATE user_profile SET bio=NULL WHERE bio='';
+            UPDATE user_profile SET avatarurl=NULL WHERE avatarurl='';
+            UPDATE user_profile SET link=NULL WHERE link='';
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_company CHECK (CASE WHEN company IS NOT NULL then character_length(company) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_email CHECK (CASE WHEN email IS NOT NULL then character_length(email) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_location CHECK (CASE WHEN location IS NOT NULL then character_length(location) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_name CHECK (CASE WHEN name IS NOT NULL then character_length(name) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_token_type CHECK (CASE WHEN token_type IS NOT NULL then character_length(token_type) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_username CHECK (CASE WHEN username IS NOT NULL then character_length(username) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_onlineprofileid CHECK (CASE WHEN onlineprofileid IS NOT NULL then character_length(onlineprofileid) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_bio CHECK (CASE WHEN bio IS NOT NULL then character_length(bio) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_avatarurl CHECK (CASE WHEN avatarurl IS NOT NULL then character_length(avatarurl) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_link CHECK (CASE WHEN link IS NOT NULL then character_length(link) > 0 END);
+        </sql>
+    </changeSet>
 </databaseChangeLog>
