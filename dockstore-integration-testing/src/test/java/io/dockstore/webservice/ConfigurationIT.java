@@ -62,14 +62,14 @@ public class ConfigurationIT {
     }
 
     /**
-     * Create a Dropwizard test support object in which the configuration is overriden as specified.
+     * Create a Dropwizard test support object with the specified configuration overrides.
      */
     private DropwizardTestSupport<DockstoreWebserviceConfiguration> createSupport(ConfigOverride... overrides) {
         return new DropwizardTestSupport<DockstoreWebserviceConfiguration>(DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH, overrides);
     }
 
     /**
-     * Run a specified Runnable in the environment specified by the supplied Dropwizard test support object.
+     * Run the specified Runnable in the environment corresponding to the supplied Dropwizard test support object.
      */
     private void runWithSupport(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, Runnable runnable) throws Exception {
         before(support);
@@ -80,6 +80,10 @@ public class ConfigurationIT {
         }
     }
 
+    private long countSourceFiles() {
+        return testingPostgres.runSelectStatement("select count(*) from sourcefile", long.class);
+    }
+
     private void registerWorkflow() {
         ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -88,23 +92,25 @@ public class ConfigurationIT {
 
     @Test
     public void testRegisterDefaultConfiguration() throws Exception {
+        long pre = countSourceFiles();
         runWithSupport(createSupport(), this::registerWorkflow);
+        long post = countSourceFiles();
+        Assert.assertTrue("some SourceFiles should have been created", post > pre);
     }
 
     @Test
     public void testRegisterLooselyRestrictedSourceFilePaths() throws Exception {
+        long pre = countSourceFiles();
         runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", ".*")), this::registerWorkflow);
+        long post = countSourceFiles();
+        Assert.assertTrue("some SourceFiles should have been created", post > pre);
     }
 
     @Test
     public void testRegisterTightlyRestrictedSourceFilePaths() throws Exception {
-        runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", "this regex literally only matches itself")), () -> {
-            try {
-                registerWorkflow();
-                Assert.fail("should have thrown");
-            } catch (CustomWebApplicationException e) {
-                // expected execution path
-            }
-        });
+        long pre = countSourceFiles();
+        runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", "this regex literally only matches itself")), this::registerWorkflow);
+        long post = countSourceFiles();
+        Assert.assertEquals("no SourceFiles should have been created", pre, post);
     }
 }
