@@ -10,9 +10,15 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
+import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,8 +38,7 @@ import org.junit.runner.Description;
 public class ConfigurationIT {
 
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
-    private static final String WORKFLOW_REPO = "dockstore-testing/md5sum-checker";
-    private static final String WORKFLOW_PATH = "/md5sum/md5sum-workflow.wdl";
+    private static final String SOURCEFILE_PATH = "/some-unique-file.json";
 
     private static TestingPostgres testingPostgres;
     @Rule
@@ -88,28 +93,43 @@ public class ConfigurationIT {
         return testingPostgres.runSelectStatement(String.format("select count(*) from sourcefile where path = '%s' or absolutepath = '%s'", path, path), long.class);
     }
 
-    private void registerWorkflow() {
-        ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), WORKFLOW_REPO, WORKFLOW_PATH, "", DescriptorLanguage.WDL.toString(), "/test.json");
-        workflowsApi.refresh(workflow.getId(), false);
+    private void createWorkflow() {
+        ApiClient webClient = getWebClient(true, BaseIT.ADMIN_USERNAME, testingPostgres);
+        HostedApi api = new HostedApi(webClient);
+        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeWorkflow", null, DescriptorLanguage.CWL.getShortName(), null, null);
+        SourceFile file = new SourceFile();
+        file.setContent("cwlVersion: v1.0\nclass: Workflow");
+        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        file.setPath("/Dockstore.cwl");
+        file.setAbsolutePath("/Dockstore.cwl");
+        SourceFile file2 = new SourceFile();
+        file2.setContent("{}");
+        file2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
+        file2.setPath(SOURCEFILE_PATH);
+        file2.setAbsolutePath(SOURCEFILE_PATH);
+        api.editHostedWorkflow(hostedWorkflow.getId(), List.of(file, file2));
     }
 
     @Test
     public void testRegisterDefaultConfiguration() throws Exception {
-        runWithSupport(createSupport(), this::registerWorkflow);
-        Assert.assertEquals(1L, countSourceFilesWithPath(WORKFLOW_PATH));
+        runWithSupport(createSupport(), this::createWorkflow);
+        Assert.assertEquals(1L, countSourceFilesWithPath(SOURCEFILE_PATH));
     }
 
     @Test
     public void testRegisterLooselyRestrictedSourceFilePaths() throws Exception {
-        runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", ".*")), this::registerWorkflow);
-        Assert.assertEquals(1L, countSourceFilesWithPath(WORKFLOW_PATH));
+        runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", ".*")), this::createWorkflow);
+        Assert.assertEquals(1L, countSourceFilesWithPath(SOURCEFILE_PATH));
     }
 
     @Test
     public void testRegisterTightlyRestrictedSourceFilePaths() throws Exception {
-        runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", "this regex literally only matches itself")), this::registerWorkflow);
-        Assert.assertEquals(0L, countSourceFilesWithPath(WORKFLOW_PATH));
+        try {
+            runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", "this regex literally only matches itself")), this::createWorkflow);
+            Assert.fail("should have thrown");
+        } catch (ApiException e) {
+            // expected execution path
+        }
+        Assert.assertEquals(0L, countSourceFilesWithPath(SOURCEFILE_PATH));
     }
 }

@@ -534,6 +534,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             }
             LOG.info("Restricting SourceFile paths to the regular expression " + regex);
             SourceFile.restrictPaths(regex, violationMessage);
+        } else {
+            SourceFile.unrestrictPaths();
         }
     }
 }
