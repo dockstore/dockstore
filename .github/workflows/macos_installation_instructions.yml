@@ -46,7 +46,9 @@ jobs:
       - name: For the system Java wrappers to find this JDK, symlink it with
         run: sudo ln -sfn /usr/local/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk
       - name: Change Java HOME
-        run: export JAVA_HOME=`/usr/libexec/java_home -v 17.0.3`
+        run: export JAVA_HOME=`/usr/libexec/java_home -v 17`
+      - name: Find Java version number
+        run: java -version
       - name: Download and install node.js https://github.com/nvm-sh/nvm
         run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
       - name: Install git secrets https://github.com/awslabs/git-secrets
@@ -55,10 +57,6 @@ jobs:
         run: brew install wget
       - name: Install jq
         run: brew install jq
-      - name: Print Working Directory and ls
-        run: |
-          ls
-          pwd
       - name: Build the webservice
         run: ./mvnw clean install
       - name: Build the UI
