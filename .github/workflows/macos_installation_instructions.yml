@@ -46,7 +46,7 @@ jobs:
       - name: For the system Java wrappers to find this JDK, symlink it with
         run: sudo ln -sfn /usr/local/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk
       - name: Change Java HOME
-        run: export JAVA_HOME=`/usr/libexec/java_home -v 17`
+        run: export JAVA_HOME=$(/usr/libexec/java_home -v 17)
       - name: Find Java version number
         run: java -version
       - name: Download and install node.js https://github.com/nvm-sh/nvm
