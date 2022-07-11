@@ -18,6 +18,8 @@ jobs:
           pwd
       - name: Install Brew
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      - name: echo Java home
+        run: echo $JAVA_HOME
       - name: Find Java version number
         run: java -version
       - name: Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
