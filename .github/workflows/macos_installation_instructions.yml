@@ -34,6 +34,8 @@ jobs:
           sudo ./install.sh
       - name: Find installed JDK
         run: /usr/libexec/java_home -V
+      - name: Uninstall Java
+        run: sudo rm -rf “/Library/Java/JavaVirtualMachines”
       - name: Install JDK 17 https://formulae.brew.sh/formula/openjdk@17
         run: brew install openjdk@17
       - name: Find installed JDK
