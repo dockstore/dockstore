@@ -53,10 +53,9 @@ public class ConfigurationIT {
     };
 
     private void before(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
-        CommonTestUtilities.dropAndRecreateNoTestData(support);
+        CommonTestUtilities.cleanStatePrivate2(support, false);
         support.before();
         testingPostgres = new TestingPostgres(support);
-        CommonTestUtilities.cleanStatePrivate2(support, false);
     }
 
     private void after(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {

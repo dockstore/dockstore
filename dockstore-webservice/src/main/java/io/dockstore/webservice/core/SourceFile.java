@@ -76,8 +76,8 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public static final EnumSet<DescriptorLanguage.FileType> TEST_FILE_TYPES = EnumSet.of(DescriptorLanguage.FileType.CWL_TEST_JSON, DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
     public static final String SHA_TYPE = "SHA-256";
-    private static Pattern pathRegex = null;
-    private static String pathViolationMessage = null;
+    private static volatile Pattern pathRegex = null;
+    private static volatile String pathViolationMessage = null;
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
