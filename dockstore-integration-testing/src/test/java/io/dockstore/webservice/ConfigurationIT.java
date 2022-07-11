@@ -119,8 +119,9 @@ public class ConfigurationIT {
 
     @Test
     public void testRegisterTightlyRestrictedSourceFilePaths() throws Exception {
+        DropwizardTestSupport<DockstoreWebserviceConfiguration> support = createSupport(ConfigOverride.config("sourceFilePathRegex", "this regex literally only matches itself"));
         try {
-            runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", "this regex literally only matches itself")), this::createWorkflow);
+            runWithSupport(support, this::createWorkflow);
             Assert.fail("should have thrown");
         } catch (ApiException e) {
             // expected execution path
