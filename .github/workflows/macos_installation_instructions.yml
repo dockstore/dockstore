@@ -41,7 +41,7 @@ jobs:
       - name: Find Java version number
         run: java -version
       - name: Change Java HOME
-        run: export JAVA_HOME=$(/usr/libexec/java_home -v 17.0.3)
+        run: export JAVA_HOME=`/usr/libexec/java_home -v 17`
       - name: Find Java version number
         run: java -version
       - name: Download and install node.js https://github.com/nvm-sh/nvm
