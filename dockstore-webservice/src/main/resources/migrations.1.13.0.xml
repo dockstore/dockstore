@@ -63,4 +63,10 @@
             ALTER TABLE user_profile ADD CONSTRAINT non_blank_link CHECK (CASE WHEN link IS NOT NULL then character_length(link) > 0 END);
         </sql>
     </changeSet>
+    <changeSet id="wipe_old_format_tokens" author="dyuen">
+        <!-- https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/ -->
+        <sql dbms="postgresql">
+            delete from token where tokensource = 'github.com' and content not like 'gho_%';
+        </sql>
+    </changeSet>
 </databaseChangeLog>
