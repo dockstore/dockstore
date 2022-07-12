@@ -45,8 +45,8 @@ import org.slf4j.LoggerFactory;
  * <ul>
  * <li>checkIsOwner: is the user one of the users that controls the specified entry?
  * <li>checkIsAdmin: does the user have adminitrative privileges?
- * <li>checkUserId: does the used have the specified user id?
- * <li>checkExists(X): is the object reference of type X not null?
+ * <li>checkUserId: does the user have the specified user id?
+ * <li>checkExists{X}: is the object reference of type X not null?
  * </ul>
  *
  * Additionally, "non-check" methods are defined that correspond to the most commonly-used "check" methods:
@@ -61,7 +61,6 @@ public interface AuthenticatedResourceInterface {
     Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
     String FORBIDDEN_ENTRY_MESSAGE = "Forbidden: you do not have the credentials required to access this entry.";
     String FORBIDDEN_ADMIN_MESSAGE = "Forbidden: you need to be an admin to perform this operation.";
-    String FORBIDDEN_CURATOR_MESSAGE = "Forbidden: you need to be a curator or an admin to perform this operation.";
     String FORBIDDEN_ID_MISMATCH_MESSAGE = "Forbidden: please check your credentials.";
 
     /**
