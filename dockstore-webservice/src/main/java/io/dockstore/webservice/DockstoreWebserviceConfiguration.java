@@ -148,9 +148,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private String checkUrlLambdaUrl;
 
-    private String sourceFilePathRegex;
+    private String sourceFilePathRegex = "^[a-zA-Z0-9 ./_-]*$";
 
-    private String sourceFilePathViolationMessage;
+    private String sourceFilePathViolationMessage = "Filenames and paths must not contain characters other than letters, digits, '.', '/', '-', '_', and ' '.";
 
     @JsonProperty("toolTesterBucket")
     public String getToolTesterBucket() {
