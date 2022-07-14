@@ -62,24 +62,12 @@
       <artifactId>dockstore-common</artifactId>
       <version>1.13.0-SNAPSHOT</version>
       <scope>compile</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.liquibase</groupId>
-          <artifactId>liquibase-core</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>dockstore-webservice</artifactId>
       <version>1.13.0-SNAPSHOT</version>
       <scope>compile</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.liquibase</groupId>
-          <artifactId>liquibase-core</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>

@@ -334,9 +334,5 @@
                 </exclusion>
             </exclusions>
         </dependency>
-      <dependency>
-        <groupId>org.glassfish.jersey.core</groupId>
-        <artifactId>jersey-client</artifactId>
-      </dependency>
     </dependencies>
 </project>
