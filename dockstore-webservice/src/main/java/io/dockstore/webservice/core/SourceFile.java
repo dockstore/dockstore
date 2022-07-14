@@ -76,8 +76,8 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public static final EnumSet<DescriptorLanguage.FileType> TEST_FILE_TYPES = EnumSet.of(DescriptorLanguage.FileType.CWL_TEST_JSON, DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
     public static final String SHA_TYPE = "SHA-256";
-    private static volatile Pattern pathRegex = null;
-    private static volatile String pathViolationMessage = null;
+    private static Pattern pathRegex = null;
+    private static String pathViolationMessage = null;
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -234,18 +234,18 @@ public class SourceFile implements Comparable<SourceFile> {
         this.frozen = frozen;
     }
 
-    private static void checkPath(String path) {
+    private static synchronized void checkPath(String path) {
         if (path != null && pathRegex != null && !pathRegex.matcher(path).matches()) {
             throw new CustomWebApplicationException(pathViolationMessage, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
-    public static void restrictPaths(Pattern newPathRegex, String newPathViolationMessage) {
+    public static synchronized void restrictPaths(Pattern newPathRegex, String newPathViolationMessage) {
         pathRegex = newPathRegex;
         pathViolationMessage = newPathViolationMessage;
     }
 
-    public static void unrestrictPaths() {
+    public static synchronized void unrestrictPaths() {
         pathRegex = null;
         pathViolationMessage = null;
     }
