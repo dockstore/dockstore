@@ -316,6 +316,8 @@ public class ElasticListener implements StateListenerInterface {
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
         Entry detachedEntry = removeIrrelevantProperties(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
+        // add number of starred users to allow sorting in the UI
+        ((ObjectNode)jsonNode).put("stars_count", (long) entry.getStarredUsers().size());
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
         addCategoriesJson(jsonNode, entry);
