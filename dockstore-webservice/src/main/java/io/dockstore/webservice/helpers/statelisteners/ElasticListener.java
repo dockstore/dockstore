@@ -52,6 +52,7 @@ import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkItemResponse.Failure;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkProcessor.Builder;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -208,9 +209,11 @@ public class ElasticListener implements StateListenerInterface {
                     LOGGER.error("Bulk [{}] executed with failures", executionId);
                     for (BulkItemResponse bulkItemResponse : response.getItems()) {
                         if (bulkItemResponse.isFailed()) {
-                            Throwable failure = bulkItemResponse.getFailure().getCause().getCause();
-                            LOGGER.error("Item {} in bulk [{}] executed with failure", bulkItemResponse.getItemId(), executionId, failure);
-                            afterBulkFailures.add(failure);
+                            final Failure failure = bulkItemResponse.getFailure();
+                            final Throwable throwable = failure.getCause().getCause();
+                            LOGGER.error("Item {} in bulk [{}] executed with failure, for entry with id {}",
+                                bulkItemResponse.getItemId(), executionId, failure.getId());
+                            afterBulkFailures.add(throwable);
                         }
                     }
                 } else {
@@ -256,9 +259,6 @@ public class ElasticListener implements StateListenerInterface {
                 if (!terminated) {
                     LOGGER.error("Could not submit " + index + " index to elastic search in time");
                     throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search in time", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                }
-                if (!afterBulkFailures.isEmpty()) {
-                    throw new CustomWebApplicationException("Encountered failures while executing bulk index", HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
             } catch (InterruptedException e) {
                 LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
