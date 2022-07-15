@@ -125,7 +125,7 @@ public class ConfigurationIT {
 
     @SuppressWarnings("checkstyle:AvoidEscapedUnicodeCharacters")
     private List<String> getSomeWeirdPaths() {
-        return List.of("\t", "`", "$", "@", "\\", "\u00f1", "\u1200").stream().map(w -> ("/" + w + VANILLA_SOURCEFILE_PATH)).collect(Collectors.toList());
+        return List.of("\t", "`", "$", "@", "\u00f1", "\u1200").stream().map(w -> ("/" + w + VANILLA_SOURCEFILE_PATH)).collect(Collectors.toList());
     }
 
     @Test
