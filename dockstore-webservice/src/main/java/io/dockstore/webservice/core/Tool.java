@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -356,6 +357,7 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @JsonProperty
+    @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
     public String getToolname() {
         return toolname;
     }
