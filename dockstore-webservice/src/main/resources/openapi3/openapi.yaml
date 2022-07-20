@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.13.0-beta.2
+  version: 1.13.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -3212,9 +3212,9 @@ paths:
         name: client_version
         schema:
           type: string
-          pattern: "(^(0|[1-9]\\d*+)\\.(0|[1-9]\\d*+)\\.(0|[1-9]\\d*+)(?:-((?:0|[1-9]\\\
-            d*+|\\d*+[a-zA-Z-][0-9a-zA-Z-]*+)(?:\\.(?:0|[1-9]\\d*+|\\d*+[a-zA-Z-][0-9a-zA-Z-]*+))*+))?(?:\\\
-            +([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*+))?$)|(^development-build$)"
+          pattern: "(^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\\
+            d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\\
+            +([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$)|(^development-build$)"
       - description: "Python version, only relevant for the cwltool runner"
         in: query
         name: python_version
