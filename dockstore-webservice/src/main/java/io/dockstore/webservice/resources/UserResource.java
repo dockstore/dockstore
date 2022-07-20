@@ -261,6 +261,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(nickname = "getUser", value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
+        checkUserExists(foundUser);
         Hibernate.initialize(foundUser.getUserProfiles());
         return foundUser;
     }
@@ -292,6 +293,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get additional information about the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
     public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User foundUser = userDAO.findById(user.getId());
+        checkUserExists(foundUser);
         return new ExtendedUserData(foundUser, this.authorizer, userDAO);
     }
 
