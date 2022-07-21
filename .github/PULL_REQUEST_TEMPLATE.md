@@ -7,6 +7,7 @@ A link to a github issue or SEAB- ticket (using that as a prefix)
 Please make sure that you've checked the following before submitting your pull request. Thanks!
 
 - [ ] Check that you pass the basic style checks and unit tests by running `mvn clean install`
+- [ ] Ensure that the PR targets the correct branch. Check the milestone or fix version of the ticket.
 - [ ] Follow the existing JPA patterns for queries, using named parameters, to avoid SQL injection
 - [ ] If you are changing dependencies, check the Snyk status check or the dashboard to ensure you are not introducing new high/critical vulnerabilities
 - [ ] Assume that inputs to the API can be malicious, and sanitize and/or check for Denial of Service type values, e.g., massive sizes
