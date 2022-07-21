@@ -128,7 +128,8 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "Is the docker image private or not.", required = true, position = 21)
     private boolean privateAccess = false;
 
-    @Column(columnDefinition = "Text")
+    @Column
+    @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
@@ -357,7 +358,6 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @JsonProperty
-    @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
     public String getToolname() {
         return toolname;
     }

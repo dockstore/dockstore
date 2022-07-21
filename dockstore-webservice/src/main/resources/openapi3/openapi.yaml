@@ -3212,9 +3212,9 @@ paths:
         name: client_version
         schema:
           type: string
-          pattern: "(^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\\
-            d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\\
-            +([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$)|(^development-build$)"
+          pattern: "(^(0|[1-9]\\d*+)\\.(0|[1-9]\\d*+)\\.(0|[1-9]\\d*+)(?:-((?:0|[1-9]\\\
+            d*+|\\d*+[a-zA-Z-][0-9a-zA-Z-]*+)(?:\\.(?:0|[1-9]\\d*+|\\d*+[a-zA-Z-][0-9a-zA-Z-]*+))*+))?(?:\\\
+            +([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*+))?$)|(^development-build$)"
       - description: "Python version, only relevant for the cwltool runner"
         in: query
         name: python_version
@@ -7838,6 +7838,8 @@ components:
           type: string
         toolname:
           type: string
+          maxLength: 256
+          minLength: 0
         topic:
           type: string
         topicAutomatic:
@@ -9737,6 +9739,8 @@ components:
           uniqueItems: true
         workflowName:
           type: string
+          maxLength: 256
+          minLength: 0
         workflowVersions:
           type: array
           items:

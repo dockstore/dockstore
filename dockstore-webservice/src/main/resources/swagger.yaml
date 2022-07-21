@@ -6997,6 +6997,8 @@ definitions:
           \ entries in the dockstore registry/namespace/name/tool, different options\
           \ to edit tags, and only the same insofar as they would \"docker pull\"\
           \ the same image, required: GA4GH"
+        minLength: 0
+        maxLength: 256
       namespace:
         type: "string"
         position: 23
@@ -8937,6 +8939,8 @@ definitions:
         position: 14
         description: "This is the name of the workflow, not needed when only one workflow\
           \ in a repo"
+        minLength: 0
+        maxLength: 256
       input_file_formats:
         type: "array"
         position: 15

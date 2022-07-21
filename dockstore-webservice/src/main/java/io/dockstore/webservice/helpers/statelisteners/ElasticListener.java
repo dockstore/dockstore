@@ -193,7 +193,6 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private void postBulkUpdate(String index, List<Entry> entries) {
-        final ArrayList<Throwable> afterBulkFailures = new ArrayList<>(); // Store information about failures encountered by the BulkProcessor.Listener
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
@@ -213,7 +212,6 @@ public class ElasticListener implements StateListenerInterface {
                             final Throwable throwable = failure.getCause().getCause();
                             LOGGER.error("Item {} in bulk [{}] executed with failure, for entry with id {}",
                                 bulkItemResponse.getItemId(), executionId, failure.getId());
-                            afterBulkFailures.add(throwable);
                         }
                     }
                 } else {
@@ -226,7 +224,6 @@ public class ElasticListener implements StateListenerInterface {
             public void afterBulk(long executionId, BulkRequest request,
                     Throwable failure) {
                 LOGGER.error("Failed to execute bulk", failure);
-                afterBulkFailures.add(failure);
             }
         };
 
