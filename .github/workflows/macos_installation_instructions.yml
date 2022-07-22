@@ -22,7 +22,7 @@ jobs:
       - run: git config --global user.email "you@example.com"
       - run: git config --global user.name "Your Name"
       - run: git clone https://github.com/datasift/gitflow
-      - run: cd gitflow
+#      - run: cd gitflow
       - run: sudo ./install.sh
       - run: brew install openjdk@17
       - run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
