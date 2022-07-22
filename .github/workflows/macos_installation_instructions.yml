@@ -16,63 +16,20 @@ jobs:
         with:
           distribution: 'temurin' # See 'Supported distributions' for available options
           java-version: '17'
-      - name: Print Working Directory and ls
-        run: |
-          ls
-          pwd
-      - name: Install Brew
-        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-      - name: echo Java home
-        run: echo $JAVA_HOME
-      - name: Find Java version number
-        run: java -version
-      - name: Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
-        run: git
+      - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      - run: git
         continue-on-error: true
-      - name: Setup git user information
-        run: |
-          git config --global user.email "you@example.com"
-          git config --global user.name "Your Name"
-      - name: Install Hubflow https://datasift.github.io/gitflow/TheHubFlowTools.html
-        run: |
-          git clone https://github.com/datasift/gitflow
-          cd gitflow
-          sudo ./install.sh
-      - name: Find installed JDK
-        run: /usr/libexec/java_home -V
-      - name: Uninstall Java
-        run: sudo rm -rf “/Library/Java/JavaVirtualMachines”
-      - name: Install JDK 17 https://formulae.brew.sh/formula/openjdk@17
-        run: brew install openjdk@17
-      - name: Find installed JDK
-        run: /usr/libexec/java_home -V
-      - name: Find Java version number
-        run: java -version
-      - name: Allow Java Wrappers to find OpenJDK@17
-        run: sudo ln -sfn /usr/local/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk
-      - name: Find installed JDK
-        run: /usr/libexec/java_home -V
-      - name: Add OpenJDK@17 to path
-        run: echo 'export PATH="/usr/local/opt/openjdk@17/bin:$PATH"' >> /Users/runner/.bash_profile
-      - name: Allow compilers to find OpenJDK@17
-        run: export CPPFLAGS="-I/usr/local/opt/openjdk@17/include"
-      - name: Change Java HOME path
-        run: export JAVA_HOME=/usr/local/Cellar/openjdk@17/17.0.3/libexec/openjdk.jdk/Contents/Home
-      - name: Find Java version number
-        run: java -version
-      - name: Download and install node.js https://github.com/nvm-sh/nvm
-        run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-      - name: Install git secrets https://github.com/awslabs/git-secrets
-        run: brew install git-secrets
-      - name: Install wget
-        run: brew install wget
-      - name: Install jq
-        run: brew install jq
-      - name: Build the webservice
-        run: ./mvnw clean install
-      - name: Build the UI
-        run: npm ci --legacy-peer-deps
-      - name: Run prebuild
-        run: npm run prebuild
-      - name: Run build
-        run: npm run build
+      - run: git config --global user.email "you@example.com"
+      - run: git config --global user.name "Your Name"
+      - run: git clone https://github.com/datasift/gitflow
+      - run: cd gitflow
+      - run: sudo ./install.sh
+      - run: brew install openjdk@17
+      - run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+      - run: brew install git-secrets
+      - run: brew install wget
+      - run: brew install jq
+      - run: ./mvnw clean install
+      - run: npm ci --legacy-peer-deps
+      - run: npm run prebuild
+      - run: npm run build
