@@ -42,6 +42,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Event;
 import io.swagger.client.model.Event.TypeEnum;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
@@ -49,6 +50,7 @@ import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -278,9 +280,18 @@ public class BasicIT extends BaseIT {
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
 
+        // create some more events so we can test ordering
+        PublishRequest publishRequest = new PublishRequest();
+        publishRequest.setPublish(true);
+        PublishRequest unPublishRequest = new PublishRequest();
+        unPublishRequest.setPublish(false);
+        toolsApi.publish(tool.getId(), unPublishRequest);
+        toolsApi.publish(tool.getId(), publishRequest);
+        toolsApi.publish(tool.getId(), unPublishRequest);
+
         // Events API should return 1 event
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        assertEquals("The user should return 1 starred entry", 1, events.size());
+        assertEquals("The user should return 4 events relating to the starred entry", 4, events.size());
 
         // Get the event to compare with another user's request
         Event event = events.get(0);
@@ -291,11 +302,14 @@ public class BasicIT extends BaseIT {
 
         // Get events by user id
         List<Event> eventsForFirstClient = client2EventsApi.getUserEvents(user.getId(), EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        assertEquals("The user should return 1 starred entry", 1, eventsForFirstClient.size());
+        assertEquals("The user should return 4 events relating to the starred entry", 4, eventsForFirstClient.size());
 
         // Get user initiated events by user id
         List<Event> profileEventsForFirstClient = client2EventsApi.getUserEvents(user.getId(), EventSearchType.PROFILE.toString(), 10, 0);
-        assertTrue("The user events should be all intiiated by the client", !profileEventsForFirstClient.isEmpty() && profileEventsForFirstClient.stream().allMatch(e -> Objects.equals(e.getInitiatorUser().getId(), user.getId())));
+        assertTrue("The user events should be all initiated by the client", !profileEventsForFirstClient.isEmpty() && profileEventsForFirstClient.stream().allMatch(e -> Objects.equals(e.getInitiatorUser().getId(), user.getId())));
+        profileEventsForFirstClient.sort(Comparator.comparing(Event::getId).reversed());
+        List<Event> profileEventsFromWebservice = client2EventsApi.getUserEvents(user.getId(), EventSearchType.PROFILE.toString(), 10, 0);
+        assertEquals(profileEventsForFirstClient, profileEventsFromWebservice);
 
         // Get the identified event
         Event event2 = eventsForFirstClient.get(0);

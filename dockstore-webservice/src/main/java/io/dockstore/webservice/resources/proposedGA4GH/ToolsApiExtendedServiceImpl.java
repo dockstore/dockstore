@@ -32,6 +32,7 @@ import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
+import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
@@ -76,6 +77,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
+    public static final int ES_BATCH_INSERT_SIZE = 500;
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
 
     private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
@@ -115,22 +117,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         } else {
             ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(config.getEsConfiguration().getMaxConcurrentSessions());
         }
-    }
-
-    /**
-     * Avoid using this one, this is quite slow
-     *
-     * @return all published workflows
-     * @deprecated as of 1.11, avoid this one and hopefully delete it
-     */
-    @Deprecated
-    private List<Entry> getPublished() {
-        final List<Entry> published = new ArrayList<>();
-        published.addAll(toolDAO.findAllPublished());
-        published.addAll(workflowDAO.findAllPublished());
-        published.addAll(appToolDAO.finalAllPublished());
-        published.sort(Comparator.comparing(Entry::getGitUrl));
-        return published;
     }
 
     /**
@@ -183,40 +169,62 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response toolsIndexGet(SecurityContext securityContext) {
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
-            List<Entry> published = getPublished();
-            try {
-                RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
-                // Delete previous indices
-                deleteIndex(client, TOOLS_INDEX);
-                deleteIndex(client, WORKFLOWS_INDEX);
-
-                // Get mapping for tools index
-                URL urlTools = Resources.getResource("queries/mapping_tool.json");
-                String textTools = Resources.toString(urlTools, StandardCharsets.UTF_8);
-
-                // Get mapping for workflows index
-                URL urlWorkflows = Resources.getResource("queries/mapping_workflow.json");
-                String textWorkflows = Resources.toString(urlWorkflows, StandardCharsets.UTF_8);
-
-                // Create indices
-                CreateIndexRequest toolsRequest = new CreateIndexRequest(TOOLS_INDEX);
-                toolsRequest.source(textTools, XContentType.JSON);
-                CreateIndexRequest workflowsRequest = new CreateIndexRequest(WORKFLOWS_INDEX);
-                workflowsRequest.source(textWorkflows, XContentType.JSON);
-                client.indices().create(toolsRequest, RequestOptions.DEFAULT);
-                client.indices().create(workflowsRequest, RequestOptions.DEFAULT);
-
-                // Populate index
-                if (!published.isEmpty()) {
-                    publicStateManager.bulkUpsert(published);
-                }
-            } catch (IOException e) {
-                LOG.error("Could not create elastic search index", e);
-                throw new CustomWebApplicationException("Search indexing failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-            return Response.ok().entity(published.size()).build();
+            clearElasticSearch();
+            int totalProcessed = 0;
+            LOG.info("Starting GA4GH batch processing");
+            totalProcessed += indexDAO(toolDAO);
+            LOG.info("Processed {} tools", totalProcessed);
+            totalProcessed += indexDAO(workflowDAO);
+            LOG.info("Processed {} tools and workflows", totalProcessed);
+            totalProcessed += indexDAO(appToolDAO);
+            LOG.info("Processed {} tools, workflows, and apptools", totalProcessed);
+            return Response.ok().entity(totalProcessed).build();
         }
         return Response.ok().entity(0).build();
+    }
+
+    private int indexDAO(EntryDAO entryDAO) {
+        int processed = 0;
+        List<? extends Entry> published;
+        do {
+            published = entryDAO.findAllPublished(processed, ES_BATCH_INSERT_SIZE, null, "gitUrl", "asc");
+            processed += published.size();
+            indexBatch(published);
+            published.forEach(entryDAO::evict);
+        } while (published.size() == ES_BATCH_INSERT_SIZE);
+        return processed;
+    }
+
+    private void clearElasticSearch() {
+        try {
+            // FYI. it is real tempting to use a try ... catch with resources to close this client, but it actually permanently messes up the client!
+            RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
+            // Delete previous indices
+            deleteIndex(client, TOOLS_INDEX);
+            deleteIndex(client, WORKFLOWS_INDEX);
+            createIndex("queries/mapping_tool.json", TOOLS_INDEX, client);
+            createIndex("queries/mapping_workflow.json", WORKFLOWS_INDEX, client);
+        } catch (IOException | RuntimeException e) {
+            LOG.error("Could not clear elastic search index", e);
+            throw new CustomWebApplicationException("Search indexing failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private void createIndex(String resourceName, String nameOfIndex, RestHighLevelClient client) throws IOException {
+        // Get mapping for index
+        URL urlStuff = Resources.getResource(resourceName);
+        String textTools = Resources.toString(urlStuff, StandardCharsets.UTF_8);
+        // Create indices
+        CreateIndexRequest toolsRequest = new CreateIndexRequest(nameOfIndex);
+        toolsRequest.source(textTools, XContentType.JSON);
+        client.indices().create(toolsRequest, RequestOptions.DEFAULT);
+    }
+
+    private void indexBatch(List<? extends Entry> published) {
+        // Populate index
+        if (!published.isEmpty()) {
+            publicStateManager.bulkUpsert((List<Entry>) published);
+        }
     }
 
     @Override

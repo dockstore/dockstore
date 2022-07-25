@@ -15,7 +15,7 @@ jobs:
 
     # Should only release tags
     # TODO: should only release tags where the required status checks are passing
-    if: startsWith(github.ref, ‘refs/tags/’)
+    if: startsWith(github.ref, 'refs/tags/')
 
     permissions:
       id-token: write
@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       # Step that does that actual cache save and restore
-      - uses: actions/cache@v3.0.4
+      - uses: actions/cache@v3.0.5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}

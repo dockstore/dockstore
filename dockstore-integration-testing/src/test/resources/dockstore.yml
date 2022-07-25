@@ -33,7 +33,7 @@ externalConfig:
   scheme: http
   port: 8080
 
-authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10s
 
 server:
   applicationConnectors:
