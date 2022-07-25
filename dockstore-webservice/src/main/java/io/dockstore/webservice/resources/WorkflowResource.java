@@ -893,20 +893,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * Checks if <code>user</code> has permission to read <code>workflow</code>. If the user does not have permission, throws a {@link CustomWebApplicationException}.
+     * Returns true if <code>user</code> has permission to examine <code>workflow</code>.
      *
      * @param user
      * @param workflow
      */
     @Override
-    public void checkCanRead(User user, Entry workflow) {
-        try {
-            super.checkCanRead(user, workflow);
-        } catch (CustomWebApplicationException ex) {
-            if (!permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.READ)) {
-                throw ex;
-            }
+    public boolean canExamine(User user, Entry workflow) {
+        if (super.canExamine(user, workflow)) {
+            return true;
         }
+        return permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.READ);
     }
 
     /**

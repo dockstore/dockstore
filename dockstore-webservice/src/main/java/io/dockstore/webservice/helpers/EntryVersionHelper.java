@@ -262,7 +262,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             checkCanRead(user, entry);
 
             // tighten permissions for hosted tools and workflows
-            if (!user.isPresent() || !isOwner(user.get(), entry)) {
+            if (!user.isPresent() || !canExamine(user.get(), entry)) {
                 if (!entry.getIsPublished()) {
                     if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
                         throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);

@@ -260,14 +260,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
-    public void checkCanRead(User user, Entry entry) {
-        try {
-            AuthenticatedResourceInterface.super.checkCanRead(user, entry);
-        } catch (CustomWebApplicationException ex) {
-            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.READ)) {
-                throw ex;
-            }
+    public boolean canExamine(User user, Entry entry) {
+        if (AuthenticatedResourceInterface.super.canExamine(user, entry)) {
+            return true;
         }
+        return (entry instanceof Workflow) && permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.READ);
     }
 
     @Override
@@ -631,7 +628,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
 
             boolean showHiddenVersions = false;
-            if (user.isPresent() && isOwner(user.get(), entry)) {
+            if (user.isPresent() && canExamine(user.get(), entry)) {
                 showHiddenVersions = true;
             }
 

@@ -463,7 +463,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkExistsEntry(tool);
-        checkIsOwner(user, tool);
+        checkCanExamine(user, tool);
         return new ArrayList<>(tool.getUsers());
     }
 
@@ -944,25 +944,13 @@ public class DockerRepoResource
         return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO, versionDAO);
     }
 
-    /**
-     * Checks if <code>user</code> has permission to read <code>workflow</code>. If the user does not have permission, throws a {@link CustomWebApplicationException}.
-     *
-     * @param user
-     * @param tool
-     */
     @Override
-    public void checkCanRead(User user, Entry tool) {
-        try {
-            EntryVersionHelper.super.checkCanRead(user, tool);
-        } catch (CustomWebApplicationException ex) {
+    public boolean canExamine(User user, Entry tool) {
+        boolean result = EntryVersionHelper.super.canExamine(user, tool);
+        if (!result) {
             LOG.info("permissions are not yet tool aware");
-            // should not throw away exception
-            throw ex;
-            //TODO permissions will eventually need to know about tools too
-            //            if (!permissionsInterface.canDoAction(user, (Workflow)workflow, Role.Action.READ)) {
-            //                throw ex;
-            //            }
         }
+        return result;
     }
 
     @PUT

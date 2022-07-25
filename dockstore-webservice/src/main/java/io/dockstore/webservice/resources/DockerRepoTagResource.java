@@ -94,18 +94,12 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     }
 
     @Override
-    public void checkCanRead(User user, Entry tool) {
-        try {
-            EntryVersionHelper.super.checkCanRead(user, tool);
-        } catch (CustomWebApplicationException ex) {
+    public boolean canExamine(User user, Entry tool) {
+        boolean result = EntryVersionHelper.super.canExamine(user, tool);
+        if (!result) {
             LOG.info("permissions are not yet tool aware");
-            // should not throw away exception
-            throw ex;
-            //TODO permissions will eventually need to know about tools too
-            //            if (!permissionsInterface.canDoAction(user, (Workflow)workflow, Role.Action.READ)) {
-            //                throw ex;
-            //            }
         }
+        return result;
     }
 
     @GET

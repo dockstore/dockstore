@@ -29,32 +29,44 @@ import org.slf4j.LoggerFactory;
 /**
  * AuthenticatedResourceInterface is a mixin that provides methods used to implement user-level access control in
  * Resource handlers.  By using these methods consistently, we centralize access-checking logic and avoid its
- * repetition, allowing us to easily modify our access policies, if necessary.
+ * repetition, allowing us to easily enhance/modify our access policies.
  *
- * Each of the "check" methods returns on success, and throws an appropriate CustomWebApplicationException on failure.
- * The most commonly-used "check" methods check if a user is allowed to perform a type of action on a specified entry:
+ * <p>
+ * Most of our code utilizes the "check" methods, which typically are called near the beginning of a resource handler to "gate" the execution of the rest of the handler.
+ * Each "check" method returns successfully if the checked condition is true, and throws an appropriate CustomWebApplicationException otherwise.
+ * The most commonly-used "check" methods determine if a user is allowed to perform a type of action on a specified entry:
  *
  * <ul>
- * <li>checkCanRead: can the user read the specified entry?
- * <li>checkCanWrite: can the user write (modify) the specified entry?
- * <li>checkCanShare: can the user share (publish) the specified entry?
+ * <li>checkCanRead: can the user read public information from the specified entry?</li>
+ * <li>checkCanExamine: can the user read non-public information from the specified entry?</li>
+ * <li>checkCanWrite: can the user write (modify) the specified entry?</li>
+ * <li>checkCanShare: can the user share (publish) the specified entry?</li>
  * </ul>
  *
+ * <p>
+ * "Non-public information" is information that should only be visible to the entry's owner(s) or a user authorized (via SAM, for example) to read the entry.
+ *
+ * <p>
+ * The above "check" methods are implemented as wrappers around corresponding "non-check" methods, which return true/false rather than throwing:
+ *
+ * <ul>
+ * <li>canRead</li>
+ * <li>canExamine</li>
+ * <li>canWrite</li>
+ * <li>canShare</li>
+ * </ul>
+ *
+ * <p>
+ * To add an authentication method, override the "non-check" methods.  The "non-check" methods may also be called directly to implement non-"gate"-type access checks.
+ *
+ * <p>
  * There are a number of "check" utility methods that perform other useful checks:
  *
  * <ul>
- * <li>checkIsOwner: is the user one of the users that controls the specified entry?
- * <li>checkIsAdmin: does the user have adminitrative privileges?
- * <li>checkUserId: does the user have the specified user id?
- * <li>checkExists{X}: is the object reference of type X not null?
+ * <li>checkIsAdmin: does the user have administrative privileges?</li>
+ * <li>checkUserId: does the user have the specified user id?</li>
+ * <li>checkExists{X}: is the object argument of type X not null?</li>
  * </ul>
- *
- * Additionally, "non-check" methods are defined that correspond to the most commonly-used "check" methods:
- *
- *   canRead, canWrite, canShare, isOwner, isAdmin
- *
- * Each "non-check" method performs the same check as its partner "check" method, except that rather than returning/throwing,
- * it returns true/false.
  */
 public interface AuthenticatedResourceInterface {
 
@@ -91,6 +103,16 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
+     * Check if the user is allowed to read the specified entry, even
+     * if the entry is not published.
+     * @param user user to be checked, null if user not logged in
+     * @param entry entry to be checked
+     */
+    default void checkCanExamine(User user, Entry<?, ?> entry) {
+        throwIf(!canExamine(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    }
+
+    /**
      * Check if a user is allowed to write (modify) the specified entry.
      * @param user user to be checked, null if user not logged in
      * @param entry entry to be checked
@@ -106,15 +128,6 @@ public interface AuthenticatedResourceInterface {
      */
     default void checkCanShare(User user, Entry<?, ?> entry) {
         throwIf(!canShare(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
-    }
-
-    /**
-     * Check if a user owns (is one of the users that controls) the specified entry.
-     * @param user user to be checked, null if user not logged in
-     * @param entry entry to be checked
-     */
-    default void checkIsOwner(User user, Entry<?, ?> entry) {
-        throwIf(!isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     /**
@@ -167,7 +180,11 @@ public interface AuthenticatedResourceInterface {
     }
 
     default boolean canRead(User user, Entry<?, ?> entry) {
-        return (entry != null && entry.getIsPublished()) || isOwner(user, entry);
+        return (entry != null && entry.getIsPublished()) || canExamine(user, entry);
+    }
+
+    default boolean canExamine(User user, Entry<?, ?> entry) {
+        return isOwner(user, entry);
     }
 
     default boolean canWrite(User user, Entry<?, ?> entry) {
@@ -178,7 +195,7 @@ public interface AuthenticatedResourceInterface {
         return isOwner(user, entry);
     }
 
-    default boolean isOwner(User user, Entry<?, ?> entry) {
+    static boolean isOwner(User user, Entry<?, ?> entry) {
         return user != null && entry != null && entry.getUsers().stream().anyMatch(u -> u.getId() == user.getId());
     }
 
