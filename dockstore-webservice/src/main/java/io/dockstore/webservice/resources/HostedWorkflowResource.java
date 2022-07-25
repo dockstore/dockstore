@@ -184,7 +184,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         @ApiParam(value = "hosted entry ID") @Parameter(name = "entryId", description = "hosted entry ID") @PathParam("entryId") final Long entryId,
         @Parameter(name = "file", schema = @Schema(type = "string", format = "binary")) @FormDataParam("file") final InputStream payload) {
         final Workflow workflow = getEntryDAO().findById(entryId);
-        checkExistsEntry(workflow);
+        checkNotNullEntry(workflow);
         checkHosted(workflow);
         checkCanWrite(user, workflow);
         checkVersionLimit(user, workflow);

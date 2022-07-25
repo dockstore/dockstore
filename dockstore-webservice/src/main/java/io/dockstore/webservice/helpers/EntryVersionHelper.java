@@ -84,7 +84,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      */
     default Entry updateDefaultVersionHelper(String version, long id, User user) {
         Entry entry = getDAO().findById(id);
-        checkExistsEntry(entry);
+        checkNotNullEntry(entry);
         checkCanWrite(user, entry);
         if (version != null) {
             if (!entry.checkAndSetDefaultVersion(version)) {
@@ -92,7 +92,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             }
         }
         Entry result = getDAO().findById(id);
-        checkExistsEntry(result);
+        checkNotNullEntry(result);
         entry.syncMetadataWithDefault();
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result;
@@ -158,7 +158,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
     default T updateLabels(User user, Long containerId, String labelStrings, LabelDAO labelDAO) {
         T c = getDAO().findById(containerId);
-        checkExistsEntry(c);
+        checkNotNullEntry(c);
         checkCanWrite(user, c);
 
         EntryLabelHelper<T> labeller = new EntryLabelHelper<>(labelDAO);
@@ -258,7 +258,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
             versionDAO.enableNameFilter(finalTagName);
             T entry = getDAO().findById(workflowId);
-            checkExistsEntry(entry);
+            checkNotNullEntry(entry);
             checkCanRead(user, entry);
 
             // tighten permissions for hosted tools and workflows

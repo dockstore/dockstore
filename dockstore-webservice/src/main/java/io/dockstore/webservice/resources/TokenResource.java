@@ -208,7 +208,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     public Token listToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam("ID of token to return") @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
-        checkExistsToken(token);
+        checkNotNullToken(token);
         checkUserId(user, token.getUserId());
 
         return token;
@@ -296,7 +296,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     public Response deleteToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
-        checkExistsToken(token);
+        checkNotNullToken(token);
         checkUserId(user, token.getUserId());
 
         // invalidate cache now that we're deleting the token
@@ -918,7 +918,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
     }
 
-    private void checkExistsToken(Token token) {
+    private void checkNotNullToken(Token token) {
         if (token == null) {
             throw new CustomWebApplicationException("Token not found.", HttpStatus.SC_NOT_FOUND);
         }

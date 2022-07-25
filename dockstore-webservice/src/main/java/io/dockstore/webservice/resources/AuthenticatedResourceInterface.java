@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
  * <ul>
  * <li>checkIsAdmin: does the user have administrative privileges?</li>
  * <li>checkUserId: does the user have the specified user id?</li>
- * <li>checkExistsEntry: is the specified entry not null?</li>
+ * <li>checkNotNullEntry: is the specified entry not null?</li>
  * </ul>
  */
 public interface AuthenticatedResourceInterface {
@@ -149,7 +149,7 @@ public interface AuthenticatedResourceInterface {
      * Check if a specified entry exists (is not null).
      * @param entry entry to be checked
      */
-    default void checkExistsEntry(Entry<?, ?> entry) {
+    default void checkNotNullEntry(Entry<?, ?> entry) {
         throwIf(entry == null, "Entry not found.", HttpStatus.SC_NOT_FOUND);
     }
 

@@ -153,7 +153,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             }
         }
         Tool result = toolDAO.findById(containerId);
-        checkExistsEntry(result);
+        checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
@@ -192,7 +192,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
         }
 
         Tool result = toolDAO.findById(containerId);
-        checkExistsEntry(result);
+        checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
@@ -272,7 +272,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
         //        }
         //
         //        Tool result = toolDAO.findById(containerId);
-        //        checkExistsEntry(result);
+        //        checkNotNullEntry(result);
         //        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         //        return result.getWorkflowVersions();
     }
@@ -286,7 +286,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
      */
     private Tool findToolByIdAndCheckToolAndUser(Long toolId, User user) {
         Tool tool = toolDAO.findById(toolId);
-        checkExistsEntry(tool);
+        checkNotNullEntry(tool);
         checkCanRead(user, tool);
         return tool;
     }
@@ -302,7 +302,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
             @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
         Tool tool = toolDAO.findById(containerId);
-        checkExistsEntry(tool);
+        checkNotNullEntry(tool);
         checkCanRead(user, tool);
 
         return getVersionsSourcefiles(containerId, tagId, fileTypes, versionDAO);
