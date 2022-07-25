@@ -261,10 +261,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @Override
     public boolean canExamine(User user, Entry entry) {
-        if (AuthenticatedResourceInterface.super.canExamine(user, entry)) {
-            return true;
-        }
-        return (entry instanceof Workflow) && permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.READ);
+        return AuthenticatedResourceInterface.super.canExamine(user, entry)
+            || (entry instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.READ));
     }
 
     @Override
