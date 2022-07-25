@@ -716,7 +716,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
         checkExistsEntry(c);
-        checkCanRead(user, c);
+        checkCanExamine(user, c);
 
         return new ArrayList<>(c.getUsers());
     }
