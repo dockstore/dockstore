@@ -917,4 +917,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
         throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
     }
+
+    private void checkExistsToken(Token token) {
+        if (token == null) {
+            throw new CustomWebApplicationException("Token not found.", HttpStatus.SC_NOT_FOUND);
+        }
+    }
 }

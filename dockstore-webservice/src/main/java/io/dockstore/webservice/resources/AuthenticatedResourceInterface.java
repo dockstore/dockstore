@@ -17,8 +17,6 @@ package io.dockstore.webservice.resources;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Organization;
-import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import java.util.List;
 import java.util.Optional;
@@ -65,7 +63,7 @@ import org.slf4j.LoggerFactory;
  * <ul>
  * <li>checkIsAdmin: does the user have administrative privileges?</li>
  * <li>checkUserId: does the user have the specified user id?</li>
- * <li>checkExists{X}: is the object argument of type X not null?</li>
+ * <li>checkExistsEntry: is the specified entry not null?</li>
  * </ul>
  */
 public interface AuthenticatedResourceInterface {
@@ -155,30 +153,6 @@ public interface AuthenticatedResourceInterface {
         throwIf(entry == null, "Entry not found.", HttpStatus.SC_NOT_FOUND);
     }
 
-    /**
-     * Check if a specified user exists (is not null).
-     * @param user user to be checked
-     */
-    default void checkExistsUser(User user) {
-        throwIf(user == null, "User not found.", HttpStatus.SC_NOT_FOUND);
-    }
-
-    /**
-     * Check if a specified organization exists (is not null).
-     * @param organization organization to be checked
-     */
-    default void checkExistsOrganization(Organization organization) {
-        throwIf(organization == null, "Organization not found.", HttpStatus.SC_NOT_FOUND);
-    }
-
-    /**
-     * Check if a specified token exists (is not null).
-     * @param token token to be checked
-     */
-    default void checkExistsToken(Token token) {
-        throwIf(token == null, "Token not found.", HttpStatus.SC_NOT_FOUND);
-    }
-
     default boolean canRead(User user, Entry<?, ?> entry) {
         return (entry != null && entry.getIsPublished()) || canExamine(user, entry);
     }
@@ -195,12 +169,12 @@ public interface AuthenticatedResourceInterface {
         return isOwner(user, entry);
     }
 
-    static boolean isOwner(User user, Entry<?, ?> entry) {
-        return user != null && entry != null && entry.getUsers().stream().anyMatch(u -> u.getId() == user.getId());
-    }
-
     default boolean isAdmin(User user) {
         return user != null && user.getIsAdmin();
+    }
+
+    static boolean isOwner(User user, Entry<?, ?> entry) {
+        return user != null && entry != null && entry.getUsers().stream().anyMatch(u -> u.getId() == user.getId());
     }
 
     static void throwIf(boolean condition, String message, int status) {

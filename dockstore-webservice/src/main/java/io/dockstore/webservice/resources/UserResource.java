@@ -367,9 +367,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             checkIsAdmin(authUser);
             user = userDAO.findById(userId);
         } else {
-            checkUserId(authUser, authUser.getId());
+            checkExistsUser(authUser);
             user = userDAO.findById(authUser.getId());
         }
+        checkExistsUser(user);
 
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
@@ -1292,4 +1293,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
     }
 
+    private void checkExistsUser(User user) {
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
+        }
+    }
 }
