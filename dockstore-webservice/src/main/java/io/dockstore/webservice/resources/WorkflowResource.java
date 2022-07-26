@@ -173,7 +173,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE + ", " + VERSION_INCLUDE;
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
     public static final String A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB = "A workflow must be unpublished to restub.";
-    public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOTS_TO_RESTUB = "A workflow must have no snapshots to restub";
+    public static final String A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB = "A workflow must have no issued DOIs to restub";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -244,8 +244,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (workflow.isIsChecker()) {
             throw new CustomWebApplicationException("A checker workflow cannot be restubed.", HttpStatus.SC_BAD_REQUEST);
         }
-        if (versionDAO.getVersionsFrozen(workflowId) > 0) {
-            throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOTS_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
+        if (workflow.getConceptDoi() != null) {
+            throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
         }
 
         checkNotHosted(workflow);

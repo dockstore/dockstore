@@ -59,6 +59,7 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
         return (long)query.getSingleResult();
     }
 
+    // Currently not used, but may be useful later for archive/deletion operations
     public long getVersionsFrozen(long entryId) {
         Query query = namedQuery("io.dockstore.webservice.core.Version.getCountVersionFrozenByEntryID");
         query.setParameter("id", entryId);
