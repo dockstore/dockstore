@@ -59,6 +59,12 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
         return (long)query.getSingleResult();
     }
 
+    public long getVersionsFrozen(long entryId) {
+        Query query = namedQuery("io.dockstore.webservice.core.Version.getCountVersionFrozenByEntryID");
+        query.setParameter("id", entryId);
+        return (long) query.getSingleResult();
+    }
+
     public void enableNameFilter(String name) {
         currentSession().enableFilter("versionNameFilter").setParameter("name", name);
     }
