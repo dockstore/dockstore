@@ -1261,7 +1261,7 @@
                 <configuration>
                     <outputFileName>openapi</outputFileName>
                     <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
-                    <outputFormat>YAML</outputFormat>
+                    <outputFormat>JSONANDYAML</outputFormat>
                     <prettyPrint>true</prettyPrint>
                     <resourcePackages>
                         <package>io.swagger.api</package>
@@ -1459,7 +1459,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/openapi3/openapi.yaml</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/openapi3/openapi.json</inputSpec>
                             <generatorName>powershell</generatorName>
                             <!-- the following options don't seem to work, but might work someday -->
                             <generateApis>false</generateApis>

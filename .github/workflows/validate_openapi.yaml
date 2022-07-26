@@ -14,4 +14,4 @@ jobs:
       - name: Validate OpenAPI definition
         uses: char0n/swagger-editor-validate@v1.3.1
         with:
-          definition-file: dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+          definition-file: dockstore-webservice/src/main/resources/openapi3/openapi.json
