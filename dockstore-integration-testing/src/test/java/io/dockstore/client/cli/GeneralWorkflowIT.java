@@ -20,6 +20,7 @@ import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_N
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB;
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB;
+import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB;
 import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
 import static org.junit.Assert.assertEquals;
@@ -1207,6 +1208,14 @@ public class GeneralWorkflowIT extends BaseIT {
             fail("This line should never execute, should not be able to restub workflow with DOI even if it is unpublished");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB));
+        }
+        // don't die horribly when stubbing something with snapshots, explain the error
+        testingPostgres.runUpdateStatement("update workflow set conceptdoi = null");
+        try {
+            workflowsApi.restub(workflowBeforeFreezing.getId());
+            fail("This line should never execute, should not be able to restub workflow with DOI even if it is unpublished");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB));
         }
     }
 }
