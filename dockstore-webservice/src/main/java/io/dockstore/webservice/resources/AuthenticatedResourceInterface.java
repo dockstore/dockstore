@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * </ul>
  *
  * <p>
- * "Non-public information" is information that should only be visible to the entry's owner(s) or a user authorized (via SAM, for example) to read the entry.
+ * "Non-public information" is sensitive information that should only be visible to the entry's owner(s) or a user authorized (via SAM, for example) to read the entry.
  *
  * <p>
  * The above "check" methods are implemented as wrappers around corresponding "non-check" methods, which return true/false rather than throwing:
@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
  * </ul>
  *
  * <p>
- * To add an authentication method, override the "non-check" methods.  The "non-check" methods may also be called directly to implement non-"gate"-type access checks.
+ * To add an authentication method, override the "non-check" methods.  The "non-check" methods may also be called directly to implement non-"gate"-type access controls.
  *
  * <p>
  * There are a number of "check" utility methods that perform other useful checks:
@@ -75,7 +75,8 @@ public interface AuthenticatedResourceInterface {
 
     /**
      * Check if a user is allowed to read all of the specified entries.
-     * @param user user to be checked, null if user no logged in
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param user user to be checked, null if the user is not logged in
      * @param entries list of entries to be checked
      */
     default void checkCanRead(User user, List<? extends Entry<?, ?>> entries) {
@@ -84,7 +85,8 @@ public interface AuthenticatedResourceInterface {
 
     /**
      * Check if a user is allowed to read the specified entry.
-     * @param user the user to be checked, not set if user not logged in
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param user the user to be checked, not set if the user is not logged in
      * @param entry entry to be checked
      */
     default void checkCanRead(Optional<User> user, Entry<?, ?> entry) {
@@ -93,7 +95,8 @@ public interface AuthenticatedResourceInterface {
 
     /**
      * Check if a user is allowed to read the specified entry.
-     * @param user user to be checked, null if user not logged in
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param user user to be checked, null if the user is not logged in
      * @param entry entry to be checked
      */
     default void checkCanRead(User user, Entry<?, ?> entry) {
@@ -101,9 +104,9 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
-     * Check if the user is allowed to read the specified entry, even
-     * if the entry is not published.
-     * @param user user to be checked, null if user not logged in
+     * Check if the user is allowed to read non-public or sensitive information from the specified entry.
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param user user to be checked, null if the user is not logged in
      * @param entry entry to be checked
      */
     default void checkCanExamine(User user, Entry<?, ?> entry) {
@@ -112,7 +115,8 @@ public interface AuthenticatedResourceInterface {
 
     /**
      * Check if a user is allowed to write (modify) the specified entry.
-     * @param user user to be checked, null if user not logged in
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param user user to be checked, null if the user is not logged in
      * @param entry entry to be checked
      */
     default void checkCanWrite(User user, Entry<?, ?> entry) {
@@ -121,7 +125,8 @@ public interface AuthenticatedResourceInterface {
 
     /**
      * Check if a user is allowed to share (publish) the specified entry.
-     * @param user user to be checked, null if user not logged in
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param user user to be checked, null if the user is not logged in
      * @param entry entry to be checked
      */
     default void checkCanShare(User user, Entry<?, ?> entry) {
@@ -130,7 +135,8 @@ public interface AuthenticatedResourceInterface {
 
     /**
      * Check if a user has adminitrative privileges.
-     * @param user user to be checked, null if user not logged in
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param user user to be checked, null if the user is not logged in
      */
     default void checkIsAdmin(User user) {
         throwIf(!isAdmin(user), FORBIDDEN_ADMIN_MESSAGE, HttpStatus.SC_FORBIDDEN);
@@ -138,7 +144,8 @@ public interface AuthenticatedResourceInterface {
 
     /**
      * Check if a the ID of a user matches the specified ID.
-     * @param user user to be checked, null if user not logged in
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param user user to be checked, null if the user is not logged in
      * @param userId id to match
      */
     default void checkUserId(User user, long userId) {
@@ -146,7 +153,8 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
-     * Check if a specified entry exists (is not null).
+     * Check if a specified entry is not null.
+     * If not, throw a {@link CustomWebApplicationException}.
      * @param entry entry to be checked
      */
     default void checkNotNullEntry(Entry<?, ?> entry) {
