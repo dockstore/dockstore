@@ -238,6 +238,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow restub(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
         // Check that workflow is valid to restub
         if (workflow.getIsPublished()) {
             throw new CustomWebApplicationException(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
