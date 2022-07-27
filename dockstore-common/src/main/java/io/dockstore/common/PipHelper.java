@@ -15,8 +15,11 @@ import java.util.regex.Pattern;
 public final class PipHelper {
     public static final String DEV_SEM_VER = "development-build";
     // https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-    // Modified regex linked above to mitigate against ReDoS attacks.
-    public static final String SEM_VER_STRING = "(^(0|[1-9]\\d*+)\\.(0|[1-9]\\d*+)\\.(0|[1-9]\\d*+)(?:-((?:0|[1-9]\\d*+|\\d*+[a-zA-Z-][0-9a-zA-Z-]*+)(?:\\.(?:0|[1-9]\\d*+|\\d*+[a-zA-Z-][0-9a-zA-Z-]*+))*+))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*+))?$)|(^" + DEV_SEM_VER + "$)";
+    // OPENAPI_SEM_VER_STRING is only used for the openapi schema pattern. Do not use it for pattern matching because it does not mitigate against ReDos attacks.
+    // The openapi schema pattern must be a valid regular expression according to the Ecma-262 dialect, which does not support possessive quantifiers.
+    public static final String OPENAPI_SEM_VER_STRING = "(^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$)|(^" + DEV_SEM_VER + "$)";
+    // SEM_VER_STRING regex is modified with possessive quantifiers to mitigate against ReDoS attacks. Use this for pattern matching.
+    public static final String SEM_VER_STRING = OPENAPI_SEM_VER_STRING.replace("*", "*+");
     public static final Pattern SEM_VER_PATTERN = Pattern.compile(SEM_VER_STRING);
 
     private PipHelper() { }
