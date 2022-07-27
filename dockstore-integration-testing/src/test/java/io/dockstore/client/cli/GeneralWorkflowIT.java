@@ -18,6 +18,9 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
+import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB;
+import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB;
+import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB;
 import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
 import static org.junit.Assert.assertEquals;
@@ -1175,16 +1178,44 @@ public class GeneralWorkflowIT extends BaseIT {
         master = workflowVersions1.stream().filter(v -> v.getName().equals("master")).findFirst().get();
         assertTrue(master.isFrozen());
 
+
+        workflowsApi.publish(workflowBeforeFreezing.getId(), CommonTestUtilities.createPublishRequest(true));
+        // should not be able to restub whether published or not since there is a snapshot/frozen
+        try {
+            workflowsApi.restub(workflowBeforeFreezing.getId());
+            fail("This line should never execute, should not be able to restub workflow that is published.");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB));
+        }
+
         //TODO: For now just checking for next failure (no Zenodo token), but should replace with when DOI registration tests are written
         try {
             workflowsApi.requestDOIForWorkflowVersion(workflowBeforeFreezing.getId(), master.getId(), "");
             fail("This line should never execute without valid Zenodo token");
         } catch (ApiException ex) {
             assertTrue(ex.getResponseBody().contains(NO_ZENDO_USER_TOKEN));
-
+            // fake a DOI
+            testingPostgres.runUpdateStatement("update workflow set conceptdoi = '10.5281/zenodo.8'");
         }
 
         // Should be able to refresh a workflow with a frozen version without throwing an error
         workflowsApi.refresh(githubWorkflow.getId(), false);
+
+        // unpublish workflow
+        workflowsApi.publish(workflowBeforeFreezing.getId(), CommonTestUtilities.createPublishRequest(false));
+        try {
+            workflowsApi.restub(workflowBeforeFreezing.getId());
+            fail("This line should never execute, should not be able to restub workflow with DOI even if it is unpublished");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB));
+        }
+        // don't die horribly when stubbing something with snapshots, explain the error
+        testingPostgres.runUpdateStatement("update workflow set conceptdoi = null");
+        try {
+            workflowsApi.restub(workflowBeforeFreezing.getId());
+            fail("This line should never execute, should not be able to restub workflow with DOI even if it is unpublished");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB));
+        }
     }
 }

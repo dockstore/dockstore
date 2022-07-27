@@ -81,6 +81,7 @@ import org.hibernate.annotations.UpdateTimestamp;
             "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata, verifiedbysource.platformVersion, sourcefiles.path, verifiedbysource.verified) FROM Version version "
                 + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
                 + "version.parent.id = :entryId"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountVersionFrozenByEntryID", query = "SELECT sum (case when v.frozen = true then 1 else 0 end) FROM Version v WHERE v.parent.id = :id"),
     @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
 })
 
