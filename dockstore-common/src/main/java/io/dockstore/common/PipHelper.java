@@ -84,7 +84,6 @@ public final class PipHelper {
      * @return true if the semantic version is valid else false.
      */
     public static boolean validateSemVer(String semVer) {
-        System.out.println(SEM_VER_STRING);
         return SEM_VER_PATTERN.matcher(semVer).matches();
     }
 }
