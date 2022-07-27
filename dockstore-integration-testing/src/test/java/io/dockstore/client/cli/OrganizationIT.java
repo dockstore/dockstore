@@ -58,8 +58,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 @Category(ConfidentialTest.class)
-public class
-OrganizationIT extends BaseIT {
+public class OrganizationIT extends BaseIT {
     private static final long NONEXISTENT_ID = Long.MAX_VALUE;
 
     private static final StarRequest STAR_REQUEST = getStarRequest(true);
