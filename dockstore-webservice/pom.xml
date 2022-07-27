@@ -1261,7 +1261,7 @@
                 <configuration>
                     <outputFileName>openapi</outputFileName>
                     <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
-                    <outputFormat>JSONANDYAML</outputFormat>
+                    <outputFormat>YAML</outputFormat>
                     <prettyPrint>true</prettyPrint>
                     <resourcePackages>
                         <package>io.swagger.api</package>
