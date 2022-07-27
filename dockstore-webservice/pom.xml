@@ -1459,7 +1459,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/openapi3/openapi.json</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/openapi3/openapi.yaml</inputSpec>
                             <generatorName>powershell</generatorName>
                             <!-- the following options don't seem to work, but might work someday -->
                             <generateApis>false</generateApis>
