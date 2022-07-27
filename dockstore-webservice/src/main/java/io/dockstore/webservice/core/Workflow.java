@@ -102,7 +102,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 13)
     private WorkflowMode mode = WorkflowMode.STUB;
 
-    @Column
+    @Column(columnDefinition = "varchar(256)")
     @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", position = 14)
     @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
     private String workflowName;

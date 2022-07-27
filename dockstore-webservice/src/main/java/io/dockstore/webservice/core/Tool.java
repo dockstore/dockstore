@@ -128,7 +128,7 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "Is the docker image private or not.", required = true, position = 21)
     private boolean privateAccess = false;
 
-    @Column
+    @Column(columnDefinition = "varchar(256)")
     @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
