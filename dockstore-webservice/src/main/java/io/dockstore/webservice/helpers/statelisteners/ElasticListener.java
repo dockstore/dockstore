@@ -210,8 +210,10 @@ public class ElasticListener implements StateListenerInterface {
                         if (bulkItemResponse.isFailed()) {
                             final Failure failure = bulkItemResponse.getFailure();
                             final Throwable throwable = failure.getCause().getCause();
-                            LOGGER.error("Item {} in bulk [{}] executed with failure, for entry with id {}",
+                            final String message = String.format(
+                                "Item %s in bulk [%s] executed with failure, for entry with id %s",
                                 bulkItemResponse.getItemId(), executionId, failure.getId());
+                            LOGGER.error(message, throwable);
                         }
                     }
                 } else {
