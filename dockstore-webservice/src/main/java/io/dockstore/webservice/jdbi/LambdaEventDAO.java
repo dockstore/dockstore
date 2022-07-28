@@ -91,12 +91,6 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         return typedQuery.getResultList();
     }
 
-    /**
-     * Finds GitHub organizations with events that are in <code>organizations</code>. Does a
-     * case-insensitive lookup.
-     * @param organizations
-     * @return
-     */
     public List<String> findOrganizationsWithEvents(Set<String> organizations) {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.LambdaEvent.findOrganizationsWithEvents")
             .setParameter("organizations", organizations));
