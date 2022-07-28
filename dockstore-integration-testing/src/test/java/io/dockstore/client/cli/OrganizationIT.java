@@ -1254,6 +1254,19 @@ public class OrganizationIT extends BaseIT {
 
         numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
         assertEquals(1, numberOfCollections);
+
+        // Test collectionsLength works for starred orgs. https://ucsc-cgl.atlassian.net/browse/SEAB-3136
+        organizationsApi.approveOrganization(organization.getId()); // Can only star approved orgs
+
+        final StarRequest starRequest = new StarRequest();
+        starRequest.star(Boolean.TRUE);
+        organizationsApi.starOrganization(organization.getId(), starRequest);
+
+        final UsersApi usersApi = new UsersApi(webClientUser2);
+        final List<Organization> starredOrganizations = usersApi.getStarredOrganizations();
+        assertEquals(1, starredOrganizations.size());
+        final long starredOrgNumberOfCollections = starredOrganizations.get(0).getCollectionsLength().longValue();
+        assertEquals(1, starredOrgNumberOfCollections);
     }
 
     /**
