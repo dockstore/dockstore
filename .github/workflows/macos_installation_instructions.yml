@@ -32,6 +32,9 @@ jobs:
       - run: brew install wget
       - run: brew install jq
       - run: ./mvnw clean install
+      - run: cd ..
+      - run: git clone https://www.github.com/dockstore/dockstore-ui2
+      - run: cd dockstore-ui2
       - run: npm ci --legacy-peer-deps
       - run: npm run prebuild
       - run: npm run build
