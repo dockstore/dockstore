@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Set;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -52,19 +53,28 @@ public class LambdaEventResource {
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("/{organization}")
+    @Path("/organizations")
+    @Operation(operationId = "getOrganizationsWithLambdaEvents", description = "Get all of the user's GitHub organizations that have events.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "See OpenApi for details")
+    public List<String> getOrganizationsWithLambdaEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        final GitHubSourceCodeRepo sourceCodeRepoInterface =
+            (GitHubSourceCodeRepo) SourceCodeRepoFactory.createSourceCodeRepo(getToken(user));
+        final Set<String> gitHubOrganizations =
+            sourceCodeRepoInterface.getMyOrganizations();
+        return lambdaEventDAO.findOrganizationsWithEvents(gitHubOrganizations);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/organizations/{organization}")
     @Operation(operationId = "getLambdaEventsByOrganization", description = "Get all of the Lambda Events for the given GitHub organization.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "organization", required = true) @PathParam("organization") String organization,
             @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
             @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
-        User authUser = userDAO.findById(user.getId());
-        List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
-        if (githubTokens.isEmpty()) {
-            throw new CustomWebApplicationException("You do not have GitHub connected to your account.", HttpStatus.SC_BAD_REQUEST);
-        }
-        Token githubToken = githubTokens.get(0);
+        Token githubToken = getToken(user);
 
         // If the organization isn't the user's github account, check github to see if we have access to the organization.
         if (!organization.equals(githubToken.getUsername())) {
@@ -75,5 +85,15 @@ public class LambdaEventResource {
         }
 
         return lambdaEventDAO.findByOrganization(organization, offset, limit);
+    }
+
+    private Token getToken(User user) {
+        User authUser = userDAO.findById(user.getId());
+        List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
+        if (githubTokens.isEmpty()) {
+            throw new CustomWebApplicationException("You do not have GitHub connected to your account.", HttpStatus.SC_BAD_REQUEST);
+        }
+        Token githubToken = githubTokens.get(0);
+        return githubToken;
     }
 }

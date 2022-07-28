@@ -2779,7 +2779,24 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Event"
-  /lambdaEvents/{organization}:
+  /lambdaEvents/organizations:
+    get:
+      tags:
+      - "lambdaEvents"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getOrganizationsWithLambdaEvents"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+  /lambdaEvents/organizations/{organization}:
     get:
       tags:
       - "lambdaEvents"

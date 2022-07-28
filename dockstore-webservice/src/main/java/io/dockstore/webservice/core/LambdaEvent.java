@@ -36,6 +36,7 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByOrganization", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.repository like :organization"),
     @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByUsername", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.githubUsername = :username"),
     @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByUser", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.user = :user"),
+    @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findOrganizationsWithEvents", query = "select distinct(lambdaEvent.organization) FROM LambdaEvent lambdaEvent WHERE lambdaEvent.organization in :organizations")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class LambdaEvent {

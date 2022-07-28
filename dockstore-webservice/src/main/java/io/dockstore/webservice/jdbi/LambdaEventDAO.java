@@ -6,6 +6,7 @@ import io.dockstore.webservice.core.User;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -88,5 +89,16 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
         TypedQuery<LambdaEvent> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
         return typedQuery.getResultList();
+    }
+
+    /**
+     * Finds GitHub organizations with events that are in <code>organizations</code>. Does a
+     * case-insensitive lookup.
+     * @param organizations
+     * @return
+     */
+    public List<String> findOrganizationsWithEvents(Set<String> organizations) {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.LambdaEvent.findOrganizationsWithEvents")
+            .setParameter("organizations", organizations));
     }
 }

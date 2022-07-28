@@ -337,6 +337,15 @@ public class WebhookIT extends BaseIT {
             assertEquals("Should fail because user cannot access org.", HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
+        final List<String> organizationsWithLambdaEvents =
+            lambdaEventsApi.getOrganizationsWithLambdaEvents();
+        assertEquals(1, organizationsWithLambdaEvents.size());
+        assertEquals(BasicIT.USER_2_USERNAME, organizationsWithLambdaEvents.get(0));
+
+        // Fake event that doesn't correspond to an entry
+        testingPostgres.runUpdateStatement("insert into lambdaevent (organization) values ('dockstoretesting');");
+        assertEquals(2, lambdaEventsApi.getOrganizationsWithLambdaEvents().size());
+
         // Try adding version with empty test parameter file (should work)
         client.handleGitHubRelease("refs/heads/emptytestparameter", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         workflow2 = getFoobar2Workflow(client);
