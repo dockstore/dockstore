@@ -29,10 +29,10 @@ jobs:
         with:
           distribution: 'temurin' # See 'Supported distributions' for available options
           java-version: '17'
+
       - name: Install Brew
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         working-directory: ${{ env.DOCKSTORE }}
-
       - name: Run git
         run: git
         continue-on-error: true
