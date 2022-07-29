@@ -7,8 +7,8 @@ on:
       - develop
       - feature/SEAB-4529/link-macos-instructions-to-github-action
 env:
-  DOCKSTORE: dockstore
-  DOCKSTORE_UI: dockstore-ui2
+  DOCKSTORE: dockstore-install
+  DOCKSTORE_UI: dockstore-install-ui2
 
 jobs:
   build:
