@@ -14,11 +14,13 @@ jobs:
       - uses: actions/checkout@v3
         with:
           repository: dockstore/dockstore
+      - run: |
+          /bin/bash -c "ls; pwd; cd ..; ls ; pwd"
       - uses: actions/checkout@v3
         with:
           repository: dockstore/dockstore-ui2
       - run: |
-          /bin/bash -c "ls -a - l; pwd; cd ..; ls -a - l; pwd"
+          /bin/bash -c "ls; pwd; cd ..; ls ; pwd"
       - uses: actions/setup-java@v3
         with:
           distribution: 'temurin' # See 'Supported distributions' for available options
