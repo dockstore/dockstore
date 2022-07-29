@@ -12,6 +12,17 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          repository: dockstore/dockstore
+      - uses: actions/checkout@v3
+        with:
+          repository: dockstore/dockstore-ui2
+      - run: |
+          ls -a - l
+          pwd
+          cd ..
+          ls -a - l
+          pwd
       - uses: actions/setup-java@v3
         with:
           distribution: 'temurin' # See 'Supported distributions' for available options
