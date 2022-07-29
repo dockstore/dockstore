@@ -15,6 +15,12 @@ jobs:
       - uses: actions/checkout@v3
         with:
           repository: dockstore/dockstore
+      - run: /bin/bash -c "mkdir -p /Users/runner/work/dockstore/dockstore-ui2"
+      - uses: actions/checkout@v3
+        with:
+          repository: dockstore/dockstore-ui2
+          path: /Users/runner/work/dockstore/dockstore-ui2
+      - run: /bin/bash -c "pwd; ls; ls /Users/runner/work/dockstore/dockstore-ui2"
       - uses: actions/setup-java@v3
         with:
           distribution: 'temurin' # See 'Supported distributions' for available options
