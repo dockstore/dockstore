@@ -2,10 +2,9 @@ name: Verify MacOS Installation Instructions
 # This job follows the instructions in README.md
 
 on:
-  push:
-    branches:
-      - develop
-      - feature/SEAB-4529/link-macos-instructions-to-github-action
+  schedule:
+    - cron: '30 12 * * 1' #  This is every Monday at 5:30am PST/8:30am EST
+
 env:
   DOCKSTORE: dockstore
   DOCKSTORE_UI2: dockstore-ui2
