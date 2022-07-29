@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           repository: dockstore/dockstore-ui2
-          path: /Users/runner/work/dockstore/dockstore-ui2
+          path: ../dockstore-ui2
       - run: /bin/bash -c "ls; pwd; cd ..; ls ; pwd; ls /Users/runner/work/dockstore/dockstore-ui2"
       - uses: actions/setup-java@v3
         with:
