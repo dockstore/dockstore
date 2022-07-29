@@ -4,7 +4,7 @@ name: Verify MacOS Installation Instructions
 on:
   schedule:
     - cron: '30 12 * * 1' #  This is every Monday at 5:30am PST/8:30am EST
-    branches: develop
+#    branches: develop
 
 env:
   DOCKSTORE: dockstore
