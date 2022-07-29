@@ -32,9 +32,9 @@ jobs:
       - name: Install Brew
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         working-directory: ${{ env.DOCKSTORE }}
-      - run: pwd
+      - run: pwd; ls -l
         working-directory: ${{ env.DOCKSTORE_UI2 }}
-      - run: pwd
+      - run: pwd; ls -l
         working-directory: ${{ env.DOCKSTORE }}
       - name: Run git
         run: git
