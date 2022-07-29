@@ -8,7 +8,7 @@ on:
       - feature/SEAB-4529/link-macos-instructions-to-github-action
 env:
   DOCKSTORE: dockstore
-  DOCKSTORE_UI: dockstore-ui
+  DOCKSTORE_UI: dockstore-ui2
 
 jobs:
   build:
@@ -33,7 +33,7 @@ jobs:
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         working-directory: DOCKSTORE
       - run: pwd
-        working-directory: DOCKSTORE
+        working-directory: DOCKSTORE_UI2
       - name: Run git
         run: git
         continue-on-error: true
