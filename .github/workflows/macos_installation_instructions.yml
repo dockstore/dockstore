@@ -7,8 +7,8 @@ on:
       - develop
       - feature/SEAB-4529/link-macos-instructions-to-github-action
 env:
-  DOCKSTORE: dockstore-install
-  DOCKSTORE_UI2: dockstore-install-ui2
+  DOCKSTORE: dockstore
+  DOCKSTORE_UI2: dockstore-ui2
 
 jobs:
   build:
@@ -31,10 +31,6 @@ jobs:
           java-version: '17'
       - name: Install Brew
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        working-directory: ${{ env.DOCKSTORE }}
-      - run: pwd; ls -l
-        working-directory: ${{ env.DOCKSTORE_UI2 }}
-      - run: pwd; ls -l
         working-directory: ${{ env.DOCKSTORE }}
       - name: Run git
         run: git
@@ -80,6 +76,3 @@ jobs:
       - name: Run build
         run: npm run build
         working-directory: ${{ env.DOCKSTORE_UI2 }}
-
-
-      
