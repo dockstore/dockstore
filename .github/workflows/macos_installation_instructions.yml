@@ -6,9 +6,9 @@ on:
     branches:
       - develop
       - feature/SEAB-4529/link-macos-instructions-to-github-action
-  env:
-    DOCKSTORE: dockstore
-    DOCKSTORE_UI: dockstore-ui
+env:
+  DOCKSTORE: dockstore
+  DOCKSTORE_UI: dockstore-ui
 
 jobs:
   build:
