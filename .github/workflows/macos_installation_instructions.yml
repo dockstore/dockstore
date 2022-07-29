@@ -48,5 +48,6 @@ jobs:
           npm ci --legacy-peer-deps
           npm run prebuild
           npm run build
+          working-directory: ./dockstore-ui2
 
       
