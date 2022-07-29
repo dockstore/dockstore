@@ -25,10 +25,12 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EntriesApi;
+import io.swagger.client.api.ExtendedGa4GhApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Collection;
+import io.swagger.client.model.CollectionEntry;
 import io.swagger.client.model.CollectionOrganization;
 import io.swagger.client.model.Event;
 import io.swagger.client.model.Organization;
@@ -1936,7 +1938,11 @@ public class OrganizationIT extends BaseIT {
         workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         Assert.assertEquals(2, workflow.getWorkflowVersions().size());
 
-        return (workflow);
+        ExtendedGa4GhApi ga4ghApi = new ExtendedGa4GhApi(webClient);
+        ga4ghApi.toolsIdVersionsVersionIdTypeTestsPost("CWL", "#workflow/github.com/DockstoreTestUser2/gdc-dnaseq-cwl", "test", "/workflows/dnaseq/transform.cwl.json", "platform", "platform version",
+            "dummy metadata", true);
+        workflow = workflowApi.getWorkflow(workflow.getId(), "");
+        return workflow;
     }
 
     private Workflow createWorkflow2() {
@@ -1951,7 +1957,7 @@ public class OrganizationIT extends BaseIT {
         workflowApi.refresh(workflowByPathGithub2.getId(), false);
         workflowApi.publish(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
 
-        return (workflow2);
+        return workflow2;
     }
 
     /**
@@ -1998,6 +2004,11 @@ public class OrganizationIT extends BaseIT {
         //testing the query is working properly by using GET {organizationId}/collections
         List<Collection> collectionsFromOrganization = organizationsApi.getCollectionsFromOrganization(orgId, null);
         assertEquals(3, (long)collectionsFromOrganization.stream().filter(col -> col.getId().equals(collectionId)).findFirst().get().getWorkflowsLength());
+
+
+        // test whether verified workflow info comes back
+        final Collection collectionByName = organizationsApi.getCollectionByName(organization.getName(), collection.getName());
+        assertTrue(collectionByName.getEntries().stream().anyMatch(CollectionEntry::isVerified));
     }
 
     /**

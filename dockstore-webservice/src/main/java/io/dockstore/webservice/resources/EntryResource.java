@@ -133,7 +133,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
         this.userDAO = userDAO;
-        this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO);
+        this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO, versionDAO);
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
         discourseCategoryId = configuration.getDiscourseCategoryId();

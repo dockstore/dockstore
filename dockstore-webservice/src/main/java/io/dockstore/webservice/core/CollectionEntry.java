@@ -26,7 +26,18 @@ public class CollectionEntry implements Serializable {
     @JsonProperty("categories")
     private List<CategorySummary> categorySummaries = new ArrayList<>();
 
+    /**
+     * @param id
+     * @param dbUpdateDate
+     * @param entryTypeString
+     * @param sourceControl
+     * @param organization
+     * @param repository
+     * @param entryName
+     * @deprecated assumes verification is false, but one version may in fact be verified
+     */
     @SuppressWarnings("checkstyle:ParameterNumber")
+    @Deprecated
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
         this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false);
     }
@@ -41,7 +52,19 @@ public class CollectionEntry implements Serializable {
         setVerified(verified);
     }
 
+
+    /**
+     * @param id
+     * @param dbUpdateDate
+     * @param entryTypeString
+     * @param registry
+     * @param organization
+     * @param repository
+     * @param entryName
+     * @deprecated assumes verification is false, but one version may in fact be verified
+     */
     @SuppressWarnings("checkstyle:ParameterNumber")
+    @Deprecated
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
         this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, false);
     }
