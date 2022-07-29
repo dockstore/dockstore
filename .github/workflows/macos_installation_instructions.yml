@@ -13,6 +13,7 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
+
       - name: Checkout dockstore/docktore
         uses: actions/checkout@v3
         with:
@@ -31,6 +32,7 @@ jobs:
       - name: Install Brew
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         working-directory: ${{ env.DOCKSTORE }}
+
       - name: Run git
         run: git
         continue-on-error: true
