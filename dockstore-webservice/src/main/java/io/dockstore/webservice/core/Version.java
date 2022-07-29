@@ -594,5 +594,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET
     }
 
+    /**
+     * Used to override @JsonIgnore of source files. Annoyingly, we want to not retrieve source files in general to preserve lazy-loading and not return source files un-necessarily in most REST
+     * responses. However, we want to serialize them into the elasticsearch index.
+     */
+    public interface ElasticSearchMixin {
 
+        @JsonProperty
+        String getSourceFiles();
+    }
 }
