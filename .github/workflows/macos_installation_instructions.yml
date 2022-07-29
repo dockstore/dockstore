@@ -18,12 +18,12 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: dockstore/dockstore
-          path: dockstore
+          path: $DOCKSTORE
       - name: Checkout dockstore/docktore-ui2
         uses: actions/checkout@v3
         with:
           repository: dockstore/dockstore-ui2
-          path: DOCKSTORE_UI2
+          path: $DOCKSTORE_UI2
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
