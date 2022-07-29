@@ -50,50 +50,50 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
-#      - unit_test:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - workflow-integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#          context: sonarcloud
-#      - bitbucket-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - language-parsing-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - tool-integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - regression-integration-tests:
-#          filters:
-#            branches:
-#              only:
-#                - master
-#                - /^release.*$/
-#          requires:
-#            - build
-#      - sonar-cloud:
-#          <<: *common_filters
-#          requires:
-#            - unit_test
-#            - workflow-integration-tests
-#            - bitbucket-tests
-#            - language-parsing-tests
-#            - tool-integration-tests
-#            - integration-tests
-#            - regression-integration-tests
-#          context: sonarcloud
+      - unit_test:
+          <<: *common_filters
+          requires:
+            - build
+      - workflow-integration-tests:
+          <<: *common_filters
+          requires:
+            - build
+          context: sonarcloud
+      - bitbucket-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - language-parsing-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - tool-integration-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - integration-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - regression-integration-tests:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release.*$/
+          requires:
+            - build
+      - sonar-cloud:
+          <<: *common_filters
+          requires:
+            - unit_test
+            - workflow-integration-tests
+            - bitbucket-tests
+            - language-parsing-tests
+            - tool-integration-tests
+            - integration-tests
+            - regression-integration-tests
+          context: sonarcloud
 jobs:
   regression-integration-tests:
     executor: machine_integration_test_exec
@@ -191,10 +191,9 @@ jobs:
       - setup_integration_test
       - save_test_results
   build:
+    docker: # run the steps with Docker
+      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
-      - run: #TODO DELETE THIS (I added it so circleci wasn't run unnecessarily)
-            name: Generate test lists
-            command: exit 0
       - checkout # check out source code to working directory
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
