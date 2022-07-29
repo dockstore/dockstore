@@ -7838,6 +7838,8 @@ components:
           type: string
         toolname:
           type: string
+          maxLength: 256
+          minLength: 0
         topic:
           type: string
         topicAutomatic:
@@ -9737,6 +9739,8 @@ components:
           uniqueItems: true
         workflowName:
           type: string
+          maxLength: 256
+          minLength: 0
         workflowVersions:
           type: array
           items:
