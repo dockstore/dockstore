@@ -18,12 +18,12 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: dockstore/dockstore
-          path: $DOCKSTORE
+          path: ${{ env.DOCKSTORE }}
       - name: Checkout dockstore/docktore-ui2
         uses: actions/checkout@v3
         with:
           repository: dockstore/dockstore-ui2
-          path: $DOCKSTORE_UI2
+          path: ${{ env.DOCKSTORE_UI2 }}
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
@@ -31,55 +31,55 @@ jobs:
           java-version: '17'
       - name: Install Brew
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
       - run: pwd
-        working-directory: $DOCKSTORE_UI2
+        working-directory: ${{ env.DOCKSTORE_UI2 }}
       - run: pwd
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
       - name: Run git
         run: git
         continue-on-error: true
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
       - name: Setup git user information
         run: |
           git config --global user.email "you@example.com"
           git config --global user.name "Your Name"
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
       - name: Install Hubflow
         run: |
           git clone https://github.com/datasift/gitflow
           cd gitflow
           sudo ./install.sh
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
       - name: Install JDK 17 # NOTE: this is not used, the java version installed at the beginning is used
         run: brew install openjdk@17
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
       - name: Download and installl node.js
         run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
       - name: Install git secrets
         run: brew install git-secrets
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
       - name: Install wget
         run: brew install wget
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
       - name: Install jq
         run: brew install jq
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
         
       - name: Build the webservice
         run: ./mvnw clean install
-        working-directory: $DOCKSTORE
+        working-directory: ${{ env.DOCKSTORE }}
         
       - name: Setup UI requirements
         run: npm ci --legacy-peer-deps
-        working-directory: $DOCKSTORE_UI2
+        working-directory: ${{ env.DOCKSTORE_UI2 }}
       - name: Run prebuild
         run: npm run prebuild
-        working-directory: $DOCKSTORE_UI2
+        working-directory: ${{ env.DOCKSTORE_UI2 }}
       - name: Run build
         run: npm run build
-        working-directory: $DOCKSTORE_UI2
+        working-directory: ${{ env.DOCKSTORE_UI2 }}
 
 
       
