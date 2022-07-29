@@ -31,7 +31,7 @@ jobs:
           java-version: '17'
       - name: Install Brew
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        working-directory: DOCKSTORE
+        working-directory: $DOCKSTORE
       - run: pwd
         working-directory: $DOCKSTORE_UI2
       - run: pwd
