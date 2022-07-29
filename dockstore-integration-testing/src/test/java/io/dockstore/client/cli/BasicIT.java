@@ -628,7 +628,7 @@ public class BasicIT extends BaseIT {
             workflowsApi.getWorkflowByPath("potato", BIOWORKFLOW, "potato");
             Assert.fail("Should've not been able to get an entry that does not exist");
         } catch (ApiException e) {
-            Assert.assertEquals("Entry not found", e.getMessage());
+            Assert.assertEquals("Entry not found.", e.getMessage());
         }
     }
 

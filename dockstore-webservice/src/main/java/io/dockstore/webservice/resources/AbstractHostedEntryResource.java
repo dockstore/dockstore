@@ -156,18 +156,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     protected abstract T getEntry(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName);
 
     @Override
-    public void checkUserCanUpdate(User user, Entry entry) {
-        try {
-            checkUserOwnsEntry(user, entry);
-        } catch (CustomWebApplicationException ex) {
-            if (entry instanceof Workflow) {
-                if (!permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.WRITE)) {
-                    throw ex;
-                }
-            } else {
-                throw ex;
-            }
-        }
+    public boolean canWrite(User user, Entry entry) {
+        return EntryVersionHelper.super.canWrite(user, entry)
+            || (entry instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.WRITE));
     }
 
     @PATCH
@@ -181,8 +172,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true)
         @Parameter(description = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", name = "sourceFiles", required = true) Set<SourceFile> sourceFiles) {
         T entry = getEntryDAO().findById(entryId);
-        checkEntry(entry);
-        checkUserCanUpdate(user, entry);
+        checkNotNullEntry(entry);
+        checkCanWrite(user, entry);
         checkHosted(entry);
 
         checkVersionLimit(user, entry);
@@ -383,8 +374,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
         @ApiParam(value = "version", required = true) @QueryParam("version") String version) {
         T entry = getEntryDAO().findById(entryId);
-        checkEntry(entry);
-        checkUserCanUpdate(user, entry);
+        checkNotNullEntry(entry);
+        checkCanWrite(user, entry);
         checkHosted(entry);
 
         Optional<U> deleteVersion =  entry.getWorkflowVersions().stream().filter(v -> Objects.equals(v.getName(), version)).findFirst();

@@ -19,7 +19,6 @@ package io.openapi.api.impl;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
-import static io.dockstore.webservice.resources.EntryResource.checkCanReadAcrossEntryTypes;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.SERVICE;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
@@ -51,6 +50,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.permissions.Role;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.openapi.api.ToolsApiService;
 import io.openapi.model.Checksum;
@@ -257,6 +257,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return entry;
         }
         return null;
+    }
+
+    @Override
+    public boolean canExamine(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canExamine(user, entry)
+            || (entry instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.READ));
     }
 
     @Override
@@ -620,8 +626,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
 
             boolean showHiddenVersions = false;
-            if (user.isPresent() && !AuthenticatedResourceInterface
-                    .userCannotRead(user.get(), entry)) {
+            if (user.isPresent() && canExamine(user.get(), entry)) {
                 showHiddenVersions = true;
             }
 
@@ -904,16 +909,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private String cleanRelativePath(String relativePath) {
         String cleanRelativePath = StringUtils.removeStart(relativePath, "./");
         return StringUtils.removeStart(cleanRelativePath, "/");
-    }
-
-
-    @Override
-    public void checkCanRead(User user, Entry workflow) {
-        try {
-            checkUser(user, workflow);
-        } catch (CustomWebApplicationException ex) {
-            checkCanReadAcrossEntryTypes(user, workflow, permissionsInterface, ex);
-        }
     }
 
     /**

@@ -229,8 +229,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         @Parameter(name = "include", description = USER_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = USER_INCLUDE_MESSAGE) @QueryParam("include") String include) {
         @SuppressWarnings("deprecation")
         User user = userDAO.findByUsername(username);
-        checkUserExists(user);
-        checkUser(authUser, user.getId());
+        checkNotNullUser(user);
+        checkUserId(authUser, user.getId());
 
         initializeAdditionalFields(include, user);
         return user;
@@ -246,9 +246,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(nickname = "getSpecificUser", value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(authUser, userId);
+        checkUserId(authUser, userId);
         User user = userDAO.findById(userId);
-        checkUserExists(user);
+        checkNotNullUser(user);
         return user;
     }
 
@@ -261,7 +261,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(nickname = "getUser", value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
-        checkUserExists(foundUser);
+        checkNotNullUser(foundUser);
         Hibernate.initialize(foundUser.getUserProfiles());
         return foundUser;
     }
@@ -276,7 +276,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get the logged-in user's memberships.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class, responseContainer = "set")
     public Set<OrganizationUser> getUserMemberships(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User foundUser = userDAO.findById(user.getId());
-        checkUserExists(foundUser);
+        checkNotNullUser(foundUser);
         Set<OrganizationUser> organizationUsers = foundUser.getOrganizations();
         organizationUsers.forEach(organizationUser -> Hibernate.initialize(organizationUser.getOrganization()));
         return organizationUsers;
@@ -294,7 +294,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get additional information about the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
     public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User foundUser = userDAO.findById(user.getId());
-        checkUserExists(foundUser);
+        checkNotNullUser(foundUser);
         return new ExtendedUserData(foundUser, this.authorizer, userDAO);
     }
 
@@ -308,14 +308,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiOperation(value = "Change username if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User changeUsername(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
-        checkUser(authUser, authUser.getId());
+        checkUserId(authUser, authUser.getId());
         if (!VALID_USERNAME_PATTERN.asPredicate().test(username)) {
             throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
         }
         restrictUsername(username);
 
         User user = userDAO.findById(authUser.getId());
-        checkUserExists(user);
+        checkNotNullUser(user);
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
         }
@@ -368,13 +368,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(value = "Optional user id if deleting another user. Only admins can delete another user.") @Parameter(description = "Optional user id if deleting another user. Only admins can delete another user.", name = "userId", in = ParameterIn.QUERY) @QueryParam("userId") Long userId) {
         User user;
         if (userId != null) {
-            checkAdmin(authUser);
+            checkIsAdmin(authUser);
             user = userDAO.findById(userId);
         } else {
-            checkUser(authUser, authUser.getId());
+            checkNotNullUser(authUser);
             user = userDAO.findById(authUser.getId());
         }
-        checkUserExists(user);
+        checkNotNullUser(user);
 
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
@@ -444,10 +444,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser, @ApiParam(value = "User to terminate", required = true) @Parameter(name = "userId", required = true) @PathParam("userId") long targetUserId,
         @ApiParam(value = "isBanned", required = true) @Parameter(name = "isBanned", required = true) Boolean isBanned) {
         // note this bans the user but leaves behind a tombstone to prevent re-login
-        checkUser(authUser, authUser.getId());
+        checkUserId(authUser, authUser.getId());
 
         User targetUser = userDAO.findById(targetUserId);
-        checkUserExists(targetUser);
+        checkNotNullUser(targetUser);
 
         if (isBanned) {
             invalidateTokensForUser(targetUser);
@@ -489,9 +489,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get information about tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
+        checkUserId(user, userId);
         User fetchedUser = userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkNotNullUser(fetchedUser);
         return tokenDAO.findByUserId(userId);
     }
 
@@ -507,9 +507,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "List all published tools from a user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        checkUser(user, userId);
+        checkUserId(user, userId);
         User fetchedUser = userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkNotNullUser(fetchedUser);
 
         // get live entity
         final List<Tool> immutableList = toolDAO.findMyEntriesPublished(userId);
@@ -531,9 +531,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "List all published workflows from a user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        checkUser(user, userId);
+        checkUserId(user, userId);
         User fetchedUser = userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkNotNullUser(fetchedUser);
 
         // get live entity
         final List<Workflow> immutableList = workflowDAO.findMyEntriesPublished(userId);
@@ -566,9 +566,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization,
             @ApiParam(value = "Docker registry", required = true) @QueryParam("dockerRegistry") String dockerRegistry) {
 
-        checkUser(authUser, userId);
+        checkUserId(authUser, userId);
         User fetchedUser = userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkNotNullUser(fetchedUser);
 
         // Check if the user has tokens for the organization they're refreshing
         checkToolTokens(authUser, userId, organization);
@@ -630,9 +630,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        checkUser(user, userId);
+        checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkNotNullUser(fetchedUser);
         return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()));
     }
 
@@ -647,9 +647,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     public List<Workflow> userAppTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        checkUser(user, userId);
+        checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkNotNullUser(fetchedUser);
         List<Workflow> appTools = appToolDAO.findMyEntries(fetchedUser.getId()).stream().map(AppTool.class::cast).collect(Collectors.toList());
         EntryVersionHelper.stripContentFromEntries(appTools, this.userDAO);
         return appTools;
@@ -685,9 +685,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "List all services owned by the authenticated user.", nickname = "userServices", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        checkUser(user, userId);
+        checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
-        checkUserExists(fetchedUser);
+        checkNotNullUser(fetchedUser);
         return getStrippedServices(fetchedUser);
     }
 
@@ -723,9 +723,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "List all tools owned by the authenticated user.", nickname = "userContainers", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> userContainers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        checkUser(user, userId);
+        checkUserId(user, userId);
         final User byId = this.userDAO.findById(userId);
-        checkUserExists(byId);
+        checkNotNullUser(byId);
         List<Tool> tools = getTools(byId);
         EntryVersionHelper.stripContentFromEntries(tools, this.userDAO);
         return tools;
@@ -743,7 +743,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                                                             @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
         final List<OrganizationUpdateTime> organizations = new ArrayList<>();
         final User fetchedUser = this.userDAO.findById(authUser.getId());
-        checkUserExists(fetchedUser);
+        checkNotNullUser(fetchedUser);
 
         // Retrieve all organizations and get timestamps
         Set<OrganizationUser> organizationUsers = fetchedUser.getOrganizations();
@@ -810,7 +810,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get the authenticated user's starred tools.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
-        checkUserExists(u);
+        checkNotNullUser(u);
         return u.getStarredEntries().stream().filter(element -> element instanceof Tool || element instanceof AppTool)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
@@ -825,7 +825,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get the authenticated user's starred workflows.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
-        checkUserExists(u);
+        checkNotNullUser(u);
         return u.getStarredEntries().stream().filter(element -> element instanceof BioWorkflow)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
@@ -840,7 +840,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get the authenticated user's starred services.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
-        checkUserExists(u);
+        checkNotNullUser(u);
         return u.getStarredEntries().stream().filter(element -> element instanceof Service)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
@@ -855,7 +855,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get the authenticated user's starred organizations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class, responseContainer = "List")
     public Set<Organization> getStarredOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
-        checkUserExists(u);
+        checkNotNullUser(u);
         return u.getStarredOrganizations();
     }
 
@@ -909,7 +909,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Update metadata for logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true)@Parameter(hidden = true, name = "user")@Auth User user, @ApiParam(value = "Token source", allowableValues = "google.com, github.com") @QueryParam("source") TokenType source) {
         User dbuser = userDAO.findById(user.getId());
-        checkUserExists(dbuser);
+        checkNotNullUser(dbuser);
         if (source.equals(TokenType.GOOGLE_COM)) {
             updateGoogleAccessToken(user.getId());
         }
@@ -926,7 +926,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Update the user's TOS and privacy policy to the latest versions.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, hidden = true)
     public User updateAcceptedDocuments(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user) {
         User dbUser = userDAO.findById(user.getId());
-        checkUserExists(dbUser);
+        checkNotNullUser(dbUser);
         TokenResource.acceptTOSAndPrivacyPolicy(dbUser);
         return dbUser;
     }
@@ -944,7 +944,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Limits getUserLimits(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         User user = userDAO.findById(userId);
-        checkUserExists(user);
+        checkNotNullUser(user);
         Limits limits = new Limits();
         limits.setHostedEntryCountLimit(user.getHostedEntryCountLimit());
         limits.setHostedEntryVersionLimit(user.getHostedEntryVersionsLimit());
@@ -966,7 +966,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Limits to set for a user", required = true) Limits limits) {
         User user = userDAO.findById(userId);
-        checkUserExists(user);
+        checkNotNullUser(user);
         user.setHostedEntryCountLimit(limits.getHostedEntryCountLimit());
         user.setHostedEntryVersionsLimit(limits.getHostedEntryVersionLimit());
         // User could be cached by Dockstore or Google token -- invalidate all
@@ -985,7 +985,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Syncs Dockstore account with GitHub App Installations.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> syncUserWithGitHub(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
-        checkUserExists(user);
+        checkNotNullUser(user);
         workflowResource.syncEntitiesForUser(user);
         userDAO.clearCache();
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
@@ -1003,7 +1003,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     })
     public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
-        checkUserExists(user);
+        checkNotNullUser(user);
         Token githubToken = tokenDAO.findGithubByUserId(user.getId()).stream()
                 .filter(token -> token.getTokenSource() == TokenType.GITHUB_COM).findFirst().orElse(null);
         if (githubToken != null) {
@@ -1027,7 +1027,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId,
             @ApiParam(name = "emptyBody", value = APPEASE_SWAGGER_PATCH) @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
         final User user = userDAO.findById(authUser.getId());
-        checkUserExists(user);
+        checkNotNullUser(user);
         if (!Objects.equals(userId, user.getId())) {
             throw new CustomWebApplicationException("The user id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -1068,7 +1068,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                                  @Parameter(name = "User ID", required = true) @PathParam("userId") Long userID,
                                  @Parameter(name = "Set privilege for a user", required = true) PrivilegeRequest privilegeRequest) {
         User targetUser = userDAO.findById(userID);
-        checkUserExists(targetUser);
+        checkNotNullUser(targetUser);
 
         // This ensures that the user cannot modify their own privileges.
         if (authUser.getId() == targetUser.getId()) {
@@ -1103,7 +1103,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") String offset,
             @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
         final User user = userDAO.findById(authUser.getId());
-        checkUserExists(user);
+        checkNotNullUser(user);
         return lambdaEventDAO.findByUser(user, offset, limit);
     }
 
@@ -1169,8 +1169,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<CloudInstance> getUserCloudInstances(@Parameter(hidden = true, name = "user")@Auth User authUser,
         @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to get cloud instances for", required = true) long userId) {
         final User user = userDAO.findById(userId);
-        checkUser(authUser, userId);
-        checkUserExists(user);
+        checkUserId(authUser, userId);
+        checkNotNullUser(user);
         Set<CloudInstance> cloudInstances = user.getCloudInstances();
         cloudInstances.forEach(e -> Hibernate.initialize(e.getSupportedLanguages()));
         return cloudInstances;
@@ -1191,8 +1191,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to create the cloud instance for", required = true) long userId,
             @Parameter(description = "Cloud instance to add to the user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
         final User user = userDAO.findById(userId);
-        checkUser(authUser, userId);
-        checkUserExists(user);
+        checkUserId(authUser, userId);
+        checkNotNullUser(user);
         CloudInstance cloudInstanceToBeAdded = new CloudInstance();
         cloudInstanceToBeAdded.setPartner(cloudInstanceBody.getPartner());
         cloudInstanceToBeAdded.setUrl(cloudInstanceBody.getUrl());
@@ -1221,8 +1221,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to delete the cloud instance for", required = true) long userId,
             @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = CLOUD_INSTANCE_ID_DESCRIPTION, required = true) long cloudInstanceId) {
         final User user = userDAO.findById(userId);
-        checkUser(authUser, userId);
-        checkUserExists(user);
+        checkUserId(authUser, userId);
+        checkNotNullUser(user);
         boolean deleted = user.getCloudInstances().removeIf(cloudInstance -> cloudInstance.getId() == cloudInstanceId);
         if (!deleted) {
             throw new CustomWebApplicationException("ID of cloud instance does not exist", HttpStatus.SC_NOT_FOUND);
@@ -1245,8 +1245,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = CLOUD_INSTANCE_ID_DESCRIPTION, required = true) long cloudInstanceId,
             @Parameter(description = "Cloud instance to replace for a user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
         final User user = userDAO.findById(userId);
-        checkUser(authUser, userId);
-        checkUserExists(user);
+        checkUserId(authUser, userId);
+        checkNotNullUser(user);
         Optional<CloudInstance> optionalExistingCloudInstance = user.getCloudInstances().stream()
                 .filter(cloudInstance -> cloudInstance.getId() == cloudInstanceId).findFirst();
         if (optionalExistingCloudInstance.isPresent()) {
@@ -1307,4 +1307,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
     }
 
+    private void checkNotNullUser(User user) {
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
+        }
+    }
 }

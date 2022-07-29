@@ -360,7 +360,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "StarRequest to star an organization for a user.", required = true) @Parameter(description = "StarRequest to star an organization for a user.", name = "request", required = true) StarRequest request) {
         Organization organization = organizationDAO.findApprovedById(organizationId);
-        checkOrganization(organization);
+        throwExceptionForNullOrganization(organization);
         Set<User> starredUsers = organization.getStarredUsers();
         if (request.getStar()) {
             starOrganizationHelper(organization, starredUsers, user);
@@ -397,7 +397,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     public Set<User> getStarredUsersForApprovedOrganization(
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findApprovedById(organizationId);
-        checkOrganization(organization);
+        throwExceptionForNullOrganization(organization);
         return organization.getStarredUsers();
     }
 

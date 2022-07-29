@@ -84,15 +84,15 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      */
     default Entry updateDefaultVersionHelper(String version, long id, User user) {
         Entry entry = getDAO().findById(id);
-        checkEntry(entry);
-        checkUser(user, entry);
+        checkNotNullEntry(entry);
+        checkCanWrite(user, entry);
         if (version != null) {
             if (!entry.checkAndSetDefaultVersion(version)) {
                 throw new CustomWebApplicationException("Given version does not exist.", HttpStatus.SC_NOT_FOUND);
             }
         }
         Entry result = getDAO().findById(id);
-        checkEntry(result);
+        checkNotNullEntry(result);
         entry.syncMetadataWithDefault();
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result;
@@ -158,8 +158,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
     default T updateLabels(User user, Long containerId, String labelStrings, LabelDAO labelDAO) {
         T c = getDAO().findById(containerId);
-        checkEntry(c);
-        checkUserCanUpdate(user, c);
+        checkNotNullEntry(c);
+        checkCanWrite(user, c);
 
         EntryLabelHelper<T> labeller = new EntryLabelHelper<>(labelDAO);
         T entry = labeller.updateLabels(c, labelStrings);
@@ -258,10 +258,11 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
             versionDAO.enableNameFilter(finalTagName);
             T entry = getDAO().findById(workflowId);
-            checkOptionalAuthRead(user, entry);
+            checkNotNullEntry(entry);
+            checkCanRead(user, entry);
 
             // tighten permissions for hosted tools and workflows
-            if (!user.isPresent() || AuthenticatedResourceInterface.userCannotRead(user.get(), entry)) {
+            if (!user.isPresent() || !canExamine(user.get(), entry)) {
                 if (!entry.getIsPublished()) {
                     if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
                         throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);

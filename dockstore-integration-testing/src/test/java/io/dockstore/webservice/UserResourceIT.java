@@ -274,11 +274,6 @@ public class UserResourceIT extends BaseIT {
         // refresh targeted
         workflowsApi.refresh(workflowByPath.getId(), false);
 
-        // Verify that admin can access unpublished workflow, because admin is going to verify later
-        // that the workflow is gone
-        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
-        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, SERVICE, null);
-
         // publish one
         workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(true));
 
@@ -303,7 +298,7 @@ public class UserResourceIT extends BaseIT {
             adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
 
         } catch (ApiException e) {
-            assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
+            assertEquals(e.getCode(), HttpStatus.SC_NOT_FOUND);
             expectedAdminAccessToFail = true;
         }
         assertTrue(expectedAdminAccessToFail);
@@ -313,7 +308,7 @@ public class UserResourceIT extends BaseIT {
         try {
             adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, SERVICE, null);
         } catch (ApiException e) {
-            assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
+            assertEquals(e.getCode(), HttpStatus.SC_NOT_FOUND);
             expectedAdminServiceAccessToFail = true;
         }
         assertTrue(expectedAdminServiceAccessToFail);
