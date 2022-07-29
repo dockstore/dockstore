@@ -194,7 +194,8 @@ To add copyright headers to all files with IntelliJ
 3. Set the default project copyright to Dockstore (Settings -> Copyright)
 
 ### Setting up a Mac for Dockstore development
-[comment]: <> (If modifying this section please check to see if you need to update the github action workflow macos_installation_instructions)
+
+[//]: # (If modifying this section please check to see if you need to update the github action workflow macos_installation_instructions)
 
 Install Docker (Be sure to click on 'Mac with Apple chip' if you have Apple silicon)
 https://docs.docker.com/desktop/mac/install/
