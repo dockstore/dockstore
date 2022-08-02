@@ -607,20 +607,6 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.cwl</groupId>
-            <artifactId>cwlavro-tools</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.cwl</groupId>
-            <artifactId>cwlavro-generated</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
         </dependency>

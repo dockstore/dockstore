@@ -1,7 +1,7 @@
 cwlVersion: v1.0
 class: CommandLineTool
-inputs:
-outputs:
+inputs: []
+outputs: []
 baseCommand: echo
 requirements:
   - class: DockerRequirement
