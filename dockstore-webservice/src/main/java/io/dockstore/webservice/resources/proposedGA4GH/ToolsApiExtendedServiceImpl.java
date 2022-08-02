@@ -187,7 +187,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         int processed = 0;
         List<? extends Entry> published;
         do {
-            published = entryDAO.findAllPublished(processed, ES_BATCH_INSERT_SIZE, null, "gitUrl", "asc");
+            published = entryDAO.findAllPublished(processed, ES_BATCH_INSERT_SIZE, null, "id", "asc");
             processed += published.size();
             indexBatch(published);
             published.forEach(entryDAO::evict);
