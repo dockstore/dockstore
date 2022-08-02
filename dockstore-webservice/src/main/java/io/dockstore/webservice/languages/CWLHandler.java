@@ -354,6 +354,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 return Optional.empty();
             }
 
+            final Object cwlJavaWorkflow = org.w3id.cwl.cwl1_2.utils.RootLoader.loadDocument(mapping, "");
+            LOG.info("CLASS " + cwlJavaWorkflow.getClass().getName());
+            LOG.info("ETC " + (cwlJavaWorkflow instanceof org.w3id.cwl.cwl1_2.Workflow));
+
             processWorkflow(workflow, null, null, 0, null, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
             if (type == LanguageHandlerInterface.Type.DAG) {
