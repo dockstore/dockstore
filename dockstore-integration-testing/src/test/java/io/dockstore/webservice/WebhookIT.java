@@ -861,6 +861,8 @@ public class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.ApiClient anonymousWebClient = getAnonymousOpenAPIWebClient();
+        io.dockstore.openapi.client.api.WorkflowsApi anonymousWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(anonymousWebClient);
         String wdlWorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar");
 
         // Workflows containing 1 descriptor author and multiple .dockstore.yml authors.
@@ -878,6 +880,14 @@ public class WebhookIT extends BaseIT {
             hoverfly.simulate(ORCID_SIMULATION_SOURCE);
             List<OrcidAuthorInformation> orcidAuthorInfo = workflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
             assertEquals(1, orcidAuthorInfo.size()); // There's 1 OrcidAuthorInfo instead of 2 because only 1 ORCID ID from the version exists on ORCID
+
+            // Publish workflow
+            io.dockstore.openapi.client.model.PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
+            workflowsApi.publish1(workflow.getId(), publishRequest);
+
+            // Check that an unauthenticated user can get the workflow version ORCID authors of a published workflow
+            anonymousWorkflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
+            assertEquals(1, orcidAuthorInfo.size());
         }
     }
 
