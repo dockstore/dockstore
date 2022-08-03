@@ -13,6 +13,7 @@
 #   to the end of the steps in macos_installation_instruction.yml.
 #   NOTE: Do not have multiline code, this will cause problems for github actions, instead use ';'s
 #   scripts/macos-instructions.sh will substitute each ';' for a new line in README.md.
+#   NOTE: "|| true" will be removed from the code shown on README.md
 
 actionOnlyInformation:
     name: Verify MacOS Installation Instructions
@@ -53,9 +54,8 @@ setupInformation:
     - text: Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git
     - text:  https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
     - code:
-        run: git
+        run: git || true
         working-directory: dockstore
-        continue-on-error: true
     - text: _(If that doesn't work install git manually https://git-scm.com/download/mac)_
     - newLine: 2
     - text: Setup git user information

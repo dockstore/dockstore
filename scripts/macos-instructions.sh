@@ -45,7 +45,9 @@ do
       (yes "" || true) | head -n "$NUMBER_LINES_TO_PRINT" >> "$OUTPUT_FILE_TEXT"
 
    elif [ "$key" == "code" ]; then
-     STRING_TO_PRINT=$(yq  '.setupInformation.[env(i)].code.run' "$INSTRUCTION_FILE" | tr ';' '\n')
+     STRING_TO_PRINT=$(yq  '.setupInformation.[env(i)].code.run' "$INSTRUCTION_FILE" | tr ';' '\n' | sed 's+ || true++g')
+     # Replaces ; with \n and removes ' || true' from text displayed to user
+
      {
       echo "\`\`\`"
       echo -e "$STRING_TO_PRINT"

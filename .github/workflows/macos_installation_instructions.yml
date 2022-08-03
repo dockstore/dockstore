@@ -24,9 +24,8 @@ jobs:
           java-version: '17'
       - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         working-directory: dockstore
-      - run: git
+      - run: git || true
         working-directory: dockstore
-        continue-on-error: true
       - run: git config --global user.email "you@example.com";git config --global user.name "Your Name"
         working-directory: dockstore
       - run: git clone https://github.com/datasift/gitflow;cd gitflow;sudo ./install.sh
