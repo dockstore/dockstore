@@ -251,6 +251,16 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return findAllPublished(offset, limit, filter, sortCol, sortOrder, typeOfT);
     }
 
+    /**
+     *
+     * @param offset
+     * @param limit
+     * @param filter
+     * @param sortCol the column to sort on, note that if the column to sort by has null values, they will be omitted
+     * @param sortOrder default sort order is ascending
+     * @param classType
+     * @return
+     */
     public List<T> findAllPublished(Integer offset, Integer limit, String filter, String sortCol, String sortOrder, Class<T> classType) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<T> query = criteriaQuery();
