@@ -11,9 +11,9 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout dockstore/docktore
-        run: git clone https//:www.github.com/dockstore/dockstore-ui2
+        run: git clone https://www.github.com/dockstore/dockstore-ui2
       - name: Checkout dockstore/docktore-ui2
-        run: git clone https//:www.github.com/dockstore/dockstore
+        run: git clone https://www.github.com/dockstore/dockstore
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
