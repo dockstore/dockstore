@@ -231,6 +231,15 @@ public interface LanguageHandlerInterface {
         List<Map<String, Map<String, String>>> nodes = new ArrayList<>();
         List<Map<String, Map<String, String>>> edges = new ArrayList<>();
 
+        LOG.info("*** nodePairs");
+        nodePairs.forEach(pair -> LOG.info(pair.getLeft() + " , " + pair.getRight()));
+        LOG.info("*** stepToDependencies");
+        stepToDependencies.forEach((key, value) -> LOG.info(key + " , " + value.toolDependencyList.stream().collect(Collectors.joining(","))));
+        LOG.info("*** stepToType");
+        stepToType.forEach((key, value) -> LOG.info(key + " , " + value));
+        LOG.info("*** nodeDockerInfo");
+        nodeDockerInfo.forEach((key, value) -> LOG.info(key + " , " + value));
+
         // Iterate over steps, make nodes and edges
         for (Pair<String, String> node : nodePairs) {
             String stepId = node.getLeft();
