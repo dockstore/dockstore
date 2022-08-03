@@ -11,7 +11,8 @@
 # 2. Code
 #   The key run is the only field pasted into README.md. All of the fields are added
 #   to the end of the steps of macos_installation_instruction.yml
-
+#   NOTE: Do not have multiline code, this will cause problems for github actions, instead use ';'s
+#   scripts/macos-instructions.sh will substitute each ';' for a new line.
 
 actionOnlyInformation:
     # The file macos_installation_instructions is generated with the script scripts/macos-instructions.sh
@@ -59,9 +60,7 @@ setupInformation:
     - newLine: 2
     - text: Setup git user information
     - code:
-        run: |
-          git config --global user.email "you@example.com"
-          git config --global user.name "Your Name"
+        run: git config --global user.email "you@example.com";git config --global user.name "Your Name"
         working-directory: dockstore
     - text: |
         [Read about git token requirements](https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/)
@@ -72,10 +71,7 @@ setupInformation:
     - text: Install Hubflow
     - text: https://datasift.github.io/gitflow/TheHubFlowTools.html
     - code:
-        run: |
-          git clone https://github.com/datasift/gitflow
-          cd gitflow
-          sudo ./install.sh
+        run: git clone https://github.com/datasift/gitflow;cd gitflow;sudo ./install.sh
         working-directory: dockstore
     - newLine: 1
     - text: Install JDK 17

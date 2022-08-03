@@ -37,7 +37,7 @@ do
       yes "" | head -n "$NUMBER_LINES_TO_PRINT" >> "$OUTPUT_FILE_TEXT"
 
    elif [ "$key" == "code" ]; then
-     STRING_TO_PRINT=$(yq  '.setupInformation.[env(i)].code.run' "$INSTRUCTION_FILE")
+     STRING_TO_PRINT=$(yq  '.setupInformation.[env(i)].code.run' "$INSTRUCTION_FILE" | tr ';' '\n')
      {
       echo "\`\`\`"
       echo -e "$STRING_TO_PRINT"

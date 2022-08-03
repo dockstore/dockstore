@@ -27,9 +27,9 @@ jobs:
       - run: git
         working-directory: dockstore
         continue-on-error: true
-      - run: git config --global user.email "you@example.com"\ngit config --global user.name "Your Name"\n
+      - run: git config --global user.email "you@example.com";git config --global user.name "Your Name"
         working-directory: dockstore
-      - run: git clone https://github.com/datasift/gitflow\ncd gitflow\nsudo ./install.sh\n
+      - run: git clone https://github.com/datasift/gitflow;cd gitflow;sudo ./install.sh
         working-directory: dockstore
       - run: brew install openjdk@17
         working-directory: dockstore
