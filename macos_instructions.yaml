@@ -1,4 +1,20 @@
+# actionOnlyInformation contains information necessary for the GitHub action to run,
+# but not useful to an end user
+
+# setupInformation contains two different keys,
+# 1. Text
+#   This is displayed only in README.md and is pasted exactly into README.md, this means
+#   that any md formatting must be made to the text in the text field.
+#   For example:
+#   text: ### This is a heading
+#
+# 2. Code
+#   The key run is the only field pasted into README.md. All of the fields are added
+#   to the end of the steps of macos_installation_instruction.yml
+
+
 actionOnlyInformation:
+    # The file macos_installation_instructions is generated with the script scripts/macos-instructions.sh
     name: Verify MacOS Installation Instructions
     on:
       schedule:
@@ -20,42 +36,39 @@ actionOnlyInformation:
           - name: Setup Java
             uses: actions/setup-java@v3
             with:
-              distribution: temurin
-              java-version: "17"
+              distribution: 'temurin'
+              java-version: '17'
 setupInformation:
-    - text: '## Setting up a Mac for Dockstore development'
+    - text: '### Setting up a Mac for Dockstore development'
     - text: Install Docker (Be sure to click on 'Mac with Apple chip' if you have Apple silicon)
-    - text: https://docs.docker.com/desktop/mac/install
+    - text: https://docs.docker.com/desktop/mac/install/
     - newLine: 1
     - text: Install Brew
-    - text: https://brew.sh
+    - text: https://brew.sh/
     - code:
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        directory: dockstore
+        working-directory: dockstore
     - newLine: 1
     - text: Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git
     - text:  https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
     - code:
         run: git
-        directory: dockstore
-        continue-on-error: "true"
-    - text: _If that doesn't work install git manually https://git-scm.com/download/mac)_
+        working-directory: dockstore
+        continue-on-error: true
+    - text: _(If that doesn't work install git manually https://git-scm.com/download/mac)_
     - newLine: 2
     - text: Setup git user information
     - code:
         run: |
           git config --global user.email "you@example.com"
           git config --global user.name "Your Name"
-        directory: dockstore
+        working-directory: dockstore
     - text: |
         [Read about git token requirements](https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/)
-    - newLine: 1
     - text: |
         [Setup personal access token for git CLI](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
-    - newLine: 1
     - text: |
-        [It's helpful to cache your git personal access token](https://docs.github.com/en/get-started/getting-started-with-git/caching-your-github-credentials-in-git)
-    - newLine: 1
+       [It's helpful to cache your git personal access token](https://docs.github.com/en/get-started/getting-started-with-git/caching-your-github-credentials-in-git)
     - text: Install Hubflow
     - text: https://datasift.github.io/gitflow/TheHubFlowTools.html
     - code:
@@ -63,54 +76,57 @@ setupInformation:
           git clone https://github.com/datasift/gitflow
           cd gitflow
           sudo ./install.sh
-        directory: dockstore
+        working-directory: dockstore
     - newLine: 1
     - text: Install JDK 17
     - text: https://formulae.brew.sh/formula/openjdk@17
     - code:
+        run: brew install openjdk@17
+        working-directory: dockstore
+    - text: Download and install node.js
+    - text: https://github.com/nvm-sh/nvm
+    - code:
         run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-        directory: dockstore
+        working-directory: dockstore
     - text: Install git secrets
     - text: https://github.com/awslabs/git-secrets
     - code:
         run: brew install git-secrets
-        directory: dockstore
+        working-directory: dockstore
     - text: Install wget
     - code:
         run: brew install wget
-        directory: dockstore
+        working-directory: dockstore
     - newLine: 1
     - text: Install jq
     - code:
         run: brew install jq
-        directory: dockstore
+        working-directory: dockstore
     - text: '#### Build the webservice'
     - text: (cd to where you cloned the dockstore/dockstore repo)
     - code:
         run: ./mvnw clean install
-        directory: dockstore
+        working-directory: dockstore
     - newLine: 1
     - text: '#### Build the UI'
-    - text: |
-        (cd to where you cloned the dockstore/dockstore-ui2 repo)
+    - text: (cd to where you cloned the dockstore/dockstore-ui2 repo)
     - newLine: 1
     - text: Set up UI requirements
-    - text: 'NOTE: You must use the --legacy-peer-deps switch due to using npm version 8.11.0 (> npm 6)'
+    - text: 'NOTE: You must use the --legacy-peer-deps switch due to using npm version 8.11.0 (> npm 6) '
     - text: for reasons mentioned in [this post](https://stackoverflow.com/questions/66239691/what-does-npm-install-legacy-peer-deps-do-exactly-when-is-it-recommended-wh)
     - code:
         run: npm ci --legacy-peer-deps
-        directory: dockstore-ui2
+        working-directory: dockstore-ui2
     - text: Run prebuild
     - code:
         run: npm run prebuild
-        directory: dockstore-ui2
+        working-directory: dockstore-ui2
     - newLine: 1
     - text: Run build
     - code:
         run: npm run build
-        directory: dockstore
+        working-directory: dockstore
     - text: '#### Optional'
-    - newLine: 1
     - text: Install IntelliJ _(if on Apple Silicon, select the .dmg (Apple Silicon), otherwise select .dmg(Intel)_
     - newLine: 1
     - text: https://www.jetbrains.com/idea/download/#section=mac
