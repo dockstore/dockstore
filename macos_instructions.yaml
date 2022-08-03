@@ -1,0 +1,120 @@
+actionOnlyInformation:
+    name: Verify MacOS Installation Instructions
+    on:
+      schedule:
+        cron: '30 12 * * 1'  #  This is every Monday at 5:30am PST/8:30am EST
+    jobs:
+      build:
+        runs-on: macos-latest
+        steps:
+          - name: Checkout dockstore/docktore
+            uses: actions/checkout@v3
+            with:
+              repository: dockstore/dockstore
+              path: dockstore
+          - name: Checkout dockstore/docktore-ui2
+            uses: actions/checkout@v3
+            with:
+              repository: dockstore/dockstore-ui2
+              path: dockstore-ui2
+          - name: Setup Java
+            uses: actions/setup-java@v3
+            with:
+              distribution: temurin
+              java-version: "17"
+setupInformation:
+    - text: '## Setting up a Mac for Dockstore development'
+    - text: Install Docker (Be sure to click on 'Mac with Apple chip' if you have Apple silicon)
+    - text: https://docs.docker.com/desktop/mac/install
+    - newLine: 1
+    - text: Install Brew
+    - text: https://brew.sh
+    - code:
+        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        directory: dockstore
+    - newLine: 1
+    - text: Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git
+    - text:  https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
+    - code:
+        run: git
+        directory: dockstore
+        continue-on-error: "true"
+    - text: _If that doesn't work install git manually https://git-scm.com/download/mac)_
+    - newLine: 2
+    - text: Setup git user information
+    - code:
+        run: |
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+        directory: dockstore
+    - text: |
+        [Read about git token requirements](https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/)
+    - newLine: 1
+    - text: |
+        [Setup personal access token for git CLI](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+    - newLine: 1
+    - text: |
+        [It's helpful to cache your git personal access token](https://docs.github.com/en/get-started/getting-started-with-git/caching-your-github-credentials-in-git)
+    - newLine: 1
+    - text: Install Hubflow
+    - text: https://datasift.github.io/gitflow/TheHubFlowTools.html
+    - code:
+        run: |
+          git clone https://github.com/datasift/gitflow
+          cd gitflow
+          sudo ./install.sh
+        directory: dockstore
+    - newLine: 1
+    - text: Install JDK 17
+    - text: https://formulae.brew.sh/formula/openjdk@17
+    - code:
+        run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+        directory: dockstore
+    - text: Install git secrets
+    - text: https://github.com/awslabs/git-secrets
+    - code:
+        run: brew install git-secrets
+        directory: dockstore
+    - text: Install wget
+    - code:
+        run: brew install wget
+        directory: dockstore
+    - newLine: 1
+    - text: Install jq
+    - code:
+        run: brew install jq
+        directory: dockstore
+    - text: '#### Build the webservice'
+    - text: (cd to where you cloned the dockstore/dockstore repo)
+    - code:
+        run: ./mvnw clean install
+        directory: dockstore
+    - newLine: 1
+    - text: '#### Build the UI'
+    - text: |
+        (cd to where you cloned the dockstore/dockstore-ui2 repo)
+    - newLine: 1
+    - text: Set up UI requirements
+    - text: 'NOTE: You must use the --legacy-peer-deps switch due to using npm version 8.11.0 (> npm 6)'
+    - text: for reasons mentioned in [this post](https://stackoverflow.com/questions/66239691/what-does-npm-install-legacy-peer-deps-do-exactly-when-is-it-recommended-wh)
+    - code:
+        run: npm ci --legacy-peer-deps
+        directory: dockstore-ui2
+    - text: Run prebuild
+    - code:
+        run: npm run prebuild
+        directory: dockstore-ui2
+    - newLine: 1
+    - text: Run build
+    - code:
+        run: npm run build
+        directory: dockstore
+    - text: '#### Optional'
+    - newLine: 1
+    - text: Install IntelliJ _(if on Apple Silicon, select the .dmg (Apple Silicon), otherwise select .dmg(Intel)_
+    - newLine: 1
+    - text: https://www.jetbrains.com/idea/download/#section=mac
+    - newLine: 1
+    - text: Add the Scala plugin to IntelliJ
+    - text: https://www.jetbrains.com/help/idea/managing-plugins.html
+
