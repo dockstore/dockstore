@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout dockstore/docktore
-        run: git clone https://www.github.com/dockstore/dockstore-ui2
+        run: git clone https://www.github.com/dockstore/dockstore-ui2; git checkout master
       - name: Checkout dockstore/docktore-ui2
         run: git clone https://www.github.com/dockstore/dockstore
       - name: Setup Java
