@@ -1,8 +1,8 @@
-# The file macos_installation_instructions is generated with the script scripts/macos-instructions.sh
 name: Verify MacOS Installation Instructions
+# The file macos_installation_instructions is generated with the script scripts/macos-instructions.sh
 on:
   schedule:
-    cron: '30 12 * * 1' #  This is every Monday at 5:30am PST/8:30am EST
+    - cron: '30 12 * * 1' #  This is every Monday at 5:30am PST/8:30am EST
 jobs:
   build:
     runs-on: macos-latest
