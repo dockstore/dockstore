@@ -235,6 +235,9 @@ jobs:
             fi
           environment:
             TESTING_PROFILE: automated-review
+      - run:
+          name: Verify that the MacOS installation instructions in README.md and macos_installation_instructions.yml are up to date with scripts/macos-instructions.sh
+          command: scripts/macos-instructions.sh
 
   unit_test: # runs not using Workflows must have a `build` job as entry point
     parameters:
