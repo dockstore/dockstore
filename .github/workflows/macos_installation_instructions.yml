@@ -1,78 +1,48 @@
 name: Verify MacOS Installation Instructions
-# This job follows the instructions in README.md
-
+# The file macos_installation_instructions.yml is generated with the script scripts/macos-instructions.sh
 on:
+  schedule:
+    - cron: '30 12 * * 1' #  This is every Monday at 5:30am PST/8:30am EST
   push:
-    branches:
-      - develop
+    branch:
       - feature/SEAB-4529/link-macos-instructions-to-github-action
-env:
-  DOCKSTORE: dockstore
-  DOCKSTORE_UI2: dockstore-ui2
-
 jobs:
   build:
     runs-on: macos-latest
     steps:
       - name: Checkout dockstore/docktore
-        uses: actions/checkout@v3
-        with:
-          repository: dockstore/dockstore
-          path: ${{ env.DOCKSTORE }}
+        run: git clone https//:www.github.com/dockstore/dockstore-ui2
       - name: Checkout dockstore/docktore-ui2
-        uses: actions/checkout@v3
-        with:
-          repository: dockstore/dockstore-ui2
-          path: ${{ env.DOCKSTORE_UI2 }}
+        run: git clone https//:www.github.com/dockstore/dockstore
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin' # See 'Supported distributions' for available options
+          distribution: 'temurin'
           java-version: '17'
-      - name: Install Brew
-        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        working-directory: ${{ env.DOCKSTORE }}
-      - name: Run git
-        run: git
+      - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        working-directory: dockstore
+      - run: git
+        working-directory: dockstore
         continue-on-error: true
-        working-directory: ${{ env.DOCKSTORE }}
-      - name: Setup git user information
-        run: |
-          git config --global user.email "you@example.com"
-          git config --global user.name "Your Name"
-        working-directory: ${{ env.DOCKSTORE }}
-      - name: Install Hubflow
-        run: |
-          git clone https://github.com/datasift/gitflow
-          cd gitflow
-          sudo ./install.sh
-        working-directory: ${{ env.DOCKSTORE }}
-      - name: Install JDK 17 # NOTE: this is not used, the java version installed at the beginning is used
-        run: brew install openjdk@17
-        working-directory: ${{ env.DOCKSTORE }}
-      - name: Download and installl node.js
-        run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-        working-directory: ${{ env.DOCKSTORE }}
-      - name: Install git secrets
-        run: brew install git-secrets
-        working-directory: ${{ env.DOCKSTORE }}
-      - name: Install wget
-        run: brew install wget
-        working-directory: ${{ env.DOCKSTORE }}
-      - name: Install jq
-        run: brew install jq
-        working-directory: ${{ env.DOCKSTORE }}
-
-#      - name: Build the webservice
-#        run: ./mvnw clean install
-#        working-directory: ${{ env.DOCKSTORE }}
-
-      - name: Setup UI requirements
-        run: npm ci --legacy-peer-deps
-        working-directory: ${{ env.DOCKSTORE_UI2 }}
-      - name: Run prebuild
-        run: npm run prebuild
-        working-directory: ${{ env.DOCKSTORE_UI2 }}
-      - name: Run build
-        run: npm run build
-        working-directory: ${{ env.DOCKSTORE_UI2 }}
+      - run: git config --global user.email "you@example.com";git config --global user.name "Your Name"
+        working-directory: dockstore
+      - run: git clone https://github.com/datasift/gitflow;cd gitflow;sudo ./install.sh
+        working-directory: dockstore
+      - run: brew install openjdk@17
+        working-directory: dockstore
+      - run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+        working-directory: dockstore
+      - run: brew install git-secrets
+        working-directory: dockstore
+      - run: brew install wget
+        working-directory: dockstore
+      - run: brew install jq
+        working-directory: dockstore
+#      - run: ./mvnw clean install
+#        working-directory: dockstore
+      - run: npm ci --legacy-peer-deps
+        working-directory: dockstore-ui2
+      - run: npm run prebuild
+        working-directory: dockstore-ui2
+      - run: npm run build
+        working-directory: dockstore-ui2
