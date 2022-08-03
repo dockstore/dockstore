@@ -58,6 +58,8 @@ import org.slf4j.LoggerFactory;
 import org.w3id.cwl.cwl1_2.CommandLineTool;
 import org.w3id.cwl.cwl1_2.DockerRequirement;
 import org.w3id.cwl.cwl1_2.ExpressionTool;
+import org.w3id.cwl.cwl1_2.Operation;
+import org.w3id.cwl.cwl1_2.Process;
 import org.w3id.cwl.cwl1_2.Workflow;
 import org.w3id.cwl.cwl1_2.WorkflowOutputParameter;
 import org.w3id.cwl.cwl1_2.WorkflowStep;
@@ -82,6 +84,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static final String TOOL_TYPE = "tool";
     private static final String WORKFLOW_TYPE = "workflow";
     private static final String EXPRESSION_TOOL_TYPE = "expressionTool";
+    private static final String OPERATION_TYPE = "operation";
 
 
     @Override
@@ -332,9 +335,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 throw new CustomWebApplicationException(CWLHandler.CWL_NO_VERSION_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
 
-            // If the descriptor describes a tool, wrap and process it as a single-step workflow
+            // TODO Handle packed CWL.
+
+            // If the descriptor describes something other than a workflow, wrap and process it as a single-step workflow
             final Object cwlClass = mapping.get("class");
-            if ("CommandLineTool".equals(cwlClass) || "ExpressionTool".equals(cwlClass)) {
+            if (!"Workflow".equals(cwlClass)) {
                 mapping = convertToolToSingleStepWorkflow(mapping);
             }
 
@@ -348,7 +353,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             }
 
             if (!(rootObject instanceof Workflow)) {
-                LOG.error("Unsupported CWL class.");
+                LOG.error("Unsupported CWL construct.");
                 return Optional.empty();
             }
 
@@ -402,6 +407,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return workflow;
     }
 
+    /**
+     * This function converts the workflow step ID that cwljava returns, which includes the enclosing workflow IDS,
+     * to form that we display.
+     * For example, given the id "/#W1/S1/W2/S2", where W1 and W2 are the parent and child workflow IDs and
+     * S1 and S2 are the corresponding workflow step IDs, this function will return "S1.S2".
+     */
     private String convertStepId(String cwljavaStepId) {
         List<String> parts = Arrays.asList(cwljavaStepId.split("/"));
         return NODE_PREFIX + IntStream.range(0, parts.size()).filter(i -> i % 2 == 0 && i > 0).mapToObj(parts::get).collect(Collectors.joining("."));
@@ -455,32 +466,17 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             String currentPath;
 
-            // TODO improve code by using Process interface etc
-            if (run instanceof Workflow) {
-                Workflow stepWorkflow = (Workflow)run;
+            if (run instanceof Process) {
+                // If the run object is an instance of Process, it's either a Workflow, CommandLineTool, ExpressionTool, or Operation.
+                Process process = (Process)run;
                 stepDockerPath = getDockerPull(
-                    joinRequirementsOrHints(stepRequirements, stepWorkflow.getRequirements()),
-                    joinRequirementsOrHints(stepHints, stepWorkflow.getHints()));
-                stepToType.put(workflowStepId, WORKFLOW_TYPE);
-                currentPath = preprocessor.getPath(deOptionalize(stepWorkflow.getId()));
-                // Process the subworkflow
-                processWorkflow(stepWorkflow, stepRequirements, stepHints, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
-
-            } else if (run instanceof CommandLineTool) {
-                CommandLineTool clTool = (CommandLineTool)run;
-                stepDockerPath = getDockerPull(
-                    joinRequirementsOrHints(stepRequirements, clTool.getRequirements()),
-                    joinRequirementsOrHints(stepHints, clTool.getHints()));
-                stepToType.put(workflowStepId, TOOL_TYPE);
-                currentPath = preprocessor.getPath(deOptionalize(clTool.getId()));
-
-            } else if (run instanceof ExpressionTool) {
-                ExpressionTool expressionTool = (ExpressionTool)run;
-                stepDockerPath = getDockerPull(
-                    joinRequirementsOrHints(stepRequirements, expressionTool.getRequirements()),
-                    joinRequirementsOrHints(stepHints, expressionTool.getHints()));
-                stepToType.put(workflowStepId, EXPRESSION_TOOL_TYPE);
-                currentPath = preprocessor.getPath(deOptionalize(expressionTool.getId()));
+                    joinRequirementsOrHints(stepRequirements, process.getRequirements()),
+                    joinRequirementsOrHints(stepHints, process.getHints()));
+                stepToType.put(workflowStepId, computeProcessType(process));
+                currentPath = preprocessor.getPath(getId(process));
+                if (process instanceof Workflow) {
+                    processWorkflow((Workflow)process, stepRequirements, stepHints, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                }
 
             } else if (run instanceof String) {
                 stepToType.put(workflowStepId, "n/a");
@@ -510,6 +506,52 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             nodeDockerInfo.put(workflowStepId, new DockerInfo(currentPath, stepDockerPath, dockerUrl, dockerSpecifier));
         }
+    }
+
+    private String getId(Process process) {
+        Optional<String> optionalId;
+        // This `if` statement is necessary because the cwljava `Identified` interface, which `Process` extends,
+        //  doesn't include the `getId()` function.
+        if (process instanceof Workflow) {
+            optionalId = ((Workflow)process).getId();
+        } else if (process instanceof CommandLineTool) {
+            optionalId = ((CommandLineTool)process).getId();
+        } else if (process instanceof ExpressionTool) {
+            optionalId = ((ExpressionTool)process).getId();
+        } else if (process instanceof Operation) {
+            optionalId = ((Operation)process).getId();
+        } else {
+            optionalId = null;
+        }
+        String id = deOptionalize(optionalId);
+        if (id == null) {
+            return null;
+        }
+        return lastField(id, "/").replaceFirst("^#", "");
+    }
+
+    private String lastField(String value, String separator) {
+        String[] fields = value.split(separator);
+        if (fields.length < 1) {
+            return value;
+        }
+        return fields[fields.length - 1];
+    }
+
+    private String computeProcessType(Process process) {
+        if (process instanceof Workflow) {
+            return WORKFLOW_TYPE;
+        }
+        if (process instanceof CommandLineTool) {
+            return TOOL_TYPE;
+        }
+        if (process instanceof ExpressionTool) {
+            return EXPRESSION_TOOL_TYPE;
+        }
+        if (process instanceof Operation) {
+            return OPERATION_TYPE;
+        }
+        return "n/a";
     }
 
     private String convertToString(Object object) {
@@ -749,57 +791,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             }
         });
         return sum;
-    }
-
-    /**
-     * Checks if a file is a workflow (CWL)
-     *
-     * @param content
-     * @return true if workflow, false otherwise
-     */
-    private boolean isWorkflow(String content, Yaml yaml) {
-        if (!Strings.isNullOrEmpty(content)) {
-            Map<String, Object> mapping = yaml.loadAs(content, Map.class);
-            if (mapping.get("class") != null) {
-                String cwlClass = mapping.get("class").toString();
-                return "Workflow".equals(cwlClass);
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Checks if a file is an expression tool (CWL)
-     *
-     * @param content
-     * @return true if expression tool, false otherwise
-     */
-    private boolean isExpressionTool(String content, Yaml yaml) {
-        if (!Strings.isNullOrEmpty(content)) {
-            Map<String, Object> mapping = yaml.loadAs(content, Map.class);
-            if (mapping.get("class") != null) {
-                String cwlClass = mapping.get("class").toString();
-                return "ExpressionTool".equals(cwlClass);
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Checks if a file is a tool (CWL)
-     *
-     * @param content
-     * @return true if tool, false otherwise
-     */
-    private boolean isTool(String content, Yaml yaml) {
-        if (!Strings.isNullOrEmpty(content)) {
-            Map<String, Object> mapping = yaml.loadAs(content, Map.class);
-            if (mapping.get("class") != null) {
-                String cwlClass = mapping.get("class").toString();
-                return "CommandLineTool".equals(cwlClass);
-            }
-        }
-        return false;
     }
 
     /**
