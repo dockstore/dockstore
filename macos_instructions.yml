@@ -124,7 +124,7 @@ setupInformation:
     - text: Run build
     - code:
         run: npm run build
-        working-directory: dockstore
+        working-directory: dockstore-ui2
     - text: '#### Optional'
     - text: Install IntelliJ _(if on Apple Silicon, select the .dmg (Apple Silicon), otherwise select .dmg(Intel)_
     - newLine: 1
