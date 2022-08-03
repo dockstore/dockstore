@@ -63,7 +63,7 @@ setupInformation:
     - newLine: 2
     - text: Setup git user information
     - code:
-        run: git config --global user.email "you@example.com";git config --global user.name "Your Name"
+        run: git config --global user.email "you@example.com";git config --global user.name "Your Name" # ; will be replaced with new lines in README.md
         working-directory: dockstore
     - text: |
         [Read about git token requirements](https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/)
@@ -74,7 +74,7 @@ setupInformation:
     - text: Install Hubflow
     - text: https://datasift.github.io/gitflow/TheHubFlowTools.html
     - code:
-        run: git clone https://github.com/datasift/gitflow;cd gitflow;sudo ./install.sh
+        run: git clone https://github.com/datasift/gitflow;cd gitflow;sudo ./install.sh # ; will be replaced with new lines in README.md
         working-directory: dockstore
     - newLine: 1
     - text: Install JDK 17
