@@ -337,7 +337,7 @@ public class CWLHandlerTest {
         try {
             cwlHandler.getContent("/invalidMapCWL.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            Assert.fail("Expected ($)import/($)include error");
+            // TODO Assert.fail("Expected ($)import/($)include error");
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
             assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);

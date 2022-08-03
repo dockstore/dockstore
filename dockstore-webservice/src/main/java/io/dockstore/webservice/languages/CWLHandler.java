@@ -59,9 +59,9 @@ import org.w3id.cwl.cwl1_2.CommandLineTool;
 import org.w3id.cwl.cwl1_2.DockerRequirement;
 import org.w3id.cwl.cwl1_2.ExpressionTool;
 import org.w3id.cwl.cwl1_2.Workflow;
-// import org.w3id.cwl.cwl1_2.WorkflowOutputParameter;
+import org.w3id.cwl.cwl1_2.WorkflowOutputParameter;
 import org.w3id.cwl.cwl1_2.WorkflowStep;
-// import org.w3id.cwl.cwl1_2.WorkflowStepInput;
+import org.w3id.cwl.cwl1_2.WorkflowStepInput;
 import org.w3id.cwl.cwl1_2.utils.RootLoader;
 import org.w3id.cwl.cwl1_2.utils.ValidationException;
 import org.yaml.snakeyaml.Yaml;
@@ -359,13 +359,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // Determine steps that point to end
                 List<String> endDependencies = new ArrayList<>();
 
-                /*
-                TODO fix
-                for (WorkflowOutputParameter workflowOutputParameter : workflow.getOutputs()) {
-                    Object sources = workflowOutputParameter.getOutputSource();
-                    processDependencies(NODE_PREFIX, endDependencies, sources);
+                for (Object outputParameterObj : workflow.getOutputs()) {
+                    LOG.info("OUTPUTS " + outputParameterObj.getClass());
+                    if (outputParameterObj instanceof WorkflowOutputParameter) {
+                        WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
+                        Object sources = outputParameter.getOutputSource();
+                        LOG.info("SOURCES " + sources.toString());
+                        processDependencies(NODE_PREFIX, endDependencies, sources);
+                    }
                 }
-                */
 
                 toolInfoMap.put("UniqueEndKey", new ToolInfo(null, endDependencies));
                 nodePairs.add(new MutablePair<>("UniqueEndKey", ""));
@@ -402,7 +404,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     private String convertStepId(String cwljavaStepId) {
         List<String> parts = Arrays.asList(cwljavaStepId.split("/"));
-        return IntStream.range(0, parts.size()).filter(i -> i % 2 == 0 && i > 0).mapToObj(parts::get).collect(Collectors.joining("."));
+        return NODE_PREFIX + IntStream.range(0, parts.size()).filter(i -> i % 2 == 0 && i > 0).mapToObj(parts::get).collect(Collectors.joining("."));
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -419,15 +421,19 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String workflowStepId = convertStepId(deOptionalize(workflowStep.getId()));
             LOG.error("XXX processing step " + workflowStepId);
 
-            /* TODO fix
             if (depth == 0) {
                 ArrayList<String> stepDependencies = new ArrayList<>();
 
                 // Iterate over source and get the dependencies
                 if (workflowStep.getIn() != null) {
-                    for (WorkflowStepInput workflowStepInput : workflowStep.getIn()) {
-                        Object sources = workflowStepInput.getSource();
-                        processDependencies(NODE_PREFIX, stepDependencies, sources);
+                    for (Object stepInputObj : workflowStep.getIn()) {
+                        LOG.info("INS " + stepInputObj.getClass());
+                        if (stepInputObj instanceof WorkflowStepInput) {
+                            WorkflowStepInput stepInput = (WorkflowStepInput)stepInputObj;
+                            Object sources = stepInput.getSource();
+                            LOG.info("SOURCES " + sources.toString());
+                            processDependencies(NODE_PREFIX, stepDependencies, sources);
+                        }
                     }
                     if (stepDependencies.size() > 0) {
                         toolInfoMap.computeIfPresent(workflowStepId, (toolId, toolInfo) -> {
@@ -438,7 +444,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     }
                 }
             }
-            */
 
             // Check workflow step for docker requirement and hints
             Map<String, Map> stepRequirements = joinRequirementsOrHints(requirements, workflowStep.getRequirements());
@@ -515,8 +520,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         if (sources != null) {
             if (sources instanceof String) {
                 String[] sourceSplit = ((String)sources).split("/");
-                if (sourceSplit.length > 1) {
-                    endDependencies.add(nodePrefix + sourceSplit[0].replaceFirst("#", ""));
+                if (sourceSplit.length > 2) {
+                    String v = nodePrefix + sourceSplit[sourceSplit.length - 2].replaceFirst("#", "");
+                    LOG.info("V " + v);
+                    endDependencies.add(v);
                 }
             } else {
                 List<String> filteredDependencies = filterDependent((List<String>)sources, nodePrefix);
