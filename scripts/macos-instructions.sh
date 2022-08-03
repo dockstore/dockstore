@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+
+set -o errexit
+set -o pipefail
+set -o nounset
+# set -o xtrace
+
 # This script requires yq (https://github.com/mikefarah/yq) which can be installed with this command
 # snap install yq
 
@@ -36,7 +42,7 @@ do
 
    elif [ "$key" == "newLine" ]; then
       NUMBER_LINES_TO_PRINT=$(yq '.setupInformation[env(i)].newLine' "$INSTRUCTION_FILE")
-      yes "" | head -n "$NUMBER_LINES_TO_PRINT" >> "$OUTPUT_FILE_TEXT"
+      (yes "" || true) | head -n "$NUMBER_LINES_TO_PRINT" >> "$OUTPUT_FILE_TEXT"
 
    elif [ "$key" == "code" ]; then
      STRING_TO_PRINT=$(yq  '.setupInformation.[env(i)].code.run' "$INSTRUCTION_FILE" | tr ';' '\n')
