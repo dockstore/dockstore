@@ -7,6 +7,8 @@
 # 1. Modify README.md to include the instructions specified in $INSTRUCTION_FILE
 # 2. Create a github action running all of the code specified in $INSTRUCTION_FILE
 
+# This script must be run in the directory dockstore/dockstore
+
 INSTRUCTION_FILE=macos_instructions.yml
 OUTPUT_FILE_TEXT=macos-instructions.md
 ACTION_FILE=.github/workflows/macos_installation_instructions.yml

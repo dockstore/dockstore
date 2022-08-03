@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # Checks that  README.md and the macos github action are up to date with macos_instructions.yml
+# This file must be run in the directory dockstore/dockstore
 
 CURRENT_FILE_NAME_README=README.md
 TEMP_FILE_NAME_README=README-TEMP.md
