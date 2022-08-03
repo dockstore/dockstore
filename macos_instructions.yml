@@ -9,10 +9,10 @@
 #   text: ### This is a heading
 #
 # 2. Code
-#   The key run is the only field pasted into README.md. All of the fields are added
-#   to the end of the steps of macos_installation_instruction.yml
+#   The key run is the only field pasted into README.md. All the fields are added
+#   to the end of the steps in macos_installation_instruction.yml.
 #   NOTE: Do not have multiline code, this will cause problems for github actions, instead use ';'s
-#   scripts/macos-instructions.sh will substitute each ';' for a new line.
+#   scripts/macos-instructions.sh will substitute each ';' for a new line in README.md.
 
 actionOnlyInformation:
     name: Verify MacOS Installation Instructions

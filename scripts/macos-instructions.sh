@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script requires yq (https://github.com/mikefarah/yq) and can be installed with this command
+# This script requires yq (https://github.com/mikefarah/yq) which can be installed with this command
 # snap install yq
 
 # This script does two things
