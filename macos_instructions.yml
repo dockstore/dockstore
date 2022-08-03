@@ -20,9 +20,6 @@ actionOnlyInformation:
     on:
       schedule:
         - cron: '30 12 * * 1'  #  This is every Monday at 5:30am PST/8:30am EST
-      push:
-          branch:
-              - feature/SEAB-4529/link-macos-instructions-to-github-action
     jobs:
       build:
         runs-on: macos-latest
