@@ -239,7 +239,6 @@ jobs:
           environment:
             TESTING_PROFILE: automated-review
 
-
   unit_test: # runs not using Workflows must have a `build` job as entry point
     parameters:
       aws_bucket:
