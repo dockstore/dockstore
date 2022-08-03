@@ -11,9 +11,15 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout dockstore/docktore
-        run: git clone https://www.github.com/dockstore/dockstore-ui2; git checkout master
+        uses: actions/checkout@v3
+        with:
+          repository: dockstore/dockstore
+          path: dockstore
       - name: Checkout dockstore/docktore-ui2
-        run: git clone https://www.github.com/dockstore/dockstore
+        uses: actions/checkout@v3
+        with:
+          repository: dockstore/dockstore-ui2
+          path: dockstore-ui2
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
@@ -38,8 +44,8 @@ jobs:
         working-directory: dockstore
       - run: brew install jq
         working-directory: dockstore
-#      - run: ./mvnw clean install
-#        working-directory: dockstore
+      - run: ./mvnw clean install
+        working-directory: dockstore
       - run: npm ci --legacy-peer-deps
         working-directory: dockstore-ui2
       - run: npm run prebuild
