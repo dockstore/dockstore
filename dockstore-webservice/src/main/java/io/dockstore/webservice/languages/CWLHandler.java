@@ -365,7 +365,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
                         Object sources = outputParameter.getOutputSource();
                         LOG.info("SOURCES " + sources.toString());
-                        processDependencies(NODE_PREFIX, endDependencies, sources);
+                        processDependencies(NODE_PREFIX, endDependencies, sources, 2);
                     }
                 }
 
@@ -432,7 +432,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                             WorkflowStepInput stepInput = (WorkflowStepInput)stepInputObj;
                             Object sources = stepInput.getSource();
                             LOG.info("SOURCES " + sources.toString());
-                            processDependencies(NODE_PREFIX, stepDependencies, sources);
+                            processDependencies(NODE_PREFIX, stepDependencies, sources, 1);
                         }
                     }
                     if (stepDependencies.size() > 0) {
@@ -516,17 +516,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return object != null ? object.toString() : null;
     }
 
-    private void processDependencies(String nodePrefix, List<String> endDependencies, Object sources) {
+    private void processDependencies(String nodePrefix, List<String> endDependencies, Object sources, int skip) {
         if (sources != null) {
             if (sources instanceof String) {
                 String[] sourceSplit = ((String)sources).split("/");
-                if (sourceSplit.length > 2) {
-                    String v = nodePrefix + sourceSplit[sourceSplit.length - 2].replaceFirst("#", "");
+                sourceSplit = Arrays.copyOfRange(sourceSplit, Math.min(skip + 1, sourceSplit.length), sourceSplit.length);
+                if (sourceSplit.length > 1) {
+                    String v = nodePrefix + sourceSplit[0].replaceFirst("#", "");
                     LOG.info("V " + v);
                     endDependencies.add(v);
                 }
             } else {
-                List<String> filteredDependencies = filterDependent((List<String>)sources, nodePrefix);
+                List<String> filteredDependencies = filterDependent((List<String>)sources, nodePrefix, skip);
                 endDependencies.addAll(filteredDependencies);
             }
         }
@@ -831,11 +832,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      * @param sources
      * @return filtered list of dependent sources
      */
-    private List<String> filterDependent(List<String> sources, String nodePrefix) {
+    private List<String> filterDependent(List<String> sources, String nodePrefix, int skip) {
         List<String> filteredArray = new ArrayList<>();
 
         for (String s : sources) {
             String[] split = s.split("/");
+            split = Arrays.copyOfRange(split, Math.min(skip + 1, split.length), split.length);
             if (split.length > 1) {
                 filteredArray.add(nodePrefix + split[0].replaceFirst("#", ""));
             }
