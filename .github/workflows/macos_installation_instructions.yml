@@ -44,8 +44,8 @@ jobs:
         working-directory: dockstore
       - run: brew install jq
         working-directory: dockstore
-      - run: ./mvnw clean install
-        working-directory: dockstore
+#      - run: ./mvnw clean install
+#        working-directory: dockstore
       - run: npm ci --legacy-peer-deps
         working-directory: dockstore-ui2
       - run: npm run prebuild
