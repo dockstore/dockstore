@@ -51,4 +51,4 @@ jobs:
       - run: npm run prebuild
         working-directory: dockstore-ui2
       - run: npm run build
-        working-directory: dockstore
+        working-directory: dockstore-ui2
