@@ -133,3 +133,4 @@ setupInformation:
     - newLine: 1
     - text: Add the Scala plugin to IntelliJ
     - text: https://www.jetbrains.com/help/idea/managing-plugins.html
+    - newLine: 1
