@@ -51,8 +51,6 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpStatus;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3id.cwl.cwl1_2.CommandLineTool;
@@ -437,12 +435,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private void processWorkflow(Workflow workflow, Map<String, Map> parentRequirements, Map<String, Map> parentHints, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
+    private void processWorkflow(Workflow workflow, RequirementOrHintState parentRequirementState,  RequirementOrHintState parentHintState, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         LOG.error("XXX processing workflow " + deOptionalize(workflow.getId()));
 
         // Join parent and current requirements and hints.
-        Map<String, Map> requirements = joinRequirementsOrHints(parentRequirements, workflow.getRequirements());
-        Map<String, Map> hints = joinRequirementsOrHints(parentHints, workflow.getHints());
+        RequirementOrHintState requirementState = addToRequirementOrHintState(parentRequirementState, workflow.getRequirements());
+        RequirementOrHintState hintState = addToRequirementOrHintState(parentHintState, workflow.getHints());
 
         // Iterate through steps to find dependencies and docker requirements
         for (Object workflowStepObj: workflow.getSteps()) {
@@ -475,9 +473,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             }
 
             // Check workflow step for docker requirement and hints
-            Map<String, Map> stepRequirements = joinRequirementsOrHints(requirements, workflowStep.getRequirements());
-            Map<String, Map> stepHints = joinRequirementsOrHints(hints, workflowStep.getHints());
-            String stepDockerPath = getDockerPull(stepRequirements, stepHints);
+            RequirementOrHintState stepRequirementState = addToRequirementOrHintState(requirementState, workflowStep.getRequirements());
+            RequirementOrHintState stepHintState = addToRequirementOrHintState(hintState, workflowStep.getHints());
+            String stepDockerPath = getDockerPull(stepRequirementState, stepHintState);
 
             // Check for docker requirement within workflow step file
             Object run = workflowStep.getRun();
@@ -488,12 +486,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // If the run object is an instance of Process, it's either a Workflow, CommandLineTool, ExpressionTool, or Operation.
                 Process process = (Process)run;
                 stepDockerPath = getDockerPull(
-                    joinRequirementsOrHints(stepRequirements, process.getRequirements()),
-                    joinRequirementsOrHints(stepHints, process.getHints()));
+                    addToRequirementOrHintState(stepRequirementState, process.getRequirements()),
+                    addToRequirementOrHintState(stepHintState, process.getHints()));
                 stepToType.put(workflowStepId, computeProcessType(process));
                 currentPath = preprocessor.getPath(getId(process));
                 if (process instanceof Workflow) {
-                    processWorkflow((Workflow)process, stepRequirements, stepHints, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                    processWorkflow((Workflow)process, stepRequirementState, stepHintState, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 }
 
             } else if (run instanceof String) {
@@ -683,89 +681,19 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * Will determine dockerPull from requirements and hints (requirements take precedence)
+     * Determine dockerPull from requirement and hint state (requirements take precedence).
      *
      * @param requirements
      * @param hints
      * @return
      */
-    private String getDockerPull(Map<String, Map> requirements, Map<String, Map> hints) {
-        String requirementPull = getDockerPull(requirements);
-        if (requirementPull != null) {
-            return requirementPull;
+    private String getDockerPull(RequirementOrHintState requirementState, RequirementOrHintState hintState) {
+        String dockerPull = requirementState.getDockerPull();
+        if (dockerPull != null) {
+            return dockerPull;
         }
-        return getDockerPull(hints);
+        return hintState.getDockerPull();
     }
-
-    /**
-     * Return the DockerPull from the specified CWL requirements/hints, null if not present.
-     */
-    private String getDockerPull(Map<String, Map> requirementsOrHints) {
-        Map requirementOrHint = requirementsOrHints.get("DockerRequirement");
-        if (requirementOrHint != null) {
-            Object dockerPull = requirementOrHint.get("dockerPull");
-            if (dockerPull != null) {
-                return dockerPull.toString();
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Converts a JSON Object in CWL to JSON Array
-     * @param keyName Name of key to convert (Ex. requirements, hints)
-     * @param entryJson JSON representation of file
-     * @return Updated JSON representation of file
-     */
-    private void convertJSONObjectToArray(String keyName, JSONObject entryJson) {
-        if (entryJson.has(keyName)) {
-            if (entryJson.get(keyName) instanceof JSONObject) {
-                JSONArray reqArray = new JSONArray();
-                JSONObject requirements = (JSONObject)entryJson.get(keyName);
-                requirements.keySet().stream().forEach(key -> {
-                    JSONObject newReqEntry = requirements.getJSONObject(key);
-                    newReqEntry.put("class", key);
-                    reqArray.put(newReqEntry);
-                });
-                entryJson.put(keyName, reqArray);
-            }
-        }
-    }
-
-    /*
-    private void convertRequirementsAndHintsToArray(JSONObject entryJson) {
-
-        convertJSONObjectToArray("hints", entryJson);
-        convertJSONObjectToArray("requirements", entryJson);
-
-        // for each step, convert the hints and requirements in each step and in the entry that the step runs.
-        if (entryJson.has("steps")) {
-            Object steps = entryJson.get("steps");
-            List<Object> stepValues;
-            if (steps instanceof JSONObject) {
-                JSONObject stepsObject = (JSONObject)steps;
-                stepValues = stepsObject.keySet().stream().map(stepsObject::get).collect(Collectors.toList());
-            } else if (steps instanceof JSONArray) {
-                stepValues = ((JSONArray)steps).toList();
-            } else {
-                stepValues = Collections.emptyList();
-            }
-            for (Object stepValue: stepValues) {
-                if (stepValue instanceof JSONObject) {
-                    JSONObject stepObject = (JSONObject)stepValue;
-                    convertJSONObjectToArray("hints", stepObject);
-                    convertJSONObjectToArray("requirements", stepObject);
-                    if (stepObject.has("run")) {
-                        Object runValue = stepObject.get("run");
-                        if (runValue instanceof JSONObject) {
-                            convertRequirementsAndHintsToArray((JSONObject)runValue);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    */
 
     private <T> T deOptionalize(Optional<T> optional) {
         if (optional == null) {
@@ -774,37 +702,32 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return optional.orElse(null);
     }
 
-    private Map convertToMap(DockerRequirement dockerRequirement) {
-        Map map = new LinkedHashMap();
-        map.put("class", "DockerRequirement");
-        map.put("dockerPull", deOptionalize(dockerRequirement.getDockerPull()));
-        return map;
-    }
-
     /**
-     * Adds the List of new CWL requirements/hints to the specified Map of CWL requirements/hints.
-     * Requirements/hints from the List take precedence over those in the Map.
-     * If there are no requirements/hints to be added, the original Map is returned.
+     * Computes a new requirement/hint state by adding information-of-interest from the specified list of CWL requirements/hints.
+     * If there are no requirements/hints to be added, the original state is returned.
      */
-    private Map<String, Map> joinRequirementsOrHints(Map<String, Map> existing, Optional<List<Object>> optionalAdd) {
+    private RequirementOrHintState addToRequirementOrHintState(RequirementOrHintState existing, Optional<List<Object>> optionalAdd) {
         if (existing == null) {
-            existing = Map.of();
+            existing = new RequirementOrHintState();
         }
         List<Object> add = deOptionalize(optionalAdd);
         if (add == null || add.isEmpty()) {
             return existing;
         }
-        Map<String, Map> sum = new HashMap<>(existing);
+        RequirementOrHintState sum = new RequirementOrHintState(existing);
         add.forEach(obj -> {
+            // The cwljava parser has an oddity: it does not parse equivalent requirements and hints to the same representation.
+            // So, we must check both for a DockerRequirement object and the equivalent Map.
             if (obj instanceof DockerRequirement) {
-                obj = convertToMap((DockerRequirement)obj);
+                sum.setDockerPull(deOptionalize(((DockerRequirement)obj).getDockerPull()));
             }
             if (obj instanceof Map) {
                 Map map = (Map)obj;
-                Object klass = map.get("class");
-                if (klass instanceof String) { 
-                    sum.put((String)klass, map);
-                    LOG.error("joining requirement " + (String)klass);
+                if ("DockerRequirement".equals(map.get("class"))) {
+                    Object value = map.get("dockerPull");
+                    if (value instanceof String) {
+                        sum.setDockerPull((String)value);
+                    }
                 }
             }
         });
@@ -946,6 +869,26 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
         return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.CWL_TEST_JSON);
+    }
+
+    static class RequirementOrHintState {
+
+        private String dockerPull;
+
+        RequirementOrHintState() {
+        }
+
+        RequirementOrHintState(RequirementOrHintState src) {
+            setDockerPull(src.getDockerPull());
+        }
+
+        public void setDockerPull(String dockerPull) {
+            this.dockerPull = dockerPull;
+        }
+
+        public String getDockerPull() {
+            return dockerPull;
+        }
     }
 
     /**
