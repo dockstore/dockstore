@@ -17,6 +17,7 @@ TEMP_FILE_NAME_ACTION=macos_installation_instructions-TEMP.yml
 
 
 cp "$CURRENT_FILE_NAME_README" "$TEMP_FILE_NAME_README"
+# Copy "$CURRENT_FILE_NAME_README" as ./scripts/macos-instructions.sh modifies "$CURRENT_FILE_NAME_README"
 mv "$CURRENT_FILE_NAME_ACTION" "$TEMP_FILE_NAME_ACTION"
 
 ./scripts/macos-instructions.sh
