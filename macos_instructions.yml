@@ -26,12 +26,12 @@ actionOnlyInformation:
       build:
         runs-on: macos-latest
         steps:
-          - name: Checkout dockstore/docktore
+          - name: Checkout dockstore/dockstore
             uses: actions/checkout@v3
             with:
               repository: dockstore/dockstore
               path: dockstore
-          - name: Checkout dockstore/docktore-ui2
+          - name: Checkout dockstore/dockstore-ui2
             uses: actions/checkout@v3
             with:
               repository: dockstore/dockstore-ui2
