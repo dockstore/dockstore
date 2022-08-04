@@ -21,16 +21,18 @@ cp "$CURRENT_FILE_NAME_README" "$TEMP_FILE_NAME_README"
 mv "$CURRENT_FILE_NAME_ACTION" "$TEMP_FILE_NAME_ACTION"
 
 ./scripts/macos-instructions.sh
+
 EXIT_CODE=0
-cmp -s "$CURRENT_FILE_NAME_README" "$TEMP_FILE_NAME_README"
-if [ $? -ne 0 ]; then
+
+if ! cmp -s "$CURRENT_FILE_NAME_README" "$TEMP_FILE_NAME_README"
+then
   echo "Your README is not up to date with macos_instructions.yml"
   echo "Please generate any instructions related to Mac installation with scripts/macos-instructions.sh"
   EXIT_CODE=1
 fi
 
-cmp -s "$CURRENT_FILE_NAME_ACTION" "$TEMP_FILE_NAME_ACTION"
-if [ $? -ne 0 ]; then
+if ! cmp -s "$CURRENT_FILE_NAME_ACTION" "$TEMP_FILE_NAME_ACTION"
+then
   echo "Your MacOS GitHub Action is not up to date with macos_instructions.yml"
   echo "Please generate any instructions related to Mac installation with scripts/macos-instructions.sh"
   EXIT_CODE=1
