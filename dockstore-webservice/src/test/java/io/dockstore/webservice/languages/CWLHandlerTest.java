@@ -290,6 +290,20 @@ public class CWLHandlerTest {
     }
 
     @Test
+    public void testGetContentJson() throws IOException {
+        CWLHandler cwlHandler = new CWLHandler();
+
+        // create and mock parameters for getContent()
+        final Set<SourceFile> emptySet = Collections.emptySet();
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("json.cwl"));
+        cwlHandler.getContent("/json.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
+            LanguageHandlerInterface.Type.TOOLS, toolDAO);
+    }
+
+    @Test
     public void testGetContentWithMalformedDescriptors() throws IOException {
         CWLHandler cwlHandler = new CWLHandler();
 

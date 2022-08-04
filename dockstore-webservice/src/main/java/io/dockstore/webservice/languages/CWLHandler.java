@@ -64,6 +64,9 @@ import org.w3id.cwl.cwl1_2.Workflow;
 import org.w3id.cwl.cwl1_2.WorkflowOutputParameter;
 import org.w3id.cwl.cwl1_2.WorkflowStep;
 import org.w3id.cwl.cwl1_2.WorkflowStepInput;
+import org.w3id.cwl.cwl1_2.utils.Fetcher;
+import org.w3id.cwl.cwl1_2.utils.LoadingOptions;
+import org.w3id.cwl.cwl1_2.utils.LoadingOptionsBuilder;
 import org.w3id.cwl.cwl1_2.utils.RootLoader;
 import org.w3id.cwl.cwl1_2.utils.ValidationException;
 import org.yaml.snakeyaml.Yaml;
@@ -296,6 +299,21 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return (Map<String, Object>)preprocessed;
     }
 
+    private LoadingOptions constructSafeLoadingOptions() {
+        return new LoadingOptionsBuilder().setFetcher(
+            new Fetcher() {
+                @Override
+                public String urlJoin(final String baseUrl, final String url) {
+                    return url;
+                }
+                @Override
+                public String fetchText(final String url) {
+                    LOG.error("cwljava attempted to fetch url " + url);
+                    return "\"\"";
+                }
+            }).build();
+    }
+
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
@@ -335,31 +353,31 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 throw new CustomWebApplicationException(CWLHandler.CWL_NO_VERSION_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
 
-            // TODO Handle packed CWL.
-
             // If the descriptor describes something other than a workflow, wrap and process it as a single-step workflow
             final Object cwlClass = mapping.get("class");
             if (!"Workflow".equals(cwlClass)) {
                 mapping = convertToolToSingleStepWorkflow(mapping);
             }
 
+            // Parse the preprocessed document using cwljava
             Object rootObject;
             try {
-                rootObject = RootLoader.loadDocument(mapping, "");
+                rootObject = RootLoader.loadDocument(mapping, "", constructSafeLoadingOptions());
             } catch (ValidationException e) {
                 LOG.error("The workflow does not seem to conform to CWL specs.");
-                LOG.error("validation exception " + e.getMessage(), e);
+                LOG.error("Validation exception: " + e.getMessage(), e);
                 return Optional.empty();
             }
-
             if (!(rootObject instanceof Workflow)) {
                 LOG.error("Unsupported CWL construct.");
                 return Optional.empty();
             }
 
+            // Process the parse workflow
             Workflow workflow = (Workflow)rootObject;
             processWorkflow(workflow, null, null, 0, null, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
+            // Return the requested information
             if (type == LanguageHandlerInterface.Type.DAG) {
                 // Determine steps that point to end
                 List<String> endDependencies = new ArrayList<>();
@@ -1095,8 +1113,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
 
         private boolean isEntry(Map<String, Object> cwl) {
-            String c = (String)cwl.get("class");
-            return Objects.equals(c, "CommandLineTool") || Objects.equals(c, "ExpressionTool") || Objects.equals(c, "Workflow");
+            Object c = cwl.get("class");
+            return "Workflow".equals(c) || "CommandLineTool".equals(c) || "ExpressionTool".equals(c) || "Operation".equals(c);
         }
 
         private String setUniqueIdIfAbsent(Map<String, Object> entryCwl) {
