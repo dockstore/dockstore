@@ -49,19 +49,16 @@ setupInformation:
     - text: https://brew.sh/
     - code:
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        working-directory: dockstore
     - newLine: 1
     - text: Run 'git' to trigger the install of Xcode or the Command Line Tools which will install and or update git
     - text:  https://developer.apple.com/forums/thread/672087?answerId=659036022#659036022
     - code:
         run: git || true
-        working-directory: dockstore
     - text: _(If that doesn't work install git manually https://git-scm.com/download/mac)_
     - newLine: 2
     - text: Setup git user information
     - code:
         run: git config --global user.email "you@example.com";git config --global user.name "Your Name" # ; will be replaced with new lines in README.md
-        working-directory: dockstore
     - text: |
         [Read about git token requirements](https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/)
     - text: |
@@ -72,37 +69,31 @@ setupInformation:
     - text: https://datasift.github.io/gitflow/TheHubFlowTools.html
     - code:
         run: git clone https://github.com/datasift/gitflow;cd gitflow;sudo ./install.sh # ; will be replaced with new lines in README.md
-        working-directory: dockstore
     - newLine: 1
     - text: Install JDK 17
     - text: https://formulae.brew.sh/formula/openjdk@17
     - code:
         run: brew install openjdk@17
-        working-directory: dockstore
     - text: Download and install node.js
     - text: https://github.com/nvm-sh/nvm
     - code:
         run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-        working-directory: dockstore
     - text: Install git secrets
     - text: https://github.com/awslabs/git-secrets
     - code:
         run: brew install git-secrets
-        working-directory: dockstore
     - text: Install wget
     - code:
         run: brew install wget
-        working-directory: dockstore
     - newLine: 1
     - text: Install jq
     - code:
         run: brew install jq
-        working-directory: dockstore
     - text: '#### Build the webservice'
     - text: (cd to where you cloned the dockstore/dockstore repo)
     - code:
         run: ./mvnw clean install
-        working-directory: dockstore
+        working-directory: dockstore # Where dockstore/dockstore was cloned by actions/checkout@v3
     - newLine: 1
     - text: '#### Build the UI'
     - text: (cd to where you cloned the dockstore/dockstore-ui2 repo)
@@ -112,7 +103,7 @@ setupInformation:
     - text: for reasons mentioned in [this post](https://stackoverflow.com/questions/66239691/what-does-npm-install-legacy-peer-deps-do-exactly-when-is-it-recommended-wh)
     - code:
         run: npm ci --legacy-peer-deps
-        working-directory: dockstore-ui2
+        working-directory: dockstore-ui2 # Where dockstore/dockstore-ui2 was cloned by actions/checkout@v3
     - text: Run prebuild
     - code:
         run: npm run prebuild
