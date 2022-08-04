@@ -73,5 +73,5 @@ sed -n '1,/DO_NOT_DELETE_START_MACOS_INSTRUCTIONS/p;/DO_NOT_DELETE_END_MACOS_INS
 cat "$TEMP_FILE" > README.md
 
 # Add new instructions to README.md
-sed '/DO_NOT_DELETE_END_MACOS_INSTRUCTIONS/e cat macos-instructions.md' "$README" > "$TEMP_FILE"
+sed '/DO_NOT_DELETE_START_MACOS_INSTRUCTIONS/ r macos-instructions.md' "$README" > "$TEMP_FILE"
 cat "$TEMP_FILE" > "$README"
