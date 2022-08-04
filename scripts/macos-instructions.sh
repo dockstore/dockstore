@@ -13,7 +13,7 @@ set -o nounset
 # 1. Modify README.md to include the instructions specified in $INSTRUCTION_FILE
 # 2. Create a github action running all of the code specified in $INSTRUCTION_FILE
 
-# This script must be run in the directory dockstore/dockstore
+# This script must be run in root of the directory where you cloned the dockstore/dockstore repo
 
 INSTRUCTION_FILE=macos_instructions.yml
 OUTPUT_FILE_TEXT=macos-instructions.md
