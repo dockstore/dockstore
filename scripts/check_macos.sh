@@ -2,7 +2,7 @@
 
 # Checks that  README.md and the macos github action are up to date with macos_instructions.yml
 
-# This script must be run in root of the directory where you cloned the dockstore/dockstore repo
+# This script must be run in the root of the directory where you cloned the dockstore/dockstore repo
 
 CURRENT_FILE_NAME_README=README.md
 TEMP_FILE_NAME_README=README-TEMP.md
