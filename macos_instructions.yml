@@ -104,10 +104,6 @@ setupInformation:
     - code:
         run: npm ci --legacy-peer-deps
         working-directory: dockstore-ui2 # Where dockstore/dockstore-ui2 was cloned by actions/checkout@v3
-    - text: Run prebuild
-    - code:
-        run: npm run prebuild
-        working-directory: dockstore-ui2
     - newLine: 1
     - text: Run build
     - code:

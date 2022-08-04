@@ -270,10 +270,6 @@ for reasons mentioned in [this post](https://stackoverflow.com/questions/6623969
 ```
 npm ci --legacy-peer-deps
 ```
-Run prebuild
-```
-npm run prebuild
-```
 
 Run build
 ```

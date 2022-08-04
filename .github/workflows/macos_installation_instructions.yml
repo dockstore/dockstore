@@ -23,28 +23,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        working-directory: dockstore
       - run: git || true
-        working-directory: dockstore
       - run: git config --global user.email "you@example.com";git config --global user.name "Your Name"
-        working-directory: dockstore
       - run: git clone https://github.com/datasift/gitflow;cd gitflow;sudo ./install.sh
-        working-directory: dockstore
       - run: brew install openjdk@17
-        working-directory: dockstore
       - run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-        working-directory: dockstore
       - run: brew install git-secrets
-        working-directory: dockstore
       - run: brew install wget
-        working-directory: dockstore
       - run: brew install jq
-        working-directory: dockstore
       - run: ./mvnw clean install
         working-directory: dockstore
       - run: npm ci --legacy-peer-deps
-        working-directory: dockstore-ui2
-      - run: npm run prebuild
         working-directory: dockstore-ui2
       - run: npm run build
         working-directory: dockstore-ui2
