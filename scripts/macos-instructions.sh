@@ -6,7 +6,7 @@ set -o pipefail
 set -o nounset
 # set -o xtrace
 
-# This script requires yq (https://github.com/mikefarah/yq) which can be installed with this command
+# This script requires yq (Tested with version 4.26.1) (https://github.com/mikefarah/yq) which can be installed with this command
 # snap install yq (Linux)
 # brew install yq (Mac)
 
