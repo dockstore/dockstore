@@ -7,7 +7,8 @@ set -o nounset
 # set -o xtrace
 
 # This script requires yq (https://github.com/mikefarah/yq) which can be installed with this command
-# snap install yq
+# snap install yq (Linux)
+# brew install yq (Mac)
 
 # This script does two things
 # 1. Modify README.md to include the instructions specified in $INSTRUCTION_FILE
