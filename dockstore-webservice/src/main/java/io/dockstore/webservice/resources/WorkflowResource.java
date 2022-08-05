@@ -2154,7 +2154,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Retrieve ORCID author information for a workflow version", content = @Content(
         mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = OrcidAuthorInformation.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
-    public Set<OrcidAuthorInformation> getWorkflowVersionOrcidAuthors(@Parameter(hidden = true, name = "user") @Auth User user,
+    public Set<OrcidAuthorInformation> getWorkflowVersionOrcidAuthors(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
