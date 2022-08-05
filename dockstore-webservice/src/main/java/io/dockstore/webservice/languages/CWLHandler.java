@@ -115,7 +115,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // Expand $import, $include, etc
                 map = preprocess(map, filePath, new Preprocessor(sourceFiles));
 
-                // Retarget to the main process, if necessary.
+                // Retarget to the main process, if necessary
                 map = findMainProcess(map);
 
                 // Extract various fields
@@ -699,23 +699,23 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      * Computes a new requirement/hint state by adding information-of-interest from the specified list of CWL requirements/hints.
      * If there are no requirements/hints to be added, the original state is returned.
      */
-    private RequirementOrHintState addToRequirementOrHintState(RequirementOrHintState existing, Optional<List<Object>> optionalAdd) {
+    private RequirementOrHintState addToRequirementOrHintState(RequirementOrHintState existing, Optional<List<Object>> optionalAdds) {
         if (existing == null) {
             existing = new RequirementOrHintState();
         }
-        List<Object> add = deOptionalize(optionalAdd);
-        if (add == null || add.isEmpty()) {
+        List<Object> adds = deOptionalize(optionalAdds;
+        if (adds == null || adds.isEmpty()) {
             return existing;
         }
         RequirementOrHintState sum = new RequirementOrHintState(existing);
-        add.forEach(obj -> {
+        adds.forEach(add -> {
             // The cwljava parser has an oddity: it does not parse equivalent requirements and hints to the same representation.
             // So, we must check both for a DockerRequirement object and the equivalent Map.
-            if (obj instanceof DockerRequirement) {
-                sum.setDockerPull(deOptionalize(((DockerRequirement)obj).getDockerPull()));
+            if (add instanceof DockerRequirement) {
+                sum.setDockerPull(deOptionalize(((DockerRequirement)add).getDockerPull()));
             }
-            if (obj instanceof Map) {
-                Map map = (Map)obj;
+            if (add instanceof Map) {
+                Map map = (Map)add;
                 if ("DockerRequirement".equals(map.get("class"))) {
                     Object value = map.get("dockerPull");
                     if (value instanceof String) {
@@ -770,89 +770,55 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return filteredArray;
     }
 
-    @Override
-    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    private VersionTypeValidation validateProcessSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath,
+        String processType, Set<String> processClasses, String oppositeType, Set<String> oppositeClasses) {
+
         List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Collections.singletonList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
-        Set<SourceFile> filteredSourcefiles = filterSourcefiles(sourcefiles, fileTypes);
+        Set<SourceFile> filteredSourcefiles = filterSourcefiles(sourceFiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
-        boolean isValid = true;
-        boolean safe = false;
-        StringBuilder validationMessage = new StringBuilder();
-        Map<String, String> validationMessageObject = new HashMap<>();
-
-        if (mainDescriptor.isPresent()) {
-            try {
-                // This should throw an exception if there are unexpected blocks
-                parse(mainDescriptor.get().getContent());
-                safe = true;
-            } catch (Exception e) {
-                isValid = false;
-                LOG.info("An unsafe or malformed YAML was attempted to be parsed");
-                validationMessage.append("CWL file is malformed or missing, cannot extract metadata: " + e.getMessage());
-            }
-            if (safe) {
-                String content = mainDescriptor.get().getContent();
-                if (content == null || content.isEmpty()) {
-                    isValid = false;
-                    validationMessage.append("Primary descriptor is empty.");
-                } else if (!content.contains("class: Workflow")) {
-                    isValid = false;
-                    validationMessage.append("A CWL workflow requires 'class: Workflow'.");
-                    if (content.contains("class: CommandLineTool") || content.contains("class: ExpressionTool")) {
-                        String cwlClass = content.contains("class: CommandLineTool") ? "CommandLineTool" : "ExpressionTool";
-                        validationMessage.append(" This file contains 'class: ").append(cwlClass).append("'. Did you mean to register a tool?");
-                    }
-                } else if (!this.isValidCwl(content)) {
-                    isValid = false;
-                    validationMessage.append("Invalid CWL version.");
-                }
-            }
-        } else {
-            validationMessage.append("Primary CWL descriptor is not present.");
-            isValid = false;
-        }
-
-        if (isValid) {
-            return new VersionTypeValidation(true, Collections.emptyMap());
-        } else {
-            validationMessageObject.put(primaryDescriptorFilePath, validationMessage.toString());
-            return new VersionTypeValidation(false, validationMessageObject);
-        }
-    }
-
-    @Override
-    public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Collections.singletonList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
-        Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
-        Optional<SourceFile> mainDescriptor = filteredSourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
-
-        boolean isValid = true;
         String validationMessage = null;
-        Map<String, String> validationMessageObject = new HashMap<>();
 
         if (mainDescriptor.isPresent()) {
             String content = mainDescriptor.get().getContent();
             if (content == null || content.isEmpty()) {
-                isValid = false;
-                validationMessage = "Primary CWL descriptor is empty.";
-            } else if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
-                isValid = false;
-                validationMessage = "A CWL tool requires 'class: CommandLineTool' or 'class: ExpressionTool'.";
-                if (content.contains("class: Workflow")) {
-                    validationMessage += " This file contains 'class: Workflow'. Did you mean to register a workflow?";
+                validationMessage = "Primary descriptor is empty.";
+            } else {
+                try {
+                    Map<String, Object> parsed = findMainProcess(parseAsMap(content));
+                    Object klass = parsed.get("class");
+                    if (!processClasses.contains(klass)) {
+                        validationMessage = String.format("A CWL %s requires %s.", processType, processClasses.stream().map(s -> String.format("'class: %s'", s)).collect(Collectors.joining(" or ")));
+                        if (oppositeClasses.contains(klass)) {
+                            validationMessage += String.format(" This file contains 'class: %s'. Did you mean to register a %s?", klass, oppositeType);
+                        }
+                    } else if (!this.isValidCwl(content)) {
+                        validationMessage = "Invalid CWL version.";
+                    }
+                } catch (YAMLException | JsonParseException | ClassCastException e) {
+                    LOG.info("An unsafe or malformed YAML was attempted to be parsed", e);
+                    validationMessage = "CWL file is malformed or missing, cannot extract metadata: " + e.getMessage();
                 }
-            } else if (!this.isValidCwl(content)) {
-                isValid = false;
-                validationMessage = "Invalid CWL version.";
             }
         } else {
-            isValid = false;
             validationMessage = "Primary CWL descriptor is not present.";
         }
 
-        validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
-        return new VersionTypeValidation(isValid, validationMessageObject);
+        if (validationMessage == null) {
+            return new VersionTypeValidation(true, Collections.emptyMap());
+        } else {
+            return new VersionTypeValidation(false, Map.of(primaryDescriptorFilePath, validationMessage));
+        }
+    }
+
+    @Override
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
+        return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "workflow", Set.of("Workflow"), "tool", Set.of("CommandLineTool", "ExpressionTool"));
+    }
+
+    @Override
+    public VersionTypeValidation validateToolSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
+        return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "tool", Set.of("CommandLineTool", "ExpressionTool"), "workflow", Set.of("Workflow"));
     }
 
     @Override
