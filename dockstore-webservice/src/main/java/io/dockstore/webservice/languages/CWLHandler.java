@@ -18,6 +18,8 @@ package io.dockstore.webservice.languages;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.LanguageHandlerHelper;
@@ -107,14 +109,14 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
-                Yaml safeYaml = new Yaml(new SafeConstructor());
-                // This should throw an exception if there are unexpected blocks
-                safeYaml.load(content);
-                Yaml yaml = new Yaml();
-                Map map = yaml.loadAs(content, Map.class);
+                // Parse the file content
+                Map<String, Object> map = parseAsMap(content);
 
                 // Expand $import, $include, etc
                 map = preprocess(map, filePath, new Preprocessor(sourceFiles));
+
+                // Retarget to the main process, if necessary.
+                map = findMainProcess(map);
 
                 // Extract various fields
                 String description = null;
@@ -161,7 +163,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
-            } catch (YAMLException | NullPointerException | ClassCastException ex) {
+            } catch (YAMLException | JsonParseException | NullPointerException | ClassCastException ex) {
                 String message;
                 if (ex.getCause() != null) {
                     // seems to be possible to get underlying cause in some cases
@@ -219,14 +221,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private void processImport(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile, Map<String, SourceFile> imports) {
 
-        Yaml yaml = new Yaml();
         try {
-            Yaml safeYaml = new Yaml(new SafeConstructor());
-            // This should throw an exception if there are unexpected blocks
-            safeYaml.load(content);
-            Map<String, ?> fileContentMap = yaml.loadAs(content, Map.class);
+            Map<String, Object> fileContentMap = parseAsMap(content);
             handleMap(repositoryId, workingDirectoryForFile, version, imports, fileContentMap, sourceCodeRepoInterface);
-        } catch (YAMLException e) {
+        } catch (YAMLException | JsonParseException e) {
             SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml", e);
         }
     }
@@ -239,12 +237,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      */
     public Set<FileFormat> getFileFormats(String content, String type) {
         Set<FileFormat> fileFormats = new HashSet<>();
-        Yaml yaml = new Yaml();
         try {
-            Yaml safeYaml = new Yaml(new SafeConstructor());
-            // This should throw an exception if there are unexpected blocks
-            safeYaml.load(content);
-            Map<String, ?> map = yaml.loadAs(content, Map.class);
+            Map<String, Object> map = parseAsMap(content);
             Object targetType = map.get(type);
             if (targetType instanceof Map) {
                 Map<String, ?> outputsMap = (Map<String, ?>)targetType;
@@ -258,7 +252,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             } else {
                 LOG.debug(type + " is not comprehensible.");
             }
-        } catch (YAMLException | NullPointerException e) {
+        } catch (YAMLException | JsonParseException | NullPointerException e) {
             LOG.error("Could not process content from entry as yaml", e);
         }
         return fileFormats;
@@ -316,12 +310,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     @SuppressWarnings("checkstyle:methodlength")
     public Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
         ToolDAO dao) {
-        Yaml yaml = new Yaml();
         try {
-            Yaml safeYaml = new Yaml(new SafeConstructor());
-            // This should throw an exception if there are unexpected blocks
-            safeYaml.load(mainDescriptor);
-
             // Initialize data structures for DAG
             Map<String, ToolInfo> toolInfoMap = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
             List<Pair<String, String>> nodePairs = new ArrayList<>();       // List of pairings of step id and dockerPull url
@@ -330,8 +319,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // Initialize data structures for Tool table
             Map<String, DockerInfo> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url, docker specifier)
 
-            // Convert YAML to object representation
-            Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
+            // Convert CWL to object representation
+            Map<String, Object> mapping = parseAsMap(mainDescriptor);
 
             // Expand "$import", "$include", "run:", etc
             Preprocessor preprocessor = new Preprocessor(secondarySourceFiles);
@@ -350,6 +339,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 LOG.error(CWLHandler.CWL_NO_VERSION_ERROR);
                 throw new CustomWebApplicationException(CWLHandler.CWL_NO_VERSION_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
+
+            // Retarget to the main process, if necessary.
+            mapping = findMainProcess(mapping);
 
             // If the descriptor describes something other than a workflow, wrap and process it as a single-step workflow
             final Object cwlClass = mapping.get("class");
@@ -406,7 +398,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 Map<String, DockerInfo> toolDockerInfo = nodeDockerInfo.entrySet().stream().filter(e -> "tool".equals(stepToType.get(e.getKey()))).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                 return Optional.of(getJSONTableToolContent(toolDockerInfo));
             }
-        } catch (ClassCastException | YAMLException ex) {
+        } catch (ClassCastException | YAMLException | JsonParseException ex) {
             final String exMsg = CWLHandler.CWL_PARSE_ERROR + ex.getMessage();
             LOG.error(exMsg, ex);
             throw new CustomWebApplicationException(exMsg, HttpStatus.SC_UNPROCESSABLE_ENTITY);
@@ -416,6 +408,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private Map<String, Object> convertToolToSingleStepWorkflow(Map<String, Object> tool) {
         Map<String, Object> workflow = new HashMap<>();
         workflow.put("cwlVersion", "v1.2");
+        workflow.put("id", "wrapper");
         workflow.put("class", "Workflow");
         workflow.put("inputs", Map.of());
         workflow.put("outputs", Map.of());
@@ -737,12 +730,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     /**
      * Checks that the CWL file is the correct version
      * @param content
-     * @param yaml
      * @return true if file is valid CWL version, false otherwise
      */
-    private boolean isValidCwl(String content, Yaml yaml) {
+    private boolean isValidCwl(String content) {
         try {
-            Map<String, Object> mapping = yaml.loadAs(content, Map.class);
+            Map<String, Object> mapping = parseAsMap(content);
             final Object cwlVersion = mapping.get("cwlVersion");
 
             if (cwlVersion != null) {
@@ -752,7 +744,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 }
                 return startsWith;
             }
-        } catch (ClassCastException | YAMLException e) {
+        } catch (ClassCastException | YAMLException | JsonParseException e) {
             return false;
         }
         return false;
@@ -791,17 +783,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         if (mainDescriptor.isPresent()) {
             try {
-                Yaml safeYaml = new Yaml(new SafeConstructor());
                 // This should throw an exception if there are unexpected blocks
-                safeYaml.load(mainDescriptor.get().getContent());
+                parse(mainDescriptor.get().getContent());
                 safe = true;
             } catch (Exception e) {
                 isValid = false;
-                LOG.info("An unsafe YAML was attempted to be parsed");
+                LOG.info("An unsafe or malformed YAML was attempted to be parsed");
                 validationMessage.append("CWL file is malformed or missing, cannot extract metadata: " + e.getMessage());
             }
             if (safe) {
-                Yaml yaml = new Yaml();
                 String content = mainDescriptor.get().getContent();
                 if (content == null || content.isEmpty()) {
                     isValid = false;
@@ -813,7 +803,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         String cwlClass = content.contains("class: CommandLineTool") ? "CommandLineTool" : "ExpressionTool";
                         validationMessage.append(" This file contains 'class: ").append(cwlClass).append("'. Did you mean to register a tool?");
                     }
-                } else if (!this.isValidCwl(content, yaml)) {
+                } else if (!this.isValidCwl(content)) {
                     isValid = false;
                     validationMessage.append("Invalid CWL version.");
                 }
@@ -842,7 +832,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         Map<String, String> validationMessageObject = new HashMap<>();
 
         if (mainDescriptor.isPresent()) {
-            Yaml yaml = new Yaml();
             String content = mainDescriptor.get().getContent();
             if (content == null || content.isEmpty()) {
                 isValid = false;
@@ -853,7 +842,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (content.contains("class: Workflow")) {
                     validationMessage += " This file contains 'class: Workflow'. Did you mean to register a workflow?";
                 }
-            } else if (!this.isValidCwl(content, yaml)) {
+            } else if (!this.isValidCwl(content)) {
                 isValid = false;
                 validationMessage = "Invalid CWL version.";
             }
@@ -869,6 +858,60 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
         return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.CWL_TEST_JSON);
+    }
+
+    private Map<String, Object> findMainProcess(Map<String, Object> mapping) {
+
+        // If the CWL is packed using the "$graph" syntax, the root is the process with id "#main":
+        // https://www.commonwl.org/v1.2/Workflow.html#Packed_documents
+        Object graph = mapping.get("$graph");
+        if (graph instanceof List) {
+            List<Object> processes = (List<Object>)graph;
+            // Return the process with id "#main".
+            // TODO express this in "stream" style?
+            for (Object process: processes) {
+                if (process instanceof Map) {
+                    Map<String, Object> processMapping = (Map<String, Object>) process;
+                    if ("#main".equals(processMapping.get("id"))) {
+                        return processMapping;
+                    }
+                }
+            }
+            // If there was no process with id "#main", return the first process as a fallback.
+            // This isn't perfect, but it's a good guess, and better than nothing.
+            // TODO express this in "stream" style?
+            if (!processes.isEmpty()) {
+                Object process = processes.get(0);
+                if (process instanceof Map) {
+                    return (Map<String, Object>) process;
+                }
+            }
+        }
+
+        // Otherwise, assume this a normal CWL file.
+        return mapping;
+    }
+
+    private static boolean isJsonObject(String yamlOrJson) {
+        String trimmed = yamlOrJson.trim();
+        return trimmed.startsWith("{") && trimmed.endsWith("}");
+    }
+
+    private static Object parse(String yamlOrJson) {
+        if (isJsonObject(yamlOrJson)) {
+            return new Gson().fromJson(yamlOrJson, Map.class);
+        } else {
+            new Yaml(new SafeConstructor()).load(yamlOrJson);
+            return new Yaml().load(yamlOrJson);
+        }
+    }
+
+    private static Map<String, Object> parseAsMap(String yamlOrJson) {
+        Object parsed = parse(yamlOrJson);
+        if (!(parsed instanceof Map)) {
+            throw new YAMLException("Expected content in map format.");
+        }
+        return (Map<String, Object>)parsed;
     }
 
     static class RequirementOrHintState {
@@ -1112,9 +1155,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             mixin.forEach(to::putIfAbsent);
         }
 
-        private Object parse(String yaml) {
-            new Yaml(new SafeConstructor()).load(yaml);
-            return new Yaml().load(yaml);
+        private Object parse(String yamlOrJson) {
+            return CWLHandler.parse(yamlOrJson);
         }
 
         private String resolvePath(String childPath, String parentPath) {
