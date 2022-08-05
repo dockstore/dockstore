@@ -16,6 +16,7 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+import static io.dockstore.webservice.resources.UserResource.USER_PROFILES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -695,6 +696,25 @@ public class UserResourceIT extends BaseIT {
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
         }
+    }
+
+    /**
+     * tests that a normal user can grab the user profile for a different user to support user pages
+     */
+    @Test
+    public void testUserProfiles() {
+        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
+        // The API call updateUserMetadata() should not throw an error and exit if any users' tokens are out of date or absent
+        // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
+        adminApi.updateUserMetadata();
+
+        io.dockstore.openapi.client.ApiClient unauthUserWebClient = CommonTestUtilities.getOpenAPIWebClient(false, null, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi unauthUserApi = new io.dockstore.openapi.client.api.UsersApi(unauthUserWebClient);
+
+
+        final io.dockstore.openapi.client.model.User userProfile = unauthUserApi.listUser(USER_2_USERNAME, USER_PROFILES);
+        assertFalse(userProfile.getUserProfiles().isEmpty());
     }
 
     /**
