@@ -5051,8 +5051,6 @@ paths:
           description: Forbidden
         "404":
           description: User not found
-      security:
-      - BEARER: []
       tags:
       - users
   /users/users/entries:
@@ -8618,8 +8616,6 @@ components:
         bio:
           type: string
         company:
-          type: string
-        email:
           type: string
         link:
           type: string
