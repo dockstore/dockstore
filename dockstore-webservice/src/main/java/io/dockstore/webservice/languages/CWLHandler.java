@@ -378,7 +378,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
                         Object sources = outputParameter.getOutputSource();
                         LOG.info("SOURCES " + sources.toString());
-                        processDependencies(NODE_PREFIX, endDependencies, sources, 2);
+                        processDependencies(NODE_PREFIX, endDependencies, sources, 1);
                     }
                 }
 
@@ -418,13 +418,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     /**
      * This function converts the workflow step ID that cwljava returns, which includes the enclosing workflow IDS,
-     * to form that we display.
+     * to form that we use internally.
      * For example, given the id "/#W1/S1/W2/S2", where W1 and W2 are the parent and child workflow IDs and
      * S1 and S2 are the corresponding workflow step IDs, this function will return "S1.S2".
      */
     private String convertStepId(String cwljavaStepId) {
-        List<String> parts = Arrays.asList(cwljavaStepId.split("/"));
-        return NODE_PREFIX + IntStream.range(0, parts.size()).filter(i -> i % 2 == 0 && i > 0).mapToObj(parts::get).collect(Collectors.joining("."));
+        List<String> parts = Arrays.asList(cwljavaStepId.replaceFirst("^/", "").split("/"));
+        return NODE_PREFIX + IntStream.range(0, parts.size()).filter(i -> i % 2 == 1).mapToObj(parts::get).collect(Collectors.joining("."));
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -452,7 +452,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                             WorkflowStepInput stepInput = (WorkflowStepInput)stepInputObj;
                             Object sources = stepInput.getSource();
                             LOG.info("SOURCES " + sources.toString());
-                            processDependencies(NODE_PREFIX, stepDependencies, sources, 1);
+                            processDependencies(NODE_PREFIX, stepDependencies, sources, 0);
                         }
                     }
                     if (stepDependencies.size() > 0) {
@@ -482,7 +482,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     addToRequirementOrHintState(stepRequirementState, process.getRequirements()),
                     addToRequirementOrHintState(stepHintState, process.getHints()));
                 stepToType.put(workflowStepId, computeProcessType(process));
-                currentPath = preprocessor.getPath(getId(process));
+                currentPath = getDockstoreMetadataHintValue(deOptionalize(process.getHints()), "path");
+                LOG.error("currentPath " + currentPath);
                 if (process instanceof Workflow) {
                     processWorkflow((Workflow)process, stepRequirementState, stepHintState, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 }
@@ -515,6 +516,24 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             nodeDockerInfo.put(workflowStepId, new DockerInfo(currentPath, stepDockerPath, dockerUrl, dockerSpecifier));
         }
+    }
+
+    /**
+     * Read the value for a given key from the dockstore metadata hint, which was added by the preprocessor.
+     */
+    private String getDockstoreMetadataHintValue(List<Object> hints, String key) {
+        if (hints == null) {
+            return null;
+        }
+        Map<String, String> metadata = findMetadataHint(hints);
+        if (metadata == null) {
+            return null;
+        }
+        return metadata.get(key);
+    }
+
+    private static Map<String, String> findMetadataHint(List<Object> hints) {
+        return (Map<String, String>)hints.stream().filter(obj -> obj instanceof Map && "dockstore_metadata".equals(((Map)obj).get("class"))).findFirst().orElse(null);
     }
 
     private String getId(Process process) {
@@ -570,8 +589,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private void processDependencies(String nodePrefix, List<String> endDependencies, Object sources, int skip) {
         if (sources != null) {
             if (sources instanceof String) {
-                String[] sourceSplit = ((String)sources).split("/");
-                sourceSplit = Arrays.copyOfRange(sourceSplit, Math.min(skip + 1, sourceSplit.length), sourceSplit.length);
+                String[] sourceSplit = ((String)sources).replaceFirst("^/", "").split("/");
+                sourceSplit = Arrays.copyOfRange(sourceSplit, Math.min(skip, sourceSplit.length), sourceSplit.length);
                 if (sourceSplit.length > 1) {
                     String v = nodePrefix + sourceSplit[0].replaceFirst("#", "");
                     LOG.info("V " + v);
@@ -709,7 +728,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
         RequirementOrHintState sum = new RequirementOrHintState(existing);
         adds.forEach(add -> {
-            // The cwljava parser has an oddity: it does not parse equivalent requirements and hints to the same representation.
+            // The cwljava parser has an oddity: given requirement R and hint H, where R and H are equivalent, cwljava does not parse them to the same representation.
             // So, we must check both for a DockerRequirement object and the equivalent Map.
             if (add instanceof DockerRequirement) {
                 sum.setDockerPull(deOptionalize(((DockerRequirement)add).getDockerPull()));
@@ -834,7 +853,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         if (graph instanceof List) {
             List<Object> processes = (List<Object>)graph;
             // Return the process with id "#main".
-            // TODO express this in "stream" style?
             for (Object process: processes) {
                 if (process instanceof Map) {
                     Map<String, Object> processMapping = (Map<String, Object>) process;
@@ -845,7 +863,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             }
             // If there was no process with id "#main", return the first process as a fallback.
             // This isn't perfect, but it's a good guess, and better than nothing.
-            // TODO express this in "stream" style?
             if (!processes.isEmpty()) {
                 Object process = processes.get(0);
                 if (process instanceof Map) {
@@ -912,10 +929,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      * <p>Typically, a Preprocessor instance is one-time-use: a new Preprocessor instance is created to expand each root CWL
      * descriptor.
      *
-     * <p>As the preprocessor expands the CWL, it tracks the current file, and for each entry (workflow or tool) it encounters,
-     * it first ensures that the entry has a unique id (by assigning the missing or duplicate id to a UUID), then adds the
-     * id-to-current-file-path relationship to a Map.  Later, a parser can query the Map via the getPath method to determine
-     * what file the entry came from.
+     * <p>As the preprocessor expands the CWL, for each process (workflow or tool) it encounters, it ensures that the process
+     * has an id (by assigning a UUID if necessary), then adds the current file path to a special dockstore metadata hint.
+     * This metadata hint is valid CWL and will propagate to a parsed representation, so we can later determine what file the
+     * process came from.
      *
      * <p>During expansion, the preprocessor tracks three quantities to prevent denial-of-service attacks or infinite
      * loops due to a recursive CWL: the file import depth, the (approximate) total length of the expanded CWL in characters, and
@@ -932,7 +949,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         private static final long DEFAULT_MAX_FILE_COUNT = 1000L;
 
         private final Set<SourceFile> sourceFiles;
-        private final Map<String, String> idToPath;
         private long charCount;
         private long fileCount;
         private final int maxDepth;
@@ -948,7 +964,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
          */
         public Preprocessor(Set<SourceFile> sourceFiles, int maxDepth, long maxCharCount, long maxFileCount) {
             this.sourceFiles = sourceFiles;
-            this.idToPath = new HashMap<>();
             this.charCount = 0;
             this.fileCount = 0;
             this.maxDepth = maxDepth;
@@ -993,9 +1008,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                 Map<String, Object> map = (Map<String, Object>)cwl;
 
-                // If the map represents a workflow or tool, ensure that it has a unique ID, record the ID->path relationship, and determine the CWL version
-                if (isEntry(map)) {
-                    idToPath.put(setUniqueIdIfAbsent(map), stripLeadingSlashes(currentPath));
+                // If the map represents a workflow or tool, make sure it has an ID, record the path in the metadata, and determine the CWL version
+                if (isProcess(map)) {
+                    setIdIfAbsent(map);
+                    setDockstoreMetadataHintValue(map, "path", stripLeadingSlashes(currentPath));
                     version = (String)map.getOrDefault("cwlVersion", version);
                 }
 
@@ -1064,17 +1080,47 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             cwl.replaceAll(v -> preprocess(v, currentPath, version, depth));
         }
 
-        private boolean isEntry(Map<String, Object> cwl) {
+        private boolean isProcess(Map<String, Object> cwl) {
             Object c = cwl.get("class");
             return "Workflow".equals(c) || "CommandLineTool".equals(c) || "ExpressionTool".equals(c) || "Operation".equals(c);
         }
 
-        private String setUniqueIdIfAbsent(Map<String, Object> entryCwl) {
+        private String setIdIfAbsent(Map<String, Object> entryCwl) {
             String currentId = (String)entryCwl.get("id");
-            if (currentId == null || idToPath.containsKey(currentId)) {
+            if (currentId == null) {
                 entryCwl.put("id", java.util.UUID.randomUUID().toString());
             }
             return (String)entryCwl.get("id");
+        }
+
+        private void setDockstoreMetadataHintValue(Map<String, Object> entryCwl, String key, String value) {
+            Object hints = entryCwl.get("hints");
+            if (hints == null) {
+                hints = new ArrayList<Object>();
+                entryCwl.put("hints", hints);
+            }
+            Map<String, String> metadata = null;
+            if (hints instanceof List) {
+                List<Object> hintsList = (List<Object>)hints;
+                metadata = findMetadataHint(hintsList);
+                if (metadata == null) {
+                    metadata = new HashMap<>();
+                    metadata.put("class", "dockstore_metadata");
+                    hintsList.add(metadata);
+                }
+            }
+            if (hints instanceof Map) {
+                Map<String, Object> hintsMap = (Map<String, Object>)hints;
+                metadata = (Map<String, String>)hintsMap.get("dockstore_metadata");
+                if (metadata == null) {
+                    metadata = new HashMap<>();
+                    metadata.put("class", "dockstore_metadata");
+                    hintsMap.put("dockstore_metadata", metadata);
+                }
+            }
+            if (metadata != null) {
+                metadata.put(key, value);
+            }
         }
 
         private boolean supportsMixin(String version) {
@@ -1173,15 +1219,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String fullMessage = "CWL might be recursive: " + message;
             LOG.error(fullMessage);
             throw new CustomWebApplicationException(fullMessage, HttpStatus.SC_UNPROCESSABLE_ENTITY);
-        }
-
-        /**
-         * Determine the path of the file that contained the specified entry.
-         * @param id entry identifier
-         * @returns file path
-         */
-        public String getPath(String id) {
-            return idToPath.get(id);
         }
     }
 }
