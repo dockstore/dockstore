@@ -100,11 +100,6 @@
             <url>https://gitlab.com/api/v4/projects/17865731/packages/maven</url>
         </repository>
         -->
-        <repository>
-            <id>in-project</id>
-            <name>In-Project Repo</name>
-            <url>file://${project.basedir}/libs</url>
-        </repository>
     </repositories>
 
     <licenses>

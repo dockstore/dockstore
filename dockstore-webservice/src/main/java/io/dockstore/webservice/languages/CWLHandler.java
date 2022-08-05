@@ -703,7 +703,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         if (existing == null) {
             existing = new RequirementOrHintState();
         }
-        List<Object> adds = deOptionalize(optionalAdds;
+        List<Object> adds = deOptionalize(optionalAdds);
         if (adds == null || adds.isEmpty()) {
             return existing;
         }

@@ -63,10 +63,5 @@
       <name>artifactory.broadinstitute.org</name>
       <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
     </repository>
-    <repository>
-      <id>in-project</id>
-      <name>In-Project Repo</name>
-      <url>file:///Users/svonworl/src/dockstore/dockstore/dockstore-language-plugin-parent/libs</url>
-    </repository>
   </repositories>
 </project>
