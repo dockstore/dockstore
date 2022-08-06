@@ -48,6 +48,10 @@ public class CWLHandlerPreprocessorTest {
         return new Preprocessor(files).preprocess(parse(content), rootPath);
     }
 
+    private String metadataHint(String path) {
+        return String.format("hints: [{ class: '%s', path: '%s' }]\n", CWLHandler.METADATA_HINT_CLASS, path);
+    }
+
     public void testNoSubsitutions() {
         final String arrayOfMaps = "-\n  a: b\n-\n  d: e";
         Assert.assertEquals(parse(arrayOfMaps), preprocess(arrayOfMaps, set()));
@@ -67,8 +71,8 @@ public class CWLHandlerPreprocessorTest {
 
     @Test
     public void testMixin() {
-        Assert.assertEquals(parse(V1_0 + WORKFLOW + "a: z\nb: y"), preprocess(V1_0 + WORKFLOW + "a: z\n$mixin: b", set(file("/b", "a: x\nb: y"))));
-        Assert.assertEquals(parse(V1_1 + WORKFLOW + "$mixin: v"), preprocess(V1_1 + WORKFLOW + "$mixin: v", set()));
+        Assert.assertEquals(parse(V1_0 + WORKFLOW + metadataHint("a") + "a: z\nb: y"), preprocess(V1_0 + WORKFLOW + "a: z\n$mixin: b", set(file("/b", "a: x\nb: y"))));
+        Assert.assertEquals(parse(V1_1 + WORKFLOW + metadataHint("a") + "$mixin: v"), preprocess(V1_1 + WORKFLOW + "$mixin: v", set()));
     }
 
     @Test
@@ -82,7 +86,7 @@ public class CWLHandlerPreprocessorTest {
     public void testMissingFile() {
         Assert.assertEquals(Collections.emptyMap(), preprocess("$import: b", set()));
         Assert.assertEquals("", preprocess("$include: b", set()));
-        Assert.assertEquals(parse(V1_0 + WORKFLOW + "a: x"), preprocess(V1_0 + WORKFLOW + "a: x\n$mixin: b", set()));
+        Assert.assertEquals(parse(V1_0 + WORKFLOW + metadataHint("a") + "a: x"), preprocess(V1_0 + WORKFLOW + "a: x\n$mixin: b", set()));
     }
 
     @Test

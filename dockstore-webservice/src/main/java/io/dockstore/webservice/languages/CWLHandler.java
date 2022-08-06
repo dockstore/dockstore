@@ -83,6 +83,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     public static final String CWL_VERSION_ERROR = "CWL descriptor should contain a cwlVersion starting with " + CWLHandler.CWL_VERSION_PREFIX + ", detected version ";
     public static final String CWL_NO_VERSION_ERROR = "CWL descriptor should contain a cwlVersion";
     public static final String CWL_PARSE_SECONDARY_ERROR = "Syntax incorrect. Could not ($)import or ($)include secondary file for run command: ";
+    public static final String METADATA_HINT_CLASS = "_dockstore_metadata";
     private static final String NODE_PREFIX = "dockstore_";
     private static final String TOOL_TYPE = "tool";
     private static final String WORKFLOW_TYPE = "workflow";
@@ -525,15 +526,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         if (hints == null) {
             return null;
         }
-        Map<String, String> metadata = findMetadataHint(hints);
+        Map<String, String> metadata = (Map<String, String>)findMapInList(hints, "class", METADATA_HINT_CLASS);
         if (metadata == null) {
             return null;
         }
         return metadata.get(key);
     }
 
-    private static Map<String, String> findMetadataHint(List<Object> hints) {
-        return (Map<String, String>)hints.stream().filter(obj -> obj instanceof Map && "dockstore_metadata".equals(((Map)obj).get("class"))).findFirst().orElse(null);
+    private static Map findMapInList(List<Object> list, Object key, Object value) {
+        return (Map)list.stream().filter(e -> e instanceof Map && value.equals(((Map)e).get(key))).findFirst().orElse(null);
     }
 
     private String getId(Process process) {
@@ -1011,7 +1012,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // If the map represents a workflow or tool, make sure it has an ID, record the path in the metadata, and determine the CWL version
                 if (isProcess(map)) {
                     setIdIfAbsent(map);
-                    setDockstoreMetadataHintValue(map, "path", stripLeadingSlashes(currentPath));
+                    setMetadataHint(map, Map.of("path", stripLeadingSlashes(currentPath)));
                     version = (String)map.getOrDefault("cwlVersion", version);
                 }
 
@@ -1093,33 +1094,26 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return (String)entryCwl.get("id");
         }
 
-        private void setDockstoreMetadataHintValue(Map<String, Object> entryCwl, String key, String value) {
+        private void setMetadataHint(Map<String, Object> entryCwl, Map<String, String> entries) {
+            // Create a hint Map that has the appropriate "class" and the desired entries
+            Map<String, String> classedEntries = new HashMap<>(entries);
+            classedEntries.put("class", METADATA_HINT_CLASS);
+            // Find the hints object
             Object hints = entryCwl.get("hints");
+            // If no hints, add an empty list
             if (hints == null) {
                 hints = new ArrayList<Object>();
                 entryCwl.put("hints", hints);
             }
-            Map<String, String> metadata = null;
+            // Add the new metadata hint to the hints, replacing the existing metadata hint if it exists.
+            // Hints can either be in List or "idmap" format, so handle both representations
             if (hints instanceof List) {
                 List<Object> hintsList = (List<Object>)hints;
-                metadata = findMetadataHint(hintsList);
-                if (metadata == null) {
-                    metadata = new HashMap<>();
-                    metadata.put("class", "dockstore_metadata");
-                    hintsList.add(metadata);
-                }
-            }
-            if (hints instanceof Map) {
+                hintsList.remove(findMapInList(hintsList, "class", METADATA_HINT_CLASS));
+                hintsList.add(classedEntries);
+            } else if (hints instanceof Map) {
                 Map<String, Object> hintsMap = (Map<String, Object>)hints;
-                metadata = (Map<String, String>)hintsMap.get("dockstore_metadata");
-                if (metadata == null) {
-                    metadata = new HashMap<>();
-                    metadata.put("class", "dockstore_metadata");
-                    hintsMap.put("dockstore_metadata", metadata);
-                }
-            }
-            if (metadata != null) {
-                metadata.put(key, value);
+                hintsMap.put(METADATA_HINT_CLASS, classedEntries);
             }
         }
 
