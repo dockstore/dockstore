@@ -95,14 +95,14 @@ public class ToolsWorkflowTestIT extends BaseIT {
 
     @Test
     public void testWorkflowToolCWL() throws IOException, ApiException {
-        // https://github.com/dockstore-testing/test_workflow_cwl
+        // https://github.com/DockstoreTestUser2/test_workflow_cwl
         // Input: 1st-workflow.cwl
         // Repo: test_workflow_cwl
         // Branch: master
         // Test: normal cwl workflow DAG
         // Return: JSON string with three tools, in arguments.cwl, grep.cwl, and wc.cwl
 
-        final List<String> strings = getJSON("dockstore-testing/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
+        final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
@@ -145,7 +145,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         // Test: normal wdl workflow DAG, multiple nodes
         // Return: JSON string with three tools and all of them have no docker requirement
 
-        final List<String> strings = getJSON("dockstore-testing/hello-dockstore-workflow", "/Dockstore.wdl", "wdl", "testWDL");
+        final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "wdl", "testWDL");
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
@@ -164,7 +164,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         // Test: Repo does not have required tool files called by workflow file
         // Return: JSON string blank array
 
-        final List<String> strings = getJSON("dockstore-testing/hello-dockstore-workflow", "/Dockstore.cwl", "cwl", "testCWL");
+        final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "cwl", "testCWL");
 
         //JSON will have node:[] and edges:[]
         Assert.assertEquals("JSON should not have any data tools", strings.size(), 1);

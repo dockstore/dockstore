@@ -112,7 +112,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         // refresh individual that is valid
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow", "--script" });
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         // refresh all
         runOldDockstoreClient(dockstore,
@@ -131,7 +131,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         // attempt to publish it
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow", "--script" });
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 1 published entry, there are " + count5, 1, count5);
@@ -139,7 +139,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         // unpublish
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow", "--unpub", "--script" });
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
 
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 0 published entries, there are " + count6, 0, count6);
@@ -158,7 +158,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
                 "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow/testname:testBoth", "--script" });
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
     }
 
     /**
@@ -176,7 +176,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         // add labels
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "label", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow", "--add", "test1", "--add", "test2",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--add", "test1", "--add", "test2",
                 "--script" });
 
         final long count = testingPostgres.runSelectStatement("select count(*) from entry_label", long.class);
@@ -185,7 +185,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         // remove labels
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "label", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow", "--remove", "test1", "--add", "test3",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--remove", "test1", "--add", "test3",
                 "--script" });
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from entry_label", long.class);
@@ -207,7 +207,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
                 "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow/testname", "--name", "master",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--name", "master",
                 "--workflow-path", "/Dockstore2.wdl", "--hidden", "true", "--script" });
 
         final long count = testingPostgres.runSelectStatement(
@@ -228,10 +228,10 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow", "--script" });
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow", "--script" });
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
         assertEquals("there should be 0 workflow versions, there are " + count, 0, count);
@@ -333,7 +333,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         // refresh individual that is valid
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow", "--script" });
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         // Check that no versions have a true dirty bit
         final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
@@ -342,7 +342,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         // Edit workflow path for a version
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow", "--name", "master", "--workflow-path",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--name", "master", "--workflow-path",
                 "/Dockstoredirty.cwl", "--script" });
 
         // There should be on dirty bit
@@ -352,7 +352,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         // Update default cwl
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                SourceControl.GITHUB.toString() + "/dockstore-testing/hello-dockstore-workflow", "--workflow-path", "/Dockstoreclean.cwl",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--workflow-path", "/Dockstoreclean.cwl",
                 "--script" });
 
         // There should be 3 versions with new cwl
