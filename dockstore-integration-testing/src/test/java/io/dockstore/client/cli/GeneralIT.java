@@ -511,7 +511,7 @@ public class GeneralIT extends BaseIT {
         io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
 
         Workflow workflow = workflowApi
-                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
+                .manualRegister("github", "dockstore-testing/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
 
         workflow = workflowApi.refresh(workflow.getId(), false);
         long workflowVersionId = workflow.getWorkflowVersions().stream().filter(w -> w.getReference().equals("testBoth")).findFirst().get().getId();
@@ -1840,7 +1840,7 @@ public class GeneralIT extends BaseIT {
         }
 
         try {
-            openApiWorkflows.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname",
+            openApiWorkflows.manualRegister("github", "dockstore-testing/hello-dockstore-workflow", "/Dockstore.wdl", "altname",
                 DescriptorLanguage.WDL.getShortName(), "/test.json");
             fail("Should not be able to register a workflow");
         } catch (io.dockstore.openapi.client.ApiException ex) {
@@ -1851,7 +1851,7 @@ public class GeneralIT extends BaseIT {
         testingPostgres.runUpdateStatement("update tool set ispublished = 'f'");
         openApiUsers.changeUsername("thisIsFine");
         openApiContainers.starEntry(starRequest1, tool1.getId());
-        openApiWorkflows.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
+        openApiWorkflows.manualRegister("github", "dockstore-testing/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
         io.dockstore.openapi.client.model.Workflow workflow1 = openApiWorkflows.getWorkflow(1000L, null);
 
         // Change back to continue testing

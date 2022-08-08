@@ -301,7 +301,7 @@ public class EntryResourceIT extends BaseIT {
         DockstoreTool existingTool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", "");
         assertNull(existingTool.getTopic());
 
-        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/dockstore.wdl", "",
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/hello-dockstore-workflow", "/dockstore.wdl", "",
                 DescriptorLanguage.WDL.getShortName(), "");
         // Registering a workflow sets the topic. Set it to null in the DB so the migration can be tested
         testingPostgres.runUpdateStatement(String.format("update workflow set topicAutomatic=null where id='%s'", workflow.getId()));

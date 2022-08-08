@@ -108,7 +108,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Test: normal cwl workflow DAG
         // Return: JSON with 2 nodes and an edge connecting it (nodes:{{untar},{compile}}, edges:{untar->compile})
 
-        final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
+        final List<String> strings = getJSON("dockstore-testing/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
@@ -172,7 +172,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Test: normal wdl workflow DAG, multiple nodes
         // Return: JSON with 5 nodes node and five edges
 
-        final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "wdl", "testWDL");
+        final List<String> strings = getJSON("dockstore-testing/hello-dockstore-workflow", "/Dockstore.wdl", "wdl", "testWDL");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
@@ -201,7 +201,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Test: Repo does not have required tool files called by workflow file
         // Return: JSON not blank, but it will have empty nodes and edges (nodes:{},edges:{})
 
-        final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "cwl", "testCWL");
+        final List<String> strings = getJSON("dockstore-testing/hello-dockstore-workflow", "/Dockstore.cwl", "cwl", "testCWL");
 
         //JSON will have node:[] and edges:[]
         Assert.assertEquals("JSON should not have any data for nodes and edges", strings.size(), 1);

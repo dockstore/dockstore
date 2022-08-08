@@ -70,7 +70,7 @@ import org.junit.rules.ExpectedException;
  */
 @Category(BitBucketTest.class)
 public class BitBucketGitHubWorkflowIT extends BaseIT {
-    public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
+    public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "dockstore-testing/hello-dockstore-workflow";
     public static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW =
         SourceControl.GITHUB.toString() + "/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
     public static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW =

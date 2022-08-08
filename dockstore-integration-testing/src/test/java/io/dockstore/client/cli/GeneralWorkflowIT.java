@@ -107,7 +107,7 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     public void testSmartRefreshGitHub() {
-        commonSmartRefreshTest(SourceControl.GITHUB, "DockstoreTestUser2/hello-dockstore-workflow", "testBoth");
+        commonSmartRefreshTest(SourceControl.GITHUB, "dockstore-testing/hello-dockstore-workflow", "testBoth");
     }
 
     /**
@@ -128,11 +128,11 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // refresh all
-        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "",
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/hello-dockstore-workflow", "/Dockstore.cwl", "",
                 DescriptorLanguage.CWL.getShortName(), "");
 
         // refresh individual that is valid
-        Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", BIOWORKFLOW, "");
+        Workflow workflow = workflowsApi.getWorkflowByPath("github.com/dockstore-testing/hello-dockstore-workflow", BIOWORKFLOW, "");
         workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertNotNull("Should have a license object even if it's null name", workflow.getLicenseInformation());
         Assert.assertNotNull("Should have no license name", workflow.getLicenseInformation().getLicenseName());
@@ -188,7 +188,7 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testManualPublish() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "wdl", SourceControl.GITHUB,
+        manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", "wdl", SourceControl.GITHUB,
             "/Dockstore.wdl", true);
     }
 
@@ -217,7 +217,7 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // Set up workflow
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "wdl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", "wdl",
                 SourceControl.GITHUB, "/Dockstore.wdl", true);
 
         // test good labels
@@ -241,7 +241,7 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // Set up workflow
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "wdl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", "wdl",
             SourceControl.GITHUB, "/Dockstore.wdl", true);
 
         // add labels
@@ -268,12 +268,12 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // Manually register workflow
-        manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "wdl", SourceControl.GITHUB,
+        manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "", "wdl", SourceControl.GITHUB,
             "/Dockstore.wdl", true);
 
         // Manually register the same workflow
         try {
-            manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "wdl", SourceControl.GITHUB,
+            manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "", "wdl", SourceControl.GITHUB,
                 "/Dockstore.wdl", true);
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("A workflow with the same path and name already exists."));
@@ -290,7 +290,7 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // Manually register workflow
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "wdl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", "wdl",
             SourceControl.GITHUB, "/Dockstore.wdl", true);
 
         // Update workflow
@@ -322,7 +322,7 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // refresh all and individual
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "cwl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", "cwl",
             SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // Restub workflow
@@ -341,7 +341,7 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // refresh all and individual
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "cwl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", "cwl",
             SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // Publish workflow
@@ -363,7 +363,7 @@ public class GeneralWorkflowIT extends BaseIT {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "wdl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", "wdl",
             SourceControl.GITHUB, "/Dockstore.wdl", true);
 
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow where descriptortype = 'wdl'", long.class);
@@ -387,7 +387,7 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // refresh all and individual
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "cwl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", "cwl",
             SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // Update workflow version to new path
@@ -492,7 +492,7 @@ public class GeneralWorkflowIT extends BaseIT {
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", DescriptorLanguage.CWL.toString(),
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", DescriptorLanguage.CWL.toString(),
             SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // confirm the default workflow topic settings
@@ -688,7 +688,7 @@ public class GeneralWorkflowIT extends BaseIT {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         // Manually register workflow
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "cwl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "", "cwl",
                 SourceControl.GITHUB, "/Dockstore.cwl", true);
         assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "master", workflow.getDefaultVersion());
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
@@ -713,7 +713,7 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // Manually register workflow
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "cwl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "", "cwl",
             SourceControl.GITHUB, "/Dockstore.cwl", true);
 
         // Update workflow with version with no metadata
@@ -778,7 +778,7 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // refresh all and individual
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "cwl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", "cwl",
             SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // check that workflow is valid and full
@@ -839,7 +839,7 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // refresh all and individual
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "cwl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-dockstore-workflow", "testname", "cwl",
             SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // Check that no versions have a true dirty bit

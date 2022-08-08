@@ -61,7 +61,7 @@ import org.junit.rules.ExpectedException;
 
 @Category({ ConfidentialTest.class, WorkflowTest.class })
 public class HostedWorkflowIT extends BaseIT {
-    public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
+    public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "dockstore-testing/hello-dockstore-workflow";
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
