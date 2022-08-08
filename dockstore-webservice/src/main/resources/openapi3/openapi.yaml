@@ -5047,8 +5047,6 @@ paths:
           description: A user with the specified username
         "400":
           description: Bad request
-        "403":
-          description: Forbidden
         "404":
           description: User not found
       tags:
