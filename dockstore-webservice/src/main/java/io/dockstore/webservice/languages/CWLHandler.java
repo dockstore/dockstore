@@ -353,6 +353,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // Parse the preprocessed document using cwljava
             Object rootObject;
             try {
+                // parse the document, using an instance of LoadingOptions which safely map any file loads, since all files should have been loaded by the preprocesser.
                 rootObject = RootLoader.loadDocument(mapping, "", constructSafeLoadingOptions());
             } catch (ValidationException e) {
                 LOG.error("The workflow does not seem to conform to CWL specs.");
@@ -428,8 +429,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     private void processWorkflow(Workflow workflow, RequirementOrHintState parentRequirementState,  RequirementOrHintState parentHintState, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
-        // LOG.error("XXX processing workflow " + deOptionalize(workflow.getId()));
-
         // Join parent and current requirements and hints.
         RequirementOrHintState requirementState = addToRequirementOrHintState(parentRequirementState, workflow.getRequirements());
         RequirementOrHintState hintState = addToRequirementOrHintState(parentHintState, workflow.getHints());
@@ -480,7 +479,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     addToRequirementOrHintState(stepHintState, process.getHints()));
                 stepToType.put(workflowStepId, computeProcessType(process));
                 currentPath = getDockstoreMetadataHintValue(deOptionalize(process.getHints()), "path");
-                LOG.error("currentPath " + currentPath);
                 if (process instanceof Workflow) {
                     processWorkflow((Workflow)process, stepRequirementState, stepHintState, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 }
@@ -500,8 +498,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             DockerSpecifier dockerSpecifier = null;
             String dockerUrl = null;
-            String stepType = stepToType.get(workflowStepId);
-            if ((stepType.equals(WORKFLOW_TYPE) || stepType.equals(TOOL_TYPE)) && !Strings.isNullOrEmpty(stepDockerPath)) {
+            if ((run instanceof Workflow || run instanceof CommandLineTool) && !Strings.isNullOrEmpty(stepDockerPath)) {
                 // CWL doesn't support parameterized docker pulls. Must be a string.
                 dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerPath, DockerImageReference.LITERAL);
                 dockerUrl = getURLFromEntry(stepDockerPath, dao, dockerSpecifier);
@@ -589,8 +586,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 String[] sourceSplit = ((String)sources).replaceFirst("^/", "").split("/");
                 sourceSplit = Arrays.copyOfRange(sourceSplit, Math.min(skip, sourceSplit.length), sourceSplit.length);
                 if (sourceSplit.length > 1) {
-                    String v = nodePrefix + sourceSplit[0].replaceFirst("#", "");
-                    endDependencies.add(v);
+                    endDependencies.add(nodePrefix + sourceSplit[0].replaceFirst("#", ""));
                 }
             } else {
                 List<String> filteredDependencies = filterDependent((List<String>)sources, nodePrefix, skip);
