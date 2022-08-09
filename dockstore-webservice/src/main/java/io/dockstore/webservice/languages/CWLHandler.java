@@ -354,7 +354,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             Object rootObject;
             try {
                 // parse the document, using an instance of LoadingOptions which safely map any file loads, since all files should have been loaded by the preprocesser.
-                rootObject = RootLoader.loadDocument(mapping, "", constructSafeLoadingOptions());
+                rootObject = RootLoader.loadDocument(mapping, "/", constructSafeLoadingOptions());
             } catch (ValidationException e) {
                 LOG.error("The workflow does not seem to conform to CWL specs.");
                 LOG.error("Validation exception: " + e.getMessage(), e);
@@ -408,7 +408,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private Map<String, Object> convertToolToSingleStepWorkflow(Map<String, Object> tool) {
         Map<String, Object> workflow = new HashMap<>();
         workflow.put("cwlVersion", "v1.2");
-        workflow.put("id", "wrapper");
+        workflow.put("id", "_dockstore_wrapper");
         workflow.put("class", "Workflow");
         workflow.put("inputs", Map.of());
         workflow.put("outputs", Map.of());
@@ -437,7 +437,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         for (Object workflowStepObj: workflow.getSteps()) {
             WorkflowStep workflowStep = (WorkflowStep)workflowStepObj;
             String workflowStepId = convertStepId(deOptionalize(workflowStep.getId()));
-            LOG.error("XXX processing step " + workflowStepId);
 
             if (depth == 0) {
                 ArrayList<String> stepDependencies = new ArrayList<>();
@@ -528,28 +527,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     private static Map findMapInList(List<Object> list, Object key, Object value) {
         return (Map)list.stream().filter(e -> e instanceof Map && value.equals(((Map)e).get(key))).findFirst().orElse(null);
-    }
-
-    private String getId(Process process) {
-        Optional<String> optionalId;
-        // This `if` statement is necessary because the cwljava `Identified` interface, which `Process` extends,
-        //  doesn't include the `getId()` function.
-        if (process instanceof Workflow) {
-            optionalId = ((Workflow)process).getId();
-        } else if (process instanceof CommandLineTool) {
-            optionalId = ((CommandLineTool)process).getId();
-        } else if (process instanceof ExpressionTool) {
-            optionalId = ((ExpressionTool)process).getId();
-        } else if (process instanceof Operation) {
-            optionalId = ((Operation)process).getId();
-        } else {
-            optionalId = null;
-        }
-        String id = deOptionalize(optionalId);
-        if (id == null) {
-            return null;
-        }
-        return lastField(id, "/").replaceFirst("^#", "");
     }
 
     private String lastField(String value, String separator) {
