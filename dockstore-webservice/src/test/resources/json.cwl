@@ -1,5 +1,5 @@
 {
-  "cwlVersion": "v1.0", 
+  "cwlVersion": "v1.0",
   "class": "Workflow",
   "inputs": {
     "input_file": "File",

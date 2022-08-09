@@ -82,7 +82,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     public static final String CWL_PARSE_ERROR = "Unable to parse CWL workflow, ";
     public static final String CWL_VERSION_ERROR = "CWL descriptor should contain a cwlVersion starting with " + CWLHandler.CWL_VERSION_PREFIX + ", detected version ";
     public static final String CWL_NO_VERSION_ERROR = "CWL descriptor should contain a cwlVersion";
-    public static final String CWL_PARSE_SECONDARY_ERROR = "Syntax incorrect. Could not ($)import or ($)include secondary file for run command: ";
+    public static final String CWL_PARSE_SECONDARY_ERROR = "Syntax incorrect. Run command should specify a file name or process: ";
     public static final String METADATA_HINT_CLASS = "_dockstore_metadata";
     private static final String NODE_PREFIX = "dockstore_";
     private static final String TOOL_TYPE = "tool";
@@ -353,16 +353,16 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // Parse the preprocessed document using cwljava
             Object rootObject;
             try {
-                // parse the document, using an instance of LoadingOptions which safely map any file loads, since all files should have been loaded by the preprocesser.
+                // parse the document, using a LoadingOptions instance which neutralizes any resources loads, since all files should have already been loaded by the preprocesser.
                 rootObject = RootLoader.loadDocument(mapping, "/", constructSafeLoadingOptions());
             } catch (ValidationException e) {
                 LOG.error("The workflow does not seem to conform to CWL specs.");
                 LOG.error("Validation exception: " + e.getMessage(), e);
-                return Optional.empty();
+                throw new CustomWebApplicationException(CWL_PARSE_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
             if (!(rootObject instanceof Workflow)) {
                 LOG.error("Unsupported CWL construct.");
-                return Optional.empty();
+                throw new CustomWebApplicationException(CWL_PARSE_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
 
             // Process the parse workflow
@@ -435,7 +435,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         // Iterate through steps to find dependencies and docker requirements
         for (Object workflowStepObj: workflow.getSteps()) {
-            WorkflowStep workflowStep = (WorkflowStep)workflowStepObj;
+            WorkflowStep workflowStep = (WorkflowStep)workflowStepObj; // per the spec, the only possible type is WorkflowStep
             String workflowStepId = convertStepId(deOptionalize(workflowStep.getId()));
 
             if (depth == 0) {
@@ -467,7 +467,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             // Check for docker requirement within workflow step file
             Object run = workflowStep.getRun();
-
             String currentPath;
 
             if (run instanceof Process) {
