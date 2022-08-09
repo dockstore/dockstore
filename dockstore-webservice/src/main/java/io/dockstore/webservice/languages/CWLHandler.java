@@ -518,7 +518,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         if (hints == null) {
             return null;
         }
-        Map<String, String> metadata = (Map<String, String>)findMapInList(hints, "class", METADATA_HINT_CLASS);
+        Map<String, String> metadata = findMapInList(hints, "class", METADATA_HINT_CLASS);
         if (metadata == null) {
             return null;
         }
@@ -543,10 +543,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return OPERATION_TYPE;
         }
         return "n/a";
-    }
-
-    private String convertToString(Object object) {
-        return object != null ? object.toString() : null;
     }
 
     private void processDependencies(String nodePrefix, List<String> endDependencies, Object sources, int skip) {
@@ -656,9 +652,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     /**
      * Determine dockerPull from requirement and hint state (requirements take precedence).
      *
-     * @param requirements
-     * @param hints
-     * @return
+     * @param requirementState
+     * @param hintState
+     * @return docker image name
      */
     private String getDockerPull(RequirementOrHintState requirementState, RequirementOrHintState hintState) {
         String dockerPull = requirementState.getDockerPull();
@@ -669,6 +665,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     private <T> T deOptionalize(Optional<T> optional) {
+        // Cwljava did actually return a null Optional reference (optional == null), thus this if statement
         if (optional == null) {
             return null;
         }
