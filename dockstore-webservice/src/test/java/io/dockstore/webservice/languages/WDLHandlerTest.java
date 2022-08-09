@@ -9,7 +9,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -254,7 +253,7 @@ public class WDLHandlerTest {
         }
 
         @Override
-        public List<SourceControlOrganization> getOrganizations() {
+        public Set<String> getOrganizations() {
             return null;
         }
 

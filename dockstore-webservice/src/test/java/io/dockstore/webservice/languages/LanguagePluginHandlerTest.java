@@ -11,7 +11,6 @@ import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -338,7 +337,7 @@ public class LanguagePluginHandlerTest {
         }
 
         @Override
-        public List<SourceControlOrganization> getOrganizations() {
+        public Set<String> getOrganizations() {
             return null;
         }
 

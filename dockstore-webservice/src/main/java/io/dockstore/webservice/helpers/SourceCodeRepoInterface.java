@@ -30,7 +30,6 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -739,8 +738,11 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Gets organizations for the current user
+     * Gets organizations that the user is a member of. Currently only implemented by
+     * <code>GitHubSourceCodeRepo</code>; other implementations throw
+     * <code>UnsupportedOperationException</code>.
+     *
      * @return
      */
-    public abstract List<SourceControlOrganization> getOrganizations();
+    public abstract Set<String> getOrganizations();
 }
