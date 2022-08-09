@@ -529,14 +529,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return (Map)list.stream().filter(e -> e instanceof Map && value.equals(((Map)e).get(key))).findFirst().orElse(null);
     }
 
-    private String lastField(String value, String separator) {
-        String[] fields = value.split(separator);
-        if (fields.length < 1) {
-            return value;
-        }
-        return fields[fields.length - 1];
-    }
-
     private String computeProcessType(Process process) {
         if (process instanceof Workflow) {
             return WORKFLOW_TYPE;
