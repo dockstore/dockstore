@@ -356,18 +356,17 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // parse the document, using a LoadingOptions instance which neutralizes any resources loads, since all files should have already been loaded by the preprocesser.
                 rootObject = RootLoader.loadDocument(mapping, "/", constructSafeLoadingOptions());
             } catch (ValidationException e) {
-                LOG.error("The workflow does not seem to conform to CWL specs.");
                 LOG.error("Validation exception: " + e.getMessage(), e);
                 throw new CustomWebApplicationException(CWL_PARSE_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
             if (!(rootObject instanceof Workflow)) {
-                LOG.error("Unsupported CWL construct.");
+                LOG.error("Top level construct was not a Workflow.");
                 throw new CustomWebApplicationException(CWL_PARSE_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
 
             // Process the parse workflow
             Workflow workflow = (Workflow)rootObject;
-            processWorkflow(workflow, null, null, 0, null, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+            processWorkflow(workflow, null, null, 0, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
             // Return the requested information
             if (type == LanguageHandlerInterface.Type.DAG) {
@@ -428,7 +427,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private void processWorkflow(Workflow workflow, RequirementOrHintState parentRequirementState,  RequirementOrHintState parentHintState, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
+    private void processWorkflow(Workflow workflow, RequirementOrHintState parentRequirementState,  RequirementOrHintState parentHintState, int depth, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         // Join parent and current requirements and hints.
         RequirementOrHintState requirementState = addToRequirementOrHintState(parentRequirementState, workflow.getRequirements());
         RequirementOrHintState hintState = addToRequirementOrHintState(parentHintState, workflow.getHints());
@@ -478,7 +477,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 stepToType.put(workflowStepId, computeProcessType(process));
                 currentPath = getDockstoreMetadataHintValue(deOptionalize(process.getHints()), "path");
                 if (process instanceof Workflow) {
-                    processWorkflow((Workflow)process, stepRequirementState, stepHintState, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                    processWorkflow((Workflow)process, stepRequirementState, stepHintState, depth + 1, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 }
 
             } else if (run instanceof String) {
@@ -664,7 +663,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     private <T> T deOptionalize(Optional<T> optional) {
-        // Cwljava did actually return a null Optional reference (optional == null), thus this if statement
+        // The cwljava parser did actually return a null Optional reference, thus necessitating the following if statement
         if (optional == null) {
             return null;
         }
