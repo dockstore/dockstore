@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.GenericType;
 import org.apache.commons.lang3.StringUtils;
@@ -202,12 +201,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
         return file;
     }
-
-    @Override
-    public Set<String> getOrganizations() {
-        throw new UnsupportedOperationException("apps not supported for bitbucket yet");
-    }
-
     @Override
     public void updateReferenceType(String repositoryId, Version version) {
         if (version.getReferenceType() != Version.ReferenceType.UNSET) {

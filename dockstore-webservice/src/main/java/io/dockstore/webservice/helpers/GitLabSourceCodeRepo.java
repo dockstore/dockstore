@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.gitlab.api.GitlabAPI;
 import org.gitlab.api.TokenType;
@@ -278,11 +277,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info("could not find " + path + " at " + e.getMessage());
         }
         return null;
-    }
-
-    @Override
-    public Set<String> getOrganizations() {
-        throw new UnsupportedOperationException("apps not supported for gitlab yet");
     }
 
     @Override

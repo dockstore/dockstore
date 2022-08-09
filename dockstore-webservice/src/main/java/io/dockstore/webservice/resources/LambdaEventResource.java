@@ -98,7 +98,7 @@ public class LambdaEventResource {
 
     /**
      * Returns a list of repository names, e.g, "dockstore-ui2" for org/repo of "dockstore/dockstore-ui2"
-     * that the user has been granted specific access to in <code>organization</code>
+     * that the user has been granted specific access to in the <code>organization</code>
      * @param organization
      * @param sourceCodeRepoInterface
      * @return

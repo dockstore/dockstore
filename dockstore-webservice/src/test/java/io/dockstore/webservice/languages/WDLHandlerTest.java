@@ -253,11 +253,6 @@ public class WDLHandlerTest {
         }
 
         @Override
-        public Set<String> getOrganizations() {
-            return null;
-        }
-
-        @Override
         public void updateReferenceType(String repositoryId, Version version) {
 
         }

@@ -738,11 +738,11 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Gets organizations that the user is a member of. Currently only implemented by
-     * <code>GitHubSourceCodeRepo</code>; other implementations throw
-     * <code>UnsupportedOperationException</code>.
-     *
+     * Returns
      * @return
      */
-    public abstract Set<String> getOrganizations();
+    public Set<String> getOrganizations() {
+        return getWorkflowGitUrl2RepositoryId().values().stream()
+            .map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+    }
 }

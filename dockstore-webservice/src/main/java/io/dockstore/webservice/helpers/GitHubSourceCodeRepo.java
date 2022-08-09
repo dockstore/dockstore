@@ -324,15 +324,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Returns the set of organizations as well as the personal account the user has some level of
-     * access to.
+     * access to. Overrides the base implementation for performance, avoiding use of
+     * RepositoryListFilter.MEMBER -- although performance tests results are mixed.
      *
      * @return
      */
+    @Override
     public Set<String> getOrganizations() {
         try {
             // The organizations of individual repos the user has been granted access to
+            final Collection<String> inlineMe =
+                getWorkflowGitUrl2RepositoryId(RepositoryListFilter.MEMBER).values();
             final Set<String> orgsViaRepoMembership =
-                getWorkflowGitUrl2RepositoryId(RepositoryListFilter.MEMBER).values().stream()
+                inlineMe.stream()
                     .map(fullRepoName -> fullRepoName.split("/")[0])
                     .collect(Collectors.toSet());
             // The user's account, e.g., coverbeck

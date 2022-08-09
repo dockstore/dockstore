@@ -1109,11 +1109,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "See OpenApi for details")
     public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                             @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry) {
+
         SourceCodeRepoInterface sourceCodeRepo = createSourceCodeRepo(authUser, gitRegistry, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
         if (sourceCodeRepo == null) {
             return Set.of();
+        } else {
+            return sourceCodeRepo.getOrganizations();
         }
-        return Set.copyOf(sourceCodeRepo.getOrganizations());
     }
 
     @GET

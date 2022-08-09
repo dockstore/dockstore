@@ -345,6 +345,29 @@ public class WebhookIT extends BaseIT {
         testDefaultVersion(client);
     }
 
+    @Test
+    public void testLambdaEvents() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        final LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
+        final List<String> userOrganizations = usersApi.getUserOrganizations("github.com");
+        assertTrue(userOrganizations.contains("dockstoretesting")); // Org user is member of
+        assertTrue(userOrganizations.contains("DockstoreTestUser2")); // The GitHub account
+        final String dockstoreTestUser = "DockstoreTestUser";
+        assertTrue(userOrganizations.contains(dockstoreTestUser)); // User has access to only one repo in the org, DockstoreTestUser/dockstore-whalesay-2
+
+        assertEquals("No events at all works", 0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size());
+
+        testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization) values ('whatevs', 'repo-no-access', 'DockstoreTestUser')");
+        assertEquals("Can't see event for repo with no access", 0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size());
+
+        testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization) values ('whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser')");
+        final List<io.dockstore.openapi.client.model.LambdaEvent> events =
+            lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10);
+        assertEquals("Can see event for repo with access, not one without", 1, events.size());
+    }
+
     private void testDefaultVersion(io.dockstore.openapi.client.api.WorkflowsApi client) {
         io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
         assertNull(workflow2.getDefaultVersion());
