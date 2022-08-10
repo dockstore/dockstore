@@ -145,7 +145,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
     private static final String CLOUD_INSTANCE_ID_DESCRIPTION = "ID of cloud instance to update/delete";
     private static final String USER_NOT_FOUND_DESCRIPTION = "User not found";
-    private static final String USER_PROFILES = "userProfiles";
+    public static final String USER_PROFILES = "userProfiles";
     private static final String USER_INCLUDE = USER_PROFILES + ", ...";
     private static final String USER_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + USER_INCLUDE;
     private final UserDAO userDAO;
@@ -218,19 +218,16 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/username/{username}")
-    @Operation(operationId = "listUser", description = "Get a user by username.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "listUser", description = "Get a user by username.")
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A user with the specified username", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Get a user by username.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User listUser(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-            @ApiParam("Username of user to return") @PathParam("username") @NotBlank String username,
+    public User listUser(@ApiParam("Username of user to return") @PathParam("username") @NotBlank String username,
         @Parameter(name = "include", description = USER_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = USER_INCLUDE_MESSAGE) @QueryParam("include") String include) {
         @SuppressWarnings("deprecation")
         User user = userDAO.findByUsername(username);
         checkNotNullUser(user);
-        checkUserId(authUser, user.getId());
 
         initializeAdditionalFields(include, user);
         return user;

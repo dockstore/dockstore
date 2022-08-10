@@ -16,6 +16,7 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+import static io.dockstore.webservice.resources.UserResource.USER_PROFILES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -596,7 +597,6 @@ public class UserResourceIT extends BaseIT {
         Profile userProfile = usersApi.getUser().getUserProfiles().get("github.com");
 
         assertNull(userProfile.getName());
-        assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getBio());
         assertNull(userProfile.getLocation());
@@ -608,7 +608,6 @@ public class UserResourceIT extends BaseIT {
         userProfile = usersApi.getUser().getUserProfiles().get("github.com");
 
         assertNull(userProfile.getName());
-        assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
         assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
         assertEquals("I am a test user", userProfile.getBio());
         assertEquals("Toronto", userProfile.getLocation());
@@ -698,6 +697,30 @@ public class UserResourceIT extends BaseIT {
     }
 
     /**
+     * tests that a normal user can grab the user profile for a different user to support user pages
+     */
+    @Test
+    public void testUserProfiles() {
+        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
+        // The API call updateUserMetadata() should not throw an error and exit if any users' tokens are out of date or absent
+        // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
+        adminApi.updateUserMetadata();
+
+        io.dockstore.openapi.client.ApiClient unauthUserWebClient = CommonTestUtilities.getOpenAPIWebClient(false, null, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi unauthUserApi = new io.dockstore.openapi.client.api.UsersApi(unauthUserWebClient);
+
+
+        final io.dockstore.openapi.client.model.User userProfile = unauthUserApi.listUser(USER_2_USERNAME, USER_PROFILES);
+        assertFalse(userProfile.getUserProfiles().isEmpty());
+
+        // check to see that DB actually had an email in the first place and the test above wasn't true by default
+        final String email = testingPostgres.runSelectStatement(String.format("select email from user_profile  WHERE username = '%s' and token_type = 'github.com'", "DockstoreTestUser2"),
+            String.class);
+        assertFalse(email.isEmpty());
+    }
+
+    /**
      * Tests the endpoint used to sync all users' Github information called by a user who has a valid GitHub token
      * and one user who has a missing or outdated GitHub token
      */
@@ -722,7 +745,6 @@ public class UserResourceIT extends BaseIT {
 
         // DockstoreUser2's profile elements should be initially set to null since the GitHub metadata isn't synced yet
         assertNull(userProfile.getName());
-        assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getBio());
@@ -735,7 +757,6 @@ public class UserResourceIT extends BaseIT {
 
         userProfile = userApi.getUser().getUserProfiles().get("github.com");
         assertNull(userProfile.getName());
-        assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
         assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
         assertEquals("Toronto", userProfile.getLocation());
         assertEquals("I am a test user", userProfile.getBio());
@@ -759,7 +780,6 @@ public class UserResourceIT extends BaseIT {
         testingPostgres.runUpdateStatement("DELETE FROM token WHERE tokensource <> 'dockstore'");
 
         assertNull(userProfile.getName());
-        assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getBio());
@@ -772,7 +792,6 @@ public class UserResourceIT extends BaseIT {
 
         userProfile = userApi.getUser().getUserProfiles().get("github.com");
         assertNull(userProfile.getName());
-        assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getBio());
