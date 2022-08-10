@@ -342,7 +342,6 @@ public class DockerRepoResource
         @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
         Tool foundTool = toolDAO.findById(containerId);
         checkNotNullEntry(foundTool);
-        checkNotHosted(foundTool);
         checkCanWrite(user, foundTool);
 
         // Don't need to check for duplicate tool because the tool path can't be updated
@@ -394,14 +393,18 @@ public class DockerRepoResource
      * @param newTool      the new tool from the webservice
      */
     private void updateInfo(Tool originalTool, Tool newTool) {
-        // to do, this could probably be better handled better
+        //TODO this could probably be better handled better, maybe with some Jackson magic?
 
         // Add descriptor type default paths here
-        originalTool.setDefaultCwlPath(newTool.getDefaultCwlPath());
-        originalTool.setDefaultWdlPath(newTool.getDefaultWdlPath());
-        originalTool.setDefaultDockerfilePath(newTool.getDefaultDockerfilePath());
-        originalTool.setDefaultTestCwlParameterFile(newTool.getDefaultTestCwlParameterFile());
-        originalTool.setDefaultTestWdlParameterFile(newTool.getDefaultTestWdlParameterFile());
+        // ignore path changes for hosted workflows
+        if (!Objects.equals(originalTool.getMode(), ToolMode.HOSTED)) {
+            originalTool.setDefaultCwlPath(newTool.getDefaultCwlPath());
+            originalTool.setDefaultWdlPath(newTool.getDefaultWdlPath());
+            originalTool.setDefaultDockerfilePath(newTool.getDefaultDockerfilePath());
+            originalTool.setDefaultTestCwlParameterFile(newTool.getDefaultTestCwlParameterFile());
+            originalTool.setDefaultTestWdlParameterFile(newTool.getDefaultTestWdlParameterFile());
+            originalTool.setGitUrl(newTool.getGitUrl());
+        }
 
         if (newTool.getDefaultVersion() != null) {
             if (!originalTool.checkAndSetDefaultVersion(newTool.getDefaultVersion())) {
@@ -409,10 +412,11 @@ public class DockerRepoResource
             }
         }
 
-        originalTool.setGitUrl(newTool.getGitUrl());
         originalTool.setForumUrl(newTool.getForumUrl());
         originalTool.setTopicManual(newTool.getTopicManual());
-        originalTool.setTopicSelection(newTool.getTopicSelection());
+        if (!Objects.equals(originalTool.getMode(), ToolMode.HOSTED)) {
+            originalTool.setTopicSelection(newTool.getTopicSelection());
+        }
 
         if (originalTool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             originalTool.setToolMaintainerEmail(newTool.getToolMaintainerEmail());

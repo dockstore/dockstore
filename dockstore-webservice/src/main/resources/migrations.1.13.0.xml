@@ -81,4 +81,14 @@
         <modifyDataType tableName="apptool" columnName="workflowname" newDataType="varchar(256)"/>
         <modifyDataType tableName="service" columnName="workflowname" newDataType="varchar(256)"/>
     </changeSet>
+    <changeSet author="dyuen" id="hostedtopicmanual">
+        <update tableName="workflow">
+            <column name="topicselection" value ="MANUAL"/>
+            <where>mode= 'HOSTED'</where>
+        </update>
+        <update tableName="tool">
+            <column name="topicselection" value ="MANUAL"/>
+            <where>mode = 'HOSTED'</where>
+        </update>
+    </changeSet>
 </databaseChangeLog>

@@ -503,8 +503,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
         Workflow wf = workflowDAO.findById(workflowId);
         checkNotNullEntry(wf);
-        // TODO: Need to handle updating a hosted workflow's workflow-level properties such as forumUrl and topic
-        checkNotHosted(wf);
         checkCanWrite(user, wf);
 
         Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false, BioWorkflow.class).orElse(null);
@@ -539,8 +537,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     // Used to update workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
-        // If workflow is FULL and descriptor type is being changed throw an error
-        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) && !Objects
+        // If workflow is FULL or HOSTED and descriptor type is being changed throw an error
+        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) || Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED) && !Objects
             .equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
             throw new CustomWebApplicationException("You cannot change the descriptor type of a FULL workflow.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -550,11 +548,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
         }
 
-        oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
-        oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
+        // ignore path changes for hosted workflows
+        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) {
+            oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
+            oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
+        }
         oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
         oldWorkflow.setTopicManual(newWorkflow.getTopicManual());
-        oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
+
+        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) {
+            oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
+        }
+
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
