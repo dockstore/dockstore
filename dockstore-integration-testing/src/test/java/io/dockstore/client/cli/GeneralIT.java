@@ -558,7 +558,7 @@ public class GeneralIT extends BaseIT {
         final io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(openApiWebClient);
         final io.dockstore.openapi.client.model.Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "foo", DescriptorLanguage.WDL.toString(), null, null);
         hostedWorkflow.setTopicManual("new foo");
-        assertSame(hostedWorkflow.getTopicSelection(), io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.MANUAL);
+        assertSame(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.MANUAL, hostedWorkflow.getTopicSelection());
         hostedWorkflow.setTopicSelection(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.AUTOMATIC);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiWebClient);
         final io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.updateWorkflow(hostedWorkflow.getId(), hostedWorkflow);
@@ -574,7 +574,7 @@ public class GeneralIT extends BaseIT {
         final io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(openApiWebClient);
         final io.dockstore.openapi.client.model.DockstoreTool hostedTool = hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "foo", DescriptorLanguage.WDL.toString(), null, null);
         hostedTool.setTopicManual("new foo");
-        assertSame(hostedTool.getTopicSelection(), io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.MANUAL);
+        assertSame(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.MANUAL, hostedTool.getTopicSelection());
         hostedTool.setTopicSelection(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.AUTOMATIC);
         io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(openApiWebClient);
         final io.dockstore.openapi.client.model.DockstoreTool dockstoreTool = containersApi.updateContainer(hostedTool.getId(), hostedTool);
