@@ -538,9 +538,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     // Used to update workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
         // If workflow is FULL or HOSTED and descriptor type is being changed throw an error
-        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) || Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED) && !Objects
+        if ((Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) || Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) && !Objects
             .equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
-            throw new CustomWebApplicationException("You cannot change the descriptor type of a FULL workflow.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("You cannot change the descriptor type of a FULL or HOSTED workflow.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Only copy workflow type if old workflow is a STUB

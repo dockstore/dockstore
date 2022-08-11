@@ -394,6 +394,9 @@ public class DockerRepoResource
      */
     private void updateInfo(Tool originalTool, Tool newTool) {
         //TODO this could probably be better handled better, maybe with some Jackson magic?
+        if (!Objects.equals(originalTool.getMode(), newTool.getMode())) {
+            throw new CustomWebApplicationException("You cannot change the mode of a tool.", HttpStatus.SC_BAD_REQUEST);
+        }
 
         // Add descriptor type default paths here
         // ignore path changes for hosted workflows
