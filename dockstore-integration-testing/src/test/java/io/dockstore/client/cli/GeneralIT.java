@@ -130,7 +130,7 @@ public class GeneralIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false);
+        CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false, testingPostgres);
     }
 
     @Test

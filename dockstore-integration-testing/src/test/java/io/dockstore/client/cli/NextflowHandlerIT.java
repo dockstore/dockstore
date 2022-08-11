@@ -32,7 +32,7 @@ public class NextflowHandlerIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false);
+        CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false, testingPostgres);
         String githubToken = testingPostgres
                 .runSelectStatement("select content from token where username='DockstoreTestUser2' and tokensource='github.com'",
                         String.class);

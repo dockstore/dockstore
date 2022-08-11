@@ -90,12 +90,12 @@ public class UserResourceIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
 
     @Test
     public void testAddUserToOrgs() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
@@ -801,7 +801,7 @@ public class UserResourceIT extends BaseIT {
 
     @Test
     public void testGetStarredWorkflowsAndServices() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
