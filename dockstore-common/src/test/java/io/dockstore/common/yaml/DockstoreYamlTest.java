@@ -272,6 +272,16 @@ public class DockstoreYamlTest {
     }
 
     @Test
+    public void testDuplicateKeys() {
+        try {
+            DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML + "\nworkflows: []\n");
+            Assert.fail("Should have thrown because of duplicate key");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue("Error message should contain the name of the duplicate key", ex.getMessage().contains("workflows"));
+        }
+    }
+
+    @Test
     public void testDifferentCaseForWorkflowSubclass() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE12_YAML);
         final List<YamlWorkflow> workflows = dockstoreYaml12.getWorkflows();
