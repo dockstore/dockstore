@@ -171,10 +171,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String WORKFLOW_INCLUDE = VERSIONS + ", " + ORCID_PUT_CODES + ", " + VERSION_INCLUDE;
     private static final String VERSION_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VERSION_INCLUDE;
     private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE + ", " + VERSION_INCLUDE;
-    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
     public static final String A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB = "A workflow must be unpublished to restub.";
     public static final String A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB = "A workflow must have no issued DOIs to restub";
     public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB = "A workflow must have no snapshots to restub, you may consider unpublishing";
+    public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -540,7 +540,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // If workflow is FULL or HOSTED and descriptor type is being changed throw an error
         if ((Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) || Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) && !Objects
             .equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
-            throw new CustomWebApplicationException("You cannot change the descriptor type of a FULL or HOSTED workflow.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW, HttpStatus.SC_BAD_REQUEST);
         }
 
         // Only copy workflow type if old workflow is a STUB
