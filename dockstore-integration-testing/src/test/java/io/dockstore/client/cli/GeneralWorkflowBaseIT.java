@@ -13,6 +13,12 @@ import java.util.List;
 
 public class GeneralWorkflowBaseIT extends BaseIT {
 
+
+    /**
+     * Verifies that Checksums are saved.
+     *
+     * @param tags
+     */
     protected static void verifyChecksumsAreSaved(List<Tag> tags) {
         assertTrue("The list of tags should not be empty", tags.size() > 0);
         for (Tag tag : tags) {
@@ -27,6 +33,13 @@ public class GeneralWorkflowBaseIT extends BaseIT {
         }
     }
 
+    /**
+     * Refreshes after deleting tag.
+     *
+     * @param toolApi
+     * @param tool
+     * @param tags
+     */
     protected static void refreshAfterDeletedTag(ContainersApi toolApi, DockstoreTool tool, List<Tag> tags) {
         String imageID = tags.get(0).getImages().get(0).getImageID();
 
