@@ -196,7 +196,7 @@ public final class CommonTestUtilities {
      *  Deletes BitBucket Tokens from Database
      *
      *  @param testingPostgres reference to the testing instance of Postgres
-     * @throws Exception
+     *  @throws Exception
      */
     public static void deleteBitBucketToken(TestingPostgres testingPostgres)  {
         if (testingPostgres != null) {
