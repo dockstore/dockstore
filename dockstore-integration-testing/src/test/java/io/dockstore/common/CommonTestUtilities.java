@@ -193,10 +193,10 @@ public final class CommonTestUtilities {
                 .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';", String.class));
     }
     /**
-     *  Deletes BitBucket Tokens from Database
+     * Deletes BitBucket Tokens from Database
      *
-     *  @param testingPostgres reference to the testing instance of Postgres
-     *  @throws Exception
+     * @param testingPostgres reference to the testing instance of Postgres
+     * @throws Exception
      */
     public static void deleteBitBucketToken(TestingPostgres testingPostgres)  {
         if (testingPostgres != null) {
