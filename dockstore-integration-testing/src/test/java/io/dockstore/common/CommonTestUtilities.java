@@ -276,7 +276,7 @@ public final class CommonTestUtilities {
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
         TestingPostgres testingPostgres, boolean needBitBucketToken) throws Exception {
-        LOG.info("Dropping and Recreating thPrivate2e database with confidential 2 test data");
+        LOG.info("Dropping and Recreating the database with confidential 2 test data");
 
         cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         if (!needBitBucketToken) {
