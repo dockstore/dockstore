@@ -101,7 +101,7 @@ public class BitBucketUserResourceIT extends BaseIT {
         // Register a workflow
         BioWorkflow ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
         assertNotNull("GitHub workflow should be added", ghWorkflow);
-        assertEquals(ghWorkflow.getFullWorkflowPath(), "github.com/dockstoretesting/basic-workflow");
+        assertEquals("github.com/dockstoretesting/basic-workflow", ghWorkflow.getFullWorkflowPath());
 
         // dockstoretesting/basic-workflow should be present now
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
@@ -143,7 +143,7 @@ public class BitBucketUserResourceIT extends BaseIT {
 
         // Register a workflow
         BioWorkflow glWorkflow = workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
-        assertEquals(glWorkflow.getFullWorkflowPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-example");
+        assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-example", glWorkflow.getFullWorkflowPath());
 
         // dockstore.test.user2/dockstore-workflow-example should be present now
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
