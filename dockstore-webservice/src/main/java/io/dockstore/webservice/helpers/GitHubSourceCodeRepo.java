@@ -325,7 +325,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Returns the set of organizations as well as the personal account the user has some level of
      * access to. Overrides the base implementation for performance, avoiding use of
-     * RepositoryListFilter.MEMBER -- although performance tests results are mixed.
+     * RepositoryListFilter.ALL -- although performance tests results are mixed.
      *
      * @return
      */

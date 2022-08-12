@@ -74,7 +74,7 @@ public class LambdaEventResource {
 
     /**
      * Returns an Optional list of the repositories in the organization the user has access to. If
-     * the user is an organziation member hand has access to all repositories in the organization,
+     * the user is an organization member and has access to all repositories in the organization,
      * returns an <code>Optional.empty()</code>.
      * If the user has no access to the organization or any of its repos, throws a 401 CustomWebApplicationException.
      *
