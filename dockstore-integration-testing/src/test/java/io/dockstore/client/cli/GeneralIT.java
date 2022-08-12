@@ -95,7 +95,7 @@ import org.kohsuke.github.RateLimitHandler;
  * @author aduncan
  */
 @Category({ ConfidentialTest.class, ToolTest.class })
-public class GeneralIT extends BaseIT {
+public class GeneralIT extends GeneralWorkflowBaseIT {
     public static final String DOCKSTORE_TOOL_IMPORTS = "dockstore-tool-imports";
 
     private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";

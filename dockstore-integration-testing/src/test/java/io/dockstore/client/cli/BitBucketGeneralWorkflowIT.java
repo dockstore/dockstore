@@ -59,7 +59,7 @@ import org.junit.experimental.categories.Category;
  * Created by aduncan on 05/04/16.
  */
 @Category(BitBucketTest.class)
-public class BitBucketGeneralWorkflowIT extends BaseIT {
+public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
