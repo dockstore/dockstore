@@ -199,8 +199,12 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void deleteBitBucketToken(TestingPostgres testingPostgres)  {
-        LOG.info("Deleting BitBucket Token from Database");
-        testingPostgres.runUpdateStatement("delete from token where tokensource = 'bitbucket.org'");
+        if (testingPostgres != null) {
+            LOG.info("Deleting BitBucket Token from Database");
+            testingPostgres.runUpdateStatement("delete from token where tokensource = 'bitbucket.org'");
+        } else {
+            LOG.info("testingPostgres is null");
+        }
     }
     /**
      * Wrapper for dropping and recreating database from migrations for test confidential 1 and optionally deleting BitBucket tokens
