@@ -145,16 +145,6 @@ public class BaseIT {
     /**
      * Manually register and publish a workflow with the given path and name
      *
-Notifications
-Customize
-
-You’re receiving notifications because you were assigned.
-4 participants
-@fhembroff
-@denis-yuen
-@kathy-t
-@svonworl
-
      * @param workflowsApi
      * @param workflowPath
      * @param workflowName
@@ -359,7 +349,6 @@ You’re receiving notifications because you were assigned.
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         return client;
     }
-
 
     @After
     public void after() throws InterruptedException {
