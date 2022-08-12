@@ -128,8 +128,8 @@ public final class CommonTestUtilities {
      * @param needBitBucketToken if false BitBucket token is deleted from database
      * @throws Exception
      */
-    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres, boolean needBitBucketToken)
-        throws Exception {
+    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
+        TestingPostgres testingPostgres, boolean needBitBucketToken) throws Exception {
         dropAndCreateWithTestDataAndAdditionalTools(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
         if (!needBitBucketToken) {
             deleteBitBucketToken(testingPostgres);

@@ -69,7 +69,7 @@ public class BitBucketUserResourceIT extends BaseIT {
 
 
     /**
-     * Tests that the endpoints for the wizard registration work
+     * Tests that the endpoints for the wizard registration work.
      * @throws ApiException
      */
     @Test
