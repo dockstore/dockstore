@@ -274,7 +274,7 @@
                     <version>2.8.2</version>
                     <configuration>
                         <uniqueVersion>false</uniqueVersion>
-                        <deployAtEnd>false</deployAtEnd>
+                        <deployAtEnd>true</deployAtEnd>
                     </configuration>
                 </plugin>
                 <plugin>
