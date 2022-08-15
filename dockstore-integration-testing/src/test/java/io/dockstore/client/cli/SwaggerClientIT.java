@@ -124,7 +124,7 @@ public class SwaggerClientIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestDataAndAdditionalTools(SUPPORT, true);
+        CommonTestUtilities.dropAndCreateWithTestDataAndAdditionalTools(SUPPORT, true, testingPostgres);
     }
 
     private static StarRequest getStarRequest(boolean star) {

@@ -68,7 +68,7 @@ public class ExtendedNextflowIT extends BaseIT {
 
     @Test
     public void testNextflowSecondaryFiles() throws Exception {
-        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
         final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
