@@ -171,10 +171,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String WORKFLOW_INCLUDE = VERSIONS + ", " + ORCID_PUT_CODES + ", " + VERSION_INCLUDE;
     private static final String VERSION_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VERSION_INCLUDE;
     private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE + ", " + VERSION_INCLUDE;
-    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
     public static final String A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB = "A workflow must be unpublished to restub.";
     public static final String A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB = "A workflow must have no issued DOIs to restub";
     public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB = "A workflow must have no snapshots to restub, you may consider unpublishing";
+    public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -503,8 +503,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
         Workflow wf = workflowDAO.findById(workflowId);
         checkNotNullEntry(wf);
-        // TODO: Need to handle updating a hosted workflow's workflow-level properties such as forumUrl and topic
-        checkNotHosted(wf);
         checkCanWrite(user, wf);
 
         Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false, BioWorkflow.class).orElse(null);
@@ -539,10 +537,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     // Used to update workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
-        // If workflow is FULL and descriptor type is being changed throw an error
-        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) && !Objects
+        // If workflow is FULL or HOSTED and descriptor type is being changed throw an error
+        if ((Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) || Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) && !Objects
             .equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
-            throw new CustomWebApplicationException("You cannot change the descriptor type of a FULL workflow.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW, HttpStatus.SC_BAD_REQUEST);
         }
 
         // Only copy workflow type if old workflow is a STUB
@@ -550,11 +548,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
         }
 
-        oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
-        oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
+        // ignore path changes for hosted workflows
+        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) {
+            oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
+            oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
+        }
         oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
         oldWorkflow.setTopicManual(newWorkflow.getTopicManual());
-        oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
+
+        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) {
+            oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
+        }
+
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);

@@ -23,6 +23,7 @@ import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST
 import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB;
 import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
+import static io.dockstore.webservice.resources.WorkflowResource.YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -374,7 +375,7 @@ public class GeneralWorkflowIT extends BaseIT {
         try {
             workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("You cannot change the descriptor type of a FULL workflow"));
+            assertTrue(e.getMessage().contains(YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW));
         }
     }
 

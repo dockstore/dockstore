@@ -41,6 +41,7 @@ import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.DockstoreTool.ModeEnum;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -469,6 +470,8 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool hostedTool = hostedApi
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
         DockstoreTool newTool = new DockstoreTool();
+        // need to modify something that does not make sense now but isn't ignored
+        newTool.setMode(ModeEnum.MANUAL_IMAGE_PATH);
         thrown.expect(ApiException.class);
         containersApi.updateContainer(hostedTool.getId(), newTool);
     }

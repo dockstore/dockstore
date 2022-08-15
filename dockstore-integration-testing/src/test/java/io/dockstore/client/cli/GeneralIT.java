@@ -27,6 +27,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -463,6 +464,38 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         workflowApi.publish(workflow.getId(), publishRequest);
         versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
         assertEquals(1, versionsVerified.size());
+    }
+
+    @Test
+    public void testEditingHostedWorkflowTopics() {
+        final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(openApiWebClient);
+        final io.dockstore.openapi.client.model.Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "foo", DescriptorLanguage.WDL.toString(), null, null);
+        hostedWorkflow.setTopicManual("new foo");
+        assertSame(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.MANUAL, hostedWorkflow.getTopicSelection());
+        hostedWorkflow.setTopicSelection(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.AUTOMATIC);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiWebClient);
+        final io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.updateWorkflow(hostedWorkflow.getId(), hostedWorkflow);
+        // topic should change
+        assertEquals("new foo", workflow.getTopic());
+        // but should ignore selection change
+        assertEquals(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.MANUAL, workflow.getTopicSelection());
+    }
+
+    @Test
+    public void testEditingHostedToolTopics() {
+        final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(openApiWebClient);
+        final io.dockstore.openapi.client.model.DockstoreTool hostedTool = hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "foo", DescriptorLanguage.WDL.toString(), null, null);
+        hostedTool.setTopicManual("new foo");
+        assertSame(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.MANUAL, hostedTool.getTopicSelection());
+        hostedTool.setTopicSelection(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.AUTOMATIC);
+        io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(openApiWebClient);
+        final io.dockstore.openapi.client.model.DockstoreTool dockstoreTool = containersApi.updateContainer(hostedTool.getId(), hostedTool);
+        // topic should change
+        assertEquals("new foo", dockstoreTool.getTopic());
+        // but should ignore selection change
+        assertEquals(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.MANUAL, dockstoreTool.getTopicSelection());
     }
 
     @Test
