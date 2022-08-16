@@ -815,7 +815,7 @@ public class DockerRepoResource
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, false);
-        checkCanExamine(user, tools);
+        tools.forEach(tool -> checkCanExamine(user, tool));
         return tools;
     }
 
@@ -854,6 +854,7 @@ public class DockerRepoResource
         try {
             Tool tool = toolDAO.findByPath(path, true);
             checkNotNullEntry(tool);
+            checkCanRead(tool);
 
             if (checkIncludes(include, "validations")) {
                 tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -1065,6 +1066,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkNotNullEntry(tool);
+        checkCanRead(tool);
         return tool.getStarredUsers();
     }
 

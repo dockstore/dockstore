@@ -1097,6 +1097,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkNotNullEntry(workflow);
+        checkCanRead(workflow);
 
         Hibernate.initialize(workflow.getAliases());
         setWorkflowVersionSubset(workflow, include, versionName);
@@ -1612,6 +1613,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
+        checkCanRead(workflow);
 
         return workflow.getStarredUsers();
     }
@@ -2164,7 +2166,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
-        checkCanExamine(user, workflow);
+        checkCanRead(user, workflow);
 
         WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
