@@ -458,30 +458,32 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
         cacheConfigManager.initCache();
 
-        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-            @Override
-            public void lifeCycleStarted(LifeCycle event) {
-                LifeCycle.Listener.super.lifeCycleStarted(event);
-                try {
-                    if (!ElasticSearchHelper.doIndicesExist()) { // Previous indexing attempt might've been unsuccessful but oh well
-                        LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
-                        Session session = hibernate.getSessionFactory().openSession();
-                        ManagedSessionContext.bind(session);
-                        Response response = getToolsExtendedApi().toolsIndexGet(null);
-                        session.close();
-                        if (response.getStatus() != HttpStatus.SC_OK) {
+        if (configuration.getEsConfiguration().isIndexOnStart()) {
+            environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
+                @Override
+                public void lifeCycleStarted(LifeCycle event) {
+                    LifeCycle.Listener.super.lifeCycleStarted(event);
+                    try {
+                        if (!ElasticSearchHelper.doIndicesExist()) { // Previous indexing attempt might've been unsuccessful but oh well
+                            LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
+                            Session session = hibernate.getSessionFactory().openSession();
+                            ManagedSessionContext.bind(session);
+                            Response response = getToolsExtendedApi().toolsIndexGet(null);
+                            session.close();
+                            if (response.getStatus() != HttpStatus.SC_OK) {
 
-                            throw new RuntimeException("Error indexing Elasticsearch");
+                                throw new RuntimeException("Error indexing Elasticsearch");
+                            }
+                            LOG.info("Indexed Elasticsearch");
+                        } else {
+                            LOG.info("Elasticsearch indices exist");
                         }
-                        LOG.info("Indexed Elasticsearch");
-                    } else {
-                        LOG.info("Elasticsearch indices exist");
+                    } catch (NotFoundException e) {
+                        throw new RuntimeException("Could not index Elasticsearch", e);
                     }
-                } catch (NotFoundException e) {
-                    throw new RuntimeException("Could not index Elasticsearch", e);
                 }
-            }
-        });
+            });
+        }
     }
 
     private void registerAPIsAndMisc(Environment environment) {
