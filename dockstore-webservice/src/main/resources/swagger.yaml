@@ -4549,6 +4549,14 @@ paths:
         in: "query"
         required: false
         type: "string"
+      - name: "type"
+        in: "query"
+        required: false
+        type: "string"
+        enum:
+        - "TOOLS"
+        - "WORKFLOWS"
+        - "SERVICES"
       responses:
         200:
           description: "successful operation"

@@ -34,6 +34,7 @@ import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.SourceControlOrganization;
 import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.webservice.helpers.AppToolHelper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.HostedApi;
@@ -42,6 +43,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.EntryUpdateTime;
+import io.swagger.client.model.EntryUpdateTime.EntryTypeEnum;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.OrganizationUpdateTime;
 import io.swagger.client.model.Profile;
@@ -420,6 +422,26 @@ public class UserResourceIT extends BaseIT {
     }
 
 
+    @Test
+    public void testGetUserEntries() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
+
+        assertEquals(1, userApi.getUserEntries(10, null, "WORKFLOWS").size());
+        assertEquals(5, userApi.getUserEntries(10, null, null).size());
+        assertEquals(0, userApi.getUserEntries(10, null, "SERVICES").size());
+        assertEquals(4, userApi.getUserEntries(10, null, "TOOLS").size());
+
+        // Add an app tool, which should appear when specifying the TOOLS type
+        AppToolHelper.registerAppTool(client);
+        final List<EntryUpdateTime> tools = userApi.getUserEntries(10, null, "TOOLS");
+        assertEquals(5, tools.size());
+        assertEquals(1L, tools.stream().filter(t -> t.getEntryType() == EntryTypeEnum.APPTOOL).count());
+    }
+
     /**
      * Tests the endpoints used for logged in homepage to retrieve recent entries and organizations
      */
@@ -431,7 +453,7 @@ public class UserResourceIT extends BaseIT {
 
         workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
 
-        List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
+        List<EntryUpdateTime> entries = userApi.getUserEntries(10, null, null);
         assertFalse(entries.isEmpty());
         assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified")));
         assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("dockstore-workflow-md5sum-unified")));
@@ -444,7 +466,7 @@ public class UserResourceIT extends BaseIT {
         Assert.assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));
 
         // Entry should now be at the top
-        entries = userApi.getUserEntries(10, null);
+        entries = userApi.getUserEntries(10, null, null);
         assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(0).getPath());
         assertEquals("dockstore-workflow-md5sum-unified", entries.get(0).getPrettyPath());
 
