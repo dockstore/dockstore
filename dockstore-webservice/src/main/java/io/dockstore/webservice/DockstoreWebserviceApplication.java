@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice;
 
+import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory.getToolsExtendedApi;
 import static javax.servlet.DispatcherType.REQUEST;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
@@ -134,6 +135,7 @@ import io.dropwizard.setup.Environment;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.MetadataApi;
 import io.swagger.api.MetadataApiV1;
+import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolClassesApi;
 import io.swagger.api.ToolClassesApiV1;
 import io.swagger.api.ToolsApi;
@@ -154,14 +156,19 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import javax.ws.rs.core.Response;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.eclipse.jetty.util.component.LifeCycle;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.hibernate.Session;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginWrapper;
@@ -309,6 +316,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
     @Override
+    @SuppressWarnings("checkstyle:MethodLength")
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setSchemes(new String[] { configuration.getExternalConfig().getScheme() });
@@ -449,6 +457,31 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
         cacheConfigManager.initCache();
+
+        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
+            @Override
+            public void lifeCycleStarted(LifeCycle event) {
+                LifeCycle.Listener.super.lifeCycleStarted(event);
+                try {
+                    if (!ElasticSearchHelper.doIndicesExist()) { // Previous indexing attempt might've been unsuccessful but oh well
+                        LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
+                        Session session = hibernate.getSessionFactory().openSession();
+                        ManagedSessionContext.bind(session);
+                        Response response = getToolsExtendedApi().toolsIndexGet(null);
+                        session.close();
+                        if (response.getStatus() != HttpStatus.SC_OK) {
+
+                            throw new RuntimeException("Error indexing Elasticsearch");
+                        }
+                        LOG.info("Indexed Elasticsearch");
+                    } else {
+                        LOG.info("Elasticsearch indices exist");
+                    }
+                } catch (NotFoundException e) {
+                    throw new RuntimeException("Could not index Elasticsearch", e);
+                }
+            }
+        });
     }
 
     private void registerAPIsAndMisc(Environment environment) {

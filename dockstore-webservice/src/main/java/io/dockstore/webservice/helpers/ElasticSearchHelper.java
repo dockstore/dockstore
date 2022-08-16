@@ -2,6 +2,7 @@ package io.dockstore.webservice.helpers;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.lifecycle.Managed;
+import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -9,9 +10,12 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
 
 public final class  ElasticSearchHelper implements Managed {
 
@@ -29,6 +33,16 @@ public final class  ElasticSearchHelper implements Managed {
 
     public static synchronized RestHighLevelClient restHighLevelClient() {
         return restHighLevelClient;
+    }
+
+    public static boolean doIndicesExist() {
+        GetMappingsRequest getMappingsRequest = new GetMappingsRequest();
+        try {
+            GetMappingsResponse response = restHighLevelClient.indices().getMapping(getMappingsRequest, RequestOptions.DEFAULT);
+            return !response.mappings().isEmpty();
+        } catch (IOException e) {
+            throw new RuntimeException("Could not get Elasticsearch mappings", e);
+        }
     }
 
     private RestClientBuilder builder() {
