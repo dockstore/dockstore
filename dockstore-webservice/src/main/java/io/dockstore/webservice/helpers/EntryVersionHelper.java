@@ -297,7 +297,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                         final String workflowPath = workflow.getDefaultWorkflowPath();
                         final String workflowVersionPath = workflowVersion.getWorkflowPath();
                         final String actualPath =
-                            workflowVersionPath == null || workflowVersionPath.isEmpty() ? workflowVersionPath : workflowPath;
+                            workflowVersionPath == null || workflowVersionPath.isEmpty() ? workflowPath : workflowVersionPath;
                         boolean isPrimary = file.getType() == fileType && file.getPath().equalsIgnoreCase(actualPath);
                         resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
                     }
