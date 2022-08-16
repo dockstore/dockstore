@@ -419,7 +419,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "include", description = WORKFLOW_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = WORKFLOW_INCLUDE_MESSAGE) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
-        checkCanRead(user, workflow);
+        checkCanExamine(user, workflow);
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
         Hibernate.initialize(workflow.getAliases());
@@ -443,7 +443,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflowID", required = true) @Parameter(name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
-        checkCanRead(user, workflow);
+        checkCanExamine(user, workflow);
 
         List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0);
         return new TreeSet<>(versions);
@@ -463,7 +463,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
-        checkCanRead(user, workflow);
+        checkCanExamine(user, workflow);
 
         WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
@@ -867,7 +867,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkNotNullEntry(workflow);
-        checkCanRead(user, workflow);
+        checkCanExamine(user, workflow);
         Hibernate.initialize(workflow.getAliases());
         initializeAdditionalFields(include, workflow);
         return workflow;
@@ -1039,7 +1039,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // Ensure the user has access
-        checkCanRead(user, entryPair.getValue());
+        checkCanExamine(user, entryPair.getValue());
 
         return entryPair.getValue();
     }
@@ -2164,7 +2164,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
-        checkCanRead(user, workflow);
+        checkCanExamine(user, workflow);
 
         WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {

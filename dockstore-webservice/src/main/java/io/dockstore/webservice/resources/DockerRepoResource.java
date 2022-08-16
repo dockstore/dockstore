@@ -300,7 +300,7 @@ public class DockerRepoResource
         @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findById(containerId);
         checkNotNullEntry(tool);
-        checkCanRead(user, tool);
+        checkCanExamine(user, tool);
 
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -815,7 +815,7 @@ public class DockerRepoResource
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, false);
-        checkCanRead(user, tools);
+        checkCanExamine(user, tools);
         return tools;
     }
 
@@ -832,7 +832,7 @@ public class DockerRepoResource
         @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findByPath(path, false);
         checkNotNullEntry(tool);
-        checkCanRead(user, tool);
+        checkCanExamine(user, tool);
 
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -878,7 +878,7 @@ public class DockerRepoResource
         Tool repository = toolDAO.findById(containerId);
         checkNotNullEntry(repository);
 
-        checkCanRead(user, repository);
+        checkCanExamine(user, repository);
 
         return new ArrayList<>(repository.getWorkflowVersions());
     }
