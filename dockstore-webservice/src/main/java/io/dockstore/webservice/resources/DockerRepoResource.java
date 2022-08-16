@@ -854,7 +854,6 @@ public class DockerRepoResource
         try {
             Tool tool = toolDAO.findByPath(path, true);
             checkNotNullEntry(tool);
-            checkCanRead(tool);
 
             if (checkIncludes(include, "validations")) {
                 tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));

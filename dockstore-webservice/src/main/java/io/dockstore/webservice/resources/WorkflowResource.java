@@ -1097,7 +1097,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkNotNullEntry(workflow);
-        checkCanRead(workflow);
 
         Hibernate.initialize(workflow.getAliases());
         setWorkflowVersionSubset(workflow, include, versionName);
