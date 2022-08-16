@@ -17,7 +17,7 @@ package io.dockstore.webservice.resources;
 
 public enum EntrySearchType {
     /**
-     * Includes both legacy tools and app tools
+     * Includes both legacy tools and app tools.
      */
     TOOLS,
     WORKFLOWS,
