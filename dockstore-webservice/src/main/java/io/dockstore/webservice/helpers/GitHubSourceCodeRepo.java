@@ -292,12 +292,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @return
      */
     public Map<String, String> getRepositoriesWithMemberAccess() {
-        return getWorkflowGitUrl2RepositoryId(RepositoryListFilter.MEMBER);
+        return gitSshUrlToOrgSlashRepositoryMap(RepositoryListFilter.MEMBER);
     }
 
     @Override
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
-        return getWorkflowGitUrl2RepositoryId(RepositoryListFilter.ALL);
+        return gitSshUrlToOrgSlashRepositoryMap(RepositoryListFilter.ALL);
     }
 
     /**
@@ -306,7 +306,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param filter
      * @return
      */
-    private Map<String, String> getWorkflowGitUrl2RepositoryId(RepositoryListFilter filter) {
+    private Map<String, String> gitSshUrlToOrgSlashRepositoryMap(RepositoryListFilter filter) {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
             // The filter RepositoryListFilter.ALL includes:
@@ -333,10 +333,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public Set<String> getOrganizations() {
         try {
             // The organizations of individual repos the user has been granted access to
-            final Collection<String> inlineMe =
-                getWorkflowGitUrl2RepositoryId(RepositoryListFilter.MEMBER).values();
             final Set<String> orgsViaRepoMembership =
-                inlineMe.stream()
+                gitSshUrlToOrgSlashRepositoryMap(RepositoryListFilter.MEMBER).values().stream()
                     .map(fullRepoName -> fullRepoName.split("/")[0])
                     .collect(Collectors.toSet());
             // The user's account, e.g., coverbeck
