@@ -135,7 +135,6 @@ import io.dropwizard.setup.Environment;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.MetadataApi;
 import io.swagger.api.MetadataApiV1;
-import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolClassesApi;
 import io.swagger.api.ToolClassesApiV1;
 import io.swagger.api.ToolsApi;
@@ -462,24 +461,28 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
                 @Override
                 public void lifeCycleStarted(LifeCycle event) {
-                    LifeCycle.Listener.super.lifeCycleStarted(event);
-                    try {
-                        if (!ElasticSearchHelper.doIndicesExist()) { // Previous indexing attempt might've been unsuccessful but oh well
-                            LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
-                            Session session = hibernate.getSessionFactory().openSession();
-                            ManagedSessionContext.bind(session);
-                            Response response = getToolsExtendedApi().toolsIndexGet(null);
-                            session.close();
-                            if (response.getStatus() != HttpStatus.SC_OK) {
-
-                                throw new RuntimeException("Error indexing Elasticsearch");
+                    if (!ElasticSearchHelper.doMappingsExist()) {
+                        // A lock is used to prevent concurrent indexing requests in a deployment where multiple webservices start at the same time
+                        if (ElasticSearchHelper.acquireLock()) {
+                            try {
+                                LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
+                                Session session = hibernate.getSessionFactory().openSession();
+                                ManagedSessionContext.bind(session);
+                                Response response = getToolsExtendedApi().toolsIndexGet(null);
+                                session.close();
+                                if (response.getStatus() == HttpStatus.SC_OK) {
+                                    LOG.info("Indexed Elasticsearch");
+                                } else {
+                                    LOG.error("Error indexing Elasticsearch with status code {}", response.getStatus());
+                                }
+                            } catch (Exception e) {
+                                LOG.error("Could not index Elasticsearch", e);
+                            } finally {
+                                ElasticSearchHelper.releaseLock();
                             }
-                            LOG.info("Indexed Elasticsearch");
-                        } else {
-                            LOG.info("Elasticsearch indices exist");
                         }
-                    } catch (NotFoundException e) {
-                        throw new RuntimeException("Could not index Elasticsearch", e);
+                    } else {
+                        LOG.info("Elasticsearch indices already exist");
                     }
                 }
             });
