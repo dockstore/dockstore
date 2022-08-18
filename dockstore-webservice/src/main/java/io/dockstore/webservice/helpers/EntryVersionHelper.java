@@ -46,7 +46,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -288,61 +287,50 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * This returns a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
      *
      * @param workflowId the database id for a workflow
-     * @param tag        the version of the workflow
+     * @param versionName the name of the workflow version
      * @param fileType   the type of file we're interested in
      * @param versionDAO
      * @return a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
      */
-    default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
+    default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String versionName,
             DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
 
         T entry = findAndCheckEntryById(workflowId, user);
-        Version tagInstance = findAndCheckVersionByName(entry, tag, versionDAO);
-        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(tagInstance.getId());
-        return mapAndDescribe(sourceFiles, entry, tagInstance, fileType);
+        Version version = findAndCheckVersionByName(entry, versionName, versionDAO);
+        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
+        return mapAndDescribe(sourceFiles, entry, version, fileType);
     }
 
 
-    static Map<String, ImmutablePair<SourceFile, FileDescription>> mapAndDescribe(List<SourceFile> sourceFiles, Entry entry, Version tagInstance, DescriptorLanguage.FileType fileType) {    
+    static Map<String, ImmutablePair<SourceFile, FileDescription>> mapAndDescribe(Collection<SourceFile> sourceFiles, Entry entry, Version tagInstance, DescriptorLanguage.FileType fileType) {
         Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();
-        List<SourceFile> filteredTypes = sourceFiles.stream()
-            .filter(file -> Objects.equals(file.getType(), fileType)).collect(Collectors.toList());
+        String primaryPath = getPrimaryPath(entry, tagInstance, fileType);
 
-        if (tagInstance instanceof WorkflowVersion) {
-            final Workflow workflow = (Workflow)entry;
-            final WorkflowVersion workflowVersion = (WorkflowVersion)tagInstance;
-            for (SourceFile file : filteredTypes) {
-                if (fileType == DescriptorLanguage.FileType.CWL_TEST_JSON || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON || fileType == DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
-                    resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
-                } else {
-                    // looks like this takes into account a potentially different workflow path for a specific version of a workflow
-                    final String actualPath = StringUtils.firstNonEmpty(workflowVersion.getWorkflowPath(), workflow.getDefaultWorkflowPath());
-                    boolean isPrimary = file.getPath().equalsIgnoreCase(actualPath);
-                    resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
-                }
-            }
-        } else {
-            final Tool tool = (Tool)entry;
-            final Tag toolTag = (Tag)tagInstance;
-            for (SourceFile file : filteredTypes) {
-                // dockerfile is a special case since there always is only a max of one
-                if (fileType == DescriptorLanguage.FileType.DOCKERFILE || fileType == DescriptorLanguage.FileType.CWL_TEST_JSON || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON) {
-                    resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
-                } else {
-                    String actualPath;
-                    if (fileType == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
-                        actualPath = StringUtils.firstNonEmpty(toolTag.getCwlPath(), tool.getDefaultCwlPath());
-                    } else if (fileType == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
-                        actualPath = StringUtils.firstNonEmpty(toolTag.getWdlPath(), tool.getDefaultWdlPath());
-                    } else {
-                        throw new CustomWebApplicationException("Format " + fileType + " not valid", HttpStatus.SC_BAD_REQUEST);
-                    }
-                    boolean isPrimary = file.getPath().equalsIgnoreCase(actualPath);
-                    resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
-                }
+        for (SourceFile file: sourceFiles) {
+            if (file.getType() == fileType) {
+                boolean isPrimary = file.getPath().equalsIgnoreCase(primaryPath);
+                resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
             }
         }
         return resultMap;
+    }
+
+    static String getPrimaryPath(Entry entry, Version version, DescriptorLanguage.FileType fileType) {
+        if (version instanceof WorkflowVersion) {
+            final Workflow workflow = (Workflow)entry;
+            final WorkflowVersion workflowVersion = (WorkflowVersion)version;
+            return StringUtils.firstNonEmpty(workflowVersion.getWorkflowPath(), workflow.getDefaultWorkflowPath());
+        } else {
+            final Tool tool = (Tool)entry;
+            final Tag toolTag = (Tag)version;
+            if (fileType == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
+                return StringUtils.firstNonEmpty(toolTag.getCwlPath(), tool.getDefaultCwlPath());
+            }
+            if (fileType == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
+                return StringUtils.firstNonEmpty(toolTag.getWdlPath(), tool.getDefaultWdlPath());
+            }
+        }
+        return null;
     }
 
     @SuppressWarnings("lgtm[java/path-injection]")
