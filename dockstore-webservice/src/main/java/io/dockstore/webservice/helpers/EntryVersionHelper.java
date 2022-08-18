@@ -454,14 +454,14 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
-    default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, Optional<User> user, VersionDAO versionDAO) {
+    default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
         Version version = findAndCheckVersionById(entryId, versionId, user, versionDAO).getVersion();
-        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         if (fileTypes != null && !fileTypes.isEmpty()) {
             sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
-                    TreeSet::new));
+                    ArrayList::new));
         }
-        return sourceFiles;
+        return new TreeSet<>(sourceFiles);
 
     }
     /**
