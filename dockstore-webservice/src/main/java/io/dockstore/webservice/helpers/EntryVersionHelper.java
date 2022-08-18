@@ -304,8 +304,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
 
     static Map<String, ImmutablePair<SourceFile, FileDescription>> mapAndDescribe(Collection<SourceFile> sourceFiles, Entry entry, Version tagInstance, DescriptorLanguage.FileType fileType) {
-        Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();
         String primaryPath = getPrimaryPath(entry, tagInstance, fileType);
+        Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();
 
         for (SourceFile file: sourceFiles) {
             if (file.getType() == fileType) {
