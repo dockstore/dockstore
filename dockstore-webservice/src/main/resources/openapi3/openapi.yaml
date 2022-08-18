@@ -5067,6 +5067,15 @@ paths:
         name: filter
         schema:
           type: string
+      - description: Type of entry
+        in: query
+        name: type
+        schema:
+          type: string
+          enum:
+          - TOOLS
+          - WORKFLOWS
+          - SERVICES
       responses:
         "200":
           content:
