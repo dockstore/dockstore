@@ -473,7 +473,7 @@ public abstract class AbstractImageRegistry {
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final EventDAO eventDAO, final User user) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
-        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath()) && existingTags.isEmpty())) {
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath())) {
 
             if (newTags == null) {
                 LOG.info(tool.getToolPath() + " : Tags for tool {} did not get updated because new tags were not found",
