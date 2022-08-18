@@ -1527,7 +1527,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(workflow);
         checkCanRead(user, workflow);
 
-        return getVersionsSourcefiles(workflowId, workflowVersionId, fileTypes, versionDAO);
+        return getVersionsSourcefiles(workflowId, workflowVersionId, fileTypes, user, versionDAO);
     }
 
     /**

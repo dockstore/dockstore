@@ -305,6 +305,6 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
         checkNotNullEntry(tool);
         checkCanRead(user, tool);
 
-        return getVersionsSourcefiles(containerId, tagId, fileTypes, versionDAO);
+        return getVersionsSourcefiles(containerId, tagId, fileTypes, user, versionDAO);
     }
 }

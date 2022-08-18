@@ -298,7 +298,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
         T entry = findAndCheckEntryById(workflowId, user);
         Version version = findAndCheckVersionByName(entry, versionName, versionDAO);
-        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         return mapAndDescribe(sourceFiles, entry, version, fileType);
     }
 
@@ -420,8 +420,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
-    default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, VersionDAO versionDAO) {
-        T entry = findAndCheckEntryById(entryId, Optional.empty());
+    default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, Optional<User> user, VersionDAO versionDAO) {
+        T entry = findAndCheckEntryById(entryId, user);
         Version version = findAndCheckVersionById(entryId, versionId, versionDAO);
         SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
         if (fileTypes != null && !fileTypes.isEmpty()) {
