@@ -779,13 +779,21 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "See OpenApi for details")
     public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
-                                                @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
+                                                @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter,
+                                                @Parameter(name = "type", description = "Type of entry", in = ParameterIn.QUERY) @QueryParam("type") EntrySearchType type) {
         //get entries with only minimal columns from database
         final List<EntryLite> entriesLite = new ArrayList<>();
         final long userId = authUser.getId();
-        entriesLite.addAll(toolDAO.findEntryVersions(userId));
-        entriesLite.addAll(bioWorkflowDAO.findEntryVersions(userId));
-        entriesLite.addAll(serviceDAO.findEntryVersions(userId));
+        if (type == null || type == EntrySearchType.TOOLS) {
+            entriesLite.addAll(toolDAO.findEntryVersions(userId));
+            entriesLite.addAll(appToolDAO.findEntryVersions(userId));
+        }
+        if (type == null || type == EntrySearchType.WORKFLOWS) {
+            entriesLite.addAll(bioWorkflowDAO.findEntryVersions(userId));
+        }
+        if (type == null || type == EntrySearchType.SERVICES) {
+            entriesLite.addAll(serviceDAO.findEntryVersions(userId));
+        }
 
         //cleanup fields for UI: filter(if applicable), sort, and limit by count(if applicable)
         List<EntryUpdateTime> filteredEntries = entriesLite
