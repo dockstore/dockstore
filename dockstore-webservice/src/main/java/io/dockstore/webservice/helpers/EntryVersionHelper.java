@@ -54,6 +54,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
@@ -237,23 +238,31 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
     }
 
-    default Version findVersionByName(T entry, String versionName, VersionDAO versionDAO) {
+    default Version findAndCheckVersionByName(T entry, String versionName, VersionDAO versionDAO) {
         try {
             // This is an assumption made for quay tools. Workflows will not have a latest unless it is created by the user,
             // and would thus make more sense to use master for workflows.
-            final String modifiedVersionName = versionName == null ? "latest" : versionName;
+            final String modifiedVersionName = ObjectUtils.firstNonNull(versionName, "latest");
             versionDAO.enableNameFilter(modifiedVersionName);
-            return entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(modifiedVersionName)).findFirst().orElse(null);
+            Version version = entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(modifiedVersionName)).findFirst().orElse(null);
+            if (version == null) {
+                throw new CustomWebApplicationException("Invalid or missing version " + modifiedVersionName + ".", HttpStatus.SC_BAD_REQUEST);
+            }
+            return version;
         } finally {
             versionDAO.disableNameFilter();
         }
     }
 
-    default Version findVersionById(long entryId, long versionId, VersionDAO versionDAO) {
-        return versionDAO.findVersionInEntry(entryId, versionId);
+    default Version findAndCheckVersionById(long entryId, long versionId, VersionDAO versionDAO) {
+        Version version = versionDAO.findVersionInEntry(entryId, versionId);
+        if (version == null) {
+            throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
+        }
+        return version;
     }
 
-    default T findEntryById(long entryId, Optional<User> user) {
+    default T findAndCheckEntryById(long entryId, Optional<User> user) {
 
         T entry = getDAO().findById(entryId);
         checkNotNullEntry(entry);
@@ -287,9 +296,9 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
             DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
 
-        T entry = findEntryById(workflowId, user);
-        Version tagInstance = findVersionByName(entry, tag, versionDAO);
-        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(entry.getId());
+        T entry = findAndCheckEntryById(workflowId, user);
+        Version tagInstance = findAndCheckVersionByName(entry, tag, versionDAO);
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(tagInstance.getId());
         return mapAndDescribe(sourceFiles, entry, tagInstance, fileType);
     }
 
@@ -423,8 +432,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, VersionDAO versionDAO) {
-        T entry = findEntryById(entryId, Optional.empty());
-        Version version = findVersionById(entryId, versionId, versionDAO);
+        T entry = findAndCheckEntryById(entryId, Optional.empty());
+        Version version = findAndCheckVersionById(entryId, versionId, versionDAO);
         SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
         if (fileTypes != null && !fileTypes.isEmpty()) {
             sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
