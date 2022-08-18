@@ -34,6 +34,7 @@ import io.dockstore.webservice.jdbi.AbstractDockstoreDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import java.io.File;
@@ -238,38 +239,71 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
     }
 
-    default Version findAndCheckVersionByName(T entry, String versionName, VersionDAO versionDAO) {
+    default String getDefaultVersionName() {
+        return getDAO() instanceof ToolDAO ? "latest" : "master";
+    }
+
+    /**
+     * Finds the version and entry corresponding to the specified version name and entry ID, adjusting access per the specified logged-in user.
+     * The entry will only contain the version with the specified version name, and will be evicted so no accidental db mods are possible.
+     * Throws a CustomWebApplicationException if the entry or version is not accessible.
+     * @param entryId database id of the entry
+     * @param versionName name of the version
+     * @param user the logged-in user
+     * @return the version and corresponding entry
+     */
+    default VersionAndEntry<T> findAndCheckVersionByName(long entryId, String versionName, Optional<User> user, VersionDAO versionDAO) {
         try {
-            // This is an assumption made for quay tools. Workflows will not have a latest unless it is created by the user,
-            // and would thus make more sense to use master for workflows.
-            final String modifiedVersionName = ObjectUtils.firstNonNull(versionName, "latest");
+            String modifiedVersionName = ObjectUtils.firstNonNull(versionName, getDefaultVersionName());
             versionDAO.enableNameFilter(modifiedVersionName);
+            T entry = findAndCheckEntryById(entryId, user);
             Version version = entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(modifiedVersionName)).findFirst().orElse(null);
             if (version == null) {
                 throw new CustomWebApplicationException("Invalid or missing version " + modifiedVersionName + ".", HttpStatus.SC_BAD_REQUEST);
             }
-            return version;
+            getDAO().evict(entry);
+            return new VersionAndEntry<>(version, entry);
         } finally {
             versionDAO.disableNameFilter();
         }
     }
 
-    default Version findAndCheckVersionById(long entryId, long versionId, VersionDAO versionDAO) {
-        Version version = versionDAO.findVersionInEntry(entryId, versionId);
-        if (version == null) {
-            throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
+    /**
+     * Finds the version and entry corresponding to the specified version ID and entry ID, adjusting access per the specified logged-in user.
+     * The entry will only contain the version with the specified version ID, and will be evicted so no accidental db mods are possible.
+     * Throws a CustomWebApplicationException if the entry or version is not accessible.
+     * @param entryId database id of the entry
+     * @param versionName name of the version
+     * @param user the logged-in user
+     * @return the version and corresponding entry
+     */
+    default VersionAndEntry<T> findAndCheckVersionById(long entryId, long versionId, Optional<User> user, VersionDAO versionDAO) {
+        try {
+            versionDAO.enableIdFilter(versionId);
+            T entry = findAndCheckEntryById(entryId, user);
+            Version version = entry.getWorkflowVersions().stream().filter(v -> v.getId() == versionId).findFirst().orElse(null);
+            if (version == null) {
+                throw new CustomWebApplicationException("Invalid or missing version id " + versionId + ".", HttpStatus.SC_BAD_REQUEST);
+            }
+            getDAO().evict(entry);
+            return new VersionAndEntry<>(version, entry);
+        } finally {
+            versionDAO.disableIdFilter();
         }
-        return version;
     }
 
+    /**
+     * Finds the entry corresponding to the specified ID, adjusting access per the specified logged-in user.
+     * Throws a CustomWebApplicationException if the entry is not accessible.
+     */
     default T findAndCheckEntryById(long entryId, Optional<User> user) {
 
         T entry = getDAO().findById(entryId);
         checkNotNullEntry(entry);
         checkCanRead(user, entry);
 
-        // tighten permissions for hosted tools and workflows
         if (!user.isPresent() || !canExamine(user.get(), entry)) {
+            // tighten permissions for hosted tools and workflows
             if (!entry.getIsPublished()) {
                 if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
                     throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
@@ -278,6 +312,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                     throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
                 }
             }
+            // filter hidden versions
             this.filterContainersForHiddenTags(entry);
         }
 
@@ -296,12 +331,12 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String versionName,
             DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
 
-        T entry = findAndCheckEntryById(workflowId, user);
-        Version version = findAndCheckVersionByName(entry, versionName, versionDAO);
+        VersionAndEntry<T> versionAndEntry = findAndCheckVersionByName(workflowId, versionName, user, versionDAO);
+        Version version = versionAndEntry.getVersion();
+        T entry = versionAndEntry.getEntry();
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         return mapAndDescribe(sourceFiles, entry, version, fileType);
     }
-
 
     static Map<String, ImmutablePair<SourceFile, FileDescription>> mapAndDescribe(Collection<SourceFile> sourceFiles, Entry entry, Version tagInstance, DescriptorLanguage.FileType fileType) {
         String primaryPath = getPrimaryPath(entry, tagInstance, fileType);
@@ -326,8 +361,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             final Tag toolTag = (Tag)version;
             if (fileType == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
                 return StringUtils.firstNonEmpty(toolTag.getCwlPath(), tool.getDefaultCwlPath());
-            }
-            if (fileType == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
+            } else if (fileType == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
                 return StringUtils.firstNonEmpty(toolTag.getWdlPath(), tool.getDefaultWdlPath());
             }
         }
@@ -421,8 +455,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, Optional<User> user, VersionDAO versionDAO) {
-        T entry = findAndCheckEntryById(entryId, user);
-        Version version = findAndCheckVersionById(entryId, versionId, versionDAO);
+        Version version = findAndCheckVersionById(entryId, versionId, user, versionDAO).getVersion();
         SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
         if (fileTypes != null && !fileTypes.isEmpty()) {
             sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
@@ -442,4 +475,21 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
+    class VersionAndEntry<T> {
+        private Version version;
+        private T entry;
+
+        public VersionAndEntry(Version version, T entry) {
+            this.version = version;
+            this.entry = entry;
+        }
+
+        public Version getVersion() {
+            return version;
+        }
+
+        public T getEntry() {
+            return entry;
+        }
+    }
 }

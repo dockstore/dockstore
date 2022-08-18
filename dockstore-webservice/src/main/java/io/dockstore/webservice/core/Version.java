@@ -87,6 +87,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @FilterDef(name = "versionNameFilter", parameters = @ParamDef(name = "name", type = "string"), defaultCondition = "LOWER(:name) = LOWER(name)")
 @Filter(name = "versionNameFilter")
+@FilterDef(name = "versionIdFilter", parameters = @ParamDef(name = "id", type = "long"), defaultCondition = ":id = id")
+@Filter(name = "versionIdFilter")
 
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
