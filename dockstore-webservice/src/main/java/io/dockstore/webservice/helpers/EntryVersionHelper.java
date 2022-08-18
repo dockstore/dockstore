@@ -51,8 +51,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -255,24 +253,9 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         return versionDAO.findVersionInEntry(entryId, versionId);
     }
 
-    /**
-     * This returns a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
-     *
-     * @param workflowId the database id for a workflow
-     * @param tag        the version of the workflow
-     * @param fileType   the type of file we're interested in
-     * @param versionDAO
-     * @return a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
-     */
-    default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
-            DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
-        return getSourceFiles(workflowId, entry -> findVersionByName(entry, tag, versionDAO), () -> "bad tag " + tag, fileType, user, fileDAO, versionDAO);
-    }
+    default T findEntryById(long entryId, Optional<User> user) {
 
-    default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, Function<T, Version> versionSelector, Supplier<String> versionNotFoundMessage,
-            DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
-
-        T entry = getDAO().findById(workflowId);
+        T entry = getDAO().findById(entryId);
         checkNotNullEntry(entry);
         checkCanRead(user, entry);
 
@@ -289,25 +272,40 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             this.filterContainersForHiddenTags(entry);
         }
 
-        Version tagInstance = versionSelector.apply(entry);
+        return entry;
+    }
 
-        if (tagInstance == null) {
-            throw new CustomWebApplicationException(versionNotFoundMessage.get(), HttpStatus.SC_BAD_REQUEST);
-        }
+    /**
+     * This returns a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
+     *
+     * @param workflowId the database id for a workflow
+     * @param tag        the version of the workflow
+     * @param fileType   the type of file we're interested in
+     * @param versionDAO
+     * @return a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
+     */
+    default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
+            DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
 
-        SortedSet<SourceFile> sourceFiles = tagInstance.getSourceFiles();
+        T entry = findEntryById(workflowId, user);
+        Version tagInstance = findVersionByName(entry, tag, versionDAO);
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(entry.getId());
+        return mapAndDescribe(sourceFiles, entry, tagInstance, fileType);
+    }
+
+
+    static Map<String, ImmutablePair<SourceFile, FileDescription>> mapAndDescribe(List<SourceFile> sourceFiles, Entry entry, Version tagInstance, DescriptorLanguage.FileType fileType) {    
         Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();
-
+        List<SourceFile> filteredTypes = sourceFiles.stream()
+            .filter(file -> Objects.equals(file.getType(), fileType)).collect(Collectors.toList());
 
         if (tagInstance instanceof WorkflowVersion) {
             final WorkflowVersion workflowVersion = (WorkflowVersion)tagInstance;
-            // List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
-            List<SourceFile> filteredTypes = sourceFiles.stream()
-                .filter(file -> Objects.equals(file.getType(), fileType)).collect(Collectors.toList());
             for (SourceFile file : filteredTypes) {
                 if (fileType == DescriptorLanguage.FileType.CWL_TEST_JSON || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON || fileType == DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
                     resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
                 } else {
+                    
                     // looks like this takes into account a potentially different workflow path for a specific version of a workflow
                     final String workflowPath = workflowVersion.getWorkflowPath();
                     final String workflowVersionPath = workflowVersion.getWorkflowPath();
@@ -320,9 +318,6 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         } else {
             final Tool tool = (Tool)entry;
             final Tag toolTag = (Tag)tagInstance;
-            // List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(toolTag.getId());
-            List<SourceFile> filteredTypes = sourceFiles.stream().filter(file -> Objects.equals(file.getType(), fileType))
-                .collect(Collectors.toList());
             for (SourceFile file : filteredTypes) {
                 // dockerfile is a special case since there always is only a max of one
                 if (fileType == DescriptorLanguage.FileType.DOCKERFILE || fileType == DescriptorLanguage.FileType.CWL_TEST_JSON
@@ -438,11 +433,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, VersionDAO versionDAO) {
-        Version version = versionDAO.findVersionInEntry(entryId, versionId);
-        if (version == null) {
-            throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
-        }
-
+        T entry = findEntryById(entryId, Optional.empty());
+        Version version = findVersionById(entryId, versionId, versionDAO);
         SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
         if (fileTypes != null && !fileTypes.isEmpty()) {
             sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
