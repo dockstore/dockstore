@@ -1,8 +1,12 @@
 package io.dockstore.webservice.helpers;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dropwizard.lifecycle.Managed;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -47,7 +51,7 @@ public final class  ElasticSearchHelper implements Managed {
         GetMappingsRequest getMappingsRequest = new GetMappingsRequest();
         try {
             GetMappingsResponse response = restHighLevelClient.indices().getMapping(getMappingsRequest, RequestOptions.DEFAULT);
-            return !response.mappings().isEmpty();
+            return response.mappings().keySet().containsAll(ElasticListener.ALL_INDICES_LIST);
         } catch (Exception e) {
             LOG.error("Could not get Elasticsearch mappings", e);
             return false;
@@ -76,15 +80,18 @@ public final class  ElasticSearchHelper implements Managed {
 
     /**
      * Releases the Elasticsearch lock by deleting the document that represents a lock. View acquireLock() for more info
+     * @return boolean indicating if the lock was released successfully
      */
-    public static void releaseLock() {
+    public static boolean releaseLock() {
         RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
         DeleteRequest deleteRequest = new DeleteRequest(LOCK_INDEX).id(LOCK_DOCUMENT_ID);
         try {
             client.delete(deleteRequest, RequestOptions.DEFAULT);
             LOG.info("Released Elasticsearch lock");
-        } catch (IOException e) {
+            return true;
+        } catch (Exception e) {
             LOG.error("Could not release Elasticsearch lock", e);
+            return false;
         }
     }
 
