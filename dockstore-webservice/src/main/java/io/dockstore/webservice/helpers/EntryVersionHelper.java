@@ -293,7 +293,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                         resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
                     } else {
                         // looks like this takes into account a potentially different workflow path for a specific version of a workflow
-                        final String workflowPath = workflowVersion.getWorkflowPath();
+                        final Workflow workflow = (Workflow)entry;
+                        final String workflowPath = workflow.getDefaultWorkflowPath();
                         final String workflowVersionPath = workflowVersion.getWorkflowPath();
                         final String actualPath =
                             workflowVersionPath == null || workflowVersionPath.isEmpty() ? workflowPath : workflowVersionPath;
