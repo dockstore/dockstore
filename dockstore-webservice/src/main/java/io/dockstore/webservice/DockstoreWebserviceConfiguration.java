@@ -630,7 +630,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String user;
         private String password;
         private Integer maxConcurrentSessions;
-        private boolean isIndexOnStart = false;
 
         public String getProtocol() {
             return protocol;
@@ -677,14 +676,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         }
         public Integer getMaxConcurrentSessions() {
             return this.maxConcurrentSessions;
-        }
-
-        public boolean isIndexOnStart() {
-            return isIndexOnStart;
-        }
-
-        public void setIsIndexOnStart(boolean isIndexOnStart) {
-            this.isIndexOnStart = isIndexOnStart;
         }
     }
 

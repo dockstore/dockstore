@@ -457,36 +457,35 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
         cacheConfigManager.initCache();
 
-        if (configuration.getEsConfiguration().isIndexOnStart()) {
-            environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-                @Override
-                public void lifeCycleStarted(LifeCycle event) {
-                    if (!ElasticSearchHelper.doMappingsExist()) {
-                        // A lock is used to prevent concurrent indexing requests in a deployment where multiple webservices start at the same time
-                        if (ElasticSearchHelper.acquireLock()) {
-                            try {
-                                LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
-                                Session session = hibernate.getSessionFactory().openSession();
-                                ManagedSessionContext.bind(session);
-                                Response response = getToolsExtendedApi().toolsIndexGet(null);
-                                session.close();
-                                if (response.getStatus() == HttpStatus.SC_OK) {
-                                    LOG.info("Indexed Elasticsearch");
-                                } else {
-                                    LOG.error("Error indexing Elasticsearch with status code {}", response.getStatus());
-                                }
-                            } catch (Exception e) {
-                                LOG.error("Could not index Elasticsearch", e);
-                            } finally {
-                                ElasticSearchHelper.releaseLock();
+        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
+            // Indexes Elasticsearch if mappings don't exist when the application is started
+            @Override
+            public void lifeCycleStarted(LifeCycle event) {
+                if (!ElasticSearchHelper.doMappingsExist()) {
+                    // A lock is used to prevent concurrent indexing requests in a deployment where multiple webservices start at the same time
+                    if (ElasticSearchHelper.acquireLock()) {
+                        try {
+                            LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
+                            Session session = hibernate.getSessionFactory().openSession();
+                            ManagedSessionContext.bind(session);
+                            Response response = getToolsExtendedApi().toolsIndexGet(null);
+                            session.close();
+                            if (response.getStatus() == HttpStatus.SC_OK) {
+                                LOG.info("Indexed Elasticsearch");
+                            } else {
+                                LOG.error("Error indexing Elasticsearch with status code {}", response.getStatus());
                             }
+                        } catch (Exception e) {
+                            LOG.error("Could not index Elasticsearch", e);
+                        } finally {
+                            ElasticSearchHelper.releaseLock();
                         }
-                    } else {
-                        LOG.info("Elasticsearch indices already exist");
                     }
+                } else {
+                    LOG.info("Elasticsearch indices already exist");
                 }
-            });
-        }
+            }
+        });
     }
 
     private void registerAPIsAndMisc(Environment environment) {
