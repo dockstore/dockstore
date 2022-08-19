@@ -30,7 +30,6 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -739,8 +738,11 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Gets organizations for the current user
+     * Returns
      * @return
      */
-    public abstract List<SourceControlOrganization> getOrganizations();
+    public Set<String> getOrganizations() {
+        return getWorkflowGitUrl2RepositoryId().values().stream()
+            .map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+    }
 }
