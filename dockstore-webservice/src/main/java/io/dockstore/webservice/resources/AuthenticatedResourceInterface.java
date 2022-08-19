@@ -104,6 +104,15 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
+     * Check if a non-authenticated user can read the specified entry.
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param entry entry to be checked
+     */
+    default void checkCanRead(Entry<?, ?> entry) {
+        checkCanRead((User)null, entry);
+    }
+
+    /**
      * Check if the user is allowed to read non-public or sensitive information from the specified entry.
      * If not, throw a {@link CustomWebApplicationException}.
      * @param user user to be checked, null if the user is not logged in

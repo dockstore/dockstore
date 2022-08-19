@@ -300,7 +300,7 @@ public class DockerRepoResource
         @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findById(containerId);
         checkNotNullEntry(tool);
-        checkCanRead(user, tool);
+        checkCanExamine(user, tool);
 
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -815,7 +815,7 @@ public class DockerRepoResource
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, false);
-        checkCanRead(user, tools);
+        tools.forEach(tool -> checkCanExamine(user, tool));
         return tools;
     }
 
@@ -832,7 +832,7 @@ public class DockerRepoResource
         @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findByPath(path, false);
         checkNotNullEntry(tool);
-        checkCanRead(user, tool);
+        checkCanExamine(user, tool);
 
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -878,7 +878,7 @@ public class DockerRepoResource
         Tool repository = toolDAO.findById(containerId);
         checkNotNullEntry(repository);
 
-        checkCanRead(user, repository);
+        checkCanExamine(user, repository);
 
         return new ArrayList<>(repository.getWorkflowVersions());
     }
@@ -1065,6 +1065,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkNotNullEntry(tool);
+        checkCanRead(tool);
         return tool.getStarredUsers();
     }
 
