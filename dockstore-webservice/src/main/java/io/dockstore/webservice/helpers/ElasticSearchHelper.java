@@ -3,10 +3,8 @@ package io.dockstore.webservice.helpers;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dropwizard.lifecycle.Managed;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -50,8 +48,9 @@ public final class  ElasticSearchHelper implements Managed {
     public static boolean doMappingsExist() {
         GetMappingsRequest getMappingsRequest = new GetMappingsRequest();
         try {
+            List<String> allIndices =  Arrays.asList(ElasticListener.ALL_INDICES.split(","));
             GetMappingsResponse response = restHighLevelClient.indices().getMapping(getMappingsRequest, RequestOptions.DEFAULT);
-            return response.mappings().keySet().containsAll(ElasticListener.ALL_INDICES_LIST);
+            return response.mappings().keySet().containsAll(allIndices);
         } catch (Exception e) {
             LOG.error("Could not get Elasticsearch mappings", e);
             return false;

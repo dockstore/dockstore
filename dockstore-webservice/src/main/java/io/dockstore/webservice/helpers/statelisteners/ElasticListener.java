@@ -38,7 +38,6 @@ import io.dropwizard.jackson.Jackson;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -79,7 +78,6 @@ public class ElasticListener implements StateListenerInterface {
     public static final String TOOLS_INDEX = "tools";
     public static final String WORKFLOWS_INDEX = "workflows";
     public static final String ALL_INDICES = "tools,workflows";
-    public static final List<String> ALL_INDICES_LIST = Arrays.asList(ElasticListener.ALL_INDICES.split(","));
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
