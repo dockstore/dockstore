@@ -347,7 +347,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testLambdaEvents() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
         final LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
