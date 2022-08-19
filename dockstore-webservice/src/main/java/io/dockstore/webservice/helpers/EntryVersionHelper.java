@@ -247,10 +247,10 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * Finds the version and entry corresponding to the specified version name and entry ID, adjusting access per the specified logged-in user.
      * The entry will only contain the version with the specified version name, and will be evicted so no accidental db mods are possible.
      * Throws a CustomWebApplicationException if the entry or version is not accessible.
-     * @param entryId database id of the entry
+     * @param entryId id of the entry
      * @param versionName name of the version
      * @param user the logged-in user
-     * @return the version and corresponding entry
+     * @return the version and parent entry
      */
     default VersionAndEntry<T> findAndCheckVersionByName(long entryId, String versionName, Optional<User> user, VersionDAO versionDAO) {
         try {
@@ -272,10 +272,10 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * Finds the version and entry corresponding to the specified version ID and entry ID, adjusting access per the specified logged-in user.
      * The entry will only contain the version with the specified version ID, and will be evicted so no accidental db mods are possible.
      * Throws a CustomWebApplicationException if the entry or version is not accessible.
-     * @param entryId database id of the entry
-     * @param versionName name of the version
+     * @param entryId id of the entry
+     * @param versionId id of the version
      * @param user the logged-in user
-     * @return the version and corresponding entry
+     * @return the version and parent entry
      */
     default VersionAndEntry<T> findAndCheckVersionById(long entryId, long versionId, Optional<User> user, VersionDAO versionDAO) {
         try {
