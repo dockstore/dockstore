@@ -15,6 +15,8 @@
  */
 package io.dockstore.common.yaml;
 
+import javax.validation.constraints.NotNull;
+
 public class YamlAuthor {
 
     private String name;
@@ -27,6 +29,7 @@ public class YamlAuthor {
 
     private String orcid;
 
+    @NotNull
     public String getName() {
         return name;
     }
