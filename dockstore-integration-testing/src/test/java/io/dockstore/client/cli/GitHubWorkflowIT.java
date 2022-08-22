@@ -40,12 +40,15 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Image;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -221,6 +224,28 @@ public class GitHubWorkflowIT extends BaseIT {
         verifyImageChecksumsAreSaved(versionWithDuplicateImages);
         versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
         verifyTRSImageConversion(versions, "1.0", 3);
+    }
+
+    @Test
+    public void testGettingMultiArchImagesFromQuay() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
+
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, workflow, "quayMultiArchImages");
+        // This multi-arch image was created using the buildx method
+        List<Image> buildxImages = version.getImages().stream().filter(image -> "skopeo/stable".equals(image.getRepository())).collect(Collectors.toList());
+        assertTrue("Should have at least 4 images for skopeo/stable@sha256:656733c60ea7a8e45f2c7f0c86b24fc9f388d44c5a7d6d482ec59fbabcdb4eee image", buildxImages.size() >= 4);
+        // This multi-arch image was created using the docker manifest method
+        List<Image> dockerManifestImages = version.getImages().stream().filter(image -> "openshift-release-dev/ocp-release".equals(image.getRepository())).collect(Collectors.toList());
+        assertTrue("Should have at least 4 images for openshift-release-dev/ocp-release:4.12.0-0.nightly-multi-2022-08-22-130726 image", dockerManifestImages.size() >= 4);
+        assertTrue("Should have at least 8 images. There are " + version.getImages().size(), version.getImages().size() >= 8);
+        verifyImageChecksumsAreSaved(version);
+
+        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow");
+        verifyTRSImageConversion(versions, "quayMultiArchImages", 8);
     }
 
     private void verifyTRSImageConversion(final List<ToolVersion> versions, final String snapShottedVersionName, final int numImages) {

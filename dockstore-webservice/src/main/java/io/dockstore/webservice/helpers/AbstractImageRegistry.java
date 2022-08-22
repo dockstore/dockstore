@@ -473,7 +473,7 @@ public abstract class AbstractImageRegistry {
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final EventDAO eventDAO, final User user) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
-        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath())) {
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath()) && existingTags.isEmpty()) {
 
             if (newTags == null) {
                 LOG.info(tool.getToolPath() + " : Tags for tool {} did not get updated because new tags were not found",
@@ -723,13 +723,7 @@ public abstract class AbstractImageRegistry {
         // No need to get all tags belonging to the container because image information is only updated for existing tool tags
         for (Tag tag : tool.getWorkflowVersions()) {
             // Determine if the tag is the 'latest' tag
-            LanguageHandlerInterface.DockerSpecifier specifier;
-            if (tag.getName().equals("latest")) {
-                specifier = LanguageHandlerInterface.DockerSpecifier.LATEST;
-            } else {
-                specifier = LanguageHandlerInterface.DockerSpecifier.TAG;
-            }
-
+            LanguageHandlerInterface.DockerSpecifier specifier = getSpecifierFromTagName(tag.getName());
             Set<Image> images = DockerRegistryAPIHelper.getImages(registry, repo, specifier, tag.getName());
             if (images.isEmpty()) {
                 LOG.error("Could not get image and checksum information for {}:{} from {}", repo, tag.getName(), registry.getFriendlyName());
@@ -1038,5 +1032,13 @@ public abstract class AbstractImageRegistry {
         }
 
         return dbToolList;
+    }
+
+    public LanguageHandlerInterface.DockerSpecifier getSpecifierFromTagName(String tagName) {
+        if ("latest".equals(tagName)) {
+            return LanguageHandlerInterface.DockerSpecifier.LATEST;
+        } else {
+            return LanguageHandlerInterface.DockerSpecifier.TAG;
+        }
     }
 }
