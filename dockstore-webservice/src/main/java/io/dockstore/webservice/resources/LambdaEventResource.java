@@ -24,6 +24,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -59,21 +62,57 @@ public class LambdaEventResource {
             @ApiParam(value = "organization", required = true) @PathParam("organization") String organization,
             @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
             @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
-        User authUser = userDAO.findById(user.getId());
-        List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
+        final User authUser = userDAO.findById(user.getId());
+        final List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
         if (githubTokens.isEmpty()) {
             throw new CustomWebApplicationException("You do not have GitHub connected to your account.", HttpStatus.SC_BAD_REQUEST);
         }
-        Token githubToken = githubTokens.get(0);
-
-        // If the organization isn't the user's github account, check github to see if we have access to the organization.
-        if (!organization.equals(githubToken.getUsername())) {
-            GitHubSourceCodeRepo sourceCodeRepoInterface = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
-            if (!sourceCodeRepoInterface.isOneOfMyOrganizations(organization)) {
-                throw new CustomWebApplicationException("You do not have access to the GitHub organization '" + organization + "'", HttpStatus.SC_UNAUTHORIZED);
-            }
-        }
-
-        return lambdaEventDAO.findByOrganization(organization, offset, limit);
+        final Token githubToken = githubTokens.get(0);
+        final Optional<List<String>> authorizedRepos = authorizedRepos(organization, githubToken);
+        return lambdaEventDAO.findByOrganization(organization, offset, limit, authorizedRepos);
     }
+
+    /**
+     * Returns an Optional list of the repositories in the organization the user has access to. If
+     * the user is an organization member and has access to all repositories in the organization,
+     * returns an <code>Optional.empty()</code>.
+     * If the user has no access to the organization or any of its repos, throws a 401 CustomWebApplicationException.
+     *
+     * @param organization
+     * @param gitHubToken
+     * @return
+     */
+    private Optional<List<String>> authorizedRepos(String organization, Token gitHubToken) {
+        final GitHubSourceCodeRepo sourceCodeRepoInterface = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken);
+        if (!sourceCodeRepoInterface.isOneOfMyOrganizations(organization)) {
+            final List<String> gitHubOrgRepos = organizationRepositories(organization, sourceCodeRepoInterface);
+            if (gitHubOrgRepos.isEmpty()) {
+                throw new CustomWebApplicationException(
+                    "You do not have access to the GitHub organization '" + organization + "'",
+                    HttpStatus.SC_UNAUTHORIZED);
+            }
+            return Optional.of(gitHubOrgRepos);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Returns a list of repository names, e.g, "dockstore-ui2" for org/repo of "dockstore/dockstore-ui2"
+     * that the user has been granted specific access to in the <code>organization</code>
+     * @param organization
+     * @param sourceCodeRepoInterface
+     * @return
+     */
+    private List<String> organizationRepositories(String organization, GitHubSourceCodeRepo sourceCodeRepoInterface) {
+        final Map<String, String> repositoriesWithMemberAccess =
+            sourceCodeRepoInterface.getRepositoriesWithMemberAccess();
+        // Example values are org/repo, e.g., "dockstore/dockstore", "dockstore/dockstore-ui2", etc.
+        final List<String> gitHubOrgRepos = repositoriesWithMemberAccess.values().stream()
+            .filter(fullname -> fullname.startsWith(organization + "/"))
+            .map(fullname -> fullname.split("/")[1])
+            .collect(Collectors.toList());
+        return gitHubOrgRepos;
+    }
+
 }
+

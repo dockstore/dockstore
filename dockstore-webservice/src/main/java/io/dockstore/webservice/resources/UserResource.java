@@ -48,7 +48,6 @@ import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.TokenViews;
@@ -92,7 +91,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.sql.Timestamp;
@@ -779,13 +777,21 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "See OpenApi for details")
     public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
-                                                @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
+                                                @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter,
+                                                @Parameter(name = "type", description = "Type of entry", in = ParameterIn.QUERY) @QueryParam("type") EntrySearchType type) {
         //get entries with only minimal columns from database
         final List<EntryLite> entriesLite = new ArrayList<>();
         final long userId = authUser.getId();
-        entriesLite.addAll(toolDAO.findEntryVersions(userId));
-        entriesLite.addAll(bioWorkflowDAO.findEntryVersions(userId));
-        entriesLite.addAll(serviceDAO.findEntryVersions(userId));
+        if (type == null || type == EntrySearchType.TOOLS) {
+            entriesLite.addAll(toolDAO.findEntryVersions(userId));
+            entriesLite.addAll(appToolDAO.findEntryVersions(userId));
+        }
+        if (type == null || type == EntrySearchType.WORKFLOWS) {
+            entriesLite.addAll(bioWorkflowDAO.findEntryVersions(userId));
+        }
+        if (type == null || type == EntrySearchType.SERVICES) {
+            entriesLite.addAll(serviceDAO.findEntryVersions(userId));
+        }
 
         //cleanup fields for UI: filter(if applicable), sort, and limit by count(if applicable)
         List<EntryUpdateTime> filteredEntries = entriesLite
@@ -988,28 +994,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
     }
 
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/github/organizations")
-    @Operation(operationId = "getMyGitHubOrgs", description = "Gets GitHub organizations for current user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = HttpStatus.SC_OK
-            + "", description = "Descriptions of Github organizations (including but not limited to id, names)", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SourceControlOrganization.class)))),
-        @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
-    })
-    public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
-        final User user = userDAO.findById(authUser.getId());
-        checkNotNullUser(user);
-        Token githubToken = tokenDAO.findGithubByUserId(user.getId()).stream()
-                .filter(token -> token.getTokenSource() == TokenType.GITHUB_COM).findFirst().orElse(null);
-        if (githubToken != null) {
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
-            return sourceCodeRepo.getOrganizations();
-        }
-        return Lists.newArrayList();
-    }
-
     @PATCH
     @Timed
     @UnitOfWork
@@ -1130,8 +1114,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "See OpenApi for details")
     public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                             @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry) {
-        Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
-        return repositoryUrlToName.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+
+        SourceCodeRepoInterface sourceCodeRepo = createSourceCodeRepo(authUser, gitRegistry, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
+        if (sourceCodeRepo == null) {
+            return Set.of();
+        } else {
+            return sourceCodeRepo.getOrganizations();
+        }
     }
 
     @GET

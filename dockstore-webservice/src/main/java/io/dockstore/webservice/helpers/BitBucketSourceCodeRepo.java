@@ -23,7 +23,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -202,12 +201,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
         return file;
     }
-
-    @Override
-    public List<SourceControlOrganization> getOrganizations() {
-        throw new UnsupportedOperationException("apps not supported for bitbucket yet");
-    }
-
     @Override
     public void updateReferenceType(String repositoryId, Version version) {
         if (version.getReferenceType() != Version.ReferenceType.UNSET) {
