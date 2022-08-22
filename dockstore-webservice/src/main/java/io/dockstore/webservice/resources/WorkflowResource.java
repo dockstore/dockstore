@@ -1318,6 +1318,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         newWorkflow.setWorkflowName(Strings.isNullOrEmpty(workflowName) ? null : workflowName);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 
+        // check that the user should have access to this organization
+        final Set<String> organizations = sourceCodeRepo.getOrganizations();
+        if (!organizations.contains(newWorkflow.getOrganization())) {
+            throw new CustomWebApplicationException("Your user does not seem to have access to this organization.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         // Save into database and then pull versions
         Workflow workflowFromDB = saveNewWorkflow(newWorkflow, user);
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user, Optional.empty());
