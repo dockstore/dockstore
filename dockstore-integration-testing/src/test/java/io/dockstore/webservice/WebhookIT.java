@@ -106,6 +106,7 @@ public class WebhookIT extends BaseIT {
     private final String taggedToolRepo = "dockstore-testing/tagged-apptool";
     private final String taggedToolRepoPath = "dockstore-testing/tagged-apptool/md5sum";
     private final String authorsRepo = "DockstoreTestUser2/test-authors";
+    private final String workflowDockstoreYmlRepo = "dockstore-testing/workflow-dockstore-yml";
     private FileDAO fileDAO;
 
     @Before
@@ -1199,5 +1200,39 @@ public class WebhookIT extends BaseIT {
         organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null);
         Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
+    }
+
+    @Test
+    public void testDifferentLanguagesWithSameWorkflowName() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowClient = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+
+        try {
+            workflowClient.handleGitHubRelease(workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME, "refs/heads/differentLanguagesWithSameWorkflowName", installationId);
+            Assert.fail("should have thrown");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            String message = ex.getMessage().toLowerCase();
+            assertTrue(message.contains("descriptor language"));
+            assertTrue(message.contains("workflow"));
+            assertTrue(message.contains("version"));
+        }
+        
+        // There should be one failure message
+        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+        assertEquals(0, events.stream().filter(lambdaEvent -> lambdaEvent.isSuccess()).count());
+        assertEquals(1, events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
+        io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
+
+        // There should be one workflow version
+        io.dockstore.openapi.client.model.Workflow workflow = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo, WorkflowSubClass.BIOWORKFLOW, "versions,validations");
+        assertEquals(1, workflow.getWorkflowVersions());
+       
+        // The failure message should contain some words about non-matching descriptor languages, workflows, and versions
+        String message = event.getMessage().toLowerCase();
+        assertTrue(message.contains("descriptor language"));
+        assertTrue(message.contains("workflow"));
+        assertTrue(message.contains("version"));
     }
 }
