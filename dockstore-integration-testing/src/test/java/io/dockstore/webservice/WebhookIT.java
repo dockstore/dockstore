@@ -1224,15 +1224,18 @@ public class WebhookIT extends BaseIT {
         assertEquals(0, events.stream().filter(lambdaEvent -> lambdaEvent.isSuccess()).count());
         assertEquals(1, events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
         io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
-
-        // There should be one workflow version
-        io.dockstore.openapi.client.model.Workflow workflow = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo, WorkflowSubClass.BIOWORKFLOW, "versions,validations");
-        assertEquals(1, workflow.getWorkflowVersions());
-       
-        // The failure message should contain some words about non-matching descriptor languages, workflows, and versions
         String message = event.getMessage().toLowerCase();
         assertTrue(message.contains("descriptor language"));
         assertTrue(message.contains("workflow"));
         assertTrue(message.contains("version"));
+
+        // No workflow should have been created.
+        // This will change in 1.13, wherein .dockstore.yml processing changes so that an error in one entry will not roll back the entire update, and a workflow with one version should have been created.
+
+        try {
+            io.dockstore.openapi.client.model.Workflow workflow = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo, WorkflowSubClass.BIOWORKFLOW, "versions,validations");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("Entry not found", ex.getMessage());
+        }
     }
 }
