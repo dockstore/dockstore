@@ -174,9 +174,22 @@ public abstract class SourceCodeRepoInterface {
     public abstract Map<String, String> getWorkflowGitUrl2RepositoryId();
 
     /**
-     * Checks to see if a particular source code repository is properly setup for issues like token scope
+     * Checks to see if a particular source code repository is properly setup for issues like token scope.
      */
-    public abstract boolean checkSourceCodeValidity();
+    public abstract boolean checkSourceControlTokenValidity();
+
+    /**
+     * Checks to see if a particular source code repository is real or not.
+     * TODO: assumes real repos have branches, there may be a better way for specific source control types
+     *
+     * @param entry
+     * @return
+     */
+    public boolean checkSourceControlRepoValidity(Entry entry) {
+        final String repositoryId = this.getRepositoryId(entry);
+        final String mainBranch = this.getMainBranch(entry, repositoryId);
+        return mainBranch != null;
+    }
 
 
     /**

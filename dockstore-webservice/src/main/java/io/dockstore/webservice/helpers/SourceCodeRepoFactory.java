@@ -21,6 +21,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -68,8 +69,17 @@ public final class SourceCodeRepoFactory {
             throw new CustomWebApplicationException("Sorry, we do not support " + token.getTokenSource() + ".",
                 HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
-        repo.checkSourceCodeValidity();
+        repo.checkSourceControlTokenValidity();
         return repo;
+    }
+
+    public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, List<Token> tokens) {
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
+        return SourceCodeRepoFactory
+            .createSourceCodeRepo(gitUrl, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
     }
 
     /**
@@ -114,7 +124,7 @@ public final class SourceCodeRepoFactory {
             LOG.info("Do not support: " + source);
             throw new CustomWebApplicationException("Sorry, we do not support " + source + ".", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
-        repo.checkSourceCodeValidity();
+        repo.checkSourceControlTokenValidity();
         return repo;
     }
 

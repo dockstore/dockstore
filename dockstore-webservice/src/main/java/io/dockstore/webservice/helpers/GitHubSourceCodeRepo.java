@@ -364,7 +364,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public boolean checkSourceCodeValidity() {
+    public boolean checkSourceControlTokenValidity() {
         try {
             GHRateLimit ghRateLimit = github.getRateLimit();
             if (ghRateLimit.getRemaining() == 0) {
@@ -1145,30 +1145,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername(), ex);
-        }
-    }
-
-    // DO NOT USE THIS FUNCTION ELSEWHERE
-    // This function has no use outside of gathering user's GitHub IDs the first time. This uses the GitHub token of the admin user calling the new, one-time-use endpoint.
-    // This will attempt to get the GitHub profile info (including id) of users we were unable to get by calling the github.getMyself() function above.
-    public void syncUserMetadataFromGitHubByUsername(User user, TokenDAO tokenDAO) {
-        // eGit user object
-        try {
-            if (user.getUserProfiles().get(TokenType.GITHUB_COM.toString()) == null) {
-                throw new CustomWebApplicationException("Could not find GitHub user profile information on Dockstore with username: " + user.getUsername() + "dockstore userid: " + user.getId(), HttpStatus.SC_NOT_FOUND);
-            }
-            GHUser ghUser = github.getUser(user.getUserProfiles().get(TokenType.GITHUB_COM.toString()).username);
-            User.Profile profile = getProfile(user, ghUser);
-            profile.email = ghUser.getEmail();
-
-            // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
-            Token usersGitHubToken = tokenDAO.findGithubByUserId(user.getId()).get(0);
-            usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
-            usersGitHubToken.setUsername(profile.username);
-        } catch (IOException ex) {
-            String msg = "Unable to get GitHub user id for Dockstore user " + user.getUsername() + " " + user.getId();
-            LOG.info(msg, ex);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
     }
 
