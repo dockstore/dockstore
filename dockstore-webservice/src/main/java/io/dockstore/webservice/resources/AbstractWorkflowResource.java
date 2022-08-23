@@ -610,11 +610,25 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
+        if (workflowType == BioWorkflow.class || workflowType == AppTool.class) {
+            checkSameDescriptorLanguage(workflowToUpdate, subclass);
+        }
+
         if (user != null) {
             workflowToUpdate.getUsers().add(user);
         }
 
         return  workflowToUpdate;
+    }
+
+    private void checkSameDescriptorLanguage(Workflow workflow, String subclass) {
+        try {
+            if (workflow.getDescriptorType() != DescriptorLanguage.convertShortStringToEnum(subclass)) {
+                throw new CustomWebApplicationException(String.format("The descriptor language (subclass) of the original workflow ('%s') and all of its versions must be the same.", subclass), HttpStatus.SC_BAD_REQUEST);
+            }
+        } catch (UnsupportedOperationException e) {
+            throw new CustomWebApplicationException(String.format("Unknown descriptor language '%s'", subclass), HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     /**
