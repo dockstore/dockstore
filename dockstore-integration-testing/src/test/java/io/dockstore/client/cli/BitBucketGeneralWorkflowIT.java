@@ -46,7 +46,6 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -319,7 +318,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         try {
             toolApi.registerManual(tool);
         } catch (ApiException e) {
-            Assert.assertTrue(e.getMessage().contains(UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO));
+            assertTrue(e.getMessage().contains(UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO));
             return;
         }
         fail("should fail to register");

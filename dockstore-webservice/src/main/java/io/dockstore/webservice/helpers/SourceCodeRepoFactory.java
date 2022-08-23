@@ -73,6 +73,12 @@ public final class SourceCodeRepoFactory {
         return repo;
     }
 
+    /**
+     * Convenience factory method, extracts tokens from list
+     * @param gitUrl
+     * @param tokens
+     * @return
+     */
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, List<Token> tokens) {
         Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
         Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
