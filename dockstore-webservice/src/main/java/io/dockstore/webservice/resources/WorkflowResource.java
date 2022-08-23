@@ -1321,7 +1321,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // check that the user should have access to this organization
         final Set<String> organizations = sourceCodeRepo.getOrganizations();
         if (!organizations.contains(newWorkflow.getOrganization())) {
-            throw new CustomWebApplicationException("Your user does not seem to have access to this organization.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Your user does not have access to this organization.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Save into database and then pull versions
