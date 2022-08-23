@@ -1210,7 +1210,7 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
 
         try {
-            workflowClient.handleGitHubRelease(workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME, "refs/heads/differentLanguagesWithSameWorkflowName", installationId);
+            workflowClient.handleGitHubRelease("refs/heads/differentLanguagesWithSameWorkflowName", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
             Assert.fail("should have thrown");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             String message = ex.getMessage().toLowerCase();

@@ -624,7 +624,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private void checkSameDescriptorLanguage(Workflow workflow, String subclass) {
         try {
             if (workflow.getDescriptorType() != DescriptorLanguage.convertShortStringToEnum(subclass)) {
-                throw new CustomWebApplicationException(String.format("The descriptor language (subclass) of the original workflow ('%s') and all of its versions must be the same.", subclass), HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(String.format("The descriptor language (subclass) of the original workflow ('%s') and all of its versions must be the same.", workflow.getDescriptorType().getShortName()), HttpStatus.SC_BAD_REQUEST);
             }
         } catch (UnsupportedOperationException e) {
             throw new CustomWebApplicationException(String.format("Unknown descriptor language '%s'", subclass), HttpStatus.SC_BAD_REQUEST);
