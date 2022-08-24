@@ -122,6 +122,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
@@ -881,6 +882,43 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return userDAO.findAll();
     }
 
+    @POST
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/updateUserWorkflows")
+    @Operation(operationId = "checkWorkflowOwnership", description = "Check workflow ownership", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT
+        + "", description = "Successfully updated workflow ownership for all users", content = @Content(array = @ArraySchema(schema = @Schema(implementation = User.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    public Response updateUserWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        final List<Long> allGitHubUsers = userDAO.findAllGitHubUserIds();
+        allGitHubUsers.forEach(gitHubUserId -> {
+            final List<Token> gitHubTokens = tokenDAO.findGithubByUserId(gitHubUserId);
+            if (gitHubTokens.size() > 0) {
+                final Token gitHubToken = gitHubTokens.get(0);
+                final SourceCodeRepoInterface sourceCodeRepo =
+                     SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken);
+                final Set<String> organizations = sourceCodeRepo.getOrganizationMemberships();
+                final List<String> repos = reposNotThroughOrg(sourceCodeRepo, organizations);
+                System.out.println("repos = " + repos);
+                System.out.println("organizations = " + organizations);
+            }
+        });
+        return Response.noContent().build();
+    }
+
+    private List<String> reposNotThroughOrg(SourceCodeRepoInterface sourceCodeRepo,
+        Set<String> organizations) {
+        final List<String> repos =
+            sourceCodeRepo.getWorkflowGitUrl2RepositoryId().values().stream()
+                .filter(orgRepo -> {
+                    final String org = orgRepo.split("/")[0];
+                    return !organizations.contains(org);
+                })
+                .collect(Collectors.toList());
+        return repos;
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -1023,10 +1061,11 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
 
         scTokens.forEach(token -> {
             SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);
-            Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-            Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+            final Set<String> organizationMemberships = sourceCodeRepo.getOrganizationMemberships();
+            final List<String> reposNotThroughOrg =
+                reposNotThroughOrg(sourceCodeRepo, organizationMemberships);
 
-            organizations.forEach(organization -> {
+            organizationMemberships.forEach(organization -> {
                 List<Workflow> workflowsWithoutuser = workflowDAO.findByOrganizationWithoutUser(token.getTokenSource().getSourceControl(), organization, user);
                 workflowsWithoutuser.forEach(workflow -> workflow.addUser(user));
             });

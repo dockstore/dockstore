@@ -751,11 +751,21 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Returns
+     * Returns all organizations that the user has repos in and/or belongs to. This includes both
+     * organizations the user is a member of, as well as organizations that the user may not be a
+     * member of, but has been granted permissions to one or more repos in the org.
      * @return
      */
     public Set<String> getOrganizations() {
         return getWorkflowGitUrl2RepositoryId().values().stream()
             .map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns all organizations a user is a member of.
+     * @return
+     */
+    public Set<String> getOrganizationMemberships() {
+        return getOrganizations();
     }
 }

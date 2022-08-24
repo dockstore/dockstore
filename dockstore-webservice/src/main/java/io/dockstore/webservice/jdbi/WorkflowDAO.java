@@ -290,6 +290,14 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
                 .setParameter("sourceControl", sourceControl));
     }
 
+    public List<Workflow> findByOrganizationsWithoutUser(SourceControl sourceControl, List<String> organizations, User user) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationsWithoutUser")
+            .setParameter("organization", organizations.stream().map(o -> o.toLowerCase()).collect(Collectors.toList()))
+            .setParameter("user", user)
+            .setParameter("sourceControl", sourceControl));
+    }
+
+
     public Workflow findByAlias(String alias) {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
     }
