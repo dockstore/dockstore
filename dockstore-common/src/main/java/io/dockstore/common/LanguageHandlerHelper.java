@@ -15,12 +15,16 @@ public final class LanguageHandlerHelper {
      * Should only be used with workflow imports and not for using
      * untrusted inputs for traversing the filesystem.
      * @param parentPath Absolute path to parent file
-     * @param relativePath Relative path the parent file
+     * @param relativePath Relative path to another file
      * @return Absolute version of relative path
      */
     public static String unsafeConvertRelativePathToAbsolutePath(String parentPath, String relativePath) {
         if (relativePath.startsWith("/")) {
             return relativePath;
+        }
+        // If the parent path isn't absolute, make it so, assuming that it's relative to the root directory.
+        if (!parentPath.startsWith("/")) {
+            parentPath = Paths.get("/").resolve(parentPath).normalize().toString();
         }
 
         Path workDir = Paths.get(parentPath); // lgtm[java/path-injection]
@@ -30,5 +34,4 @@ public final class LanguageHandlerHelper {
 
         return workDir.resolve(relativePath).normalize().toString();
     }
-
 }

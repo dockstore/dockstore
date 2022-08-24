@@ -26,6 +26,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.VersionTypeValidation;
@@ -845,7 +846,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 return null;
             }
             theWf = maybeWorkflow.get();
-            testParameterPaths = theWf.getTestParameterFiles();
+            testParameterPaths = theWf.getTestParameterFiles().stream().map(this::convertToAbsolutePath).collect(Collectors.toList());
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             String msg = "Invalid .dockstore.yml: " + ex.getMessage();
             LOG.info(msg, ex);
@@ -853,7 +854,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         // No need to check for null, has been validated
-        String primaryDescriptorPath = theWf.getPrimaryDescriptorPath();
+        String primaryDescriptorPath = convertToAbsolutePath(theWf.getPrimaryDescriptorPath());
 
         version.setWorkflowPath(primaryDescriptorPath);
 
@@ -918,6 +919,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         version.addOrUpdateValidation(dockstoreYmlValidation);
 
         return version;
+    }
+
+    private String convertToAbsolutePath(String path) {
+        return LanguageHandlerHelper.unsafeConvertRelativePathToAbsolutePath("/", path);
     }
 
     /**
