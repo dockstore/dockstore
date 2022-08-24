@@ -24,11 +24,9 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.AbstractDockstoreDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -252,17 +250,15 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param user the logged-in user
      * @return the version and parent entry
      */
-    default VersionAndEntry<T> findAndCheckVersionByName(long entryId, String versionName, Optional<User> user, VersionDAO versionDAO) {
+    default EvictedVersionAndEntry<T> findAndCheckVersionByName(long entryId, String versionName, Optional<User> user, VersionDAO versionDAO) {
         try {
             String modifiedVersionName = ObjectUtils.firstNonNull(versionName, getDefaultVersionName());
             versionDAO.enableNameFilter(modifiedVersionName);
             T entry = findAndCheckEntryById(entryId, user);
-            Version version = entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(modifiedVersionName)).findFirst().orElse(null);
-            if (version == null) {
-                throw new CustomWebApplicationException("Invalid or missing version " + modifiedVersionName + ".", HttpStatus.SC_BAD_REQUEST);
-            }
+            Version version = entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(modifiedVersionName)).findFirst().orElseThrow(
+                () -> new CustomWebApplicationException("Invalid or missing version " + modifiedVersionName + ".", HttpStatus.SC_BAD_REQUEST));
             getDAO().evict(entry);
-            return new VersionAndEntry<>(version, entry);
+            return new EvictedVersionAndEntry<>(version, entry);
         } finally {
             versionDAO.disableNameFilter();
         }
@@ -277,7 +273,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param user the logged-in user
      * @return the version and parent entry
      */
-    default VersionAndEntry<T> findAndCheckVersionById(long entryId, long versionId, Optional<User> user, VersionDAO versionDAO) {
+    default EvictedVersionAndEntry<T> findAndCheckVersionById(long entryId, long versionId, Optional<User> user, VersionDAO versionDAO) {
         try {
             versionDAO.enableIdFilter(versionId);
             T entry = findAndCheckEntryById(entryId, user);
@@ -286,7 +282,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                 throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
             }
             getDAO().evict(entry);
-            return new VersionAndEntry<>(version, entry);
+            return new EvictedVersionAndEntry<>(version, entry);
         } finally {
             versionDAO.disableIdFilter();
         }
@@ -304,16 +300,6 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         checkCanRead(user, entry);
 
         if (!user.isPresent() || !canExamine(user.get(), entry)) {
-            // tighten permissions for hosted tools and workflows
-            if (!entry.getIsPublished()) {
-                if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
-                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-                }
-                if (entry instanceof Workflow && ((Workflow)entry).getMode() == WorkflowMode.HOSTED) {
-                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-                }
-            }
-            // filter hidden versions
             filterContainersForHiddenTags(entry);
         }
 
@@ -332,7 +318,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String versionName,
             DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
 
-        VersionAndEntry<T> versionAndEntry = findAndCheckVersionByName(workflowId, versionName, user, versionDAO);
+        EvictedVersionAndEntry<T> versionAndEntry = findAndCheckVersionByName(workflowId, versionName, user, versionDAO);
         Version version = versionAndEntry.getVersion();
         T entry = versionAndEntry.getEntry();
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
@@ -455,7 +441,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
-    default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
+    default SortedSet<SourceFile> getVersionSourceFiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
         Version version = findAndCheckVersionById(entryId, versionId, user, versionDAO).getVersion();
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         if (fileTypes != null && !fileTypes.isEmpty()) {
@@ -476,11 +462,14 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
-    class VersionAndEntry<T> {
-        private Version version;
-        private T entry;
+    /**
+     * Container class for a version and its associated entry, both of which are evicted.
+     */
+    class EvictedVersionAndEntry<T> {
+        private final Version version;
+        private final T entry;
 
-        public VersionAndEntry(Version version, T entry) {
+        public EvictedVersionAndEntry(Version version, T entry) {
             this.version = version;
             this.entry = entry;
         }
