@@ -610,8 +610,18 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
-        if (workflowType == BioWorkflow.class || workflowType == AppTool.class) {
-            checkSameDescriptorLanguage(workflowToUpdate, subclass);
+        // Check that the subclass is the same as the entry to update
+        // For services, we must compare the descriptor type subclasses
+        // For workflows and tools, we must compare the descriptor types (languages)
+        // The `convertShortName` methods throw `UnsupportedOperationException` when passed an unknown subclass
+        try {
+            if (workflowType == Service.class) {
+                checkSame(workflowToUpdate.getDescriptorTypeSubclass(), DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass), "descriptor type subclass", "service");
+            } else {
+                checkSame(workflowToUpdate.getDescriptorType(), DescriptorLanguage.convertShortStringToEnum(subclass), "descriptor language (subclass)", workflowToUpdate instanceof AppTool ? "tool" : "workflow");
+            }
+        } catch (UnsupportedOperationException e) {
+            throw new CustomWebApplicationException(String.format("Unknown subclass '%s'", subclass), HttpStatus.SC_BAD_REQUEST);
         }
 
         if (user != null) {
@@ -621,13 +631,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return  workflowToUpdate;
     }
 
-    private void checkSameDescriptorLanguage(Workflow workflow, String subclass) {
-        try {
-            if (workflow.getDescriptorType() != DescriptorLanguage.convertShortStringToEnum(subclass)) {
-                throw new CustomWebApplicationException(String.format("The descriptor language (subclass) of the original workflow ('%s') and all of its versions must be the same.", workflow.getDescriptorType().getShortName()), HttpStatus.SC_BAD_REQUEST);
-            }
-        } catch (UnsupportedOperationException e) {
-            throw new CustomWebApplicationException(String.format("Unknown descriptor language '%s'", subclass), HttpStatus.SC_BAD_REQUEST);
+    private <T> void checkSame(T currentValue, T newValue, String valueDescription, String entryDescription) {
+        if (!Objects.equals(currentValue, newValue)) {
+            throw new CustomWebApplicationException(String.format("The %s of the original %s ('%s') and all of its versions must be the same.", valueDescription, entryDescription, currentValue), HttpStatus.SC_BAD_REQUEST);
         }
     }
 
