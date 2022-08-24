@@ -34,6 +34,8 @@ public class TestingPostgres {
         "select count(*) from event e where e.type = ";
     private Jdbi jdbi;
 
+    private static int entryId = 10000; // So as to not conflict with generated ids that start at 1000
+
     public TestingPostgres(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         DataSourceFactory dataSourceFactory = support.getConfiguration().getDataSourceFactory();
         Environment environment = support.getEnvironment();
@@ -76,5 +78,20 @@ public class TestingPostgres {
     public long getUnpublishEventCountForWorkflow(long workflowId) {
         return runSelectStatement(
             SELECT_COUNT_FROM_EVENT_E_WHERE_E_TYPE + "'UNPUBLISH_ENTRY' and workflowId = " + workflowId, Long.class);
+    }
+
+    /**
+     * Add a skeleton unpublished workflow without requiring GitHub access/token. Use this as a last resort.
+     * @param sourceControl
+     * @param organization
+     * @param repository
+     * @param descriptorLanguage
+     * @return
+     */
+    public int addUnpublishedWorkflow(SourceControl sourceControl, String organization, String repository, DescriptorLanguage descriptorLanguage) {
+        final String sql = String.format(
+            "INSERT INTO workflow (id, sourcecontrol, organization, repository, descriptortype, dbcreatedate, dbupdatedate, ispublished) VALUES (%s, '%s', '%s', '%s', '%s', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, false)",
+            entryId++, sourceControl.toString(), organization, repository, descriptorLanguage.getShortName());
+        return runUpdateStatement(sql);
     }
 }

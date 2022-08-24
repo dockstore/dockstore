@@ -4281,6 +4281,17 @@ paths:
               $ref: "#/definitions/User"
       security:
       - BEARER: []
+  /users/updateUserWorkflows:
+    post:
+      tags:
+      - "users"
+      operationId: "updateUserWorkflows"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        default:
+          description: "successful operation"
   /users/user:
     get:
       tags:
