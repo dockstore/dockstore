@@ -846,7 +846,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 return null;
             }
             theWf = maybeWorkflow.get();
-            testParameterPaths = theWf.getTestParameterFiles().stream().map(this::convertToAbsolutePath).collect(Collectors.toList());
+            testParameterPaths = theWf.getTestParameterFiles();
+            if (testParameterPaths != null) {
+                testParameterPaths = testParameterPaths.stream().map(this::convertToAbsolutePath).collect(Collectors.toList());
+            }
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             String msg = "Invalid .dockstore.yml: " + ex.getMessage();
             LOG.info(msg, ex);
