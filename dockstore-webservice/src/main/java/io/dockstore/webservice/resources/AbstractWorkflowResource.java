@@ -530,6 +530,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+                        workflow.syncMetadataWithDefault();
 
                         addValidationsToMessage(workflow, version, messageWriter);
                         publishWorkflowAndLog(workflow, publish, user, repository, gitReference);
