@@ -36,7 +36,6 @@ import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -47,7 +46,6 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.permissions.PermissionsInterface;
-import io.dockstore.webservice.permissions.Role;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -135,7 +133,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
         this.userDAO = userDAO;
-        this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO);
+        this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO, versionDAO);
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
         discourseCategoryId = configuration.getDiscourseCategoryId();
@@ -189,7 +187,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public List<Category> entryCategories(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
-        checkOptionalAuthRead(user, entry);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
         List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
         collectionHelper.evictAndSummarize(categories);
         return categories;
@@ -203,8 +202,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public List<VersionVerifiedPlatform> getVerifiedPlatforms(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "entryId", description = "id of the entry", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-
-        checkOptionalAuthRead(user, entry);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
 
         List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
         return verifiedVersions;
@@ -220,8 +219,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
             @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-
-        checkOptionalAuthRead(user, entry);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -230,15 +229,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
         return sourceFiles.stream().map(sourceFile -> sourceFile.getType()).collect(Collectors.toCollection(TreeSet::new));
-    }
-
-    public void checkEntryPermissions(final Optional<User> user, final Entry<? extends Entry, ? extends Version> entry) {
-        if (!entry.getIsPublished()) {
-            if (user.isEmpty()) {
-                throw new CustomWebApplicationException("This entry is not published.", HttpStatus.SC_NOT_FOUND);
-            }
-            checkUser(user.get(), entry);
-        }
     }
 
     @GET
@@ -251,8 +241,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
         @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-
-        checkOptionalAuthRead(user, entry);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -278,8 +268,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @PathParam("entryId") Long entryId,
         @Parameter(description = "Optional version ID of the entry version to export.", name = "versionId", in = ParameterIn.QUERY) @QueryParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-        checkEntry(entry);
-        checkEntryPermissions(Optional.of(user), entry);
+        checkNotNullEntry(entry);
+        checkCanRead(Optional.of(user), entry);
         List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
         String putCode;
         User nonCachedUser = this.userDAO.findById(user.getId());
@@ -536,40 +526,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Override
     public Entry getAndCheckResource(User user, Long id) {
         Entry<? extends Entry, ? extends Version> c = toolDAO.getGenericEntryById(id);
-        checkEntry(c);
-        checkUserCanUpdate(user, c);
+        checkNotNullEntry(c);
+        checkCanWrite(user, c);
         return c;
     }
 
     @Override
     public Entry getAndCheckResourceByAlias(String alias) {
         throw new UnsupportedOperationException("Use the TRS API for tools and workflows");
-    }
-
-    @Override
-    public void checkCanRead(User user, Entry workflow) {
-        try {
-            checkUser(user, workflow);
-        } catch (CustomWebApplicationException ex) {
-            checkCanReadAcrossEntryTypes(user, workflow, permissionsInterface, ex);
-        }
-    }
-
-    /**
-     * Process permissions for entries that may or may not be workflows
-     * @param user
-     * @param workflow
-     * @param permissionsInterface
-     * @param ex
-     */
-    public static void checkCanReadAcrossEntryTypes(User user, Entry<?, ?> workflow, PermissionsInterface permissionsInterface, CustomWebApplicationException ex) {
-        if (workflow instanceof Workflow) {
-            if (!permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.READ)) {
-                throw ex;
-            }
-        } else {
-            // TODO what will happen here with tools and other stuff? right now, ignore from a SAM POV and pass along exception
-            throw ex;
-        }
     }
 }

@@ -171,7 +171,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String WORKFLOW_INCLUDE = VERSIONS + ", " + ORCID_PUT_CODES + ", " + VERSION_INCLUDE;
     private static final String VERSION_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VERSION_INCLUDE;
     private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE + ", " + VERSION_INCLUDE;
-    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
+    public static final String A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB = "A workflow must be unpublished to restub.";
+    public static final String A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB = "A workflow must have no issued DOIs to restub";
+    public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB = "A workflow must have no snapshots to restub, you may consider unpublishing";
+    public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -235,17 +238,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow restub(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
         // Check that workflow is valid to restub
         if (workflow.getIsPublished()) {
-            throw new CustomWebApplicationException("A workflow must be unpublished to restub.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
         }
-
         if (workflow.isIsChecker()) {
             throw new CustomWebApplicationException("A checker workflow cannot be restubed.", HttpStatus.SC_BAD_REQUEST);
         }
+        if (workflow.getConceptDoi() != null) {
+            throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
+        }
+        if (versionDAO.getVersionsFrozen(workflowId) > 0) {
+            throw new CustomWebApplicationException(A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB, HttpStatus.SC_BAD_REQUEST);
+        }
 
         checkNotHosted(workflow);
-        checkCanWriteWorkflow(user, workflow);
+        checkCanWrite(user, workflow);
 
         workflow.setMode(WorkflowMode.STUB);
 
@@ -335,8 +344,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version, boolean hardRefresh) {
         Workflow existingWorkflow = workflowDAO.findById(workflowId);
-        checkEntry(existingWorkflow);
-        checkUserOwnsEntry(user, existingWorkflow);
+        checkNotNullEntry(existingWorkflow);
+        checkCanWrite(user, existingWorkflow);
         checkNotHosted(existingWorkflow);
         checkNotService(existingWorkflow);
         // get a live user for the following
@@ -409,8 +418,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowId", required = true, in = ParameterIn.PATH) @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
         @Parameter(name = "include", description = WORKFLOW_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = WORKFLOW_INCLUDE_MESSAGE) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        checkCanRead(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanExamine(user, workflow);
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
         Hibernate.initialize(workflow.getAliases());
@@ -433,8 +442,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "workflowID", required = true) @Parameter(name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        checkCanRead(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanExamine(user, workflow);
 
         List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0);
         return new TreeSet<>(versions);
@@ -453,8 +462,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
         @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        checkCanRead(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanExamine(user, workflow);
 
         WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
@@ -493,10 +502,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
         Workflow wf = workflowDAO.findById(workflowId);
-        checkEntry(wf);
-        // TODO: Need to handle updating a hosted workflow's workflow-level properties such as forumUrl and topic
-        checkNotHosted(wf);
-        checkCanWriteWorkflow(user, wf);
+        checkNotNullEntry(wf);
+        checkCanWrite(user, wf);
 
         Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false, BioWorkflow.class).orElse(null);
 
@@ -509,7 +516,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         updateInfo(wf, workflow);
         wf.getWorkflowVersions().stream().forEach(workflowVersion -> workflowVersion.setSynced(false));
         Workflow result = workflowDAO.findById(workflowId);
-        checkEntry(result);
+        checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result;
 
@@ -530,10 +537,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     // Used to update workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
-        // If workflow is FULL and descriptor type is being changed throw an error
-        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) && !Objects
+        // If workflow is FULL or HOSTED and descriptor type is being changed throw an error
+        if ((Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) || Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) && !Objects
             .equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
-            throw new CustomWebApplicationException("You cannot change the descriptor type of a FULL workflow.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW, HttpStatus.SC_BAD_REQUEST);
         }
 
         // Only copy workflow type if old workflow is a STUB
@@ -541,11 +548,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
         }
 
-        oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
-        oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
+        // ignore path changes for hosted workflows
+        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) {
+            oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
+            oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
+        }
         oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
         oldWorkflow.setTopicManual(newWorkflow.getTopicManual());
-        oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
+
+        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) {
+            oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
+        }
+
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
@@ -590,8 +604,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        checkUserOwnsEntry(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanWrite(user, workflow);
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
@@ -635,7 +649,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         registerZenodoDOIForWorkflow(zenodoClient, workflow, workflowVersion, user);
 
         Workflow result = workflowDAO.findById(workflowId);
-        checkEntry(result);
+        checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
 
@@ -689,8 +703,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow wf = workflowDAO.findById(workflowId);
 
         //check if the user and the entry is correct
-        checkEntry(wf);
-        checkCanWriteWorkflow(user, wf);
+        checkNotNullEntry(wf);
+        checkCanWrite(user, wf);
         checkNotHosted(wf);
 
         //update the workflow path in all workflowVersions
@@ -715,9 +729,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<User> getUsers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
-        checkEntry(c);
-
-        checkUser(user, c);
+        checkNotNullEntry(c);
+        checkCanExamine(user, c);
 
         return new ArrayList<>(c.getUsers());
     }
@@ -732,7 +745,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowId", required = true, in = ParameterIn.PATH) @ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId,
         @Parameter(name = "include", description = WORKFLOW_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = WORKFLOW_INCLUDE_MESSAGE) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
         initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return filterContainersForHiddenTags(workflow);
@@ -763,9 +776,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-
-        checkCanShareWorkflow(user, workflow);
+        checkNotNullEntry(workflow);
+        if (!isAdmin(user)) {
+            checkCanShare(user, workflow);
+        }
 
         Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());
@@ -852,8 +866,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
-        checkEntry(workflow);
-        checkCanRead(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanExamine(user, workflow);
         Hibernate.initialize(workflow.getAliases());
         initializeAdditionalFields(include, workflow);
         return workflow;
@@ -893,52 +907,38 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * Checks if <code>user</code> has permission to read <code>workflow</code>. If the user does not have permission, throws a {@link CustomWebApplicationException}.
+     * Returns true if <code>user</code> has permission to examine <code>workflow</code>.
      *
      * @param user
      * @param workflow
      */
     @Override
-    public void checkCanRead(User user, Entry workflow) {
-        try {
-            checkUser(user, workflow);
-        } catch (CustomWebApplicationException ex) {
-            if (!permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.READ)) {
-                throw ex;
-            }
-        }
+    public boolean canExamine(User user, Entry workflow) {
+        return super.canExamine(user, workflow)
+            || (workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.READ));
     }
 
     /**
-     * Checks if <code>user</code> has permission to write <code>workflow</code>. If the user does not have permission, throws a {@link CustomWebApplicationException}.
+     * Checks if <code>user</code> has permission to write <code>workflow</code>.
+     * @param user
+     * @param workflow
+     */
+    @Override
+    public boolean canWrite(User user, Entry workflow) {
+        return super.canWrite(user, workflow)
+            || (workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.WRITE));
+    }
+
+    /**
+     * Checks if <code>user</code> has permission to share <code>workflow</code>.
      *
      * @param user
      * @param workflow
      */
-    private void checkCanWriteWorkflow(User user, Workflow workflow) {
-        try {
-            checkUserOwnsEntry(user, workflow);
-        } catch (CustomWebApplicationException ex) {
-            if (!permissionsInterface.canDoAction(user, workflow, Role.Action.WRITE)) {
-                throw ex;
-            }
-        }
-    }
-
-    /**
-     * Checks if <code>user</code> has permission to share <code>workflow</code>. If the user does not have permission, throws a {@link CustomWebApplicationException}.
-     *
-     * @param user
-     * @param workflow
-     */
-    private void checkCanShareWorkflow(User user, Workflow workflow) {
-        try {
-            checkUser(user, workflow);
-        } catch (CustomWebApplicationException ex) {
-            if (!permissionsInterface.canDoAction(user, workflow, Role.Action.SHARE)) {
-                throw ex;
-            }
-        }
+    @Override
+    public boolean canShare(User user, Entry workflow) {
+        return super.canShare(user, workflow)
+            || (workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.SHARE));
     }
 
     @GET
@@ -953,7 +953,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
 
@@ -976,7 +976,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
         return this.permissionsInterface.getActionsForWorkflow(user, workflow);
     }
 
@@ -994,7 +994,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
         // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/dockstore/dockstore/issues/1593
         if (workflow.getMode() != WorkflowMode.HOSTED) {
             throw new CustomWebApplicationException("Setting permissions is only allowed on hosted workflows.", HttpStatus.SC_BAD_REQUEST);
@@ -1016,7 +1016,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
         this.permissionsInterface.removePermission(user, workflow, email, role);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
@@ -1039,7 +1039,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // Ensure the user has access
-        checkUser(user, entryPair.getValue());
+        checkCanExamine(user, entryPair.getValue());
 
         return entryPair.getValue();
     }
@@ -1072,8 +1072,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Workflow> workflows = workflowDAO.findAllByPath(path, false);
-        checkEntry(workflows);
-        AuthenticatedResourceInterface.checkUserAccessEntries(user, workflows);
+        workflows.forEach(this::checkNotNullEntry);
+        checkCanRead(user, workflows);
         return workflows;
     }
 
@@ -1096,7 +1096,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             targetClass = getSubClass(subclass);
         }
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
 
         Hibernate.initialize(workflow.getAliases());
         setWorkflowVersionSubset(workflow, include, versionName);
@@ -1113,7 +1113,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user, @QueryParam("workflowId") long workflowId) {
         Workflow repository = workflowDAO.findPublishedById(workflowId);
-        checkEntry(repository);
+        checkNotNullEntry(repository);
         return new ArrayList<>(repository.getWorkflowVersions());
     }
 
@@ -1170,7 +1170,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("version") String version) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
         FileType testParameterType = workflow.getTestParameterType();
         return getAllSourceFiles(workflowId, version, testParameterType, user, fileDAO, versionDAO);
     }
@@ -1188,8 +1188,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody,
         @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        checkCanWriteWorkflow(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanWrite(user, workflow);
         checkNotHosted(workflow);
 
         if (workflow.getMode() == WorkflowMode.STUB) {
@@ -1233,8 +1233,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
         @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        checkCanWriteWorkflow(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanWrite(user, workflow);
         checkNotHosted(workflow);
 
         Optional<WorkflowVersion> potentialWorkflowVersion = workflow.getWorkflowVersions().stream()
@@ -1337,8 +1337,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "List of modified workflow versions", required = true) List<WorkflowVersion> workflowVersions) {
 
         Workflow w = workflowDAO.findById(workflowId);
-        checkEntry(w);
-        checkCanWriteWorkflow(user, w);
+        checkNotNullEntry(w);
+        checkCanWrite(user, w);
 
         // create a map for quick lookup
         Map<Long, WorkflowVersion> mapOfExistingWorkflowVersions = new HashMap<>();
@@ -1411,7 +1411,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
         }
         Workflow result = workflowDAO.findById(workflowId);
-        checkEntry(result);
+        checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
@@ -1427,7 +1427,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkOptionalAuthRead(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         if (workflowVersion == null) {
@@ -1473,7 +1474,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkOptionalAuthRead(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         if (workflowVersion == null) {
@@ -1522,7 +1524,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
         @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by", in = ParameterIn.QUERY) @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkOptionalAuthRead(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanRead(user, workflow);
 
         return getVersionsSourcefiles(workflowId, workflowVersionId, fileTypes, versionDAO);
     }
@@ -1608,7 +1611,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Set<User> getStarredUsers(
         @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
+        checkCanRead(workflow);
 
         return workflow.getStarredUsers();
     }
@@ -1630,8 +1634,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Descriptor type to update to", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        checkUser(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanWrite(user, workflow);
         if (workflow.getIsPublished()) {
             throw new CustomWebApplicationException("Cannot change descriptor type of a published workflow", Response.Status.BAD_REQUEST.getStatusCode());
         } else {
@@ -1706,8 +1710,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 HttpStatus.SC_BAD_REQUEST);
         }
 
-        checkEntry(entry);
-        checkUser(user, entry);
+        checkNotNullEntry(entry);
+        checkCanWrite(user, entry);
 
         // Don't allow workflow stubs
         if (entry instanceof Workflow) {
@@ -1938,7 +1942,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkOptionalAuthRead(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         if (workflowVersion == null) {
@@ -1966,8 +1971,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow getWorkflowByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
         final Workflow workflow = this.workflowDAO.findByAlias(alias);
-        checkEntry(workflow);
-        optionalUserCheckEntry(user, workflow);
+        checkNotNullEntry(workflow);
+        checkCanRead(user, workflow);
         return workflow;
     }
 
@@ -2065,7 +2070,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         BioWorkflow workflow = existingWorkflow.get();
-        checkUser(foundUser, workflow);
+        checkCanWrite(foundUser, workflow);
         if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
             PublicStateManager.getInstance().handleIndexUpdate(existingWorkflow.get(), StateManagerMode.DELETE);
             eventDAO.deleteEventByEntryID(workflow.getId());
@@ -2155,11 +2160,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Retrieve ORCID author information for a workflow version", content = @Content(
         mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = OrcidAuthorInformation.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
-    public Set<OrcidAuthorInformation> getWorkflowVersionOrcidAuthors(@Parameter(hidden = true, name = "user") @Auth User user,
+    public Set<OrcidAuthorInformation> getWorkflowVersionOrcidAuthors(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
         checkCanRead(user, workflow);
 
         WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);

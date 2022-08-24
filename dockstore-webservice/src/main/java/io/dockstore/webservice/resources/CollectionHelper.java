@@ -22,6 +22,7 @@ import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -37,10 +38,12 @@ class CollectionHelper {
     private static final Logger LOG = LoggerFactory.getLogger(CollectionHelper.class);
     private final SessionFactory sessionFactory;
     private final EntryDAO<?> entryDAO;
+    private final VersionDAO versionDAO;
 
-    CollectionHelper(SessionFactory sessionFactory, EntryDAO<?> entryDAO) {
+    CollectionHelper(SessionFactory sessionFactory, EntryDAO<?> entryDAO, VersionDAO versionDAO) {
         this.sessionFactory = sessionFactory;
         this.entryDAO = entryDAO;
+        this.versionDAO = versionDAO;
     }
 
     public void throwExceptionForNullCollection(Collection collection) {
@@ -85,6 +88,7 @@ class CollectionHelper {
             List<Label> labels = entryDAO.getLabelByEntryId(entry.getId());
             List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
             entry.setLabels(labelStrings);
+            entry.setVerified(!versionDAO.findEntryVersionsWithVerifiedPlatforms(entry.getId()).isEmpty());
             List<CategorySummary> summaries = entryDAO.findCategorySummariesByEntryId(entry.getId());
             entry.setCategorySummaries(summaries);
             switch (entry.getEntryType()) {

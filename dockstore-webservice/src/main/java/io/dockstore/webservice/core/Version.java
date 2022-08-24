@@ -81,6 +81,7 @@ import org.hibernate.annotations.UpdateTimestamp;
             "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata, verifiedbysource.platformVersion, sourcefiles.path, verifiedbysource.verified) FROM Version version "
                 + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
                 + "version.parent.id = :entryId"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountVersionFrozenByEntryID", query = "SELECT sum (case when v.frozen = true then 1 else 0 end) FROM Version v WHERE v.parent.id = :id"),
     @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
 })
 
@@ -593,5 +594,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET
     }
 
+    /**
+     * Used to override @JsonIgnore of source files. Annoyingly, we want to not retrieve source files in general to preserve lazy-loading and not return source files un-necessarily in most REST
+     * responses. However, we want to serialize them into the elasticsearch index.
+     */
+    public interface ElasticSearchMixin {
 
+        @JsonProperty
+        String getSourceFiles();
+    }
 }

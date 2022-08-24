@@ -1,0 +1,39 @@
+name: Verify MacOS Installation Instructions
+# The file macos_installation_instructions.yml is generated with the script scripts/macos-instructions.sh
+on:
+  schedule:
+    - cron: '30 12 * * 1' #  This is every Monday at 5:30am PST/8:30am EST
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout dockstore/dockstore
+        uses: actions/checkout@v3
+        with:
+          repository: dockstore/dockstore
+          path: dockstore
+      - name: Checkout dockstore/dockstore-ui2
+        uses: actions/checkout@v3
+        with:
+          repository: dockstore/dockstore-ui2
+          path: dockstore-ui2
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      - run: git || true
+      - run: git config --global user.email "you@example.com";git config --global user.name "Your Name"
+      - run: git clone https://github.com/datasift/gitflow;cd gitflow;sudo ./install.sh
+      - run: brew install openjdk@17
+      - run: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+      - run: brew install git-secrets
+      - run: brew install wget
+      - run: brew install jq
+      - run: ./mvnw clean install
+        working-directory: dockstore
+      - run: npm ci --legacy-peer-deps
+        working-directory: dockstore-ui2
+      - run: npm run build
+        working-directory: dockstore-ui2

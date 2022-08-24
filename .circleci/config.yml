@@ -207,6 +207,9 @@ jobs:
       - run:
           name: Generate test lists
           command: bash scripts/generate-test-lists.sh
+      - run:
+          name: Verify that the MacOS installation instructions in README.md and macos_installation_instructions.yml are up to date with scripts/macos-instructions.sh
+          command: scripts/check_macos.sh
       - store_artifacts:
           path: temp/test-lists
       - run:
@@ -266,7 +269,7 @@ jobs:
             python3 -V
       - run:
           name: run the actual tests
-          command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp
+          command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
       - run:
           name: send coverage for unit tests
           command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
@@ -280,7 +283,7 @@ jobs:
               # If it is a branch, skip the signature check
               export SKIP_SIGNATURE_CHECK=true
             fi
-            ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
+            ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"
             # ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
       - run:
           name: send coverage for non-confidential integration tests
@@ -466,11 +469,11 @@ commands:
               TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
               echo $TESTS_TO_RUN
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
-              clean verify -Dit.test=$TESTS_TO_RUN -DfailIfNoTests=false
+              clean verify -Dit.test=$TESTS_TO_RUN -DfailIfNoTests=false | grep  -v "^Running Changeset:"
             else 
-              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp 
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
             fi
-
+          # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"

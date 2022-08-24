@@ -59,9 +59,9 @@ POM as their parent.
         <assertj.version>3.14.0</assertj.version>
         <junit-version>4.13.1</junit-version>
         <logback.version>1.2.11</logback.version>
-        <aws.version>2.17.165</aws.version>
+        <aws.version>2.17.186</aws.version>
         <powermock.version>2.0.4</powermock.version>
-        <postgresql.version>42.3.3</postgresql.version>
+        <postgresql.version>42.4.1</postgresql.version>
         <mockito.version>3.12.4</mockito.version>
         <cwlavro.version>2.0.4.7</cwlavro.version>
         <okhttp.version>4.10.0</okhttp.version>
@@ -234,7 +234,7 @@ POM as their parent.
             <dependency>
                 <groupId>commons-validator</groupId>
                 <artifactId>commons-validator</artifactId>
-                <version>1.6</version>
+                <version>1.7</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -620,7 +620,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.7</version>
+                <version>2.8.0</version>
             </dependency>
 
             <dependency>

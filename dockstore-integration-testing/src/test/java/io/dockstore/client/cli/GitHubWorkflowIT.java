@@ -35,6 +35,7 @@ import io.dockstore.openapi.client.model.ImageData;
 import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -63,8 +64,6 @@ public class GitHubWorkflowIT extends BaseIT {
     public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
     public static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW =
         SourceControl.GITHUB.toString() + "/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
-    private final String installationId = "1179416";
-    private final String toolAndWorkflowRepo = "DockstoreTestUser2/test-workflows-and-tools";
     private final String toolAndWorkflowRepoToolPath = "DockstoreTestUser2/test-workflows-and-tools/md5sum";
     private static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
     @Rule
@@ -94,7 +93,7 @@ public class GitHubWorkflowIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
 
 
@@ -184,7 +183,7 @@ public class GitHubWorkflowIT extends BaseIT {
                 WorkflowSubClass.BIOWORKFLOW.getValue()).size());
 
         // Create an app tool and publish it
-        workflowApi.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
+        AppToolHelper.registerAppTool(webClient);
         Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions");
         workflowApi.publish(appTool.getId(), publishRequest);
         assertEquals("There should be 1 app tool published", 1,

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -101,8 +102,9 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 13)
     private WorkflowMode mode = WorkflowMode.STUB;
 
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "varchar(256)")
     @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", position = 14)
+    @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
     private String workflowName;
 
     @Column(nullable = false)

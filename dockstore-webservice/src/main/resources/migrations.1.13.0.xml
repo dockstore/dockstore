@@ -69,4 +69,32 @@
             delete from token where tokensource = 'github.com' and content not like 'gho_%' and content not like 'ghp_%';
         </sql>
     </changeSet>
+    <changeSet id="max_workflowname_and_toolname" author="coverbeck">
+        <!-- 256 is from StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT.
+             If truncating, add numbers using a sequence to ensure workflowname uniqueness within a sourcecontrol, organization, repository;
+             otherwise a uniqueness constraint will cause a failure.
+        -->
+        <sql dbms="postgresql">
+            create sequence max_workflowname_and_toolname;
+            update workflow set workflowname = concat(left(workflowname, 254), nextval('max_workflowname_and_toolname')) where length(workflowname) > 256;
+            update tool set toolname = concat(left(toolname, 254), nextVal('max_workflowname_and_toolname')) where length(toolname) > 256;
+            update service set workflowname = concat(left(workflowname, 254), nextval('max_workflowname_and_toolname')) where length(workflowname) > 256;
+            update apptool set workflowname = concat(left(workflowname, 254), nextval('max_workflowname_and_toolname')) where length(workflowname) > 256;
+            drop sequence max_workflowname_and_toolname;
+        </sql>
+        <modifyDataType tableName="workflow" columnName="workflowname" newDataType="varchar(256)"/>
+        <modifyDataType tableName="tool" columnName="toolname" newDataType="varchar(256)"/>
+        <modifyDataType tableName="apptool" columnName="workflowname" newDataType="varchar(256)"/>
+        <modifyDataType tableName="service" columnName="workflowname" newDataType="varchar(256)"/>
+    </changeSet>
+    <changeSet author="dyuen" id="hostedtopicmanual">
+        <update tableName="workflow">
+            <column name="topicselection" value ="MANUAL"/>
+            <where>mode= 'HOSTED'</where>
+        </update>
+        <update tableName="tool">
+            <column name="topicselection" value ="MANUAL"/>
+            <where>mode = 'HOSTED'</where>
+        </update>
+    </changeSet>
 </databaseChangeLog>

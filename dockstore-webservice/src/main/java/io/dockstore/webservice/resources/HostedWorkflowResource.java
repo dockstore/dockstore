@@ -40,7 +40,6 @@ import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
-import io.dockstore.webservice.permissions.Role;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -135,31 +134,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    public void checkUserCanRead(User user, Entry entry) {
-        checkUserCanDoAction(user, entry, Role.Action.READ);
-    }
-
-    @Override
-    public void checkUserCanUpdate(User user, Entry entry) {
-        checkUserCanDoAction(user, entry, Role.Action.WRITE);
-    }
-
-    @Override
-    public void checkUserCanDelete(User user, Entry entry) {
-        checkUserCanDoAction(user, entry, Role.Action.DELETE);
-    }
-
-    private void checkUserCanDoAction(User user, Entry entry, Role.Action action) {
-        try {
-            checkUserOwnsEntry(user, entry); // Checks if owner, which has all permissions.
-        } catch (CustomWebApplicationException ex) {
-            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, action)) {
-                throw ex;
-            }
-        }
-    }
-
-    @Override
     protected void checkForDuplicatePath(Workflow workflow) {
         MutablePair<String, Entry> duplicate = getEntryDAO().findEntryByPath(workflow.getWorkflowPath(), false);
         if (duplicate != null) {
@@ -210,9 +184,9 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         @ApiParam(value = "hosted entry ID") @Parameter(name = "entryId", description = "hosted entry ID") @PathParam("entryId") final Long entryId,
         @Parameter(name = "file", schema = @Schema(type = "string", format = "binary")) @FormDataParam("file") final InputStream payload) {
         final Workflow workflow = getEntryDAO().findById(entryId);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
         checkHosted(workflow);
-        checkUserCanUpdate(user, workflow);
+        checkCanWrite(user, workflow);
         checkVersionLimit(user, workflow);
         final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromInputStream(payload, workflow.getFileType());
         final WorkflowVersion version = getVersion(workflow);

@@ -564,7 +564,11 @@ public class User implements Principal, Comparable<User>, Serializable {
     public static class Profile implements Serializable {
         @Column(columnDefinition = "text")
         public String name;
+        /**
+         * Only use this for computations inside the webservice.
+         */
         @Column(columnDefinition = "text")
+        @JsonIgnore
         public String email;
         @Column(columnDefinition = "text")
         public String avatarURL;

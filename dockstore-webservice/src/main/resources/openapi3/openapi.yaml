@@ -4577,26 +4577,6 @@ paths:
       - BEARER: []
       tags:
       - users
-  /users/github/organizations:
-    get:
-      description: Gets GitHub organizations for current user.
-      operationId: getMyGitHubOrgs
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SourceControlOrganization'
-          description: "Descriptions of Github organizations (including but not limited\
-            \ to id, names)"
-        "400":
-          description: Bad request
-      security:
-      - BEARER: []
-      tags:
-      - users
   /users/github/sync:
     post:
       description: Syncs Dockstore account with GitHub App Installations.
@@ -5047,12 +5027,8 @@ paths:
           description: A user with the specified username
         "400":
           description: Bad request
-        "403":
-          description: Forbidden
         "404":
           description: User not found
-      security:
-      - BEARER: []
       tags:
       - users
   /users/users/entries:
@@ -5071,6 +5047,15 @@ paths:
         name: filter
         schema:
           type: string
+      - description: Type of entry
+        in: query
+        name: type
+        schema:
+          type: string
+          enum:
+          - TOOLS
+          - WORKFLOWS
+          - SERVICES
       responses:
         "200":
           content:
@@ -7838,6 +7823,8 @@ components:
           type: string
         toolname:
           type: string
+          maxLength: 256
+          minLength: 0
         topic:
           type: string
         topicAutomatic:
@@ -8617,8 +8604,6 @@ components:
           type: string
         company:
           type: string
-        email:
-          type: string
         link:
           type: string
         location:
@@ -8717,14 +8702,6 @@ components:
         friendlyName:
           type: string
         value:
-          type: string
-    SourceControlOrganization:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        name:
           type: string
     SourceFile:
       type: object
@@ -9737,6 +9714,8 @@ components:
           uniqueItems: true
         workflowName:
           type: string
+          maxLength: 256
+          minLength: 0
         workflowVersions:
           type: array
           items:

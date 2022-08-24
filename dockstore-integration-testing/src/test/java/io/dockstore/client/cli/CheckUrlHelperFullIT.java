@@ -72,7 +72,7 @@ public class CheckUrlHelperFullIT {
      */
     @Test
     public void settingVersionMetadata() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(RULE.getTestSupport(), false);
+        CommonTestUtilities.cleanStatePrivate2(RULE.getTestSupport(), false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         final String installationId = "1179416";

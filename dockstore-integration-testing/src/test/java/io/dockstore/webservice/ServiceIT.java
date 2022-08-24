@@ -206,7 +206,7 @@ public class ServiceIT extends BaseIT {
     @Test
     public void testGitHubAppEndpoints() throws Exception {
 
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -255,7 +255,7 @@ public class ServiceIT extends BaseIT {
     @Test
     public void createServiceNoUser() throws Exception {
 
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -283,7 +283,7 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void testServiceWithSamePathAsWorkflow() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -323,7 +323,7 @@ public class ServiceIT extends BaseIT {
     @Test
     public void updateServiceIncorrectTag() throws Exception {
 
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -344,7 +344,7 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void updateServiceNoOrInvalidYml() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -374,7 +374,7 @@ public class ServiceIT extends BaseIT {
     @Test
     public void updateServiceSync() throws Exception {
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -401,7 +401,7 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void createServiceNoGitHubRepo() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 

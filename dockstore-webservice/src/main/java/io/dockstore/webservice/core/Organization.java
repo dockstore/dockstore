@@ -33,7 +33,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -119,15 +118,16 @@ public class Organization implements Serializable, Aliasable {
     @OrderBy("id")
     private Set<User> starredUsers;
 
+    /**
+     * This should probably be lazy. Until then, note that the <code>getCollectionsLength()</code>
+     * method fetches all collections; to convert this to lazy, the implementation of
+     * <code>getCollectionsLength()</code> should change otherwise they'll be eagerly fetched
+     * anyway.
+     */
     @JsonIgnore
     @OneToMany(mappedBy = "organization")
     @Where(clause = "deleted = false")
     private Set<Collection> collections = new HashSet<>();
-
-    @Transient
-    @JsonSerialize
-    @ApiModelProperty(value = "collectionsLength")
-    private long collectionsLength;
 
     @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "organization_alias", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = @UniqueConstraint(name = "unique_org_aliases", columnNames = { "alias" }))
@@ -265,12 +265,10 @@ public class Organization implements Serializable, Aliasable {
         this.collections = collections;
     }
 
+    @JsonSerialize
+    @ApiModelProperty(value = "collectionsLength")
     public long getCollectionsLength() {
-        return collectionsLength; 
-    }
-
-    public void setCollectionsLength(long length) {
-        this.collectionsLength = length; 
+        return getCollections().size();
     }
 
     public void addCollection(Collection collection) {

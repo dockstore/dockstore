@@ -148,6 +148,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private String checkUrlLambdaUrl;
 
+    private String sourceFilePathRegex = "^[a-zA-Z0-9 ./_-]*$";
+
+    private String sourceFilePathViolationMessage = "Filenames and paths must not contain characters other than letters, digits, '.', '/', '-', '_', and ' '.";
+
     @JsonProperty("toolTesterBucket")
     public String getToolTesterBucket() {
         return toolTesterBucket;
@@ -543,6 +547,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setCheckUrlLambdaUrl(String checkUrlLambdaUrl) {
         this.checkUrlLambdaUrl = checkUrlLambdaUrl;
+    }
+
+    public String getSourceFilePathRegex() {
+        return sourceFilePathRegex;
+    }
+
+    public void setSourceFilePathRegex(String sourceFilePathRegex) {
+        this.sourceFilePathRegex = sourceFilePathRegex;
+    }
+
+    public String getSourceFilePathViolationMessage() {
+        return sourceFilePathViolationMessage;
+    }
+
+    public void setSourceFilePathViolationMessage(String sourceFilePathViolationMessage) {
+        this.sourceFilePathViolationMessage = sourceFilePathViolationMessage;
     }
 
     /**

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -127,7 +128,8 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "Is the docker image private or not.", required = true, position = 21)
     private boolean privateAccess = false;
 
-    @Column(columnDefinition = "Text")
+    @Column(columnDefinition = "varchar(256)")
+    @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "

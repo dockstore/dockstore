@@ -146,7 +146,7 @@ public class GalaxyPluginIT {
         Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
 
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
 
     @Test

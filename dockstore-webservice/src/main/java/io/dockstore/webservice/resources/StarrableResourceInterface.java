@@ -34,8 +34,8 @@ public interface StarrableResourceInterface extends AuthenticatedResourceInterfa
      * @param entryPath the path of the entry
      */
     default void starEntryHelper(Entry<?, ?> entry, User user, String entryType, String entryPath) {
-        checkEntry(entry);
-        if (!entry.getIsPublished()) {
+        checkNotNullEntry(entry);
+        if (!isAdmin(user)) {
             checkCanRead(user, entry);
         }
         Set<User> starredUsers = entry.getStarredUsers();
@@ -56,7 +56,7 @@ public interface StarrableResourceInterface extends AuthenticatedResourceInterfa
      * @param entryPath the path of the entry
      */
     default void unstarEntryHelper(Entry<?, ?> entry, User user, String entryType, String entryPath) {
-        checkEntry(entry);
+        checkNotNullEntry(entry);
 
         Set<User> starredUsers = entry.getStarredUsers();
         if (starredUsers.contains(user)) {
