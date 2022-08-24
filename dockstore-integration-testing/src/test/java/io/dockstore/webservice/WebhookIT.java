@@ -1326,4 +1326,15 @@ public class WebhookIT extends BaseIT {
         // test service and unnamed workflows
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/service-and-unnamed-workflow", installationId));
     }
+
+    @Test
+    public void testMultiEntryRelativePrimaryDescriptorPath() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/relative-primary-descriptor-path", installationId);
+        assertEquals(2, countWorkflows());
+        assertEquals(2, countTools());
+    }
 }
