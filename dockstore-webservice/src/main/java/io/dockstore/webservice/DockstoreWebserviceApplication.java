@@ -148,15 +148,12 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -178,6 +175,7 @@ import org.eclipse.jetty.util.component.LifeCycle;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
@@ -499,39 +497,34 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         });
 
         environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-            // experiment with github token api
             @Override
             public void lifeCycleStarted(LifeCycle event) {
-                try (Session session = hibernate.getSessionFactory().openSession()) {
-                    ManagedSessionContext.bind(session);
+                Session session = hibernate.getSessionFactory().openSession();
+                ManagedSessionContext.bind(session);
+                final Transaction transaction = session.beginTransaction();
+                try {
                     TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
-                    tokenDAO.findAllGitHubTokens().stream().forEachOrdered(token -> {
+                    // exclude both gho tokens that the application generates and ghp tokens that we can insert for testing
+                    // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
+                    tokenDAO.findAllGitHubTokens().stream().filter(t -> !t.getContent().startsWith("gho_") && !t.getContent().startsWith("ghp_")).forEach(token -> {
                         try {
                             // cannot use normal github library
-                            final java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().authenticator(new Authenticator() {
-                                @Override
-                                protected PasswordAuthentication getPasswordAuthentication() {
-                                    return new PasswordAuthentication(
-                                        configuration.getGithubClientID(),
-                                        configuration.getGithubClientSecret().toCharArray());
-                                }
-                            }).build();
+                            final java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().build();
                             HttpRequest request = HttpRequest.newBuilder()
-                                .uri(new URI("https://api.github.com/applications/"+configuration.getGithubClientID()+"/token"))
+                                .uri(new URI("https://api.github.com/applications/" + configuration.getGithubClientID() + "/token"))
                                 .header("Accept", "application/vnd.github+json")
-                                .header("Content-Type", "application/json")
-                                .method("PATCH", BodyPublishers.ofString("{\"access_token\":\""+token.getContent()+"\"}"))
+                                .header("Authorization", getBasicAuthenticationHeader(configuration.getGithubClientID(), configuration.getGithubClientSecret()))
+                                .method("PATCH", BodyPublishers.ofString("{\"access_token\":\"" + token.getContent() + "\"}"))
                                 .build();
-                            final HttpResponse<String> send = client.send(request, BodyHandlers.ofString());
-                            final String body = send.body();
-                            //final HttpResponse<Model> send = client.send(request, new JsonBodyHandler<>(Model.class));
-                            //final HttpResponse<Model> send = client.send(request, new JsonBodyHandler<>(Model.class));
-//                            final String token1 = send.body().token;
-//                            if (send.statusCode() != HttpStatus.SC_NOT_FOUND) {
-//                                token.setContent(token1);
-//                            } else {
-//                                LOG.error("could not update old style github token for {}, token was not found", token.getUsername());
-//                            }
+                            final HttpResponse<ResetTokenModel> send = client.send(request, new JsonBodyHandler<>(ResetTokenModel.class));
+                            final String token1 = send.body().token;
+                            if (send.statusCode() != HttpStatus.SC_NOT_FOUND) {
+                                token.setContent(token1);
+                                tokenDAO.update(token);
+                                LOG.info("updated token for {}", token.getUsername());
+                            } else {
+                                LOG.error("could not update old style github token for {}, token was not found on github", token.getUsername());
+                            }
                         } catch (IOException e) {
                             LOG.error("could not update old style github token for {}", token.getUsername());
                         } catch (URISyntaxException e) {
@@ -540,14 +533,17 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                             LOG.error("could not update old style github token for {} due to interruption", token.getUsername());
                         }
                     });
+                } finally {
+                    transaction.commit();
+                    ManagedSessionContext.unbind(hibernate.getSessionFactory());
                 }
             }
         });
     }
 
-    private static final String getBasicAuthenticationHeader(String username, String password) {
+    private static String getBasicAuthenticationHeader(String username, String password) {
         String valueToEncode = username + ":" + password;
-        return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes());
+        return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes(StandardCharsets.UTF_8));
     }
 
     private void registerAPIsAndMisc(Environment environment) {
@@ -639,7 +635,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
 
-    private static class Model {
+    private static class ResetTokenModel {
+
         private String token;
 
         public String getToken() {
@@ -650,11 +647,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             this.token = token;
         }
     }
+
     private static class JsonBodyHandler<W> implements HttpResponse.BodyHandler<W> {
 
         private final Class<W> wClass;
 
-        public JsonBodyHandler(Class<W> wClass) {
+        JsonBodyHandler(Class<W> wClass) {
             this.wClass = wClass;
         }
 
