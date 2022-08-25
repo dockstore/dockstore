@@ -144,6 +144,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @BatchSize(size = 25)
     @Filter(name = "versionNameFilter")
+    @Filter(name = "versionIdFilter")
     private SortedSet<WorkflowVersion> workflowVersions;
 
     @JsonIgnore

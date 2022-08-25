@@ -76,4 +76,12 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
     public void disableNameFilter() {
         currentSession().disableFilter("versionNameFilter");
     }
+
+    public void enableIdFilter(long id) {
+        currentSession().enableFilter("versionIdFilter").setParameter("id", id);
+    }
+
+    public void disableIdFilter() {
+        currentSession().disableFilter("versionIdFilter");
+    }
 }
