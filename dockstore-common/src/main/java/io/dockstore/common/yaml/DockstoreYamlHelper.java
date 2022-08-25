@@ -386,6 +386,10 @@ public final class DockstoreYamlHelper {
         if (!violations.isEmpty()) {
             throw new DockstoreYamlException(
                 violations.stream()
+                    // The violations come back unordered in a HashSet.
+                    // Sort them lexicographically by property path (ex "workflows[0].author[0].name").
+                    // The result doesn't match their order in the yaml file, but is probably good enough for now...
+                    .sorted((a, b) -> a.getPropertyPath().toString().compareTo(b.getPropertyPath().toString()))
                     .map(v -> buildMessageFromViolation(v))  // NOSONAR here, a lambda is more understandable than method reference
                     .collect(Collectors.joining("; ")));
         }

@@ -34,9 +34,7 @@ public class YamlWorkflow {
     public static final String NEW_GALAXY_SUBCLASS = "GALAXY";
 
     private String name;
-    @NotNull
     private String subclass;
-    @NotNull
     private String primaryDescriptorPath;
 
     /**
@@ -63,6 +61,7 @@ public class YamlWorkflow {
         this.name = name;
     }
 
+    @NotNull
     public String getSubclass() {
         if (NEW_GALAXY_SUBCLASS.equalsIgnoreCase(subclass)) {
             return DescriptorLanguage.GXFORMAT2.getShortName();
@@ -74,6 +73,7 @@ public class YamlWorkflow {
         this.subclass = subclass;
     }
 
+    @NotNull
     public String getPrimaryDescriptorPath() {
         return primaryDescriptorPath;
     }
