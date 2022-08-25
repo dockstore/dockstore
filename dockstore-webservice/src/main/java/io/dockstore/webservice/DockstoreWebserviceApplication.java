@@ -531,6 +531,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                             LOG.error("could not update old style github token for {} due to syntax issue", token.getUsername());
                         } catch (InterruptedException e) {
                             LOG.error("could not update old style github token for {} due to interruption", token.getUsername());
+                            // Restore interrupted state... (sonarcloud suggestion)
+                            Thread.currentThread().interrupt();
                         }
                     });
                 } finally {
