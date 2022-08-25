@@ -283,10 +283,10 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             versionDAO.enableIdFilter(versionId);
             T entry = findAndCheckEntryById(entryId, user);
             Version version = entry.getWorkflowVersions().stream().filter(v -> v.getId() == versionId).findFirst().orElse(null);
+            getDAO().evict(entry);
             if (version == null) {
                 throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
             }
-            getDAO().evict(entry);
             return new EvictedVersionAndEntry<>(version, entry);
         } finally {
             versionDAO.disableIdFilter();
@@ -294,8 +294,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     /**
-     * Finds the entry corresponding to the specified ID, adjusting access per the specified logged-in user.
-     * The entry will have its versions populated, and will be evicted so no accidental db mods are possible.
+     * Finds the entry corresponding to the specified ID, adjusting access to hidden versions per the specified logged-in user.
      * Throws a CustomWebApplicationException if the entry is not accessible.
      */
     default T findAndCheckEntryById(long entryId, Optional<User> user) {
