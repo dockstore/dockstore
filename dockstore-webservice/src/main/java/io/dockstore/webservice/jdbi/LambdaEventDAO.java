@@ -6,6 +6,7 @@ import io.dockstore.webservice.core.User;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -73,13 +74,23 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         return typedQuery.getResultList();
     }
 
-    public List<LambdaEvent> findByOrganization(String organization, String offset, Integer limit) {
+    /**
+     * Returns a list of lambda events for an organization. If <code>repositories</code> is not
+     * empty, it further filters down to the specified repos within the organization.
+     * @param organization
+     * @param offset
+     * @param limit
+     * @param repositories
+     * @return
+     */
+    public List<LambdaEvent> findByOrganization(String organization, String offset, Integer limit, Optional<List<String>> repositories) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<LambdaEvent> query = criteriaQuery();
         Root<LambdaEvent> event = query.from(LambdaEvent.class);
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(cb.equal(event.get("organization"), organization));
+        repositories.ifPresent(repos -> predicates.add(event.get("repository").in(repos)));
         query.orderBy(cb.desc(event.get("id")));
         query.where(predicates.toArray(new Predicate[]{}));
 

@@ -31,7 +31,6 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
-import io.dockstore.openapi.client.model.SourceControlOrganization;
 import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.helpers.AppToolHelper;
@@ -536,13 +535,11 @@ public class UserResourceIT extends BaseIT {
 
         io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
-        List<SourceControlOrganization> myGitHubOrgs = userApi.getMyGitHubOrgs();
-        assertTrue(!myGitHubOrgs.isEmpty() && myGitHubOrgs.stream().anyMatch(org -> org.getName().equals("dockstoretesting")));
         // Delete all of the tokens (except for Dockstore tokens) for every user
         testingPostgres.runUpdateStatement("UPDATE token set content = 'foo' WHERE tokensource <> 'dockstore'");
 
         try {
-            userApi.getMyGitHubOrgs();
+            userApi.getUserOrganizations("github.com");
         } catch (io.dockstore.openapi.client.ApiException e) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
             return;

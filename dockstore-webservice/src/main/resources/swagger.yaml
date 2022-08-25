@@ -4088,22 +4088,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/LambdaEvent"
-  /users/github/organizations:
-    get:
-      tags:
-      - "users"
-      operationId: "getMyGitHubOrgs"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          headers: {}
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceControlOrganization"
   /users/github/sync:
     post:
       tags:
@@ -7849,17 +7833,6 @@ definitions:
         type: "string"
       value:
         type: "string"
-  SourceControlOrganization:
-    type: "object"
-    properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Id for the organization e.g. 1"
-      name:
-        type: "string"
-        description: "Name of the organization e.g. dockstore"
-    description: "This describes a source control organization"
   SourceFile:
     type: "object"
     required:

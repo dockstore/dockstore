@@ -168,9 +168,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response toolsIndexGet(SecurityContext securityContext) {
+        int totalProcessed = 0;
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
             clearElasticSearch();
-            int totalProcessed = 0;
             LOG.info("Starting GA4GH batch processing");
             totalProcessed += indexDAO(toolDAO);
             LOG.info("Processed {} tools", totalProcessed);
@@ -178,9 +178,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             LOG.info("Processed {} tools and workflows", totalProcessed);
             totalProcessed += indexDAO(appToolDAO);
             LOG.info("Processed {} tools, workflows, and apptools", totalProcessed);
-            return Response.ok().entity(totalProcessed).build();
         }
-        return Response.ok().entity(0).build();
+        return Response.ok().entity(totalProcessed).build();
     }
 
     private int indexDAO(EntryDAO entryDAO) {
