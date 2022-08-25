@@ -1326,4 +1326,42 @@ public class WebhookIT extends BaseIT {
         // test service and unnamed workflows
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/service-and-unnamed-workflow", installationId));
     }
+
+    /**
+     * Test that the GitHub release syncs a workflow's metadata with the default version's metadata.
+     * @throws Exception
+     */
+    @Test
+    public void testSyncWorkflowMetadataWithDefaultVersion() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+
+        workflowsApi.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(workflowsApi); // dockstore.yml for foobar doesn't have latestTagAsDefault set
+        assertNull(workflow.getDefaultVersion());
+        workflowsApi.updateDefaultVersion1(workflow.getId(), "0.4"); // Set default version for workflow that doesn't have one
+        workflow = getFoobar1Workflow(workflowsApi);
+        assertEquals("0.4", workflow.getDefaultVersion());
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> defaultVersion = workflow.getWorkflowVersions().stream()
+                .filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.4"))
+                .findFirst();
+        assertTrue(defaultVersion.isPresent());
+        assertEquals("Version should have author set", "Test User", defaultVersion.get().getAuthor());
+        assertEquals("Version should have email set", "test@dockstore.org", defaultVersion.get().getEmail());
+        assertEquals("Version should have email set", "This is a description", defaultVersion.get().getDescription());
+        assertEquals("Workflow author should be default version author", defaultVersion.get().getAuthor(), workflow.getAuthor());
+        assertEquals("Workflow email should be default version email", defaultVersion.get().getEmail(), workflow.getEmail());
+        assertEquals("Workflow description should be default version description", defaultVersion.get().getDescription(), workflow.getDescription());
+        // Clear workflow metadata to test the scenario where the default version metadata was updated and is now out of sync with the workflow's metadata
+        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET author = NULL where id = '%s'", workflow.getId()));
+        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET email = NULL where id = '%s'", workflow.getId()));
+        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET description = NULL where id = '%s'", workflow.getId()));
+        // GitHub release should sync metadata with default version
+        workflowsApi.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        workflow = getFoobar1Workflow(workflowsApi);
+        assertEquals("Workflow author should be default version author", defaultVersion.get().getAuthor(), workflow.getAuthor());
+        assertEquals("Workflow email should be default version email", defaultVersion.get().getEmail(), workflow.getEmail());
+        assertEquals("Workflow description should be default version description", defaultVersion.get().getDescription(), workflow.getDescription());
+    }
 }
