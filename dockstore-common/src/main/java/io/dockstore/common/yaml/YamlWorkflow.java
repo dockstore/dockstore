@@ -37,6 +37,7 @@ public class YamlWorkflow implements Workflowish {
     @NotNull
     private String subclass;
     @NotNull
+    @AbsolutePath
     private String primaryDescriptorPath;
 
     /**
@@ -48,11 +49,14 @@ public class YamlWorkflow implements Workflowish {
     // If true, the most recent tag that Dockstore processes from AWS lambda becomes the default version
     private boolean latestTagAsDefault = false;
 
+    @Valid
     private Filters filters = new Filters();
 
+    @Valid
     private List<YamlAuthor> authors = new ArrayList<>();
 
-    private List<String> testParameterFiles = new ArrayList<>();
+    @Valid
+    private List<@NotNull @AbsolutePath String> testParameterFiles = new ArrayList<>();
 
 
     public String getName() {
@@ -90,7 +94,6 @@ public class YamlWorkflow implements Workflowish {
         this.publish = publish;
     }
 
-    @Valid
     public Filters getFilters() {
         return filters;
     }
@@ -99,7 +102,6 @@ public class YamlWorkflow implements Workflowish {
         this.filters = filters;
     }
 
-    @Valid
     public List<YamlAuthor> getAuthors() {
         return authors;
     }
