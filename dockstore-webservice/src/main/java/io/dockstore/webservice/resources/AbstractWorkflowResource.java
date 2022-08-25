@@ -610,11 +610,31 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
+        // Check that the subclass is the same as the entry to update
+        // For services, we must compare the descriptor type subclasses
+        // For workflows and tools, we must compare the descriptor types (languages)
+        // The `convertShortName` methods throw `UnsupportedOperationException` when passed an unknown subclass
+        try {
+            if (workflowType == Service.class) {
+                checkSame(workflowToUpdate.getDescriptorTypeSubclass(), DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass), "descriptor type subclass", "service");
+            } else {
+                checkSame(workflowToUpdate.getDescriptorType(), DescriptorLanguage.convertShortStringToEnum(subclass), "descriptor language (subclass)", workflowType == AppTool.class ? "tool" : "workflow");
+            }
+        } catch (UnsupportedOperationException e) {
+            throw new CustomWebApplicationException(String.format("Unknown subclass '%s'", subclass), HttpStatus.SC_BAD_REQUEST);
+        }
+
         if (user != null) {
             workflowToUpdate.getUsers().add(user);
         }
 
         return  workflowToUpdate;
+    }
+
+    private <T> void checkSame(T currentValue, T newValue, String valueDescription, String entryDescription) {
+        if (!Objects.equals(currentValue, newValue)) {
+            throw new CustomWebApplicationException(String.format("You can't add a %s version to a %s %s, the %s of all versions must be the same.", newValue, currentValue, entryDescription, valueDescription), HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     /**
