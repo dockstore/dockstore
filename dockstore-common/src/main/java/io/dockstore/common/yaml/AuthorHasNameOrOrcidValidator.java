@@ -23,14 +23,14 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Validates that an author has a non-empty name or ORCID.
  */
-public class AuthorNameOrOrcidValidator implements ConstraintValidator<AuthorNameOrOrcid, YamlAuthor> {
+public class AuthorHasNameOrOrcidValidator implements ConstraintValidator<AuthorHasNameOrOrcid, YamlAuthor> {
     @Override
-    public void initialize(final AuthorNameOrOrcid constraintAnnotation) {
+    public void initialize(final AuthorHasNameOrOrcid constraintAnnotation) {
         // Intentionally empty
     }
 
     @Override
     public boolean isValid(final YamlAuthor author, final ConstraintValidatorContext context) {
-        return !StringUtils.isEmpty(author.getName()) || !StringUtils.isEmpty(author.getOrcid());
+        return StringUtils.isNotEmpty(author.getName()) || StringUtils.isNotEmpty(author.getOrcid());
     }
 }

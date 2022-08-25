@@ -15,7 +15,7 @@
  */
 package io.dockstore.common.yaml;
 
-@AuthorNameOrOrcid
+@AuthorHasNameOrOrcid
 public class YamlAuthor {
 
     private String name;

@@ -19,12 +19,22 @@ package io.dockstore.common.yaml;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+/**
+ * Adapts `ToStringBuilder` to construct a short text representation of
+ * the values of an object's fields, extending the methods that format
+ * fields with object or object array values so that null values are not
+ * displayed.
+ *
+ * <p>Used to create short text representations of the YAML objects
+ * that are suitable for inclusion in error messages.
+ */
 public class BriefToStringBuilder extends ToStringBuilder {
     
     public BriefToStringBuilder(Object object) {
         super(object, ToStringStyle.NO_CLASS_NAME_STYLE);
     }
 
+    @Override
     public BriefToStringBuilder append(String fieldName, Object value) {
         if (value != null) {
             super.append(fieldName, value);
@@ -32,6 +42,7 @@ public class BriefToStringBuilder extends ToStringBuilder {
         return this;
     }
 
+    @Override
     public BriefToStringBuilder append(String fieldName, Object[] values) {
         if (values != null) {
             super.append(fieldName, values);
