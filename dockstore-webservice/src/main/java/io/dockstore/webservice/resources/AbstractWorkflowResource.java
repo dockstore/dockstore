@@ -618,7 +618,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (workflowType == Service.class) {
                 checkSame(workflowToUpdate.getDescriptorTypeSubclass(), DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass), "descriptor type subclass", "service");
             } else {
-                checkSame(workflowToUpdate.getDescriptorType(), DescriptorLanguage.convertShortStringToEnum(subclass), "descriptor language (subclass)", workflowToUpdate instanceof AppTool ? "tool" : "workflow");
+                checkSame(workflowToUpdate.getDescriptorType(), DescriptorLanguage.convertShortStringToEnum(subclass), "descriptor language (subclass)", workflowType == AppTool.class ? "tool" : "workflow");
             }
         } catch (UnsupportedOperationException e) {
             throw new CustomWebApplicationException(String.format("Unknown subclass '%s'", subclass), HttpStatus.SC_BAD_REQUEST);
@@ -633,7 +633,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     private <T> void checkSame(T currentValue, T newValue, String valueDescription, String entryDescription) {
         if (!Objects.equals(currentValue, newValue)) {
-            throw new CustomWebApplicationException(String.format("The %s of the original %s ('%s') and all of its versions must be the same.", valueDescription, entryDescription, currentValue), HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(String.format("You can't add a %s version to a %s %s, the %s of all versions must be the same.", newValue, currentValue, entryDescription, valueDescription), HttpStatus.SC_BAD_REQUEST);
         }
     }
 

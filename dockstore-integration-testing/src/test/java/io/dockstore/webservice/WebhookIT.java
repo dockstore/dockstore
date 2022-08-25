@@ -1234,6 +1234,7 @@ public class WebhookIT extends BaseIT {
 
         try {
             io.dockstore.openapi.client.model.Workflow workflow = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo, WorkflowSubClass.BIOWORKFLOW, "versions,validations");
+            Assert.fail("should have thrown");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals("Entry not found", ex.getMessage());
         }
