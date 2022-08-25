@@ -147,9 +147,20 @@ import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -486,6 +497,57 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 }
             }
         });
+
+        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
+            // experiment with github token api
+            @Override
+            public void lifeCycleStarted(LifeCycle event) {
+                try (Session session = hibernate.getSessionFactory().openSession()) {
+                    ManagedSessionContext.bind(session);
+                    TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
+                    tokenDAO.findAllGitHubTokens().stream().forEachOrdered(token -> {
+                        try {
+                            // cannot use normal github library
+                            final java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().authenticator(new Authenticator() {
+                                @Override
+                                protected PasswordAuthentication getPasswordAuthentication() {
+                                    return new PasswordAuthentication(
+                                        configuration.getGithubClientID(),
+                                        configuration.getGithubClientSecret().toCharArray());
+                                }
+                            }).build();
+                            HttpRequest request = HttpRequest.newBuilder()
+                                .uri(new URI("https://api.github.com/applications/"+configuration.getGithubClientID()+"/token"))
+                                .header("Accept", "application/vnd.github+json")
+                                .header("Content-Type", "application/json")
+                                .method("PATCH", BodyPublishers.ofString("{\"access_token\":\""+token.getContent()+"\"}"))
+                                .build();
+                            final HttpResponse<String> send = client.send(request, BodyHandlers.ofString());
+                            final String body = send.body();
+                            //final HttpResponse<Model> send = client.send(request, new JsonBodyHandler<>(Model.class));
+                            //final HttpResponse<Model> send = client.send(request, new JsonBodyHandler<>(Model.class));
+//                            final String token1 = send.body().token;
+//                            if (send.statusCode() != HttpStatus.SC_NOT_FOUND) {
+//                                token.setContent(token1);
+//                            } else {
+//                                LOG.error("could not update old style github token for {}, token was not found", token.getUsername());
+//                            }
+                        } catch (IOException e) {
+                            LOG.error("could not update old style github token for {}", token.getUsername());
+                        } catch (URISyntaxException e) {
+                            LOG.error("could not update old style github token for {} due to syntax issue", token.getUsername());
+                        } catch (InterruptedException e) {
+                            LOG.error("could not update old style github token for {} due to interruption", token.getUsername());
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private static final String getBasicAuthenticationHeader(String username, String password) {
+        String valueToEncode = username + ":" + password;
+        return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes());
     }
 
     private void registerAPIsAndMisc(Environment environment) {
@@ -573,6 +635,48 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             SourceFile.restrictPaths(regex, violationMessage);
         } else {
             SourceFile.unrestrictPaths();
+        }
+    }
+
+
+    private static class Model {
+        private String token;
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
+    }
+    private static class JsonBodyHandler<W> implements HttpResponse.BodyHandler<W> {
+
+        private final Class<W> wClass;
+
+        public JsonBodyHandler(Class<W> wClass) {
+            this.wClass = wClass;
+        }
+
+        @Override
+        public HttpResponse.BodySubscriber<W> apply(HttpResponse.ResponseInfo responseInfo) {
+            return asJSON(wClass);
+        }
+
+        public <T> HttpResponse.BodySubscriber<T> asJSON(Class<T> targetType) {
+            HttpResponse.BodySubscriber<String> upstream = HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8);
+
+            return HttpResponse.BodySubscribers.mapping(
+                upstream,
+                (String body) -> {
+                    try {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+                        return objectMapper.readValue(body, targetType);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
         }
     }
 }
