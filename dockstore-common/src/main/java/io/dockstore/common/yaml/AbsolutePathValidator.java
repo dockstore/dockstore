@@ -6,7 +6,8 @@ import javax.validation.ConstraintValidatorContext;
 
 /**
  * Validates that a string is an absolute path.
- * Similar to the built-in constraints (such as @Pattern), null is valid.
+ * Similar to the built-in constraints (such as @Pattern), null is valid,
+ * so that this constraint can be applied to optional values.
  */
 public class AbsolutePathValidator implements ConstraintValidator<AbsolutePath, String> {
     @Override

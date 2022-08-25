@@ -1340,4 +1340,16 @@ public class WebhookIT extends BaseIT {
         assertEquals(0, countWorkflows());
         assertEquals(0, countTools());
     }
+
+    @Test
+    public void testMultiEntryRelativeTestFilePath() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        ApiException ex = shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/relative-test-file-path", installationId));
+        assertTrue(ex.getMessage().toLowerCase().contains("absolute"));
+        assertEquals(0, countWorkflows());
+        assertEquals(0, countTools());
+    }
 }

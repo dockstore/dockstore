@@ -34,10 +34,9 @@ public class YamlWorkflow implements Workflowish {
     public static final String NEW_GALAXY_SUBCLASS = "GALAXY";
 
     private String name;
-    @NotNull
+
     private String subclass;
-    @NotNull
-    @AbsolutePath
+
     private String primaryDescriptorPath;
 
     /**
@@ -49,14 +48,11 @@ public class YamlWorkflow implements Workflowish {
     // If true, the most recent tag that Dockstore processes from AWS lambda becomes the default version
     private boolean latestTagAsDefault = false;
 
-    @Valid
     private Filters filters = new Filters();
 
-    @Valid
     private List<YamlAuthor> authors = new ArrayList<>();
 
-    @Valid
-    private List<@NotNull @AbsolutePath String> testParameterFiles = new ArrayList<>();
+    private List<String> testParameterFiles = new ArrayList<>();
 
 
     public String getName() {
@@ -67,6 +63,7 @@ public class YamlWorkflow implements Workflowish {
         this.name = name;
     }
 
+    @NotNull
     public String getSubclass() {
         if (NEW_GALAXY_SUBCLASS.equalsIgnoreCase(subclass)) {
             return DescriptorLanguage.GXFORMAT2.getShortName();
@@ -78,6 +75,8 @@ public class YamlWorkflow implements Workflowish {
         this.subclass = subclass;
     }
 
+    @NotNull
+    @AbsolutePath
     public String getPrimaryDescriptorPath() {
         return primaryDescriptorPath;
     }
@@ -94,6 +93,7 @@ public class YamlWorkflow implements Workflowish {
         this.publish = publish;
     }
 
+    @Valid
     public Filters getFilters() {
         return filters;
     }
@@ -102,6 +102,7 @@ public class YamlWorkflow implements Workflowish {
         this.filters = filters;
     }
 
+    @Valid
     public List<YamlAuthor> getAuthors() {
         return authors;
     }
@@ -110,7 +111,8 @@ public class YamlWorkflow implements Workflowish {
         this.authors = authors;
     }
 
-    public List<String> getTestParameterFiles() {
+    @Valid
+    public List<@NotNull @AbsolutePath String> getTestParameterFiles() {
         return testParameterFiles;
     }
 
