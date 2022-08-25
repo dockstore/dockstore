@@ -237,6 +237,11 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
     }
 
+    /**
+     * This method guesses the name of the "default" version of an entry.
+     * "master" is a pretty good guess for workflows, although someday,
+     * "main" will overtake it. https://github.com/github/renaming
+     */
     default String getDefaultVersionName() {
         return getDAO() instanceof ToolDAO ? "latest" : "master";
     }
