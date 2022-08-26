@@ -509,37 +509,40 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                     final java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().build();
                     // exclude both gho tokens that the application generates and ghp tokens that we can insert for testing
                     // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
-                    tokenDAO.findAllGitHubTokens().stream().filter(t -> !t.getContent().startsWith("gho_") && !t.getContent().startsWith("ghp_")).forEach(token -> {
-                        try {
-                            HttpRequest request = HttpRequest.newBuilder()
-                                .uri(new URI("https://api.github.com/applications/" + configuration.getGithubClientID() + "/token"))
-                                .header("Accept", "application/vnd.github+json")
-                                .header("Authorization", getBasicAuthenticationHeader(configuration.getGithubClientID(), configuration.getGithubClientSecret()))
-                                .method("PATCH", BodyPublishers.ofString("{\"access_token\":\"" + token.getContent() + "\"}"))
-                                .build();
-                            final HttpResponse<ResetTokenModel> send = client.send(request, new JsonBodyHandler<>(ResetTokenModel.class));
-                            final ResetTokenModel body = send.body();
-                            if (send.statusCode() == HttpStatus.SC_OK) {
-                                String newToken = body.token;
-                                token.setContent(newToken);
-                                tokenDAO.update(token);
-                                LOG.info("updated token for {}", token.getUsername());
-                            } else {
-                                LOG.error(errorPrefix + " for {}, error code {}, token was not found on github", token.getUsername(), send.statusCode());
+                    for (Token t : tokenDAO.findAllGitHubTokens()) {
+                        if (!t.getContent().startsWith("gho_") && !t.getContent().startsWith("ghp_")) {
+                            try {
+                                HttpRequest request = HttpRequest.newBuilder()
+                                    .uri(new URI("https://api.github.com/applications/" + configuration.getGithubClientID() + "/token"))
+                                    .header("Accept", "application/vnd.github+json")
+                                    .header("Authorization", getBasicAuthenticationHeader(configuration.getGithubClientID(), configuration.getGithubClientSecret()))
+                                    .method("PATCH", BodyPublishers.ofString("{\"access_token\":\"" + t.getContent() + "\"}"))
+                                    .build();
+                                final HttpResponse<ResetTokenModel> send = client.send(request, new JsonBodyHandler<>(ResetTokenModel.class));
+                                final ResetTokenModel body = send.body();
+                                if (send.statusCode() == HttpStatus.SC_OK) {
+                                    String newToken = body.token;
+                                    t.setContent(newToken);
+                                    tokenDAO.update(t);
+                                    LOG.info("updated token for {}", t.getUsername());
+                                } else {
+                                    LOG.error(errorPrefix + " for {}, error code {}, token was not found on github", t.getUsername(), send.statusCode());
+                                }
+                            } catch (IOException e) {
+                                LOG.error(errorPrefix + " for {}", t.getUsername());
+                                LOG.error(errorPrefix, e);
+                            } catch (URISyntaxException e) {
+                                LOG.error(errorPrefix + " for {} due to syntax issue", t.getUsername());
+                                LOG.error(errorPrefix, e);
+                            } catch (InterruptedException e) {
+                                LOG.error(errorPrefix + " for {} due to interruption", t.getUsername());
+                                LOG.error(errorPrefix, e);
+                                // Restore interrupted state... (sonarcloud suggestion)
+                                Thread.currentThread().interrupt();
+                                return;
                             }
-                        } catch (IOException e) {
-                            LOG.error(errorPrefix + " for {}", token.getUsername());
-                            LOG.error(errorPrefix, e);
-                        } catch (URISyntaxException e) {
-                            LOG.error(errorPrefix + " for {} due to syntax issue", token.getUsername());
-                            LOG.error(errorPrefix, e);
-                        } catch (InterruptedException e) {
-                            LOG.error(errorPrefix + " for {} due to interruption", token.getUsername());
-                            LOG.error(errorPrefix, e);
-                            // Restore interrupted state... (sonarcloud suggestion)
-                            Thread.currentThread().interrupt();
                         }
-                    });
+                    }
                 } finally {
                     transaction.commit();
                     ManagedSessionContext.unbind(hibernate.getSessionFactory());
