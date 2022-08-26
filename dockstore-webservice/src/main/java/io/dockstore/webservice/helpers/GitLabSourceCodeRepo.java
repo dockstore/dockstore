@@ -280,7 +280,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public boolean checkSourceCodeValidity() {
+    public boolean checkSourceControlTokenValidity() {
         //TODO
         return true;
     }

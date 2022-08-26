@@ -20,6 +20,7 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.webservice.core.SourceFile.SHA_TYPE;
 import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
+import static io.dockstore.webservice.resources.DockerRepoResource.UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO;
 import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1462,6 +1463,21 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
             "select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl
                 + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", long.class);
         assertEquals("The tool should be manual, there are " + count, 1, count);
+    }
+
+    @Test
+    public void testCannotRegisterGarbageSourceControlFromDockerHub() {
+        String gitUrl = "git@github.com:DockstoreTestUser2/bewareoftheleopard.git";
+        ContainersApi toolsApi = setupWebService();
+        DockstoreTool tool = getQuayContainer(gitUrl);
+
+        try {
+            toolsApi.registerManual(tool);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains(UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO));
+            return;
+        }
+        fail("should fail to register");
     }
 
     /**

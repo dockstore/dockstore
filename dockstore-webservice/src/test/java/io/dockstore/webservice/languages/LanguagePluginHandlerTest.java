@@ -306,7 +306,7 @@ public class LanguagePluginHandlerTest {
         }
 
         @Override
-        public boolean checkSourceCodeValidity() {
+        public boolean checkSourceControlTokenValidity() {
             return false;
         }
 

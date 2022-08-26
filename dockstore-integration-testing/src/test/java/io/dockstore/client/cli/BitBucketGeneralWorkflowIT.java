@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli;
 
+import static io.dockstore.webservice.resources.DockerRepoResource.UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -308,6 +309,21 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         verifyChecksumsAreSaved(updatedTags);
     }
 
+    @Test
+    public void testCannotRegisterGarbageSourceControlFromDockerHub() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        DockstoreTool tool = createManualDockerHubTool(false);
+
+        try {
+            toolApi.registerManual(tool);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains(UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO));
+            return;
+        }
+        fail("should fail to register");
+    }
+
     private DockstoreTool registerManualGitHubContainerRegistryToolAndAddTag() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
@@ -378,6 +394,11 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
     }
 
     private DockstoreTool createManualDockerHubTool() {
+        return createManualDockerHubTool(true);
+    }
+
+
+    private DockstoreTool createManualDockerHubTool(boolean validRepo) {
         DockstoreTool tool = new DockstoreTool();
         tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
         tool.setName("dockstore-whalesay-2");
@@ -389,8 +410,12 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         tool.setDefaultCWLTestParameterFile("/test.cwl.json");
         tool.setDefaultWDLTestParameterFile("/test.wdl.json");
         tool.setIsPublished(false);
-        // This actually exists: https://bitbucket.org/DockstoreTestUser/dockstore-whalesay-2/src/master/
-        tool.setGitUrl("git@bitbucket.org:DockstoreTestUser/dockstore-whalesay-2.git");
+        if (validRepo) {
+            // This actually exists: https://bitbucket.org/DockstoreTestUser/dockstore-whalesay-2/src/master/
+            tool.setGitUrl("git@bitbucket.org:DockstoreTestUser/dockstore-whalesay-2.git");
+        } else {
+            tool.setGitUrl("git@bitbucket.org:DockstoreTestUser/bewareoftheleopard-2.git");
+        }
         tool.setToolname("alternate");
         tool.setPrivateAccess(false);
         return tool;

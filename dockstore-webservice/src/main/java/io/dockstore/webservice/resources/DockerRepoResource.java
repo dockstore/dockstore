@@ -122,6 +122,7 @@ public class DockerRepoResource
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published tools, authentication can be provided for restricted tools";
+    public static final String UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO = "unable to verify that your tool points at a valid source control repo";
 
     @Context
     private ResourceContext rc;
@@ -555,6 +556,12 @@ public class DockerRepoResource
         // Check if the tool has a valid tool name
         StringInputValidationHelper.checkEntryName(toolParam.getClass(), toolParam.getToolname());
 
+        // check that the repo is valid
+        if (!isGit(toolParam.getGitUrl())) {
+            toolParam.setGitUrl(convertHttpsToSsh(toolParam.getGitUrl()));
+        }
+        this.checkRepoValidity(user, toolParam);
+
         final Set<Tag> workflowVersionsFromParam = Sets.newHashSet(toolParam.getWorkflowVersions());
         toolParam.setWorkflowVersions(Sets.newHashSet());
         // cannot create tool with a transient version hanging on it
@@ -597,10 +604,6 @@ public class DockerRepoResource
         tool.getLabels().clear();
         tool.getLabels().addAll(createdLabels);
 
-        if (!isGit(tool.getGitUrl())) {
-            tool.setGitUrl(convertHttpsToSsh(tool.getGitUrl()));
-        }
-
         // Can't set tool license information here, far too many tests register a tool without a GitHub token
         setToolLicenseInformation(user, tool);
 
@@ -617,18 +620,30 @@ public class DockerRepoResource
      * @param tool The tool to get license information for
      */
     private void setToolLicenseInformation(User user, Tool tool) {
-        // Get user's Git tokens
         List<Token> tokens = tokenDAO.findByUserId(user.getId());
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
-                gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), tokens);
+
         if (sourceCodeRepo != null) {
-            sourceCodeRepo.checkSourceCodeValidity();
+            sourceCodeRepo.checkSourceControlTokenValidity();
             String gitRepositoryFromGitUrl = AbstractImageRegistry.getGitRepositoryFromGitUrl(tool.getGitUrl());
             sourceCodeRepo.setLicenseInformation(tool, gitRepositoryFromGitUrl);
+        }
+    }
+
+    /**
+     * Check whether a tool is pointing at a valid repo that the user has access to.
+     * This is a bit silly because it looks like the methods in SourceCodeRepoInterface
+     * mainly check whether the github token is valid, not whether the repo exists
+     *
+     * @param user The user the tool belongs to
+     * @param tool The tool to get license information for
+     */
+    private void checkRepoValidity(User user, Tool tool) {
+        List<Token> tokens = tokenDAO.findByUserId(user.getId());
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), tokens);
+        if (sourceCodeRepo == null || !sourceCodeRepo.checkSourceControlRepoValidity(tool)) {
+            throw new CustomWebApplicationException(UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO,
+                HttpStatus.SC_BAD_REQUEST);
         }
     }
 

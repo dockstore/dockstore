@@ -16,16 +16,16 @@ Workflow Language (CWL), WDL (Workflow Description Language), Nextflow, or Galax
 workflows so that they are  machine readable as well as runnable in a variety of environments. While the 
 Dockstore is focused on serving researchers in the biosciences, the combination of Docker + workflow languages can be used by 
 anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.  
-Dockstore is also a leading implementor of the GA4GH API standard for container registries, [TRS](https://www.ga4gh.org/news/tool-registry-service-api-enabling-an-interoperable-library-of-genomics-analysis-tools/).
-
-For the live site see [dockstore.org](https://dockstore.org)
-
-This repo contains the web service and CLI components for Dockstore as well as collecting documentation and 
-the issues for the project as a whole. The usage of this is to enumerate the docker containers 
+Dockstore is also a leading implementor of the GA4GH API standard for container registries, [TRS](https://www.ga4gh.org/news/tool-registry-service-api-enabling-an-interoperable-library-of-genomics-analysis-tools/). The usage of this is to enumerate the docker containers 
 (from quay.io and hopefully docker hub) and the workflows (from github/bitbucket) that are available 
 to users of Dockstore.org.
 
+For the live site see [dockstore.org](https://dockstore.org)
+
+This repo contains the web service component for Dockstore as well as collecting issues for the project as a whole. 
+
 For the related web UI see the [dockstore-ui](https://github.com/dockstore/dockstore-ui2) project.
+For the related CLI see the [cli](https://github.com/dockstore/cli) project.
 
 ## For Dockstore Users
 

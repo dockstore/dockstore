@@ -222,7 +222,7 @@ public class WDLHandlerTest {
         }
 
         @Override
-        public boolean checkSourceCodeValidity() {
+        public boolean checkSourceControlTokenValidity() {
             return false;
         }
 
