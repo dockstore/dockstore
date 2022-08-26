@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.docker.DockerManifestList;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.swagger.quay.client.ApiClient;
 import io.swagger.quay.client.ApiException;
 import io.swagger.quay.client.Configuration;
@@ -53,10 +54,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -72,6 +75,7 @@ import org.slf4j.LoggerFactory;
 public class QuayImageRegistry extends AbstractImageRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(QuayImageRegistry.class);
+    private static final Gson GSON = new Gson();
 
     private final Token quayToken;
     private final BuildApi buildApi;
@@ -81,18 +85,23 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     private final ManifestApi manifestApi;
 
     public QuayImageRegistry(final Token quayToken) {
-        this.quayToken = quayToken;
         ApiClient apiClient = Configuration.getDefaultApiClient();
-        apiClient.addDefaultHeader("Authorization", "Bearer " + quayToken.getContent());
+        this.quayToken = quayToken;
+        if (quayToken != null) {
+            apiClient.addDefaultHeader("Authorization", "Bearer " + quayToken.getContent());
+        }
         this.buildApi = new BuildApi(apiClient);
         this.repositoryApi = new RepositoryApi(apiClient);
         this.userApi = new UserApi(apiClient);
         this.tagApi = new TagApi((apiClient));
         this.manifestApi = new ManifestApi(apiClient);
-
     }
 
-    private List<QuayTag> getAllQuayTags(String repository) throws ApiException {
+    public QuayImageRegistry() {
+        this(null);
+    }
+
+    public List<QuayTag> getAllQuayTags(String repository) throws ApiException {
         List<QuayTag> allQuayTags = new ArrayList<>();
         // Completely arbitrary maxPageSize in the weird event that Quay.io's pagination results in an infinite loop or something
         final int maxPageSize = 100;
@@ -105,6 +114,15 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             }
         }
         return allQuayTags;
+    }
+
+    public Optional<QuayTag> getQuayTag(String repository, String tag) throws ApiException {
+        InlineResponse2002 inlineResponse2002 = tagApi.listRepoTags(repository, null, null, tag, true);
+        List<QuayTag> quayTags = inlineResponse2002.getTags();
+        if (!quayTags.isEmpty()) {
+            return Optional.of(quayTags.get(0));
+        }
+        return Optional.empty();
     }
 
 
@@ -125,18 +143,19 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
             // Search through the Quay tags for ones that are classified as a manifest list and then use its digest to get the repo's manifest.
             List<QuayTag> cleanedQuayTagList = new ArrayList<>(quayTags);
-            Map<QuayTag, List<Image>> multiImageQuayTags = new HashMap<>();
-            Gson g = new Gson();
-            quayTags.stream().forEach(quayTag -> {
+            Map<QuayTag, Set<Image>> multiImageQuayTags = new HashMap<>();
+            // Process multi-arch images first to clean list of all Quay tags
+            quayTags.forEach(quayTag -> {
                 if (Boolean.TRUE.equals(quayTag.isIsManifestList())) {
                     try {
-                        // Store the collected Image(s) into a map that consists of <Original Manifest List Quay Tag, List<Images>>.
-                        List<Image> images = handleMultiArchQuayTags(tool, quayTag, g, cleanedQuayTagList);
+                        LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", quayTag.getName());
+                        // Store the collected Image(s) into a map that consists of <Original Manifest List Quay Tag, Set<Images>>.
+                        LanguageHandlerInterface.DockerSpecifier specifier = getSpecifierFromTagName(quayTag.getName());
+                        Set<Image> images = handleMultiArchQuayTags(repo, quayTag, cleanedQuayTagList, specifier);
                         multiImageQuayTags.put(quayTag, images);
                     } catch (ApiException ex) {
                         LOG.info("Unable to handle manifest list for Quay Tag " + quayTag.getName() + " in repo " + repo, ex);
                     }
-
                 }
             });
 
@@ -157,83 +176,92 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
     /**
      * For each manifest in the list:
-     * Find the matching Quay tag (using the digest)
-     * Gather and return the associated images
-     * Remove the matching Quay tag from the list so that a Dockstore version is not created based off of it.
+     * <li>Create an image</li>
+     * <li>Check if there's a matching Quay tag in cleanedQuayTagList using the manifest digest. If there's a match, this means that the multi-arch
+     * image was built using the docker manifest method which creates individual images for each architecture.
+     * There would be no match if the multi-arch image was created using the buildx method.</li>
+     * <li>Remove the matching Quay tag from cleanedQuayTagList if it exists because it's already been processed and an image was created for it.
+     * Removing it ensures that a Dockstore version is not created from it.</li>
      *
-     * @param tool a tool from Dockstore
-     * @param quayTag the Quay Tag that is a manifest list
-     * @param g Gson to covert string to JSON
-     * @param cleanedQuayTagList List of Quay Tags that removes Quay tags that are listed in quayTag's manifest list
+     * @param repository a tool from Dockstore
+     * @param quayTag    the Quay Tag that is a manifest list
+     * @param cleanedQuayTagList List of Quay Tags that removes Quay tags that are listed in quayTag's manifest list.
      * @return list of images with arch/os information for the quayTag
      */
-    private List<Image> handleMultiArchQuayTags(Tool tool, QuayTag quayTag, Gson g, List<QuayTag> cleanedQuayTagList) throws ApiException {
-        LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", quayTag.getName());
+    public Set<Image> handleMultiArchQuayTags(String repository, QuayTag quayTag, List<QuayTag> cleanedQuayTagList, LanguageHandlerInterface.DockerSpecifier specifier) throws ApiException {
         QuayRepoManifest quayRepoManifest;
         DockerManifestList manifestList;
-        List<Image> images = new ArrayList<>();
-        quayRepoManifest = manifestApi.getRepoManifest(quayTag.getManifestDigest(), tool.getNamespace() + '/' + tool.getName());
+        Set<Image> images = new HashSet<>();
+        quayRepoManifest = manifestApi.getRepoManifest(quayTag.getManifestDigest(), repository);
         try {
-            manifestList = g.fromJson(quayRepoManifest.getManifestData(), DockerManifestList.class);
+            manifestList = GSON.fromJson(quayRepoManifest.getManifestData(), DockerManifestList.class);
         } catch (JsonSyntaxException ex) {
-            LOG.info("Unexpected response from Quay while retrieving repo manifest for Quay Tag " + quayTag.getName() + " for tool " + tool.getToolPath(), ex);
+            LOG.info("Unexpected response from Quay while retrieving repo manifest for Quay Tag " + quayTag.getName() + " for repository " + repository, ex);
             return images;
         }
+
         try {
+            // Create an image for each architecture manifest
             Arrays.stream(manifestList.getManifests()).forEach(manifest -> {
-                Optional<QuayTag> matchingTag = cleanedQuayTagList.stream().filter(tag -> (tag.getManifestDigest().equals(manifest.getDigest()))).findFirst();
-                if (matchingTag.isPresent()) {
-                    final String manifestDigest = manifest.getDigest();
-                    final String imageID = matchingTag.get().getImageId();
-                    List<Checksum> checksums = new ArrayList<>();
-                    String[] splitChecksum = manifestDigest.split(":");
-                    checksums.add(new Checksum(splitChecksum[0], splitChecksum[1]));
-                    Image image = new Image(checksums, tool.getNamespace() + '/' + tool.getName(), quayTag.getName(), imageID, Registry.QUAY_IO, quayTag.getSize(), quayTag.getLastModified());
-                    image.setArchitecture(manifest.getPlatform().getArchitecture());
-                    image.setOs(manifest.getPlatform().getOs());
-                    images.add(image);
-                    cleanedQuayTagList.remove(matchingTag.get());
-                } else {
-                    LOG.info("Unable to find matching Quay tag image information using digest");
-                }
+                final String manifestDigest = manifest.getDigest();
+                final String imageID = quayTag.getImageId();
+                List<Checksum> checksums = new ArrayList<>();
+                String[] splitChecksum = manifestDigest.split(":");
+                checksums.add(new Checksum(splitChecksum[0], splitChecksum[1]));
+                Image image = new Image(checksums, repository, quayTag.getName(), imageID, Registry.QUAY_IO, manifest.getSize(), quayTag.getLastModified());
+                image.setArchitecture(manifest.getPlatform().getArchitecture());
+                image.setOs(manifest.getPlatform().getOs());
+                image.setSpecifier(specifier);
+                images.add(image);
+                // Look through Quay tags to see if this multi arch image was built using the "docker manifest" approach where each architecture has its own tag
+                Optional<QuayTag> singleArchTag = cleanedQuayTagList.stream().filter(tag -> tag.getManifestDigest().equals(manifestDigest)).findFirst();
+                singleArchTag.ifPresent(cleanedQuayTagList::remove); // Remove it because it's already been processed
             });
         } catch (NullPointerException ex) {
-            LOG.info("Unexpected null response from Quay while retrieving image and checksum info from manifest for Quay Tag " + quayTag.getName() + " for tool " + tool.getToolPath(), ex);
+            LOG.info("Unexpected null response from Quay while retrieving image and checksum info from manifest for Quay Tag " + quayTag.getName() + " for repository " + repository, ex);
         }
         return images;
     }
 
-    private Tag convertQuayTagToTag(QuayTag quayTag, Tool tool, Map<QuayTag, List<Image>> multiImageQuayTags) throws InvocationTargetException, IllegalAccessException {
+    private Tag convertQuayTagToTag(QuayTag quayTag, Tool tool, Map<QuayTag, Set<Image>> multiImageQuayTags) throws InvocationTargetException, IllegalAccessException {
         final Tag tag = new Tag();
         BeanUtils.copyProperties(tag, quayTag);
         // If we were unable to get the list of images from the manifest list, then an empty image list will be added to the tag.
         if (quayTag.isIsManifestList() != null && quayTag.isIsManifestList()) {
-            List<Image> images = multiImageQuayTags.get(quayTag);
+            Set<Image> images = multiImageQuayTags.get(quayTag);
             tag.getImages().addAll(images);
         } else {
-            Optional<Image> tagImage = getImageForTag(tool, tag, quayTag);
-            tagImage.ifPresent(image -> tag.getImages().add(image));
+            LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
+            final String repo = tool.getNamespace() + '/' + tool.getName();
+            final LanguageHandlerInterface.DockerSpecifier specifier = getSpecifierFromTagName(quayTag.getName());
+            Image tagImage = getImageForTag(repo, quayTag, specifier);
+            tag.getImages().add(tagImage);
         }
         insertQuayLastModifiedIntoLastBuilt(quayTag, tag);
         return tag;
     }
 
+    /**
+     * Checks if a quay tag is multi-arch by getting its repo manifest. Checking its repo manifest instead of QuayTag ensures that isIsManifestList() is not null
+     * if there's no authentication.
+     * @param quayTag
+     * @param repository
+     * @return
+     */
+    public boolean isMultiArchImage(QuayTag quayTag, String repository) throws ApiException {
+        QuayRepoManifest quayRepoManifest = manifestApi.getRepoManifest(quayTag.getManifestDigest(), repository);
+        return quayRepoManifest.isIsManifestList();
+    }
 
     //TODO: If the repo has a lot of tags, then it needs to be paged through. Can get tag info individually, but then that's more API calls.
-    private Optional<Image> getImageForTag(final Tool tool, final Tag tag, final QuayTag quayTag) {
-        LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
-
-        final String repo = tool.getNamespace() + '/' + tool.getName();
-        try {
-            final String manifestDigest = quayTag.getManifestDigest();
-            final String imageID = quayTag.getImageId();
-            List<Checksum> checksums = new ArrayList<>();
-            checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-            return Optional.of((new Image(checksums, repo, tag.getName(), imageID, Registry.QUAY_IO, quayTag.getSize(), quayTag.getLastModified())));
-        } catch (IndexOutOfBoundsException | NullPointerException ex) {
-            LOG.error("Could not get checksum information for " + repo, ex);
-            return Optional.empty();
-        }
+    public Image getImageForTag(final String repo, final QuayTag quayTag, final LanguageHandlerInterface.DockerSpecifier specifier) {
+        final String manifestDigest = quayTag.getManifestDigest();
+        final String imageID = quayTag.getImageId();
+        List<Checksum> checksums = new ArrayList<>();
+        checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
+        Image image = new Image(checksums, repo, quayTag.getName(), imageID, Registry.QUAY_IO, quayTag.getSize(), quayTag.getLastModified());
+        image.setSpecifier(specifier);
+        return image;
     }
 
     /**
@@ -381,7 +409,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                                     String trimmed = splitLine[1].trim();
                                     // strip the brackets
                                     String substring = trimmed.substring(1, trimmed.length() - 1);
-                                    Map<String, String> map = new Gson().fromJson(substring, new TypeToken<Map<String, String>>() {
+                                    Map<String, String> map = GSON.fromJson(substring, new TypeToken<Map<String, String>>() {
                                     }.getType());
                                     gitUrl = "git@github.com:" + map.get("namespace") + "/" + map.get("repo") + ".git";
                                 }

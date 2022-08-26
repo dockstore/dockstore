@@ -175,6 +175,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public static final String A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB = "A workflow must have no issued DOIs to restub";
     public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB = "A workflow must have no snapshots to restub, you may consider unpublishing";
     public static final String YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW = "You cannot change the descriptor type of a FULL or HOSTED workflow.";
+    public static final String YOUR_USER_DOES_NOT_HAVE_ACCESS_TO_THIS_ORGANIZATION = "Your user does not have access to this organization.";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -1318,6 +1319,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         newWorkflow.setWorkflowName(Strings.isNullOrEmpty(workflowName) ? null : workflowName);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 
+        // check that the user should have access to this organization
+        final Set<String> organizations = sourceCodeRepo.getOrganizations();
+        if (!organizations.contains(newWorkflow.getOrganization())) {
+            throw new CustomWebApplicationException(YOUR_USER_DOES_NOT_HAVE_ACCESS_TO_THIS_ORGANIZATION, HttpStatus.SC_BAD_REQUEST);
+        }
+
         // Save into database and then pull versions
         Workflow workflowFromDB = saveNewWorkflow(newWorkflow, user);
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user, Optional.empty());
@@ -1523,11 +1530,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
         @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by", in = ParameterIn.QUERY) @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkNotNullEntry(workflow);
-        checkCanRead(user, workflow);
-
-        return getVersionsSourcefiles(workflowId, workflowVersionId, fileTypes, versionDAO);
+        return getVersionSourceFiles(workflowId, workflowVersionId, fileTypes, user, fileDAO, versionDAO);
     }
 
     /**
