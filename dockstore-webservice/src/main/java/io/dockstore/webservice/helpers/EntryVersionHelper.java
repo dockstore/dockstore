@@ -24,16 +24,15 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.AbstractDockstoreDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import java.io.File;
@@ -43,10 +42,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -54,6 +53,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
@@ -238,105 +238,125 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     /**
+     * This method guesses the name of the "default" version of an entry.
+     * "master" is a pretty good guess for workflows, although someday,
+     * "main" will overtake it. https://github.com/github/renaming
+     */
+    default String getDefaultVersionName() {
+        return getDAO() instanceof ToolDAO ? "latest" : "master";
+    }
+
+    /**
+     * Finds the version and entry corresponding to the specified version name and entry ID, adjusting access per the specified logged-in user.
+     * The entry will only contain the version with the specified version name, and will be evicted so no accidental db mods are possible.
+     * Throws a CustomWebApplicationException if the entry or version is not accessible.
+     * @param entryId id of the entry
+     * @param versionName name of the version
+     * @param user the logged-in user
+     * @return the version and parent entry
+     */
+    default EvictedVersionAndEntry<T> findAndCheckVersionByName(long entryId, String versionName, Optional<User> user, VersionDAO versionDAO) {
+        try {
+            String modifiedVersionName = ObjectUtils.firstNonNull(versionName, getDefaultVersionName());
+            versionDAO.enableNameFilter(modifiedVersionName);
+            T entry = findAndCheckEntryById(entryId, user);
+            Version version = entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(modifiedVersionName)).findFirst().orElseThrow(
+                () -> new CustomWebApplicationException("Invalid or missing version " + modifiedVersionName + ".", HttpStatus.SC_BAD_REQUEST));
+            getDAO().evict(entry);
+            return new EvictedVersionAndEntry<>(version, entry);
+        } finally {
+            versionDAO.disableNameFilter();
+        }
+    }
+
+    /**
+     * Finds the version and entry corresponding to the specified version ID and entry ID, adjusting access per the specified logged-in user.
+     * The entry will only contain the version with the specified version ID, and will be evicted so no accidental db mods are possible.
+     * Throws a CustomWebApplicationException if the entry or version is not accessible.
+     * @param entryId id of the entry
+     * @param versionId id of the version
+     * @param user the logged-in user
+     * @return the version and parent entry
+     */
+    default EvictedVersionAndEntry<T> findAndCheckVersionById(long entryId, long versionId, Optional<User> user, VersionDAO versionDAO) {
+        try {
+            versionDAO.enableIdFilter(versionId);
+            T entry = findAndCheckEntryById(entryId, user);
+            Version version = entry.getWorkflowVersions().stream().filter(v -> v.getId() == versionId).findFirst().orElse(null);
+            getDAO().evict(entry);
+            if (version == null) {
+                throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
+            }
+            return new EvictedVersionAndEntry<>(version, entry);
+        } finally {
+            versionDAO.disableIdFilter();
+        }
+    }
+
+    /**
+     * Finds the entry corresponding to the specified ID, adjusting access to hidden versions per the specified logged-in user.
+     * Throws a CustomWebApplicationException if the entry is not accessible.
+     */
+    default T findAndCheckEntryById(long entryId, Optional<User> user) {
+
+        T entry = getDAO().findById(entryId);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
+
+        if (!user.isPresent() || !canExamine(user.get(), entry)) {
+            filterContainersForHiddenTags(entry);
+        }
+
+        return entry;
+    }
+
+    /**
      * This returns a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
      *
      * @param workflowId the database id for a workflow
-     * @param tag        the version of the workflow
+     * @param versionName the name of the workflow version
      * @param fileType   the type of file we're interested in
      * @param versionDAO
      * @return a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
      */
-    default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
+    default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String versionName,
             DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
-        try {
-            if (tag == null) {
-                // This is an assumption made for quay tools. Workflows will not have a latest unless it is created by the user,
-                // and would thus make more sense to use master for workflows.
-                tag = "latest";
+
+        EvictedVersionAndEntry<T> versionAndEntry = findAndCheckVersionByName(workflowId, versionName, user, versionDAO);
+        Version version = versionAndEntry.getVersion();
+        T entry = versionAndEntry.getEntry();
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
+        return mapAndDescribe(sourceFiles, entry, version, fileType);
+    }
+
+    static Map<String, ImmutablePair<SourceFile, FileDescription>> mapAndDescribe(Collection<SourceFile> sourceFiles, Entry entry, Version tagInstance, DescriptorLanguage.FileType fileType) {
+        String primaryPath = getPrimaryPath(entry, tagInstance, fileType);
+        Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();
+
+        for (SourceFile file: sourceFiles) {
+            if (file.getType() == fileType) {
+                boolean isPrimary = file.getPath().equalsIgnoreCase(primaryPath);
+                resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
             }
-            final String finalTagName = tag;
-
-            versionDAO.enableNameFilter(finalTagName);
-            T entry = getDAO().findById(workflowId);
-            checkNotNullEntry(entry);
-            checkCanRead(user, entry);
-
-            // tighten permissions for hosted tools and workflows
-            if (!user.isPresent() || !canExamine(user.get(), entry)) {
-                if (!entry.getIsPublished()) {
-                    if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
-                        throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-                    }
-                    if (entry instanceof Workflow && ((Workflow)entry).getMode() == WorkflowMode.HOSTED) {
-                        throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-                    }
-                }
-                this.filterContainersForHiddenTags(entry);
-            }
-            Version tagInstance = null;
-
-            Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();
-
-            tagInstance = entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(finalTagName)).findFirst().orElse(null);
-
-            if (tagInstance == null) {
-                throw new CustomWebApplicationException("Invalid or missing tag " + finalTagName + ".", HttpStatus.SC_BAD_REQUEST);
-            }
-
-            if (tagInstance instanceof WorkflowVersion) {
-                final WorkflowVersion workflowVersion = (WorkflowVersion)tagInstance;
-                List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
-                List<SourceFile> filteredTypes = sourceFiles.stream()
-                    .filter(file -> Objects.equals(file.getType(), fileType)).collect(Collectors.toList());
-                for (SourceFile file : filteredTypes) {
-                    if (fileType == DescriptorLanguage.FileType.CWL_TEST_JSON || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON || fileType == DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
-                        resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
-                    } else {
-                        // looks like this takes into account a potentially different workflow path for a specific version of a workflow
-                        final Workflow workflow = (Workflow)entry;
-                        final String workflowPath = workflow.getDefaultWorkflowPath();
-                        final String workflowVersionPath = workflowVersion.getWorkflowPath();
-                        final String actualPath =
-                            workflowVersionPath == null || workflowVersionPath.isEmpty() ? workflowPath : workflowVersionPath;
-                        boolean isPrimary = file.getType() == fileType && file.getPath().equalsIgnoreCase(actualPath);
-                        resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
-                    }
-                }
-            } else {
-                final Tool tool = (Tool)entry;
-                final Tag toolTag = (Tag)tagInstance;
-                List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(toolTag.getId());
-                List<SourceFile> filteredTypes = sourceFiles.stream().filter(file -> Objects.equals(file.getType(), fileType))
-                    .collect(Collectors.toList());
-                for (SourceFile file : filteredTypes) {
-                    // dockerfile is a special case since there always is only a max of one
-                    if (fileType == DescriptorLanguage.FileType.DOCKERFILE || fileType == DescriptorLanguage.FileType.CWL_TEST_JSON
-                        || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON) {
-                        resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
-                        continue;
-                    }
-
-                    final String toolPath;
-                    String toolVersionPath;
-                    if (fileType == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
-                        toolPath = tool.getDefaultCwlPath();
-                        toolVersionPath = toolTag.getCwlPath();
-                    } else if (fileType == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
-                        toolPath = tool.getDefaultWdlPath();
-                        toolVersionPath = toolTag.getWdlPath();
-                    } else {
-                        throw new CustomWebApplicationException("Format " + fileType + " not valid", HttpStatus.SC_BAD_REQUEST);
-                    }
-
-                    final String actualPath = (toolVersionPath == null || toolVersionPath.isEmpty()) ? toolPath : toolVersionPath;
-                    boolean isPrimary = file.getType() == fileType && actualPath.equalsIgnoreCase(file.getPath());
-                    resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
-                }
-            }
-            return resultMap;
-        } finally {
-            versionDAO.disableNameFilter();
         }
+        return resultMap;
+    }
+
+    static String getPrimaryPath(Entry entry, Version version, DescriptorLanguage.FileType fileType) {
+        if (version instanceof WorkflowVersion) {
+            final Workflow workflow = (Workflow)entry;
+            final WorkflowVersion workflowVersion = (WorkflowVersion)version;
+            return StringUtils.firstNonEmpty(workflowVersion.getWorkflowPath(), workflow.getDefaultWorkflowPath());
+        } else {
+            final Tool tool = (Tool)entry;
+            final Tag toolTag = (Tag)version;
+            if (fileType == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
+                return StringUtils.firstNonEmpty(toolTag.getCwlPath(), tool.getDefaultCwlPath());
+            } else if (fileType == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
+                return StringUtils.firstNonEmpty(toolTag.getWdlPath(), tool.getDefaultWdlPath());
+            }
+        }
+        return null;
     }
 
     @SuppressWarnings("lgtm[java/path-injection]")
@@ -425,18 +445,14 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
-    default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, VersionDAO versionDAO) {
-        Version version = versionDAO.findVersionInEntry(entryId, versionId);
-        if (version == null) {
-            throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
+    default SortedSet<SourceFile> getVersionSourceFiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, Optional<User> user, FileDAO fileDAO, VersionDAO versionDAO) {
+        Version version = findAndCheckVersionById(entryId, versionId, user, versionDAO).getVersion();
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         if (fileTypes != null && !fileTypes.isEmpty()) {
             sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
-                    TreeSet::new));
+                    ArrayList::new));
         }
-        return sourceFiles;
+        return new TreeSet<>(sourceFiles);
 
     }
     /**
@@ -450,4 +466,24 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
+    /**
+     * Container class for a version and its associated entry, both of which are evicted.
+     */
+    class EvictedVersionAndEntry<T> {
+        private final Version version;
+        private final T entry;
+
+        public EvictedVersionAndEntry(Version version, T entry) {
+            this.version = version;
+            this.entry = entry;
+        }
+
+        public Version getVersion() {
+            return version;
+        }
+
+        public T getEntry() {
+            return entry;
+        }
+    }
 }
