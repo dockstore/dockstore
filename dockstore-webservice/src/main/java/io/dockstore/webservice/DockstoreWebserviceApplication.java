@@ -503,13 +503,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 ManagedSessionContext.bind(session);
                 final Transaction transaction = session.beginTransaction();
                 try {
+                    final String errorPrefix = "could not update old style github token";
                     TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
+                    // cannot use normal github library
+                    final java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().build();
                     // exclude both gho tokens that the application generates and ghp tokens that we can insert for testing
                     // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
                     tokenDAO.findAllGitHubTokens().stream().filter(t -> !t.getContent().startsWith("gho_") && !t.getContent().startsWith("ghp_")).forEach(token -> {
                         try {
-                            // cannot use normal github library
-                            final java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().build();
                             HttpRequest request = HttpRequest.newBuilder()
                                 .uri(new URI("https://api.github.com/applications/" + configuration.getGithubClientID() + "/token"))
                                 .header("Accept", "application/vnd.github+json")
@@ -517,20 +518,24 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                                 .method("PATCH", BodyPublishers.ofString("{\"access_token\":\"" + token.getContent() + "\"}"))
                                 .build();
                             final HttpResponse<ResetTokenModel> send = client.send(request, new JsonBodyHandler<>(ResetTokenModel.class));
-                            final String token1 = send.body().token;
-                            if (send.statusCode() != HttpStatus.SC_NOT_FOUND) {
-                                token.setContent(token1);
+                            final ResetTokenModel body = send.body();
+                            if (send.statusCode() == HttpStatus.SC_OK) {
+                                String newToken = body.token;
+                                token.setContent(newToken);
                                 tokenDAO.update(token);
                                 LOG.info("updated token for {}", token.getUsername());
                             } else {
-                                LOG.error("could not update old style github token for {}, token was not found on github", token.getUsername());
+                                LOG.error(errorPrefix + " for {}, error code {}, token was not found on github", token.getUsername(), send.statusCode());
                             }
                         } catch (IOException e) {
-                            LOG.error("could not update old style github token for {}", token.getUsername());
+                            LOG.error(errorPrefix + " for {}", token.getUsername());
+                            LOG.error(errorPrefix, e);
                         } catch (URISyntaxException e) {
-                            LOG.error("could not update old style github token for {} due to syntax issue", token.getUsername());
+                            LOG.error(errorPrefix + " for {} due to syntax issue", token.getUsername());
+                            LOG.error(errorPrefix, e);
                         } catch (InterruptedException e) {
-                            LOG.error("could not update old style github token for {} due to interruption", token.getUsername());
+                            LOG.error(errorPrefix + " for {} due to interruption", token.getUsername());
+                            LOG.error(errorPrefix, e);
                             // Restore interrupted state... (sonarcloud suggestion)
                             Thread.currentThread().interrupt();
                         }
