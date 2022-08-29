@@ -49,7 +49,6 @@ import io.swagger.model.DescriptorType;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
