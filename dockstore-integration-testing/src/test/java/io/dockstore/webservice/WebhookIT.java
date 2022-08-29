@@ -1326,4 +1326,59 @@ public class WebhookIT extends BaseIT {
         // test service and unnamed workflows
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/service-and-unnamed-workflow", installationId));
     }
+
+    /**
+     * Tests that the GitHub release syncs a workflow's metadata with the default version's metadata.
+     * Tests two scenarios:
+     * <li>The default version for a workflow is set using the latestTagAsDefault property from the dockstore.yml</li>
+     * <li>The default version for a workflow is set manually using the API</li>
+     * @throws Exception
+     */
+    @Test
+    public void testSyncWorkflowMetadataWithDefaultVersion() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+
+        workflowsApi.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(workflowsApi); // dockstore.yml for foobar doesn't have latestTagAsDefault set
+        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(workflowsApi); // dockstore.yml for foobar2 has latestTagAsDefault set
+        assertNull(workflow.getDefaultVersion());
+        assertEquals("Should have latest tag set as default version", "0.4", workflow2.getDefaultVersion());
+
+        workflowsApi.updateDefaultVersion1(workflow.getId(), "0.4"); // Set default version for workflow that doesn't have one
+        workflow = getFoobar1Workflow(workflowsApi);
+        assertEquals("Should have default version set", "0.4", workflow.getDefaultVersion());
+
+        // Find WorkflowVersion for default version and make sure it has metadata set
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> defaultVersion = workflow.getWorkflowVersions().stream()
+                .filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.4"))
+                .findFirst();
+        assertTrue(defaultVersion.isPresent());
+        assertEquals("Version should have author set", "Test User", defaultVersion.get().getAuthor());
+        assertEquals("Version should have email set", "test@dockstore.org", defaultVersion.get().getEmail());
+        assertEquals("Version should have email set", "This is a description", defaultVersion.get().getDescription());
+
+        // Check that the workflow metadata is the same as the default version's metadata
+        checkWorkflowMetadataWithDefaultVersionMetadata(workflow, defaultVersion.get());
+        checkWorkflowMetadataWithDefaultVersionMetadata(workflow2, defaultVersion.get());
+
+        // Clear workflow metadata to test the scenario where the default version metadata was updated and is now out of sync with the workflow's metadata
+        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET author = NULL where id = '%s'", workflow.getId()));
+        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET email = NULL where id = '%s'", workflow.getId()));
+        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET description = NULL where id = '%s'", workflow.getId()));
+        // GitHub release should sync metadata with default version
+        workflowsApi.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        workflow = getFoobar1Workflow(workflowsApi);
+        workflow2 = getFoobar2Workflow(workflowsApi);
+        checkWorkflowMetadataWithDefaultVersionMetadata(workflow, defaultVersion.get());
+        checkWorkflowMetadataWithDefaultVersionMetadata(workflow2, defaultVersion.get());
+    }
+
+    // Asserts that the workflow metadata is the same as the default version metadata
+    private void checkWorkflowMetadataWithDefaultVersionMetadata(io.dockstore.openapi.client.model.Workflow workflow, io.dockstore.openapi.client.model.WorkflowVersion defaultVersion) {
+        assertEquals("Workflow author should equal default version author", defaultVersion.getAuthor(), workflow.getAuthor());
+        assertEquals("Workflow email should equal default version email", defaultVersion.getEmail(), workflow.getEmail());
+        assertEquals("Workflow description should equal default version description", defaultVersion.getDescription(), workflow.getDescription());
+    }
 }

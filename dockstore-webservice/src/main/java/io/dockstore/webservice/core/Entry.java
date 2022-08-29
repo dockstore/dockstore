@@ -366,7 +366,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     /**
-     * Currently unused because too many entries do not have a default version set
+     * Syncs entry metadata with default version metadata
      */
     public void syncMetadataWithDefault() {
         T realDefaultVersion = this.getActualDefaultVersion();
