@@ -96,6 +96,7 @@ import io.dockstore.webservice.resources.AliasResource;
 import io.dockstore.webservice.resources.CategoryResource;
 import io.dockstore.webservice.resources.CloudInstanceResource;
 import io.dockstore.webservice.resources.CollectionResource;
+import io.dockstore.webservice.resources.ConnectionPoolHealthCheck;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
 import io.dockstore.webservice.resources.ElasticSearchHealthCheck;
@@ -484,6 +485,15 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 } else {
                     LOG.info("Elasticsearch indices already exist");
                 }
+            }
+        });
+
+        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
+            // Register connection pool health check after server starts so the environment has dropwizard metrics
+            @Override
+            public void lifeCycleStarted(LifeCycle event) {
+                final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
+                environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
             }
         });
     }
