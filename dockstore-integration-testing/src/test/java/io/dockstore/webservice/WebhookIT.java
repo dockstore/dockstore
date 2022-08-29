@@ -1262,12 +1262,14 @@ public class WebhookIT extends BaseIT {
         return testingPostgres.runSelectStatement("select count(*) from " + tableName, long.class);
     }
 
-    private void shouldThrowLambdaError(Runnable runnable) {
+    private ApiException shouldThrowLambdaError(Runnable runnable) {
         try {
             runnable.run();
             fail("should have thrown");
+            return null;
         } catch (ApiException ex) {
             assertEquals(LAMBDA_ERROR, ex.getCode());
+            return ex;
         }
     }
 
@@ -1325,6 +1327,23 @@ public class WebhookIT extends BaseIT {
 
         // test service and unnamed workflows
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/service-and-unnamed-workflow", installationId));
+    }
+
+    /**
+     * Test that the push will fail if the .dockstore.yml contains a
+     * relative primary descriptor path, and the primary descriptor
+     * contains a relative pointer to a secondary descriptor.
+     */
+    @Test
+    public void testMultiEntryRelativePrimaryDescriptorPath() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        ApiException ex = shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/relative-primary-descriptor-path", installationId));
+        assertTrue(ex.getMessage().toLowerCase().contains("absolute"));
+        assertEquals(0, countWorkflows());
+        assertEquals(0, countTools());
     }
 
     /**
