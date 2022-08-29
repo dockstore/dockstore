@@ -1343,7 +1343,7 @@ public class WebhookIT extends BaseIT {
         ApiException ex = shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/relative-primary-descriptor-path", installationId));
         assertTrue(ex.getMessage().toLowerCase().contains("could not be processed"));
         assertEquals(0, countWorkflows());
-        assertEquals(0, countTools());
+        assertEquals(2, countTools());
     }
 
     /**
