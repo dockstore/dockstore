@@ -11,7 +11,6 @@ import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -307,7 +306,7 @@ public class LanguagePluginHandlerTest {
         }
 
         @Override
-        public boolean checkSourceCodeValidity() {
+        public boolean checkSourceControlTokenValidity() {
             return false;
         }
 
@@ -334,11 +333,6 @@ public class LanguagePluginHandlerTest {
 
         @Override
         public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
-            return null;
-        }
-
-        @Override
-        public List<SourceControlOrganization> getOrganizations() {
             return null;
         }
 

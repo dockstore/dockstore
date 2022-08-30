@@ -824,38 +824,44 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
         List<String> primaryDescriptorPaths = new ArrayList<>();
-        if (entry instanceof Workflow) {
-            Workflow workflow = (Workflow)entry;
-            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
-            Optional<WorkflowVersion> first = workflowVersions.stream()
-                .filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
-            if (first.isPresent()) {
-                WorkflowVersion workflowVersion = first.get();
-                // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
-                primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
-                Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, workflowVersion.getWorkingDirectory());
-                return Response.ok().entity(toolFiles).build();
+        try {
+            versionDAO.enableNameFilter(versionId);
+
+            if (entry instanceof Workflow) {
+                Workflow workflow = (Workflow) entry;
+                Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+                Optional<WorkflowVersion> first = workflowVersions.stream()
+                    .filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
+                if (first.isPresent()) {
+                    WorkflowVersion workflowVersion = first.get();
+                    // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
+                    primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
+                    Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, workflowVersion.getWorkingDirectory());
+                    return Response.ok().entity(toolFiles).build();
+                } else {
+                    return Response.noContent().build();
+                }
+            } else if (entry instanceof Tool) {
+                Tool tool = (Tool) entry;
+                Set<Tag> versions = tool.getWorkflowVersions();
+                Optional<Tag> first = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
+                if (first.isPresent()) {
+                    Tag tag = first.get();
+                    // Matching the CWL path or WDL path in a tool automatically indicates that the file is a primary descriptor
+                    primaryDescriptorPaths.add(tag.getCwlPath());
+                    primaryDescriptorPaths.add(tag.getWdlPath());
+                    Set<SourceFile> sourceFiles = tag.getSourceFiles();
+                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, tag.getWorkingDirectory());
+                    return Response.ok().entity(toolFiles).build();
+                } else {
+                    return Response.noContent().build();
+                }
             } else {
-                return Response.noContent().build();
+                return Response.status(Status.NOT_FOUND).build();
             }
-        } else if (entry instanceof Tool) {
-            Tool tool = (Tool)entry;
-            Set<Tag> versions = tool.getWorkflowVersions();
-            Optional<Tag> first = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
-            if (first.isPresent()) {
-                Tag tag = first.get();
-                // Matching the CWL path or WDL path in a tool automatically indicates that the file is a primary descriptor
-                primaryDescriptorPaths.add(tag.getCwlPath());
-                primaryDescriptorPaths.add(tag.getWdlPath());
-                Set<SourceFile> sourceFiles = tag.getSourceFiles();
-                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, tag.getWorkingDirectory());
-                return Response.ok().entity(toolFiles).build();
-            } else {
-                return Response.noContent().build();
-            }
-        } else {
-            return Response.status(Status.NOT_FOUND).build();
+        } finally {
+            versionDAO.disableNameFilter();
         }
     }
 

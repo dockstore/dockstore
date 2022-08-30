@@ -450,7 +450,7 @@
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
-      <version>42.3.3</version>
+      <version>42.4.1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -486,6 +486,12 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
+      <version>9.4.48.v20220622</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-util</artifactId>
       <version>9.4.48.v20220622</version>
       <scope>compile</scope>
     </dependency>

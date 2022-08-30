@@ -79,7 +79,7 @@ public class ElasticListener implements StateListenerInterface {
     public static final String WORKFLOWS_INDEX = "workflows";
     public static final String ALL_INDICES = "tools,workflows";
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
-    private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
+    private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
     private DockstoreWebserviceConfiguration.ElasticSearchConfig elasticSearchConfig;
 
@@ -315,6 +315,8 @@ public class ElasticListener implements StateListenerInterface {
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
         Entry detachedEntry = removeIrrelevantProperties(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
+        // add number of starred users to allow sorting in the UI
+        ((ObjectNode)jsonNode).put("stars_count", (long) entry.getStarredUsers().size());
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
         addCategoriesJson(jsonNode, entry);

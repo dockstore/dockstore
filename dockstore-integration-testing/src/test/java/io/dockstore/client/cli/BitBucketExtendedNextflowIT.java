@@ -67,10 +67,16 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         ManagedSessionContext.bind(session);
     }
 
+    @Before
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres, true);
+    }
+
 
     @Test
     public void testBitbucketNextflowWorkflow() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // get workflow stubs
@@ -133,7 +139,7 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
 
     @Test
     public void testBitbucketBinaryWorkflow() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // get workflow stubs

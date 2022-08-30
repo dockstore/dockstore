@@ -207,6 +207,9 @@ jobs:
       - run:
           name: Generate test lists
           command: bash scripts/generate-test-lists.sh
+      - run:
+          name: Verify that the MacOS installation instructions in README.md and macos_installation_instructions.yml are up to date with scripts/macos-instructions.sh
+          command: scripts/check_macos.sh
       - store_artifacts:
           path: temp/test-lists
       - run:

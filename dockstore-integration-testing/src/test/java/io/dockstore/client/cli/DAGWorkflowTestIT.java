@@ -56,7 +56,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
     }
 
     private List<String> getJSON(String repo, String fileName, String descType, String branch) throws ApiException {

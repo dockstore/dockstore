@@ -16,6 +16,7 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+import static io.dockstore.webservice.resources.UserResource.USER_PROFILES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -30,23 +31,21 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
-import io.dockstore.openapi.client.model.SourceControlOrganization;
 import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
-import io.dockstore.webservice.resources.WorkflowResource;
+import io.dockstore.webservice.helpers.AppToolHelper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.BioWorkflow;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.EntryUpdateTime;
+import io.swagger.client.model.EntryUpdateTime.EntryTypeEnum;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.OrganizationUpdateTime;
 import io.swagger.client.model.Profile;
-import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import java.util.Arrays;
@@ -89,12 +88,12 @@ public class UserResourceIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
 
     @Test
     public void testAddUserToOrgs() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
@@ -421,105 +420,25 @@ public class UserResourceIT extends BaseIT {
         adminUserApi.changeUsername(altUsername);
     }
 
-    /**
-     * Tests that the endpoints for the wizard registration work
-     * @throws ApiException
-     */
+
     @Test
-    public void testWizardEndpoints() throws ApiException {
+    public void testGetUserEntries() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
-        List<String> registries = userApi.getUserRegistries();
-        assertTrue(registries.size() > 0);
-        assertTrue(registries.contains(SourceControl.GITHUB.toString()));
-        assertTrue(registries.contains(SourceControl.GITLAB.toString()));
-        assertTrue(registries.contains(SourceControl.BITBUCKET.toString()));
+        workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
 
-        // Test GitHub
-        List<String> orgs = userApi.getUserOrganizations(SourceControl.GITHUB.name());
-        assertTrue(orgs.size() > 0);
-        assertTrue(orgs.contains("dockstoretesting"));
-        assertTrue(orgs.contains("DockstoreTestUser"));
-        assertTrue(orgs.contains("DockstoreTestUser2"));
+        assertEquals(1, userApi.getUserEntries(10, null, "WORKFLOWS").size());
+        assertEquals(5, userApi.getUserEntries(10, null, null).size());
+        assertEquals(0, userApi.getUserEntries(10, null, "SERVICES").size());
+        assertEquals(4, userApi.getUserEntries(10, null, "TOOLS").size());
 
-        List<Repository> repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
-        assertTrue(repositories.size() > 0);
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()));
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && !repo.isPresent()));
-
-        // Register a workflow
-        BioWorkflow ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
-        assertNotNull("GitHub workflow should be added", ghWorkflow);
-        assertEquals(ghWorkflow.getFullWorkflowPath(), "github.com/dockstoretesting/basic-workflow");
-
-        // dockstoretesting/basic-workflow should be present now
-        repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
-        assertTrue(repositories.size() > 0);
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()));
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent()));
-
-        // Try deleting a workflow
-        workflowsApi.deleteWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
-        Workflow deletedWorkflow = null;
-        try {
-            deletedWorkflow = workflowsApi.getWorkflow(ghWorkflow.getId(), null);
-            assertFalse("Should not reach here as entry should not exist", false);
-        } catch (ApiException ex) {
-            assertNull("Workflow should be null", deletedWorkflow);
-        }
-
-        // Try making a repo undeletable
-        ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
-        workflowsApi.refresh(ghWorkflow.getId(), false);
-        repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
-        assertTrue(repositories.size() > 0);
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent() && !repo.isCanDelete()));
-
-        // Test Gitlab
-        orgs = userApi.getUserOrganizations(SourceControl.GITLAB.name());
-        assertTrue(orgs.size() > 0);
-        assertTrue(orgs.contains("dockstore.test.user2"));
-
-        repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
-        assertTrue(repositories.size() > 0);
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-md5sum-unified") && !repo.isPresent()));
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && !repo.isPresent()));
-
-        // Register a workflow
-        BioWorkflow glWorkflow = workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
-        assertEquals(glWorkflow.getFullWorkflowPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-example");
-
-        // dockstore.test.user2/dockstore-workflow-example should be present now
-        repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
-        assertTrue(repositories.size() > 0);
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && repo.isPresent()));
-
-        // Try registering the workflow again (duplicate) should fail
-        try {
-            workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
-            assertFalse("Should not reach this, should fail", false);
-        } catch (ApiException ex) {
-            assertTrue("Should have error message that workflow already exists.", ex.getMessage().contains("already exists"));
-        }
-
-        // Try registering a hosted workflow
-        try {
-            BioWorkflow dsWorkflow = workflowsApi.addWorkflow(SourceControl.DOCKSTORE.name(), "foo", "bar");
-            assertFalse("Should not reach this, should fail", false);
-        } catch (ApiException ex) {
-            assertTrue("Should have error message that hosted workflows cannot be added this way.", ex.getMessage().contains(WorkflowResource.SC_REGISTRY_ACCESS_MESSAGE));
-        }
-
+        // Add an app tool, which should appear when specifying the TOOLS type
+        AppToolHelper.registerAppTool(client);
+        final List<EntryUpdateTime> tools = userApi.getUserEntries(10, null, "TOOLS");
+        assertEquals(5, tools.size());
+        assertEquals(1L, tools.stream().filter(t -> t.getEntryType() == EntryTypeEnum.APPTOOL).count());
     }
 
     /**
@@ -533,7 +452,7 @@ public class UserResourceIT extends BaseIT {
 
         workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
 
-        List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
+        List<EntryUpdateTime> entries = userApi.getUserEntries(10, null, null);
         assertFalse(entries.isEmpty());
         assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified")));
         assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("dockstore-workflow-md5sum-unified")));
@@ -546,7 +465,7 @@ public class UserResourceIT extends BaseIT {
         Assert.assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));
 
         // Entry should now be at the top
-        entries = userApi.getUserEntries(10, null);
+        entries = userApi.getUserEntries(10, null, null);
         assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(0).getPath());
         assertEquals("dockstore-workflow-md5sum-unified", entries.get(0).getPrettyPath());
 
@@ -596,7 +515,6 @@ public class UserResourceIT extends BaseIT {
         Profile userProfile = usersApi.getUser().getUserProfiles().get("github.com");
 
         assertNull(userProfile.getName());
-        assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getBio());
         assertNull(userProfile.getLocation());
@@ -608,7 +526,6 @@ public class UserResourceIT extends BaseIT {
         userProfile = usersApi.getUser().getUserProfiles().get("github.com");
 
         assertNull(userProfile.getName());
-        assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
         assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
         assertEquals("I am a test user", userProfile.getBio());
         assertEquals("Toronto", userProfile.getLocation());
@@ -618,13 +535,11 @@ public class UserResourceIT extends BaseIT {
 
         io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
-        List<SourceControlOrganization> myGitHubOrgs = userApi.getMyGitHubOrgs();
-        assertTrue(!myGitHubOrgs.isEmpty() && myGitHubOrgs.stream().anyMatch(org -> org.getName().equals("dockstoretesting")));
         // Delete all of the tokens (except for Dockstore tokens) for every user
         testingPostgres.runUpdateStatement("UPDATE token set content = 'foo' WHERE tokensource <> 'dockstore'");
 
         try {
-            userApi.getMyGitHubOrgs();
+            userApi.getUserOrganizations("github.com");
         } catch (io.dockstore.openapi.client.ApiException e) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
             return;
@@ -698,6 +613,30 @@ public class UserResourceIT extends BaseIT {
     }
 
     /**
+     * tests that a normal user can grab the user profile for a different user to support user pages
+     */
+    @Test
+    public void testUserProfiles() {
+        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
+        // The API call updateUserMetadata() should not throw an error and exit if any users' tokens are out of date or absent
+        // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
+        adminApi.updateUserMetadata();
+
+        io.dockstore.openapi.client.ApiClient unauthUserWebClient = CommonTestUtilities.getOpenAPIWebClient(false, null, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi unauthUserApi = new io.dockstore.openapi.client.api.UsersApi(unauthUserWebClient);
+
+
+        final io.dockstore.openapi.client.model.User userProfile = unauthUserApi.listUser(USER_2_USERNAME, USER_PROFILES);
+        assertFalse(userProfile.getUserProfiles().isEmpty());
+
+        // check to see that DB actually had an email in the first place and the test above wasn't true by default
+        final String email = testingPostgres.runSelectStatement(String.format("select email from user_profile  WHERE username = '%s' and token_type = 'github.com'", "DockstoreTestUser2"),
+            String.class);
+        assertFalse(email.isEmpty());
+    }
+
+    /**
      * Tests the endpoint used to sync all users' Github information called by a user who has a valid GitHub token
      * and one user who has a missing or outdated GitHub token
      */
@@ -722,7 +661,6 @@ public class UserResourceIT extends BaseIT {
 
         // DockstoreUser2's profile elements should be initially set to null since the GitHub metadata isn't synced yet
         assertNull(userProfile.getName());
-        assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getBio());
@@ -735,7 +673,6 @@ public class UserResourceIT extends BaseIT {
 
         userProfile = userApi.getUser().getUserProfiles().get("github.com");
         assertNull(userProfile.getName());
-        assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
         assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
         assertEquals("Toronto", userProfile.getLocation());
         assertEquals("I am a test user", userProfile.getBio());
@@ -759,7 +696,6 @@ public class UserResourceIT extends BaseIT {
         testingPostgres.runUpdateStatement("DELETE FROM token WHERE tokensource <> 'dockstore'");
 
         assertNull(userProfile.getName());
-        assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getBio());
@@ -772,7 +708,6 @@ public class UserResourceIT extends BaseIT {
 
         userProfile = userApi.getUser().getUserProfiles().get("github.com");
         assertNull(userProfile.getName());
-        assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getBio());
@@ -782,7 +717,7 @@ public class UserResourceIT extends BaseIT {
 
     @Test
     public void testGetStarredWorkflowsAndServices() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);

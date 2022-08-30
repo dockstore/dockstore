@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli;
 
+import static io.dockstore.webservice.resources.WorkflowResource.YOUR_USER_DOES_NOT_HAVE_ACCESS_TO_THIS_ORGANIZATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -143,7 +144,7 @@ public class WorkflowIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
 
     /**
@@ -838,6 +839,17 @@ public class WorkflowIT extends BaseIT {
         try {
             workflowApi.manualRegister("github", "dasn/iodnasiodnasio", "/Dockstore.wdl", "", "wdl", "/test.json");
         } catch (ApiException c) {
+            assertTrue(c.getMessage().contains("GitHub reports file not found"));
+            success = false;
+        } finally {
+            assertFalse(success);
+        }
+
+        success = true;
+        try {
+            workflowApi.manualRegister("github", "apache/hadoop", "/Dockstore.wdl", "", "wdl", "/test.json");
+        } catch (ApiException c) {
+            assertTrue(c.getMessage().contains(YOUR_USER_DOES_NOT_HAVE_ACCESS_TO_THIS_ORGANIZATION));
             success = false;
         } finally {
             assertFalse(success);

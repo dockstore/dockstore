@@ -87,6 +87,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @FilterDef(name = "versionNameFilter", parameters = @ParamDef(name = "name", type = "string"), defaultCondition = "LOWER(:name) = LOWER(name)")
 @Filter(name = "versionNameFilter")
+@FilterDef(name = "versionIdFilter", parameters = @ParamDef(name = "id", type = "long"), defaultCondition = ":id = id")
+@Filter(name = "versionIdFilter")
 
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
@@ -594,5 +596,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET
     }
 
+    /**
+     * Used to override @JsonIgnore of source files. Annoyingly, we want to not retrieve source files in general to preserve lazy-loading and not return source files un-necessarily in most REST
+     * responses. However, we want to serialize them into the elasticsearch index.
+     */
+    public interface ElasticSearchMixin {
 
+        @JsonProperty
+        String getSourceFiles();
+    }
 }

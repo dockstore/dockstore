@@ -32,6 +32,7 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
@@ -79,12 +80,14 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
     private final EventDAO eventDAO;
+    private final FileDAO fileDAO;
     private final VersionDAO versionDAO;
 
-    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO, EventDAO eventDAO, VersionDAO versionDAO) {
+    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO, EventDAO eventDAO, FileDAO fileDAO, VersionDAO versionDAO) {
         this.tagDAO = tagDAO;
         this.toolDAO = toolDAO;
         this.eventDAO = eventDAO;
+        this.fileDAO = fileDAO;
         this.versionDAO = versionDAO;
     }
 
@@ -287,7 +290,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     private Tool findToolByIdAndCheckToolAndUser(Long toolId, User user) {
         Tool tool = toolDAO.findById(toolId);
         checkNotNullEntry(tool);
-        checkCanRead(user, tool);
+        checkCanExamine(user, tool);
         return tool;
     }
 
@@ -301,10 +304,6 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             @Parameter(name = "containerId", description = "Container to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,
             @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
             @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
-        Tool tool = toolDAO.findById(containerId);
-        checkNotNullEntry(tool);
-        checkCanRead(user, tool);
-
-        return getVersionsSourcefiles(containerId, tagId, fileTypes, versionDAO);
+        return getVersionSourceFiles(containerId, tagId, fileTypes, user, fileDAO, versionDAO);
     }
 }

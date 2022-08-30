@@ -126,7 +126,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testWorkflowMigration() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
@@ -208,7 +208,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testGitHubReleaseNoWorkflowOnDockstore() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
@@ -345,6 +345,29 @@ public class WebhookIT extends BaseIT {
         testDefaultVersion(client);
     }
 
+    @Test
+    public void testLambdaEvents() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        final LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
+        final List<String> userOrganizations = usersApi.getUserOrganizations("github.com");
+        assertTrue(userOrganizations.contains("dockstoretesting")); // Org user is member of
+        assertTrue(userOrganizations.contains("DockstoreTestUser2")); // The GitHub account
+        final String dockstoreTestUser = "DockstoreTestUser";
+        assertTrue(userOrganizations.contains(dockstoreTestUser)); // User has access to only one repo in the org, DockstoreTestUser/dockstore-whalesay-2
+
+        assertEquals("No events at all works", 0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size());
+
+        testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization) values ('whatevs', 'repo-no-access', 'DockstoreTestUser')");
+        assertEquals("Can't see event for repo with no access", 0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size());
+
+        testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization) values ('whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser')");
+        final List<io.dockstore.openapi.client.model.LambdaEvent> events =
+            lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10);
+        assertEquals("Can see event for repo with access, not one without", 1, events.size());
+    }
+
     private void testDefaultVersion(io.dockstore.openapi.client.api.WorkflowsApi client) {
         io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
         assertNull(workflow2.getDefaultVersion());
@@ -392,7 +415,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testDeleteDefaultWorkflowVersion() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -427,7 +450,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testManualRefreshWorkflowWithGitHubApp() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -461,7 +484,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testGitHubReleaseNoWorkflowOnDockstoreNoUser() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -483,7 +506,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testDescriptorChange() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIWebClient);
@@ -545,7 +568,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testInvalidDockstoreYmlFiles() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
@@ -654,7 +677,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testTestParameterPaths() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -670,7 +693,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testGithubDirDockstoreYml() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -691,7 +714,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testDockstoreYmlFilters() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -763,7 +786,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testDockstoreYmlPublish() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -787,7 +810,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testDockstoreYmlAuthors() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         String wdlWorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar");
@@ -867,9 +890,11 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testGetWorkflowVersionOrcidAuthors() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.ApiClient anonymousWebClient = getAnonymousOpenAPIWebClient();
+        io.dockstore.openapi.client.api.WorkflowsApi anonymousWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(anonymousWebClient);
         String wdlWorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar");
 
         // Workflows containing 1 descriptor author and multiple .dockstore.yml authors.
@@ -887,6 +912,14 @@ public class WebhookIT extends BaseIT {
             hoverfly.simulate(ORCID_SIMULATION_SOURCE);
             List<OrcidAuthorInformation> orcidAuthorInfo = workflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
             assertEquals(1, orcidAuthorInfo.size()); // There's 1 OrcidAuthorInfo instead of 2 because only 1 ORCID ID from the version exists on ORCID
+
+            // Publish workflow
+            io.dockstore.openapi.client.model.PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
+            workflowsApi.publish1(workflow.getId(), publishRequest);
+
+            // Check that an unauthenticated user can get the workflow version ORCID authors of a published workflow
+            anonymousWorkflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
+            assertEquals(1, orcidAuthorInfo.size());
         }
     }
 
@@ -896,7 +929,7 @@ public class WebhookIT extends BaseIT {
      */
     @Test
     public void testDockstoreYmlInvalidWorkflowName() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
@@ -915,7 +948,7 @@ public class WebhookIT extends BaseIT {
     // .dockstore.yml in test repo needs to change to add a 'name' field to one of them. Should also include another branch that doesn't keep the name field
     @Test
     public void testTools() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
@@ -994,7 +1027,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testSnapshotAppTool() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -1023,7 +1056,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testChangingAppToolTopics() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -1042,7 +1075,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testChangingAppToolTopicsOpenapi() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
 
@@ -1062,7 +1095,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testStarAppTool() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
@@ -1090,7 +1123,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testTRSWithAppTools() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
@@ -1156,7 +1189,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testDuplicatePathsAcrossTables() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -1185,7 +1218,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testAppToolCollections() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -1241,7 +1274,7 @@ public class WebhookIT extends BaseIT {
     // the "multi-entry" repo has four .dockstore.yml entries
     @Test
     public void testMultiEntryAllGood() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -1252,7 +1285,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testMultiEntryOneBroken() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -1262,7 +1295,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, countTools());
 
         // test one broken workflow
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/broken-workflow", installationId));
         assertEquals(1, countWorkflows());
         assertEquals(2, countTools());
@@ -1270,7 +1303,7 @@ public class WebhookIT extends BaseIT {
 
     @Test
     public void testMultiEntrySameName() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -1292,5 +1325,60 @@ public class WebhookIT extends BaseIT {
 
         // test service and unnamed workflows
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/service-and-unnamed-workflow", installationId));
+    }
+
+    /**
+     * Tests that the GitHub release syncs a workflow's metadata with the default version's metadata.
+     * Tests two scenarios:
+     * <li>The default version for a workflow is set using the latestTagAsDefault property from the dockstore.yml</li>
+     * <li>The default version for a workflow is set manually using the API</li>
+     * @throws Exception
+     */
+    @Test
+    public void testSyncWorkflowMetadataWithDefaultVersion() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+
+        workflowsApi.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(workflowsApi); // dockstore.yml for foobar doesn't have latestTagAsDefault set
+        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(workflowsApi); // dockstore.yml for foobar2 has latestTagAsDefault set
+        assertNull(workflow.getDefaultVersion());
+        assertEquals("Should have latest tag set as default version", "0.4", workflow2.getDefaultVersion());
+
+        workflowsApi.updateDefaultVersion1(workflow.getId(), "0.4"); // Set default version for workflow that doesn't have one
+        workflow = getFoobar1Workflow(workflowsApi);
+        assertEquals("Should have default version set", "0.4", workflow.getDefaultVersion());
+
+        // Find WorkflowVersion for default version and make sure it has metadata set
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> defaultVersion = workflow.getWorkflowVersions().stream()
+                .filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.4"))
+                .findFirst();
+        assertTrue(defaultVersion.isPresent());
+        assertEquals("Version should have author set", "Test User", defaultVersion.get().getAuthor());
+        assertEquals("Version should have email set", "test@dockstore.org", defaultVersion.get().getEmail());
+        assertEquals("Version should have email set", "This is a description", defaultVersion.get().getDescription());
+
+        // Check that the workflow metadata is the same as the default version's metadata
+        checkWorkflowMetadataWithDefaultVersionMetadata(workflow, defaultVersion.get());
+        checkWorkflowMetadataWithDefaultVersionMetadata(workflow2, defaultVersion.get());
+
+        // Clear workflow metadata to test the scenario where the default version metadata was updated and is now out of sync with the workflow's metadata
+        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET author = NULL where id = '%s'", workflow.getId()));
+        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET email = NULL where id = '%s'", workflow.getId()));
+        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET description = NULL where id = '%s'", workflow.getId()));
+        // GitHub release should sync metadata with default version
+        workflowsApi.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        workflow = getFoobar1Workflow(workflowsApi);
+        workflow2 = getFoobar2Workflow(workflowsApi);
+        checkWorkflowMetadataWithDefaultVersionMetadata(workflow, defaultVersion.get());
+        checkWorkflowMetadataWithDefaultVersionMetadata(workflow2, defaultVersion.get());
+    }
+
+    // Asserts that the workflow metadata is the same as the default version metadata
+    private void checkWorkflowMetadataWithDefaultVersionMetadata(io.dockstore.openapi.client.model.Workflow workflow, io.dockstore.openapi.client.model.WorkflowVersion defaultVersion) {
+        assertEquals("Workflow author should equal default version author", defaultVersion.getAuthor(), workflow.getAuthor());
+        assertEquals("Workflow email should equal default version email", defaultVersion.getEmail(), workflow.getEmail());
+        assertEquals("Workflow description should equal default version description", defaultVersion.getDescription(), workflow.getDescription());
     }
 }

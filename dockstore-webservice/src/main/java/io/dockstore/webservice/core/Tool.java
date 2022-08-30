@@ -167,6 +167,7 @@ public class Tool extends Entry<Tool, Tag> {
     @Cascade(CascadeType.DETACH)
     @BatchSize(size = 25)
     @Filter(name = "versionNameFilter")
+    @Filter(name = "versionIdFilter")
     private final SortedSet<Tag> workflowVersions;
 
     @JsonIgnore

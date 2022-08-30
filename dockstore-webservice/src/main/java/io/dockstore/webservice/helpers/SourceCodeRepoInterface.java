@@ -30,7 +30,6 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -175,9 +174,22 @@ public abstract class SourceCodeRepoInterface {
     public abstract Map<String, String> getWorkflowGitUrl2RepositoryId();
 
     /**
-     * Checks to see if a particular source code repository is properly setup for issues like token scope
+     * Checks to see if a particular source code repository is properly setup for issues like token scope.
      */
-    public abstract boolean checkSourceCodeValidity();
+    public abstract boolean checkSourceControlTokenValidity();
+
+    /**
+     * Checks to see if a particular source code repository is real or not.
+     * TODO: assumes real repos have branches, there may be a better way for specific source control types
+     *
+     * @param entry
+     * @return
+     */
+    public boolean checkSourceControlRepoValidity(Entry entry) {
+        final String repositoryId = this.getRepositoryId(entry);
+        final String mainBranch = this.getMainBranch(entry, repositoryId);
+        return mainBranch != null;
+    }
 
 
     /**
@@ -739,8 +751,11 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Gets organizations for the current user
+     * Returns
      * @return
      */
-    public abstract List<SourceControlOrganization> getOrganizations();
+    public Set<String> getOrganizations() {
+        return getWorkflowGitUrl2RepositoryId().values().stream()
+            .map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+    }
 }

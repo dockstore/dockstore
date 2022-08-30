@@ -22,6 +22,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
@@ -135,6 +136,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         // Only check type for workflows
         String convertedRegistry = checkRegistry(registry);
         T entry = getEntry(user, convertedRegistry, name, descriptorLanguage, namespace, entryName);
+        // manual workflows should always have a manual topic because there is no source control
+        entry.setTopicSelection(TopicSelection.MANUAL);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);

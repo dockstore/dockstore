@@ -30,6 +30,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -209,25 +211,16 @@ public final class DockstoreYamlHelper {
             safeYaml.load(content);
             Representer representer = new Representer();
             representer.getPropertyUtils().setSkipMissingProperties(skipUnknownProperties);
-            final Yaml yaml = new Yaml(constructor, representer);
+            DumperOptions dumperOptions = new DumperOptions();
+            LoaderOptions loaderOptions = new LoaderOptions();
+            loaderOptions.setAllowDuplicateKeys(false);
+            final Yaml yaml = new Yaml(constructor, representer, dumperOptions, loaderOptions);
             return yaml.load(content);
         } catch (Exception e) {
-            final String exceptionMsg = createExceptionMessage(e);
+            final String exceptionMsg = e.getMessage();
             LOG.error(ERROR_READING_DOCKSTORE_YML + exceptionMsg, e);
             throw new DockstoreYamlException(exceptionMsg);
         }
-    }
-
-    private static String createExceptionMessage(Exception e) {
-        // For yaml ConstructorException, use `getProblem()`, which returns the line number, cause, and snippet.
-        // This is thrown on errors during the initial yaml parse, before validation, such as attempting to parse
-        // non-list information as a list, or create an enum from an input string that does not match any of the
-        // enum's values.  The full exception message contains lots of information about the surrounding context,
-        // formatted in a way that can be confusing and hard to read.
-        if (e instanceof org.yaml.snakeyaml.constructor.ConstructorException) {
-            return ((org.yaml.snakeyaml.constructor.ConstructorException)e).getProblem();
-        }
-        return e.getMessage();
     }
 
     /**

@@ -30,7 +30,7 @@ public class UserResourceDockerRegistriesIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
     }
     @Test
     public void getUserDockerRegistriesTest() {
