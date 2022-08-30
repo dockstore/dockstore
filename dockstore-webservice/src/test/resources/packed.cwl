@@ -34,7 +34,7 @@
         }
       }
     },
-    { 
+    {
       "class": "CommandLineTool",
       "id": "#tool",
       "inputs": [],
