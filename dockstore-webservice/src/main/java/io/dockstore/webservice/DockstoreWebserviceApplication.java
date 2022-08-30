@@ -99,7 +99,6 @@ import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.ConnectionPoolHealthCheck;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
-import io.dockstore.webservice.resources.ElasticSearchHealthCheck;
 import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
@@ -342,8 +341,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
 
-        final ElasticSearchHealthCheck elasticSearchHealthCheck = new ElasticSearchHealthCheck(new ToolsExtendedApi());
-        environment.healthChecks().register("elasticSearch", elasticSearchHealthCheck);
         environment.lifecycle().manage(new ElasticSearchHelper(configuration.getEsConfiguration()));
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
