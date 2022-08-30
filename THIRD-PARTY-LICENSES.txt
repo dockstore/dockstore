@@ -110,7 +110,7 @@ Lists of 362 third-party dependencies.
      (Cromwell License https://github.com/broadinstitute/cromwell/blob/develop/LICENSE.txt) cromwell-wdl-transforms-new-base (org.broadinstitute:cromwell-wdl-transforms-new-base_2.12:77 - no url defined)
      (Cromwell License https://github.com/broadinstitute/cromwell/blob/develop/LICENSE.txt) cromwell-wdl-transforms-shared (org.broadinstitute:cromwell-wdl-transforms-shared_2.12:77 - no url defined)
      (Cromwell License https://github.com/broadinstitute/cromwell/blob/develop/LICENSE.txt) cromwell-wom (org.broadinstitute:cromwell-wom_2.12:77 - no url defined)
-     (https://www.apache.org/licenses/LICENSE-2.0.txt) cwljava (org.w3id.cwl.sdk:cwljava:1.0.0 - no url defined)
+     (Apache License, Version 2.0) cwljava (org.w3id.cwl.sdk:cwljava:1.0.0 - no url defined)
      (The Apache Software License, Version 2.0) docker-java-api (com.github.docker-java:docker-java-api:3.2.8 - https://github.com/docker-java/docker-java)
      (The Apache Software License, Version 2.0) docker-java-core (com.github.docker-java:docker-java-core:3.2.8 - https://github.com/docker-java/docker-java)
      (The Apache Software License, Version 2.0) docker-java-transport (com.github.docker-java:docker-java-transport:3.2.8 - https://github.com/docker-java/docker-java)

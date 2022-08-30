@@ -89,6 +89,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static final String WORKFLOW_TYPE = "workflow";
     private static final String EXPRESSION_TOOL_TYPE = "expressionTool";
     private static final String OPERATION_TYPE = "operation";
+    private static final int CODE_SNIPPET_LENGTH = 50;
 
 
     @Override
@@ -292,6 +293,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return (Map<String, Object>)preprocessed;
     }
 
+    /**
+     * Create a "safe" LoadingOptions object, wherein the `urlJoin` and `fetchText` methods
+     * of the embedded `Fetcher` are essentially disabled.  Such an object is useful to ensure
+     * that the cwljava parser does not try to retrieve files from remote servers, since our
+     * preprocessor should have already retrieved and inlined the appropriate files.
+     */
     private LoadingOptions constructSafeLoadingOptions() {
         return new LoadingOptionsBuilder().setFetcher(
             new Fetcher() {
@@ -359,8 +366,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 LOG.error("Validation exception: " + e.getMessage(), e);
                 throw new CustomWebApplicationException(CWL_PARSE_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
+            // The parse should always produce a Workflow object, because we converted any non-workflow to a one-step workflow, above.
             if (!(rootObject instanceof Workflow)) {
-                LOG.error("Top level construct was not a Workflow.");
+                LOG.error("Top level object was not a Workflow, class " + className(rootObject));
                 throw new CustomWebApplicationException(CWL_PARSE_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
 
@@ -413,6 +421,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         workflow.put("outputs", Map.of());
         workflow.put("steps", Map.of("tool", Map.of("run", tool, "in", List.of(), "out", List.of())));
         return workflow;
+    }
+
+    private String className(Object obj) {
+        return obj != null ? obj.getClass().getName() : "null object";
     }
 
     /**
@@ -485,8 +497,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 currentPath = run.toString();
 
             } else {
-                LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
-                throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+                String message = CWLHandler.CWL_PARSE_SECONDARY_ERROR + "in workflow step " + workflowStepId;
+                LOG.error("Type of run object: " + className(run));
+                LOG.error(message);
+                throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
 
             if (currentPath == null) {
@@ -684,7 +698,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
         RequirementOrHintState sum = new RequirementOrHintState(existing);
         adds.forEach(add -> {
-            // The cwljava parser has an oddity: given requirement R and hint H, where R and H are equivalent, cwljava does not parse them to the same representation.
+            // The cwljava parser has an oddity: given a requirement R and a hint H, where R and H are equivalent, cwljava does not parse them to the same representation.
             // So, we must check both for a DockerRequirement object and the equivalent Map.
             if (add instanceof DockerRequirement) {
                 sum.setDockerPull(deOptionalize(((DockerRequirement)add).getDockerPull()));
@@ -727,8 +741,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     /**
      * Given an array of sources, will look for dependencies in the source name
-     *
-     * @param sources
+     * @param sources list of sources
+     * @param nodePrefix prefix to attach to extracted dependencies
+     * @param skip number of slash-separated name components to skip
      * @return filtered list of dependent sources
      */
     private List<String> filterDependent(List<String> sources, String nodePrefix, int skip) {
@@ -756,7 +771,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         if (mainDescriptor.isPresent()) {
             String content = mainDescriptor.get().getContent();
-            if (content == null || content.isEmpty()) {
+            if (StringUtils.isBlank(content)) {
                 validationMessage = "Primary descriptor is empty.";
             } else {
                 try {
@@ -771,7 +786,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         validationMessage = "Invalid CWL version.";
                     }
                 } catch (YAMLException | JsonParseException | ClassCastException e) {
-                    LOG.info("An unsafe or malformed YAML was attempted to be parsed", e);
+                    LOG.error("An unsafe or malformed YAML was attempted to be parsed", e);
                     validationMessage = "CWL file is malformed or missing, cannot extract metadata: " + e.getMessage();
                 }
             }
@@ -848,7 +863,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static Map<String, Object> parseAsMap(String yamlOrJson) {
         Object parsed = parse(yamlOrJson);
         if (!(parsed instanceof Map)) {
-            throw new YAMLException("Expected content in map format.");
+            throw new YAMLException("Unexpected construct: " + StringUtils.abbreviate(yamlOrJson, CODE_SNIPPET_LENGTH));
         }
         return (Map<String, Object>)parsed;
     }
