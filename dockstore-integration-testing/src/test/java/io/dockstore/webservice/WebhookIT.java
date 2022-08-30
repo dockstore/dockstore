@@ -668,8 +668,12 @@ public class WebhookIT extends BaseIT {
         }
     }
 
+    private LambdaEvent getLatestLambdaEvent(String user, UsersApi usersApi) {
+        return usersApi.getUserGitHubEvents(user, 1).get(0);
+    }
+
     private String getLatestLambdaEventMessage(String user, UsersApi usersApi) {
-        return usersApi.getUserGitHubEvents(user, 1).get(0).getMessage();
+        return getLatestLambdaEvent(user, usersApi).getMessage();
     }
 
     /**
@@ -1338,18 +1342,16 @@ public class WebhookIT extends BaseIT {
     public void testMultiEntryRelativePrimaryDescriptorPath() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        UsersApi usersApi = new UsersApi(webClient);
         WorkflowsApi client = new WorkflowsApi(webClient); 
-        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
 
         ApiException ex = shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/relative-primary-descriptor-path", installationId));
         assertTrue(ex.getMessage().toLowerCase().contains("could not be processed"));
         assertEquals(0, countWorkflows());
         assertEquals(2, countTools());
-        List<io.dockstore.openapi.client.model.LambdaEvent> lambdaEvents = usersApi.getUserGitHubEvents("0", 10);
-        assertEquals("There should be 1 event", 1, lambdaEvents.size());
-        assertFalse("The event should be unsuccessful", lambdaEvents.get(0).isSuccess());
-        assertTrue("Should contain the word 'absolute'", lambdaEvents.get(0).getMessage().toLowerCase().contains("absolute"));
+        LambdaEvent lambdaEvent = getLatestLambdaEvent("0", usersApi);
+        assertFalse("The event should be unsuccessful", lambdaEvent.isSuccess());
+        assertTrue("Should contain the word 'absolute'", lambdaEvent.getMessage().toLowerCase().contains("absolute"));
     }
 
     /**
