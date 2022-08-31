@@ -96,9 +96,9 @@ import io.dockstore.webservice.resources.AliasResource;
 import io.dockstore.webservice.resources.CategoryResource;
 import io.dockstore.webservice.resources.CloudInstanceResource;
 import io.dockstore.webservice.resources.CollectionResource;
+import io.dockstore.webservice.resources.ConnectionPoolHealthCheck;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
-import io.dockstore.webservice.resources.ElasticSearchHealthCheck;
 import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
@@ -350,8 +350,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
 
-        final ElasticSearchHealthCheck elasticSearchHealthCheck = new ElasticSearchHealthCheck(new ToolsExtendedApi());
-        environment.healthChecks().register("elasticSearch", elasticSearchHealthCheck);
         environment.lifecycle().manage(new ElasticSearchHelper(configuration.getEsConfiguration()));
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
@@ -465,6 +463,15 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
         cacheConfigManager.initCache();
+
+        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
+            // Register connection pool health check after server starts so the environment has dropwizard metrics
+            @Override
+            public void lifeCycleStarted(LifeCycle event) {
+                final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
+                environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+            }
+        });
 
         environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
             // Indexes Elasticsearch if mappings don't exist when the application is started
