@@ -106,6 +106,7 @@ public class WebhookIT extends BaseIT {
     private final String taggedToolRepo = "dockstore-testing/tagged-apptool";
     private final String taggedToolRepoPath = "dockstore-testing/tagged-apptool/md5sum";
     private final String authorsRepo = "DockstoreTestUser2/test-authors";
+    private final String workflowDockstoreYmlRepo = "dockstore-testing/workflow-dockstore-yml";
     private FileDAO fileDAO;
 
     @Before
@@ -861,6 +862,8 @@ public class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.ApiClient anonymousWebClient = getAnonymousOpenAPIWebClient();
+        io.dockstore.openapi.client.api.WorkflowsApi anonymousWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(anonymousWebClient);
         String wdlWorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar");
 
         // Workflows containing 1 descriptor author and multiple .dockstore.yml authors.
@@ -878,6 +881,14 @@ public class WebhookIT extends BaseIT {
             hoverfly.simulate(ORCID_SIMULATION_SOURCE);
             List<OrcidAuthorInformation> orcidAuthorInfo = workflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
             assertEquals(1, orcidAuthorInfo.size()); // There's 1 OrcidAuthorInfo instead of 2 because only 1 ORCID ID from the version exists on ORCID
+
+            // Publish workflow
+            io.dockstore.openapi.client.model.PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
+            workflowsApi.publish1(workflow.getId(), publishRequest);
+
+            // Check that an unauthenticated user can get the workflow version ORCID authors of a published workflow
+            anonymousWorkflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
+            assertEquals(1, orcidAuthorInfo.size());
         }
     }
 
@@ -1189,5 +1200,43 @@ public class WebhookIT extends BaseIT {
         organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null);
         Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
+    }
+
+    @Test
+    public void testDifferentLanguagesWithSameWorkflowName() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowClient = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+
+        try {
+            workflowClient.handleGitHubRelease("refs/heads/differentLanguagesWithSameWorkflowName", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+            Assert.fail("should have thrown");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            String message = ex.getMessage().toLowerCase();
+            assertTrue(message.contains("descriptor language"));
+            assertTrue(message.contains("workflow"));
+            assertTrue(message.contains("version"));
+        }
+        
+        // There should be one failure message
+        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+        assertEquals(0, events.stream().filter(lambdaEvent -> lambdaEvent.isSuccess()).count());
+        assertEquals(1, events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
+        io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
+        String message = event.getMessage().toLowerCase();
+        assertTrue(message.contains("descriptor language"));
+        assertTrue(message.contains("workflow"));
+        assertTrue(message.contains("version"));
+
+        // No workflow should have been created.
+        // This will change in 1.13, wherein .dockstore.yml processing changes so that an error in one entry will not roll back the entire update, and a workflow with one version should have been created.
+
+        try {
+            io.dockstore.openapi.client.model.Workflow workflow = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo, WorkflowSubClass.BIOWORKFLOW, "versions,validations");
+            Assert.fail("should have thrown");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("Entry not found", ex.getMessage());
+        }
     }
 }

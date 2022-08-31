@@ -419,4 +419,28 @@ public class DockstoreYamlTest {
             assertTrue(ex.getMessage().contains(DockstoreYamlHelper.UNKNOWN_PROPERTY));
         }
     }
+
+    @Test
+    public void testAuthorHasNameOrOrcid() throws DockstoreYamlHelper.DockstoreYamlException {
+        // Original .dockstore.yml should validate correctly
+        DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML);
+
+        // Replace authors with an author that has either a name or an ORCID
+        // Both should validate
+        DockstoreYamlHelper.readDockstoreYaml(replaceAuthors(DOCKSTORE12_YAML, "- name: Mister Potato"));
+        DockstoreYamlHelper.readDockstoreYaml(replaceAuthors(DOCKSTORE12_YAML, "- orcid: 0000-0001-2345-6789"));
+
+        // Replace authors with an author that does not have a name or an ORCID
+        // Should not validate
+        try {
+            DockstoreYamlHelper.readDockstoreYaml(replaceAuthors(DOCKSTORE12_YAML, "- affiliation: The Org"));
+            fail("Should not pass property validation because an author has neither a name nor an orcid");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().toLowerCase().contains("author"));
+        }
+    }
+
+    private static String replaceAuthors(String text, String replacement) {
+        return text.replaceFirst("(?s)- name: Denis.*?affiliation: UCSC", replacement);
+    }
 }
