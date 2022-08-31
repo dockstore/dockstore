@@ -1343,7 +1343,7 @@ public class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
-        WorkflowsApi client = new WorkflowsApi(webClient); 
+        WorkflowsApi client = new WorkflowsApi(webClient);
 
         ApiException ex = shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/relative-primary-descriptor-path", installationId));
         assertTrue(ex.getMessage().toLowerCase().contains("could not be processed"));

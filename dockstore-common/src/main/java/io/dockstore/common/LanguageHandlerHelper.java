@@ -14,8 +14,8 @@ public final class LanguageHandlerHelper {
      * Resolves a relative path based on an absolute parent path
      * Should only be used with workflow imports and not for using
      * untrusted inputs for traversing the filesystem.
-     * @param parentPath Absolute path to resolve
-     * @param relativePath Relative path the parent file
+     * @param parentPath Absolute path to parent file
+     * @param relativePath Relative path to resolve
      * @return Absolute version of relative path
      */
     public static String unsafeConvertRelativePathToAbsolutePath(String parentPath, String relativePath) {
