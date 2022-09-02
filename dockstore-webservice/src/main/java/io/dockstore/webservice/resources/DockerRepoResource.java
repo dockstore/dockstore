@@ -639,6 +639,7 @@ public class DockerRepoResource
      * @param tool The tool to get license information for
      */
     private void checkRepoValidity(User user, Tool tool) {
+        refreshBitbucketToken(user.getId());
         List<Token> tokens = tokenDAO.findByUserId(user.getId());
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), tokens);
         if (sourceCodeRepo == null || !sourceCodeRepo.checkSourceControlRepoValidity(tool)) {
