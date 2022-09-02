@@ -126,6 +126,11 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         return entries;
     }
 
+    default boolean hasHiddenTags(T entry) {
+        Hibernate.initialize(entry.getWorkflowVersions());
+        return entry.getWorkflowVersions().stream().anyMatch(Version::isHidden);
+    }
+
     default void stripContent(List<? extends Entry> entries) {
         stripContentFromEntries(entries, getDAO());
     }
@@ -303,7 +308,9 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         checkNotNullEntry(entry);
         checkCanRead(user, entry);
 
-        if (!user.isPresent() || !canExamine(user.get(), entry)) {
+        // Filter hidden tags
+        // Only check permissions when the entry has hidden tags, avoiding a potential SAM auth query in most cases
+        if (hasHiddenTags(entry) && (!user.isPresent() || !canExamine(user.get(), entry))) {
             filterContainersForHiddenTags(entry);
         }
 

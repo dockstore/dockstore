@@ -321,11 +321,11 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     @Override
     public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
-        ResourcesApi resourcesApi = getResourcesApi(user);
-        String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
         try {
+            ResourcesApi resourcesApi = getResourcesApi(user);
+            String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
             return resourcesApi.resourceAction(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.toSamAction(action));
-        } catch (ApiException e) {
+        } catch (ApiException | CustomWebApplicationException e) {
             return false;
         }
     }
