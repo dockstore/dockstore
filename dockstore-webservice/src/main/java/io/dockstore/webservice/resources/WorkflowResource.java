@@ -915,8 +915,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     @Override
     public boolean canExamine(User user, Entry workflow) {
-        return super.canExamine(user, workflow)
-            || (workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.READ));
+        return super.canExamine(user, workflow) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, workflow, Role.Action.READ);
     }
 
     /**
@@ -926,8 +925,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     @Override
     public boolean canWrite(User user, Entry workflow) {
-        return super.canWrite(user, workflow)
-            || (workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.WRITE));
+        return super.canWrite(user, workflow) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, workflow, Role.Action.WRITE);
     }
 
     /**
@@ -938,8 +936,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     @Override
     public boolean canShare(User user, Entry workflow) {
-        return super.canShare(user, workflow)
-            || (workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.SHARE));
+        return super.canShare(user, workflow) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, workflow, Role.Action.SHARE);
     }
 
     @GET

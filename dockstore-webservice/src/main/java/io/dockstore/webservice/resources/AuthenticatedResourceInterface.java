@@ -18,6 +18,9 @@ package io.dockstore.webservice.resources;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.permissions.Role;
 import java.util.List;
 import java.util.Optional;
 import org.apache.http.HttpStatus;
@@ -197,6 +200,16 @@ public interface AuthenticatedResourceInterface {
     static void throwIf(boolean condition, String message, int status) {
         if (condition) {
             throw new CustomWebApplicationException(message, status);
+        }
+    }
+
+    static boolean canDoAction(PermissionsInterface permissionsInterface, User user, Entry workflow, Role.Action action) {
+        try {
+            return workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, action);
+        } catch (CustomWebApplicationException e) {
+            e.rethrowIf5xx();
+            LOG.info("converted CustomWebApplicationException to false response", e);
+            return false;
         }
     }
 }

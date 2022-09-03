@@ -30,6 +30,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Ignore;
 
 import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT;
@@ -1262,7 +1263,8 @@ public class WebhookIT extends BaseIT {
      * generates an error about the duplicate names, instead.  To reimplement, we'll need to load a workflow
      * into the db, then push a branch that updates it, containing a workflow with the same name but different
      * descriptor language.
-
+     */
+    @Ignore
     @Test
     public void testDifferentLanguagesWithSameWorkflowName() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -1300,7 +1302,6 @@ public class WebhookIT extends BaseIT {
             assertEquals("Entry not found", ex.getMessage());
         }
     }
-    */
     
     private long countTools() {
         return countTableRows("apptool");
