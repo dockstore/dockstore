@@ -19,6 +19,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
 import java.util.List;
@@ -205,7 +206,10 @@ public interface AuthenticatedResourceInterface {
 
     static boolean canDoAction(PermissionsInterface permissionsInterface, User user, Entry workflow, Role.Action action) {
         try {
-            return workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, action);
+            return workflow instanceof Workflow
+                // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/dockstore/dockstore/issues/1593
+                && ((Workflow) workflow).getMode() == WorkflowMode.HOSTED
+                && permissionsInterface.canDoAction(user, (Workflow) workflow, action);
         } catch (CustomWebApplicationException e) {
             e.rethrowIf5xx();
             LOG.info("converted CustomWebApplicationException to false response", e);
