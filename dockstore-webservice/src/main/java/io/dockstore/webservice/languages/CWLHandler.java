@@ -359,10 +359,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             if (type == LanguageHandlerInterface.Type.DAG) {
                 // Determine steps that point to end
                 List<String> endDependencies = new ArrayList<>();
-
-                for (WorkflowOutputParameter workflowOutputParameter : workflow.getOutputs()) {
-                    Object sources = workflowOutputParameter.getOutputSource();
-                    processDependencies(NODE_PREFIX, endDependencies, sources);
+                if (workflow.getOutputs() != null) {
+                    for (WorkflowOutputParameter workflowOutputParameter : workflow.getOutputs()) {
+                        Object sources = workflowOutputParameter.getOutputSource();
+                        processDependencies(NODE_PREFIX, endDependencies, sources);
+                    }
                 }
 
                 toolInfoMap.put("UniqueEndKey", new ToolInfo(null, endDependencies));
