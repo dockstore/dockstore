@@ -19,6 +19,7 @@ package io.dockstore.webservice;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.http.HttpStatus;
 
 /**
  * @author xliu
@@ -34,5 +35,11 @@ public class CustomWebApplicationException extends WebApplicationException {
 
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    public void rethrowIf5xx() {
+        if (getResponse().getStatus() >= HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+            throw this;
+        }
     }
 }
