@@ -538,17 +538,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     @Override
-    public boolean canExamine(User user, Entry workflow) {
-        return AuthenticatedResourceInterface.super.canExamine(user, workflow) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, workflow, Role.Action.READ);
+    public boolean canExamine(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canExamine(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.READ);
     }
 
     @Override
-    public boolean canWrite(User user, Entry workflow) {
-        return AuthenticatedResourceInterface.super.canWrite(user, workflow) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, workflow, Role.Action.WRITE);
+    public boolean canWrite(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
     }
 
     @Override
-    public boolean canShare(User user, Entry workflow) {
-        return AuthenticatedResourceInterface.super.canShare(user, workflow) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, workflow, Role.Action.SHARE);
+    public boolean canShare(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canShare(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.SHARE);
     }
 }
