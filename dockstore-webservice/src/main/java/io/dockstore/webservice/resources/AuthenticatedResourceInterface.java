@@ -204,12 +204,12 @@ public interface AuthenticatedResourceInterface {
         }
     }
 
-    static boolean canDoAction(PermissionsInterface permissionsInterface, User user, Entry workflow, Role.Action action) {
+    static boolean canDoAction(PermissionsInterface permissionsInterface, User user, Entry<?, ?> entry, Role.Action action) {
         try {
-            return workflow instanceof Workflow
+            return entry instanceof Workflow
                 // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/dockstore/dockstore/issues/1593
-                && ((Workflow) workflow).getMode() == WorkflowMode.HOSTED
-                && permissionsInterface.canDoAction(user, (Workflow) workflow, action);
+                && ((Workflow) entry).getMode() == WorkflowMode.HOSTED
+                && permissionsInterface.canDoAction(user, (Workflow) entry, action);
         } catch (CustomWebApplicationException e) {
             e.rethrowIf5xx();
             LOG.info("converted CustomWebApplicationException to false response", e);

@@ -159,8 +159,18 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     protected abstract T getEntry(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName);
 
     @Override
+    public boolean canExamine(User user, Entry entry) {
+        return EntryVersionHelper.super.canExamine(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.READ);
+    }
+
+    @Override
     public boolean canWrite(User user, Entry entry) {
         return EntryVersionHelper.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
+    }
+
+    @Override
+    public boolean canShare(User user, Entry entry) {
+        return EntryVersionHelper.super.canShare(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.SHARE);
     }
 
     @PATCH
