@@ -354,7 +354,7 @@ public class CWLHandlerTest {
         try {
             cwlHandler.getContent("/invalidMapCWL.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            Assert.fail("Expected parse error");
+            Assert.fail("Expected parse error: value of workflow step run field should be a string, workflow, or tool");
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
             assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_ERROR);

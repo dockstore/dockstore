@@ -374,7 +374,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             // Process the parse workflow
             Workflow workflow = (Workflow)rootObject;
-            processWorkflow(workflow, null, null, 0, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+            processWorkflow(workflow, null, null, 0, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
             // Return the requested information
             if (type == LanguageHandlerInterface.Type.DAG) {
@@ -439,7 +439,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private void processWorkflow(Workflow workflow, RequirementOrHintState parentRequirementState,  RequirementOrHintState parentHintState, int depth, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
+    private void processWorkflow(Workflow workflow, RequirementOrHintState parentRequirementState,  RequirementOrHintState parentHintState, int depth, LanguageHandlerInterface.Type type, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         // Join parent and current requirements and hints.
         RequirementOrHintState requirementState = addToRequirementOrHintState(parentRequirementState, workflow.getRequirements());
         RequirementOrHintState hintState = addToRequirementOrHintState(parentHintState, workflow.getHints());
@@ -489,7 +489,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 stepToType.put(workflowStepId, computeProcessType(process));
                 currentPath = getDockstoreMetadataHintValue(deOptionalize(process.getHints()), "path");
                 if (process instanceof Workflow) {
-                    processWorkflow((Workflow)process, stepRequirementState, stepHintState, depth + 1, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                    processWorkflow((Workflow)process, stepRequirementState, stepHintState, depth + 1, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 }
 
             } else if (run instanceof String) {
