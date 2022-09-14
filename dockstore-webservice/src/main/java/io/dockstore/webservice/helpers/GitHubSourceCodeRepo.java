@@ -41,7 +41,6 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -60,6 +59,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,6 +71,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -85,6 +86,7 @@ import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHEmail;
 import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHMyself;
+import org.kohsuke.github.GHMyself.RepositoryListFilter;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
@@ -164,6 +166,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
         return readFileFromRepo(fileName, reference, repo);
     }
+
 
     @Override
     public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
@@ -282,18 +285,37 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return null;
     }
 
+    /**
+     * Returns a map of repositories of which the user is a member. These are individual repositories
+     * to which the user has explicitly been granted access, and does not include repositories the
+     * user has access to via organization or account membership.
+     * @return
+     */
+    public Map<String, String> getRepositoriesWithMemberAccess() {
+        return gitSshUrlToOrgSlashRepositoryMap(RepositoryListFilter.MEMBER);
+    }
+
     @Override
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
+        return gitSshUrlToOrgSlashRepositoryMap(RepositoryListFilter.ALL);
+    }
+
+    /**
+     * The method can be slow, especially with filter set to <code>RepositoryListFilter.ALL</code>. Try not to
+     * invoke it with <code>RepositoryListFilter.ALL</code>. But you may have to.
+     * @param filter
+     * @return
+     */
+    private Map<String, String> gitSshUrlToOrgSlashRepositoryMap(RepositoryListFilter filter) {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
-            // TODO: This code should be optimized. Ex. Only grab repositories from a specific org if refreshing by org.
-            // The filter all includes:
+            // The filter RepositoryListFilter.ALL includes:
             // * All repositories I own
             // * All repositories I am a contributor on
             // * All repositories from organizations I belong to
 
-            final int pageSize = 30;
-            github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL).forEach((GHRepository r) -> reposByGitURl.put(r.getSshUrl(), r.getFullName()));
+            final int pageSize = 100;
+            github.getMyself().listRepositories(pageSize, filter).forEach((GHRepository r) -> reposByGitURl.put(r.getSshUrl(), r.getFullName()));
             return reposByGitURl;
         } catch (IOException e) {
             return this.handleGetWorkflowGitUrl2RepositoryIdError(e);
@@ -301,27 +323,48 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Get a list of all the orgs a user has access to
-     * Based on the ALL repository filter, since getAllOrganizations() only returns organizations the user owns
+     * Returns the set of organizations as well as the personal account the user has some level of
+     * access to. Overrides the base implementation for performance, avoiding use of
+     * RepositoryListFilter.ALL -- although performance tests results are mixed.
+     *
      * @return
      */
-    public Set<String> getMyOrganizations() {
+    @Override
+    public Set<String> getOrganizations() {
         try {
-            final int pageSize = 30;
-            return github.getMyself()
-                .listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL)
-                .asList()
-                .stream()
-                .map((GHRepository repository) -> repository.getFullName().split("/")[0])
-                .collect(Collectors.toSet());
+            // The organizations of individual repos the user has been granted access to
+            final Set<String> orgsViaRepoMembership =
+                gitSshUrlToOrgSlashRepositoryMap(RepositoryListFilter.MEMBER).values().stream()
+                    .map(fullRepoName -> fullRepoName.split("/")[0])
+                    .collect(Collectors.toSet());
+            // The user's account, e.g., coverbeck
+            final Set<String> account = Set.of(githubTokenUsername);
+            // The organizations that the user is a member of
+            final Set<String> orgMemberships = github.getMyOrganizations().keySet();
+            return Stream.of(orgsViaRepoMembership, account, orgMemberships)
+                .flatMap(Collection::stream).collect(Collectors.toSet());
         } catch (IOException e) {
             LOG.error("could not find organizations due to ", e);
             throw new CustomWebApplicationException("could not read organizations from github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
+    /**
+     * Determine if the specified organization is one that the user belongs to, including the user's
+     * own account. Does NOT check for organizations where the user has only been granted access
+     * to specific repos within an org.
+     */
+    public boolean isOneOfMyOrganizations(String organization) {
+        try {
+            return organization.equals(githubTokenUsername) || github.getMyOrganizations().keySet().contains(organization);
+        } catch (IOException e) {
+            LOG.error("could not determine organization accessibility due to ", e);
+            throw new CustomWebApplicationException("could not determine organization accessibility on github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @Override
-    public boolean checkSourceCodeValidity() {
+    public boolean checkSourceControlTokenValidity() {
         try {
             GHRateLimit ghRateLimit = github.getRateLimit();
             if (ghRateLimit.getRemaining() == 0) {
@@ -682,7 +725,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param existingDefaults Optional mapping of existing versions
      * @return Version with updated sourcefiles
      */
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private WorkflowVersion setupWorkflowFilesForVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, DescriptorLanguage.FileType identifiedType, Workflow workflow, Map<String, WorkflowVersion> existingDefaults) {
         // Grab workflow file from github
         try {
@@ -1025,17 +1068,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public List<SourceControlOrganization> getOrganizations() {
-        try {
-            return github.getMyOrganizations().entrySet().stream()
-                    .map(o -> new SourceControlOrganization(o.getValue().getId(), o.getKey())).collect(Collectors.toList());
-        } catch (IOException e) {
-            LOG.info(githubTokenUsername + ": Cannot retrieve their organizations", e);
-        }
-        return new ArrayList<>();
-    }
-
-    @Override
     public void updateReferenceType(String repositoryId, Version version) {
         if (version.getReferenceType() != Version.ReferenceType.UNSET) {
             return;
@@ -1116,30 +1148,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
-    // DO NOT USE THIS FUNCTION ELSEWHERE
-    // This function has no use outside of gathering user's GitHub IDs the first time. This uses the GitHub token of the admin user calling the new, one-time-use endpoint.
-    // This will attempt to get the GitHub profile info (including id) of users we were unable to get by calling the github.getMyself() function above.
-    public void syncUserMetadataFromGitHubByUsername(User user, TokenDAO tokenDAO) {
-        // eGit user object
-        try {
-            if (user.getUserProfiles().get(TokenType.GITHUB_COM.toString()) == null) {
-                throw new CustomWebApplicationException("Could not find GitHub user profile information on Dockstore with username: " + user.getUsername() + "dockstore userid: " + user.getId(), HttpStatus.SC_NOT_FOUND);
-            }
-            GHUser ghUser = github.getUser(user.getUserProfiles().get(TokenType.GITHUB_COM.toString()).username);
-            User.Profile profile = getProfile(user, ghUser);
-            profile.email = ghUser.getEmail();
-
-            // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
-            Token usersGitHubToken = tokenDAO.findGithubByUserId(user.getId()).get(0);
-            usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
-            usersGitHubToken.setUsername(profile.username);
-        } catch (IOException ex) {
-            String msg = "Unable to get GitHub user id for Dockstore user " + user.getUsername() + " " + user.getId();
-            LOG.info(msg, ex);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
-    }
-
     /**
      * DO NOT USE THIS FUNCTION ELSEWHERE.
      * This function is for gathering topics for existing entries and only needs to be run once.
@@ -1188,7 +1196,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         profile.username = ghUser.getLogin();
         profile.name = ghUser.getName();
         profile.avatarURL = ghUser.getAvatarUrl();
-        profile.bio = ghUser.getBlog();  // ? not sure about this mapping in the new api
+        profile.bio = ghUser.getBio();
+        // The GitHub blog field is the only one that uses an empty string for an unset value. Set it to null if there's no value.
+        profile.link = StringUtils.isNotEmpty(ghUser.getBlog()) ? ghUser.getBlog() : null;
         profile.location = ghUser.getLocation();
         profile.company = ghUser.getCompany();
         Map<String, User.Profile> userProfile = user.getUserProfiles();

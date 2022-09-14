@@ -17,9 +17,11 @@ package io.dockstore.webservice.languages;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
+import io.dockstore.language.MinimalLanguageInterface.GenericFileType;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Author;
@@ -63,8 +65,8 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         final MinimalLanguageInterface.WorkflowMetadata workflowMetadata =
             minimalLanguageInterface.parseWorkflowForMetadata(filepath, content, new HashMap<>());
-        // Add authors from descriptor
-        if (workflowMetadata.getAuthor() != null) {
+        // Add authors from descriptor if there are no .dockstore.yml authors
+        if (workflowMetadata.getAuthor() != null && version.getAuthors().isEmpty()) {
             Author author = new Author(workflowMetadata.getAuthor());
             author.setEmail(workflowMetadata.getEmail());
             version.addAuthor(author);
@@ -84,7 +86,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 content = mainDescriptor.get().getContent();
             } else {
                 Map<String, String> validationMessage = new HashMap<>();
-                validationMessage.put("Unknown", "Missing the primary descriptor.");
+                validationMessage.put("Unknown", "Primary descriptor file not found.");
                 return new VersionTypeValidation(false, validationMessage);
             }
 
@@ -111,29 +113,32 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             String content = file.getContent();
             String absolutePath = file.getAbsolutePath();
 
-            MinimalLanguageInterface.GenericFileType fileType;
-            switch (file.getType()) {
-            case DOCKSTORE_CWL:
-            case DOCKSTORE_WDL:
-            case NEXTFLOW_CONFIG:
-            case NEXTFLOW:
-            case DOCKSTORE_SERVICE_YML:
-            case DOCKSTORE_SERVICE_OTHER:
-            case DOCKSTORE_YML:
-                fileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
+            FileType fileType = file.getType();
+            if (fileType == null) {
+                LOG.error("File type for source file {} is null", file.getPath());
+                throw new CustomWebApplicationException("File type for source file "
+                    + file.getPath() + " is null", HttpStatus.SC_METHOD_FAILURE);
+            }
+            MinimalLanguageInterface.GenericFileType genericFileType;
+            switch (fileType.getCategory()) {
+            case GENERIC_DESCRIPTOR:
+            case PRIMARY_DESCRIPTOR:
+            case SECONDARY_DESCRIPTOR:
+            case OTHER:
+                genericFileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
                 break;
-            case CWL_TEST_JSON:
-            case WDL_TEST_JSON:
-            case NEXTFLOW_TEST_PARAMS:
-            case DOCKSTORE_SERVICE_TEST_JSON:
-                fileType = MinimalLanguageInterface.GenericFileType.TEST_PARAMETER_FILE;
+            case TEST_FILE:
+                genericFileType = MinimalLanguageInterface.GenericFileType.TEST_PARAMETER_FILE;
+                break;
+            case CONTAINERFILE:
+                genericFileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
                 break;
             default:
-                fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
-                break;
+                LOG.error("Could not determine file type category for source file {}", file.getPath());
+                throw new CustomWebApplicationException("Could not determine file type category for source file "
+                    + file.getPath(), HttpStatus.SC_METHOD_FAILURE);
             }
-
-            Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, fileType);
+            Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, genericFileType);
             indexedFiles.put(absolutePath, indexedFile);
         }
         return indexedFiles;
@@ -177,6 +182,24 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
             }
+
+            // The language plugins don't necessarily set the file type
+            // so query the plugin to find out what the imported file
+            // type should be, because this is needed in downstream code.
+            // We assume if imported files are not descriptors or not test files they are Dockerfiles,
+            // however this may not be true for some languages, and we may have to change this
+            if (sourceFile.getType() == null) {
+                DescriptorLanguage.FileType importedFileType = null;
+                if (entry.getValue().getRight() == GenericFileType.IMPORTED_DESCRIPTOR) {
+                    importedFileType = minimalLanguageInterface.getDescriptorLanguage().getFileType();
+                } else if (entry.getValue().getRight() == GenericFileType.TEST_PARAMETER_FILE) {
+                    importedFileType = minimalLanguageInterface.getDescriptorLanguage().getTestParamType();
+                } else {
+                    // For some languages this may be incorrect
+                    importedFileType = FileType.DOCKERFILE;
+                }
+                sourceFile.setType(importedFileType);
+            }
             sourceFile.setAbsolutePath(entry.getKey());
             results.put(entry.getKey(), sourceFile);
         }
@@ -201,15 +224,10 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 LOG.error("could not parse tools from workflow", e);
                 return Optional.empty();
             }
-            final List<Map<String, String>> collect = rowData.stream().map(row -> {
-                Map<String, String> oldRow = new HashMap<>();
-                oldRow.put("id", row.toolid);
-                oldRow.put("file", row.filename);
-                oldRow.put("docker", row.dockerContainer);
-                oldRow.put("link", row.link == null ? "" : row.link.toString());
-                return oldRow;
-            }).collect(Collectors.toList());
-            return Optional.of(gson.toJson(collect));
+            final Map<String, DockerInfo> collect = rowData.stream()
+                    .collect(Collectors.toMap(row -> row.toolid,
+                            row -> new DockerInfo("TBD".equals(row.filename) ? null : row.filename, "TBD".equals(row.dockerContainer) ? null : row.dockerContainer, row.link == null ? null : row.link.toString())));
+            return Optional.of(getJSONTableToolContent(collect));
         }
         return Optional.empty();
     }

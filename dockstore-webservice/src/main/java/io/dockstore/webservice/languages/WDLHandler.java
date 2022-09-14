@@ -89,7 +89,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 String match = m.group(1);
                 if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
                     String localRelativePath = match.replaceFirst("file://", "");
-                    String absolutePath = LanguageHandlerHelper.convertRelativePathToAbsolutePath(parent, localRelativePath);
+                    String absolutePath = LanguageHandlerHelper.unsafeConvertRelativePathToAbsolutePath(parent, localRelativePath);
                     if (absolutePaths.contains(absolutePath)) {
                         throw new ParseException(ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT + absolutePath, 0);
                     }
@@ -406,7 +406,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         }
 
         for (String importPath : currentFileImports) {
-            String absoluteImportPath = convertRelativePathToAbsolutePath(currentFilePath, importPath);
+            String absoluteImportPath = unsafeConvertRelativePathToAbsolutePath(currentFilePath, importPath);
             if (!imports.containsKey(absoluteImportPath)) {
                 SourceFile importFile = new SourceFile();
 

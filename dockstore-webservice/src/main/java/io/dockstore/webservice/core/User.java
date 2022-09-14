@@ -77,8 +77,8 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @ApiModel(value = "User", description = "End users for the dockstore")
 @Entity
-@Table(name = "enduser", uniqueConstraints = @UniqueConstraint(columnNames = { "username" }))
-@NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
+@Table(name = "enduser", uniqueConstraints = @UniqueConstraint(columnNames = {"username"}))
+@NamedQueries({@NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGoogleEmail", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'google.com' AND p.email = :email)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGoogleUserId", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'google.com' AND p.onlineProfileId = :id)"),
@@ -86,10 +86,12 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUserId", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com' AND p.onlineProfileId = :id)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findAllGitHubUsers", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com')"),
-    @NamedQuery(name = "io.dockstore.webservice.core.database.UserInfo.findAllGoogleUserInfo", query = "SELECT new io.dockstore.webservice.core.database.UserInfo(user.username, userProfiles.username, userProfiles.email, KEY(userProfiles))"
-        + " FROM User user INNER JOIN user.userProfiles as userProfiles WHERE( KEY(userProfiles) = 'google.com' )"),
-    @NamedQuery(name = "io.dockstore.webservice.core.database.UserInfo.findAllGitHubUserInfo", query = "SELECT new io.dockstore.webservice.core.database.UserInfo(user.username, userProfiles.username, userProfiles.email, KEY(userProfiles))"
-        + " FROM User user INNER JOIN user.userProfiles as userProfiles WHERE( KEY(userProfiles) = 'github.com' )")
+    @NamedQuery(name = "io.dockstore.webservice.core.database.UserInfo.findAllGoogleUserInfo", query =
+        "SELECT new io.dockstore.webservice.core.database.UserInfo(user.username, userProfiles.username, userProfiles.email, KEY(userProfiles))"
+            + " FROM User user INNER JOIN user.userProfiles as userProfiles WHERE( KEY(userProfiles) = 'google.com' )"),
+    @NamedQuery(name = "io.dockstore.webservice.core.database.UserInfo.findAllGitHubUserInfo", query =
+        "SELECT new io.dockstore.webservice.core.database.UserInfo(user.username, userProfiles.username, userProfiles.email, KEY(userProfiles))"
+            + " FROM User user INNER JOIN user.userProfiles as userProfiles WHERE( KEY(userProfiles) = 'github.com' )")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User>, Serializable {
@@ -114,8 +116,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @ElementCollection(targetClass = Profile.class)
     @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = {
-            @UniqueConstraint(columnNames = { "id", "token_type" })}, indexes = {
-            @Index(name = "profile_by_username", columnList = "username"), @Index(name = "profile_by_email", columnList = "email") })
+        @UniqueConstraint(columnNames = {"id", "token_type"})}, indexes = {@Index(name = "profile_by_username", columnList = "username"), @Index(name = "profile_by_email", columnList = "email")})
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
     @ApiModelProperty(value = "Profile information of the user retrieved from 3rd party sites (GitHub, Google, etc)")
     @OrderBy("id")
@@ -309,7 +310,7 @@ public class User implements Principal, Comparable<User>, Serializable {
         } else {
             Token githubToken = githubByUserId.get(0);
             GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
-            sourceCodeRepo.checkSourceCodeValidity();
+            sourceCodeRepo.checkSourceControlTokenValidity();
             sourceCodeRepo.syncUserMetadataFromGitHub(this, Optional.of(tokenDAO));
             return true;
         }
@@ -563,7 +564,11 @@ public class User implements Principal, Comparable<User>, Serializable {
     public static class Profile implements Serializable {
         @Column(columnDefinition = "text")
         public String name;
+        /**
+         * Only use this for computations inside the webservice.
+         */
         @Column(columnDefinition = "text")
+        @JsonIgnore
         public String email;
         @Column(columnDefinition = "text")
         public String avatarURL;
@@ -573,6 +578,8 @@ public class User implements Principal, Comparable<User>, Serializable {
         public String location;
         @Column(columnDefinition = "text")
         public String bio;
+        @Column(columnDefinition = "text")
+        public String link;
         /**
          * Redundant with token, but needed since tokens can be deleted.
          * i.e. if usernames can change and tokens can be deleted, we need somewhere to let

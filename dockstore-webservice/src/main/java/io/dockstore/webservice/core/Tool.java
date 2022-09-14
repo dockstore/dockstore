@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -67,37 +68,39 @@ import org.hibernate.annotations.Filter;
  * @author dyuen
  */
 @ApiModel(value = "DockstoreTool", description =
-        "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
-                + " * associated with CWL and Dockerfile documents")
+    "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
+        + " * associated with CWL and Dockerfile documents")
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(name = "ukbq5vy17y4ocaist3d3r3imcus", columnNames = { "registry", "namespace", "name", "toolname" }))
+@Table(uniqueConstraints = @UniqueConstraint(name = "ukbq5vy17y4ocaist3d3r3imcus", columnNames = {"registry", "namespace", "name", "toolname"}))
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getByAlias", query = "SELECT e from Tool e JOIN e.aliases a WHERE KEY(a) IN :alias"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Tool c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedById", query = "SELECT c FROM Tool c WHERE c.id = :id AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.countAllPublished", query = "SELECT COUNT(c.id)" + Tool.PUBLISHED_QUERY),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublished", query = "SELECT c" + Tool.PUBLISHED_QUERY + "ORDER BY size(c.starredUsers) DESC"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.ToolPath(c.registry, c.namespace, c.name, c.toolname)" + Tool.PUBLISHED_QUERY),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate", query = "SELECT new io.dockstore.webservice.core.database.RSSToolPath(c.registry, c.namespace, c.name, c.toolname, c.lastUpdated, c.description)" + Tool.PUBLISHED_QUERY + "and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByMode", query = "SELECT c FROM Tool c WHERE c.mode = :mode"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByNamespace", query = "SELECT c FROM Tool c WHERE lower(c.namespace) = lower(:namespace) AND c.isPublished = true ORDER BY gitUrl"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteTool(t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
-                + "FROM Tool t LEFT JOIN t.workflowVersions v "
-                + "WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
-                + "GROUP BY t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespace", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace AND t.name = :repository"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getPublishedNamespaces", query = "SELECT distinct lower(namespace) FROM Tool c WHERE c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getPublishedEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.isPublished = true AND t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.getByAlias", query = "SELECT e from Tool e JOIN e.aliases a WHERE KEY(a) IN :alias"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Tool c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedById", query = "SELECT c FROM Tool c WHERE c.id = :id AND c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.countAllPublished", query = "SELECT COUNT(c.id)" + Tool.PUBLISHED_QUERY),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.ToolPath(c.registry, c.namespace, c.name, c.toolname)"
+        + Tool.PUBLISHED_QUERY),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate", query =
+        "SELECT new io.dockstore.webservice.core.database.RSSToolPath(c.registry, c.namespace, c.name, c.toolname, c.lastUpdated, c.description)" + Tool.PUBLISHED_QUERY
+            + "and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByMode", query = "SELECT c FROM Tool c WHERE c.mode = :mode"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByNamespace", query = "SELECT c FROM Tool c WHERE lower(c.namespace) = lower(:namespace) AND c.isPublished = true ORDER BY gitUrl"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntryLiteByUserId", query =
+        "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteTool(t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
+            + "FROM Tool t LEFT JOIN t.workflowVersions v "
+            + "WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
+            + "GROUP BY t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespace", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace AND t.name = :repository"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.getPublishedNamespaces", query = "SELECT distinct lower(namespace) FROM Tool c WHERE c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.getPublishedEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.isPublished = true AND t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
-
 
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
@@ -125,7 +128,8 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "Is the docker image private or not.", required = true, position = 21)
     private boolean privateAccess = false;
 
-    @Column(columnDefinition = "Text")
+    @Column(columnDefinition = "varchar(256)")
+    @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
@@ -163,6 +167,7 @@ public class Tool extends Entry<Tool, Tag> {
     @Cascade(CascadeType.DETACH)
     @BatchSize(size = 25)
     @Filter(name = "versionNameFilter")
+    @Filter(name = "versionIdFilter")
     private final SortedSet<Tag> workflowVersions;
 
     @JsonIgnore

@@ -18,10 +18,10 @@ package io.dockstore.common;
 
 import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
 
-import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -46,7 +46,7 @@ public final class TestUtility {
     }
 
     public static String getConfigFileLocation(boolean correctUser, boolean validPort, boolean useCache) throws IOException {
-        File tempDir = Files.createTempDir();
+        File tempDir = Files.createTempDirectory("tmpconfig").toFile();
         final File tempFile = File.createTempFile("config", "config", tempDir);
         FileUtils.write(tempFile, "token: " + (correctUser ? DUMMY_TOKEN_1 : "foobar") + "\n", StandardCharsets.UTF_8);
         FileUtils.write(tempFile, "server-url: http://localhost:" + (validPort ? "8080" : "9001") + "\n", StandardCharsets.UTF_8, true);

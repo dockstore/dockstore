@@ -45,4 +45,20 @@ public class DescriptorLanguageTest {
         Assert.assertEquals(FileType.WDL_TEST_JSON, DescriptorLanguage.WDL.getTestParamType());
         Assert.assertEquals(FileType.NEXTFLOW_TEST_PARAMS, DescriptorLanguage.NEXTFLOW.getTestParamType());
     }
+
+    @Test
+    public void testGetTestFileTypeFromDescriptorLanguageString() {
+        Assert.assertEquals(FileType.CWL_TEST_JSON, DescriptorLanguage.getTestFileTypeFromDescriptorLanguageString(DescriptorLanguage.CWL.toString()));
+        Assert.assertEquals(FileType.WDL_TEST_JSON, DescriptorLanguage.getTestFileTypeFromDescriptorLanguageString(DescriptorLanguage.WDL.toString()));
+        Assert.assertEquals(FileType.NEXTFLOW_TEST_PARAMS,
+            DescriptorLanguage.getTestFileTypeFromDescriptorLanguageString(DescriptorLanguage.NEXTFLOW.toString()));
+    }
+
+    @Test
+    public void testgetDescriptorLanguage() {
+        Assert.assertEquals(DescriptorLanguage.CWL, DescriptorLanguage.getDescriptorLanguage(DescriptorLanguage.FileType.DOCKSTORE_CWL));
+        Assert.assertEquals(DescriptorLanguage.CWL, DescriptorLanguage.getDescriptorLanguage(FileType.CWL_TEST_JSON));
+        Assert.assertEquals(DescriptorLanguage.SERVICE, DescriptorLanguage.getDescriptorLanguage(FileType.DOCKSTORE_SERVICE_OTHER));
+        Assert.assertEquals(DescriptorLanguage.NEXTFLOW, DescriptorLanguage.getDescriptorLanguage(DescriptorLanguage.FileType.NEXTFLOW));
+    }
 }

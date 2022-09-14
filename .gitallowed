@@ -114,6 +114,12 @@ swagger-java-sam-client/pom.xml:.*broadinstitute/sam/de13d1d
 # dockstore-webservice/src/main/java/io/swagger/model/ToolDescriptor.java
 dockstore-webservice/src/main/java/io/swagger/model/ToolDescriptor.java:.*pcawg_delly_workflow/ea2a
 
+# dockstore-webservice/src/main/java/io/dockstore/webservice/languages/LanguageHandlerInterface.java
+dockstore-webservice/src/main/java/io/dockstore/webservice/languages/LanguageHandlerInterface.java:99:.*broadinstitute/gatk@sha256:98b2f223dce4282c144d249e7e1f47d400ae349404409d01e87df2efeebac439
+dockstore-webservice/src/main/java/io/dockstore/webservice/languages/LanguageHandlerInterface.java:102:.*d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c
+dockstore-webservice/src/main/java/io/dockstore/webservice/languages/LanguageHandlerInterface.java:530:.*c404618e908391e50953e1ead94fe05dbbddbf532bd5c89b935ef34a9ca130d3
+
+
 # README.md:.*
 README.md:.*https://github.com/dockstore/dockstore/blob/
 README.md:.*https://app.codacy.com/app/dockstore/dockstore

@@ -16,10 +16,14 @@
 
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.DockstoreWebserviceApplication.getOkHttpClient;
 import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY;
 import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
 
 import com.codahale.metrics.annotation.Timed;
+import com.github.zafarkhaja.semver.UnexpectedCharacterException;
+import com.github.zafarkhaja.semver.expr.LexerException;
+import com.github.zafarkhaja.semver.expr.UnexpectedTokenException;
 import com.google.common.io.Resources;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.PipHelper;
@@ -28,6 +32,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.api.CLIInfo;
 import io.dockstore.webservice.api.Config;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
@@ -76,9 +81,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedSet;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -89,12 +99,21 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import okhttp3.Cache;
+import okhttp3.OkHttpClient;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.kohsuke.github.GHRelease;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.HttpConnector;
+import org.kohsuke.github.PagedIterable;
+import org.kohsuke.github.extras.ImpatientHttpConnector;
+import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,6 +137,8 @@ public class MetadataResource {
     private final DockstoreWebserviceConfiguration config;
     private final SitemapListener sitemapListener;
     private final RSSListener rssListener;
+
+    private static final String DOCKSTORE_CLI_RELEASES_URL = "https://github.com/dockstore/dockstore-cli/releases";
 
     public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
         this.toolDAO = new ToolDAO(sessionFactory);
@@ -203,6 +224,7 @@ public class MetadataResource {
         try {
             return rssListener.getCache().get(RSS_KEY, (k) -> getRSS());
         } catch (RuntimeException e) {
+            LOG.error("runtime exception on rss call:", e);
             throw new CustomWebApplicationException("RSS cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
@@ -261,6 +283,7 @@ public class MetadataResource {
             RSSWriter.write(feed, byteArrayOutputStream);
             return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
         } catch (Exception e) {
+            LOG.error("exception on rss call:", e);
             throw new CustomWebApplicationException("Could not write RSS feed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
@@ -274,8 +297,8 @@ public class MetadataResource {
         schema = @Schema(implementation = String.class)))
     @ApiOperation(value = "Returns the file containing runner dependencies.", response = String.class)
     public Response getRunnerDependencies(
-            @Parameter(name = "client_version", description = "The Dockstore client version")
-            @ApiParam(value = "The Dockstore client version") @QueryParam("client_version") String clientVersion,
+            @Parameter(name = "client_version", description = "The Dockstore client version (e.g. 1.13.0)", schema = @Schema(pattern = PipHelper.OPENAPI_SEM_VER_STRING))
+            @ApiParam(value = "The Dockstore client version (e.g. 1.13.0)") @QueryParam("client_version") String clientVersion,
             @Parameter(name = "python_version", description = "Python version, only relevant for the cwltool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "2"))
             @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("3") @QueryParam("python_version") String pythonVersion,
             @Parameter(name = "runner", description = "The tool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "cwltool", allowableValues = {"cwltool"}))
@@ -287,6 +310,10 @@ public class MetadataResource {
             return Response.noContent().build();
         }
         boolean unwrap = !("json").equals(output);
+        if (!PipHelper.validateSemVer(clientVersion)) {
+            throw new CustomWebApplicationException(String.format("Invalid value for client version: `%s`. Value must be like `1.13.0`)", clientVersion),
+                                                    HttpStatus.SC_BAD_REQUEST);
+        }
         String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
         try {
             String content = Resources.toString(this.getClass().getClassLoader()
@@ -406,6 +433,88 @@ public class MetadataResource {
             LOG.error("Error generating config response", e);
             throw new CustomWebApplicationException("Error retrieving config information", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GET
+    @Timed
+    @Path("cli-info")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get Dockstore CLI information.", description = "Get Dockstore CLI information. NO authentication")
+    @ApiOperation(value = "Get Dockstore CLI information.", notes = "Get Dockstore CLI information. NO authentication")
+    public CLIInfo getCliVersion() {
+        GHRelease ghRelease;
+        PagedIterable<GHRelease> allReleases;
+        CLIInfo cliInfo = new CLIInfo();
+        try {
+            OkHttpClient build = getOkHttpClient();
+            ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
+            HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
+            GitHub gitHub = GitHubBuilder.fromEnvironment().withConnector(okHttp3Connector).build();
+
+            GHRepository repository = gitHub.getRepository("dockstore/dockstore-cli");
+            ghRelease = repository.getLatestRelease();
+            allReleases = repository.listReleases();
+        } catch (IOException e) {
+            LOG.info("Could not get CLI releases information from GitHub. ", e);
+            throw new CustomWebApplicationException("Could not get CLI  releases information info from GitHub",
+                    HttpStatus.SC_SERVICE_UNAVAILABLE);
+        }
+        String cliLatestVersion = ghRelease.getName();
+        cliInfo.setCliLatestDockstoreScriptDownloadUrl(DOCKSTORE_CLI_RELEASES_URL + "/download/" + cliLatestVersion + "/dockstore");
+        cliInfo.setCliLatestVersion(cliLatestVersion);
+        // Get the latest unstable version
+        // If there is no unstable version return a null as the latest unstable version
+        Optional<String> cliLatestUnstableVersion = getLatestUnstableVersion(allReleases, cliLatestVersion);
+        if (cliLatestUnstableVersion.isPresent()) {
+            cliInfo.setCliLatestUnstableDockstoreScriptDownloadUrl(DOCKSTORE_CLI_RELEASES_URL + "/download/" + cliLatestUnstableVersion.get() + "/dockstore");
+            cliInfo.setCliLatestUnstableVersion(cliLatestUnstableVersion.get());
+        } else {
+            cliInfo.setCliLatestUnstableDockstoreScriptDownloadUrl(null);
+            cliInfo.setCliLatestUnstableVersion(null);
+        }
+        return cliInfo;
+    }
+
+    /**
+     * This method will return the prerelease version that is greater than the latest version if there is one
+     * If there isn't a prerelease version greater than the latest release then don't return one
+     * since we don't want to downgrade to an older untested version
+     *
+     * @param allReleases a PagedIterable of GHRelease objects for releases
+     * @param latestRelease the semantic variable string of the latest release
+     * @return An Optional String of the latest unstable version
+     */
+    private static Optional<String> getLatestUnstableVersion(PagedIterable<GHRelease> allReleases, String latestRelease) {
+        // https://stackoverflow.com/questions/24511052/how-to-convert-an-iterator-to-a-stream
+        Stream<GHRelease> targetStream = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(allReleases.iterator(), Spliterator.ORDERED), false);
+        return targetStream
+                .filter(GHRelease::isPrerelease)
+                .findFirst()
+                .filter(g -> preReleaseVersionIsGreaterThanLatest(g.getName(), latestRelease))
+                .map(g -> g.getName());
+    }
+
+    /**
+     * Check if the input prerelease is greater than the latest release
+     * @param preReleaseSemVer semantic version string of a prerelease
+     * @param latestReleaseSemVer semantic version string of the latest release
+     * @return whether the input semantic version string is greater
+     */
+    public static boolean preReleaseVersionIsGreaterThanLatest(String preReleaseSemVer, String latestReleaseSemVer) {
+        com.github.zafarkhaja.semver.Version latestReleaseSemVerValue;
+        com.github.zafarkhaja.semver.Version preReleaseSemVerValue;
+        try {
+            latestReleaseSemVerValue = com.github.zafarkhaja.semver.Version.valueOf(latestReleaseSemVer);
+            preReleaseSemVerValue = com.github.zafarkhaja.semver.Version.valueOf(preReleaseSemVer);
+        } catch (IllegalArgumentException | UnexpectedCharacterException | LexerException | UnexpectedTokenException ex) {
+            // https://github.com/zafarkhaja/jsemver#exception-handling
+            // if semVer cannot parse the version string it is probably not a good version string
+            // In general return false since we cannot determine if the unstable version is greater
+            // than the latest published version
+            return false;
+        }
+        return preReleaseSemVerValue.greaterThan(latestReleaseSemVerValue);
     }
 
 }

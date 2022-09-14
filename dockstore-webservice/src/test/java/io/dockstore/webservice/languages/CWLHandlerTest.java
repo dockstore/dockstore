@@ -3,6 +3,7 @@ package io.dockstore.webservice.languages;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import com.google.gson.Gson;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
@@ -36,15 +38,15 @@ import org.mockito.Mockito;
  */
 public class CWLHandlerTest {
 
+    private Set<String> toValues(Set<FileFormat> formats) {
+        return formats.stream().map(FileFormat::getValue).collect(Collectors.toSet());
+    }
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    private Set<String> toValues(Set<FileFormat> formats) {
-        return formats.stream().map(FileFormat::getValue).collect(Collectors.toSet());
-    }
 
     /**
      * Tests if the input and output file formats can be extracted from a CWL descriptor file
@@ -340,5 +342,60 @@ public class CWLHandlerTest {
             Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
             assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);
         }
+    }
+
+
+    /**
+     * Test the precedence of CWL requirements and hints.
+     *
+     * <p> The referenced workflow defines 9 workflow steps which enumerate the possible combinations
+     * of a requirement, hint, or neither, at both the parent workflow step and child tool level.
+     * The ID of each workflow step indicates the combination for that particular workflow step.
+     * For example, the workflow step ID "requirement_none" means that the workflow step defines
+     * requirement, and the invoked tool does not define a requirement or a hint.
+     *
+     * <p> According to the CWL spec, a child inherits requirements and hints from its parent.
+     * Child requirements override parent requirements, child hints override parent hints, and if
+     * both are present at a node, requirements take precedence over hints.
+     */
+    @Test
+    public void testCWLRequirementsAndHints() throws IOException {
+        CWLHandler cwlHandler = new CWLHandler();
+
+        // create and mock parameters for getContent()
+        final String resourceRoot = "requirements-and-hints";
+        final SourceFile parentFile = mockSourceFile(resourceRoot, "/parent.cwl");
+        final Set<SourceFile> secondarySourceFiles = Set.of(
+            mockSourceFile(resourceRoot, "/requirement.cwl"),
+            mockSourceFile(resourceRoot, "/hint.cwl"),
+            mockSourceFile(resourceRoot, "/none.cwl"));
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+
+        // determine the tool information from the "repo"
+        String tableToolContent = cwlHandler.getContent(parentFile.getAbsolutePath(), parentFile.getContent(),
+            secondarySourceFiles, LanguageHandlerInterface.Type.TOOLS, toolDAO).get();
+
+        // check that the dockerPulls are correct
+        Gson gson = new Gson();
+        List<Map<String, String>> tools = gson.fromJson(tableToolContent, List.class);
+        for (Map<String, String> tool: tools) {
+            String id = tool.get("id");
+            String docker = tool.get("docker");
+            if (Set.of("requirement_none", "requirement_hint", "hint_none").contains(id)) {
+                Assert.assertEquals("step", docker);
+            } else {
+                Assert.assertEquals("child", docker);
+            }
+        }
+        Assert.assertEquals("there should be a dockerPull for all workflow steps except the one with no requirements/hints", 3 * 3 - 1, tools.size());
+    }
+
+    private SourceFile mockSourceFile(String resourceRoot, String sourceFilePath) throws IOException {
+        String content = FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath(resourceRoot + sourceFilePath)), StandardCharsets.UTF_8);
+        SourceFile sourceFile = Mockito.mock(SourceFile.class);
+        when(sourceFile.getPath()).thenReturn(sourceFilePath);
+        when(sourceFile.getAbsolutePath()).thenReturn(sourceFilePath);
+        when(sourceFile.getContent()).thenReturn(content);
+        return sourceFile;
     }
 }

@@ -16,8 +16,7 @@
 
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
@@ -33,6 +32,7 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -79,12 +80,14 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
     private final EventDAO eventDAO;
+    private final FileDAO fileDAO;
     private final VersionDAO versionDAO;
 
-    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO, EventDAO eventDAO, VersionDAO versionDAO) {
+    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO, EventDAO eventDAO, FileDAO fileDAO, VersionDAO versionDAO) {
         this.tagDAO = tagDAO;
         this.toolDAO = toolDAO;
         this.eventDAO = eventDAO;
+        this.fileDAO = fileDAO;
         this.versionDAO = versionDAO;
     }
 
@@ -94,25 +97,19 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     }
 
     @Override
-    public void checkCanRead(User user, Entry tool) {
-        try {
-            checkUser(user, tool);
-        } catch (CustomWebApplicationException ex) {
+    public boolean canExamine(User user, Entry tool) {
+        boolean result = EntryVersionHelper.super.canExamine(user, tool);
+        if (!result) {
             LOG.info("permissions are not yet tool aware");
-            // should not throw away exception
-            throw ex;
-            //TODO permissions will eventually need to know about tools too
-            //            if (!permissionsInterface.canDoAction(user, (Workflow)workflow, Role.Action.READ)) {
-            //                throw ex;
-            //            }
         }
+        return result;
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/{containerId}/tags")
-    @Operation(operationId = "getTagsByPath", description = "Get tags for a tool by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getTagsByPath", description = "Get tags for a tool by id.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get tags for a tool by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "Set")
     public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId) {
@@ -124,7 +121,8 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags")
-    @Operation(operationId = "updateTags", description = "Update the tags linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "updateTags", description = "Update the tags linked to a tool.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the tags linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> updateTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -158,7 +156,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             }
         }
         Tool result = toolDAO.findById(containerId);
-        checkEntry(result);
+        checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
@@ -167,7 +165,8 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags")
-    @Operation(operationId = "addTags", description = "Add new tags linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "addTags", description = "Add new tags linked to a tool.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add new tags linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> addTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -196,7 +195,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
         }
 
         Tool result = toolDAO.findById(containerId);
-        checkEntry(result);
+        checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
@@ -205,7 +204,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags/{tagId}")
-    @Operation(operationId = "deleteTags", description = "Delete tag linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "deleteTags", description = "Delete tag linked to a tool.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete tag linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public Response deleteTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -253,7 +252,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @UnitOfWork
     @Beta
     @Path("/{containerId}/requestDOI/{tagId}")
-    @Operation(operationId = "requestDOIForToolTag", description = "Request a DOI for this version of a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "requestDOIForToolTag", description = "Request a DOI for this version of a tool.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Request a DOI for this version of a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> requestDOIForToolTag(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -276,7 +275,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
         //        }
         //
         //        Tool result = toolDAO.findById(containerId);
-        //        checkEntry(result);
+        //        checkNotNullEntry(result);
         //        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         //        return result.getWorkflowVersions();
     }
@@ -290,8 +289,8 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
      */
     private Tool findToolByIdAndCheckToolAndUser(Long toolId, User user) {
         Tool tool = toolDAO.findById(toolId);
-        checkEntry(tool);
-        checkUser(user, tool);
+        checkNotNullEntry(tool);
+        checkCanExamine(user, tool);
         return tool;
     }
 
@@ -300,14 +299,11 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @UnitOfWork(readOnly = true)
     @Path("{containerId}/tags/{tagId}/sourcefiles")
     @ApiOperation(value = "Retrieve sourcefiles for a container's version",  hidden = true)
-    @Operation(operationId = "getTagsSourcefiles", description = "Retrieve sourcefiles for a container's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getTagsSourcefiles", description = "Retrieve sourcefiles for a container's version", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public SortedSet<SourceFile> getTagsSourceFiles(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "containerId", description = "Container to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,
             @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
             @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
-        Tool tool = toolDAO.findById(containerId);
-        checkOptionalAuthRead(user, tool);
-
-        return getVersionsSourcefiles(containerId, tagId, fileTypes, versionDAO);
+        return getVersionSourceFiles(containerId, tagId, fileTypes, user, fileDAO, versionDAO);
     }
 }

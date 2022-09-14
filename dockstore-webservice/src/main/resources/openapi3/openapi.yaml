@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.12.0-SNAPSHOT
+  version: 1.13.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -98,7 +98,7 @@ paths:
                 $ref: '#/components/schemas/WorkflowVersionPathInfo'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - aliases
   /aliases/workflow-versions/{workflowVersionId}:
@@ -124,7 +124,7 @@ paths:
                 $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - aliases
   /api/ga4gh/v1/tools:
@@ -464,7 +464,7 @@ paths:
                 format: int32
           description: Workflows and tools indices populated with entries.
       security:
-      - bearer: []
+      - BEARER: []
       summary: Update the workflows and tools indices
       tags:
       - extendedGA4GH
@@ -574,7 +574,7 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: The tool test cannot be found to annotate.
       security:
-      - bearer: []
+      - BEARER: []
       summary: Annotate test JSON with information on whether it ran successfully
         on particular platforms plus metadata
       tags:
@@ -602,7 +602,7 @@ paths:
         "409":
           description: Conflict
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - tokens
   /auth/tokens/github:
@@ -629,7 +629,7 @@ paths:
         "409":
           description: Conflict
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - tokens
   /auth/tokens/github.com:
@@ -655,7 +655,7 @@ paths:
         "409":
           description: Conflict
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - tokens
   /auth/tokens/gitlab.com:
@@ -681,7 +681,7 @@ paths:
         "409":
           description: Conflict
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - tokens
   /auth/tokens/google:
@@ -711,7 +711,7 @@ paths:
         "417":
           description: Expectation failed
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - tokens
   /auth/tokens/orcid.org:
@@ -740,7 +740,7 @@ paths:
         "500":
           description: Internal server error
       security:
-      - bearer: []
+      - BEARER: []
       summary: Add a new orcid.org token
       tags:
       - tokens
@@ -767,7 +767,7 @@ paths:
         "409":
           description: Conflict
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - tokens
   /auth/tokens/zenodo.org:
@@ -793,7 +793,7 @@ paths:
         "409":
           description: Conflict
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - tokens
   /auth/tokens/{tokenId}:
@@ -815,7 +815,7 @@ paths:
         "404":
           description: Token not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - tokens
     get:
@@ -838,7 +838,7 @@ paths:
         "404":
           description: Token not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - tokens
   /categories:
@@ -924,7 +924,7 @@ paths:
         "403":
           description: Forbidden
       security:
-      - bearer: []
+      - BEARER: []
       summary: "Add a new public cloud instance, admin only"
       tags:
       - Cloud Instances
@@ -947,7 +947,7 @@ paths:
         "403":
           description: Forbidden
       security:
-      - bearer: []
+      - BEARER: []
       summary: "Delete a public cloud instance, admin only"
       tags:
       - Cloud Instances
@@ -969,6 +969,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -991,7 +992,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: Successfully created a hosted tool.
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - hosted
   /containers/hostedEntry/{entryId}:
@@ -1017,7 +1018,7 @@ paths:
                 $ref: '#/components/schemas/Entry'
           description: Successfully deleted hosted entry version
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - hosted
     patch:
@@ -1050,7 +1051,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - hosted
   /containers/namespace/{namespace}/published:
@@ -1096,7 +1097,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Get a tool by the specific tool path
       tags:
       - containers
@@ -1146,7 +1147,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containertags
   /containers/path/{repository}:
@@ -1169,7 +1170,7 @@ paths:
                   $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Get a list of tools by path.
       tags:
       - containers
@@ -1193,7 +1194,7 @@ paths:
                   $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Get a list of published tools by path.
       tags:
       - containers
@@ -1205,7 +1206,9 @@ paths:
       - in: query
         name: offset
         schema:
-          type: string
+          type: integer
+          format: int32
+          default: 0
       - in: query
         name: limit
         schema:
@@ -1255,7 +1258,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/schema/{containerId}/published:
@@ -1300,7 +1303,7 @@ paths:
                   $ref: '#/components/schemas/Tag'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{alias}/aliases:
@@ -1321,7 +1324,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}:
@@ -1341,7 +1344,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
     get:
@@ -1366,7 +1369,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
     put:
@@ -1394,7 +1397,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Update the tool with the given tool.
       tags:
       - containers
@@ -1430,7 +1433,7 @@ paths:
                 $ref: '#/components/schemas/SourceFile'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}/dockerfile:
@@ -1456,7 +1459,7 @@ paths:
                 $ref: '#/components/schemas/SourceFile'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}/labels:
@@ -1487,7 +1490,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}/primaryDescriptor:
@@ -1517,7 +1520,7 @@ paths:
                 $ref: '#/components/schemas/SourceFile'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}/publish:
@@ -1533,7 +1536,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/PublishRequest'
       responses:
@@ -1544,7 +1547,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}/refresh:
@@ -1566,7 +1569,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}/requestDOI/{tagId}:
@@ -1597,7 +1600,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containertags
   /containers/{containerId}/secondaryDescriptors:
@@ -1620,6 +1623,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -1636,7 +1640,7 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}/star:
@@ -1664,7 +1668,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}/starredUsers:
@@ -1703,7 +1707,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: array
               items:
@@ -1719,7 +1723,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containertags
     put:
@@ -1734,7 +1738,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: array
               items:
@@ -1750,7 +1754,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containertags
   /containers/{containerId}/tags/{tagId}:
@@ -1776,7 +1780,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containertags
   /containers/{containerId}/tags/{tagId}/sourcefiles:
@@ -1806,11 +1810,13 @@ paths:
           items:
             type: string
             enum:
+            - DOCKSTORE_SMK
+            - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
-            - DOCKSTORE_WDL
-            - DOCKERFILE
             - CWL_TEST_JSON
+            - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
@@ -1833,7 +1839,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containertags
   /containers/{containerId}/testParameterFiles:
@@ -1872,7 +1878,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
     get:
@@ -1894,6 +1900,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -1910,7 +1917,7 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
     put:
@@ -1953,7 +1960,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}/updateTagPaths:
@@ -1969,7 +1976,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/DockstoreTool'
       responses:
@@ -1980,7 +1987,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{containerId}/users:
@@ -2004,7 +2011,7 @@ paths:
                   $ref: '#/components/schemas/User'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{toolId}/defaultVersion:
@@ -2031,7 +2038,7 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /containers/{toolId}/zip/{tagId}:
@@ -2057,7 +2064,7 @@ paths:
             application/zip: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - containers
   /curation/notifications:
@@ -2093,7 +2100,7 @@ paths:
                 $ref: '#/components/schemas/Notification'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - curation
   /curation/notifications/{id}:
@@ -2113,7 +2120,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - curation
     get:
@@ -2158,7 +2165,7 @@ paths:
                 $ref: '#/components/schemas/Notification'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - curation
   /entries/updateEntryToGetTopics:
@@ -2177,7 +2184,7 @@ paths:
           description: Get the number of entries that failed to have their topics
             retrieved from GitHub.
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - entries
   /entries/{entryId}/exportToOrcid:
@@ -2212,7 +2219,7 @@ paths:
         "500":
           description: Internal Server Error
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - entries
   /entries/{entryId}/verifiedPlatforms:
@@ -2237,7 +2244,7 @@ paths:
                   $ref: '#/components/schemas/VersionVerifiedPlatform'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - entries
   /entries/{entryId}/versions/{versionId}/descriptionMetrics:
@@ -2267,7 +2274,7 @@ paths:
                 $ref: '#/components/schemas/DescriptionMetrics'
           description: Successfully calculated description metrics
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - entries
   /entries/{entryId}/versions/{versionId}/fileTypes:
@@ -2298,11 +2305,13 @@ paths:
                 items:
                   type: string
                   enum:
+                  - DOCKSTORE_SMK
+                  - SMK_TEST_PARAMS
                   - DOCKSTORE_CWL
-                  - DOCKSTORE_WDL
-                  - DOCKERFILE
                   - CWL_TEST_JSON
+                  - DOCKSTORE_WDL
                   - WDL_TEST_JSON
+                  - DOCKERFILE
                   - NEXTFLOW
                   - NEXTFLOW_CONFIG
                   - NEXTFLOW_TEST_PARAMS
@@ -2317,7 +2326,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - entries
   /entries/{id}/aliases:
@@ -2343,7 +2352,7 @@ paths:
                 $ref: '#/components/schemas/Entry'
           description: Successfully added alias to entry
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - entries
   /entries/{id}/categories:
@@ -2369,8 +2378,6 @@ paths:
           description: Successfully retrieved categories
         "400":
           description: Entry must be published
-      security:
-      - bearer: []
       tags:
       - entries
   /entries/{id}/collections:
@@ -2416,7 +2423,7 @@ paths:
                 $ref: '#/components/schemas/Entry'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - entries
   /events:
@@ -2425,13 +2432,15 @@ paths:
       operationId: getEvents
       parameters:
       - in: query
-        name: event_search_type
+        name: eventSearchType
+        required: true
         schema:
           type: string
           enum:
           - STARRED_ENTRIES
           - STARRED_ORGANIZATION
           - ALL_STARRED
+          - PROFILE
       - in: query
         name: limit
         schema:
@@ -2447,17 +2456,66 @@ paths:
           format: int32
           default: 0
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Event'
-          description: default response
+          description: A list of events
       security:
-      - bearer: []
+      - BEARER: []
       summary: Get events based on filters.
+      tags:
+      - events
+  /events/{userId}:
+    get:
+      description: No authentication.
+      operationId: getUserEvents
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: query
+        name: eventSearchType
+        required: true
+        schema:
+          type: string
+          enum:
+          - STARRED_ENTRIES
+          - STARRED_ORGANIZATION
+          - ALL_STARRED
+          - PROFILE
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 10
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+          description: A list of events
+        "404":
+          description: User not found
+      summary: Get events based on filter and user id.
       tags:
       - events
   /ga4gh/trs/v2/service-info:
@@ -2535,6 +2593,7 @@ paths:
           - NFL
           - SERVICE
           - GALAXY
+          - SMK
       - description: The image registry that contains the image.
         in: query
         name: registry
@@ -2776,7 +2835,8 @@ paths:
       - description: "The output type of the descriptor. Plain types return the bare\
           \ descriptor while the \"non-plain\" types return a descriptor wrapped with\
           \ metadata. Allowable values include \"CWL\", \"WDL\", \"NFL\", \"GALAXY\"\
-          , \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\", \"PLAIN_GALAXY\"."
+          , \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\", \"PLAIN_GALAXY\"\
+          , \"PLAIN_SMK\"."
         in: path
         name: type
         required: true
@@ -2835,8 +2895,8 @@ paths:
           \ to the underlying implementation to determine which output type to return.\
           \ Plain types return the bare descriptor while the \"non-plain\" types return\
           \ a descriptor wrapped with metadata. Allowable values are \"CWL\", \"WDL\"\
-          , \"NFL\", \"GALAXY\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\", \"PLAIN_GALAXY\"\
-          ."
+          , \"NFL\", \"GALAXY\", \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\"\
+          , \"PLAIN_GALAXY\", \"PLAIN_SMK\"."
         in: path
         name: type
         required: true
@@ -2898,7 +2958,7 @@ paths:
       operationId: toolsIdVersionsVersionIdTypeFilesGet
       parameters:
       - description: "The output type of the descriptor. Examples of allowable values\
-          \ are \"CWL\", \"WDL\", \"NFL\", \"GALAXY\"."
+          \ are \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"SMK\"."
         in: path
         name: type
         required: true
@@ -2953,10 +3013,10 @@ paths:
       operationId: toolsIdVersionsVersionIdTypeTestsGet
       parameters:
       - description: "The type of the underlying descriptor. Allowable values include\
-          \ \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"\
-          PLAIN_NFL\", \"PLAIN_GALAXY\". For example, \"CWL\" would return an list\
-          \ of ToolTests objects while \"PLAIN_CWL\" would return a bare JSON list\
-          \ with the content of the tests."
+          \ \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\"\
+          , \"PLAIN_NFL\", \"PLAIN_GALAXY\", \"PLAIN_SMK\". For example, \"CWL\" would\
+          \ return an list of ToolTests objects while \"PLAIN_CWL\" would return a\
+          \ bare JSON list with the content of the tests."
         in: path
         name: type
         required: true
@@ -3035,9 +3095,23 @@ paths:
                   $ref: '#/components/schemas/LambdaEvent'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - lambdaEvents
+  /metadata/cli-info:
+    get:
+      description: Get Dockstore CLI information. NO authentication
+      operationId: getCliVersion
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CLIInfo'
+          description: default response
+      summary: Get Dockstore CLI information.
+      tags:
+      - metadata
   /metadata/config.json:
     get:
       description: "Configuration, NO authentication"
@@ -3133,11 +3207,14 @@ paths:
       description: "Returns the file containing runner dependencies, NO authentication"
       operationId: getRunnerDependencies
       parameters:
-      - description: The Dockstore client version
+      - description: The Dockstore client version (e.g. 1.13.0)
         in: query
         name: client_version
         schema:
           type: string
+          pattern: "(^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\\
+            d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\\
+            +([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$)|(^development-build$)"
       - description: "Python version, only relevant for the cwltool runner"
         in: query
         name: python_version
@@ -3242,7 +3319,7 @@ paths:
                 $ref: '#/components/schemas/Organization'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Create an organization.
       tags:
       - organizations
@@ -3273,7 +3350,7 @@ paths:
                   $ref: '#/components/schemas/Organization'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: List all organizations.
       tags:
       - organizations
@@ -3325,7 +3402,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: Successfully added alias to collection
       security:
-      - bearer: []
+      - BEARER: []
       summary: Add aliases linked to a collection in Dockstore.
       tags:
       - organizations
@@ -3348,7 +3425,7 @@ paths:
                 $ref: '#/components/schemas/Organization'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Retrieve an organization by name.
       tags:
       - organizations
@@ -3393,7 +3470,7 @@ paths:
         "403":
           description: FORBIDDEN
       security:
-      - bearer: []
+      - BEARER: []
       summary: Delete pending or rejected organization
       tags:
       - organizations
@@ -3416,7 +3493,7 @@ paths:
                 $ref: '#/components/schemas/Organization'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Retrieve an organization by ID.
       tags:
       - organizations
@@ -3447,7 +3524,7 @@ paths:
                 $ref: '#/components/schemas/Organization'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Update an organization.
       tags:
       - organizations
@@ -3479,7 +3556,7 @@ paths:
                 $ref: '#/components/schemas/Organization'
           description: Successfully created organization alias
       security:
-      - bearer: []
+      - BEARER: []
       summary: Add aliases linked to a listing in Dockstore.
       tags:
       - organizations
@@ -3503,7 +3580,7 @@ paths:
                 $ref: '#/components/schemas/Organization'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Approve an organization.
       tags:
       - organizations
@@ -3536,7 +3613,7 @@ paths:
                   $ref: '#/components/schemas/Collection'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Retrieve all collections for an organization.
       tags:
       - organizations
@@ -3566,7 +3643,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Create a collection in the given organization.
       tags:
       - organizations
@@ -3597,7 +3674,7 @@ paths:
         "404":
           description: Collection not found
       security:
-      - bearer: []
+      - BEARER: []
       summary: Delete a collection.
       tags:
       - organizations
@@ -3627,7 +3704,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Retrieve a collection by ID.
       tags:
       - organizations
@@ -3665,7 +3742,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Update a collection.
       tags:
       - organizations
@@ -3697,7 +3774,7 @@ paths:
                 type: string
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Retrieve a collection description by organization ID and collection
         ID.
       tags:
@@ -3735,7 +3812,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Update a collection's description.
       tags:
       - organizations
@@ -3778,7 +3855,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Delete an entry to a collection.
       tags:
       - organizations
@@ -3821,7 +3898,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Add an entry to a collection.
       tags:
       - organizations
@@ -3846,7 +3923,7 @@ paths:
                 type: string
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Retrieve an organization description by organization ID.
       tags:
       - organizations
@@ -3877,7 +3954,7 @@ paths:
                 $ref: '#/components/schemas/Organization'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Update an organization's description.
       tags:
       - organizations
@@ -3923,7 +4000,7 @@ paths:
                   $ref: '#/components/schemas/Event'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Retrieve all events for an organization.
       tags:
       - organizations
@@ -3952,7 +4029,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Accept or reject an organization invitation.
       tags:
       - organizations
@@ -3979,7 +4056,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Retrieve all members for an organization.
       tags:
       - organizations
@@ -4003,7 +4080,7 @@ paths:
                 $ref: '#/components/schemas/Organization'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Reject an organization.
       tags:
       - organizations
@@ -4028,7 +4105,7 @@ paths:
                 $ref: '#/components/schemas/Organization'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Re-request an organization review.
       tags:
       - organizations
@@ -4057,7 +4134,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Star an organization.
       tags:
       - organizations
@@ -4111,7 +4188,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Remove a user from an organization.
       tags:
       - organizations
@@ -4151,7 +4228,7 @@ paths:
                 $ref: '#/components/schemas/OrganizationUser'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Update a user role in an organization.
       tags:
       - organizations
@@ -4198,7 +4275,7 @@ paths:
                 $ref: '#/components/schemas/OrganizationUser'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Add a user role to an organization.
       tags:
       - organizations
@@ -4238,7 +4315,7 @@ paths:
                 $ref: '#/components/schemas/OrganizationUser'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Add a user role to an organization.
       tags:
       - organizations
@@ -4267,7 +4344,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Retrieve a collection by name.
       tags:
       - organizations
@@ -4377,7 +4454,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/dockerRegistries:
@@ -4394,7 +4471,7 @@ paths:
                   type: string
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/dockerRegistries/{dockerRegistry}/organizations:
@@ -4419,7 +4496,7 @@ paths:
                   type: string
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/dockerRegistries/{dockerRegistry}/organizations/{organization}/repositories:
@@ -4450,7 +4527,7 @@ paths:
                   type: string
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/emails:
@@ -4469,7 +4546,7 @@ paths:
         "403":
           description: Forbidden
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/github/events:
@@ -4497,27 +4574,7 @@ paths:
                   $ref: '#/components/schemas/LambdaEvent'
           description: A list of GitHub Events for the logged in user
       security:
-      - bearer: []
-      tags:
-      - users
-  /users/github/organizations:
-    get:
-      description: Gets GitHub organizations for current user.
-      operationId: getMyGitHubOrgs
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SourceControlOrganization'
-          description: "Descriptions of Github organizations (including but not limited\
-            \ to id, names)"
-        "400":
-          description: Bad request
-      security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/github/sync:
@@ -4536,7 +4593,7 @@ paths:
         "400":
           description: Bad request
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/registries:
@@ -4558,7 +4615,7 @@ paths:
                   - gitlab.com
           description: A list of the git registries accessible to the logged in user
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/registries/{gitRegistry}/organizations:
@@ -4590,7 +4647,7 @@ paths:
           description: A list of organizations for a given git registry accessible
             to the logged in user
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/registries/{gitRegistry}/organizations/{organization}:
@@ -4627,7 +4684,7 @@ paths:
           description: A list of repositories for an organization for a given git
             registry accessible to the logged in user
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/starredOrganizations:
@@ -4644,7 +4701,7 @@ paths:
                   $ref: '#/components/schemas/Organization'
           description: A list of the authenticated user's starred organizations
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/starredServices:
@@ -4661,7 +4718,7 @@ paths:
                   $ref: '#/components/schemas/Entry'
           description: A list of the authenticated user's starred services
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/starredTools:
@@ -4678,7 +4735,7 @@ paths:
                   $ref: '#/components/schemas/Entry'
           description: A list of the authenticated user's starred tools
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/starredWorkflows:
@@ -4695,7 +4752,7 @@ paths:
                   $ref: '#/components/schemas/Entry'
           description: A list of the authenticated user's starred workflows
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/updateUserMetadata:
@@ -4714,7 +4771,7 @@ paths:
         "403":
           description: Forbidden
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/user:
@@ -4743,7 +4800,7 @@ paths:
         "500":
           description: Internal server error
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
     get:
@@ -4757,7 +4814,7 @@ paths:
                 $ref: '#/components/schemas/User'
           description: The logged-in user
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/user/changeUsername:
@@ -4781,7 +4838,7 @@ paths:
         "403":
           description: Forbidden
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/user/extended:
@@ -4796,7 +4853,7 @@ paths:
                 $ref: '#/components/schemas/ExtendedUserData'
           description: Additional information about the authenticated user
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/user/memberships:
@@ -4813,7 +4870,7 @@ paths:
                   $ref: '#/components/schemas/OrganizationUser'
           description: A set of the logged-in user's memberships
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/user/updateAcceptedDocuments:
@@ -4828,7 +4885,7 @@ paths:
                 $ref: '#/components/schemas/User'
           description: User with updated TOS/Privacy Policy
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/user/updateUserMetadata:
@@ -4859,7 +4916,7 @@ paths:
         "403":
           description: Forbidden
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/user/{userId}/bannedStatus:
@@ -4887,7 +4944,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/user/{userId}/limits:
@@ -4913,7 +4970,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
     put:
@@ -4928,7 +4985,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Limits'
       responses:
@@ -4943,7 +5000,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/username/{username}:
@@ -4956,6 +5013,11 @@ paths:
         required: true
         schema:
           type: string
+      - description: "Comma-delimited list of fields to include: userProfiles, ..."
+        in: query
+        name: include
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -4965,12 +5027,8 @@ paths:
           description: A user with the specified username
         "400":
           description: Bad request
-        "403":
-          description: Forbidden
         "404":
           description: User not found
-      security:
-      - bearer: []
       tags:
       - users
   /users/users/entries:
@@ -4989,6 +5047,15 @@ paths:
         name: filter
         schema:
           type: string
+      - description: Type of entry
+        in: query
+        name: type
+        schema:
+          type: string
+          enum:
+          - TOOLS
+          - WORKFLOWS
+          - SERVICES
       responses:
         "200":
           content:
@@ -4999,7 +5066,7 @@ paths:
                   $ref: '#/components/schemas/EntryUpdateTime'
           description: A list of the entries for a user
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/users/organizations:
@@ -5029,7 +5096,7 @@ paths:
                   $ref: '#/components/schemas/OrganizationUpdateTime'
           description: A list of the Dockstore organizations for a user
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}:
@@ -5055,7 +5122,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/appTools:
@@ -5084,7 +5151,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/cloudInstances:
@@ -5113,7 +5180,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
     post:
@@ -5144,7 +5211,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/cloudInstances/{cloudInstanceId}:
@@ -5176,7 +5243,7 @@ paths:
         "404":
           description: Not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
     put:
@@ -5214,7 +5281,7 @@ paths:
         "404":
           description: Not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/containers:
@@ -5242,7 +5309,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/containers/published:
@@ -5270,7 +5337,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/containers/{organization}/refresh:
@@ -5310,7 +5377,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/privileges:
@@ -5343,7 +5410,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/services:
@@ -5371,7 +5438,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/tokens:
@@ -5399,7 +5466,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/workflows:
@@ -5428,7 +5495,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
     patch:
@@ -5465,7 +5532,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /users/{userId}/workflows/published:
@@ -5493,7 +5560,7 @@ paths:
         "404":
           description: User not found
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - users
   /workflows/github:
@@ -5531,7 +5598,7 @@ paths:
         "418":
           description: This code tells AWS Lambda not to retry.
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/github/install:
@@ -5563,7 +5630,7 @@ paths:
         "418":
           description: This code tells AWS Lambda not to retry.
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/github/release:
@@ -5601,7 +5668,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/hostedEntry:
@@ -5622,6 +5689,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -5644,7 +5712,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: Successfully created a hosted workflow.
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - hosted
   /workflows/hostedEntry/{entryId}:
@@ -5670,7 +5738,7 @@ paths:
                 $ref: '#/components/schemas/Entry'
           description: Successfully deleted hosted entry version
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - hosted
     patch:
@@ -5703,7 +5771,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - hosted
     post:
@@ -5734,7 +5802,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: successful operation
       security:
-      - bearer: []
+      - BEARER: []
       summary: Creates a new revision of a hosted workflow from a zip
       tags:
       - hosted
@@ -5775,7 +5843,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/organization/{organization}/published:
@@ -5817,7 +5885,7 @@ paths:
                 $ref: '#/components/schemas/Entry'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Get an entry by path.
       tags:
       - workflows
@@ -5872,7 +5940,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Get a workflow by path.
       tags:
       - workflows
@@ -5907,7 +5975,7 @@ paths:
                   - share
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/path/workflow/{repository}/permissions:
@@ -5947,7 +6015,7 @@ paths:
                   $ref: '#/components/schemas/Permission'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
     get:
@@ -5974,7 +6042,7 @@ paths:
                   $ref: '#/components/schemas/Permission'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
     patch:
@@ -5993,7 +6061,7 @@ paths:
           default: false
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Permission'
       responses:
@@ -6006,7 +6074,7 @@ paths:
                   $ref: '#/components/schemas/Permission'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/path/workflow/{repository}/published:
@@ -6067,7 +6135,7 @@ paths:
                   $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Get a list of workflows by path.
       tags:
       - workflows
@@ -6079,7 +6147,9 @@ paths:
       - in: query
         name: offset
         schema:
-          type: string
+          type: integer
+          format: int32
+          default: 0
       - in: query
         name: limit
         schema:
@@ -6181,7 +6251,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
     post:
@@ -6220,7 +6290,7 @@ paths:
                 $ref: '#/components/schemas/BioWorkflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/shared:
@@ -6237,7 +6307,7 @@ paths:
                   $ref: '#/components/schemas/SharedWorkflows'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/versions:
@@ -6260,7 +6330,7 @@ paths:
                   $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{alias}/aliases:
@@ -6281,7 +6351,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
@@ -6309,6 +6379,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -6323,7 +6394,7 @@ paths:
                 $ref: '#/components/schemas/Entry'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}:
@@ -6351,7 +6422,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
     put:
@@ -6366,7 +6437,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Workflow'
       responses:
@@ -6377,7 +6448,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/dag/{workflowVersionId}:
@@ -6405,7 +6476,7 @@ paths:
                 type: string
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/defaultVersion:
@@ -6432,7 +6503,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/descriptor/{relative-path}:
@@ -6460,6 +6531,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -6474,7 +6546,7 @@ paths:
                 $ref: '#/components/schemas/SourceFile'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/descriptorType:
@@ -6494,6 +6566,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -6508,7 +6581,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: "Changes the descriptor type of an unpublished, invalid workflow."
       tags:
       - workflows
@@ -6540,7 +6613,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/primaryDescriptor:
@@ -6570,7 +6643,7 @@ paths:
                 $ref: '#/components/schemas/SourceFile'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/publish:
@@ -6597,7 +6670,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/refresh:
@@ -6624,7 +6697,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/refresh/{version}:
@@ -6656,7 +6729,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/requestDOI/{workflowVersionId}:
@@ -6692,7 +6765,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/resetVersionPaths:
@@ -6708,7 +6781,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Workflow'
       responses:
@@ -6719,7 +6792,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/restub:
@@ -6741,7 +6814,7 @@ paths:
                 $ref: '#/components/schemas/Workflow'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       summary: Restub a workflow
       tags:
       - workflows
@@ -6765,6 +6838,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -6781,7 +6855,7 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/star:
@@ -6806,7 +6880,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/starredUsers:
@@ -6864,7 +6938,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
     get:
@@ -6891,7 +6965,7 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
     put:
@@ -6930,7 +7004,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/tools/{workflowVersionId}:
@@ -6958,7 +7032,7 @@ paths:
                 type: string
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/users:
@@ -6982,7 +7056,7 @@ paths:
                   $ref: '#/components/schemas/User'
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/workflowVersions:
@@ -7009,7 +7083,7 @@ paths:
         "400":
           description: Bad Request
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
     put:
@@ -7024,7 +7098,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: array
               items:
@@ -7040,7 +7114,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}:
@@ -7078,7 +7152,7 @@ paths:
         "400":
           description: Bad Request
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors:
@@ -7112,7 +7186,7 @@ paths:
         "400":
           description: Bad Request
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/parsedInformation:
@@ -7148,7 +7222,7 @@ paths:
             application/json: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles:
@@ -7178,11 +7252,13 @@ paths:
           items:
             type: string
             enum:
+            - DOCKSTORE_SMK
+            - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
-            - DOCKSTORE_WDL
-            - DOCKERFILE
             - CWL_TEST_JSON
+            - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
@@ -7205,7 +7281,7 @@ paths:
                 uniqueItems: true
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
   /workflows/{workflowId}/zip/{workflowVersionId}:
@@ -7231,7 +7307,7 @@ paths:
             application/zip: {}
           description: default response
       security:
-      - bearer: []
+      - BEARER: []
       tags:
       - workflows
 components:
@@ -7265,6 +7341,17 @@ components:
           parent_id:
             type: integer
             format: int64
+    CLIInfo:
+      type: object
+      properties:
+        cliLatestDockstoreScriptDownloadUrl:
+          type: string
+        cliLatestUnstableDockstoreScriptDownloadUrl:
+          type: string
+        cliLatestUnstableVersion:
+          type: string
+        cliLatestVersion:
+          type: string
     Category:
       type: object
       description: Category of entries
@@ -7736,6 +7823,8 @@ components:
           type: string
         toolname:
           type: string
+          maxLength: 256
+          minLength: 0
         topic:
           type: string
         topicAutomatic:
@@ -8211,6 +8300,7 @@ components:
         language:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -8230,6 +8320,7 @@ components:
           type: string
           description: The language of the workflow
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -8475,6 +8566,7 @@ components:
         descriptorLanguage:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -8512,7 +8604,7 @@ components:
           type: string
         company:
           type: string
-        email:
+        link:
           type: string
         location:
           type: string
@@ -8611,14 +8703,6 @@ components:
           type: string
         value:
           type: string
-    SourceControlOrganization:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        name:
-          type: string
     SourceFile:
       type: object
       properties:
@@ -8643,11 +8727,13 @@ components:
           type: string
           description: Enumerates the type of file
           enum:
+          - DOCKSTORE_SMK
+          - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
           - CWL_TEST_JSON
+          - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
@@ -9014,6 +9100,7 @@ components:
         type:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - NFL
@@ -9134,6 +9221,7 @@ components:
             - NFL
             - SERVICE
             - GALAXY
+            - SMK
         id:
           type: string
           description: An identifier of the version of this tool for this particular
@@ -9290,11 +9378,13 @@ components:
         type:
           type: string
           enum:
+          - DOCKSTORE_SMK
+          - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
           - CWL_TEST_JSON
+          - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
@@ -9499,6 +9589,7 @@ components:
         descriptorType:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -9623,6 +9714,8 @@ components:
           uniqueItems: true
         workflowName:
           type: string
+          maxLength: 256
+          minLength: 0
         workflowVersions:
           type: array
           items:
@@ -9771,8 +9864,5 @@ components:
           type: string
   securitySchemes:
     BEARER:
-      scheme: bearer
-      type: http
-    bearer:
       scheme: bearer
       type: http

@@ -31,6 +31,7 @@ import io.swagger.client.api.ExtendedGa4GhApi;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -62,7 +63,7 @@ public class SearchResourceIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         restartElasticsearch();
     }
 
@@ -117,6 +118,10 @@ public class SearchResourceIT extends BaseIT {
         assertTrue(s + " should've contained potatoAlias", s.contains("\"aliases\":{\"potatoAlias\":{}}"));
         assertFalse(s.contains("\"aliases\":null"));
         assertTrue(s.contains(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW));
+        // ensure source file returns
+        String newQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
+        String t = extendedGa4GhApi.toolsIndexSearch(newQuery);
+        assertTrue(t + " should've contained sourcefiles", t.contains("sourceFiles") && t.contains("\"checksum\":\"cb5d0323091b22e0a1d6f52a4930ee256b15835c968462c03cf7be2cc842a4ad\""));
     }
 
     /**

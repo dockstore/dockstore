@@ -1,9 +1,14 @@
 package io.dockstore.webservice.helpers;
 
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
+import io.swagger.quay.client.ApiException;
+import io.swagger.quay.client.model.QuayTag;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -43,13 +48,7 @@ public class QuayImageRegistryTest {
             Assert.assertTrue("things look kinda sane", !tag.getName().isEmpty() && tag.getImages().stream().noneMatch(img -> img.getImageUpdateDate().isEmpty()));
             // If the tag size is null, that means at least one image with os/arch information was built and uploaded to Quay separately.
             if (tag.getSize() == null) {
-                tag.getImages().stream().forEach(image -> {
-                    boolean archOsInfoFilled = false;
-                    if (image.getOs() != null || image.getArchitecture() != null) {
-                        archOsInfoFilled = true;
-                    }
-                    Assert.assertTrue("The image's arch and/or os info should be filled in", archOsInfoFilled);
-                });
+                tag.getImages().forEach(this::checkImageArchOsInfo);
             }
         });
         Set<String> collect = tags.parallelStream().map(Version::getName).collect(Collectors.toSet());
@@ -69,14 +68,60 @@ public class QuayImageRegistryTest {
             Assert.assertTrue("things look kinda sane", !tag.getName().isEmpty() && tag.getImages().stream().noneMatch(img -> img.getImageUpdateDate().isEmpty()));
             // If the tag size is null, that means at least one image with os/arch information was built and uploaded to Quay separately.
             if (tag.getSize() == null) {
-                tag.getImages().stream().forEach(image -> {
-                    boolean archOsInfoFilled = false;
-                    if (image.getOs() != null || image.getArchitecture() != null) {
-                        archOsInfoFilled = true;
-                    }
-                    Assert.assertTrue("The image's arch and/or os info should be filled in", archOsInfoFilled);
-                });
+                tag.getImages().forEach(this::checkImageArchOsInfo);
             }
         });
+    }
+
+    @Test
+    public void testGetQuayTag() throws ApiException {
+        final String repo = "calico/node";
+        final String tag = "master";
+        QuayImageRegistry quayImageRegistry = new QuayImageRegistry();
+        Optional<QuayTag> quayTag = quayImageRegistry.getQuayTag(repo, tag);
+        Assert.assertTrue(quayTag.isPresent());
+        Assert.assertTrue("Should be a multi-arch image", quayImageRegistry.isMultiArchImage(quayTag.get(), repo));
+    }
+
+    @Test
+    public void testHandleMultiArchTags() throws ApiException {
+        final QuayImageRegistry quayImageRegistry = new QuayImageRegistry();
+        String repo = "skopeo/stable";
+        String tag = "latest"; // This is a multi-arch image built using the docker manifest method
+        Optional<QuayTag> quayTag = quayImageRegistry.getQuayTag(repo, tag);
+        Assert.assertTrue(quayTag.isPresent());
+        Assert.assertTrue("Should be a multi-arch image", quayImageRegistry.isMultiArchImage(quayTag.get(), repo));
+        LanguageHandlerInterface.DockerSpecifier specifier = quayImageRegistry.getSpecifierFromTagName(quayTag.get().getName());
+        Assert.assertEquals(LanguageHandlerInterface.DockerSpecifier.LATEST, specifier);
+        List<QuayTag> quayTags = quayImageRegistry.getAllQuayTags(repo);
+        List<QuayTag> cleanedQuayTagsList = new ArrayList<>(quayTags);
+        Set<Image> images = quayImageRegistry.handleMultiArchQuayTags(repo, quayTag.get(), cleanedQuayTagsList, specifier);
+        Assert.assertFalse(images.isEmpty());
+        Assert.assertTrue(images.size() >= 4);
+        images.forEach(this::checkImageArchOsInfo);
+        // quayTags and cleanQuayTagsList should be the same size because the multi-arch image is built using buildx, so there's no individual images
+        // for each architecture and there's no "cleaning" needed
+        Assert.assertEquals(quayTags.size(), cleanedQuayTagsList.size());
+
+        repo = "openshift-release-dev/ocp-release";
+        tag = "4.12.0-0.nightly-multi-2022-08-22-124404"; // This is a multi-arch image built using the buildx method
+        quayTag = quayImageRegistry.getQuayTag(repo, tag);
+        Assert.assertTrue(quayTag.isPresent());
+        Assert.assertTrue("Should be a multi-arch image", quayImageRegistry.isMultiArchImage(quayTag.get(), repo));
+        specifier = quayImageRegistry.getSpecifierFromTagName(quayTag.get().getName());
+        Assert.assertEquals(LanguageHandlerInterface.DockerSpecifier.TAG, specifier);
+        quayTags = quayImageRegistry.getAllQuayTags(repo);
+        cleanedQuayTagsList = new ArrayList<>(quayTags);
+        images = quayImageRegistry.handleMultiArchQuayTags(repo, quayTag.get(), cleanedQuayTagsList, specifier);
+        Assert.assertFalse(images.isEmpty());
+        Assert.assertTrue(images.size() >= 4);
+        images.forEach(this::checkImageArchOsInfo);
+        // quayTags and cleanQuayTagsList should be different sizes because the multi-arch image is built using the docker manifest method, so there's an individual image
+        // for each architecture. These individuals images should be removed from cleanedQuayTagsList.
+        Assert.assertNotEquals(quayTags.size(), cleanedQuayTagsList.size());
+    }
+
+    private void checkImageArchOsInfo(Image image) {
+        Assert.assertTrue("The image's arch and/or os info should be filled in", image.getOs() != null || image.getArchitecture() != null);
     }
 }

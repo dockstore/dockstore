@@ -23,7 +23,7 @@ import javax.validation.constraints.NotNull;
  * And the subclass property is an enum, not a string.
  *
  */
-public class Service12 extends AbstractYamlService {
+public class Service12 extends AbstractYamlService implements Workflowish {
 
     public static final String MISSING_SUBCLASS = "Missing property \"subclass\"";
 

@@ -26,8 +26,12 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "apptool")
 @NamedQueries({
-    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.findAllPublished", query = "SELECT a FROM AppTool a WHERE a.isPublished = true"),
-    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.getEntriesByUserId", query = "SELECT a FROM AppTool a WHERE a.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
+    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.getEntriesByUserId", query = "SELECT a FROM AppTool a WHERE a.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.getEntryLiteByUserId", query =
+        "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteAppTool(a.sourceControl, a.organization, a.repository, a.workflowName, a.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
+            + "FROM AppTool a LEFT JOIN a.workflowVersions v "
+            + "WHERE a.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
+            + "GROUP BY a.sourceControl, a.organization, a.repository, a.workflowName, a.dbUpdateDate")
 })
 public class AppTool extends Workflow {
 

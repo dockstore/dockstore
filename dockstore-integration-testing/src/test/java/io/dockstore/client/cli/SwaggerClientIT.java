@@ -124,7 +124,7 @@ public class SwaggerClientIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestDataAndAdditionalTools(SUPPORT, true);
+        CommonTestUtilities.dropAndCreateWithTestDataAndAdditionalTools(SUPPORT, true, testingPostgres);
     }
 
     private static StarRequest getStarRequest(boolean star) {
@@ -160,9 +160,9 @@ public class SwaggerClientIT extends BaseIT {
 
         // do some minor testing on pagination, majority of tests are in WorkflowIT.testPublishingAndListingOfPublished for now
         // TODO: better testing of pagination when we use it
-        List<DockstoreTool> pagedToolsLowercase = containersApi.allPublishedContainers("0", 1, "test", "stars", "desc");
+        List<DockstoreTool> pagedToolsLowercase = containersApi.allPublishedContainers(0, 1, "test", "stars", "desc");
         assertEquals(1, pagedToolsLowercase.size());
-        List<DockstoreTool> pagedToolsUppercase = containersApi.allPublishedContainers("0", 1, "TEST", "stars", "desc");
+        List<DockstoreTool> pagedToolsUppercase = containersApi.allPublishedContainers(0, 1, "TEST", "stars", "desc");
         assertEquals(1, pagedToolsUppercase.size());
         assertEquals(pagedToolsLowercase, pagedToolsUppercase);
 
@@ -198,7 +198,7 @@ public class SwaggerClientIT extends BaseIT {
         WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
         WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
 
-        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l", BIOWORKFLOW, null);
+        Workflow workflow = userApi1.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
         assertTrue(workflow.isIsPublished());
 
         long containerId = workflow.getId();
@@ -212,7 +212,7 @@ public class SwaggerClientIT extends BaseIT {
         userApi1.updateLabels(containerId, "foo,spam,phone", "");
 
         // updating label should fail since user is not owner
-        workflow = userApi1.getWorkflowByPath("github.com/A/l", BIOWORKFLOW, null);
+        workflow = userApi1.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
         assertEquals(3, workflow.getLabels().size());
         thrown.expect(ApiException.class);
         userApi2.updateLabels(containerId, "foobar", "");
@@ -571,6 +571,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testStarStarredTool() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
+        testingPostgres.runUpdateStatement("update tool set ispublished = true;");
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2", null);
         assertTrue("There should be at least one user of the workflow", container.getUsers().size() > 0);
         Assert.assertNotNull("Upon checkUser(), a container with lazy loaded users should still get users", container.getUsers());

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -31,6 +32,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
@@ -51,6 +53,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
+import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -66,13 +69,15 @@ import org.slf4j.LoggerFactory;
 @Entity
 @Table(name = "sourcefile")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.SourceFile.findSourceFilesForVersion", query = "SELECT sourcefiles FROM Version version INNER JOIN version.sourceFiles as sourcefiles WHERE version.id = :versionId"),
+    @NamedQuery(name = "io.dockstore.webservice.core.SourceFile.findSourceFilesForVersion", query = "SELECT sourcefiles FROM Version version INNER JOIN version.sourceFiles as sourcefiles WHERE version.id = :versionId"),
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class SourceFile implements Comparable<SourceFile> {
 
     public static final EnumSet<DescriptorLanguage.FileType> TEST_FILE_TYPES = EnumSet.of(DescriptorLanguage.FileType.CWL_TEST_JSON, DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
     public static final String SHA_TYPE = "SHA-256";
+    private static Pattern pathRegex = null;
+    private static String pathViolationMessage = null;
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -165,6 +170,7 @@ public class SourceFile implements Comparable<SourceFile> {
     }
 
     public void setPath(String path) {
+        checkPath(path);
         this.path = path;
     }
 
@@ -186,7 +192,9 @@ public class SourceFile implements Comparable<SourceFile> {
     public void setAbsolutePath(String absolutePath) {
         // TODO: Figure out the actual absolute path before this workaround
         // FIXME: it looks like dockstore tool test_parameter --add and a number of other CLI commands depend on this now
-        this.absolutePath = ZipSourceFileHelper.addLeadingSlashIfNecessary((absolutePath));
+        String modifiedPath = ZipSourceFileHelper.addLeadingSlashIfNecessary(absolutePath);
+        checkPath(modifiedPath);
+        this.absolutePath = modifiedPath;
         if (!this.absolutePath.equals(absolutePath)) {
             LOG.warn("Absolute path workaround used, this should be fixed at some point");
         }
@@ -224,6 +232,22 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
+    }
+
+    private static synchronized void checkPath(String path) {
+        if (path != null && pathRegex != null && !pathRegex.matcher(path).matches()) {
+            throw new CustomWebApplicationException(pathViolationMessage, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    public static synchronized void restrictPaths(Pattern newPathRegex, String newPathViolationMessage) {
+        pathRegex = newPathRegex;
+        pathViolationMessage = newPathViolationMessage;
+    }
+
+    public static synchronized void unrestrictPaths() {
+        pathRegex = null;
+        pathViolationMessage = null;
     }
 
     /**

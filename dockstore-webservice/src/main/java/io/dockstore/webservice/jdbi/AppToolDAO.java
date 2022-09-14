@@ -19,7 +19,6 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.SourceControlConverter;
-import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -31,7 +30,7 @@ public class AppToolDAO extends EntryDAO<AppTool> {
         super(factory);
     }
 
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected Root<AppTool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, CriteriaQuery<?> q) {
 
@@ -47,9 +46,5 @@ public class AppToolDAO extends EntryDAO<AppTool> {
 
         q.where(predicate);
         return entryRoot;
-    }
-
-    public List<AppTool> finalAllPublished() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.AppTool.findAllPublished"));
     }
 }

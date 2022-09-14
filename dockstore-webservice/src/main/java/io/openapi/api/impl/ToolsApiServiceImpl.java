@@ -19,7 +19,6 @@ package io.openapi.api.impl;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
-import static io.dockstore.webservice.resources.EntryResource.checkCanReadAcrossEntryTypes;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.SERVICE;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
@@ -42,7 +41,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
-import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -52,6 +50,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.permissions.Role;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.openapi.api.ToolsApiService;
 import io.openapi.model.Checksum;
@@ -85,7 +84,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -112,7 +110,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static FileDAO fileDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
-    private static TRSListener trsListener = null;
     private static EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO> workflowHelper;
     private static BioWorkflowDAO bioWorkflowDAO;
     private static PermissionsInterface permissionsInterface;
@@ -152,10 +149,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     public static void setVersionDAO(VersionDAO versionDAO) {
         ToolsApiServiceImpl.versionDAO = versionDAO;
-    }
-
-    public static void setTrsListener(TRSListener listener) {
-        ToolsApiServiceImpl.trsListener = listener;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
@@ -267,6 +260,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
+    public boolean canExamine(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canExamine(user, entry)
+            || (entry instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.READ));
+    }
+
+    @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
         final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
@@ -331,14 +330,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
         final String relativePath = value.getUriInfo().getRequestUri().getPath();
 
-        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(descriptorType).append(registry).append(organization).append(name)
-            .append(toolname).append(description).append(author).append(checker).append(offset).append(actualLimit).append(relativePath)
-            .append(user.orElseGet(User::new).getId()).build();
-        final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
-        if (trsResponses.isPresent()) {
-            return trsResponses.get().build();
-        }
-
         int offsetInteger = 0;
         if (offset != null) {
             offsetInteger = Integer.parseInt(offset);
@@ -382,7 +373,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final long numPages = numEntries.sum() / actualLimit;
         responseBuilder.header("last_page", createUrlString(scheme, hostname, port, path, positionQuery(encodedQuery, actualLimit, numPages)));
 
-        trsListener.loadTRSResponse(hashcode, responseBuilder);
         return responseBuilder.build();
     }
 
@@ -441,10 +431,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param user
      * @param actualLimit page size
      * @param offset index to start at
-     * @throws UnsupportedEncodingException
      * @return number of tools, number of workflows we're working with
+     * @throws UnsupportedEncodingException
      */
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private NumberOfEntityTypes getEntries(List<Entry<?, ?>> all, String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, Optional<User> user, int actualLimit, int offset) throws UnsupportedEncodingException {
         long numTools = 0;
@@ -539,7 +529,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @deprecated
      */
     @Deprecated
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private Entry<?, ?> filterOldSchool(Entry<?, ?> entry, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker) {
         if (entry instanceof Tool) {
@@ -636,8 +626,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
 
             boolean showHiddenVersions = false;
-            if (user.isPresent() && !AuthenticatedResourceInterface
-                    .userCannotRead(user.get(), entry)) {
+            if (user.isPresent() && canExamine(user.get(), entry)) {
                 showHiddenVersions = true;
             }
 
@@ -835,38 +824,44 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
         List<String> primaryDescriptorPaths = new ArrayList<>();
-        if (entry instanceof Workflow) {
-            Workflow workflow = (Workflow)entry;
-            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
-            Optional<WorkflowVersion> first = workflowVersions.stream()
-                .filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
-            if (first.isPresent()) {
-                WorkflowVersion workflowVersion = first.get();
-                // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
-                primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
-                Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, workflowVersion.getWorkingDirectory());
-                return Response.ok().entity(toolFiles).build();
+        try {
+            versionDAO.enableNameFilter(versionId);
+
+            if (entry instanceof Workflow) {
+                Workflow workflow = (Workflow) entry;
+                Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+                Optional<WorkflowVersion> first = workflowVersions.stream()
+                    .filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
+                if (first.isPresent()) {
+                    WorkflowVersion workflowVersion = first.get();
+                    // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
+                    primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
+                    Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, workflowVersion.getWorkingDirectory());
+                    return Response.ok().entity(toolFiles).build();
+                } else {
+                    return Response.noContent().build();
+                }
+            } else if (entry instanceof Tool) {
+                Tool tool = (Tool) entry;
+                Set<Tag> versions = tool.getWorkflowVersions();
+                Optional<Tag> first = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
+                if (first.isPresent()) {
+                    Tag tag = first.get();
+                    // Matching the CWL path or WDL path in a tool automatically indicates that the file is a primary descriptor
+                    primaryDescriptorPaths.add(tag.getCwlPath());
+                    primaryDescriptorPaths.add(tag.getWdlPath());
+                    Set<SourceFile> sourceFiles = tag.getSourceFiles();
+                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, tag.getWorkingDirectory());
+                    return Response.ok().entity(toolFiles).build();
+                } else {
+                    return Response.noContent().build();
+                }
             } else {
-                return Response.noContent().build();
+                return Response.status(Status.NOT_FOUND).build();
             }
-        } else if (entry instanceof Tool) {
-            Tool tool = (Tool)entry;
-            Set<Tag> versions = tool.getWorkflowVersions();
-            Optional<Tag> first = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
-            if (first.isPresent()) {
-                Tag tag = first.get();
-                // Matching the CWL path or WDL path in a tool automatically indicates that the file is a primary descriptor
-                primaryDescriptorPaths.add(tag.getCwlPath());
-                primaryDescriptorPaths.add(tag.getWdlPath());
-                Set<SourceFile> sourceFiles = tag.getSourceFiles();
-                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, tag.getWorkingDirectory());
-                return Response.ok().entity(toolFiles).build();
-            } else {
-                return Response.noContent().build();
-            }
-        } else {
-            return Response.status(Status.NOT_FOUND).build();
+        } finally {
+            versionDAO.disableNameFilter();
         }
     }
 
@@ -920,16 +915,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private String cleanRelativePath(String relativePath) {
         String cleanRelativePath = StringUtils.removeStart(relativePath, "./");
         return StringUtils.removeStart(cleanRelativePath, "/");
-    }
-
-
-    @Override
-    public void checkCanRead(User user, Entry workflow) {
-        try {
-            checkUser(user, workflow);
-        } catch (CustomWebApplicationException ex) {
-            checkCanReadAcrossEntryTypes(user, workflow, permissionsInterface, ex);
-        }
     }
 
     /**

@@ -1,6 +1,6 @@
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.Utilities;
@@ -74,8 +74,9 @@ import org.slf4j.LoggerFactory;
 @Api("/organizations")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "organizations", description = ResourceConstants.ORGANIZATIONS)
-@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
+@SecuritySchemes({@SecurityScheme(type = SecuritySchemeType.HTTP, name = JWT_SECURITY_DEFINITION_NAME, scheme = "bearer")})
 public class OrganizationResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Organization> {
+
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
 
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organizations, authentication can be provided for unapproved organizations";
@@ -105,7 +106,6 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         List<Organization> organizations = organizationDAO.findApprovedSortedByStar();
         organizations.stream().forEach(org -> {
             Hibernate.initialize(org.getAliases());
-            org.setCollectionsLength(org.getCollections().size());
         });
         return organizations;
     }
@@ -113,12 +113,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @POST
     @Timed
     @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
+    @RolesAllowed({"curator", "admin"})
     @Path("{organizationId}/approve/")
     @ApiOperation(value = "Approve an organization.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", response = Organization.class)
-    @Operation(operationId = "approveOrganization", summary = "Approve an organization.", description = "Approve the organization with the given id. Admin/curator only.", security = @SecurityRequirement(name = "bearer"))
-    public Organization approveOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Admin/curator only", response = Organization.class)
+    @Operation(operationId = "approveOrganization", summary = "Approve an organization.", description = "Approve the organization with the given id. Admin/curator only.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public Organization approveOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = organizationDAO.findById(id);
         throwExceptionForNullOrganization(organization);
@@ -137,12 +137,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @POST
     @Timed
     @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
+    @RolesAllowed({"curator", "admin"})
     @Path("{organizationId}/reject/")
     @ApiOperation(value = "Reject an organization.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", response = Organization.class)
-    @Operation(operationId = "rejectOrganization", summary = "Reject an organization.", description = "Reject the organization with the given id. Admin/curator only.", security = @SecurityRequirement(name = "bearer"))
-    public Organization rejectOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Admin/curator only", response = Organization.class)
+    @Operation(operationId = "rejectOrganization", summary = "Reject an organization.", description = "Reject the organization with the given id. Admin/curator only.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public Organization rejectOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = organizationDAO.findById(id);
         throwExceptionForNullOrganization(organization);
@@ -167,10 +167,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @Path("{organizationId}/request/")
     @ApiOperation(value = "Re-request an organization approval.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Only for rejected organizations", response = Organization.class)
-    @Operation(operationId = "requestOrganizationReview", summary = "Re-request an organization review.", description = "Re-request a review of the given organization. Requires the organization to be rejected.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Only for rejected organizations", response = Organization.class)
+    @Operation(operationId = "requestOrganizationReview", summary = "Re-request an organization review.", description = "Re-request a review of the given organization. Requires the organization to be rejected.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Organization requestOrganizationReview(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-            @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
+        @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = organizationDAO.findById(id);
         throwExceptionForNullOrganization(organization);
         OrganizationUser organizationUser = getUserOrgRole(organization, user.getId());
@@ -183,7 +183,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         if (Objects.equals(organization.getStatus(), Organization.ApplicationState.REJECTED)) {
             organization.setStatus(Organization.ApplicationState.PENDING);
             Event rerequestOrgEvent = new Event.Builder().withOrganization(organization).withInitiatorUser(user)
-                    .withType(Event.EventType.REREQUEST_ORG).build();
+                .withType(Event.EventType.REREQUEST_ORG).build();
             eventDAO.create(rerequestOrgEvent);
         } else {
             String msg = "Only rejected organizations can request re-review.";
@@ -199,8 +199,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork(readOnly = true)
     @Path("/name/{name}/")
     @ApiOperation(value = "Retrieve an organization by name.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
-    @Operation(operationId = "getOrganizationByName", summary = "Retrieve an organization by name.", description = "Retrieve an organization by name. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Organization.class)
+    @Operation(operationId = "getOrganizationByName", summary = "Retrieve an organization by name.", description = "Retrieve an organization by name. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Organization getOrganizationByName(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization name.", required = true) @Parameter(description = "Organization name.", name = "name", in = ParameterIn.PATH, required = true) @PathParam("name") String name) {
         if (user.isEmpty()) {
@@ -248,13 +248,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork(readOnly = true)
     @Path("/{organizationId}")
     @ApiOperation(value = "Retrieve an organization by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
-    @Operation(operationId = "getOrganizationById", summary = "Retrieve an organization by ID.", description = "Retrieve an organization by ID. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Organization.class)
+    @Operation(operationId = "getOrganizationById", summary = "Retrieve an organization by ID.", description = "Retrieve an organization by ID. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Organization getOrganizationById(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = getOrganizationByIdOptionalAuth(user, id);
         Hibernate.initialize(organization.getAliases());
-        organization.setCollectionsLength(organization.getCollections().size());
         return organization;
     }
 
@@ -263,8 +262,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork(readOnly = true)
     @Path("/{organizationId}/description")
     @ApiOperation(value = "Retrieve an organization description by organization ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
-    @Operation(operationId = "getOrganizationDescription", summary = "Retrieve an organization description by organization ID.", description = "Retrieve an organization description by organization ID. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = String.class)
+    @Operation(operationId = "getOrganizationDescription", summary = "Retrieve an organization description by organization ID.", description = "Retrieve an organization description by organization ID. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public String getOrganizationDescription(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         return getOrganizationByIdOptionalAuth(user, id).getDescription();
@@ -275,8 +274,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Path("{organizationId}/description")
     @UnitOfWork
     @ApiOperation(value = "Update an organization's description.", notes = "Description in markdown", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
-    @Operation(operationId = "updateOrganizationDescription", summary = "Update an organization's description.", description = "Update an organization's description. Expects description in markdown format.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Organization.class)
+    @Operation(operationId = "updateOrganizationDescription", summary = "Update an organization's description.", description = "Update an organization's description. Expects description in markdown format.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Organization updateOrganizationDescription(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Organization's description in markdown.", required = true) @Parameter(description = "Organization's description in markdown.", name = "description", required = true) String description) {
@@ -312,14 +311,14 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork(readOnly = true)
     @Path("/{organizationId}/members")
     @ApiOperation(value = "Retrieve all members for an organization.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class, responseContainer = "Set")
-    @Operation(operationId = "getOrganizationMembers", summary = "Retrieve all members for an organization.", description = "Retrieve all members for an organization. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = OrganizationUser.class, responseContainer = "Set")
+    @Operation(operationId = "getOrganizationMembers", summary = "Retrieve all members for an organization.", description = "Retrieve all members for an organization. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Set<OrganizationUser> getOrganizationMembers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Set<OrganizationUser> acceptedUsers = getOrganizationByIdOptionalAuth(user, id).getUsers()
-                .stream()
-                .filter(orgUser -> orgUser.isAccepted())
-                .collect(Collectors.toSet());
+            .stream()
+            .filter(orgUser -> orgUser.isAccepted())
+            .collect(Collectors.toSet());
 
         return acceptedUsers;
     }
@@ -329,14 +328,15 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork(readOnly = true)
     @Path("/{organizationId}/events")
     @ApiOperation(value = "Retrieve all events for an organization.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Event.class, responseContainer = "List")
-    @Operation(operationId = "getOrganizationEvents", summary = "Retrieve all events for an organization.", description = "Retrieve all events for an organization. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Event.class, responseContainer = "List")
+    @Operation(operationId = "getOrganizationEvents", summary = "Retrieve all events for an organization.", description = "Retrieve all events for an organization. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<Event> getOrganizationEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-            @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id,
-            @ApiParam(value = "Start index of paging.  If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.", defaultValue = DEFAULT_OFFSET) @Parameter(description = "Start index of paging.  If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.", name = "offset", in = ParameterIn.QUERY, required = true) @DefaultValue(DEFAULT_OFFSET) @QueryParam("offset") Integer offset,
-            @ApiParam(value = "Amount of records to return in a given page, limited to "
-                    + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @Parameter(description = "Amount of records to return in a given page, limited to " + PAGINATION_LIMIT, name = "limit", in = ParameterIn.QUERY, schema = @Schema(minimum = "1", maximum = "100"), required = true) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
-            @Context HttpServletResponse response) {
+        @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id,
+        @ApiParam(value = "Start index of paging.  If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.", defaultValue = DEFAULT_OFFSET) @Parameter(description = "Start index of paging.  If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.", name = "offset", in = ParameterIn.QUERY, required = true) @DefaultValue(DEFAULT_OFFSET) @QueryParam("offset") Integer offset,
+        @ApiParam(value = "Amount of records to return in a given page, limited to "
+            + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @Parameter(description = "Amount of records to return in a given page, limited to "
+            + PAGINATION_LIMIT, name = "limit", in = ParameterIn.QUERY, schema = @Schema(minimum = "1", maximum = "100"), required = true) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+        @Context HttpServletResponse response) {
         getOrganizationByIdOptionalAuth(user, id);
         response.addHeader("X-total-count", String.valueOf(eventDAO.countAllEventsForOrganization(id)));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
@@ -354,13 +354,13 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Consumes(MediaType.APPLICATION_JSON)
     @UsernameRenameRequired
     @Path("/{organizationId}/star")
-    @ApiOperation(value = "Star an organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    @Operation(operationId = "starOrganization", summary = "Star an organization.", description = "Star an organization.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "Star an organization.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    @Operation(operationId = "starOrganization", summary = "Star an organization.", description = "Star an organization.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public void starOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-                          @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
-                          @ApiParam(value = "StarRequest to star an organization for a user.", required = true) @Parameter(description = "StarRequest to star an organization for a user.", name = "request", required = true) StarRequest request) {
+        @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
+        @ApiParam(value = "StarRequest to star an organization for a user.", required = true) @Parameter(description = "StarRequest to star an organization for a user.", name = "request", required = true) StarRequest request) {
         Organization organization = organizationDAO.findApprovedById(organizationId);
-        checkOrganization(organization);
+        throwExceptionForNullOrganization(organization);
         Set<User> starredUsers = organization.getStarredUsers();
         if (request.getStar()) {
             starOrganizationHelper(organization, starredUsers, user);
@@ -395,9 +395,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(value = "Return list of users who starred the given approved organization.", response = User.class, responseContainer = "List")
     @Operation(operationId = "getStarredUsersForApprovedOrganization", summary = "Return list of users who starred the given approved organization.", description = "Return list of users who starred the given approved organization.")
     public Set<User> getStarredUsersForApprovedOrganization(
-            @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
+        @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findApprovedById(organizationId);
-        checkOrganization(organization);
+        throwExceptionForNullOrganization(organization);
         return organization.getStarredUsers();
     }
 
@@ -432,15 +432,15 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Timed
     @UnitOfWork
     @ApiOperation(value = "hidden", hidden = true)
-    @Operation(operationId = "deleteRejectedOrPendingOrganization", summary = "Delete pending or rejected organization", description = "Delete pending or rejected organization", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "deleteRejectedOrPendingOrganization", summary = "Delete pending or rejected organization", description = "Delete pending or rejected organization", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "NO CONTENT"),
-            @ApiResponse(responseCode = "400", description = "BAD REQUEST"),
-            @ApiResponse(responseCode = "403", description = "FORBIDDEN")
+        @ApiResponse(responseCode = "204", description = "NO CONTENT"),
+        @ApiResponse(responseCode = "400", description = "BAD REQUEST"),
+        @ApiResponse(responseCode = "403", description = "FORBIDDEN")
     })
     public void deleteRejectedOrPendingOrganization(
-            @Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
+        @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findById(organizationId);
         throwExceptionForNullOrganization(organization);
         OrganizationUser orgUser = getUserOrgRole(organization, user.getId());
@@ -468,12 +468,13 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/all")
-    @RolesAllowed({ "curator", "admin" })
+    @RolesAllowed({"curator", "admin"})
     @ApiOperation(value = "List all organizations.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", responseContainer = "List", response = Organization.class)
-    @Operation(operationId = "getAllOrganizations", summary = "List all organizations.", description = "List all organizations, regardless of organization status. Admin/curator only.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Admin/curator only", responseContainer = "List", response = Organization.class)
+    @Operation(operationId = "getAllOrganizations", summary = "List all organizations.", description = "List all organizations, regardless of organization status. Admin/curator only.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<Organization> getAllOrganizations(
-        @ApiParam(value = "Filter to apply to organizations.", required = true, allowableValues = "all, pending, rejected, approved") @Parameter(description = "Filter to apply to organizations.", name = "type", in = ParameterIn.QUERY, schema = @Schema(allowableValues = {"all", "pending", "rejected", "approved"}), required = true) @QueryParam("type") String type) {
+        @ApiParam(value = "Filter to apply to organizations.", required = true, allowableValues = "all, pending, rejected, approved") @Parameter(description = "Filter to apply to organizations.", name = "type", in = ParameterIn.QUERY, schema = @Schema(allowableValues = {
+            "all", "pending", "rejected", "approved"}), required = true) @QueryParam("type") String type) {
         List<Organization> organizations;
 
         switch (type) {
@@ -502,8 +503,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Consumes("application/json")
     @UsernameRenameRequired
     @ApiOperation(value = "Create an organization.", notes = "Organization requires approval by an admin before being made public.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
-    @Operation(operationId = "createOrganization", summary = "Create an organization.", description = "Create an organization. Organization requires approval by an admin before being made public.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Organization.class)
+    @Operation(operationId = "createOrganization", summary = "Create an organization.", description = "Create an organization. Organization requires approval by an admin before being made public.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Organization createOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization to register.", required = true) @Parameter(description = "Organization to register.", name = "organization", required = true) Organization organization) {
 
@@ -562,8 +563,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @Path("{organizationId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Update an organization.", notes = "Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
-    @Operation(operationId = "updateOrganization", summary = "Update an organization.", description = "Update an organization. Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "Update an organization.", notes = "Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Organization.class)
+    @Operation(operationId = "updateOrganization", summary = "Update an organization.", description = "Update an organization. Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Organization updateOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization to update with.", required = true) @Parameter(description = "Organization to register.", name = "organization", required = true) Organization organization,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
@@ -615,13 +617,15 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         validateLink(organization.getLink());
 
         if (!oldOrganization.getName().equals(organization.getName()) || !oldOrganization.getDisplayName().equals(organization.getDisplayName())) {
-            if (user.getIsAdmin() || user.isCurator() || (oldOrganization.getStatus() != Organization.ApplicationState.APPROVED && oldOrganization.getStatus() != Organization.ApplicationState.HIDDEN)) {
+            if (user.getIsAdmin() || user.isCurator() || (oldOrganization.getStatus() != Organization.ApplicationState.APPROVED
+                && oldOrganization.getStatus() != Organization.ApplicationState.HIDDEN)) {
                 // Only update the name and display name if the user is an admin/curator or if the org is not yet approved or hidden
                 // This is for https://ucsc-cgl.atlassian.net/browse/SEAB-203 to prevent name squatting after organization was approved
                 oldOrganization.setName(organization.getName());
                 oldOrganization.setDisplayName(organization.getDisplayName());
             } else {
-                throw new CustomWebApplicationException("Only admin and curators are able to change an approved Organization's name or display name. Contact Dockstore to have it changed.", HttpStatus.SC_UNAUTHORIZED);
+                throw new CustomWebApplicationException("Only admin and curators are able to change an approved Organization's name or display name. Contact Dockstore to have it changed.",
+                    HttpStatus.SC_UNAUTHORIZED);
             }
         }
 
@@ -642,6 +646,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     /**
      * Validate email string.
+     *
      * @param email The email to validate
      */
     private void validateEmail(String email) {
@@ -655,13 +660,14 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     /**
      * Validate url string. null/empty is valid since it's optional.
+     *
      * @param url The link to validate
      */
     private void validateLink(String url) {
         if (StringUtils.isEmpty(url)) {
             return;
         }
-        String[] schemes = { "http", "https" };
+        String[] schemes = {"http", "https"};
         UrlValidator urlValidator = new UrlValidator(schemes);
         if (!urlValidator.isValid(url)) {
             String msg = "Link is invalid: " + url;
@@ -675,10 +681,11 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @Path("/{organizationId}/users/{username}")
     @ApiOperation(value = "Add a user role to an organization.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class)
-    @Operation(operationId = "addUserToOrgByUsername", summary = "Add a user role to an organization.", description = "Add a user role to an organization.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = OrganizationUser.class)
+    @Operation(operationId = "addUserToOrgByUsername", summary = "Add a user role to an organization.", description = "Add a user role to an organization.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public OrganizationUser addUserToOrgByUsername(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "Role of user.", allowableValues = "MAINTAINER, MEMBER", required = true) @Parameter(description = "Role of user.", name = "role", schema = @Schema(allowableValues = {"MAINTAINER", "MEMBER"}), required = true) String role,
+        @ApiParam(value = "Role of user.", allowableValues = "MAINTAINER, MEMBER", required = true) @Parameter(description = "Role of user.", name = "role", schema = @Schema(allowableValues = {
+            "MAINTAINER", "MEMBER"}), required = true) String role,
         @ApiParam(value = "User to add to org.", required = true) @Parameter(description = "User to add to org.", name = "username", in = ParameterIn.PATH, required = true) @PathParam("username") String username,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         User userToAdd = userDAO.findByUsername(username);
@@ -695,10 +702,11 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @Path("/{organizationId}/user")
     @ApiOperation(value = "Add a user role to an organization.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class)
-    @Operation(operationId = "addUserToOrg", summary = "Add a user role to an organization.", description = "Add a user role to an organization.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = OrganizationUser.class)
+    @Operation(operationId = "addUserToOrg", summary = "Add a user role to an organization.", description = "Add a user role to an organization.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public OrganizationUser addUserToOrg(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, schema = @Schema(allowableValues = {"ADMIN", "MAINTAINER", "MEMBER"}), required = true) @QueryParam("role") String role,
+        @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, schema = @Schema(allowableValues = {
+            "ADMIN", "MAINTAINER", "MEMBER"}), required = true) @QueryParam("role") String role,
         @ApiParam(value = "User ID of user to add to organization.", required = true) @Parameter(description = "User ID of user to add to organization.", name = "userId", in = ParameterIn.QUERY, required = true) @QueryParam("userId") Long userId,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
@@ -730,10 +738,11 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @Path("/{organizationId}/user")
     @ApiOperation(value = "Update a user role in an organization.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class)
-    @Operation(operationId = "updateUserRole", summary = "Update a user role in an organization.", description = "Update a user role in an organization.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = OrganizationUser.class)
+    @Operation(operationId = "updateUserRole", summary = "Update a user role in an organization.", description = "Update a user role in an organization.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public OrganizationUser updateUserRole(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, required = true, schema = @Schema(allowableValues = {"ADMIN", "MAINTAINER", "MEMBER"})) @QueryParam("role") String role,
+        @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, required = true, schema = @Schema(allowableValues = {
+            "ADMIN", "MAINTAINER", "MEMBER"})) @QueryParam("role") String role,
         @ApiParam(value = "User ID of user to update within organization.", required = true) @Parameter(description = "User ID of user to add to organization.", name = "userId", in = ParameterIn.QUERY, required = true) @QueryParam("userId") Long userId,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
 
@@ -764,8 +773,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @Path("/{organizationId}/user")
     @ApiOperation(value = "Remove a user from an organization.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = void.class)
-    @Operation(operationId = "deleteUserRole", summary = "Remove a user from an organization.", description = "Remove a user from an organization.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = void.class)
+    @Operation(operationId = "deleteUserRole", summary = "Remove a user from an organization.", description = "Remove a user from an organization.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public void deleteUserRole(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "User ID of user to remove from organization.", required = true) @Parameter(description = "User ID of user to add to organization.", name = "userId", in = ParameterIn.QUERY, required = true) @QueryParam("userId") Long userId,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
@@ -795,8 +804,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @Path("/{organizationId}/invitation")
     @ApiOperation(value = "Accept or reject an organization invitation.", notes = "True accepts the invitation, false rejects the invitation.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    @Operation(operationId = "acceptOrRejectInvitation", summary = "Accept or reject an organization invitation.", description = "Accept or reject an organization invitation. True accepts the invitation, false rejects the invitation.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    @Operation(operationId = "acceptOrRejectInvitation", summary = "Accept or reject an organization invitation.", description = "Accept or reject an organization invitation. True accepts the invitation, false rejects the invitation.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public void acceptOrRejectInvitation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Accept or reject.", required = true) @Parameter(description = "Accept or reject.", name = "accept", in = ParameterIn.QUERY, required = true) @QueryParam("accept") boolean accept) {
@@ -859,8 +868,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     /**
-     * Checks if a user has the given role type in the organization
-     * Throws an error if the user has no roles or the wrong roles
+     * Checks if a user has the given role type in the organization Throws an error if the user has no roles or the wrong roles
      *
      * @param organization
      * @param userId
@@ -889,8 +897,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     /**
-     * Checks if the given user should know of the existence of the organization
-     * For a user to see an organsation, either it must be approved or the user must have a role in the organization
+     * Checks if the given user should know of the existence of the organization For a user to see an organsation, either it must be approved or the user must have a role in the organization
      *
      * @param organizationId
      * @param userId
@@ -936,8 +943,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      * Common checks done by the user add/edit/delete endpoints
      *
      * @param organizationId Organization ID of organization to perform action on
-     * @param userId User ID of user to perform action on
-     * @param user User performing the action
+     * @param userId         User ID of user to perform action on
+     * @param user           User performing the action
      * @return A pair of organistion to edit and user add/edit/delete role
      */
     private Pair<Organization, User> commonUserOrg(Long organizationId, Long userId, User user) {
@@ -978,9 +985,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Override
     @Path("{organizationId}/aliases")
     @ApiOperation(nickname = "addOrganizationAliases", value = "Add aliases linked to a listing in Dockstore.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Organization.class)
-    @Operation(operationId = "addOrganizationAliases", summary = "Add aliases linked to a listing in Dockstore.", description = "Add aliases linked to a listing in Dockstore. Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", security = @SecurityRequirement(name = "bearer"))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created organization alias", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Organization.class)))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Organization.class)
+    @Operation(operationId = "addOrganizationAliases", summary = "Add aliases linked to a listing in Dockstore.", description = "Add aliases linked to a listing in Dockstore. Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+        + "", description = "Successfully created organization alias", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Organization.class)))
     public Organization addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization to modify.", required = true) @Parameter(description = "Organization to modify.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id,
         @ApiParam(value = "Comma-delimited list of aliases.", required = true) @Parameter(description = "Comma-delimited list of aliases.", name = "aliases", in = ParameterIn.QUERY, required = true) @QueryParam("aliases") String aliases) {

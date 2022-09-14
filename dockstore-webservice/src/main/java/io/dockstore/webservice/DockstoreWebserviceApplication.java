@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice;
 
+import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory.getToolsExtendedApi;
 import static javax.servlet.DispatcherType.REQUEST;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
@@ -75,7 +76,6 @@ import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener;
-import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
@@ -96,9 +96,9 @@ import io.dockstore.webservice.resources.AliasResource;
 import io.dockstore.webservice.resources.CategoryResource;
 import io.dockstore.webservice.resources.CloudInstanceResource;
 import io.dockstore.webservice.resources.CollectionResource;
+import io.dockstore.webservice.resources.ConnectionPoolHealthCheck;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
-import io.dockstore.webservice.resources.ElasticSearchHealthCheck;
 import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
@@ -147,21 +147,36 @@ import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import javax.ws.rs.core.Response;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.eclipse.jetty.util.component.LifeCycle;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginWrapper;
@@ -309,6 +324,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
     @Override
+    @SuppressWarnings("checkstyle:MethodLength")
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setSchemes(new String[] { configuration.getExternalConfig().getScheme() });
@@ -318,6 +334,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api,io.openapi.api");
         beanConfig.setScan(true);
 
+        restrictSourceFiles(configuration);
+
         final DefaultPluginManager languagePluginManager = LanguagePluginManager.getInstance(getFilePluginLocation(configuration));
         describeAvailableLanguagePlugins(languagePluginManager);
         LanguageHandlerFactory.setLanguagePluginManager(languagePluginManager);
@@ -325,8 +343,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final PublicStateManager publicStateManager = PublicStateManager.getInstance();
         publicStateManager.reset();
         publicStateManager.setConfig(configuration);
-        final TRSListener trsListener = new TRSListener();
-        publicStateManager.addListener(trsListener);
 
         environment.jersey().property(CommonProperties.FEATURE_AUTO_DISCOVERY_DISABLE, true);
         environment.jersey().register(new JsonProcessingExceptionMapper(true));
@@ -334,8 +350,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
 
-        final ElasticSearchHealthCheck elasticSearchHealthCheck = new ElasticSearchHealthCheck(new ToolsExtendedApi());
-        environment.healthChecks().register("elasticSearch", elasticSearchHealthCheck);
         environment.lifecycle().manage(new ElasticSearchHelper(configuration.getEsConfiguration()));
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
@@ -383,7 +397,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(httpClient, hibernate.getSessionFactory(), configuration, workflowResource, entryResource);
 
         environment.jersey().register(dockerRepoResource);
-        environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO, eventDAO, versionDAO));
+        environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO, eventDAO, fileDAO, versionDAO));
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, deletedUsernameDAO, httpClient, cachingAuthenticator, configuration));
 
         environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
@@ -421,7 +435,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setFileDAO(fileDAO);
         ToolsApiServiceImpl.setVersionDAO(versionDAO);
         ToolsApiServiceImpl.setConfig(configuration);
-        ToolsApiServiceImpl.setTrsListener(trsListener);
         ToolsApiServiceImpl.setAuthorizer(authorizer);
 
         ToolsApiExtendedServiceImpl.setStateManager(publicStateManager);
@@ -450,6 +463,104 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
         cacheConfigManager.initCache();
+
+        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
+            // Register connection pool health check after server starts so the environment has dropwizard metrics
+            @Override
+            public void lifeCycleStarted(LifeCycle event) {
+                final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
+                environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+            }
+        });
+
+        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
+            // Indexes Elasticsearch if mappings don't exist when the application is started
+            @Override
+            public void lifeCycleStarted(LifeCycle event) {
+                if (!ElasticSearchHelper.doMappingsExist()) {
+                    // A lock is used to prevent concurrent indexing requests in a deployment where multiple webservices start at the same time
+                    if (ElasticSearchHelper.acquireLock()) {
+                        try {
+                            LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
+                            Session session = hibernate.getSessionFactory().openSession();
+                            ManagedSessionContext.bind(session);
+                            Response response = getToolsExtendedApi().toolsIndexGet(null);
+                            session.close();
+                            if (response.getStatus() == HttpStatus.SC_OK) {
+                                LOG.info("Indexed Elasticsearch");
+                            } else {
+                                LOG.error("Error indexing Elasticsearch with status code {}", response.getStatus());
+                            }
+                        } catch (Exception e) {
+                            LOG.error("Could not index Elasticsearch", e);
+                        } finally {
+                            ElasticSearchHelper.releaseLock();
+                        }
+                    }
+                } else {
+                    LOG.info("Elasticsearch indices already exist");
+                }
+            }
+        });
+
+        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
+            @Override
+            public void lifeCycleStarted(LifeCycle event) {
+                Session session = hibernate.getSessionFactory().openSession();
+                ManagedSessionContext.bind(session);
+                final Transaction transaction = session.beginTransaction();
+                try {
+                    final String errorPrefix = "could not update old style github token";
+                    TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
+                    // cannot use normal github library
+                    final java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().build();
+                    // exclude both gho tokens that the application generates and ghp tokens that we can insert for testing
+                    // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
+                    for (Token t : tokenDAO.findAllGitHubTokens()) {
+                        if (!t.getContent().startsWith("gho_") && !t.getContent().startsWith("ghp_")) {
+                            try {
+                                HttpRequest request = HttpRequest.newBuilder()
+                                    .uri(new URI("https://api.github.com/applications/" + configuration.getGithubClientID() + "/token"))
+                                    .header("Accept", "application/vnd.github+json")
+                                    .header("Authorization", getBasicAuthenticationHeader(configuration.getGithubClientID(), configuration.getGithubClientSecret()))
+                                    .method("PATCH", BodyPublishers.ofString("{\"access_token\":\"" + t.getContent() + "\"}"))
+                                    .build();
+                                final HttpResponse<ResetTokenModel> send = client.send(request, new JsonBodyHandler<>(ResetTokenModel.class));
+                                final ResetTokenModel body = send.body();
+                                if (send.statusCode() == HttpStatus.SC_OK) {
+                                    String newToken = body.token;
+                                    t.setContent(newToken);
+                                    tokenDAO.update(t);
+                                    LOG.info("updated token for {}", t.getUsername());
+                                } else {
+                                    LOG.error(errorPrefix + " for {}, error code {}, token was not found on github", t.getUsername(), send.statusCode());
+                                }
+                            } catch (IOException e) {
+                                LOG.error(errorPrefix + " for {}", t.getUsername());
+                                LOG.error(errorPrefix, e);
+                            } catch (URISyntaxException e) {
+                                LOG.error(errorPrefix + " for {} due to syntax issue", t.getUsername());
+                                LOG.error(errorPrefix, e);
+                            } catch (InterruptedException e) {
+                                LOG.error(errorPrefix + " for {} due to interruption", t.getUsername());
+                                LOG.error(errorPrefix, e);
+                                // Restore interrupted state... (sonarcloud suggestion)
+                                Thread.currentThread().interrupt();
+                                return;
+                            }
+                        }
+                    }
+                } finally {
+                    transaction.commit();
+                    ManagedSessionContext.unbind(hibernate.getSessionFactory());
+                }
+            }
+        });
+    }
+
+    private static String getBasicAuthenticationHeader(String username, String password) {
+        String valueToEncode = username + ":" + password;
+        return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes(StandardCharsets.UTF_8));
     }
 
     private void registerAPIsAndMisc(Environment environment) {
@@ -517,4 +628,70 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         return hibernate;
     }
 
+    private void restrictSourceFiles(DockstoreWebserviceConfiguration configuration) {
+
+        String regexString = configuration.getSourceFilePathRegex();
+        String violationMessage = configuration.getSourceFilePathViolationMessage();
+
+        if (regexString != null) {
+            Pattern regex;
+            try {
+                regex = Pattern.compile(regexString);
+            } catch (Exception e) {
+                LOG.error("Could not parse SourceFile path regex " + regexString);
+                throw e;
+            }
+            if (violationMessage == null) {
+                violationMessage = "SourceFile path contains unexpected characters.";
+            }
+            LOG.info("Restricting SourceFile paths to the regular expression " + regex);
+            SourceFile.restrictPaths(regex, violationMessage);
+        } else {
+            SourceFile.unrestrictPaths();
+        }
+    }
+
+
+    private static class ResetTokenModel {
+
+        private String token;
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
+    }
+
+    private static class JsonBodyHandler<W> implements HttpResponse.BodyHandler<W> {
+
+        private final Class<W> wClass;
+
+        JsonBodyHandler(Class<W> wClass) {
+            this.wClass = wClass;
+        }
+
+        @Override
+        public HttpResponse.BodySubscriber<W> apply(HttpResponse.ResponseInfo responseInfo) {
+            return asJSON(wClass);
+        }
+
+        public <T> HttpResponse.BodySubscriber<T> asJSON(Class<T> targetType) {
+            HttpResponse.BodySubscriber<String> upstream = HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8);
+
+            return HttpResponse.BodySubscribers.mapping(
+                upstream,
+                (String body) -> {
+                    try {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+                        return objectMapper.readValue(body, targetType);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
+        }
+    }
 }

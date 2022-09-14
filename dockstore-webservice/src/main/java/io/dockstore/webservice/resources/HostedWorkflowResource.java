@@ -16,8 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.common.DescriptorLanguage.getDefaultDescriptorPath;
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
@@ -41,7 +40,6 @@ import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
-import io.dockstore.webservice.permissions.Role;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -67,6 +65,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
@@ -114,40 +113,24 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
+    @POST
+    @Path("/hostedEntry")
+    @Timed
+    @UnitOfWork
     @UsernameRenameRequired
-    @Operation(operationId = "createHostedWorkflow", description = "Create a hosted workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted workflow.", content = @Content(schema = @Schema(implementation = Workflow.class)))
+    @Operation(operationId = "createHostedWorkflow", description = "Create a hosted workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted workflow.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Workflow.class)))
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow createHosted(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
+    public Workflow createHosted(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user") @Auth User user,
+        @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
+        @ApiParam(value = "The repository name", required = true) @QueryParam("name") String name,
+        @ApiParam(value = "The descriptor type (Workflows only)") @QueryParam("descriptorType") DescriptorLanguage descriptorType,
+        @ApiParam(value = "The Docker namespace (Tools only)") @QueryParam("namespace") String namespace,
+        @ApiParam(value = "Optional entry name (Tools only)") @QueryParam("entryName") String entryName) {
         Workflow workflow = super.createHosted(user, registry, name, descriptorType, namespace, entryName);
         EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
         return workflow;
-    }
-
-    @Override
-    public void checkUserCanRead(User user, Entry entry) {
-        checkUserCanDoAction(user, entry, Role.Action.READ);
-    }
-
-    @Override
-    public void checkUserCanUpdate(User user, Entry entry) {
-        checkUserCanDoAction(user, entry, Role.Action.WRITE);
-    }
-
-    @Override
-    public void checkUserCanDelete(User user, Entry entry) {
-        checkUserCanDoAction(user, entry, Role.Action.DELETE);
-    }
-
-    private void checkUserCanDoAction(User user, Entry entry, Role.Action action) {
-        try {
-            checkUserOwnsEntry(user, entry); // Checks if owner, which has all permissions.
-        } catch (CustomWebApplicationException ex) {
-            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, action)) {
-                throw ex;
-            }
-        }
     }
 
     @Override
@@ -178,7 +161,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
     
     @Override
-    @Operation(operationId = "editHostedWorkflow", description = "Non-idempotent operation for creating new revisions of hosted workflows", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "editHostedWorkflow", description = "Non-idempotent operation for creating new revisions of hosted workflows", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "editHostedWorkflow", value = "Non-idempotent operation for creating new revisions of hosted workflows", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
@@ -194,16 +177,16 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @ApiOperation(nickname = ZIP_UPLOAD_OPERATION_ID, value = ZIP_UPLOAD_DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
     @Deprecated(since = "1.9.0")
-    @Operation(operationId = ZIP_UPLOAD_OPERATION_ID, summary = ZIP_UPLOAD_DESCRIPTION, security = @SecurityRequirement(name = "bearer"), deprecated = true)
+    @Operation(operationId = ZIP_UPLOAD_OPERATION_ID, summary = ZIP_UPLOAD_DESCRIPTION, security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), deprecated = true)
     @ApiResponse(responseCode = "200", description = "successful operation", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Workflow.class)))
     public Workflow addZip(
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth final User user,
         @ApiParam(value = "hosted entry ID") @Parameter(name = "entryId", description = "hosted entry ID") @PathParam("entryId") final Long entryId,
         @Parameter(name = "file", schema = @Schema(type = "string", format = "binary")) @FormDataParam("file") final InputStream payload) {
         final Workflow workflow = getEntryDAO().findById(entryId);
-        checkEntry(workflow);
+        checkNotNullEntry(workflow);
         checkHosted(workflow);
-        checkUserCanUpdate(user, workflow);
+        checkCanWrite(user, workflow);
         checkVersionLimit(user, workflow);
         final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromInputStream(payload, workflow.getFileType());
         final WorkflowVersion version = getVersion(workflow);
@@ -231,7 +214,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    @Operation(operationId = "deleteHostedWorkflowVersion", description = "Delete a revision of a hosted workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "deleteHostedWorkflowVersion", description = "Delete a revision of a hosted workflow.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "deleteHostedWorkflowVersion", value = "Delete a revision of a hosted workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow deleteHostedVersion(User user, Long entryId, String version) {
@@ -258,25 +241,21 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         descriptorValidation = new Validation(identifiedType, validDescriptorSet);
         version.addOrUpdateValidation(descriptorValidation);
 
-        DescriptorLanguage.FileType testParameterType = null;
-        switch (identifiedType) {
-        case DOCKSTORE_CWL:
-            testParameterType = DescriptorLanguage.FileType.CWL_TEST_JSON;
-            break;
-        case DOCKSTORE_WDL:
-            testParameterType = DescriptorLanguage.FileType.WDL_TEST_JSON;
-            break;
-        case DOCKSTORE_GXFORMAT2:
-            testParameterType = DescriptorLanguage.FileType.GXFORMAT2_TEST_FILE;
-            break;
-        case NEXTFLOW_CONFIG:
-            // Nextflow does not have test parameter files, so do not fail
-            break;
-        default:
-            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
+        DescriptorLanguage descriptorLanguage = null;
+        try {
+            // get the descriptor language associated with this file
+            descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(identifiedType);
+        } catch (UnsupportedOperationException exception) {
+            // if the file type was not a valid workflow file type throw an exception
+            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow or test file type.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        DescriptorLanguage.FileType testParameterType = descriptorLanguage.getTestParamType();
         if (testParameterType != null) {
+            // if the type of the file is already a test file then this is an error
+            if (testParameterType == identifiedType) {
+                throw new CustomWebApplicationException(identifiedType + " is a test file type, not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
+            }
             VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
             Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
             version.addOrUpdateValidation(testParameterValidation);

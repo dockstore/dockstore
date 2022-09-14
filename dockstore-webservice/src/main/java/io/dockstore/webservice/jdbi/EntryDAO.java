@@ -16,7 +16,6 @@
 
 package io.dockstore.webservice.jdbi;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Category;
@@ -248,29 +247,30 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return list(this.currentSession().getNamedQuery("Entry.getCollectionToolsWithVersions").setParameter("collectionId", collectionId));
     }
 
-    public List<CollectionEntry> getCollectionEntries(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionEntries").setParameter("collectionId", collectionId));
-    }
-
-    public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {
+    public List<T> findAllPublished(Integer offset, Integer limit, String filter, String sortCol, String sortOrder) {
         return findAllPublished(offset, limit, filter, sortCol, sortOrder, typeOfT);
     }
 
-    public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder, Class<T> classType) {
+    /**
+     *
+     * @param offset
+     * @param limit
+     * @param filter
+     * @param sortCol the column to sort on, note that if the column to sort by has null values, they will be omitted
+     * @param sortOrder default sort order is ascending
+     * @param classType
+     * @return
+     */
+    public List<T> findAllPublished(Integer offset, Integer limit, String filter, String sortCol, String sortOrder, Class<T> classType) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<T> query = criteriaQuery();
         Root<T> entry = query.from(classType != null ? classType : typeOfT);
         processQuery(filter, sortCol, sortOrder, cb, query, entry);
         query.select(entry);
 
-        int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
+        int primitiveOffset = (offset != null) ? offset : 0;
         TypedQuery<T> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
         return typedQuery.getResultList();
-    }
-
-    @Deprecated
-    public List<T> findAllPublished() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
     }
 
     public long countAllHosted(long userid) {
@@ -278,7 +278,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     // TODO: these methods should be merged with the proprietary version in EntryDAO, but should be a major version refactoring.
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         final CriteriaQuery<Long> q = cb.createQuery(Long.class);
@@ -373,7 +373,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return '%' + value + '%';
     }
 
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public List<T> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, int startIndex, int pageRemaining) {
 
@@ -388,11 +388,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return query.getResultList();
     }
 
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected abstract Root<T> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, CriteriaQuery<?> q);
 
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected Predicate getWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, SourceControlConverter converter, Root<?> entryRoot) {
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));

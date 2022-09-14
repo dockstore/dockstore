@@ -35,13 +35,12 @@ import io.dockstore.webservice.core.dockerhub.Results;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
 import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.DockerRegistryAPIHelper;
+import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.swagger.quay.client.ApiClient;
 import io.swagger.quay.client.ApiException;
 import io.swagger.quay.client.Configuration;
-import io.swagger.quay.client.api.RepositoryApi;
-import io.swagger.quay.client.model.QuayRepo;
 import io.swagger.quay.client.model.QuayTag;
 import java.io.IOException;
 import java.net.URL;
@@ -807,46 +806,38 @@ public interface LanguageHandlerInterface {
         return imageInfo;
     }
 
+    /**
+     * Get set of images for an image specified by tag or digest. If the image is multi-arch, then there will be more than one image in the set.
+     * @param repo
+     * @param specifierType
+     * @param specifierName
+     * @return
+     */
     default Set<Image> getImageResponseFromQuay(String repo, DockerSpecifier specifierType, String specifierName) {
         Set<Image> quayImages = new HashSet<>();
-        RepositoryApi api = new RepositoryApi(API_CLIENT);
+        QuayImageRegistry quayImageRegistry = new QuayImageRegistry();
         try {
-
-            final QuayRepo quayRepo = api.getRepo(repo, false);
+            Optional<QuayTag> maybeTag;
             if (specifierType == DockerSpecifier.DIGEST) {
-                Map<String, QuayTag> tags = quayRepo.getTags();
-                boolean imageFound = false;
-
-                for (QuayTag tag : tags.values()) {
-                    final String digest = tag.getManifestDigest();
-
-                    // Find image with the specified digest
-                    if (digest.equals(specifierName)) {
-                        final String imageID = tag.getImageId();
-                        final String tagName = tag.getName(); // Tag that's associated with the image specified by digest
-                        List<Checksum> checksums = Collections.singletonList(new Checksum(digest.split(":")[0], digest.split(":")[1]));
-                        Image quayImage = new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO, tag.getSize(), tag.getLastModified());
-                        quayImage.setSpecifier(specifierType);
-                        quayImages.add(quayImage);
-                        imageFound = true;
-                        break;
-                    }
-                }
-                if (!imageFound) {
-                    LOG.error("Unable to find image with digest: {} from Quay in repo {}", specifierName, repo);
-                    return quayImages;
-                }
+                // Look through all tags and find one with matching digest
+                List<QuayTag> tags = quayImageRegistry.getAllQuayTags(repo);
+                maybeTag = tags.stream().filter(quayTag -> quayTag.getManifestDigest().equals(specifierName)).findFirst();
             } else {
-                QuayTag tag = quayRepo.getTags().get(specifierName);
-                if (tag == null) {
-                    LOG.error("Unable to find tag: {} from Quay in repo {}", specifierName, repo);
-                    return quayImages;
-                }
-                final String digest = tag.getManifestDigest();
-                final String imageID = tag.getImageId();
-                List<Checksum> checksums = Collections.singletonList(new Checksum(digest.split(":")[0], digest.split(":")[1]));
-                Image quayImage = new Image(checksums, repo, specifierName, imageID, Registry.QUAY_IO, tag.getSize(), tag.getLastModified());
-                quayImage.setSpecifier(specifierType);
+                // Get specific QuayTag
+                maybeTag = quayImageRegistry.getQuayTag(repo, specifierName);
+            }
+
+            if (maybeTag.isEmpty()) {
+                LOG.error("Unable to find image with specifier {}: {} from Quay in repo {}", specifierType, specifierName, repo);
+                return quayImages;
+            }
+
+            QuayTag tag = maybeTag.get();
+            if (quayImageRegistry.isMultiArchImage(tag, repo)) {
+                List<QuayTag> cleanedQuayTagList = List.of(); // Don't need to keep track of cleaned tags because we're only processing one tag, so use empty list
+                quayImages = quayImageRegistry.handleMultiArchQuayTags(repo, tag, cleanedQuayTagList, specifierType);
+            } else {
+                Image quayImage = quayImageRegistry.getImageForTag(repo, tag, specifierType);
                 quayImages.add(quayImage);
             }
         } catch (ApiException ex) {
@@ -861,8 +852,8 @@ public interface LanguageHandlerInterface {
      * @param relativePath Relative path the parent file
      * @return Absolute version of relative path
      */
-    default String convertRelativePathToAbsolutePath(String parentPath, String relativePath) {
-        return LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, relativePath);
+    default String unsafeConvertRelativePathToAbsolutePath(String parentPath, String relativePath) {
+        return LanguageHandlerHelper.unsafeConvertRelativePathToAbsolutePath(parentPath, relativePath);
     }
 
     /**

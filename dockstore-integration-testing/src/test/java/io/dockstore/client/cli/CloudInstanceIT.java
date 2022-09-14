@@ -36,7 +36,7 @@ public class CloudInstanceIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false);
+        CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false, testingPostgres);
     }
 
     @Test
@@ -155,8 +155,13 @@ public class CloudInstanceIT extends BaseIT {
         } catch (ApiException e) {
             Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
         }
-        memberUserCloudInstances = adminUsersApi.getUserCloudInstances(memberUserId);
-        Assert.assertEquals("Admin can still get a different user's cloud instance", 0, memberUserCloudInstances.size());
+
+        try {
+            adminUsersApi.getUserCloudInstances(memberUserId);
+            Assert.fail("Should not be able to get a different user's cloud instances");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
+        }
 
         // Check post works
         newCloudInstance.setPartner(ADMIN_PARTNER_1);

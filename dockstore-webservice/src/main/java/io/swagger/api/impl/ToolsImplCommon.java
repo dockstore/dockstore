@@ -19,6 +19,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -56,6 +57,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import org.apache.commons.lang3.ObjectUtils;
@@ -190,35 +192,14 @@ public final class ToolsImplCommon {
 
             final Set<SourceFile> sourceFiles = version.getSourceFiles();
             for (SourceFile file : sourceFiles) {
-                switch (file.getType()) {
-                case DOCKSTORE_CWL:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.CWL);
-                    break;
-                case DOCKSTORE_WDL:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
-                    break;
-                case DOCKSTORE_GXFORMAT2:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.GALAXY);
-                    break;
-                // DOCKSTORE-2428 - demo how to add new workflow language
-                //                case DOCKSTORE_SWL:
-                //                    toolVersion.addDescriptorTypeItem(DescriptorType.SWL);
-                //                    break;
-                // TODO not sure how to treat service languages
-                case DOCKSTORE_SERVICE_TEST_JSON:
-                case DOCKSTORE_SERVICE_YML:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.SERVICE);
-                    break;
-                case NEXTFLOW:
-                case NEXTFLOW_CONFIG:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
-                    break;
-                case DOCKERFILE:
-                    toolVersion.setContainerfile(true);
-                    break;
-                default:
+                Optional<DescriptorType> descriptorType = getDescriptorTypeFromFileType(file.getType());
+                if (descriptorType.isPresent()) {
+                    toolVersion.addDescriptorTypeItem(descriptorType.get());
+                } else {
+                    if (file.getType() == FileType.DOCKERFILE) {
+                        toolVersion.setContainerfile(true);
+                    }
                     // Unhandled file type is apparently ignored
-                    break;
                 }
             }
 
@@ -242,6 +223,39 @@ public final class ToolsImplCommon {
             }
         }
         return tool;
+    }
+
+    /**
+     * Get an openapi descriptor type from a descriptor language file type
+     *
+     * @param fileType a descriptor language file type such as FileType.DOCKSTORE_CWL
+     * @return an Optional openapi descriptor type such as GALAXY("GALAXY") or SMK("SMK");
+     */
+    public static Optional<DescriptorType> getDescriptorTypeFromFileType(FileType fileType) {
+        DescriptorLanguage descriptorLanguage;
+        try {
+            descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(fileType);
+        } catch (UnsupportedOperationException exception) {
+            return Optional.empty();
+        }
+
+        return getDescriptorTypeFromDescriptorLanguage(descriptorLanguage);
+    }
+
+    /**
+     * Get an openapi descriptor type from a descriptor language
+     *
+     * @param descriptorLanguage a descriptor language such as DescriptorLanguage.GXFORMAT2 or DescriptorLanguage.SMK
+     * @return an Optional openapi descriptor type such as GALAXY("GALAXY") or SMK("SMK");
+     */
+    public static Optional<DescriptorType> getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage descriptorLanguage) {
+        // Tricky case for GALAXY because it doesn't match the rules of the other languages
+        if (descriptorLanguage == DescriptorLanguage.GXFORMAT2) {
+            return Optional.of(DescriptorType.GALAXY);
+        }
+        String descriptorType = descriptorLanguage.getShortName();
+        return Arrays.stream(DescriptorType.values())
+            .filter(descType -> descriptorType.equalsIgnoreCase(descType.toString())).findFirst();
     }
 
     /**
@@ -412,7 +426,7 @@ public final class ToolsImplCommon {
         String basePath = MoreObjects.firstNonNull(config.getExternalConfig().getBasePath(), "/");
         // Example without the replace: "/api/" + "/api/ga4gh/v2" + "/tools/" = "/api//api/ga4gh/v2/tools"
         // Example with the replace: "/api/api/ga4gh/v2/tools"
-        String baseURI = basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA.replaceFirst("/", "") + "/tools/";
+        String baseURI = basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL.replaceFirst("/", "") + "/tools/";
         URI uri = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port, baseURI, null, null);
         return uri.toString();
     }

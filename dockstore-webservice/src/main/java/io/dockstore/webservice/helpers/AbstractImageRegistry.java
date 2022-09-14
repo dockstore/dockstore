@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers;
 import static io.dockstore.webservice.helpers.SourceCodeRepoFactory.parseGitUrl;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
@@ -147,7 +148,7 @@ public abstract class AbstractImageRegistry {
      * @param dashboardPrefix   A string that prefixes logging statements to indicate that it will be used for Cloudwatch & Grafana.
      * @return The list of tools that have been updated
      */
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
             String organization, final EventDAO eventDAO, final String dashboardPrefix) {
@@ -264,7 +265,7 @@ public abstract class AbstractImageRegistry {
      *
      * @return
      */
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final Token githubToken, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO, String dashboardPrefix) {
 
@@ -472,7 +473,7 @@ public abstract class AbstractImageRegistry {
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final EventDAO eventDAO, final User user) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
-        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath()) && existingTags.isEmpty())) {
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath()) && existingTags.isEmpty()) {
 
             if (newTags == null) {
                 LOG.info(tool.getToolPath() + " : Tags for tool {} did not get updated because new tags were not found",
@@ -660,7 +661,7 @@ public abstract class AbstractImageRegistry {
 
             if (projectResponse.isPresent()) {
                 final String projectJSON = projectResponse.get();
-                Gson gson = new Gson();
+                Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
                 Type gitLabContainerRegistryListType = new TypeToken<ArrayList<GitLabContainerRegistry>>() { }.getType();
                 List<GitLabContainerRegistry> registries = gson.fromJson(projectJSON, gitLabContainerRegistryListType);
 
@@ -722,13 +723,7 @@ public abstract class AbstractImageRegistry {
         // No need to get all tags belonging to the container because image information is only updated for existing tool tags
         for (Tag tag : tool.getWorkflowVersions()) {
             // Determine if the tag is the 'latest' tag
-            LanguageHandlerInterface.DockerSpecifier specifier;
-            if (tag.getName().equals("latest")) {
-                specifier = LanguageHandlerInterface.DockerSpecifier.LATEST;
-            } else {
-                specifier = LanguageHandlerInterface.DockerSpecifier.TAG;
-            }
-
+            LanguageHandlerInterface.DockerSpecifier specifier = getSpecifierFromTagName(tag.getName());
             Set<Image> images = DockerRegistryAPIHelper.getImages(registry, repo, specifier, tag.getName());
             if (images.isEmpty()) {
                 LOG.error("Could not get image and checksum information for {}:{} from {}", repo, tag.getName(), registry.getFriendlyName());
@@ -1037,5 +1032,13 @@ public abstract class AbstractImageRegistry {
         }
 
         return dbToolList;
+    }
+
+    public LanguageHandlerInterface.DockerSpecifier getSpecifierFromTagName(String tagName) {
+        if ("latest".equals(tagName)) {
+            return LanguageHandlerInterface.DockerSpecifier.LATEST;
+        } else {
+            return LanguageHandlerInterface.DockerSpecifier.TAG;
+        }
     }
 }

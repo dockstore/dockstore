@@ -6,8 +6,18 @@ package io.dockstore.common;
  * @since 1.8.0
  */
 public enum EntryType {
-    TOOL,
-    WORKFLOW,
-    SERVICE,
-    APPTOOL
+    TOOL("tool"),
+    WORKFLOW("workflow"),
+    SERVICE("service"),
+    APPTOOL("tool");
+
+    private final String term;
+
+    EntryType(String term) {
+        this.term = term;
+    }
+
+    public String getTerm() {
+        return term;
+    }
 }

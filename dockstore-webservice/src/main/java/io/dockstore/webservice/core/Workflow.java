@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -66,23 +67,22 @@ import org.hibernate.annotations.Filter;
 // this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value
 @Table(name = "foo")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getByAlias", query = "SELECT e from Workflow e JOIN e.aliases a WHERE KEY(a) IN :alias"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.countAllPublished", query = "SELECT COUNT(c.id)" + Workflow.PUBLISHED_QUERY),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllPublished", query = "SELECT c" + Workflow.PUBLISHED_QUERY + "ORDER BY size(c.starredUsers) DESC"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName IS NULL"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName IS NULL AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl AND :user not in elements(c.users)"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedOrganizations", query = "SELECT distinct lower(organization) FROM Workflow w WHERE w.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getByAlias", query = "SELECT e from Workflow e JOIN e.aliases a WHERE KEY(a) IN :alias"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.countAllPublished", query = "SELECT COUNT(c.id)" + Workflow.PUBLISHED_QUERY),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname AND c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName IS NULL"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName IS NULL AND c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl AND :user not in elements(c.users)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedOrganizations", query = "SELECT distinct lower(organization) FROM Workflow w WHERE w.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 
@@ -90,7 +90,7 @@ import org.hibernate.annotations.Filter;
 @JsonPropertyOrder("descriptorType")
 @SuppressWarnings("checkstyle:magicnumber")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
-@JsonSubTypes({ @JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
+@JsonSubTypes({@JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
     @JsonSubTypes.Type(value = Service.class, name = "Service"),
     @JsonSubTypes.Type(value = AppTool.class, name = "AppTool")})
 public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
@@ -102,8 +102,9 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 13)
     private WorkflowMode mode = WorkflowMode.STUB;
 
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "varchar(256)")
     @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", position = 14)
+    @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
     private String workflowName;
 
     @Column(nullable = false)
@@ -128,7 +129,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
     @Column(nullable = false)
     @Convert(converter = DescriptorLanguageConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "CWL, WDL, NFL, gxformat2, service")
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either SMK, CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "SMK, CWL, WDL, NFL, gxformat2, service")
     private DescriptorLanguage descriptorType;
 
     // TODO: Change this to LAZY, this is the source of all our problems
@@ -143,6 +144,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @BatchSize(size = 25)
     @Filter(name = "versionNameFilter")
+    @Filter(name = "versionIdFilter")
     private SortedSet<WorkflowVersion> workflowVersions;
 
     @JsonIgnore

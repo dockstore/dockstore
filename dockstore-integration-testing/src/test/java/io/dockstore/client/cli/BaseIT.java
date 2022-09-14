@@ -15,19 +15,40 @@
  */
 package io.dockstore.client.cli;
 
+import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.codahale.metrics.Gauge;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
+import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.resources.WorkflowSubClass;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
+import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Tag;
+import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.configuration2.INIConfiguration;
@@ -45,7 +66,7 @@ import org.junit.runner.Description;
 
 /**
  * Base integration test class
- * A default configuration that cleans the database between tests
+ * A default configuration that cleans the database between tests and provides some basic methods
  */
 @Category(ConfidentialTest.class)
 public class BaseIT {
@@ -65,6 +86,186 @@ public class BaseIT {
     public static final String SERVICE = WorkflowSubClass.SERVICE.toString();
     public static final String BIOWORKFLOW = WorkflowSubClass.BIOWORKFLOW.toString();
     public static final String APPTOOL = WorkflowSubClass.APPTOOL.toString();
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
+        String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
+        String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
+        DockstoreTool newTool = new DockstoreTool();
+        newTool.setNamespace(namespace);
+        newTool.setName(name);
+        newTool.setToolname(toolName);
+        newTool.setDefaultCwlPath(cwlPath);
+        newTool.setDefaultWdlPath(wdlPath);
+        newTool.setDefaultDockerfilePath(dockerfilePath);
+        newTool.setGitUrl(gitUrl);
+        newTool.setRegistry(registry);
+        newTool.setRegistryString(registry.getValue());
+        newTool.setMode(MANUAL_IMAGE_PATH);
+        newTool.setPrivateAccess(isPrivate);
+        newTool.setToolMaintainerEmail(email);
+        if (customDockerPath != null) {
+            newTool.setRegistryString(customDockerPath);
+        }
+
+        if (!Registry.QUAY_IO.name().equals(registry.name())) {
+            Tag tag = new Tag();
+            tag.setReference(gitReference);
+            tag.setName(versionName);
+            tag.setDockerfilePath(dockerfilePath);
+            tag.setCwlPath(cwlPath);
+            tag.setWdlPath(wdlPath);
+            List<Tag> tags = new ArrayList<>();
+            tags.add(tag);
+            newTool.setWorkflowVersions(tags);
+        }
+
+        // Manually register
+        DockstoreTool tool = containersApi.registerManual(newTool);
+
+        // Refresh
+        tool = containersApi.refresh(tool.getId());
+
+        // Publish
+        if (toPublish) {
+            tool = containersApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
+            assertTrue(tool.isIsPublished());
+        }
+        return tool;
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
+        String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
+        String versionName, boolean toPublish) {
+        return manualRegisterAndPublish(containersApi, namespace, name, toolName, gitUrl, cwlPath, wdlPath, dockerfilePath, registry,
+            gitReference, versionName, toPublish, false, null, null);
+    }
+
+    /**
+     * Manually register and publish a workflow with the given path and name
+     *
+     * @param workflowsApi
+     * @param workflowPath
+     * @param workflowName
+     * @param descriptorType
+     * @param sourceControl
+     * @param descriptorPath
+     * @param toPublish
+     * @return Published workflow
+     */
+    static Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
+        SourceControl sourceControl, String descriptorPath, boolean toPublish) {
+        // Manually register
+        Workflow workflow = workflowsApi
+            .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
+                "/test.json");
+        assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
+
+        // Refresh
+        workflow = workflowsApi.refresh(workflow.getId(), false);
+        assertEquals(Workflow.ModeEnum.FULL, workflow.getMode());
+
+        // Publish
+        if (toPublish) {
+            workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+            assertTrue(workflow.isIsPublished());
+        }
+        return workflow;
+    }
+
+    static void commonSmartRefreshTest(SourceControl sourceControl, String workflowPath, String versionOfInterest) {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        String correctDescriptorPath = "/Dockstore.cwl";
+        String incorrectDescriptorPath = "/Dockstore2.cwl";
+
+        String fullPath = sourceControl.toString() + "/" + workflowPath;
+
+        // Add workflow
+        workflowsApi.manualRegister(sourceControl.name(), workflowPath, correctDescriptorPath, "",
+                DescriptorLanguage.CWL.getShortName(), "");
+
+        // Smart refresh individual that is valid (should add versions that doesn't exist)
+        Workflow workflow = workflowsApi.getWorkflowByPath(fullPath, BIOWORKFLOW, "");
+        workflow = workflowsApi.refresh(workflow.getId(), false);
+
+        // All versions should be synced
+        workflow.getWorkflowVersions().forEach(workflowVersion -> assertTrue(workflowVersion.isSynced()));
+
+        // When the commit ID is null, a refresh should occur
+        WorkflowVersion oldVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        testingPostgres.runUpdateStatement("update workflowversion set commitid = NULL where name = '" + versionOfInterest + "'");
+        workflow = workflowsApi.refresh(workflow.getId(), false);
+        WorkflowVersion updatedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        assertNotNull(updatedVersion.getCommitID());
+        assertNotEquals(versionOfInterest + " version should be updated (different dbupdatetime)", oldVersion.getDbUpdateDate(), updatedVersion.getDbUpdateDate());
+
+        // When the commit ID is different, a refresh should occur
+        oldVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        testingPostgres.runUpdateStatement("update workflowversion set commitid = 'dj90jd9jd230d3j9' where name = '" + versionOfInterest + "'");
+        workflow = workflowsApi.refresh(workflow.getId(), false);
+        updatedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        assertNotNull(updatedVersion.getCommitID());
+        assertNotEquals(versionOfInterest + " version should be updated (different dbupdatetime)", oldVersion.getDbUpdateDate(), updatedVersion.getDbUpdateDate());
+
+        // Updating the workflow should make the version not synced, a refresh should refresh all versions
+        workflow.setWorkflowPath(incorrectDescriptorPath);
+        workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
+        workflow.getWorkflowVersions().forEach(workflowVersion -> assertFalse(workflowVersion.isSynced()));
+        workflow = workflowsApi.refresh(workflow.getId(), false);
+
+        // All versions should be synced and updated
+        workflow.getWorkflowVersions().forEach(workflowVersion -> assertTrue(workflowVersion.isSynced()));
+        workflow.getWorkflowVersions().forEach(workflowVersion -> Objects.equals(workflowVersion.getWorkflowPath(), incorrectDescriptorPath));
+
+        // Update the version to have the correct path
+        WorkflowVersion testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        testBothVersion.setWorkflowPath(correctDescriptorPath);
+        List<WorkflowVersion> versions = new ArrayList<>();
+        versions.add(testBothVersion);
+        workflowsApi.updateWorkflowVersion(workflow.getId(), versions);
+
+        // Refresh should only update the version that is not synced
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "");
+        testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        assertFalse("Version should not be synced", testBothVersion.isSynced());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
+        testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
+        assertTrue("Version should now be synced", testBothVersion.isSynced());
+        assertEquals("Workflow version path should be set", correctDescriptorPath, testBothVersion.getWorkflowPath());
+    }
+
+    static void refreshByOrganizationReplacement(WorkflowsApi workflowApi, io.dockstore.openapi.client.ApiClient openAPIWebClient) {
+        io.dockstore.openapi.client.api.UsersApi openUsersApi = new io.dockstore.openapi.client.api.UsersApi(openAPIWebClient);
+        for (SourceControl control : SourceControl.values()) {
+            List<String> userOrganizations = openUsersApi.getUserOrganizations(control.name());
+            for (String org : userOrganizations) {
+                List<Repository> userOrganizationRepositories = openUsersApi.getUserOrganizationRepositories(control.name(), org);
+                for (Repository repo : userOrganizationRepositories) {
+                    workflowApi.manualRegister(control.name(), repo.getPath(), "/Dockstore.cwl", "",
+                        DescriptorLanguage.CWL.getShortName(), "");
+                }
+            }
+        }
+    }
+
+    static Workflow registerGatkSvWorkflow(WorkflowsApi ownerWorkflowApi) {
+        // Register and refresh workflow
+        Workflow workflow = ownerWorkflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl",
+            "test", "wdl", "/test.json");
+        return ownerWorkflowApi.refresh(workflow.getId(), false);
+    }
+
+    static WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, Workflow workflow, String versionName) {
+        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+        version.setFrozen(true);
+        workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "images");
+        return workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+    }
+
 
 
     @Rule

@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
+import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -146,7 +147,7 @@ public class GalaxyPluginIT {
         Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
 
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
 
     @Test
@@ -209,5 +210,26 @@ public class GalaxyPluginIT {
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         assertTrue("Test file should have the expected path",
                 sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")));
+    }
+
+    @Test
+    public void testSnapshotWorkflow() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        final String validVersion = "0.1";
+
+        // Register and refresh Galaxy workflow
+        io.dockstore.openapi.client.model.Workflow galaxyWorkflow = workflowsApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/galaxy-workflow-dockstore-example-1", "/Dockstore.gxwf.yml",
+                        "", DescriptorLanguage.GXFORMAT2.getShortName(), "");
+        galaxyWorkflow = workflowsApi.refresh1(galaxyWorkflow.getId(), false);
+
+        // Snapshot workflow version
+        io.dockstore.openapi.client.model.WorkflowVersion version = galaxyWorkflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(validVersion)).findFirst().get();
+        version.setFrozen(true);
+        workflowsApi.updateWorkflowVersion(galaxyWorkflow.getId(), List.of(version));
+        version = workflowsApi.getWorkflowVersionById(galaxyWorkflow.getId(), version.getId(), "images");
+        assertTrue("Version should be frozen", version.isFrozen());
+        assertEquals("This version should have no images", 0, version.getImages().size());
     }
 }

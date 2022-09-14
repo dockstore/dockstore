@@ -24,7 +24,7 @@ import javax.validation.constraints.NotNull;
 /**
  * A workflow as described in a .dockstore.yml
  */
-public class YamlWorkflow {
+public class YamlWorkflow implements Workflowish {
 
     /**
      * Subclass was originally GXFORMAT2, should have been GALAXY.

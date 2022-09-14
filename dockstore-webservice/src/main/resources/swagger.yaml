@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.12.0-SNAPSHOT"
+  version: "1.13.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -1348,6 +1348,7 @@ paths:
         required: false
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -1590,12 +1591,12 @@ paths:
       parameters:
       - name: "offset"
         in: "query"
-        description: "Start index of paging. Pagination results can be based on numbers\
-          \ or other values chosen by the registry implementor (for example, SHA values).\
-          \ If this exceeds the current result set return an empty set.  If not specified\
-          \ in the request, this will start at the beginning of the results."
+        description: "Start index of paging. If not specified in the request, this\
+          \ will start at the beginning of the results."
         required: false
-        type: "string"
+        type: "integer"
+        default: 0
+        format: "int32"
       - name: "limit"
         in: "query"
         description: "Amount of records to return in a given page, limited to 100"
@@ -1951,6 +1952,8 @@ paths:
       summary: "Publish or unpublish a tool."
       description: ""
       operationId: "publish"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2053,6 +2056,7 @@ paths:
         required: false
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -2127,6 +2131,8 @@ paths:
       summary: "Add new tags linked to a tool."
       description: ""
       operationId: "addTags"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2159,6 +2165,8 @@ paths:
       summary: "Update the tags linked to a tool."
       description: ""
       operationId: "updateTags"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2239,6 +2247,7 @@ paths:
         required: true
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -2359,6 +2368,8 @@ paths:
       description: "Resets the descriptor paths and dockerfile path of all versions\
         \ to match the default paths from the tool object passed."
       operationId: "updateTagContainerPath"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2690,14 +2701,15 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "event_search_type"
+      - name: "eventSearchType"
         in: "query"
-        required: false
+        required: true
         type: "string"
         enum:
         - "STARRED_ENTRIES"
         - "STARRED_ORGANIZATION"
         - "ALL_STARRED"
+        - "PROFILE"
       - name: "limit"
         in: "query"
         required: false
@@ -2721,6 +2733,52 @@ paths:
               $ref: "#/definitions/Event"
       security:
       - BEARER: []
+  /events/{userId}:
+    get:
+      tags:
+      - "events"
+      summary: "List recent events for a user."
+      description: "No authentication."
+      operationId: "getUserEvents"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "eventSearchType"
+        in: "query"
+        required: true
+        type: "string"
+        enum:
+        - "STARRED_ENTRIES"
+        - "STARRED_ORGANIZATION"
+        - "ALL_STARRED"
+        - "PROFILE"
+      - name: "limit"
+        in: "query"
+        required: false
+        type: "integer"
+        default: 10
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      - name: "offset"
+        in: "query"
+        required: false
+        type: "integer"
+        default: 0
+        format: "int32"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Event"
   /lambdaEvents/{organization}:
     get:
       tags:
@@ -2761,6 +2819,21 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/LambdaEvent"
+  /metadata/cli-info:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get Dockstore CLI information."
+      description: "Get Dockstore CLI information. NO authentication"
+      operationId: "getCliVersion"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/CLIInfo"
   /metadata/config.json:
     get:
       tags:
@@ -2869,7 +2942,7 @@ paths:
       parameters:
       - name: "client_version"
         in: "query"
-        description: "The Dockstore client version"
+        description: "The Dockstore client version (e.g. 1.13.0)"
         required: false
         type: "string"
       - name: "python_version"
@@ -4015,22 +4088,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/LambdaEvent"
-  /users/github/organizations:
-    get:
-      tags:
-      - "users"
-      operationId: "getMyGitHubOrgs"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          headers: {}
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceControlOrganization"
   /users/github/sync:
     post:
       tags:
@@ -4406,6 +4463,8 @@ paths:
       summary: "Update the specified user's limits. ADMIN or CURATOR only"
       description: ""
       operationId: "setUserLimits"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4443,6 +4502,11 @@ paths:
         description: "Username of user to return"
         required: true
         type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: userProfiles, ..."
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -4469,6 +4533,14 @@ paths:
         in: "query"
         required: false
         type: "string"
+      - name: "type"
+        in: "query"
+        required: false
+        type: "string"
+        enum:
+        - "TOOLS"
+        - "WORKFLOWS"
+        - "SERVICES"
       responses:
         200:
           description: "successful operation"
@@ -4889,6 +4961,7 @@ paths:
         required: false
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -5268,6 +5341,8 @@ paths:
       description: "The user must be the workflow owner. Currently only supported\
         \ on hosted workflows."
       operationId: "addWorkflowPermission"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5373,12 +5448,13 @@ paths:
       parameters:
       - name: "offset"
         in: "query"
-        description: "Start index of paging. Pagination results can be based on numbers\
-          \ or other values chosen by the registry implementor (for example, SHA values).\
-          \ If this exceeds the current result set return an empty set.  If not specified\
-          \ in the request, this will start at the beginning of the results."
+        description: "Start index of paging. If this exceeds the current result set\
+          \ return an empty set.  If not specified in the request, this will start\
+          \ at the beginning of the results."
         required: false
-        type: "string"
+        type: "integer"
+        default: 0
+        format: "int32"
       - name: "limit"
         in: "query"
         description: "Amount of records to return in a given page, limited to 100"
@@ -5596,6 +5672,7 @@ paths:
         required: true
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -5646,6 +5723,8 @@ paths:
       description: "Updates descriptor type (if stub), default workflow path, default\
         \ file path, and default version"
       operationId: "updateWorkflow"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5757,6 +5836,7 @@ paths:
         required: false
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -5978,6 +6058,8 @@ paths:
       description: "Resets the workflow paths of all versions to match the default\
         \ workflow path from the workflow object passed."
       operationId: "updateWorkflowPath"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6049,6 +6131,7 @@ paths:
         required: false
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -6313,6 +6396,8 @@ paths:
       summary: "Update the workflow versions linked to a workflow."
       description: "Updates workflow path, reference, and hidden attributes."
       operationId: "updateWorkflowVersion"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6413,6 +6498,17 @@ definitions:
           format: "int64"
           readOnly: true
       description: "This describes one workflow in the dockstore"
+  CLIInfo:
+    type: "object"
+    properties:
+      cliLatestDockstoreScriptDownloadUrl:
+        type: "string"
+      cliLatestUnstableDockstoreScriptDownloadUrl:
+        type: "string"
+      cliLatestUnstableVersion:
+        type: "string"
+      cliLatestVersion:
+        type: "string"
   CategorySummary:
     type: "object"
     properties:
@@ -6893,6 +6989,8 @@ definitions:
           \ entries in the dockstore registry/namespace/name/tool, different options\
           \ to edit tags, and only the same insofar as they would \"docker pull\"\
           \ the same image, required: GA4GH"
+        minLength: 0
+        maxLength: 256
       namespace:
         type: "string"
         position: 23
@@ -7629,6 +7727,7 @@ definitions:
       descriptorLanguage:
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -7659,7 +7758,7 @@ definitions:
         type: "string"
       company:
         type: "string"
-      email:
+      link:
         type: "string"
       location:
         type: "string"
@@ -7734,17 +7833,6 @@ definitions:
         type: "string"
       value:
         type: "string"
-  SourceControlOrganization:
-    type: "object"
-    properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Id for the organization e.g. 1"
-      name:
-        type: "string"
-        description: "Name of the organization e.g. dockstore"
-    description: "This describes a source control organization"
   SourceFile:
     type: "object"
     required:
@@ -7767,11 +7855,13 @@ definitions:
         position: 1
         description: "Enumerates the type of file"
         enum:
+        - "DOCKSTORE_SMK"
+        - "SMK_TEST_PARAMS"
         - "DOCKSTORE_CWL"
-        - "DOCKSTORE_WDL"
-        - "DOCKERFILE"
         - "CWL_TEST_JSON"
+        - "DOCKSTORE_WDL"
         - "WDL_TEST_JSON"
+        - "DOCKERFILE"
         - "NEXTFLOW"
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
@@ -8167,6 +8257,7 @@ definitions:
       type:
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "NFL"
@@ -8292,6 +8383,7 @@ definitions:
         items:
           type: "string"
           enum:
+          - "SMK"
           - "CWL"
           - "WDL"
           - "NFL"
@@ -8454,11 +8546,13 @@ definitions:
         position: 1
         description: "Enumerates the type of file"
         enum:
+        - "DOCKSTORE_SMK"
+        - "SMK_TEST_PARAMS"
         - "DOCKSTORE_CWL"
-        - "DOCKSTORE_WDL"
-        - "DOCKERFILE"
         - "CWL_TEST_JSON"
+        - "DOCKSTORE_WDL"
         - "WDL_TEST_JSON"
+        - "DOCKERFILE"
         - "NEXTFLOW"
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
@@ -8824,6 +8918,8 @@ definitions:
         position: 14
         description: "This is the name of the workflow, not needed when only one workflow\
           \ in a repo"
+        minLength: 0
+        maxLength: 256
       input_file_formats:
         type: "array"
         position: 15
@@ -8857,8 +8953,9 @@ definitions:
         type: "string"
         position: 18
         description: "This is a descriptor type for the workflow, by default either\
-          \ CWL, WDL, NFL, or gxformat2 (Defaults to CWL)."
+          \ SMK, CWL, WDL, NFL, or gxformat2 (Defaults to CWL)."
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "NFL"

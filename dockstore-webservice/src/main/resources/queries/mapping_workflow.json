@@ -50,7 +50,8 @@
   "mappings": {
     "properties": {
       "author": {
-        "type": "keyword"
+        "type": "keyword",
+        "null_value": ""
       },
       "categories": {
         "properties": {

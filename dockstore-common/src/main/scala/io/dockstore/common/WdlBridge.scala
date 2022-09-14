@@ -449,7 +449,7 @@ case class MapResolver(filePath: String) extends ImportResolver {
 
   override protected def innerResolver(path: String, currentResolvers: List[ImportResolver]): Checked[ImportResolver.ResolvedImportBundle] = {
     val importPath = path.replaceFirst("file://", "")
-    val absolutePath = LanguageHandlerHelper.convertRelativePathToAbsolutePath(this.filePath, importPath)
+    val absolutePath = LanguageHandlerHelper.unsafeConvertRelativePathToAbsolutePath(this.filePath, importPath)
     val content = secondaryWdlFiles.get(absolutePath)
     val mapResolver = MapResolver(absolutePath)
     mapResolver.setSecondaryFiles(this.secondaryWdlFiles)

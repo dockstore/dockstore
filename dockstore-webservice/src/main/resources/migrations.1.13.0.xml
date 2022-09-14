@@ -1,0 +1,94 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2022 OICR and UCSC
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.13.0">
+    <changeSet author="ktran" id="migrateBioToBlogLink">
+        <!-- Rename 'bio' to 'link' because the bio we were retrieving was actually the blog link in the GitHub user profile -->
+        <renameColumn tableName="user_profile" oldColumnName="bio" newColumnName="link" columnDataType="text"/>
+        <!-- Add the 'bio' column back -->
+        <addColumn tableName="user_profile">
+            <column name="bio" type="text"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="ktran" id="convertUserProfileEmptyStringToNull">
+        <update tableName="user_profile">
+            <column name="link"/>
+            <where>link = ''</where>
+        </update>
+        <update tableName="user_profile">
+            <column name="name"/>
+            <where>name = ''</where>
+        </update>
+    </changeSet>
+    <changeSet author="ajandu" id="add_constraints_to_user_profile">
+        <!-- Replace any empty strings with NULL, same as above but for all columns except dbcreatedate, dbupdatedate, and id -->
+        <sql dbms="postgresql">
+            UPDATE user_profile SET company=NULL WHERE company='';
+            UPDATE user_profile SET email=NULL WHERE email='';
+            UPDATE user_profile SET location=NULL WHERE location='';
+            UPDATE user_profile SET name=NULL WHERE name='';
+            UPDATE user_profile SET token_type=NULL WHERE token_type='';
+            UPDATE user_profile SET username=NULL WHERE username='';
+            UPDATE user_profile SET onlineprofileid=NULL WHERE onlineprofileid='';
+            UPDATE user_profile SET bio=NULL WHERE bio='';
+            UPDATE user_profile SET avatarurl=NULL WHERE avatarurl='';
+            UPDATE user_profile SET link=NULL WHERE link='';
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_company CHECK (CASE WHEN company IS NOT NULL then character_length(company) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_email CHECK (CASE WHEN email IS NOT NULL then character_length(email) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_location CHECK (CASE WHEN location IS NOT NULL then character_length(location) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_name CHECK (CASE WHEN name IS NOT NULL then character_length(name) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_token_type CHECK (CASE WHEN token_type IS NOT NULL then character_length(token_type) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_username CHECK (CASE WHEN username IS NOT NULL then character_length(username) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_onlineprofileid CHECK (CASE WHEN onlineprofileid IS NOT NULL then character_length(onlineprofileid) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_bio CHECK (CASE WHEN bio IS NOT NULL then character_length(bio) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_avatarurl CHECK (CASE WHEN avatarurl IS NOT NULL then character_length(avatarurl) > 0 END);
+            ALTER TABLE user_profile ADD CONSTRAINT non_blank_link CHECK (CASE WHEN link IS NOT NULL then character_length(link) > 0 END);
+        </sql>
+    </changeSet>
+    <changeSet id="max_workflowname_and_toolname" author="coverbeck">
+        <!-- 256 is from StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT.
+             If truncating, add numbers using a sequence to ensure workflowname uniqueness within a sourcecontrol, organization, repository;
+             otherwise a uniqueness constraint will cause a failure.
+        -->
+        <sql dbms="postgresql">
+            create sequence max_workflowname_and_toolname;
+            update workflow set workflowname = concat(left(workflowname, 254), nextval('max_workflowname_and_toolname')) where length(workflowname) > 256;
+            update tool set toolname = concat(left(toolname, 254), nextVal('max_workflowname_and_toolname')) where length(toolname) > 256;
+            update service set workflowname = concat(left(workflowname, 254), nextval('max_workflowname_and_toolname')) where length(workflowname) > 256;
+            update apptool set workflowname = concat(left(workflowname, 254), nextval('max_workflowname_and_toolname')) where length(workflowname) > 256;
+            drop sequence max_workflowname_and_toolname;
+        </sql>
+        <modifyDataType tableName="workflow" columnName="workflowname" newDataType="varchar(256)"/>
+        <modifyDataType tableName="tool" columnName="toolname" newDataType="varchar(256)"/>
+        <modifyDataType tableName="apptool" columnName="workflowname" newDataType="varchar(256)"/>
+        <modifyDataType tableName="service" columnName="workflowname" newDataType="varchar(256)"/>
+    </changeSet>
+    <changeSet author="dyuen" id="hostedtopicmanual">
+        <update tableName="workflow">
+            <column name="topicselection" value ="MANUAL"/>
+            <where>mode= 'HOSTED'</where>
+        </update>
+        <update tableName="tool">
+            <column name="topicselection" value ="MANUAL"/>
+            <where>mode = 'HOSTED'</where>
+        </update>
+    </changeSet>
+</databaseChangeLog>

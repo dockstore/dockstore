@@ -391,6 +391,10 @@
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-forms</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>jakarta.validation</groupId>
@@ -429,7 +433,10 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlet</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+        </dependency>
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
@@ -861,6 +868,7 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sqs</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -878,6 +886,7 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>regions</artifactId>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-encryption-sdk-java -->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-encryption-sdk-java</artifactId>
@@ -948,7 +957,6 @@
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
-            <version>2.3.3</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -1290,11 +1298,12 @@
                 <configuration>
                     <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
                     <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5_gxformat2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.6-smk-gxformat2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs</language>
                     <configOptions>
-                        <dateLibrary>legacy</dateLibrary>
+                        <dateLibrary>java11</dateLibrary>
                         <java8>true</java8>
+                        <java11>true</java11>
                         <useRuntimeException>true</useRuntimeException>
                         <modelPackage>io.swagger.model</modelPackage>
                         <apiPackage>io.swagger.api</apiPackage>
@@ -1327,11 +1336,12 @@
                     <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
                     <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
                     <!--  Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.5_GALAXY/openapi/ga4gh-tool-discovery.yaml</inputSpec>
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.1-beta.1-smk-galaxy/openapi/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs-jersey</language>
                     <configOptions>
-                        <dateLibrary>legacy</dateLibrary>
+                        <dateLibrary>java11</dateLibrary>
                         <java8>true</java8>
+                        <java11>true</java11>
                         <useRuntimeException>true</useRuntimeException>
                         <modelPackage>io.openapi.model</modelPackage>
                         <apiPackage>io.openapi.api</apiPackage>

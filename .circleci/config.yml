@@ -2,7 +2,7 @@ version: 2.1
 parameters:
   java-tag:
     type: string
-    default: "11.0.12"
+    default: "17.0.3"
 orbs:
   aws-s3: circleci/aws-s3@3.0.0
 executors:
@@ -10,7 +10,7 @@ executors:
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
         environment:
-          JAVA_TOOL_OPTIONS: -Xmx512m # Nothing to do with surefire plugin, it has its own JVM. The two of these plus ES (1.3 GB) must add up to a bit less than 6GB.
+          JAVA_TOOL_OPTIONS: -Xmx1024m # Nothing to do with surefire plugin, it has its own JVM. The two of these plus ES (1.3 GB) must add up to a bit less than 6GB.
           PGHOST: 127.0.0.1
       - image: cimg/postgres:13.3
         command: postgres -c max_connections=200 -c jit=off
@@ -54,28 +54,27 @@ workflows:
           <<: *common_filters
           requires:
             - build
-          context:
-            - sonarcloud
       - workflow-integration-tests:
           <<: *common_filters
           requires:
             - build
           context: sonarcloud
+      - bitbucket-tests:
+          <<: *common_filters
+          requires:
+            - build
       - language-parsing-tests:
           <<: *common_filters
           requires:
             - build
-          context: sonarcloud
       - tool-integration-tests:
           <<: *common_filters
           requires:
             - build
-          context: sonarcloud
       - integration-tests:
           <<: *common_filters
           requires:
             - build
-          context: sonarcloud
       - regression-integration-tests:
           filters:
             branches:
@@ -84,6 +83,16 @@ workflows:
                 - /^release.*$/
           requires:
             - build
+      - sonar-cloud:
+          <<: *common_filters
+          requires:
+            - unit_test
+            - workflow-integration-tests
+            - bitbucket-tests
+            - language-parsing-tests
+            - tool-integration-tests
+            - integration-tests
+            - regression-integration-tests
           context: sonarcloud
 jobs:
   regression-integration-tests:
@@ -91,7 +100,6 @@ jobs:
     environment:
       TESTING_PROFILE: regression-integration-tests
     steps:
-      - old_python
       - setup_machine
       - setup_test
       - setup_postgres_docker
@@ -102,6 +110,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   integration-tests:
+    parallelism: 4
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: integration-tests
@@ -114,6 +123,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   tool-integration-tests:
+    parallelism: 2
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: tool-integration-tests
@@ -124,9 +134,20 @@ jobs:
       - setup_integration_test
       - save_test_results
   workflow-integration-tests:
+    parallelism: 3
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: workflow-integration-tests
+    steps:
+      - setup_test
+      - install-postgres
+      - setup_postgres
+      - setup_integration_test
+      - save_test_results
+  bitbucket-tests:
+    executor: integration_test_exec
+    environment:
+      TESTING_PROFILE: bitbucket-tests
     steps:
       - setup_test
       - install-postgres
@@ -138,23 +159,24 @@ jobs:
     environment:
       TESTING_PROFILE: language-parsing-tests
     steps:
-      - old_python
       - setup_machine
       - install-pip
       - run:
           name: install pip dependencies
           command: scripts/install-tests.sh
-      - run: 
+      - run:
           name: build sam-cli
           command: |
-            pip3 install aws-sam-cli
+            # workaround https://github.com/aws/aws-sam-cli/issues/3791#issuecomment-1096604840
+            pip3 install Jinja2==2.11.3
+            pip3 install aws-sam-cli==1.52.0
             sudo apt install unzip
-            wget https://github.com/dockstore/lambda/releases/download/0.1.6-SNAPSHOT/wdl-parsing.zip
+            wget -O wdl-parsing.zip https://github.com/dockstore/lambda/releases/download/0.1.6-SNAPSHOT/wdl-parsing3.zip
             unzip wdl-parsing.zip
             cd wdl-parsing
             # docker pull amazon/aws-sam-cli-build-image-java11
             # cannot seem to `sam build --use-container` using local jdk and mvn instead
-            sam build --use-container
+            sam build --use-container --debug
       - run:
           name: run sam-cli
           command: |
@@ -183,8 +205,16 @@ jobs:
             sudo apt install openssl -y
             bash scripts/decrypt.sh
       - run:
+          name: Generate test lists
+          command: bash scripts/generate-test-lists.sh
+      - run:
+          name: Verify that the MacOS installation instructions in README.md and macos_installation_instructions.yml are up to date with scripts/macos-instructions.sh
+          command: scripts/check_macos.sh
+      - store_artifacts:
+          path: temp/test-lists
+      - run:
           name: build
-          command: mvn -B clean install -DskipTests
+          command: ./mvnw -B clean install -DskipTests
       - run:
           name: validate openapi
           command: |
@@ -208,6 +238,7 @@ jobs:
             fi
           environment:
             TESTING_PROFILE: automated-review
+
   unit_test: # runs not using Workflows must have a `build` job as entry point
     parameters:
       aws_bucket:
@@ -217,7 +248,7 @@ jobs:
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
         environment:
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:13.3
+      - image: cimg/postgres:13.3
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
@@ -230,9 +261,18 @@ jobs:
       - install-postgres
       - install-git-secrets
       - setup_postgres
+      - run: # Useful for verifying versions
+          name: Java/Maven/Python versions
+          command: |
+            java -version
+            ./mvnw -v
+            python3 -V
       - run:
           name: run the actual tests
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp
+          command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
+      - run:
+          name: send coverage for unit tests
+          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
       - run:
           name: run the non-confidential integration tests
           command: |
@@ -243,11 +283,11 @@ jobs:
               # If it is a branch, skip the signature check
               export SKIP_SIGNATURE_CHECK=true
             fi
-            mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
-            # mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
+            ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"
+            # ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
       - run:
-          name: send coverage
-          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+          name: send coverage for non-confidential integration tests
+          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
@@ -291,9 +331,7 @@ jobs:
           path: ~/junit
       - store_artifacts:
           path: keysmap.list
-      - run:
-          name: SonarCloud scan - coverage
-          command: mvn sonar:sonar
+      - persist_coverage
       - run:
           name: Make jar directory
           command: mkdir /tmp/artifacts
@@ -310,6 +348,25 @@ jobs:
           command: cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
+
+  sonar-cloud:
+    docker: # run the steps with Docker
+      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
+    steps:
+    - attach_workspace:
+        at: .
+    - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
+        # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+        key: dockstore-java-{{ checksum "pom.xml" }}
+    - restore_cache:
+        key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+    - run:
+        name: build
+        command: ./mvnw clean install -DskipTests
+    - run:
+        name: SonarCloud scan - coverage
+        command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
+
 commands:
   install-postgres:
     steps:
@@ -334,7 +391,7 @@ commands:
           name: install pip
           command: |
             sudo apt update
-            sudo apt install python3-distutils python3-dev python3-pip
+            sudo apt install python3-distutils python3-dev python3-pip libxml2-dev libxslt-dev
             # For debug purposes, a python3 version was installed in the image, pip is untagged
             python3 --version
             pip3 --version
@@ -353,16 +410,6 @@ commands:
           command: |
             docker exec -it -u postgres postgres1 psql -c "create user dockstore with password 'dockstore' createdb;"
             docker exec -it -u postgres postgres1 psql -c "create database webservice_test with owner = dockstore;"
-  old_python: # Need Python 3.6 for old Dockstore 1.7 requirements.txt
-    steps:
-      - run:
-          name: Install & use Python 3.6
-          command: |
-            sudo add-apt-repository ppa:deadsnakes/ppa
-            sudo apt-get update
-            sudo apt-get install python3.6 python3.6-dev python3.6-distutils python3-virtualenv
-            virtualenv -p /usr/bin/python3.6 venv
-            echo 'source venv/bin/activate' >> ~/.bashrc
   setup_machine:
     steps:
       - attach_workspace:
@@ -371,7 +418,7 @@ commands:
           name: Java/Maven/Python versions
           command: |
             java -version
-            mvn -v
+            ./mvnw -v
             python3 -V
       - run:
           name: Docker-Compose
@@ -408,15 +455,30 @@ commands:
           name: Wait for ES
           command: |
             wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:9200 || true
+      - run: # Useful for verifying default versions on machine image
+          name: Java/Maven/Python versions
+          command: |
+            java -version
+            ./mvnw -v
+            python3 -V
       - run:
           name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
+          command: |  # Runs normally if it is not being run in parallel
+            if [ $CIRCLE_NODE_TOTAL != 1 ] 
+            then
+              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
+              echo $TESTS_TO_RUN
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
+              clean verify -Dit.test=$TESTS_TO_RUN -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+            else 
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
+            fi
+          # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
-      - run:
-          name: SonarCloud scan - coverage
-          command: mvn sonar:sonar
+      - persist_coverage
+
   save_test_results:
     steps:
       - save_cache:
@@ -433,3 +495,15 @@ commands:
           path: ~/test-results
       - store_artifacts:
           path: /tmp/dockstore-web-cache.misses.log
+  persist_coverage:
+    steps:
+      - run:
+          name: Rename and move coverage reports
+          command: |
+            mkdir coverage
+            cp ./reports/target/site/jacoco-aggregate/jacoco.xml coverage/${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.xml
+      - persist_to_workspace:
+          root: .
+          paths:
+          - coverage
+

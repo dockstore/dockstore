@@ -21,6 +21,7 @@ import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.helpers.ParamHelper;
 import io.dockstore.webservice.jdbi.CategoryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -56,14 +57,13 @@ public class CategoryResource implements AuthenticatedResourceInterface {
 
     public CategoryResource(SessionFactory sessionFactory) {
         this.categoryDAO = new CategoryDAO(sessionFactory);
-        this.collectionHelper = new CollectionHelper(sessionFactory, new ToolDAO(sessionFactory));
+        this.collectionHelper = new CollectionHelper(sessionFactory, new ToolDAO(sessionFactory), new VersionDAO(sessionFactory));
 
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("")
     @Operation(operationId = "getCategories", summary = "Retrieve all categories.", description = "Retrieve all categories.")
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved categories", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Category.class))))
     public List<Category> getCategories(

@@ -41,6 +41,7 @@ import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.DockstoreTool.ModeEnum;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -115,8 +116,8 @@ public class CRUDClientIT extends BaseIT {
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
         assertEquals("One user should belong to this tool, yourself", 1, hostedTool.getUsers().size());
         hostedTool.getUsers().forEach(user -> assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles()));
-        // Setting it to null afterwards to compare with the getContainer endpoint since that one doesn't return users
-        hostedTool.setUsers(null);
+
+        hostedTool.getUsers().forEach(user -> user.setUserProfiles(null));
 
         assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
@@ -127,7 +128,6 @@ public class CRUDClientIT extends BaseIT {
         container.setAliases(null);
         hostedTool.setUserIdToOrcidPutCode(null); // Setting to null to compare with the getContainer endpoint since that one doesn't return orcid put codes
         assertEquals(container, hostedTool);
-        assertNull(container.getUsers());
     }
 
     @Test
@@ -470,6 +470,8 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool hostedTool = hostedApi
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
         DockstoreTool newTool = new DockstoreTool();
+        // need to modify something that does not make sense now but isn't ignored
+        newTool.setMode(ModeEnum.MANUAL_IMAGE_PATH);
         thrown.expect(ApiException.class);
         containersApi.updateContainer(hostedTool.getId(), newTool);
     }

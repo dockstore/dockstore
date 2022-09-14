@@ -31,6 +31,16 @@ import org.apache.commons.lang3.StringUtils;
 // @Schema(enumAsRef = true)
 public enum DescriptorLanguage {
     // Add new descriptor language here
+    // RE: Snakemake defaultPrimaryDescriptorExtensions: The root descriptor for Snakemake
+    // should be called 'Snakefile' (no suffix), the other descriptors should have the '.smk' suffix.
+    // https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html
+    SMK("SMK", "Snakemake", FileType.DOCKSTORE_SMK, FileType.SMK_TEST_PARAMS, false, true,
+            Set.of("smk", ""), true, true) {
+        @Override
+        public boolean isRelevantFileType(FileType type) {
+            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
+        }
+    },
     CWL("CWL", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON, false, false,
         Set.of("cwl", "yaml", "yml"), true, true) {
         @Override
@@ -83,7 +93,7 @@ public enum DescriptorLanguage {
     private final String friendlyName;
 
     /**
-     * This is the primary descriptor filetype stored for files of this language in the database
+     * This is the primary descriptor file type stored for files of this language in the database
      */
     private final FileType fileType;
 
@@ -136,6 +146,11 @@ public enum DescriptorLanguage {
     }
 
     public static DescriptorLanguage convertShortStringToEnum(String descriptor) {
+        // Tricky case for GALAXY because it doesn't match the rules of the other languages
+        if (StringUtils.containsIgnoreCase(descriptor, "galaxy")) {
+            return GXFORMAT2;
+        }
+
         final Optional<DescriptorLanguage> first = Arrays.stream(DescriptorLanguage.values())
             .filter(lang -> lang.getShortName().equalsIgnoreCase(descriptor)).findFirst();
         return first.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
@@ -154,6 +169,10 @@ public enum DescriptorLanguage {
         // which is why we use StringUtils.containsIgnoreCase
         return Arrays.stream(DescriptorLanguage.values())
             .filter(lang -> StringUtils.containsIgnoreCase(descriptorType, lang.toString())).findFirst().map(DescriptorLanguage::getFileType);
+    }
+
+    public static FileType getTestFileTypeFromDescriptorLanguageString(String descriptorType) {
+        return convertShortStringToEnum(descriptorType).getTestParamType();
     }
 
     public FileType getTestParamType() {
@@ -198,6 +217,15 @@ public enum DescriptorLanguage {
             if (lang.getFileType() == fileType || lang.getTestParamType() == fileType) {
                 return lang;
             }
+            // include FileTypes that aren't primary descriptors or test param files
+            switch (fileType) {
+            case NEXTFLOW:
+                return DescriptorLanguage.NEXTFLOW;
+            case DOCKSTORE_SERVICE_OTHER:
+                return DescriptorLanguage.SERVICE;
+            default:
+                break;
+            }
         }
         throw new UnsupportedOperationException("Unknown language");
     }
@@ -208,7 +236,14 @@ public enum DescriptorLanguage {
      */
     public enum FileType {
         // Add supported descriptor types here
-        DOCKSTORE_CWL(FileTypeCategory.GENERIC_DESCRIPTOR), DOCKSTORE_WDL(FileTypeCategory.GENERIC_DESCRIPTOR), DOCKERFILE(FileTypeCategory.CONTAINERFILE), CWL_TEST_JSON(FileTypeCategory.TEST_FILE), WDL_TEST_JSON(FileTypeCategory.TEST_FILE), NEXTFLOW(FileTypeCategory.GENERIC_DESCRIPTOR), NEXTFLOW_CONFIG(FileTypeCategory.PRIMARY_DESCRIPTOR), NEXTFLOW_TEST_PARAMS(FileTypeCategory.TEST_FILE), DOCKSTORE_YML(FileTypeCategory.OTHER), DOCKSTORE_SERVICE_YML(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_SERVICE_TEST_JSON(FileTypeCategory.TEST_FILE), DOCKSTORE_SERVICE_OTHER(FileTypeCategory.OTHER), DOCKSTORE_GXFORMAT2(FileTypeCategory.GENERIC_DESCRIPTOR), GXFORMAT2_TEST_FILE(FileTypeCategory.TEST_FILE),
+        DOCKSTORE_SMK(FileTypeCategory.GENERIC_DESCRIPTOR), SMK_TEST_PARAMS(FileTypeCategory.TEST_FILE),
+        DOCKSTORE_CWL(FileTypeCategory.GENERIC_DESCRIPTOR), CWL_TEST_JSON(FileTypeCategory.TEST_FILE),
+        DOCKSTORE_WDL(FileTypeCategory.GENERIC_DESCRIPTOR), WDL_TEST_JSON(FileTypeCategory.TEST_FILE),
+        DOCKERFILE(FileTypeCategory.CONTAINERFILE),
+        NEXTFLOW(FileTypeCategory.GENERIC_DESCRIPTOR), NEXTFLOW_CONFIG(FileTypeCategory.PRIMARY_DESCRIPTOR), NEXTFLOW_TEST_PARAMS(FileTypeCategory.TEST_FILE),
+        DOCKSTORE_YML(FileTypeCategory.OTHER),
+        DOCKSTORE_SERVICE_YML(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_SERVICE_TEST_JSON(FileTypeCategory.TEST_FILE), DOCKSTORE_SERVICE_OTHER(FileTypeCategory.OTHER),
+        DOCKSTORE_GXFORMAT2(FileTypeCategory.GENERIC_DESCRIPTOR), GXFORMAT2_TEST_FILE(FileTypeCategory.TEST_FILE),
         DOCKSTORE_SWL(FileTypeCategory.GENERIC_DESCRIPTOR), SWL_TEST_JSON(FileTypeCategory.TEST_FILE);
         // DOCKSTORE-2428 - demo how to add new workflow language
 
@@ -225,6 +260,8 @@ public enum DescriptorLanguage {
 
     public static String getDefaultDescriptorPath(DescriptorLanguage descriptorLanguage) {
         switch (descriptorLanguage) {
+        case SMK:
+            return "/Snakefile";
         case CWL:
             return "/Dockstore.cwl";
         case WDL:
@@ -232,7 +269,7 @@ public enum DescriptorLanguage {
         case NEXTFLOW:
             return "/nextflow.config";
         case GXFORMAT2:
-            return "/Dockstore.yml";
+            return "/workflow-name.yml";
         default:
             return null;
         }

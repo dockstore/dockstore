@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -162,7 +161,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
-    @SuppressWarnings("checkstyle:parameternumber")
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate, String commitId, boolean hardRefresh) {
         if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
@@ -281,12 +280,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public List<SourceControlOrganization> getOrganizations() {
-        throw new UnsupportedOperationException("apps not supported for gitlab yet");
-    }
-
-    @Override
-    public boolean checkSourceCodeValidity() {
+    public boolean checkSourceControlTokenValidity() {
         //TODO
         return true;
     }

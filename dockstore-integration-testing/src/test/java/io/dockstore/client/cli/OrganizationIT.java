@@ -25,10 +25,12 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EntriesApi;
+import io.swagger.client.api.ExtendedGa4GhApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Collection;
+import io.swagger.client.model.CollectionEntry;
 import io.swagger.client.model.CollectionOrganization;
 import io.swagger.client.model.Event;
 import io.swagger.client.model.Organization;
@@ -95,7 +97,7 @@ public class OrganizationIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
 
     /**
@@ -543,6 +545,19 @@ public class OrganizationIT extends BaseIT {
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
         }
+    }
+
+    @Test
+    public void testUpdateOrganizationDescriptionOpenapi() {
+        final io.dockstore.openapi.client.ApiClient webClientOpenApiUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOpenApiUser);
+
+        io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
+        organization = organizationsApiAdmin.createOrganization(organization);
+
+        organizationsApiAdmin.updateOrganizationDescription("something new", organization.getId());
+        organization = organizationsApiAdmin.getOrganizationById(organization.getId());
+        assertEquals("something new", organization.getDescription());
     }
 
     /**
@@ -1241,6 +1256,19 @@ public class OrganizationIT extends BaseIT {
 
         numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
         assertEquals(1, numberOfCollections);
+
+        // Test collectionsLength works for starred orgs. https://ucsc-cgl.atlassian.net/browse/SEAB-3136
+        organizationsApi.approveOrganization(organization.getId()); // Can only star approved orgs
+
+        final StarRequest starRequest = new StarRequest();
+        starRequest.star(Boolean.TRUE);
+        organizationsApi.starOrganization(organization.getId(), starRequest);
+
+        final UsersApi usersApi = new UsersApi(webClientUser2);
+        final List<Organization> starredOrganizations = usersApi.getStarredOrganizations();
+        assertEquals(1, starredOrganizations.size());
+        final long starredOrgNumberOfCollections = starredOrganizations.get(0).getCollectionsLength().longValue();
+        assertEquals(1, starredOrgNumberOfCollections);
     }
 
     /**
@@ -1910,7 +1938,11 @@ public class OrganizationIT extends BaseIT {
         workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         Assert.assertEquals(2, workflow.getWorkflowVersions().size());
 
-        return (workflow);
+        ExtendedGa4GhApi ga4ghApi = new ExtendedGa4GhApi(webClient);
+        ga4ghApi.toolsIdVersionsVersionIdTypeTestsPost("CWL", "#workflow/github.com/DockstoreTestUser2/gdc-dnaseq-cwl", "test", "/workflows/dnaseq/transform.cwl.json", "platform", "platform version",
+            "dummy metadata", true);
+        workflow = workflowApi.getWorkflow(workflow.getId(), "");
+        return workflow;
     }
 
     private Workflow createWorkflow2() {
@@ -1925,7 +1957,7 @@ public class OrganizationIT extends BaseIT {
         workflowApi.refresh(workflowByPathGithub2.getId(), false);
         workflowApi.publish(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
 
-        return (workflow2);
+        return workflow2;
     }
 
     /**
@@ -1972,6 +2004,11 @@ public class OrganizationIT extends BaseIT {
         //testing the query is working properly by using GET {organizationId}/collections
         List<Collection> collectionsFromOrganization = organizationsApi.getCollectionsFromOrganization(orgId, null);
         assertEquals(3, (long)collectionsFromOrganization.stream().filter(col -> col.getId().equals(collectionId)).findFirst().get().getWorkflowsLength());
+
+
+        // test whether verified workflow info comes back
+        final Collection collectionByName = organizationsApi.getCollectionByName(organization.getName(), collection.getName());
+        assertTrue(collectionByName.getEntries().stream().anyMatch(CollectionEntry::isVerified));
     }
 
     /**

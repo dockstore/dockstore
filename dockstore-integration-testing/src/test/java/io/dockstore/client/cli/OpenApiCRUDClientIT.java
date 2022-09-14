@@ -127,7 +127,7 @@ public class OpenApiCRUDClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(getWebClient(ADMIN_USERNAME, testingPostgres));
 
         // cleanup to make math easier
-        final List<DockstoreTool> dockstoreTools = containersApi.allPublishedContainers("0", 100, null, null, null);
+        final List<DockstoreTool> dockstoreTools = containersApi.allPublishedContainers(0, 100, null, null, null);
         for (DockstoreTool tool : dockstoreTools) {
             // Publish tool
             PublishRequest pub = CommonTestUtilities.createPublishRequest(false);

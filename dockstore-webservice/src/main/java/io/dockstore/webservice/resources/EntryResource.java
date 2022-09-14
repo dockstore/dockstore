@@ -15,9 +15,8 @@
  */
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
@@ -37,7 +36,6 @@ import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -106,7 +104,7 @@ import org.slf4j.LoggerFactory;
 @Path("/entries")
 @Api("entries")
 @Produces(MediaType.APPLICATION_JSON)
-@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
+@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = JWT_SECURITY_DEFINITION_NAME, scheme = "bearer") })
 @Tag(name = "entries", description = ResourceConstants.ENTRIES)
 public class EntryResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Entry> {
 
@@ -136,7 +134,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
         this.userDAO = userDAO;
-        this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO);
+        this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO, versionDAO);
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
         discourseCategoryId = configuration.getDiscourseCategoryId();
@@ -155,7 +153,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @UnitOfWork
     @Override
     @Path("/{id}/aliases")
-    @Operation(operationId = "addAliases", description = "Add aliases linked to a entry in Dockstore.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "addAliases", description = "Add aliases linked to a entry in Dockstore.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "addAliases", value = "Add aliases linked to a entry in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Entry.class)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added alias to entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
@@ -183,14 +181,15 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/{id}/categories")
     @Timed
     @UnitOfWork(readOnly = true)
-    @Operation(operationId = "entryCategories", description = "Get the categories that contain the published entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get the categories that contain the published entry", response = Category.class, responseContainer = "List", hidden = true)
+    @Operation(operationId = "entryCategories", description = "Get the categories that contain the published entry")
+    @ApiOperation(value = "Get the categories that contain the published entry", notes = "Entry must be published", response = Category.class, responseContainer = "List", hidden = true)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved categories", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Category.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Entry must be published")
     public List<Category> entryCategories(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(description = "Entry ID", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
-        checkOptionalAuthRead(user, entry);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
         List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
         collectionHelper.evictAndSummarize(categories);
         return categories;
@@ -200,12 +199,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/{entryId}/verifiedPlatforms")
     @UnitOfWork
     @ApiOperation(value = "Get the verified platforms for each version of an entry.",  hidden = true)
-    @Operation(operationId = "getVerifiedPlatforms", description = "Get the verified platforms for each version of an entry.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getVerifiedPlatforms", description = "Get the verified platforms for each version of an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public List<VersionVerifiedPlatform> getVerifiedPlatforms(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "entryId", description = "id of the entry", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-
-        checkOptionalAuthRead(user, entry);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
 
         List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
         return verifiedVersions;
@@ -216,13 +215,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @UnitOfWork(readOnly = true)
     @Path("/{entryId}/versions/{versionId}/fileTypes")
     @ApiOperation(value = "Retrieve the file types of a version's sourcefiles",  hidden = true)
-    @Operation(operationId = "getVersionsFileTypes", description = "Retrieve the unique file types of a version's sourcefile", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getVersionsFileTypes", description = "Retrieve the unique file types of a version's sourcefile", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public SortedSet<DescriptorLanguage.FileType> getVersionsFileTypes(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
             @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-
-        checkOptionalAuthRead(user, entry);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -233,27 +232,18 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return sourceFiles.stream().map(sourceFile -> sourceFile.getType()).collect(Collectors.toCollection(TreeSet::new));
     }
 
-    public void checkEntryPermissions(final Optional<User> user, final Entry<? extends Entry, ? extends Version> entry) {
-        if (!entry.getIsPublished()) {
-            if (user.isEmpty()) {
-                throw new CustomWebApplicationException("This entry is not published.", HttpStatus.SC_NOT_FOUND);
-            }
-            checkUser(user.get(), entry);
-        }
-    }
-
     @GET
     @UnitOfWork
     @Path("/{entryId}/versions/{versionId}/descriptionMetrics")
     @ApiOperation(value = "Retrieve metrics on the description of an entry")
-    @Operation(operationId = "getDescriptionMetrics", description = "Retrieve metrics on the description of an entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getDescriptionMetrics", description = "Retrieve metrics on the description of an entry", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully calculated description metrics", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DescriptionMetrics.class)))
     public DescriptionMetrics calculateDescriptionMetrics(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
         @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-
-        checkOptionalAuthRead(user, entry);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -269,7 +259,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/{entryId}/exportToOrcid")
     @Timed
     @UnitOfWork
-    @Operation(description = "Export entry to ORCID. DOI is required", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(description = "Export entry to ORCID. DOI is required", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully exported entry to ORCID", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
     @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = "Internal Server Error")
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
@@ -279,8 +269,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @PathParam("entryId") Long entryId,
         @Parameter(description = "Optional version ID of the entry version to export.", name = "versionId", in = ParameterIn.QUERY) @QueryParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-        checkEntry(entry);
-        checkEntryPermissions(Optional.of(user), entry);
+        checkNotNullEntry(entry);
+        checkCanRead(Optional.of(user), entry);
         List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
         String putCode;
         User nonCachedUser = this.userDAO.findById(user.getId());
@@ -415,11 +405,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @POST
     @Path("/{id}/topic")
     @Timed
-    @RolesAllowed({ "curator", "admin" })
+    @RolesAllowed({"curator", "admin"})
     @UnitOfWork
     @ApiOperation(value = "Create a discourse topic for an entry.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
-    @Operation(description = "Create a discourse topic for an entry.", security = @SecurityRequirement(name = "bearer"))
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Entry.class)
+    @Operation(description = "Create a discourse topic for an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Entry setDiscourseTopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "The id of the entry to add a topic to.", required = true)
             @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true)
@@ -433,7 +423,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @RolesAllowed("admin")
     @Path("/updateEntryToGetTopics")
     @Deprecated
-    @Operation(operationId = "updateEntryToGetTopics", description = "Attempt to get the topic of all entries that use GitHub as the source control.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateEntryToGetTopics", description = "Attempt to get the topic of all entries that use GitHub as the source control.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get the number of entries that failed to have their topics retrieved from GitHub.",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)))
     @ApiOperation(value = "See OpenApi for details", hidden = true)
@@ -537,8 +527,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Override
     public Entry getAndCheckResource(User user, Long id) {
         Entry<? extends Entry, ? extends Version> c = toolDAO.getGenericEntryById(id);
-        checkEntry(c);
-        checkUserCanUpdate(user, c);
+        checkNotNullEntry(c);
+        checkCanWrite(user, c);
         return c;
     }
 
@@ -548,29 +538,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     @Override
-    public void checkCanRead(User user, Entry workflow) {
-        try {
-            checkUser(user, workflow);
-        } catch (CustomWebApplicationException ex) {
-            checkCanReadAcrossEntryTypes(user, workflow, permissionsInterface, ex);
-        }
+    public boolean canExamine(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canExamine(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.READ);
     }
 
-    /**
-     * Process permissions for entries that may or may not be workflows
-     * @param user
-     * @param workflow
-     * @param permissionsInterface
-     * @param ex
-     */
-    public static void checkCanReadAcrossEntryTypes(User user, Entry<?, ?> workflow, PermissionsInterface permissionsInterface, CustomWebApplicationException ex) {
-        if (workflow instanceof Workflow) {
-            if (!permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.READ)) {
-                throw ex;
-            }
-        } else {
-            // TODO what will happen here with tools and other stuff? right now, ignore from a SAM POV and pass along exception
-            throw ex;
-        }
+    @Override
+    public boolean canWrite(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
+    }
+
+    @Override
+    public boolean canShare(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canShare(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.SHARE);
     }
 }
