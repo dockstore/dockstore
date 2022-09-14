@@ -911,35 +911,32 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * Returns true if <code>user</code> has permission to examine <code>workflow</code>.
      *
      * @param user
-     * @param workflow
+     * @param entry
      */
     @Override
-    public boolean canExamine(User user, Entry workflow) {
-        return super.canExamine(user, workflow)
-            || (workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.READ));
+    public boolean canExamine(User user, Entry entry) {
+        return super.canExamine(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.READ);
     }
 
     /**
      * Checks if <code>user</code> has permission to write <code>workflow</code>.
      * @param user
-     * @param workflow
+     * @param entry
      */
     @Override
-    public boolean canWrite(User user, Entry workflow) {
-        return super.canWrite(user, workflow)
-            || (workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.WRITE));
+    public boolean canWrite(User user, Entry entry) {
+        return super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
     }
 
     /**
      * Checks if <code>user</code> has permission to share <code>workflow</code>.
      *
      * @param user
-     * @param workflow
+     * @param entry
      */
     @Override
-    public boolean canShare(User user, Entry workflow) {
-        return super.canShare(user, workflow)
-            || (workflow instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.SHARE));
+    public boolean canShare(User user, Entry entry) {
+        return super.canShare(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.SHARE);
     }
 
     @GET

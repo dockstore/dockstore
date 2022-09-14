@@ -224,15 +224,10 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 LOG.error("could not parse tools from workflow", e);
                 return Optional.empty();
             }
-            final List<Map<String, String>> collect = rowData.stream().map(row -> {
-                Map<String, String> oldRow = new HashMap<>();
-                oldRow.put("id", row.toolid);
-                oldRow.put("file", row.filename);
-                oldRow.put("docker", row.dockerContainer);
-                oldRow.put("link", row.link == null ? "" : row.link.toString());
-                return oldRow;
-            }).collect(Collectors.toList());
-            return Optional.of(gson.toJson(collect));
+            final Map<String, DockerInfo> collect = rowData.stream()
+                    .collect(Collectors.toMap(row -> row.toolid,
+                            row -> new DockerInfo("TBD".equals(row.filename) ? null : row.filename, "TBD".equals(row.dockerContainer) ? null : row.dockerContainer, row.link == null ? null : row.link.toString())));
+            return Optional.of(getJSONTableToolContent(collect));
         }
         return Optional.empty();
     }

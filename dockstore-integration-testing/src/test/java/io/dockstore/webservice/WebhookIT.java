@@ -71,6 +71,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -1255,6 +1256,15 @@ public class WebhookIT extends BaseIT {
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
     }
 
+    /*
+     * TODO: reimplement
+     * This test broke when merged from a 1.12 hotfix into 1.13, because the test pushed a .dockstore.yml that
+     * contains two workflows with the same name, and 1.13 checks for duplicate names in .dockstore.yml, and
+     * generates an error about the duplicate names, instead.  To reimplement, we'll need to load a workflow
+     * into the db, then push a branch that updates it, containing a workflow with the same name but different
+     * descriptor language.
+     */
+    @Ignore
     @Test
     public void testDifferentLanguagesWithSameWorkflowName() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
