@@ -127,8 +127,8 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * access token. Throws a <code>CustomWebApplicationException</code> if unable to get an access
      * token.
      * @param requester
-     * @return
-     * @throws CustomWebApplicationException if unable to get a valid Google access token
+     * @return a resources Swagger API client
+     * @throw CustomWebApplicationException
      */
     ResourcesApi getResourcesApi(User requester) {
         return new ResourcesApi(getApiClient(requester));
@@ -233,8 +233,8 @@ public class SamPermissionsImpl implements PermissionsInterface {
      *
      * @param user the user, who must be an owner of the workflow
      * @param workflow the workflow
-     * @return
-     * @throws CustomWebApplicationException if user is not an owner of the workflow
+     * @return a list of permissions
+     * @throw CustomWebApplicationException
      */
     @Override
     public List<Permission> getPermissionsForWorkflow(User user, Workflow workflow) {
@@ -460,8 +460,8 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * access token. Throws a <code>CustomWebApplicationException</code> if unable to get a valid Google access
      * token, which can occur if the Google refresh token has expired.
      * @param user
-     * @return
-     * @throws CustomWebApplicationException if unable to acquire a valid Google access token
+     * @return a Swagger API client
+     * @throw CustomWebApplicationException
      */
     private ApiClient getApiClient(User user) {
         ApiClient apiClient = new ApiClient() {
