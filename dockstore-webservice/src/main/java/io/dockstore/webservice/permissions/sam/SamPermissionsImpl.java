@@ -122,6 +122,14 @@ public class SamPermissionsImpl implements PermissionsInterface {
         }
     }
 
+    /**
+     * Creates a Swagger client for the SAM Resources API, with the authorization header set to the user's Google
+     * access token. Throws a <code>CustomWebApplicationException</code> if unable to get an access
+     * token.
+     * @param requester
+     * @return
+     * @throws CustomWebApplicationException if unable to get a valid Google access token
+     */
     ResourcesApi getResourcesApi(User requester) {
         return new ResourcesApi(getApiClient(requester));
     }
@@ -171,13 +179,21 @@ public class SamPermissionsImpl implements PermissionsInterface {
                         }
                     }).collect(Collectors.toList())));
         } catch (ApiException e) {
-            LOG.error("Error getting shared workflows", e);
-            if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {
+            final String message = "Error getting shared workflows";
+            if (userNotAuthorizedForSam(e)) {
+                LOG.debug(message, e);
                 // If user is unauthorized in SAM, then nothing has been shared with that user
                 return Collections.emptyMap();
             }
-            throw new CustomWebApplicationException("Error getting shared workflows", e.getCode());
+            LOG.error(message, e);
+            throw new CustomWebApplicationException(message, e.getCode());
         }
+    }
+
+    private boolean userNotAuthorizedForSam(ApiException e) {
+        // TLDR; 401 disabled or not accepted TOS; 403 user does not exist, i.e., not registered in SAM
+        // See https://github.com/broadinstitute/sam/blob/1c3c1a3f3e973895de9ba08e6c755edbb04632db/src/main/scala/org/broadinstitute/dsde/workbench/sam/api/SamUserDirectives.scala#L31-L30
+        return e.getCode() == HttpStatus.SC_UNAUTHORIZED || e.getCode() == HttpStatus.SC_FORBIDDEN;
     }
 
     /**
@@ -210,30 +226,59 @@ public class SamPermissionsImpl implements PermissionsInterface {
         }
     }
 
+    /**
+     * Gets the permissions for a workflow. The <code>user</code> must either be one of the
+     * workflow's users, in <code>workflow.getUsers()</code>, or have the Role.OWNER permission
+     * via SAM.
+     *
+     * @param user the user, who must be an owner of the workflow
+     * @param workflow the workflow
+     * @return
+     * @throws CustomWebApplicationException if user is not an owner of the workflow
+     */
     @Override
     public List<Permission> getPermissionsForWorkflow(User user, Workflow workflow) {
+        List<Permission> samPermissions = getSamPermissions(user, workflow);
+        if (samPermissions.isEmpty() || !isSamOwner(user, samPermissions)) {
+            // Super method checks if user is workflow user
+            return PermissionsInterface.super.getPermissionsForWorkflow(user, workflow);
+        }
+        // getOriginalOwnersForWorkflow does not check if user is in workflow.getUsers(), because
+        // they have access to the workflow via SAM.
         final List<Permission> dockstoreOwners = PermissionsInterface.getOriginalOwnersForWorkflow(workflow);
-        ResourcesApi resourcesApi = getResourcesApi(user);
-        try {
-            String encoded = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
-            final List<Permission> samPermissions = accessPolicyResponseEntryToUserPermissions(
-                    resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encoded));
-            return PermissionsInterface.mergePermissions(dockstoreOwners, removeDuplicateEmails(samPermissions));
-        } catch (ApiException e) {
-            final String errorGettingPermissions = "Error getting permissions";
-            // 404 - SAM resource has not been created, or user doesn't have access; just return Dockstore owners
-            if (e.getCode() != HttpStatus.SC_NOT_FOUND) {
-                throw new CustomWebApplicationException(errorGettingPermissions, e.getCode());
+        return PermissionsInterface.mergePermissions(dockstoreOwners, samPermissions);
+    }
+
+    private List<Permission> getSamPermissions(User user, Workflow workflow) {
+        if (hasGoogleToken(user)) {
+            try {
+                final ResourcesApi resourcesApi = getResourcesApi(user);
+                final String encoded = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
+                final List<Permission> samPermissions = accessPolicyResponseEntryToUserPermissions(
+                        resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encoded));
+                return samPermissions;
+            } catch (ApiException e) {
+                final String errorGettingPermissions = "Error getting permissions";
+                LOG.error(errorGettingPermissions, e);
+                // 404 - SAM resource has not been created, or user doesn't have access;
+                if (userNotAuthorizedForSam(e) && e.getCode() != HttpStatus.SC_NOT_FOUND) {
+                    throw new CustomWebApplicationException(errorGettingPermissions, e.getCode());
+                }
             }
         }
-        return dockstoreOwners;
+        return List.of();
+    }
+
+    private boolean isSamOwner(User user, List<Permission> permissions) {
+        final String email = PermissionsInterface.emailOrUsername(user);
+        return permissions.stream().anyMatch(permission -> permission.getEmail().equals(email) && permission.getRole() == Role.OWNER);
     }
 
     @Override
     public List<Role.Action> getActionsForWorkflow(User user, Workflow workflow) {
         List<Role.Action> list = new ArrayList<>();
         if (workflow.getUsers().contains(user) || canDoAction(user, workflow, Role.Action.SHARE)) {
-            // Short cut to avoid multiple calls; if we can share, we're an owner and can do all actions
+            // Shortcut to avoid multiple calls; if we can share, we're an owner and can do all actions
             list.addAll(Arrays.asList(Role.Action.values()));
         } else if (canDoAction(user, workflow, Role.Action.WRITE)) {
             // If we can write, we can read
@@ -321,13 +366,16 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     @Override
     public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
-        ResourcesApi resourcesApi = getResourcesApi(user);
-        String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
-        try {
-            return resourcesApi.resourceAction(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.toSamAction(action));
-        } catch (ApiException e) {
-            return false;
+        if (hasGoogleToken(user)) {
+            try {
+                final ResourcesApi resourcesApi = getResourcesApi(user);
+                final String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
+                return resourcesApi.resourceAction(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.toSamAction(action));
+            } catch (ApiException e) {
+                LOG.error("Error checking for resource action in SAM", e);
+            }
         }
+        return false;
     }
 
     @Override
@@ -354,13 +402,13 @@ public class SamPermissionsImpl implements PermissionsInterface {
         if (!hasGoogleToken(user)) {
             return false;
         }
-        final ResourcesApi resourcesApi = getResourcesApi(user);
         try {
+            final ResourcesApi resourcesApi = getResourcesApi(user);
             final List<String> resourceIds = ownedResourceIds(resourcesApi);
             return !userIsOnlyMember(resourceIds, resourcesApi);
         } catch (ApiException e) {
-            // User is not in SAM, which means they aren't sharing anything
-            if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {
+            if (userNotAuthorizedForSam(e)) {
+                LOG.debug("User not authorized for sam", e);
                 return false;
             }
             LOG.error("Error fetching user's shared resources", e);
@@ -399,13 +447,22 @@ public class SamPermissionsImpl implements PermissionsInterface {
                     .map(p -> p.getResourceId())
                     .collect(Collectors.toList());
         } catch (ApiException e) {
-            if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {
+            if (userNotAuthorizedForSam(e)) {
                 // User is not in SAM
                 return Collections.emptyList();
             }
             throw e;
         }
     }
+
+    /**
+     * Creates a Swagger API client for SAM, with the authorization set to the user's Google
+     * access token. Throws a <code>CustomWebApplicationException</code> if unable to get a valid Google access
+     * token, which can occur if the Google refresh token has expired.
+     * @param user
+     * @return
+     * @throws CustomWebApplicationException if unable to acquire a valid Google access token
+     */
     private ApiClient getApiClient(User user) {
         ApiClient apiClient = new ApiClient() {
             @Override

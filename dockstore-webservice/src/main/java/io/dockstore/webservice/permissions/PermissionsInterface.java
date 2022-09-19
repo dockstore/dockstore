@@ -23,6 +23,7 @@ import io.dockstore.webservice.core.Workflow;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
@@ -82,7 +83,7 @@ public interface PermissionsInterface {
 
     /**
      * Lists all <code>Permission</code>s for <code>workflow</code>
-     * @param user the user, who must either be an owner of the workflow or an admin
+     * @param user the user, who must be an owner of the workflow
      * @param workflow the workflow
      * @return a list of users and their permissions
      */
@@ -163,16 +164,8 @@ public interface PermissionsInterface {
      */
     static List<Permission> getOriginalOwnersForWorkflow(Workflow workflow) {
         return workflow.getUsers().stream()
-                .map(user -> {
-                    // This is ugly in order to support both SAM and InMemory authorizers
-                    final User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
-                    if (profile != null && profile.email != null) {
-                        return profile.email;
-                    } else {
-                        return user.getUsername();
-                    }
-                })
-                .filter(email -> email != null)
+                .map(PermissionsInterface::emailOrUsername)
+                .filter(Objects::nonNull)
                 .map(email -> {
                     final Permission permission = new Permission();
                     permission.setEmail(email);
@@ -180,6 +173,16 @@ public interface PermissionsInterface {
                     return permission;
                 })
                 .collect(Collectors.toList());
+    }
+
+    static String emailOrUsername(User user) {
+        // This is ugly in order to support both SAM and InMemory authorizers
+        final User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+        if (profile != null && profile.email != null) {
+            return profile.email;
+        } else {
+            return user.getUsername();
+        }
     }
 
     /**
