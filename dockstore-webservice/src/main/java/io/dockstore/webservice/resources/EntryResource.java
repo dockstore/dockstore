@@ -454,27 +454,25 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         // Create title and link to entry
 
-        String entryLink = "https://dockstore.org/";
-        String title = "";
-        if (hostName.contains("staging")) {
-            entryLink = "https://staging.dockstore.org/";
-            title = "Staging ";
-        }
+        final String entryPath;
+        final String sitePath;
         if (entry instanceof BioWorkflow) {
-            title += ((BioWorkflow)(entry)).getWorkflowPath();
-            entryLink += "workflows/";
+            entryPath = ((BioWorkflow)entry).getWorkflowPath();
+            sitePath = "workflows/" + entryPath;
         } else if (entry instanceof Service) {
-            title += ((Service)(entry)).getWorkflowPath();
-            entryLink += "services/";
+            entryPath = ((Service)entry).getWorkflowPath();
+            sitePath = "services/" + entryPath;
         } else if (entry instanceof AppTool) {
-            title += ((AppTool)(entry)).getWorkflowPath();
-            entryLink += "tools/";
+            entryPath = ((AppTool)entry).getWorkflowPath();
+            sitePath = "tools/" + entryPath;
         } else {
-            title += ((Tool)(entry)).getToolPath();
-            entryLink += "tools/";
+            entryPath = ((Tool)entry).getToolPath();
+            sitePath = "tools/" + entryPath;
         }
 
-        entryLink += title;
+        final boolean isStaging = hostName.contains("staging");
+        final String title = (isStaging ? "Staging " : "") + entryPath;
+        final String link = (isStaging ? "https://staging.dockstore.org/" : "https://dockstore.org/") + sitePath;
 
         // Create description
         String description = "";
@@ -482,7 +480,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             description = entry.getDescription() != null ? entry.getDescription().substring(0, Math.min(entry.getDescription().length(), maxDescriptionLength)) : "";
         }
 
-        description += "\n<hr>\n<small>This is a companion discussion topic for the original entry at <a href='" + entryLink + "'>" + title + "</a></small>\n";
+        description += "\n<hr>\n<small>This is a companion discussion topic for the original entry at <a href='" + link + "'>" + title + "</a></small>\n";
 
         // Check that discourse is reachable
         boolean isReachable;
