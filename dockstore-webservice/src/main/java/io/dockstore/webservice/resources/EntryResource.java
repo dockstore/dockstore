@@ -472,7 +472,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         final boolean isStaging = hostName.contains("staging");
         final String title = (isStaging ? "Staging " : "") + entryPath;
-        final String link = (isStaging ? "https://staging.dockstore.org/" : "https://dockstore.org/") + sitePath;
+        final String entryLink = (isStaging ? "https://staging.dockstore.org/" : "https://dockstore.org/") + sitePath;
 
         // Create description
         String description = "";
@@ -480,7 +480,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             description = entry.getDescription() != null ? entry.getDescription().substring(0, Math.min(entry.getDescription().length(), maxDescriptionLength)) : "";
         }
 
-        description += "\n<hr>\n<small>This is a companion discussion topic for the original entry at <a href='" + link + "'>" + title + "</a></small>\n";
+        description += "\n<hr>\n<small>This is a companion discussion topic for the original entry at <a href='" + entryLink + "'>" + title + "</a></small>\n";
 
         // Check that discourse is reachable
         boolean isReachable;
