@@ -436,8 +436,8 @@ public class SamPermissionsImplTest {
         // Verify it works the same if the SAM API returns the policies in a different order.
         final Map<Role, List<String>> sharedWithUser2 = samPermissionsImpl.workflowsSharedWithUser(
             janeDoeUserMock);
-        Assert.assertEquals(1, sharedWithUser.size());
-        Assert.assertEquals(Role.WRITER, sharedWithUser.entrySet().iterator().next().getKey());
+        Assert.assertEquals(1, sharedWithUser2.size());
+        Assert.assertEquals(Role.WRITER, sharedWithUser2.entrySet().iterator().next().getKey());
     }
 
     @Test

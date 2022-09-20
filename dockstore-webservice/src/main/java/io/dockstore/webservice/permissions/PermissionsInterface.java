@@ -175,8 +175,13 @@ public interface PermissionsInterface {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns the user's Google profile email if present, otherwise it returns their username. A bit
+     * of a hack to accomodate both SAM and InMemory implementations of this interface.
+     * @param user
+     * @return
+     */
     static String emailOrUsername(User user) {
-        // This is ugly in order to support both SAM and InMemory authorizers
         final User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
         if (profile != null && profile.email != null) {
             return profile.email;
