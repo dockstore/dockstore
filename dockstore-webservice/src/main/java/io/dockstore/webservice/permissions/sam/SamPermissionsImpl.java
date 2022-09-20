@@ -39,8 +39,54 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An implementation of the {@link PermissionsInterface} that makes
- * calls to SAM.
+ * <p>An implementation of the {@link PermissionsInterface} that makes
+ * calls to SAM.</p>
+ *
+ * <p>
+ *     Calls to SAM use a Google access token. This token can be acquired in 3 ways:
+ *     <ul>
+ *         <li>Using the user's Google access token in the database.</li>
+ *         <li>Minting and using a new Google access token with the user's refresh token in the
+ *         database. This is only done when we've detected the Google access token has expired.</li>
+ *         <li>A call from the "outside", e.g., Terra accesses a Dockstore API with a Google access
+ *         token minted in Terra. In this case, the access token is stored in the transient
+ *         <code>User.temporaryCredential</code> field. Note that this use case is technically
+ *         possible but not currently used by Terra. Also note that we check the token's "audience"
+ *         to ensure only approved Google clients can access Dockstore this way.</li>
+ *     </ul>
+ * </p>
+ *
+ * <p>What can go wrong with auth?
+ * <ul>
+ *     <li>The user's Google account is not registered in Terra/SAM</li>
+ *     <li>The user's Google account in Terra/SAM has been disabled</li>
+ *     <li>The user's Google refresh token has expired. We are unable to mint a new access token
+ *     for the user. The user must relink their Google account in Dockstore to get a new refresh
+ *     token.</li>
+ * </ul>
+ * </p>
+ *
+ * <p>
+ *   We want the user to know their refresh token has expired, but we don't want to fill up the UI
+ *   with errors for all the SAM APIs. The following public methods will throw an exception for an expired
+ *   refresh token. The ideas is that write operations should throw an error, so you know they failed.
+ *   The exception being <code>workflowsSharedWithUser</code>, because we'd want the UI to display
+ *   a warning if we're unable to fetch shared workflows.
+ *   <ul>
+ *       <li>setPermission</li>
+ *       <li>removePermission</li>
+ *       <li>workflowsSharedWithUser</li>
+ *       <li>selfDestruct</li>
+ *   </ul>
+ *   The following public methods will NOT throw an exception for an expired refresh token. The
+ *   idea is that read-only operations shouldn't cause errors.
+ *   <ul>
+ *       <li>getPermissionsForWorkflow</li>
+ *       <li>getActionsForWorkflow</li>
+ *       <li>canDoAction</li>
+ *       <li>isSharing</li>
+ *   </ul>
+ * </p>
  */
 public class SamPermissionsImpl implements PermissionsInterface {
 
@@ -85,13 +131,14 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * @param requester -- the requester, who must be an owner of <code>workflow</code> or an admin
      * @param workflow the workflow
      * @param permission -- the email and the permission for that email
-     * @return
+     * @return a list of permissions
+     * @throws CustomWebApplicationException
      */
     @Override
     public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
         // If original owner, you can't mess with their permissions
         checkEmailNotOriginalOwner(permission.getEmail(), workflow);
-        ResourcesApi resourcesApi = getResourcesApi(requester);
+        ResourcesApi resourcesApi = getResourcesApi(requester); // Intentionally throwing if unable to get token
         try {
             final String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
 
@@ -161,12 +208,19 @@ public class SamPermissionsImpl implements PermissionsInterface {
         }
     }
 
+    /**
+     * Returns a map of roles to workflow paths the user has access to. Throws a
+     * <code>CustomWebApplicationException</code> if unable to get an access token.
+     * @param user
+     * @return a map of roles to workflow paths
+     * @throws CustomWebApplicationException
+     */
     @Override
     public Map<Role, List<String>> workflowsSharedWithUser(User user) {
         if (!hasGoogleToken(user)) {
             return Collections.emptyMap();
         }
-        ResourcesApi resourcesApi = getResourcesApi(user);
+        ResourcesApi resourcesApi = getResourcesApi(user); // Intentionally throwing if unable to get token
         try {
             List<ResourceAndAccessPolicy> resourceAndAccessPolicies = resourcesApi.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE);
             return weedOutDuplicateResourceIds(resourceAndAccessPolicies).stream()
@@ -293,7 +347,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
     @Override
     public void removePermission(User user, Workflow workflow, String email, Role role) {
         checkEmailNotOriginalOwner(email, workflow);
-        ResourcesApi resourcesApi = getResourcesApi(user);
+        ResourcesApi resourcesApi = getResourcesApi(user); // Intentionally throwing if unable to get token
         String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
         try {
             List<AccessPolicyResponseEntry> entries = resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encodedPath);
@@ -381,7 +435,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
     @Override
     public void selfDestruct(User user) {
         if (hasGoogleToken(user)) {
-            final ResourcesApi resourcesApi = getResourcesApi(user);
+            final ResourcesApi resourcesApi = getResourcesApi(user); // Intentionally throwing if unable to get token
             try {
                 final List<String> resourceIds = ownedResourceIds(resourcesApi);
                 if (!userIsOnlyMember(resourceIds, resourcesApi)) {
