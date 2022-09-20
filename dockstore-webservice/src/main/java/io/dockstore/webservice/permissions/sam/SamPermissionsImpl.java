@@ -308,9 +308,8 @@ public class SamPermissionsImpl implements PermissionsInterface {
             try {
                 final ResourcesApi resourcesApi = getResourcesApi(user);
                 final String encoded = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
-                final List<Permission> samPermissions = accessPolicyResponseEntryToUserPermissions(
+                return accessPolicyResponseEntryToUserPermissions(
                         resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encoded));
-                return samPermissions;
             } catch (ApiException e) {
                 final String errorGettingPermissions = "Error getting permissions";
                 LOG.error(errorGettingPermissions, e);
