@@ -32,5 +32,5 @@ RUN rm /etc/cron.daily/apt-compat /etc/cron.daily/dpkg
 RUN aide -c /etc/aide/aide.conf --update || true
 RUN cp /var/lib/aide/aide.db.new /var/lib/aide/aide.db
 
-CMD ["service cron start && /home/init_webservice.sh"]
+CMD ["/home/init_webservice.sh"]
 
