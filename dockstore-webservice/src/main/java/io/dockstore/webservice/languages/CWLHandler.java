@@ -360,7 +360,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // Parse the preprocessed document using cwljava
             Object rootObject;
             try {
-                // parse the document, using a LoadingOptions instance which neutralizes any resources loads, since all files should have already been loaded by the preprocesser.
+                // Parse the document using a LoadingOptions instance which neutralizes any file loads, since all files should have already been inlined by the preprocesser.
                 rootObject = RootLoader.loadDocument(mapping, "/", constructSafeLoadingOptions());
             } catch (ValidationException e) {
                 LOG.error("Validation exception: " + e.getMessage(), e);
@@ -381,11 +381,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // Determine steps that point to end
                 List<String> endDependencies = new ArrayList<>();
 
-                for (Object outputParameterObj : workflow.getOutputs()) {
-                    if (outputParameterObj instanceof WorkflowOutputParameter) {
-                        WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
-                        Object sources = outputParameter.getOutputSource();
-                        processDependencies(NODE_PREFIX, endDependencies, sources, 2);
+                if (workflow.getOutputs() != null) {
+                    for (Object outputParameterObj : workflow.getOutputs()) {
+                        if (outputParameterObj instanceof WorkflowOutputParameter) {
+                            WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
+                            Object sources = outputParameter.getOutputSource();
+                            processDependencies(NODE_PREFIX, endDependencies, sources, 2);
+                        }
                     }
                 }
 

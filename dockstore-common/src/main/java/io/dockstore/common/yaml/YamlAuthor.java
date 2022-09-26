@@ -15,6 +15,7 @@
  */
 package io.dockstore.common.yaml;
 
+@AuthorHasNameOrOrcid
 public class YamlAuthor {
 
     private String name;
@@ -65,5 +66,15 @@ public class YamlAuthor {
 
     public void setOrcid(final String orcid) {
         this.orcid = orcid;
+    }
+
+    public String toString() {
+        return new BriefToStringBuilder(this)
+            .append("name", name)
+            .append("role", role)
+            .append("affiliation", affiliation)
+            .append("email", email)
+            .append("orcid", orcid)
+            .toString();
     }
 }

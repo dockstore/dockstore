@@ -46,6 +46,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.permissions.Role;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -534,5 +535,20 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Override
     public Entry getAndCheckResourceByAlias(String alias) {
         throw new UnsupportedOperationException("Use the TRS API for tools and workflows");
+    }
+
+    @Override
+    public boolean canExamine(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canExamine(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.READ);
+    }
+
+    @Override
+    public boolean canWrite(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
+    }
+
+    @Override
+    public boolean canShare(User user, Entry entry) {
+        return AuthenticatedResourceInterface.super.canShare(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.SHARE);
     }
 }
