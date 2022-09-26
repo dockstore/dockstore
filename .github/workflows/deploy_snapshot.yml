@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - feature/seab-4159/aide-file-verification
       
 jobs:
   build:
