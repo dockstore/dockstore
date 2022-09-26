@@ -49,10 +49,8 @@ public final class DockstoreYamlHelper {
     enum Version {
         ONE_ZERO("1.0") {
             @Override
-            public DockstoreYaml readAndValidateDockstoreYaml(final String content) throws DockstoreYamlException {
-                final DockstoreYaml10 dockstoreYaml10 = readDockstoreYaml10(content);
-                validate(dockstoreYaml10);
-                return dockstoreYaml10;
+            public DockstoreYaml10 readDockstoreYaml(final String content) throws DockstoreYamlException {
+                return readDockstoreYaml10(content);
             }
 
             @Override
@@ -62,10 +60,8 @@ public final class DockstoreYamlHelper {
         },
         ONE_ONE("1.1") {
             @Override
-            public DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException {
-                final DockstoreYaml11 dockstoreYaml11 = readDockstoreYaml11(content);
-                validate(dockstoreYaml11);
-                return dockstoreYaml11;
+            public DockstoreYaml11 readDockstoreYaml(final String content) throws DockstoreYamlException {
+                return readDockstoreYaml11(content);
             }
 
             @Override
@@ -75,10 +71,8 @@ public final class DockstoreYamlHelper {
         },
         ONE_TWO("1.2") {
             @Override
-            public DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException {
-                final DockstoreYaml12 dockstoreYaml12 = readDockstoreYaml12(content);
-                validate(dockstoreYaml12);
-                return dockstoreYaml12;
+            public DockstoreYaml12 readDockstoreYaml(final String content) throws DockstoreYamlException {
+                return readDockstoreYaml12(content);
             }
 
             @Override
@@ -93,7 +87,13 @@ public final class DockstoreYamlHelper {
             this.version = version;
         }
 
-        public abstract DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException;
+        public DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException {
+            final DockstoreYaml dockstoreYaml = readDockstoreYaml(content);
+            validate(dockstoreYaml);
+            return dockstoreYaml;
+        }
+
+        public abstract DockstoreYaml readDockstoreYaml(String content) throws DockstoreYamlException;
 
         public abstract void validateDockstoreYamlProperties(String content) throws DockstoreYamlException;
 
