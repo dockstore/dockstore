@@ -28,4 +28,4 @@ schema-salad==7.0.20200811075006
 shellescape==3.4.1
 six==1.15.0
 typing-extensions==3.7.4.3
-urllib3==1.25.10
+urllib3==1.26.5
