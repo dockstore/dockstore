@@ -57,13 +57,12 @@ POM as their parent.
         <swagger-annotations-version>1.6.5</swagger-annotations-version>
         <openapi-annotations-version>2.1.13</openapi-annotations-version>
         <assertj.version>3.14.0</assertj.version>
-        <junit-version>4.13.1</junit-version>
+        <junit-version>4.13.2</junit-version>
         <logback.version>1.2.11</logback.version>
         <aws.version>2.17.186</aws.version>
         <powermock.version>2.0.4</powermock.version>
         <postgresql.version>42.4.1</postgresql.version>
         <mockito.version>3.12.4</mockito.version>
-        <cwlavro.version>2.0.4.7</cwlavro.version>
         <okhttp.version>4.10.0</okhttp.version>
         <slf4j.version>1.7.36</slf4j.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
@@ -820,39 +819,6 @@ POM as their parent.
                 <groupId>commons-net</groupId>
                 <artifactId>commons-net</artifactId>
                 <version>3.3</version>
-            </dependency>
-
-            <!--  cwl management -->
-            <dependency>
-                <groupId>io.cwl</groupId>
-                <artifactId>cwlavro-tools</artifactId>
-                <version>${cwlavro.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpclient-osgi</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpcore-osgi</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <!-- Used by cwlavro. Even though cwlavro uses 1.21, cwlavro's avro dependency uses 1.20 -->
-            <dependency>
-                <groupId>io.cwl</groupId>
-                <artifactId>cwlavro-generated</artifactId>
-                <version>${cwlavro.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpclient-osgi</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpcore-osgi</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
