@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -49,8 +50,10 @@ public final class DockstoreYamlHelper {
     enum Version {
         ONE_ZERO("1.0") {
             @Override
-            public DockstoreYaml10 readDockstoreYaml(final String content) throws DockstoreYamlException {
-                return readDockstoreYaml10(content);
+            public DockstoreYaml readAndValidateDockstoreYaml(final String content, boolean validateEntries) throws DockstoreYamlException {
+                final DockstoreYaml10 dockstoreYaml10 = readDockstoreYaml10(content);
+                validate(dockstoreYaml10);
+                return dockstoreYaml10;
             }
 
             @Override
@@ -60,8 +63,10 @@ public final class DockstoreYamlHelper {
         },
         ONE_ONE("1.1") {
             @Override
-            public DockstoreYaml11 readDockstoreYaml(final String content) throws DockstoreYamlException {
-                return readDockstoreYaml11(content);
+            public DockstoreYaml readAndValidateDockstoreYaml(String content, boolean validateEntries) throws DockstoreYamlException {
+                final DockstoreYaml11 dockstoreYaml11 = readDockstoreYaml11(content);
+                validate(dockstoreYaml11);
+                return dockstoreYaml11;
             }
 
             @Override
@@ -71,8 +76,10 @@ public final class DockstoreYamlHelper {
         },
         ONE_TWO("1.2") {
             @Override
-            public DockstoreYaml12 readDockstoreYaml(final String content) throws DockstoreYamlException {
-                return readDockstoreYaml12(content);
+            public DockstoreYaml readAndValidateDockstoreYaml(String content, boolean validateEntries) throws DockstoreYamlException {
+                final DockstoreYaml12 dockstoreYaml12 = readDockstoreYaml12(content);
+                validate(dockstoreYaml12, validateEntries ? v -> true : DockstoreYamlHelper::doesNotReferenceWorkflowish);
+                return dockstoreYaml12;
             }
 
             @Override
@@ -87,13 +94,7 @@ public final class DockstoreYamlHelper {
             this.version = version;
         }
 
-        public DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException {
-            final DockstoreYaml dockstoreYaml = readDockstoreYaml(content);
-            validate(dockstoreYaml);
-            return dockstoreYaml;
-        }
-
-        public abstract DockstoreYaml readDockstoreYaml(String content) throws DockstoreYamlException;
+        public abstract DockstoreYaml readAndValidateDockstoreYaml(String content, boolean validateEntries) throws DockstoreYamlException;
 
         public abstract void validateDockstoreYamlProperties(String content) throws DockstoreYamlException;
 
@@ -111,15 +112,20 @@ public final class DockstoreYamlHelper {
     private DockstoreYamlHelper() {
     }
 
+    public static DockstoreYaml12 readAsDockstoreYaml12(final String content) throws DockstoreYamlException {
+        return readAsDockstoreYaml12(content, true);
+    }
+
     /**
      * Reads a .dockstore.yml and returns a DockstoreYaml12 object, if possible. It's possible if the .dockstore.yml
      * is version 1.1 or 1.2, but not 1.0.
      * @param content
+     * @param validateEntries
      * @return a DockstoreYaml12
      * @throws DockstoreYamlException
      */
-    public static DockstoreYaml12 readAsDockstoreYaml12(final String content) throws DockstoreYamlException {
-        final DockstoreYaml dockstoreYaml = readDockstoreYaml(content);
+    public static DockstoreYaml12 readAsDockstoreYaml12(final String content, boolean validateEntries) throws DockstoreYamlException {
+        final DockstoreYaml dockstoreYaml = readDockstoreYaml(content, validateEntries);
         if (dockstoreYaml instanceof DockstoreYaml12) {
             return (DockstoreYaml12)dockstoreYaml;
         } else if (dockstoreYaml instanceof DockstoreYaml11) {
@@ -148,9 +154,13 @@ public final class DockstoreYamlHelper {
     }
 
     static DockstoreYaml readDockstoreYaml(final String content) throws DockstoreYamlException {
+        return readDockstoreYaml(content, true);
+    }
+
+    static DockstoreYaml readDockstoreYaml(final String content, boolean validateEntries) throws DockstoreYamlException {
         final Optional<Version> maybeVersion = findValidVersion(content);
         if (maybeVersion.isPresent()) {
-            return maybeVersion.get().readAndValidateDockstoreYaml(content);
+            return maybeVersion.get().readAndValidateDockstoreYaml(content, validateEntries);
         }
         throw new DockstoreYamlException(DOCKSTORE_YML_MISSING_VALID_VERSION);
     }
@@ -373,9 +383,13 @@ public final class DockstoreYamlHelper {
         }
     }
 
-    private static <T> void validate(final T validatee) throws DockstoreYamlException {
+    public static <T> void validate(final T validatee) throws DockstoreYamlException {
+        validate(validatee, x -> true);
+    }
+
+    public static <T> void validate(final T validatee, Predicate<ConstraintViolation<T>> includeViolation) throws DockstoreYamlException {
         final Validator validator = createValidator();
-        final Set<ConstraintViolation<T>> violations = validator.validate(validatee);
+        final Set<ConstraintViolation<T>> violations = validator.validate(validatee).stream().filter(includeViolation).collect(Collectors.toSet());
         if (!violations.isEmpty()) {
             throw new DockstoreYamlException(
                 violations.stream()
@@ -383,7 +397,7 @@ public final class DockstoreYamlHelper {
                     // Sort them lexicographically by property path (ex "workflows[0].author[0].name").
                     // The result doesn't match their order in the yaml file, but is probably good enough for now...
                     .sorted((a, b) -> a.getPropertyPath().toString().compareTo(b.getPropertyPath().toString()))
-                    .map(v -> buildMessageFromViolation(v))  // NOSONAR here, a lambda is more understandable than method reference
+                    .map(v -> buildMessageFromViolation(v))  // NOSONAR a lambda is more understandable than method reference here
                     .collect(Collectors.joining("; ")));
         }
     }
@@ -405,6 +419,15 @@ public final class DockstoreYamlHelper {
         }
 
         return message;
+    }
+
+    private static <T> boolean doesNotReferenceWorkflowish(ConstraintViolation<T> violation) {
+        javax.validation.Path propertyPath = violation.getPropertyPath();
+        if (propertyPath == null) {
+            return true;
+        }
+        String path = propertyPath.toString();
+        return !(path.startsWith("workflows[") || path.startsWith("tools[") || path.startsWith("service."));
     }
 
     private static Validator createValidator() {

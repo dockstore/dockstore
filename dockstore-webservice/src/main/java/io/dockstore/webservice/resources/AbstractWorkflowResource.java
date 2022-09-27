@@ -360,7 +360,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
-            final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
+            final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent(), false);
 
             checkDuplicateNames(dockstoreYaml12.getWorkflows(), dockstoreYaml12.getTools(), dockstoreYaml12.getService());
 
@@ -514,6 +514,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         for (Workflowish wf : yamlWorkflows) {
             try {
                 if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+                    DockstoreYamlHelper.validate(wf);
                     // Update the workflow version in its own database transaction.
                     transactionHelper.transaction(() -> {
                         String subclass = wf.getSubclass().toString();
@@ -537,13 +538,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         publishWorkflowAndLog(workflow, publish, user, repository, gitReference);
                     });
                 }
-            } catch (RuntimeException ex) {
+            } catch (RuntimeException | DockstoreYamlHelper.DockstoreYamlException ex) {
                 // If there was a problem updating the workflow (an exception was thrown), either:
                 // a) rethrow certain exceptions to abort .dockstore.yml parsing, or
                 // b) log something helpful and move on to the next workflow.
                 isSuccessful = false;
-                rethrowIfFatal(ex, transactionHelper);
-                final String message = String.format("Error processing %s %s in .dockstore.yml:%n%s",
+                if (ex instanceof RuntimeException) {
+                    rethrowIfFatal((RuntimeException)ex, transactionHelper);
+                }
+                final String message = String.format("Error processing %s %s:%n%s",
                     computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
                 LOG.error(message, ex);
                 messageWriter.println(message);
