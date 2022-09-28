@@ -52,7 +52,7 @@ public class YamlWorkflow implements Workflowish {
 
     private List<String> testParameterFiles = new ArrayList<>();
 
-
+    @EntryName
     public String getName() {
         return name;
     }
