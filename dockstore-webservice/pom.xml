@@ -611,7 +611,7 @@
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
+            <artifactId>cromwell-wdl-transforms-draft3_2.13</artifactId>
         </dependency>
 
         <dependency>

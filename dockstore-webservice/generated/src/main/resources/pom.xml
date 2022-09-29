@@ -683,8 +683,8 @@
     </dependency>
     <dependency>
       <groupId>org.broadinstitute</groupId>
-      <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
-      <version>77</version>
+      <artifactId>cromwell-wdl-transforms-draft3_2.13</artifactId>
+      <version>84</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

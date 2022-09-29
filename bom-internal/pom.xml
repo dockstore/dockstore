@@ -72,10 +72,10 @@ POM as their parent.
         <jetty-servlet.version>9.4.48.v20220622</jetty-servlet.version>
         <jersey.version>2.36</jersey.version>
         <netty.version>4.1.72.Final</netty.version>
-        <scala.version>2.12.15</scala.version>
+        <scala.version>2.13.8</scala.version>
         <bytebuddy.version>1.12.9</bytebuddy.version>
 <!--        Cromwell versions can be found at https://broadinstitute.jfrog.io/ui/native/libs-release-local/org/broadinstitute/-->
-        <cromwell.version>77</cromwell.version>
+        <cromwell.version>84</cromwell.version>
         <jackson.version>2.13.3</jackson.version>
         <docker-client.version>3.2.8</docker-client.version>
 
@@ -116,7 +116,7 @@ POM as their parent.
         <dependencies>
             <dependency>
                 <groupId>io.circe</groupId>
-                <artifactId>circe-parser_2.12</artifactId>
+                <artifactId>circe-parser_2.13</artifactId>
                 <version>0.14.1</version>
             </dependency>
             <!-- Specify newer version of reflections to pass pgpverify-maven-plugin check -->
@@ -144,7 +144,7 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
+                <artifactId>cromwell-wdl-transforms-draft3_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
@@ -155,37 +155,37 @@ POM as their parent.
 
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>wdl-draft3_2.12</artifactId>
+                <artifactId>wdl-draft3_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>wdl-draft2_2.12</artifactId>
+                <artifactId>wdl-draft2_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-wdl-transforms-new-base_2.12</artifactId>
+                <artifactId>cromwell-wdl-transforms-new-base_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-wdl-model-draft3_2.12</artifactId>
+                <artifactId>cromwell-wdl-model-draft3_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-wdl-model-draft2_2.12</artifactId>
+                <artifactId>cromwell-wdl-model-draft2_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>wdl-biscayne_2.12</artifactId>
+                <artifactId>wdl-biscayne_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>language-factory-core_2.12</artifactId>
+                <artifactId>language-factory-core_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
@@ -195,17 +195,17 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-core_2.12</artifactId>
+                <artifactId>cromwell-core_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-wom_2.12</artifactId>
+                <artifactId>cromwell-wom_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-common_2.12</artifactId>
+                <artifactId>cromwell-common_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
@@ -215,14 +215,14 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>com.chuusai</groupId>
-                <artifactId>shapeless_2.12</artifactId>
+                <artifactId>shapeless_2.13</artifactId>
                 <version>2.3.7</version>
             </dependency>
 
             <dependency>
                 <groupId>org.typelevel</groupId>
-                <artifactId>cats-core_2.12</artifactId>
-                <version>2.6.1</version>
+                <artifactId>cats-core_2.13</artifactId>
+                <version>2.7.0</version>
             </dependency>
 
             <dependency>
@@ -806,7 +806,7 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>io.spray</groupId>
-                <artifactId>spray-json_2.12</artifactId>
+                <artifactId>spray-json_2.13</artifactId>
                 <version>1.3.6</version>
             </dependency>
             <dependency>
@@ -942,7 +942,7 @@ POM as their parent.
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>5.8.0</version>
+                <version>5.9.0</version>
             </dependency>
 
             <dependency>
