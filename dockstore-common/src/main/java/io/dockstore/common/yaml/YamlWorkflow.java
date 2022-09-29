@@ -16,6 +16,8 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.yaml.constraints.DescriptorLanguageShortName;
+import io.dockstore.common.yaml.constraints.EntryName;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;

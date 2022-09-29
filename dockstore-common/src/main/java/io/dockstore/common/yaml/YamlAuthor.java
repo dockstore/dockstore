@@ -15,6 +15,8 @@
  */
 package io.dockstore.common.yaml;
 
+import io.dockstore.common.yaml.constraints.AuthorHasNameOrOrcid;
+import io.dockstore.common.yaml.constraints.Orcid;
 import javax.validation.constraints.Email;
 
 @AuthorHasNameOrOrcid
