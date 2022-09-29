@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.dockstore.common.yaml;
+package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.ValidationConstants;
 import java.lang.annotation.ElementType;
@@ -31,7 +31,7 @@ import javax.validation.constraints.Size;
  */
 @Pattern(regexp = ValidationConstants.ENTRY_NAME_REGEX, message = "must contain only letters, numbers, and internal hyphens and underscores")
 @Size(max = ValidationConstants.ENTRY_NAME_LENGTH_MAX, message = "must be 256 characters or less.")
-@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER })
+@Target({ ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = {})
 public @interface EntryName {

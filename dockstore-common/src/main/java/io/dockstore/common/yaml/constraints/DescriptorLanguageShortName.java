@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.dockstore.common.yaml;
+package io.dockstore.common.yaml.constraints;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -27,7 +27,7 @@ import javax.validation.Payload;
  * Defines the `DescriptorLanguageShortName` constraint annotation, which
  * checks for a valid descriptor language short name.
  */
-@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER })
+@Target({ ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = DescriptorLanguageShortNameValidator.class)
 public @interface DescriptorLanguageShortName {

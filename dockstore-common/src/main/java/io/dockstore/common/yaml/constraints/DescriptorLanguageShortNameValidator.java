@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.dockstore.common.yaml;
+package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.DescriptorLanguage;
 import javax.validation.ConstraintValidator;

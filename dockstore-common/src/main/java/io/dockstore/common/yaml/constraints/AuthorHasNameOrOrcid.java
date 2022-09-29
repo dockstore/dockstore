@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.dockstore.common.yaml;
+package io.dockstore.common.yaml.constraints;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -27,7 +27,7 @@ import javax.validation.Payload;
  * Defines the `AuthorHasNameOrOrcid` constraint annotation, which
  * is valid if a `YamlAuthor` has either a non-empty name or ORCID id.
  */
-@Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+@Target({ ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = AuthorHasNameOrOrcidValidator.class)
 public @interface AuthorHasNameOrOrcid {

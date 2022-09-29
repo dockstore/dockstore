@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.dockstore.common.yaml;
+package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.ValidationConstants;
 import java.lang.annotation.ElementType;
@@ -29,7 +29,7 @@ import javax.validation.constraints.Pattern;
  * Defines the `Orcid` constraint annotation.
  */
 @Pattern(regexp = ValidationConstants.ORCID_ID_REGEX, message = "must be a valid ORCID id")
-@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER })
+@Target({ ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = {})
 public @interface Orcid {
