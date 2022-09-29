@@ -24,17 +24,15 @@ import java.lang.annotation.Target;
 import javax.validation.Constraint;
 import javax.validation.Payload;
 import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 
 /**
- * Defines the `EntryName` constraint annotation.
+ * Defines the `Orcid` constraint annotation.
  */
-@Pattern(regexp = ValidationConstants.ENTRY_NAME_REGEX, message = "must contain only letters, numbers, and internal hyphens and underscores")
-@Size(max = ValidationConstants.ENTRY_NAME_LENGTH_MAX, message = "must be 256 characters or less.")
+@Pattern(regexp = ValidationConstants.ORCID_ID_REGEX, message = "must be a valid ORCID id")
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = {})
-public @interface EntryName {
+public @interface Orcid {
 
     String message () default "";
     Class<?>[] groups () default {};
