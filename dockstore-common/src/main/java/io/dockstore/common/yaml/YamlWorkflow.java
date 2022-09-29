@@ -62,6 +62,7 @@ public class YamlWorkflow implements Workflowish {
     }
 
     @NotNull
+    @DescriptorLanguageShortName
     public String getSubclass() {
         if (NEW_GALAXY_SUBCLASS.equalsIgnoreCase(subclass)) {
             return DescriptorLanguage.GXFORMAT2.getShortName();
