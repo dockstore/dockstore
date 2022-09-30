@@ -36,7 +36,7 @@ import org.mockito.Mockito;
 
 public class WDLHandlerTest {
 
-    public static final String MAIN_WDL = "/wdl/GATKSVPipelineSingleSample.wdl";
+    public static final String MAIN_WDL = "/GATKSVPipelineClinical.wdl";
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -106,7 +106,7 @@ public class WDLHandlerTest {
 
 
     @Test
-    public void testFilenameCount() throws IOException {
+    public void testRepeatedFilename() throws IOException {
         final String content = getGatkSvMainDescriptorContent();
         final WDLHandler wdlHandler = new WDLHandler();
         Version emptyVersion = new WorkflowVersion();
@@ -114,9 +114,10 @@ public class WDLHandlerTest {
                 .processImports("whatever", content, emptyVersion, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
         // There are 9 Structs.wdl files, in gatk-sv-clinical, but the one in gncv is not imported
         final long structsWdlCount = map.keySet().stream().filter(key -> key.contains("Structs.wdl")).count();
-        Assert.assertEquals("There is only 1 Structs.wdl file", 1, structsWdlCount);
+        Assert.assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
 
-        Version version = wdlHandler.parseWorkflowContent(MAIN_WDL, content, new HashSet<>(map.values()), new WorkflowVersion());
+        final BioWorkflow entry = new BioWorkflow();
+        Version version = wdlHandler.parseWorkflowContent("/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), new WorkflowVersion());
         Assert.assertEquals("Christopher Whelan", version.getAuthor());
     }
 
@@ -138,7 +139,7 @@ public class WDLHandlerTest {
         if (toolsStr.isPresent()) {
             final Gson gson = new Gson();
             final Object[] tools = gson.fromJson(toolsStr.get(), Object[].class);
-            Assert.assertEquals("There should be 239 tools", 239, tools.length);
+            Assert.assertEquals("There should be 227 tools", 227, tools.length);
         } else {
             Assert.fail("Should be able to get tool json");
         }
@@ -168,7 +169,7 @@ public class WDLHandlerTest {
     }
 
     private String getGatkSvMainDescriptorContent() throws IOException {
-        final File wdlFile = new File(ResourceHelpers.resourceFilePath("gatk-sv-single-sample" + MAIN_WDL));
+        final File wdlFile = new File(ResourceHelpers.resourceFilePath("gatk-sv-clinical" + MAIN_WDL));
         return FileUtils.readFileToString(wdlFile, StandardCharsets.UTF_8);
     }
 
@@ -186,7 +187,7 @@ public class WDLHandlerTest {
         @Override
         public String readFile(String repositoryId, String fileName, String reference) {
             try {
-                final File file = new File(ResourceHelpers.resourceFilePath("gatk-sv-single-sample" + fileName));
+                final File file = new File(ResourceHelpers.resourceFilePath("gatk-sv-clinical" + fileName));
                 return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
             } catch (IOException e) {
                 return null;
