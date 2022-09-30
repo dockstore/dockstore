@@ -933,11 +933,10 @@ POM as their parent.
                 <artifactId>jaxb-impl</artifactId>
                 <version>2.2.8</version>
             </dependency>
-            <!-- CVE-2018-1000180 -->
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
-                <version>1.67</version>
+                <version>1.69</version>
             </dependency>
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
