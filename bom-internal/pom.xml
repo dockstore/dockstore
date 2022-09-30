@@ -117,7 +117,7 @@ POM as their parent.
             <dependency>
                 <groupId>io.circe</groupId>
                 <artifactId>circe-parser_2.13</artifactId>
-                <version>0.14.1</version>
+                <version>0.14.3</version>
             </dependency>
             <!-- Specify newer version of reflections to pass pgpverify-maven-plugin check -->
             <!-- https://mvnrepository.com/artifact/org.reflections/reflections -->
