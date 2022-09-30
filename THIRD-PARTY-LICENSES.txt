@@ -1,5 +1,5 @@
 
-Lists of 365 third-party dependencies.
+Lists of 367 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -215,6 +215,7 @@ Lists of 365 third-party dependencies.
      (Apache-2.0) (LGPL-2.1-or-later) Java Native Access (net.java.dev.jna:jna:5.9.0 - https://github.com/java-native-access/jna)
      (The MIT License) Java SemVer (com.github.zafarkhaja:java-semver:0.9.0 - https://github.com/zafarkhaja/jsemver)
      (Common Development and Distribution License) (GNU General Public License, Version 2 with the Classpath Exception) Java Transaction API (org.jboss.spec.javax.transaction:jboss-transaction-api_1.2_spec:1.1.1.Final - http://www.jboss.org/jboss-transaction-api_1.2_spec)
+     (The Apache Software License, Version 2.0) java-diff-utils (io.github.java-diff-utils:java-diff-utils:4.12 - https://github.com/java-diff-utils/java-diff-utils/java-diff-utils)
      (CDDL/GPLv2+CE) JavaBeans Activation Framework (com.sun.activation:javax.activation:1.2.0 - http://java.net/all/javax.activation/)
      (CDDL/GPLv2+CE) JavaBeans Activation Framework API jar (javax.activation:javax.activation-api:1.2.0 - http://java.net/all/javax.activation-api/)
      (Apache License 2.0) (LGPL 2.1) (MPL 1.1) Javassist (org.javassist:javassist:3.29.0-GA - http://www.javassist.org/)
@@ -329,8 +330,9 @@ Lists of 365 third-party dependencies.
      (The New BSD License) (WTFPL) Reflections (org.reflections:reflections:0.9.12 - http://github.com/ronmamo/reflections)
      (The Apache Software License, Version 2.0) rest (org.elasticsearch.client:elasticsearch-rest-client:7.10.2 - https://github.com/elastic/elasticsearch)
      (The Apache Software License, Version 2.0) rest-high-level (org.elasticsearch.client:elasticsearch-rest-high-level-client:7.10.2 - https://github.com/elastic/elasticsearch)
-     (Apache-2.0) Scala Compiler (org.scala-lang:scala-compiler:2.13.8 - https://www.scala-lang.org/)
-     (Apache-2.0) Scala Library (org.scala-lang:scala-library:2.13.8 - https://www.scala-lang.org/)
+     (Apache-2.0) Scala Compiler (org.scala-lang:scala-compiler:2.13.9 - https://www.scala-lang.org/)
+     (Apache-2.0) Scala Library (org.scala-lang:scala-library:2.13.9 - https://www.scala-lang.org/)
+     (Apache-2.0) Scala Reflect (org.scala-lang:scala-reflect:2.13.9 - https://www.scala-lang.org/)
      (Apache-2.0) scala-java8-compat (org.scala-lang.modules:scala-java8-compat_2.13:0.9.0 - http://www.scala-lang.org/)
      (Apache 2.0 License) scala-logging (com.typesafe.scala-logging:scala-logging_2.13:3.9.4 - https://github.com/lightbend/scala-logging)
      (Apache-2.0) scala-parser-combinators (org.scala-lang.modules:scala-parser-combinators_2.13:1.1.2 - http://www.scala-lang.org/)
