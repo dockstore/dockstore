@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.ws.rs.core.GenericType;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
@@ -82,42 +83,32 @@ public final class CommonTestUtilities {
      * Drops the database and recreates from migrations, not including any test data, using new application
      *
      * @param support reference to testing instance of the dockstore web service
-     * @throws Exception
      */
-    public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         dropAndRecreateNoTestData(support, CONFIDENTIAL_CONFIG_PATH);
     }
 
     public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support,
-        String dropwizardConfigurationFile) throws Exception {
+        String dropwizardConfigurationFile) {
         LOG.info("Dropping and Recreating the database with no test data");
-        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
-        application
-            .run("db", "migrate", dropwizardConfigurationFile, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,"
-                    + "1.6.0,1.7.0,1.8.0,1.9.0,1.10.0,1.11.0,1.12.0,1.13.0");
+        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
+        dropAllAndRunMigration(migrations, support.newApplication(), dropwizardConfigurationFile);
     }
 
     /**
      * Drops the database and recreates from migrations for non-confidential tests
      *
      * @param support reference to testing instance of the dockstore web service
-     * @throws Exception
      */
-    public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication)
-        throws Exception {
+    public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) {
         dropAndCreateWithTestData(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
     }
 
     public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        String dropwizardConfigurationFile) throws Exception {
+        String dropwizardConfigurationFile)  {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
-        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, dropwizardConfigurationFile,
-                isNewApplication);
-
-        List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, dropwizardConfigurationFile);
+        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
+        dropAllAndRunMigration(migrations, getApplication(support, isNewApplication), dropwizardConfigurationFile);
     }
 
     /**
@@ -126,10 +117,9 @@ public final class CommonTestUtilities {
      * @param support reference to testing instance of the dockstore web service
      * @param isNewApplication
      * @param needBitBucketToken if false BitBucket token is deleted from database
-     * @throws Exception
      */
     public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        TestingPostgres testingPostgres, boolean needBitBucketToken) throws Exception {
+        TestingPostgres testingPostgres, boolean needBitBucketToken) {
         dropAndCreateWithTestDataAndAdditionalTools(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
         if (!needBitBucketToken) {
             deleteBitBucketToken(testingPostgres);
@@ -138,20 +128,15 @@ public final class CommonTestUtilities {
     }
 
     // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
-    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres)
-            throws Exception {
+    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres) {
         dropAndCreateWithTestDataAndAdditionalTools(support, isNewApplication, testingPostgres, false);
     }
 
     public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-            String dropwizardConfigurationFile) throws Exception {
+            String dropwizardConfigurationFile) {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
-        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, dropwizardConfigurationFile,
-                isNewApplication);
-
-        List<String> migrationList = Arrays
-                .asList("1.3.0.generated", "1.3.1.consistency", "test", "add_test_tools", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, dropwizardConfigurationFile);
+        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test", "add_test_tools", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
+        dropAllAndRunMigration(migrations, getApplication(support, isNewApplication), dropwizardConfigurationFile);
     }
 
     /**
@@ -196,7 +181,6 @@ public final class CommonTestUtilities {
      * Deletes BitBucket Tokens from Database
      *
      * @param testingPostgres reference to the testing instance of Postgres
-     * @throws Exception
      */
     private static void deleteBitBucketToken(TestingPostgres testingPostgres)  {
         if (testingPostgres != null) {
@@ -212,10 +196,9 @@ public final class CommonTestUtilities {
      * @param support reference to testing instance of the dockstore web service
      * @param testingPostgres reference to the testing instance of Postgres
      * @param needBitBucketToken if false the bitbucket token will be deleted
-     * @throws Exception
      */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres,
-        boolean needBitBucketToken) throws Exception {
+        boolean needBitBucketToken) {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, CONFIDENTIAL_CONFIG_PATH);
         if (!needBitBucketToken) {
@@ -228,9 +211,8 @@ public final class CommonTestUtilities {
      *
      * @param support reference to testing instance of the dockstore web service
      * @param testingPostgres reference to the testing instance of Postgres
-     * @throws Exception
      */
-    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres) throws Exception {
+    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres) {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, testingPostgres, false);
         // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
@@ -242,28 +224,36 @@ public final class CommonTestUtilities {
      *
      * @param support    reference to testing instance of the dockstore web service
      * @param configPath
-     * @throws Exception
      */
-    private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath)
-        throws Exception {
-        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", configPath);
-
-        List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0",
-                "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, configPath);
+    private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) {
+        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
+        dropAllAndRunMigration(migrations, support.getApplication(), configPath);
     }
 
-    public static void runMigration(List<String> migrationList, Application<DockstoreWebserviceConfiguration> application,
+    public static void runMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
         String configPath) {
-        migrationList.forEach(migration -> {
-            try {
-                application.run("db", "migrate", configPath, "--include", migration);
-            } catch (Exception e) {
-                Assert.fail();
-            }
-        });
+        String s = migrations.stream().collect(Collectors.joining(","));
+        LOG.error("RUN MIGRATION " + s);
+        LOG.error("HASHCODE  " + s.hashCode());
+        try {
+            application.run("db", "migrate", configPath, "--include", migrations.stream().collect(Collectors.joining(",")));
+        } catch (Exception e) {
+            Assert.fail("database migration failed");
+        }
+    }
+
+    public static void dropAll(Application<DockstoreWebserviceConfiguration> application, String configPath) {
+        try {
+            application.run("db", "drop-all", "--confirm-delete-everything", configPath);
+        } catch (Exception e) {
+            Assert.fail("database drop-all failed");
+        }
+    }
+
+    public static void dropAllAndRunMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
+        String configPath) {
+        dropAll(application, configPath);
+        runMigration(migrations, application, configPath);
     }
 
     /**
@@ -272,10 +262,9 @@ public final class CommonTestUtilities {
      * @param support reference to testing instance of the dockstore web service
      * @param testingPostgres reference to the testing instance of Postgres
      * @param needBitBucketToken if false BitBucket token is deleted
-     * @throws Exception
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        TestingPostgres testingPostgres, boolean needBitBucketToken) throws Exception {
+        TestingPostgres testingPostgres, boolean needBitBucketToken) {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
 
         cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
@@ -288,10 +277,9 @@ public final class CommonTestUtilities {
      *
      * @param support reference to testing instance of the dockstore web service
      * @param testingPostgres reference to the testing instance of Postgres
-     * @throws Exception
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        TestingPostgres testingPostgres) throws Exception {
+        TestingPostgres testingPostgres) {
 
         cleanStatePrivate2(support, isNewApplication, testingPostgres, false);
         // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
@@ -303,17 +291,11 @@ public final class CommonTestUtilities {
      *
      * @param support reference to testing instance of the dockstore web service
      * @param configPath
-     * @throws Exception
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
-        boolean isNewApplication) throws Exception {
-        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, configPath, isNewApplication);
-
-        List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
-
-                "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, configPath);
+        boolean isNewApplication) {
+        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
+        dropAllAndRunMigration(migrations, getApplication(support, isNewApplication), configPath);
     }
 
     /**
@@ -326,45 +308,27 @@ public final class CommonTestUtilities {
      * @param needBitBucketToken If false BitBucket tokens will be deleted
      */
     public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres,
-        boolean needBitBucketToken) throws Exception {
+        boolean needBitBucketToken) {
         LOG.info("Dropping and Recreating the database with confidential 2 test data and additonal tools");
         addAdditionalToolsWithPrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         if (!needBitBucketToken) {
             deleteBitBucketToken(testingPostgres);
         }
-
     }
 
-
-
     // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
-    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres)
-            throws Exception {
+    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres) {
         addAdditionalToolsWithPrivate2(support,  isNewApplication, testingPostgres, false);
     }
 
     public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
-            boolean isNewApplication) throws Exception {
-        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, configPath, isNewApplication);
-
-        List<String> migrationList = Arrays
-                .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "add_test_tools", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
-
-                        "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, configPath);
+            boolean isNewApplication) {
+        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "add_test_tools", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
+        dropAllAndRunMigration(migrations, getApplication(support, isNewApplication), configPath);
     }
 
-    public static Application<DockstoreWebserviceConfiguration> getApplicationAndDropDB(
-            final DropwizardTestSupport<DockstoreWebserviceConfiguration> support, final String configPath, final boolean isNewApplication)
-            throws Exception {
-        Application<DockstoreWebserviceConfiguration> application;
-        if (isNewApplication) {
-            application = support.newApplication();
-        } else {
-            application = support.getApplication();
-        }
-        application.run("db", "drop-all", "--confirm-delete-everything", configPath);
-        return application;
+    public static Application<DockstoreWebserviceConfiguration> getApplication(final DropwizardTestSupport<DockstoreWebserviceConfiguration> support, final boolean isNewApplication) {
+        return isNewApplication ? support.newApplication() : support.getApplication();
     }
 
     /**
@@ -372,16 +336,11 @@ public final class CommonTestUtilities {
      * Specifically for tests toolsIdGet4Workflows() in GA4GHV1IT.java and toolsIdGet4Workflows() in GA4GHV2IT.java
      *
      * @param support reference to testing instance of the dockstore web service
-     * @throws Exception
      */
-    public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         LOG.info("Migrating samepaths migrations");
-        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        application
-            .run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,samepaths");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0, 1.8.0, 1.9.0,1.10.0,1.11.0, 1.12.0, 1.13.0");
-
+        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "samepaths", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
+        dropAllAndRunMigration(migrations, support.newApplication(), CONFIDENTIAL_CONFIG_PATH);
     }
 
     /**
@@ -389,16 +348,11 @@ public final class CommonTestUtilities {
      * Specifically for tests cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles in GA4GHV2IT.java
      *
      * @param support reference to testing instance of the dockstore web service
-     * @throws Exception
      */
-    public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         LOG.info("Migrating testworkflow migrations");
-        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        List<String> migrationList = Arrays
-                .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0",
-                        "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
+        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
+        dropAllAndRunMigration(migrations, support.getApplication(), CONFIDENTIAL_CONFIG_PATH);
     }
 
     public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws RuntimeException {
@@ -439,7 +393,7 @@ public final class CommonTestUtilities {
         Assert.assertTrue(log.toLowerCase().contains("git repo"));
     }
 
-    public static void restartElasticsearch() throws Exception {
+    public static void restartElasticsearch() throws IOException {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
 
         try (DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost())
