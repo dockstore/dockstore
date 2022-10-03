@@ -349,7 +349,7 @@ public class DAGWorkflowTestIT extends BaseIT {
 
     @Test
     public void testReallyComplexImportedWdlWorkflow() throws ApiException {
-        final List<String> strings = getJSON("dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl", "wdl", "master");
+        final List<String> strings = getJSON("dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl", "wdl", "1.0");
         Assert.assertEquals(1, strings.size());
         final Gson gson = new Gson();
         final ElementsDefinition dag = gson.fromJson(strings.get(0), ElementsDefinition.class);
