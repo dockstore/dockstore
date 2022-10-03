@@ -1,5 +1,5 @@
 
-Lists of 367 third-party dependencies.
+Lists of 366 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -319,7 +319,6 @@ Lists of 367 third-party dependencies.
      (Apache 2) opencsv (com.opencsv:opencsv:5.6 - http://opencsv.sf.net)
      (MIT License) ORCID - Model (org.orcid:orcid-model:3.0.4 - http://github.com/ORCID/orcid-model)
      (EPL 2.0) (GPL2 w/ CPE) OSGi resource locator (org.glassfish.hk2:osgi-resource-locator:1.0.3 - https://projects.eclipse.org/projects/ee4j/osgi-resource-locator)
-     (MIT) parser (org.typelevel:jawn-parser_2.13:1.1.2 - http://github.com/typelevel/jawn)
      (The Apache Software License, Version 2.0) PF4J (org.pf4j:pf4j:3.2.0 - http://nexus.sonatype.org/oss-repository-hosting.html/pf4j-parent/pf4j)
      (BSD-2-Clause) PostgreSQL JDBC Driver (org.postgresql:postgresql:42.4.1 - https://jdbc.postgresql.org)
      (The Apache Software License, Version 2.0) PowerMock (org.powermock:powermock-api-easymock:2.0.4 - http://www.powermock.org)

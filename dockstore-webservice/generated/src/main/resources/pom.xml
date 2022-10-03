@@ -686,6 +686,20 @@
       <artifactId>cromwell-wdl-transforms-draft3_2.13</artifactId>
       <version>84</version>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcprov-jdk15on</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.typelevel</groupId>
+          <artifactId>jawn-parser_2.13</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>

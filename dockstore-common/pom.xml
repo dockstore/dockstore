@@ -239,6 +239,10 @@
                     <groupId>org.typelevel</groupId>
                     <artifactId>alleycats-core_2.13</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>jawn-parser_2.13</artifactId>
+                </exclusion>
                 <!-- probably don't need GCP stuff -->
                 <exclusion>
                     <groupId>com.google.cloud</groupId>
