@@ -114,16 +114,86 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>wdl-draft3_2.13</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-effect_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-core_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>alleycats-core_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>eu.timepit</groupId>
+                    <artifactId>refined_2.13</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>wdl-draft2_2.13</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-effect_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-core_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>alleycats-core_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>eu.timepit</groupId>
+                    <artifactId>refined_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-text</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>wdl-biscayne_2.13</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-effect_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-core_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>alleycats-core_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>eu.timepit</groupId>
+                    <artifactId>refined_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-text</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
 
@@ -146,6 +216,10 @@
             <artifactId>cromwell-core_2.13</artifactId>
             <exclusions>
                 <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>com.readytalk</groupId>
                     <artifactId>metrics-statsd-common</artifactId>
                 </exclusion>
@@ -156,6 +230,10 @@
                 <exclusion>
                     <groupId>io.circe</groupId>
                     <artifactId>circe-core_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-core_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
