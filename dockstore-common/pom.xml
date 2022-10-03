@@ -214,10 +214,6 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.circe</groupId>
-            <artifactId>circe-parser_2.13</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
