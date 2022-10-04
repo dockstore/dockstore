@@ -255,10 +255,7 @@ public final class CommonTestUtilities {
 
     public static void dropAllAndRunMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
         String configPath) {
-        dropAll(application, configPath);
-        runMigration(migrations, application, configPath);
 
-        /*
         String dbName = "webservice_test";
         String userName = "dockstore";
 
@@ -267,19 +264,18 @@ public final class CommonTestUtilities {
         String migrationDir = "/tmp/migrations/";
         String migrationPath = migrationDir + migrationHash + ".sql";
 
-        // if (!restoreDatabase(migrationPath, dbName, userName)) {
+        if (!restoreDatabase(migrationPath, dbName, userName)) {
             dropAll(application, configPath);
             runMigration(migrations, application, configPath);
-        //     makeDirectory(migrationDir);
-        //     dumpDatabase(migrationPath, dbName, userName);
-        // }
-        */
+            makeDirectory(migrationDir);
+            dumpDatabase(migrationPath, dbName, userName);
+        }
     }
 
     private static boolean runCommand(String command) {
-        LOG.error("RUNNING COMMAND " + command);
+        LOG.error("Running command: " + command);
         try {
-            return new DefaultExecutor().execute(CommandLine.parse(command)) != 0;
+            return new DefaultExecutor().execute(CommandLine.parse(command)) == 0;
         } catch (IOException e) {
             return false;
         }
