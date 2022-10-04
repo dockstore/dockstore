@@ -256,7 +256,7 @@ public final class CommonTestUtilities {
         String configPath) {
 
         String dbName = "webservice_test";
-        String userName = "dockstore";
+        String userName = "postgres";
 
         String migrationString = migrations.stream().collect(Collectors.joining("'"));
         String migrationHash = Hashing.sha256().hashString(migrationString, StandardCharsets.UTF_8).toString();
