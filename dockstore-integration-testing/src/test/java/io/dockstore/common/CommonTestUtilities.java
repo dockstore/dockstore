@@ -23,6 +23,7 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import com.google.common.hash.Hashing;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -31,6 +32,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,6 +43,7 @@ import javax.ws.rs.core.GenericType;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -254,7 +257,45 @@ public final class CommonTestUtilities {
         String configPath) {
         dropAll(application, configPath);
         runMigration(migrations, application, configPath);
+
+        /*
+        String dbName = "webservice_test";
+        String userName = "dockstore";
+
+        String migrationString = migrations.stream().collect(Collectors.joining("'"));
+        String migrationHash = Hashing.sha256().hashString(migrationString, StandardCharsets.UTF_8).toString();
+        String migrationDir = "/tmp/migrations/";
+        String migrationPath = migrationDir + migrationHash + ".sql";
+
+        // if (!restoreDatabase(migrationPath, dbName, userName)) {
+            dropAll(application, configPath);
+            runMigration(migrations, application, configPath);
+        //     makeDirectory(migrationDir);
+        //     dumpDatabase(migrationPath, dbName, userName);
+        // }
+        */
     }
+
+    private static boolean runCommand(String command) {
+        LOG.error("RUNNING COMMAND " + command);
+        try {
+            return new DefaultExecutor().execute(CommandLine.parse(command)) != 0;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static boolean makeDirectory(String dir) {
+        return runCommand(String.format("docker exec postgres1 mkdir -p %s", dir));
+    }
+
+    private static boolean dumpDatabase(String dumpPath, String dbName, String userName) {
+        return runCommand(String.format("docker exec postgres1 pg_dump %s -F c -U %s -f %s", dbName, userName, dumpPath));
+    }
+
+    private static boolean restoreDatabase(String dumpPath, String dbName, String userName) {
+        return runCommand(String.format("docker exec postgres1 pg_restore -d %s -U %s --clean %s", dbName, userName, dumpPath));
+    } 
 
     /**
      * Wrapper for dropping and recreating database from migrations for test confidential 2
