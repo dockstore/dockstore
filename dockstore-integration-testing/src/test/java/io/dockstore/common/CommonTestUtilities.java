@@ -281,15 +281,15 @@ public final class CommonTestUtilities {
     }
 
     private static boolean makeDirectory(String dir) {
-        return runCommand(String.format("docker exec postgres1 mkdir -p %s", dir));
+        return runCommand(String.format("mkdir -p %s", dir));
     }
 
     private static boolean dumpDatabase(String dumpPath, String dbName, String userName) {
-        return runCommand(String.format("docker exec postgres1 pg_dump %s -F c -U %s -f %s", dbName, userName, dumpPath));
+        return runCommand(String.format("pg_dump %s -F c -U %s -f %s", dbName, userName, dumpPath));
     }
 
     private static boolean restoreDatabase(String dumpPath, String dbName, String userName) {
-        return runCommand(String.format("docker exec postgres1 pg_restore -d %s -U %s --clean %s", dbName, userName, dumpPath));
+        return runCommand(String.format("pg_restore -d %s -U %s --clean %s", dbName, userName, dumpPath));
     } 
 
     /**
