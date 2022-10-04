@@ -23,7 +23,6 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
-import com.google.common.hash.Hashing;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -32,7 +31,6 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -254,43 +252,9 @@ public final class CommonTestUtilities {
 
     public static void dropAllAndRunMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
         String configPath) {
-
-        String dbName = "webservice_test";
-        String userName = "postgres";
-
-        String migrationString = migrations.stream().collect(Collectors.joining("'"));
-        String migrationHash = Hashing.sha256().hashString(migrationString, StandardCharsets.UTF_8).toString();
-        String migrationDir = "/tmp/migrations/";
-        String migrationPath = migrationDir + migrationHash + ".sql";
-
-        if (!restoreDatabase(migrationPath, dbName, userName)) {
-            dropAll(application, configPath);
-            runMigration(migrations, application, configPath);
-            makeDirectory(migrationDir);
-            dumpDatabase(migrationPath, dbName, userName);
-        }
+        dropAll(application, configPath);
+        runMigration(migrations, application, configPath);
     }
-
-    private static boolean runCommand(String command) {
-        LOG.error("Running command: " + command);
-        try {
-            return new DefaultExecutor().execute(CommandLine.parse(command)) == 0;
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    private static boolean makeDirectory(String dir) {
-        return runCommand(String.format("mkdir -p %s", dir));
-    }
-
-    private static boolean dumpDatabase(String dumpPath, String dbName, String userName) {
-        return runCommand(String.format("pg_dump %s -F c -U %s -f %s", dbName, userName, dumpPath));
-    }
-
-    private static boolean restoreDatabase(String dumpPath, String dbName, String userName) {
-        return runCommand(String.format("pg_restore -d %s -U %s --clean %s", dbName, userName, dumpPath));
-    } 
 
     /**
      * Wrapper for dropping and recreating database from migrations for test confidential 2
