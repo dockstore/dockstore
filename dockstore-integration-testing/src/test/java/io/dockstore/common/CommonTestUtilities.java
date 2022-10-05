@@ -232,9 +232,6 @@ public final class CommonTestUtilities {
 
     public static void runMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
         String configPath) {
-        String s = migrations.stream().collect(Collectors.joining(","));
-        LOG.error("RUN MIGRATION " + s);
-        LOG.error("HASHCODE  " + s.hashCode());
         try {
             application.run("db", "migrate", configPath, "--include", migrations.stream().collect(Collectors.joining(",")));
         } catch (Exception e) {
