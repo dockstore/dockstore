@@ -474,10 +474,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             sitePath = "tools/" + entryPath;
         }
 
-        final String title = (isProduction ? "" : (baseUrl + " ")) + entryPath;
-        final String entryLink = baseUrl + sitePath;
-        LOG.error("TITLE: " + title);
-        LOG.error("ENTRYLINK: " + entryLink);
+        final String title = isProduction ? entryPath : (baseUrl + " " + entryPath);
+        final String entryLink = baseUrl + "/" + sitePath;
 
         // Create description
         String description = "";
