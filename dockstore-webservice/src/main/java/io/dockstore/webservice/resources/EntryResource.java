@@ -124,7 +124,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final int discourseCategoryId;
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
+    private final String baseUrl;
     private final String hostName;
+    private final boolean isProduction;
     private final PermissionsInterface permissionsInterface;
 
     public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
@@ -144,7 +146,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         apiClient.addDefaultHeader("cache-control", "no-cache");
         apiClient.setBasePath(discourseUrl);
 
+        baseUrl = configuration.getExternalConfig().computeBaseUrl();
         hostName = configuration.getExternalConfig().getHostname();
+        isProduction = configuration.getExternalConfig().computeIsProduction();
         topicsApi = new TopicsApi(apiClient);
     }
 
@@ -470,9 +474,10 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             sitePath = "tools/" + entryPath;
         }
 
-        final boolean isStaging = hostName.contains("staging");
-        final String title = (isStaging ? "Staging " : "") + entryPath;
-        final String entryLink = (isStaging ? "https://staging.dockstore.org/" : "https://dockstore.org/") + sitePath;
+        final String title = (isProduction ? "" : (baseUrl + " ")) + entryPath;
+        final String entryLink = baseUrl + sitePath;
+        LOG.error("TITLE: " + title);
+        LOG.error("ENTRYLINK: " + entryLink);
 
         // Create description
         String description = "";

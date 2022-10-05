@@ -19,6 +19,7 @@ package io.dockstore.webservice;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
+import io.dockstore.webservice.helpers.URIHelper;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.db.DataSourceFactory;
@@ -620,6 +621,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setUiPort(String uiPort) {
             this.uiPort = uiPort;
+        }
+
+        public String computeBaseUrl() {
+            return URIHelper.createBaseUrl(getScheme(), getHostname(), getUiPort());
+        }
+
+        public boolean computeIsProduction() {
+            return "dockstore.org".equals(getHostname());
         }
     }
 
