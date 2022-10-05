@@ -102,11 +102,11 @@ workflow SRTestChromosome {
     }
   }
   
-  Array[File?] stats = if allosome then MergeAllosomes.merged_test else SRTestAutosome.stats
+  Array[File?] unmerged_stats = if allosome then MergeAllosomes.merged_test else SRTestAutosome.stats
 
   call tasks02.MergeStats as MergeStats {
     input:
-      stats = select_all(stats),
+      stats = select_all(unmerged_stats),
       prefix = "${batch}.${algorithm}.${chrom}",
       linux_docker = linux_docker,
       runtime_attr_override = runtime_attr_merge_stats

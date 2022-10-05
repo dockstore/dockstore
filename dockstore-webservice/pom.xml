@@ -611,7 +611,21 @@
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
+            <artifactId>cromwell-wdl-transforms-draft3_2.13</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.scala-lang</groupId>
+                    <artifactId>scala-library</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>jawn-parser_2.13</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
