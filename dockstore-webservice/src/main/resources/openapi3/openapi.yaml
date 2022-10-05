@@ -4774,6 +4774,25 @@ paths:
       - BEARER: []
       tags:
       - users
+  /users/updateUserWorkflows:
+    post:
+      description: Check workflow ownership
+      operationId: checkWorkflowOwnership
+      responses:
+        "204":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: Successfully updated workflow ownership for all users
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/user:
     delete:
       description: Delete user if possible.
