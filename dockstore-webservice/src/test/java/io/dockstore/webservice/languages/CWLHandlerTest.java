@@ -7,10 +7,13 @@ import com.google.gson.Gson;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.dropwizard.testing.ResourceHelpers;
@@ -290,6 +293,20 @@ public class CWLHandlerTest {
     }
 
     @Test
+    public void testGetContentJson() throws IOException {
+        CWLHandler cwlHandler = new CWLHandler();
+
+        // create and mock parameters for getContent()
+        final Set<SourceFile> emptySet = Collections.emptySet();
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("json.cwl"));
+        cwlHandler.getContent("/json.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
+            LanguageHandlerInterface.Type.TOOLS, toolDAO);
+    }
+
+    @Test
     public void testGetContentWithMalformedDescriptors() throws IOException {
         CWLHandler cwlHandler = new CWLHandler();
 
@@ -337,13 +354,31 @@ public class CWLHandlerTest {
         try {
             cwlHandler.getContent("/invalidMapCWL.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            Assert.fail("Expected ($)import/($)include error");
+            Assert.fail("Expected parse error: value of workflow step run field should be a string, workflow, or tool");
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
-            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);
+            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_ERROR);
         }
     }
 
+    @Test
+    public void testPackedCwl() throws IOException {
+        CWLHandler cwlHandler = new CWLHandler();
+        final Set<SourceFile> emptySet = Collections.emptySet();
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("packed.cwl"));
+        cwlHandler.getContent("/packed.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
+            LanguageHandlerInterface.Type.TOOLS, toolDAO);
+
+        final Version version = Mockito.mock(Version.class);
+        Mockito.doNothing().when(version).setDescriptionAndDescriptionSource(Mockito.anyString(), Mockito.any(DescriptionSource.class));
+        Mockito.doNothing().when(version).addAuthor(Mockito.any(Author.class));
+        cwlHandler.parseWorkflowContent("/packed.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet, version);
+        Mockito.verify(version, Mockito.atLeastOnce()).setDescriptionAndDescriptionSource(Mockito.anyString(), Mockito.any(DescriptionSource.class));
+        Mockito.verify(version, Mockito.never()).addAuthor(Mockito.any(Author.class));
+    }
 
     /**
      * Test the precedence of CWL requirements and hints.
