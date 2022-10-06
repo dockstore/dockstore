@@ -1,3 +1,4 @@
+
 /*
  *    Copyright 2017 OICR
  *
@@ -827,14 +828,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             // TODO: Need to handle services; the YAML is guaranteed to have at least one of either
-            List<YamlWorkflow> workflows;
+            List<? extends YamlWorkflow> workflows;
             if (workflow instanceof AppTool) {
                 workflows = dockstoreYaml12.getTools();
             } else {
                 workflows = dockstoreYaml12.getWorkflows();
             }
 
-            final Optional<YamlWorkflow> maybeWorkflow = workflows.stream().filter(wf -> {
+            final Optional<? extends YamlWorkflow> maybeWorkflow = workflows.stream().filter(wf -> {
                 final String wfName = wf.getName();
                 final String dockstoreWorkflowPath =
                         "github.com/" + repository.getFullName() + (wfName != null && !wfName.isEmpty() ? "/" + wfName : "");

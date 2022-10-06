@@ -40,5 +40,5 @@ public class DescriptorLanguageShortNameValidator implements ConstraintValidator
             context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
             return false;
         }
-    }    
+    }
 }
