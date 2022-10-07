@@ -154,7 +154,7 @@ public final class DockstoreYamlHelper {
     }
 
     static DockstoreYaml readDockstoreYaml(final String content) throws DockstoreYamlException {
-        return readDockstoreYaml(content, true);
+        return readDockstoreYaml(content, false);
     }
 
     static DockstoreYaml readDockstoreYaml(final String content, boolean validateEntries) throws DockstoreYamlException {

@@ -31,6 +31,9 @@ public class DescriptorLanguageShortNameValidator implements ConstraintValidator
 
     @Override
     public boolean isValid(final String shortName, final ConstraintValidatorContext context) {
+        if (shortName == null) {
+            return true;
+        }
         try {
             DescriptorLanguage.convertShortStringToEnum(shortName);
             return true;

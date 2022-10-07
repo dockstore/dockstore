@@ -27,7 +27,7 @@ import javax.validation.Payload;
  * Defines the `AuthorHasNameOrOrcid` constraint annotation, which
  * is valid if a `YamlAuthor` has either a non-empty name or ORCID id.
  */
-@Target({ ElementType.TYPE_USE })
+@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = AuthorHasNameOrOrcidValidator.class)
 public @interface AuthorHasNameOrOrcid {

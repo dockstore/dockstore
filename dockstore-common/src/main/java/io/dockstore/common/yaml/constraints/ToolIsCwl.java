@@ -27,7 +27,7 @@ import javax.validation.Payload;
  * Defines the `ToolIsCwl` constraint annotation, which
  * is valid if the descriptor language is CWL
  */
-@Target({ ElementType.TYPE_USE })
+@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ToolIsCwlValidator.class)
 public @interface ToolIsCwl {

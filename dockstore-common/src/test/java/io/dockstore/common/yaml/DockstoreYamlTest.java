@@ -65,13 +65,13 @@ public class DockstoreYamlTest {
 
     @Test
     public void testReadDockstore10Yaml() throws DockstoreYamlHelper.DockstoreYamlException {
-        final DockstoreYaml10 dockstoreYaml = (DockstoreYaml10)DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE10_YAML);
+        final DockstoreYaml10 dockstoreYaml = (DockstoreYaml10)DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE10_YAML, true);
         assertEquals("SmartSeq2SingleSample.wdl", dockstoreYaml.primaryDescriptor);
     }
 
     @Test
     public void testReadDockstore11Yaml() throws DockstoreYamlHelper.DockstoreYamlException {
-        final DockstoreYaml dockstoreYaml = DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE11_YAML);
+        final DockstoreYaml dockstoreYaml = DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE11_YAML, true);
         assertTrue(dockstoreYaml.getClass() == DockstoreYaml11.class);
         DockstoreYaml11 dockstoreYaml11 = (DockstoreYaml11)dockstoreYaml;
         assertEquals("7222", dockstoreYaml11.getService().getEnvironment().get("httpPort").getDefault());
@@ -83,7 +83,7 @@ public class DockstoreYamlTest {
 
     @Test
     public void testReadDockstoreYaml12() throws DockstoreYamlHelper.DockstoreYamlException {
-        final DockstoreYaml12 dockstoreYaml = (DockstoreYaml12)DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML);
+        final DockstoreYaml12 dockstoreYaml = (DockstoreYaml12)DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML, true);
         final List<YamlWorkflow> workflows = dockstoreYaml.getWorkflows();
         assertEquals(3, workflows.size());
         final Optional<YamlWorkflow> workflowFoobar = workflows.stream().filter(w -> "foobar".equals(w.getName())).findFirst();
@@ -136,7 +136,7 @@ public class DockstoreYamlTest {
     public void testMissingPrimaryDescriptor() {
         try {
             final String content = DOCKSTORE10_YAML.replaceFirst("(?m)^primaryDescriptor.*$", "");
-            DockstoreYamlHelper.readDockstoreYaml(content);
+            DockstoreYamlHelper.readDockstoreYaml(content, true);
             fail("Invalid dockstore.yml not caught");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
             // check that the error message contains the name of the property and an appropriate adjective
@@ -149,7 +149,7 @@ public class DockstoreYamlTest {
     public void testInvalidSubclass() {
         final String content = DOCKSTORE12_YAML.replace("DOCKER_COMPOSE", "invalid sub class");
         try {
-            DockstoreYamlHelper.readDockstoreYaml(content);
+            DockstoreYamlHelper.readDockstoreYaml(content, true);
             fail("Did not catch invalid subclass");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
             assertTrue(e.getMessage().contains("subclass"));
@@ -177,7 +177,7 @@ public class DockstoreYamlTest {
     public void testEffectivelyEmptyDockstore12() {
         for (String emptyProperty: List.of("workflows", "tools", "service")) {
             try {
-                DockstoreYamlHelper.readDockstoreYaml(String.format("version: 1.2\n%s:\n", emptyProperty));
+                DockstoreYamlHelper.readDockstoreYaml(String.format("version: 1.2\n%s:\n", emptyProperty), true);
                 fail("Dockstore yaml with no entries should fail");
             } catch (DockstoreYamlHelper.DockstoreYamlException e) {
                 assertTrue(e.getMessage().contains(ValidDockstore12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
@@ -274,7 +274,7 @@ public class DockstoreYamlTest {
     @Test
     public void testDuplicateKeys() {
         try {
-            DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML + "\nworkflows: []\n");
+            DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML + "\nworkflows: []\n", true);
             Assert.fail("Should have thrown because of duplicate key");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             assertTrue("Error message should contain the name of the duplicate key", ex.getMessage().contains("workflows"));
@@ -433,17 +433,17 @@ public class DockstoreYamlTest {
     @Test
     public void testAuthorHasNameOrOrcid() throws DockstoreYamlHelper.DockstoreYamlException {
         // Original .dockstore.yml should validate correctly
-        DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML);
+        DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML, true);
 
         // Replace authors with an author that has either a name or an ORCID
         // Both should validate
-        DockstoreYamlHelper.readDockstoreYaml(replaceAuthors(DOCKSTORE12_YAML, "- name: Mister Potato"));
-        DockstoreYamlHelper.readDockstoreYaml(replaceAuthors(DOCKSTORE12_YAML, "- orcid: 0000-0001-2345-6789"));
+        DockstoreYamlHelper.readDockstoreYaml(replaceAuthors(DOCKSTORE12_YAML, "- name: Mister Potato"), true);
+        DockstoreYamlHelper.readDockstoreYaml(replaceAuthors(DOCKSTORE12_YAML, "- orcid: 0000-0001-2345-6789"), true);
 
         // Replace authors with an author that does not have a name or an ORCID
         // Should not validate
         try {
-            DockstoreYamlHelper.readDockstoreYaml(replaceAuthors(DOCKSTORE12_YAML, "- affiliation: The Org"));
+            DockstoreYamlHelper.readDockstoreYaml(replaceAuthors(DOCKSTORE12_YAML, "- affiliation: The Org"), true);
             fail("Should not pass property validation because an author has neither a name nor an orcid");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             assertTrue(ex.getMessage().toLowerCase().contains("author"));
@@ -452,5 +452,31 @@ public class DockstoreYamlTest {
 
     private static String replaceAuthors(String text, String replacement) {
         return text.replaceFirst("(?s)- name: Denis.*?affiliation: UCSC", replacement);
+    }
+
+    @Test
+    public void testAuthorEmail() throws DockstoreYamlHelper.DockstoreYamlException {
+        DockstoreYamlHelper.readDockstoreYaml(replaceOrcid(DOCKSTORE12_YAML, "email: test@test.com"), true);
+        try {
+            DockstoreYamlHelper.readDockstoreYaml(replaceOrcid(DOCKSTORE12_YAML, "email: bad"), true);
+            fail("Should not pass property validation because the email address is invalid");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().toLowerCase().contains("email"));
+        }
+    }
+
+    private static String replaceOrcid(String text, String replacement) {
+        return text.replaceFirst("orcid: [^ ]*?", replacement);
+    }
+
+    @Test
+    public void testWorkflowSubclass() throws DockstoreYamlHelper.DockstoreYamlException {
+        DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replace("subclass: wdl", "subclass: WDL"), true);
+        try {
+            DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replace("subclass: wdl", "subclass: BogusWL"), true);
+            fail("Should not pass property validation because the the workflow subclass is invalid");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().toLowerCase().contains("subclass"));
+        }
     }
 }
