@@ -35,9 +35,6 @@ public class DescriptorLanguageShortNameValidator implements ConstraintValidator
             DescriptorLanguage.convertShortStringToEnum(shortName);
             return true;
         } catch (UnsupportedOperationException ex) {
-            String message = "must be a supported descriptor language (\"CWL\", \"WDL\", \"NFL\", \"GALAXY\", etc)";
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
             return false;
         }
     }

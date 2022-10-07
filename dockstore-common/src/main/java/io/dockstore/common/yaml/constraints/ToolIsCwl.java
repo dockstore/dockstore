@@ -32,9 +32,9 @@ import javax.validation.Payload;
 @Constraint(validatedBy = ToolIsCwlValidator.class)
 public @interface ToolIsCwl {
 
-    String TOOL_MUST_BE_CWL = "must be CWL, WDL (and other non-CWL) tools are not supported";
+    String MUST_BE_CWL = "must be descriptor language CWL.  WDL (and other non-CWL) tools are not supported";
 
-    String message () default TOOL_MUST_BE_CWL;
+    String message () default MUST_BE_CWL;
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }

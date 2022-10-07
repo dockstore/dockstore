@@ -113,7 +113,7 @@ public final class DockstoreYamlHelper {
     }
 
     public static DockstoreYaml12 readAsDockstoreYaml12(final String content) throws DockstoreYamlException {
-        return readAsDockstoreYaml12(content, true);
+        return readAsDockstoreYaml12(content, false);
     }
 
     /**
@@ -412,7 +412,8 @@ public final class DockstoreYamlHelper {
             if (propertyPathString != null && !propertyPathString.isEmpty()) {
                 message = String.format("Property \"%s\" %s", propertyPathString, message);
                 Object invalidValue = violation.getInvalidValue();
-                if (invalidValue != null) {
+                // If there's a non-null invalid value, and it's a simple object (not the invalid bean), include it in the message.
+                if (invalidValue != null && violation.getLeafBean() != invalidValue) {
                     message = String.format("%s (current value: \"%s\")", message, StringUtils.abbreviate(invalidValue.toString(), INVALID_VALUE_ECHO_LIMIT));
                 }
             }

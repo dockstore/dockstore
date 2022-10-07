@@ -31,6 +31,12 @@ public class ToolIsCwlValidator implements ConstraintValidator<ToolIsCwl, YamlTo
 
     @Override
     public boolean isValid(final YamlTool tool, final ConstraintValidatorContext context) {
-        return "cwl".equalsIgnoreCase(tool.getSubclass());
+        if (!"cwl".equalsIgnoreCase(tool.getSubclass())) {
+            // create a violation that includes the 'subclass' property in the violation path.
+            context.disableDefaultConstraintViolation();
+            context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate()).addPropertyNode("subclass").addConstraintViolation();
+            return false;
+        }
+        return true;
     }
 }
