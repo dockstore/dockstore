@@ -947,7 +947,7 @@ public class WebhookIT extends BaseIT {
             List<io.dockstore.openapi.client.model.LambdaEvent> failEvents = usersApi.getUserGitHubEvents("0", 10);
             assertEquals("There should be 1 unsuccessful event", 1,
                     failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
-            assertTrue(failEvents.get(0).getMessage().contains("Invalid workflow name"));
+            assertTrue(failEvents.get(0).getMessage().contains("must contain only letters, numbers, and"));
         }
     }
 
