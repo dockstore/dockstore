@@ -78,7 +78,7 @@ public final class DockstoreYamlHelper {
             @Override
             public DockstoreYaml readAndValidateDockstoreYaml(String content, boolean validateEntries) throws DockstoreYamlException {
                 final DockstoreYaml12 dockstoreYaml12 = readDockstoreYaml12(content);
-                validate(dockstoreYaml12, validateEntries ? v -> true : DockstoreYamlHelper::doesNotReferenceWorkflowish);
+                validate(dockstoreYaml12, validateEntries ? v -> true : DockstoreYamlHelper::doesNotReferenceWorkflowish, ".dockstore.yml");
                 return dockstoreYaml12;
             }
 
@@ -384,10 +384,14 @@ public final class DockstoreYamlHelper {
     }
 
     public static <T> void validate(final T validatee) throws DockstoreYamlException {
-        validate(validatee, x -> true);
+        validate(validatee, x -> true, ".dockstore.yml");
     }
 
-    public static <T> void validate(final T validatee, Predicate<ConstraintViolation<T>> includeViolation) throws DockstoreYamlException {
+    public static <T> void validate(final T validatee, final String validateeDescription) throws DockstoreYamlException {
+        validate(validatee, x -> true, validateeDescription);
+    }
+
+    public static <T> void validate(final T validatee, Predicate<ConstraintViolation<T>> includeViolation, final String validateeDescription) throws DockstoreYamlException {
         final Validator validator = createValidator();
         final Set<ConstraintViolation<T>> violations = validator.validate(validatee).stream().filter(includeViolation).collect(Collectors.toSet());
         if (!violations.isEmpty()) {
@@ -397,26 +401,32 @@ public final class DockstoreYamlHelper {
                     // Sort them lexicographically by property path (ex "workflows[0].author[0].name").
                     // The result doesn't match their order in the yaml file, but is probably good enough for now...
                     .sorted((a, b) -> a.getPropertyPath().toString().compareTo(b.getPropertyPath().toString()))
-                    .map(v -> buildMessageFromViolation(v))  // NOSONAR a lambda is more understandable than method reference here
+                    .map(v -> buildMessageFromViolation(v, validateeDescription))  // NOSONAR a lambda is more understandable than method reference here
                     .collect(Collectors.joining("; ")));
         }
     }
 
-    private static <T> String buildMessageFromViolation(ConstraintViolation<T> violation) {
-        String message = violation.getMessage();
-
-        // If the violation contains a non-empty property path, add it to the message, with a summary of the invalid value, if present.
+    private static <T> String buildMessageFromViolation(ConstraintViolation<T> violation, String validateeDescription) {
+        // Determine the subject of the error message, either a property name or the validatee description.
+        String subject = null;
         javax.validation.Path propertyPath = violation.getPropertyPath();
         if (propertyPath != null) {
             String propertyPathString = propertyPath.toString();
             if (propertyPathString != null && !propertyPathString.isEmpty()) {
-                message = String.format("Property \"%s\" %s", propertyPathString, message);
-                Object invalidValue = violation.getInvalidValue();
-                // If there's a non-null invalid value, and it's a simple object (not the invalid bean), include it in the message.
-                if (invalidValue != null && violation.getLeafBean() != invalidValue) {
-                    message = String.format("%s (current value: \"%s\")", message, StringUtils.abbreviate(invalidValue.toString(), INVALID_VALUE_ECHO_LIMIT));
-                }
+                subject = String.format("Property \"s\"", propertyPathString);
             }
+        }
+        if (subject == null) {
+            subject = validateeDescription;
+        }
+
+        // Create the message by prepending the subject to the verb phrase in the violation message.
+        String message = String.format("%s %s", subject, violation.getMessage());
+
+        // If there's a non-null invalid value, and it's a simple object (not the invalid bean), include it in the message.
+        Object invalidValue = violation.getInvalidValue();
+        if (invalidValue != null && violation.getLeafBean() != invalidValue) {
+            message = String.format("%s (current value: \"%s\")", message, StringUtils.abbreviate(invalidValue.toString(), INVALID_VALUE_ECHO_LIMIT));
         }
 
         return message;
