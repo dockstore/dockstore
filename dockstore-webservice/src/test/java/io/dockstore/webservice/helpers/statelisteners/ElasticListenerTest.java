@@ -23,6 +23,7 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -39,6 +40,10 @@ public class ElasticListenerTest {
     private static final int SECOND_VERSION_ID = 2;
     private WorkflowVersion FIRST_WORKFLOW_VERSION;
     private WorkflowVersion SECOND_WORKFLOW_VERSION;
+    private Tag FIRST_TAG;
+    private Tag SECOND_TAG;
+    private WorkflowVersion FIRST_APP_TOOL_VERSION;
+    private WorkflowVersion SECOND_APP_TOOL_VERSION;
     private BioWorkflow bioWorkflow;
     private Tool tool;
     private AppTool appTool;
@@ -46,17 +51,32 @@ public class ElasticListenerTest {
 
     @Before
     public void setup() throws IllegalAccessException {
+
         bioWorkflow = new BioWorkflow();
-        tool = new Tool();
-        appTool = new AppTool();
         FIRST_WORKFLOW_VERSION = new WorkflowVersion();
         SECOND_WORKFLOW_VERSION = new WorkflowVersion();
         initVersion(FIRST_WORKFLOW_VERSION, FIRST_VERSION_NAME, FIRST_VERSION_ID);
         initVersion(SECOND_WORKFLOW_VERSION, SECOND_VERSION_NAME,
             SECOND_VERSION_ID);
+        bioWorkflow.getWorkflowVersions().addAll(List.of(FIRST_WORKFLOW_VERSION,
+            SECOND_WORKFLOW_VERSION));
+
+        tool = new Tool();
+        FIRST_TAG = new Tag();
+        SECOND_TAG = new Tag();
+        initVersion(FIRST_TAG, FIRST_VERSION_NAME, FIRST_VERSION_ID);
+        initVersion(SECOND_TAG, SECOND_VERSION_NAME, SECOND_VERSION_ID);
+        tool.getWorkflowVersions().addAll(List.of(FIRST_TAG, SECOND_TAG));
+
+        appTool = new AppTool();
+        FIRST_APP_TOOL_VERSION = new WorkflowVersion();
+        SECOND_APP_TOOL_VERSION = new WorkflowVersion();
+        initVersion(FIRST_APP_TOOL_VERSION, FIRST_VERSION_NAME, FIRST_VERSION_ID);
+        initVersion(SECOND_APP_TOOL_VERSION, SECOND_VERSION_NAME, SECOND_VERSION_ID);
+        appTool.getWorkflowVersions().addAll(List.of(FIRST_APP_TOOL_VERSION, SECOND_APP_TOOL_VERSION));
     }
 
-    private void initVersion(final WorkflowVersion version, final String name, final long id)
+    private void initVersion(final Version version, final String name, final long id)
         throws IllegalAccessException {
         version.setName(name);
         final SourceFile sourceFile = new SourceFile();
@@ -65,47 +85,70 @@ public class ElasticListenerTest {
         version.getSourceFiles().add(sourceFile);
         // Id is normally set via Hibernate generator; have to use reflection to set it, alas
         FieldUtils.writeField(version, "id", id, true);
-        bioWorkflow.getWorkflowVersions().addAll(List.of(FIRST_WORKFLOW_VERSION,
-            SECOND_WORKFLOW_VERSION));
     }
 
     @Test
     public void testNoValidVersions() {
         // If there are no valid versions, the latest version id wins out
-        final Entry entry = ElasticListener.removeIrrelevantProperties(bioWorkflow);
-        validateOnlyOneVersionHasSourceFileContent(entry, SECOND_WORKFLOW_VERSION);
+        List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
+            final Entry detachedEntry = ElasticListener.removeIrrelevantProperties(entry);
+            validateOnlyOneVersionHasSourceFileContent(detachedEntry, SECOND_VERSION_NAME);
+        });
+    }
+
+    @Test
+    public void testNoVersions() {
+        // In theory I don't think this should happen with a published entry, but just in case...
+        List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
+            entry.getWorkflowVersions().clear();
+            // Just make sure it doesn't throw an exception
+            ElasticListener.removeIrrelevantProperties(entry);
+            });
     }
 
     @Test
     public void testDefaultVersionSet() {
         bioWorkflow.setActualDefaultVersion(FIRST_WORKFLOW_VERSION);
         validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(bioWorkflow),
-            FIRST_WORKFLOW_VERSION);
+            FIRST_VERSION_NAME);
         bioWorkflow.setActualDefaultVersion(SECOND_WORKFLOW_VERSION);
         validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(bioWorkflow),
-            SECOND_WORKFLOW_VERSION);
+            SECOND_VERSION_NAME);
+
+        tool.setActualDefaultVersion(FIRST_TAG);
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(tool),
+            FIRST_VERSION_NAME);
+        tool.setActualDefaultVersion(SECOND_TAG);
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(tool),
+            SECOND_VERSION_NAME);
+
+        appTool.setActualDefaultVersion(FIRST_APP_TOOL_VERSION);
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(appTool),
+            FIRST_VERSION_NAME);
+        appTool.setActualDefaultVersion(SECOND_APP_TOOL_VERSION);
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(appTool),
+            SECOND_VERSION_NAME);
     }
 
     @Test
     public void testValidVersionsNoDefault() {
-        // If only one version is valid, it wins out
         FIRST_WORKFLOW_VERSION.setValid(true);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(bioWorkflow),
-            FIRST_WORKFLOW_VERSION);
+        FIRST_TAG.setValid(true);
+        FIRST_APP_TOOL_VERSION.setValid(true);
+        List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
+            validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(entry),
+                FIRST_VERSION_NAME);
 
-        // If more than one version is valid, the highest id wins out
-        SECOND_WORKFLOW_VERSION.setValid(true);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(bioWorkflow),
-            SECOND_WORKFLOW_VERSION);
+        });
     }
 
-    private void validateOnlyOneVersionHasSourceFileContent(final Entry entry, final WorkflowVersion version) {
+    private void validateOnlyOneVersionHasSourceFileContent(final Entry entry, final String versionName) {
         entry.getWorkflowVersions().forEach(v -> {
-            final Version v1 = (Version) v;
-            if (v1.getName().equals(version.getName())) {
-                v1.getSourceFiles().forEach(sf -> assertTrue(!((SourceFile)sf).getContent().isEmpty()));
+            final Version version = (Version) v;
+            if (version.getName().equals(versionName)) {
+                version.getSourceFiles().forEach(sf -> assertTrue(!((SourceFile)sf).getContent().isEmpty()));
             } else {
-                v1.getSourceFiles().forEach(sf -> assertTrue(((SourceFile)sf).getContent().isEmpty()));
+                version.getSourceFiles().forEach(sf -> assertTrue(((SourceFile)sf).getContent().isEmpty()));
             }
         });
     }
