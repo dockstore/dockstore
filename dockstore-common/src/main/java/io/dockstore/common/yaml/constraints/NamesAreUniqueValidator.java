@@ -38,7 +38,6 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
     @Override
     public boolean isValid(final DockstoreYaml12 yaml, final ConstraintValidatorContext context) {
         if (yaml == null) { 
-            // but we might as well code it this way, in case 
             return true;
         }
 
