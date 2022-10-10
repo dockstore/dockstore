@@ -27,7 +27,7 @@ import javax.validation.Payload;
 @Constraint(validatedBy = HasEntryValidator.class)
 public @interface HasEntry  {
 
-    String AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE = ".dockstore.yml must have at least 1 workflow, tool, or service";
+    String AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE = "must have at least 1 workflow, tool, or service";
 
     String message () default AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE;
     Class<?>[] groups () default {};

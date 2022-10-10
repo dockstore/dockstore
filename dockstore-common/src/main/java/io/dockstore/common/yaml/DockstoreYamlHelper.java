@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -78,7 +77,7 @@ public final class DockstoreYamlHelper {
             @Override
             public DockstoreYaml readAndValidateDockstoreYaml(String content, boolean validateEntries) throws DockstoreYamlException {
                 final DockstoreYaml12 dockstoreYaml12 = readDockstoreYaml12(content);
-                validate(dockstoreYaml12, validateEntries ? v -> true : DockstoreYamlHelper::doesNotReferenceWorkflowish, ".dockstore.yml");
+                validate(dockstoreYaml12, validateEntries, ".dockstore.yml");
                 return dockstoreYaml12;
             }
 
@@ -384,16 +383,16 @@ public final class DockstoreYamlHelper {
     }
 
     public static <T> void validate(final T validatee) throws DockstoreYamlException {
-        validate(validatee, x -> true, ".dockstore.yml");
+        validate(validatee, true);
     }
 
-    public static <T> void validate(final T validatee, final String validateeDescription) throws DockstoreYamlException {
-        validate(validatee, x -> true, validateeDescription);
+    public static <T> void validate(final T validatee, final boolean validateEntries) throws DockstoreYamlException {
+        validate(validatee, validateEntries, ".dockstore.yml");
     }
 
-    public static <T> void validate(final T validatee, Predicate<ConstraintViolation<T>> includeViolation, final String validateeDescription) throws DockstoreYamlException {
+    public static <T> void validate(final T validatee, final boolean validateEntries, final String validateeDescription) throws DockstoreYamlException {
         final Validator validator = createValidator();
-        final Set<ConstraintViolation<T>> violations = validator.validate(validatee).stream().filter(includeViolation).collect(Collectors.toSet());
+        final Set<ConstraintViolation<T>> violations = validator.validate(validatee).stream().filter(validateEntries ? v -> true : DockstoreYamlHelper::doesNotReferenceWorkflowish).collect(Collectors.toSet());
         if (!violations.isEmpty()) {
             throw new DockstoreYamlException(
                 violations.stream()

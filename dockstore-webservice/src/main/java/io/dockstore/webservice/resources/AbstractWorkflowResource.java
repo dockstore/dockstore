@@ -490,7 +490,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         for (Workflowish wf : yamlWorkflows) {
             try {
                 if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
-                    DockstoreYamlHelper.validate(wf);
+                    DockstoreYamlHelper.validate(wf, true, "a " + computeTermFromClass(workflowType));
                     // Update the workflow version in its own database transaction.
                     transactionHelper.transaction(() -> {
                         String subclass = wf.getSubclass().toString();
