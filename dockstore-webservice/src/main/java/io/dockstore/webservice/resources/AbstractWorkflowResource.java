@@ -63,7 +63,6 @@ import java.io.StringWriter;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -362,8 +361,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
 
-            checkDuplicateNames(dockstoreYaml12.getWorkflows(), dockstoreYaml12.getTools(), dockstoreYaml12.getService());
-
             // Process the service (if present) and the lists of workflows and apptools.
             // '&=' does not short-circuit, ensuring that all of the lists are processed.
             // 'isSuccessful &= x()' is equivalent to 'isSuccessful = isSuccessful & x()'.
@@ -469,27 +466,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             lambdaEvent.setUser(user);
         }
         return lambdaEvent;
-    }
-
-    private void checkDuplicateNames(List<? extends Workflowish> workflows, List<? extends Workflowish> tools, Service12 service) {
-        List<Workflowish> entries = new ArrayList<>();
-        entries.addAll(workflows);
-        entries.addAll(tools);
-        Set<String> names = new HashSet<>();
-        for (Workflowish entry: entries) {
-            String name = entry.getName();
-            if (name == null) {
-                name = "";
-            }
-            if (!names.add(name)) {
-                String msg = "".equals(name) ? "At least two workflows or tools have no name." :
-                    String.format("At least two workflows or tools have the same name '%s'.", name);
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            }
-        }
-        if (service != null && names.contains("")) {
-            throw new CustomWebApplicationException("A service always has no name, so any workflows or tools must be named.", LAMBDA_FAILURE);
-        }
     }
 
     /**
