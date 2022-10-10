@@ -125,7 +125,9 @@ public class DockstoreYamlTest {
 
     @Test
     public void testOptionalName() throws DockstoreYamlHelper.DockstoreYamlException {
-        final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE12_YAML);
+        // create an input that contains a unnamed workflow and no service
+        final String unnamedWorkflow = DOCKSTORE12_YAML.replace("name: bloop", "#").replace("(?s)service:.*$", "");
+        final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(unnamedWorkflow);
         final List<YamlWorkflow> workflows = dockstoreYaml12.getWorkflows();
         assertEquals(3, workflows.size());
         assertEquals("Expecting two workflows with names", 2L, workflows.stream().filter(w -> w.getName() != null).count());
