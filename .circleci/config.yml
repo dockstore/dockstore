@@ -116,7 +116,7 @@ jobs:
       TESTING_PROFILE: integration-tests
     steps:
       - setup_remote_docker:
-          version: 19.03.13
+          version: 20.10.17
       - setup_test
       - install-postgres
       - setup_postgres
