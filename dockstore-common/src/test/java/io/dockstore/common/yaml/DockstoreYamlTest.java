@@ -23,6 +23,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.dockstore.common.yaml.constraints.HasEntry;
 import io.dropwizard.testing.FixtureHelpers;
 import java.io.IOException;
 import java.net.URL;
@@ -126,7 +127,7 @@ public class DockstoreYamlTest {
     @Test
     public void testOptionalName() throws DockstoreYamlHelper.DockstoreYamlException {
         // create an input that contains a unnamed workflow and no service
-        final String unnamedWorkflow = DOCKSTORE12_YAML.replace("name: bloop", "#").replace("(?s)service:.*$", "");
+        final String unnamedWorkflow = DOCKSTORE12_YAML.replace("name: bloop", "#").replaceFirst("(?s)service:.*$", "");
         final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(unnamedWorkflow);
         final List<YamlWorkflow> workflows = dockstoreYaml12.getWorkflows();
         assertEquals(3, workflows.size());
@@ -171,7 +172,7 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12("version: 1.2");
             fail("Dockstore yaml with no entries should fail");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            assertEquals(ValidDockstore12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE, e.getMessage());
+            assertEquals(HasEntry.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE, e.getMessage());
         }
     }
 
@@ -182,7 +183,7 @@ public class DockstoreYamlTest {
                 DockstoreYamlHelper.readDockstoreYaml(String.format("version: 1.2\n%s:\n", emptyProperty), true);
                 fail("Dockstore yaml with no entries should fail");
             } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-                assertTrue(e.getMessage().contains(ValidDockstore12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
+                assertTrue(e.getMessage().contains(HasEntry.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
             }
         }
     }

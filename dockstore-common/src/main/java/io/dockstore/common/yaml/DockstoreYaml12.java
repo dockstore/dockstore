@@ -15,6 +15,7 @@
  */
 package io.dockstore.common.yaml;
 
+import io.dockstore.common.yaml.constraints.HasEntry;
 import io.dockstore.common.yaml.constraints.NamesAreUnique;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,7 @@ import javax.validation.constraints.Pattern;
  *
  * Validator requires at least one service or one workflow
  */
-@ValidDockstore12
+@HasEntry
 @NamesAreUnique
 public class DockstoreYaml12 implements DockstoreYaml {
 
