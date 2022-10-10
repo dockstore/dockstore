@@ -13,6 +13,9 @@ services:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      # The value on AWS OpenSearch, which we can't change, without changing instance type
+      # https://docs.aws.amazon.com/opensearch-service/latest/developerguide/limits.html#network-limits
+      - http.max_content_length=10mb
       - xpack.security.enabled=false
       - xpack.monitoring.enabled=false
       - xpack.graph.enabled=false
