@@ -32,7 +32,7 @@ import javax.validation.Payload;
 @Constraint(validatedBy = ToolIsCwlValidator.class)
 public @interface ToolIsCwl {
 
-    String MUST_BE_CWL = "must be descriptor language CWL.  WDL (and other non-CWL) tools are not supported";
+    String MUST_BE_CWL = "must be descriptor language CWL. Dockstore does not support WDL (or other non-CWL languages) for tools registered using GitHub Apps.";
 
     String message () default MUST_BE_CWL;
     Class<?>[] groups () default {};

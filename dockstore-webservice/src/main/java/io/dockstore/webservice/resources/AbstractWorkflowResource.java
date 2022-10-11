@@ -491,13 +491,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             try {
                 if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
                     DockstoreYamlHelper.validate(wf, true, "a " + computeTermFromClass(workflowType));
+
                     // Update the workflow version in its own database transaction.
                     transactionHelper.transaction(() -> {
                         String subclass = wf.getSubclass().toString();
-                        if (workflowType == AppTool.class && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
-                            throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
-                        }
-
                         final String workflowName = workflowType == Service.class ? "" : wf.getName();
                         final Boolean publish = wf.getPublish();
                         final var defaultVersion = wf.getLatestTagAsDefault();
