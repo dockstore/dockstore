@@ -172,7 +172,7 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12("version: 1.2");
             fail("Dockstore yaml with no entries should fail");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            assertEquals(HasEntry.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE, e.getMessage());
+            assertTrue(e.getMessage().contains(HasEntry.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
         }
     }
 

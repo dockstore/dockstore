@@ -412,7 +412,7 @@ public final class DockstoreYamlHelper {
         if (propertyPath != null) {
             String propertyPathString = propertyPath.toString();
             if (propertyPathString != null && !propertyPathString.isEmpty()) {
-                subject = String.format("Property \"s\"", propertyPathString);
+                subject = String.format("Property \"%s\"", propertyPathString);
             }
         }
         if (subject == null) {
