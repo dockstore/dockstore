@@ -68,7 +68,7 @@ public final class ORCIDHelper {
     private static final Logger LOG = LoggerFactory.getLogger(ORCIDHelper.class);
     private static final String ORCID_XML_CONTENT_TYPE = "application/vnd.orcid+xml";
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
-    private static final Pattern ORCID_ID_PATTERN = Pattern.compile("\\d{4}-\\d{4}-\\d{4}-\\d{4}"); // ex: 1234-1234-1234-1234
+    private static final Pattern ORCID_ID_PATTERN = Pattern.compile("\\d{4}-\\d{4}-\\d{4}-\\d{3}[X\\d]"); // ex: 1234-1234-1234-1234
 
     private static String baseApiUrl; // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/"
     private static String baseUrl; // baseUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
