@@ -471,7 +471,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
-                <version>4.7.0</version>
+                <version>4.7.1</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jaxb</groupId>
@@ -1185,7 +1185,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.kohsuke</groupId>
                 <artifactId>github-api</artifactId>
-                <version>1.123</version>
+                <version>1.313</version>
             </dependency>
 
             <dependency>
