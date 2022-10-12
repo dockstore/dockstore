@@ -960,7 +960,7 @@
     <dependency>
       <groupId>org.kohsuke</groupId>
       <artifactId>github-api</artifactId>
-      <version>1.313</version>
+      <version>1.123</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
