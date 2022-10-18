@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.DockstoreWebserviceApplication.getOkHttpClient;
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -71,9 +72,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Optional;
@@ -90,6 +89,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
@@ -486,22 +488,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         description += "\n<hr>\n<small>This is a companion discussion topic for the original entry at <a href='" + entryLink + "'>" + title + "</a></small>\n";
 
         // Check that discourse is reachable
-        boolean isReachable;
-        HttpURLConnection connection = null;
+        boolean isReachable = false;
+        OkHttpClient client = getOkHttpClient();
+        Request request = new Request.Builder().url(discourseUrl).build();
         try {
-            URL url = new URL(discourseUrl);
-            connection = (HttpURLConnection)url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.connect();
-            int respCode = connection.getResponseCode();
-            isReachable = respCode == HttpStatus.SC_OK;
+            Response response = client.newCall(request).execute();
+            isReachable = response.isSuccessful();
         } catch (IOException ex) {
             LOG.error("Error reaching " + discourseUrl, ex);
-            isReachable = false;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
         }
 
         if (isReachable) {

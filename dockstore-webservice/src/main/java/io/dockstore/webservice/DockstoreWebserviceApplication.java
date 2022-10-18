@@ -150,7 +150,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
@@ -177,7 +176,6 @@ import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
@@ -275,17 +273,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         }
         okHttpClient = builder.cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS)
                 .writeTimeout(0, TimeUnit.SECONDS).build();
-        try {
-            // this can only be called once per JVM, a factory exception is thrown in our tests
-            URL.setURLStreamHandlerFactory(new ObsoleteUrlFactory(okHttpClient));
-        } catch (Error factoryException) {
-            if (factoryException.getMessage().contains("factory already defined")) {
-                LOG.debug("OkHttpClient already registered, skipping");
-            } else {
-                LOG.error("Could not create web cache, factory exception", factoryException);
-                throw new RuntimeException(factoryException);
-            }
-        }
     }
 
     private static Cache generateCache(String suffix) {

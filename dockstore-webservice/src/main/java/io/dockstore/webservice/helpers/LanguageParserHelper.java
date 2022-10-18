@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,6 +12,7 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +40,7 @@ public final class LanguageParserHelper {
         throws InterruptedException, IOException {
         HttpRequest request = convertLanguageParsingRequestToHttpRequest(languageParsingRequest);
         HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() == HttpURLConnection.HTTP_OK) {
+        if (response.statusCode() == HttpStatus.SC_OK) {
             LanguageParsingResponse languageParsingResponse = MAPPER.readValue(response.body(), LanguageParsingResponse.class);
             return languageParsingResponse;
         } else {
