@@ -2,8 +2,6 @@ name: Develop Deploy
 
 on:
   push:
-    branches:
-      - develop
       
 jobs:
   build:
