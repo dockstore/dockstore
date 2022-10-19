@@ -2,6 +2,8 @@ name: Develop Deploy
 
 on:
   push:
+    branches:
+      - hotfix/seab-4880/include-galaxy-plugin-in-webservice-container
       
 jobs:
   build:
