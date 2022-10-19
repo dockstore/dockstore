@@ -768,4 +768,64 @@ public abstract class SourceCodeRepoInterface {
     public Set<String> getOrganizationMemberships() {
         return getOrganizations();
     }
+
+    /**
+     * Returns a list of repos that the user has repo-level access to, i.e., the user does not have
+     * permissions based on the organization, but specifically to those repos
+     * @return
+     */
+    public Set<GitRepo> getRepoLevelAccessRepositories() {
+        final Set<String> organizationMemberships = getOrganizationMemberships();
+        return getWorkflowGitUrl2RepositoryId().values().stream()
+            .map(repository -> {
+                final String[] orgRepo = repository.split("/");
+                return new GitRepo(orgRepo[0], orgRepo[1]);
+            })
+            .filter(gitRepo -> !organizationMemberships.contains(gitRepo.getOrganization()))
+            .collect(Collectors.toSet());
+    }
+
+    public static class GitRepo {
+        private final String organization;
+        private final String repository;
+
+        public GitRepo(final String organization, final String repository) {
+            this.organization = organization;
+            this.repository = repository;
+        }
+
+        public String getOrganization() {
+            return organization;
+        }
+
+        public String getRepository() {
+            return repository;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final GitRepo gitRepo = (GitRepo) o;
+            return Objects.equals(organization, gitRepo.organization) && Objects.equals(
+                repository, gitRepo.repository);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(organization, repository);
+        }
+
+        @Override
+        public String toString() {
+            return "GitRepo{" +
+                "organization='" + organization + '\'' +
+                ", repository='" + repository + '\'' +
+                '}';
+        }
+    }
 }
