@@ -106,7 +106,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
     public static final String GITHUB_ABUSE_LIMIT_REACHED = "GitHub abuse limit reached";
-    public static final int GITHUB_DEFAULT_MAX_CACHE_AGE_SECONDS = 60;
+    public static final int GITHUB_MAX_CACHE_AGE_SECONDS = 30; // GitHub's default max-cache age is 60 seconds
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
     private String githubTokenUsername;
@@ -127,8 +127,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             builder.cache(DockstoreWebserviceApplication.getCache(null));
         }
         OkHttpClient build = builder.build();
-        // Must set the cache max age otherwise kohsuke assumes 0 which significantly slows down our GitHub requests. The GitHub API uses a cache max-age of 60 seconds, so use that
-        OkHttpGitHubConnector okHttp3Connector = new OkHttpGitHubConnector(build, GITHUB_DEFAULT_MAX_CACHE_AGE_SECONDS);
+        // Must set the cache max age otherwise kohsuke assumes 0 which significantly slows down our GitHub requests
+        OkHttpGitHubConnector okHttp3Connector = new OkHttpGitHubConnector(build, GITHUB_MAX_CACHE_AGE_SECONDS);
         try {
             this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername)
                     .withRateLimitHandler(new FailRateLimitHandler(githubTokenUsername))

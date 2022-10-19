@@ -17,7 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.DockstoreWebserviceApplication.getOkHttpClient;
-import static io.dockstore.webservice.helpers.GitHubSourceCodeRepo.GITHUB_DEFAULT_MAX_CACHE_AGE_SECONDS;
+import static io.dockstore.webservice.helpers.GitHubSourceCodeRepo.GITHUB_MAX_CACHE_AGE_SECONDS;
 import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY;
 import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
 
@@ -446,7 +446,7 @@ public class MetadataResource {
         CLIInfo cliInfo = new CLIInfo();
         try {
             OkHttpClient build = getOkHttpClient();
-            OkHttpGitHubConnector okHttp3Connector = new OkHttpGitHubConnector(build, GITHUB_DEFAULT_MAX_CACHE_AGE_SECONDS);
+            OkHttpGitHubConnector okHttp3Connector = new OkHttpGitHubConnector(build, GITHUB_MAX_CACHE_AGE_SECONDS);
             GitHub gitHub = GitHubBuilder.fromEnvironment().withConnector(okHttp3Connector).build();
 
             GHRepository repository = gitHub.getRepository("dockstore/dockstore-cli");
