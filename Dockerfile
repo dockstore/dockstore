@@ -21,6 +21,7 @@ COPY dockstore-webservice/target/dockstore-webservice*[^s].jar /home
 RUN mkdir /dockstore_logs && chmod a+rx /dockstore_logs
 
 # Include galaxy language plugin
+RUN apt-get install -y wget
 RUN mkdir -p /root/.dockstore/language-plugins
 RUN wget -P /root/.dockstore/language-plugins https://artifacts.oicr.on.ca/artifactory/collab-release/com/github/galaxyproject/dockstore-galaxy-interface/dockstore-galaxy-interface/0.0.7/dockstore-galaxy-interface-0.0.7.jar
 
