@@ -822,10 +822,10 @@ public abstract class SourceCodeRepoInterface {
 
         @Override
         public String toString() {
-            return "GitRepo{" +
-                "organization='" + organization + '\'' +
-                ", repository='" + repository + '\'' +
-                '}';
+            return "GitRepo{"
+                + "organization='" + organization + '\''
+                + ", repository='" + repository + '\''
+                + '}';
         }
     }
 }
