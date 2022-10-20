@@ -51,7 +51,7 @@
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
-        <skipSignatureCheck>false</skipSignatureCheck>
+        <skipSignatureCheck>true</skipSignatureCheck>
         <!-- for sonarcloud -->
         <sonar.projectKey>dockstore_dockstore</sonar.projectKey>
         <sonar.organization>dockstore</sonar.organization>
