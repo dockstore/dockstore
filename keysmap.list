@@ -1,11 +1,11 @@
 io.swagger.core.v3:swagger-annotations:jar:2.1.7 			        = noSig
 com.fasterxml.jackson.datatype:jackson-datatype-joda:pom:2.12.1     = badSig
 com.fasterxml.jackson.core:jackson-databind:pom:2.12.1 			    = badSig
-com.fasterxml.jackson.core:jackson-annotations:pom:2.12.1 		    = badSig
-com.fasterxml.jackson.core:jackson-core:pom:2.12.1 			        = badSig
-com.fasterxml.jackson.dataformat:jackson-dataformat-xml:pom:2.12.1  = badSig
-com.fasterxml.jackson.datatype:jackson-datatype-joda:pom:2.13.4     = badSig
-com.fasterxml.jackson.core:jackson-databind:pom:2.13.4 			    = badSig
+com.fasterxml.jackson.core:jackson-annotations:pom:2.13.3 		    = badSig
+com.fasterxml.jackson.core:jackson-core:pom:2.13.3 			        = badSig
+com.fasterxml.jackson.dataformat:jackson-dataformat-xml:pom:2.13.3  = badSig
+com.fasterxml.jackson.datatype:jackson-datatype-joda:pom:2.13.3     = badSig
+com.fasterxml.jackson.core:jackson-databind:pom:2.13.3 			    = badSig
 com.fasterxml.jackson.core:jackson-annotations:pom:2.13.4		    = badSig
 com.fasterxml.jackson.core:jackson-core:pom:2.13.4 			        = badSig
 com.fasterxml.jackson.dataformat:jackson-dataformat-xml:pom:2.13.4  = badSig
