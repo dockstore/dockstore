@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - feature/seab-4900/handle-rds-upgrades
       
 jobs:
   build:
