@@ -405,7 +405,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         MetadataResourceHelper.init(configuration);
         ORCIDHelper.init(configuration);
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
-        environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
+        final MetadataResource metadataResource = new MetadataResource(getHibernate().getSessionFactory(), configuration);
+        environment.jersey().register(metadataResource);
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
@@ -470,6 +471,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             public void lifeCycleStarted(LifeCycle event) {
                 final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
                 environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+                metadataResource.setHealthCheckRegistry(environment.healthChecks());
             }
         });
 
