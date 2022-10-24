@@ -462,7 +462,7 @@ public class MetadataResource {
 
         allHealthy = results.values().stream().allMatch(HealthCheck.Result::isHealthy);
         if (allHealthy) {
-            return results.entrySet().stream().map(result -> new HealthCheckResult(result.getKey(), result.getValue().isHealthy())).collect(Collectors.toSet()); //Response.ok().entity(results).type(MediaType.APPLICATION_JSON).build();
+            return results.entrySet().stream().map(result -> new HealthCheckResult(result.getKey(), result.getValue().isHealthy())).collect(Collectors.toSet());
         } else {
             results.entrySet().stream().filter(result -> !result.getValue().isHealthy()).forEach(result -> LOG.error("Health check '{}' failed with error: {}", result.getKey(), result.getValue().getMessage()));
             String failedHealthCheckNames = results.entrySet().stream().filter(result -> !result.getValue().isHealthy()).map(result -> String.format("'%s'", result)).collect(Collectors.joining(", "));
