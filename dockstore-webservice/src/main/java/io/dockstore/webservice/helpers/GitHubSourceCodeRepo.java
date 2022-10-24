@@ -106,7 +106,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
     public static final String GITHUB_ABUSE_LIMIT_REACHED = "GitHub abuse limit reached";
-    public static final int GITHUB_MAX_CACHE_AGE_SECONDS = 60; // GitHub's default max-cache age is 60 seconds
+    public static final int GITHUB_MAX_CACHE_AGE_SECONDS = 30; // GitHub's default max-cache age is 60 seconds
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
     private String githubTokenUsername;
