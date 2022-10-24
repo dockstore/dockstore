@@ -21,6 +21,7 @@ import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.getOkHttpClient;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -53,7 +54,6 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -79,7 +79,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.http.HttpStatus;
-import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
@@ -92,11 +91,11 @@ import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubAbuseLimitHandler;
 import org.kohsuke.github.GitHubBuilder;
-import org.kohsuke.github.HttpConnector;
-import org.kohsuke.github.RateLimitHandler;
-import org.kohsuke.github.extras.ImpatientHttpConnector;
-import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
+import org.kohsuke.github.GitHubRateLimitHandler;
+import org.kohsuke.github.connector.GitHubConnectorResponse;
+import org.kohsuke.github.extras.okhttp3.OkHttpGitHubConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,6 +105,8 @@ import org.slf4j.LoggerFactory;
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
+    public static final String GITHUB_ABUSE_LIMIT_REACHED = "GitHub abuse limit reached";
+    public static final int GITHUB_MAX_CACHE_AGE_SECONDS = 30; // GitHub's default max-cache age is 60 seconds
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
     private String githubTokenUsername;
@@ -116,8 +117,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     public GitHubSourceCodeRepo(String githubTokenUsername, String githubTokenContent) {
         this.githubTokenUsername = githubTokenUsername;
-        // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
-        OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+        OkHttpClient.Builder builder = getOkHttpClient().newBuilder();
         builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), githubTokenUsername));
         if (System.getenv("CIRCLE_SHA1") != null) {
             // namespace cache by user when testing
@@ -127,12 +127,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             builder.cache(DockstoreWebserviceApplication.getCache(null));
         }
         OkHttpClient build = builder.build();
-        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
-
-        HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
+        // Must set the cache max age otherwise kohsuke assumes 0 which significantly slows down our GitHub requests
+        OkHttpGitHubConnector okHttp3Connector = new OkHttpGitHubConnector(build, GITHUB_MAX_CACHE_AGE_SECONDS);
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername).withRateLimitHandler(new FailRateLimitHandler(githubTokenUsername))
-                    .withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername)
+                    .withRateLimitHandler(new FailRateLimitHandler(githubTokenUsername))
+                    .withAbuseLimitHandler(new FailAbuseLimitHandler(githubTokenUsername))
+                    .withConnector(okHttp3Connector)
+                    .build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -1244,12 +1246,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Not using org.kohsuke.github.RateLimitHandler.FAIL directly because
-     *
      * 1. This logs username
      * 2. We control the string in the error message
      */
-    private static final class FailRateLimitHandler extends RateLimitHandler {
+    private static final class FailRateLimitHandler extends GitHubRateLimitHandler {
 
         private final String username;
 
@@ -1258,10 +1258,24 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         @Override
-        public void onError(IOException e, HttpURLConnection uc) {
+        public void onError(GitHubConnectorResponse connectorResponse) {
             LOG.error(OUT_OF_GIT_HUB_RATE_LIMIT + " for " + username);
             throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT, HttpStatus.SC_BAD_REQUEST);
         }
 
+    }
+
+    private static final class FailAbuseLimitHandler extends GitHubAbuseLimitHandler {
+        private final String username;
+
+        private FailAbuseLimitHandler(String username) {
+            this.username = username;
+        }
+
+        @Override
+        public void onError(GitHubConnectorResponse connectorResponse) {
+            LOG.error(GITHUB_ABUSE_LIMIT_REACHED + " for " + username);
+            throw new CustomWebApplicationException(GITHUB_ABUSE_LIMIT_REACHED, HttpStatus.SC_BAD_REQUEST);
+        }
     }
 }

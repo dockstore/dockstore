@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.DockstoreWebserviceApplication.getOkHttpClient;
+import static io.dockstore.webservice.helpers.GitHubSourceCodeRepo.GITHUB_MAX_CACHE_AGE_SECONDS;
 import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY;
 import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
 
@@ -110,10 +111,8 @@ import org.kohsuke.github.GHRelease;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
-import org.kohsuke.github.HttpConnector;
 import org.kohsuke.github.PagedIterable;
-import org.kohsuke.github.extras.ImpatientHttpConnector;
-import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
+import org.kohsuke.github.extras.okhttp3.OkHttpGitHubConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -447,8 +446,7 @@ public class MetadataResource {
         CLIInfo cliInfo = new CLIInfo();
         try {
             OkHttpClient build = getOkHttpClient();
-            ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
-            HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
+            OkHttpGitHubConnector okHttp3Connector = new OkHttpGitHubConnector(build, GITHUB_MAX_CACHE_AGE_SECONDS);
             GitHub gitHub = GitHubBuilder.fromEnvironment().withConnector(okHttp3Connector).build();
 
             GHRepository repository = gitHub.getRepository("dockstore/dockstore-cli");
