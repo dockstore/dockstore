@@ -114,7 +114,7 @@
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-jersey2-jaxrs</artifactId>
-      <version>1.6.5</version>
+      <version>1.6.8</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -186,13 +186,13 @@
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-models</artifactId>
-      <version>1.6.5</version>
+      <version>1.6.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-jaxrs</artifactId>
-      <version>1.6.5</version>
+      <version>1.6.8</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -552,7 +552,7 @@
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-annotations</artifactId>
-      <version>1.6.5</version>
+      <version>1.6.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -570,7 +570,7 @@
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-annotations</artifactId>
-      <version>2.1.13</version>
+      <version>2.2.4</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -582,7 +582,7 @@
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2</artifactId>
-      <version>2.1.13</version>
+      <version>2.2.4</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -594,7 +594,7 @@
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
-      <version>2.1.13</version>
+      <version>2.2.4</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -624,7 +624,7 @@
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-core</artifactId>
-      <version>1.6.5</version>
+      <version>1.6.8</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -672,7 +672,7 @@
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <version>1.31</version>
+      <version>1.33</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -1048,7 +1048,7 @@
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-integration</artifactId>
-      <version>2.1.13</version>
+      <version>2.2.4</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
