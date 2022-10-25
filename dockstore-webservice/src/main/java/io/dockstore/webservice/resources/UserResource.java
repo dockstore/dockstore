@@ -898,9 +898,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         final List<Long> allGitHubUsers = userDAO.findAllGitHubUserIds();
         allGitHubUsers.forEach(userId -> {
             // Break into many transactions so all workflows are not loaded into memory
-            new TransactionHelper(sessionFactory).transaction(() -> {
-                tokenDAO.findGithubByUserId(userId).stream().limit(1).forEach(gitHubToken -> {
-                    try {
+            try {
+                new TransactionHelper(sessionFactory).transaction(() -> {
+                    tokenDAO.findGithubByUserId(userId).stream().limit(1).forEach(gitHubToken -> {
                         final SourceCodeRepoInterface sourceCodeRepo =
                             SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken);
                         final Set<String> orgMemberships = sourceCodeRepo.getOrganizationMemberships();
@@ -914,13 +914,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                                 return !userHasOrganizationAccess && !hasRepoLevelAccess(gitRepos, workflow);
                             })
                             .forEach(workflow -> workflow.removeUser(user));
-                    } catch (Exception e) {
-                        // LOG and continue -- don't let one user's invalid token block everybody
-                        final String message = String.format("Error updating workflows for user %s", userId);
-                        LOG.error(message, e);
-                    }
+                    });
                 });
-            });
+            } catch (Exception e) {
+                // LOG and continue -- don't let one user's invalid token or other problem block everybody
+                final String message = String.format("Error updating workflows for user %s", userId);
+                LOG.error(message, e);
+            }
         });
         return Response.noContent().build();
     }
