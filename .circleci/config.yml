@@ -257,7 +257,7 @@ jobs:
     steps: # a collection of executable commands
       - checkout
       - restore_cache:
-          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+          key: dockstore-web-cache-unit-test-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
       - install-postgres
       - install-git-secrets
       - setup_postgres
@@ -316,7 +316,7 @@ jobs:
             - ~/.m2
           key: dockstore-java-{{ checksum "pom.xml" }}
       - save_cache:
-          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+          key: dockstore-web-cache-unit-test-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
           paths:
             - /tmp/dockstore-web-cache
       - run:
@@ -359,7 +359,7 @@ jobs:
         # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
         key: dockstore-java-{{ checksum "pom.xml" }}
     - restore_cache:
-        key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+        key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
     - run:
         name: build
         command: ./mvnw clean install -DskipTests
@@ -434,7 +434,7 @@ commands:
           name: manually copy back .m2
           command: cp -r .m2 ~/.m2
       - restore_cache:
-          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
   setup_integration_test:
     steps:
       - run:
@@ -482,7 +482,7 @@ commands:
   save_test_results:
     steps:
       - save_cache:
-          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
+          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
           paths:
             - /tmp/dockstore-web-cache
       - run:
