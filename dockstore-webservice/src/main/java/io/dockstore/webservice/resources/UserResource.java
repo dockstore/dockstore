@@ -892,7 +892,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/updateUserWorkflows")
     @Operation(operationId = "checkWorkflowOwnership", description = "Check workflow ownership", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT
-        + "", description = "Successfully updated workflow ownership for all users", content = @Content(array = @ArraySchema(schema = @Schema(implementation = User.class))))
+        + "", description = "Successfully updated workflow ownership for all users")
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     public Response updateUserWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User adminUser) {
         final List<Long> allGitHubUsers = userDAO.findAllGitHubUserIds();
