@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
+import org.apache.commons.lang3.ObjectUtils;
 
 /**
  * Validates that every entry of a `DockstoreYaml12` has a unique name.
@@ -45,12 +46,10 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
         Optional.ofNullable(yaml.getTools()).ifPresent(entries::addAll);
         Optional.ofNullable(yaml.getWorkflows()).ifPresent(entries::addAll);
 
+        // Create a set of tool/workflow names and check for duplicates in the process.
         Set<String> names = new HashSet<>();
         for (Workflowish entry: entries) {
-            String name = entry.getName();
-            if (name == null) {
-                name = "";
-            }
+            String name = ObjectUtils.firstNonNull(entry.getName(), "");
             if (!names.add(name)) {
                 String reason = "is not valid: at least two workflows or tools have " + ("".equals(name) ? "no name" : String.format("the same name '%s'", name));
                 addConstraintViolation(context, reason);
@@ -58,6 +57,7 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
             }
         }
 
+        // If a service exists, check for any non-services without names.
         if (yaml.getService() != null && names.contains("")) {
             String reason = "is not valid: a service always has no name, so any workflows or tools must be named";
             addConstraintViolation(context, reason);
