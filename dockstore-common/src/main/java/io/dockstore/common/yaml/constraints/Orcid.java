@@ -29,7 +29,7 @@ import javax.validation.constraints.Pattern;
  * Defines the `Orcid` constraint annotation.
  */
 @Pattern(regexp = ValidationConstants.ORCID_ID_REGEX, message = "must be a valid ORCID id")
-@Target({ ElementType.TYPE_USE })
+@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = {})
 public @interface Orcid {
