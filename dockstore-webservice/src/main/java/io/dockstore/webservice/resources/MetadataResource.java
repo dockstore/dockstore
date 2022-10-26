@@ -450,9 +450,13 @@ public class MetadataResource {
         if (include.isEmpty()) { // Run all health checks
             results = this.healthCheckRegistry.runHealthChecks();
         } else {
-            List<String> invalidNames = include.stream().filter(name -> !healthCheckRegistry.getNames().contains(name)).collect(Collectors.toList());
+            List<String> invalidNames = include.stream()
+                    .filter(name -> !healthCheckRegistry.getNames().contains(name))
+                    .collect(Collectors.toList());
             if (!invalidNames.isEmpty()) {
-                String invalidNamesMessage = invalidNames.stream().map(name -> String.format("'%s'", name)).collect(Collectors.joining(", "));
+                String invalidNamesMessage = invalidNames.stream()
+                        .map(name -> String.format("'%s'", name))
+                        .collect(Collectors.joining(", "));
                 String errorMessage = String.format("Could not run health checks. The following health checks don't exist: %s", invalidNamesMessage);
                 LOG.error(errorMessage);
                 throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_BAD_REQUEST);
@@ -462,12 +466,18 @@ public class MetadataResource {
 
         allHealthy = results.values().stream().allMatch(HealthCheck.Result::isHealthy);
         if (allHealthy) {
-            return results.entrySet().stream().map(result -> new HealthCheckResult(result.getKey(), result.getValue().isHealthy())).collect(Collectors.toSet());
+            return results.entrySet().stream()
+                    .map(result -> new HealthCheckResult(result.getKey(), result.getValue().isHealthy()))
+                    .collect(Collectors.toSet());
         } else {
-            results.entrySet().stream().filter(result -> !result.getValue().isHealthy()).forEach(result -> LOG.error("Health check '{}' failed with error: {}", result.getKey(), result.getValue().getMessage()));
-            String failedHealthCheckNames = results.entrySet().stream().filter(result -> !result.getValue().isHealthy()).map(result -> String.format("'%s'", result)).collect(Collectors.joining(", "));
-            throw new CustomWebApplicationException(String.format(String.format("Health checks failed: %s", failedHealthCheckNames)),
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            results.entrySet().stream()
+                    .filter(result -> !result.getValue().isHealthy())
+                    .forEach(result -> LOG.error("Health check '{}' failed with error: {}", result.getKey(), result.getValue().getMessage()));
+            String failedHealthCheckNames = results.entrySet().stream()
+                    .filter(result -> !result.getValue().isHealthy())
+                    .map(result -> String.format("'%s'", result))
+                    .collect(Collectors.joining(", "));
+            throw new CustomWebApplicationException(String.format("Health checks failed: %s", failedHealthCheckNames), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
