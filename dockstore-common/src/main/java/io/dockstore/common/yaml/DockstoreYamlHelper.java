@@ -390,6 +390,13 @@ public final class DockstoreYamlHelper {
         validate(validatee, validateEntries, ".dockstore.yml");
     }
 
+    /**
+     * Performs constraint validation on an object, throwing an exception containing a descriptive error message if there violations.
+     * @param validatee object to validate
+     * @param validateEntries determines whether to validate the entries in a validatee representing a .dockstore.yml, should be false for other types of validatee
+     * @param validateeDescription a very short description of the validatee, used to form error messages for top-level violations
+     * @throws DockstoreYamlException an exception containing a descriptive error message that details all violations
+     */
     public static <T> void validate(final T validatee, final boolean validateEntries, final String validateeDescription) throws DockstoreYamlException {
         final Validator validator = createValidator();
         final Set<ConstraintViolation<T>> violations = validator.validate(validatee).stream().filter(validateEntries ? v -> true : DockstoreYamlHelper::doesNotReferenceWorkflowish).collect(Collectors.toSet());
@@ -405,6 +412,13 @@ public final class DockstoreYamlHelper {
         }
     }
 
+    /**
+     * Creates an error message from a constraint violation, using a description of the
+     * validatee (object being validated) if the property is not available.
+     * @param violation constrain violation to convert
+     * @param validateeDescription string that described the object being validated (ex: ".dockstore.yml")
+     * @return a well-formed error message
+     */
     private static <T> String buildMessageFromViolation(ConstraintViolation<T> violation, String validateeDescription) {
         // Determine the subject of the error message, either a property name or the validatee description.
         String subject = null;
@@ -431,6 +445,10 @@ public final class DockstoreYamlHelper {
         return message;
     }
 
+    /**
+     * Determine if a violation references a property in .dockstore.yml that represents an entry (tool/workflow/etc).
+     * @param violation
+     */
     private static <T> boolean doesNotReferenceWorkflowish(ConstraintViolation<T> violation) {
         javax.validation.Path propertyPath = violation.getPropertyPath();
         if (propertyPath == null) {
