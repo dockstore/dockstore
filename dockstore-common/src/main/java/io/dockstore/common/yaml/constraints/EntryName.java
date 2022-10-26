@@ -29,8 +29,8 @@ import javax.validation.constraints.Size;
 /**
  * Defines the `EntryName` constraint annotation.
  */
-@Pattern(regexp = ValidationConstants.ENTRY_NAME_REGEX, message = "must contain only letters, numbers, and internal hyphens and underscores")
-@Size(max = ValidationConstants.ENTRY_NAME_LENGTH_MAX, message = "must be 256 characters or less")
+@Pattern(regexp = ValidationConstants.ENTRY_NAME_REGEX, message = ValidationConstants.ENTRY_NAME_REGEX_MESSAGE)
+@Size(min = ValidationConstants.ENTRY_NAME_LENGTH_MIN, max = ValidationConstants.ENTRY_NAME_LENGTH_MAX, message = ValidationConstants.ENTRY_NAME_LENGTH_MESSAGE)
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = {})
