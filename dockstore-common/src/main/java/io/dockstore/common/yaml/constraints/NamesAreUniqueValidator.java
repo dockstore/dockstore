@@ -51,7 +51,7 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
         for (Workflowish entry: entries) {
             String name = ObjectUtils.firstNonNull(entry.getName(), "");
             if (!names.add(name)) {
-                String reason = "is not valid: at least two workflows or tools have " + ("".equals(name) ? "no name" : String.format("the same name '%s'", name));
+                String reason = "at least two workflows or tools have " + ("".equals(name) ? "no name" : String.format("the same name '%s'", name));
                 addConstraintViolation(context, reason);
                 return false;
             }
@@ -59,7 +59,7 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
 
         // If a service exists, check for any non-services without names.
         if (yaml.getService() != null && names.contains("")) {
-            String reason = "is not valid: a service always has no name, so any workflows or tools must be named";
+            String reason = "a service always has no name, so any workflows or tools must be named";
             addConstraintViolation(context, reason);
             return false;
         }
