@@ -37,7 +37,7 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
 
     @Override
     public boolean isValid(final DockstoreYaml12 yaml, final ConstraintValidatorContext context) {
-        if (yaml == null) { 
+        if (yaml == null) {
             return true;
         }
 
@@ -52,14 +52,14 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
                 name = "";
             }
             if (!names.add(name)) {
-                String reason = "".equals(name) ? "At least two workflows or tools have no name." : String.format("At least two workflows or tools have the same name '%s'.", name);
+                String reason = "is not valid: at least two workflows or tools have " + ("".equals(name) ? "no name" : String.format("the same name '%s'", name));
                 addConstraintViolation(context, reason);
                 return false;
             }
         }
 
         if (yaml.getService() != null && names.contains("")) {
-            String reason = "A service always has no name, so any workflows or tools must be named.";
+            String reason = "is not valid: a service always has no name, so any workflows or tools must be named";
             addConstraintViolation(context, reason);
             return false;
         }
