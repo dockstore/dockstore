@@ -21,6 +21,8 @@ import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY
 import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
 
 import com.codahale.metrics.annotation.Timed;
+import com.codahale.metrics.health.HealthCheck;
+import com.codahale.metrics.health.HealthCheckRegistry;
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.github.zafarkhaja.semver.expr.LexerException;
 import com.github.zafarkhaja.semver.expr.UnexpectedTokenException;
@@ -34,6 +36,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.CLIInfo;
 import io.dockstore.webservice.api.Config;
+import io.dockstore.webservice.api.HealthCheckResult;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
@@ -82,6 +85,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -138,6 +142,8 @@ public class MetadataResource {
     private final SitemapListener sitemapListener;
     private final RSSListener rssListener;
 
+    private HealthCheckRegistry healthCheckRegistry;
+
     private static final String DOCKSTORE_CLI_RELEASES_URL = "https://github.com/dockstore/dockstore-cli/releases";
 
     public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
@@ -148,6 +154,10 @@ public class MetadataResource {
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.sitemapListener = PublicStateManager.getInstance().getSitemapListener();
         this.rssListener = PublicStateManager.getInstance().getRSSListener();
+    }
+
+    public void setHealthCheckRegistry(HealthCheckRegistry healthCheckRegistry) {
+        this.healthCheckRegistry = healthCheckRegistry;
     }
 
     @GET
@@ -419,6 +429,56 @@ public class MetadataResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build();
         }
         return Response.ok().build();
+    }
+
+    @GET
+    @Timed
+    @Path("/health")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Successful response if the health checks succeed", description = "Successful response if the health checks succeed, NO authentication")
+    @ApiOperation(value = "Successful response if the health checks succeed", notes = "NO authentication", response = List.class)
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "All health checks successful", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = HealthCheckResult.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = "Health checks failed")
+    public Set<HealthCheckResult> checkHealth(
+            @Parameter(name = "include", description = "List of health checks to run. If unspecified, run all health checks", in = ParameterIn.QUERY,
+                    array = @ArraySchema(schema = @Schema(implementation = String.class, allowableValues = {"hibernate", "deadlocks", "connectionPool"})))
+            @ApiParam(name = "include", value = "List of health checks to run. If unspecified, run all health checks", allowableValues = "hibernate,deadlocks,connectionPool",
+                    type = "array") @QueryParam(value = "include") List<String> include) {
+        Map<String, HealthCheck.Result> results;
+        boolean allHealthy;
+        if (include.isEmpty()) { // Run all health checks
+            results = this.healthCheckRegistry.runHealthChecks();
+        } else {
+            List<String> invalidNames = include.stream()
+                    .filter(name -> !healthCheckRegistry.getNames().contains(name))
+                    .collect(Collectors.toList());
+            if (!invalidNames.isEmpty()) {
+                String invalidNamesMessage = invalidNames.stream()
+                        .map(name -> String.format("'%s'", name))
+                        .collect(Collectors.joining(", "));
+                String errorMessage = String.format("Could not run health checks. The following health checks don't exist: %s", invalidNamesMessage);
+                LOG.error(errorMessage);
+                throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_BAD_REQUEST);
+            }
+            results = include.stream().collect(Collectors.toMap(name -> name, name -> healthCheckRegistry.runHealthCheck(name)));
+        }
+
+        allHealthy = results.values().stream().allMatch(HealthCheck.Result::isHealthy);
+        if (allHealthy) {
+            return results.entrySet().stream()
+                    .map(result -> new HealthCheckResult(result.getKey(), result.getValue().isHealthy()))
+                    .collect(Collectors.toSet());
+        } else {
+            results.entrySet().stream()
+                    .filter(result -> !result.getValue().isHealthy())
+                    .forEach(result -> LOG.error("Health check '{}' failed with error: {}", result.getKey(), result.getValue().getMessage()));
+            String failedHealthCheckNames = results.entrySet().stream()
+                    .filter(result -> !result.getValue().isHealthy())
+                    .map(result -> String.format("'%s'", result))
+                    .collect(Collectors.joining(", "));
+            throw new CustomWebApplicationException(String.format("Health checks failed: %s", failedHealthCheckNames), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GET

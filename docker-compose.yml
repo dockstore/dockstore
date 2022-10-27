@@ -13,6 +13,9 @@ services:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      # The max_content_length value on AWS OpenSearch is dependent on instance type
+      # https://docs.aws.amazon.com/opensearch-service/latest/developerguide/limits.html#network-limits
+      - http.max_content_length=10mb
       - xpack.security.enabled=false
       - xpack.monitoring.enabled=false
       - xpack.graph.enabled=false
@@ -42,7 +45,7 @@ services:
     # networks:
       # - elastic
   postgres_db:
-    image: postgres:13.3
+    image: postgres:13.7
     command: postgres -c jit=off
     container_name: postgres1
     environment:
