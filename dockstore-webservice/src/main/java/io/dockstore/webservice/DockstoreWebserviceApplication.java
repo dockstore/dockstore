@@ -108,7 +108,6 @@ import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.NotificationResource;
 import io.dockstore.webservice.resources.OrganizationResource;
 import io.dockstore.webservice.resources.ServiceResource;
-import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.ToolTesterResource;
 import io.dockstore.webservice.resources.UserResource;
@@ -347,9 +346,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().property(CommonProperties.FEATURE_AUTO_DISCOVERY_DISABLE, true);
         environment.jersey().register(new JsonProcessingExceptionMapper(true));
 
-        final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
-        environment.healthChecks().register("template", healthCheck);
-
         environment.lifecycle().manage(new ElasticSearchHelper(configuration.getEsConfiguration()));
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
@@ -405,7 +401,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         MetadataResourceHelper.init(configuration);
         ORCIDHelper.init(configuration);
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
-        environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
+        final MetadataResource metadataResource = new MetadataResource(getHibernate().getSessionFactory(), configuration);
+        environment.jersey().register(metadataResource);
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
@@ -470,6 +467,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             public void lifeCycleStarted(LifeCycle event) {
                 final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
                 environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+                metadataResource.setHealthCheckRegistry(environment.healthChecks());
             }
         });
 
