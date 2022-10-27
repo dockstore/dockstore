@@ -3172,6 +3172,39 @@ paths:
       summary: Successful response if elastic search is up and running
       tags:
       - metadata
+  /metadata/health:
+    get:
+      description: "Successful response if the health checks succeed, NO authentication"
+      operationId: checkHealth
+      parameters:
+      - description: "List of health checks to run. If unspecified, run all health\
+          \ checks"
+        in: query
+        name: include
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - hibernate
+            - deadlocks
+            - connectionPool
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HealthCheckResult'
+          description: All health checks successful
+        "400":
+          description: Bad Request
+        "500":
+          description: Health checks failed
+      summary: Successful response if the health checks succeed
+      tags:
+      - metadata
   /metadata/okHttpCachePerformance:
     get:
       description: "Get measures of cache performance, NO authentication"
@@ -8179,6 +8212,13 @@ components:
             \ information, and can include a git hash.  Note that this URL should\
             \ resolve to the raw unwrapped content that would otherwise be available\
             \ in content. One of url or content is required."
+    HealthCheckResult:
+      type: object
+      properties:
+        healthCheckName:
+          type: string
+        healthy:
+          type: boolean
     Image:
       type: object
       properties:

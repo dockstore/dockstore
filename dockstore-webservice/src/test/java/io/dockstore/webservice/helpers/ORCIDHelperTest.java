@@ -40,6 +40,9 @@ public class ORCIDHelperTest {
     @Test
     public void testIsValidOrcidId() {
         Assert.assertTrue(ORCIDHelper.isValidOrcidId("1234-1234-1234-1234"));
+        Assert.assertTrue(ORCIDHelper.isValidOrcidId("0000-0002-9079-593X"));
+        Assert.assertFalse(ORCIDHelper.isValidOrcidId("0000-0002-9079-593P"));
+        Assert.assertFalse(ORCIDHelper.isValidOrcidId("0000-0002-9079-59X3"));
         Assert.assertFalse(ORCIDHelper.isValidOrcidId("https://orcid.org/1234-1234-1234-1234"));
         Assert.assertFalse(ORCIDHelper.isValidOrcidId("1-1-1-1"));
         Assert.assertFalse(ORCIDHelper.isValidOrcidId("orcidId"));
