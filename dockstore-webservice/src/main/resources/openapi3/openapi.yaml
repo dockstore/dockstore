@@ -4807,6 +4807,19 @@ paths:
       - BEARER: []
       tags:
       - users
+  /users/updateUserWorkflows:
+    post:
+      description: Check workflow ownership
+      operationId: checkWorkflowOwnership
+      responses:
+        "204":
+          description: Successfully updated workflow ownership for all users
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/user:
     delete:
       description: Delete user if possible.

@@ -51,6 +51,10 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         return list(namedTypedQuery("io.dockstore.webservice.core.User.findAll"));
     }
 
+    public List<Long> findAllGitHubUserIds() {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.User.findAllGitHubUserIds"));
+    }
+
     /**
      * Deprecated method, is mostly likely dangerous if the username can be changed
      *

@@ -366,6 +366,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    public Set<String> getOrganizationMemberships() {
+        try {
+            final Set<String> orgsAndAccount = new HashSet<>();
+            orgsAndAccount.addAll(github.getMyOrganizations().keySet());
+            orgsAndAccount.add(githubTokenUsername);
+            return orgsAndAccount;
+        } catch (IOException e) {
+            LOG.error("could not determine organization accessibility due to ", e);
+            throw new CustomWebApplicationException("could not determine organization accessibility on github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
     public boolean checkSourceControlTokenValidity() {
         try {
             GHRateLimit ghRateLimit = github.getRateLimit();
