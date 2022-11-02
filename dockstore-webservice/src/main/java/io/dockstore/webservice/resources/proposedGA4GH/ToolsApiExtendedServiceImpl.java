@@ -57,12 +57,15 @@ import javax.ws.rs.core.SecurityContext;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.settings.Settings.Builder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -217,6 +220,25 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         CreateIndexRequest toolsRequest = new CreateIndexRequest(nameOfIndex);
         toolsRequest.source(textTools, XContentType.JSON);
         client.indices().create(toolsRequest, RequestOptions.DEFAULT);
+        configureRefreshInterval(nameOfIndex, client);
+    }
+
+    /**
+     * Sets the ES index's refresh interval. See https://aws.amazon.com/premiumsupport/knowledge-center/opensearch-indexing-performance/
+     * @param nameOfIndex
+     * @param client
+     * @throws IOException
+     */
+    private static void configureRefreshInterval(final String nameOfIndex, final RestHighLevelClient client)
+        throws IOException {
+        final String settingKey = "index.refresh_interval";
+        // This API is deprecated in 7.15.0; when we upgrade, we'll need to change the code
+        // https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-high-indices-put-settings.html
+        final UpdateSettingsRequest request = new UpdateSettingsRequest(nameOfIndex);
+        final Builder settingsBuilder = Settings.builder().put(settingKey,
+            config.getEsConfiguration().getRefreshInterval());
+        request.settings(settingsBuilder);
+        client.indices().putSettings(request, RequestOptions.DEFAULT);
     }
 
     private void indexBatch(List<? extends Entry> published) {
