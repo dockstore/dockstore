@@ -299,7 +299,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
         }
         // getOriginalOwnersForWorkflow does not check if user is in workflow.getUsers(), because
         // they have access to the workflow via SAM.
-        final List<Permission> dockstoreOwners = PermissionsInterface.getOriginalOwnersForWorkflow(workflow);
+        final List<Permission> dockstoreOwners = getOriginalOwnersForWorkflow(workflow);
         return PermissionsInterface.mergePermissions(dockstoreOwners, samPermissions);
     }
 
@@ -323,8 +323,9 @@ public class SamPermissionsImpl implements PermissionsInterface {
     }
 
     private boolean isSamOwner(User user, List<Permission> permissions) {
-        final String email = PermissionsInterface.emailOrUsername(user);
-        return permissions.stream().anyMatch(permission -> permission.getEmail().equals(email) && permission.getRole() == Role.OWNER);
+        final Optional<String> email = userIdForSharing(user);
+        return email.isPresent() && permissions.stream().anyMatch(permission ->
+            permission.getEmail().equals(email.get()) && permission.getRole() == Role.OWNER);
     }
 
     @Override
@@ -468,6 +469,15 @@ public class SamPermissionsImpl implements PermissionsInterface {
             // Unknown error, assume they could be sharing to be safe
             return true;
         }
+    }
+
+    @Override
+    public Optional<String> userIdForSharing(final User user) {
+        final User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+        if (profile != null) {
+            return Optional.ofNullable(profile.email);
+        }
+        return Optional.empty();
     }
 
     boolean userIsOnlyMember(List<String> resourceIds, ResourcesApi resourcesApi) {

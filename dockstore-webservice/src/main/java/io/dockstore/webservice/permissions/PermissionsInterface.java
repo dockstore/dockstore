@@ -17,13 +17,12 @@
 package io.dockstore.webservice.permissions;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
@@ -91,7 +90,7 @@ public interface PermissionsInterface {
         if (!workflow.getUsers().contains(user)) {
             throw new CustomWebApplicationException("Forbidden", HttpStatus.SC_FORBIDDEN);
         }
-        return PermissionsInterface.getOriginalOwnersForWorkflow(workflow);
+        return getOriginalOwnersForWorkflow(workflow);
     }
 
     /**
@@ -139,6 +138,37 @@ public interface PermissionsInterface {
     boolean isSharing(User user);
 
     /**
+     * Returns the userid to use for sharing. The userid will vary by implementation. For SAM
+     * the userid is the user's Google email; the InMemory implementation is the Dockstore username.
+     * If we ever add sharing with GitHub, the username might be the GitHub username, etc.
+     * @param user
+     * @return
+     */
+    Optional<String> userIdForSharing(User user);
+
+    /**
+     * Returns the "original owners" of a workflow as list of {@link Permission}. The original owners
+     * are the <code>workflow.getUsers()</code>, e.g., who created the hosted entry, or members of the
+     * GitHub repo.
+     *
+     * @param workflow
+     * @return
+     */
+    default List<Permission> getOriginalOwnersForWorkflow(Workflow workflow) {
+        return workflow.getUsers().stream()
+            .map(this::userIdForSharing)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .map(email -> {
+                final Permission permission = new Permission();
+                permission.setEmail(email);
+                permission.setRole(Role.OWNER);
+                return permission;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
      * Merges two lists of permissions, removing any duplicate users. If there
      * are duplicates, gives precedence to <code>dockstoreOwners</code>.
      *
@@ -152,42 +182,6 @@ public interface PermissionsInterface {
         permissions.addAll(nativePermissions.stream()
                 .filter(p -> !dockstoreOwnerEmails.contains(p.getEmail())).collect(Collectors.toList()));
         return permissions;
-    }
-
-    /**
-     * Returns the "original owners" of a workflow as list of {@link Permission}. The original owners
-     * are the <code>workflow.getUsers()</code>, e.g., who created the hosted entry, or members of the
-     * GitHub repo.
-     *
-     * @param workflow
-     * @return
-     */
-    static List<Permission> getOriginalOwnersForWorkflow(Workflow workflow) {
-        return workflow.getUsers().stream()
-                .map(PermissionsInterface::emailOrUsername)
-                .filter(Objects::nonNull)
-                .map(email -> {
-                    final Permission permission = new Permission();
-                    permission.setEmail(email);
-                    permission.setRole(Role.OWNER);
-                    return permission;
-                })
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Returns the user's Google profile email if present, otherwise it returns their username. A bit
-     * of a hack to accomodate both SAM and InMemory implementations of this interface.
-     * @param user
-     * @return
-     */
-    static String emailOrUsername(User user) {
-        final User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
-        if (profile != null && profile.email != null) {
-            return profile.email;
-        } else {
-            return user.getUsername();
-        }
     }
 
     /**

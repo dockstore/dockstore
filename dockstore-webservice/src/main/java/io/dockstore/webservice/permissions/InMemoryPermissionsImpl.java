@@ -139,7 +139,7 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
      * @return
      */
     private List<Permission> getWorkflowPermissions(Workflow workflow) {
-        final List<Permission> dockstoreOwners = PermissionsInterface.getOriginalOwnersForWorkflow(workflow);
+        final List<Permission> dockstoreOwners = getOriginalOwnersForWorkflow(workflow);
         Map<String, Role> permissionMap = resourceToUsersAndRolesMap.get(workflow.getWorkflowPath());
         if (permissionMap == null) {
             return dockstoreOwners;
@@ -205,6 +205,11 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
             }
             return false;
         });
+    }
+
+    @Override
+    public Optional<String> userIdForSharing(final User user) {
+        return Optional.of(user.getUsername());
     }
 
     private Optional<Role> getRole(User requester, Workflow workflow) {
