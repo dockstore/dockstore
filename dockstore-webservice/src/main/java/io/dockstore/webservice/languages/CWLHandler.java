@@ -387,7 +387,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         if (outputParameterObj instanceof WorkflowOutputParameter) {
                             WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
                             Object sources = outputParameter.getOutputSource();
-                            processDependencies(NODE_PREFIX, endDependencies, sources, deOptionalize(workflow.getId()));
+                            processDependencies(NODE_PREFIX, endDependencies, sources, checkNonNull(deOptionalize(workflow.getId())));
                         }
                     }
                 }
@@ -410,7 +410,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 return Optional.of(getJSONTableToolContent(toolDockerInfo));
             }
         } catch (ClassCastException | YAMLException | JsonParseException ex) {
-            final String exMsg = CWLHandler.CWL_PARSE_ERROR + ex.getMessage();
+            final String exMsg = CWL_PARSE_ERROR + ex.getMessage();
             LOG.error(exMsg, ex);
             throw new CustomWebApplicationException(exMsg, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
@@ -432,8 +432,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * This function converts the workflow step ID that cwljava returns, which is normalized and includes the enclosing workflow IDS,
-     * to form that we use internally.
+     * Extract the workflow step ID from the full normalized ID that cwljava returns, then prepend the parent ID, if it is not null.
      */
     private String convertStepId(String normalizedStepId, String parentStepId) {
         LOG.error("STEP ID " + normalizedStepId);
@@ -443,7 +442,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private void processWorkflow(Workflow workflow, String parentStepId, RequirementOrHintState parentRequirementState,  RequirementOrHintState parentHintState, int depth, LanguageHandlerInterface.Type type, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
+    private void processWorkflow(Workflow workflow, String parentStepId, RequirementOrHintState parentRequirementState, RequirementOrHintState parentHintState, int depth, LanguageHandlerInterface.Type type, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         // Join parent and current requirements and hints.
         RequirementOrHintState requirementState = addToRequirementOrHintState(parentRequirementState, workflow.getRequirements());
         RequirementOrHintState hintState = addToRequirementOrHintState(parentHintState, workflow.getHints());
@@ -453,12 +452,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         // Iterate through steps to find dependencies and docker requirements
         for (Object workflowStepObj: workflow.getSteps()) {
             WorkflowStep workflowStep = (WorkflowStep)workflowStepObj; // per the spec, the only possible type is WorkflowStep
-            String rawStepId = convertStepId(deOptionalize(workflowStep.getId()), parentStepId);
+            String rawStepId = convertStepId(checkNonNull(deOptionalize(workflowStep.getId())), parentStepId);
             String nodeStepId = NODE_PREFIX + rawStepId;
             LOG.error("NODE STEP ID " + nodeStepId);
 
             if (depth == 0) {
-                String workflowId = deOptionalize(workflow.getId());
                 ArrayList<String> stepDependencies = new ArrayList<>();
 
                 // Iterate over source and get the dependencies
@@ -469,7 +467,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                             LOG.error("IS WORKFLOWSTEPINPUT");
                             WorkflowStepInput stepInput = (WorkflowStepInput)stepInputObj;
                             Object sources = stepInput.getSource();
-                            processDependencies(NODE_PREFIX, stepDependencies, sources, workflowId);
+                            processDependencies(NODE_PREFIX, stepDependencies, sources, checkNonNull(deOptionalize(workflow.getId())));
                         }
                     }
                     LOG.error("DEPENDENCIES");
@@ -702,6 +700,14 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return optional.orElse(null);
     }
 
+    private <T> T checkNonNull(T value) {
+        if (value == null) {
+            LOG.error("While processing CWL, got a null value where a non-null value was required.");
+            throw new CustomWebApplicationException(CWL_PARSE_ERROR + "internal processing error", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        return value;
+    }
+
     /**
      * Computes a new requirement/hint state by adding information-of-interest from the specified list of CWL requirements/hints.
      * If there are no requirements/hints to be added, the original state is returned.
@@ -717,7 +723,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         RequirementOrHintState sum = new RequirementOrHintState(existing);
         adds.forEach(add -> {
             // The cwljava parser has an oddity: given a requirement R and a hint H, where R and H are equivalent, cwljava does not parse them to the same representation.
-            // So, we must check both for a DockerRequirement object and the equivalent Map.
+            // Thus, we must handle two cases: a) the requirement/hint is a DockerRequirement object, and b) the requirement/hint is the equivalent Map.
             if (add instanceof DockerRequirement) {
                 sum.setDockerPull(deOptionalize(((DockerRequirement)add).getDockerPull()));
             }
