@@ -386,7 +386,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         if (outputParameterObj instanceof WorkflowOutputParameter) {
                             WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
                             Object sources = outputParameter.getOutputSource();
-                            processDependencies(NODE_PREFIX, endDependencies, sources, checkNonNull(deOptionalize(workflow.getId())));
+                            processDependencies(endDependencies, sources, NODE_PREFIX, checkNonNull(deOptionalize(workflow.getId())));
                         }
                     }
                 }
@@ -430,10 +430,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * Extract the workflow step ID from the full normalized ID that cwljava returns, then prepend the parent ID, if it is not null.
+     * Extract the workflow step ID from the full normalized ID that cwljava returns, then prepend the parent ID if it is not null.
      */
-    private String convertStepId(String normalizedStepId, String parentStepId) {
-        String[] parts = normalizedStepId.split("/");
+    private String convertStepId(String fullStepId, String parentStepId) {
+        String[] parts = fullStepId.split("/");
         String thisStepId = parts[parts.length - 1];
         return parentStepId == null ? thisStepId : parentStepId + "." + thisStepId;
     }
@@ -459,7 +459,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         if (stepInputObj instanceof WorkflowStepInput) {
                             WorkflowStepInput stepInput = (WorkflowStepInput)stepInputObj;
                             Object sources = stepInput.getSource();
-                            processDependencies(NODE_PREFIX, stepDependencies, sources, checkNonNull(deOptionalize(workflow.getId())));
+                            processDependencies(stepDependencies, sources, NODE_PREFIX, checkNonNull(deOptionalize(workflow.getId())));
                         }
                     }
                     if (stepDependencies.size() > 0) {
@@ -558,19 +558,23 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return "n/a";
     }
 
-    private void processDependencies(String nodePrefix, List<String> endDependencies, Object sources, String workflowId) {
-        if (sources != null) {
-            if (sources instanceof String) {
-                String source = (String)sources;
-                if (source.startsWith(workflowId)) {
-                    String[] sourceSplit = source.substring(workflowId.length()).replaceFirst("^/", "").split("/");
-                    if (sourceSplit.length > 1) {
-                        endDependencies.add(nodePrefix + sourceSplit[sourceSplit.length - 2].replaceFirst("#", ""));
-                    }
+    /**
+     * Computes the dependencies from one or more output sources
+     * @param endDependencies List to which the computed dependencies are added
+     * @param sources a single String output source or List of String output sources
+     * @param nodePrefix prefix to attach to extracted dependencies
+     * @param workflowId normalized workflow ID
+     */
+    private void processDependencies(List<String> endDependencies, Object sourcesObj, String nodePrefix, String workflowId) {
+        List<String> sources = sourcesObj instanceof String ? List.of((String)sourcesObj) : (List<String>)sourcesObj;
+        for (String s: sources) {
+            // If the source ID starts with the workflow ID, strip it off, split at the slashes, and if
+            // there are two or more parts, the dependency (workflow step name/id) is the second-to-last part.
+            if (s.startsWith(workflowId)) {
+                String[] split = s.substring(workflowId.length()).replaceFirst("^/", "").split("/");
+                if (split.length >= 2) {
+                    endDependencies.add(nodePrefix + split[split.length - 2].replaceFirst("#", ""));
                 }
-            } else {
-                List<String> filteredDependencies = filterDependent((List<String>)sources, nodePrefix, workflowId);
-                endDependencies.addAll(filteredDependencies);
             }
         }
     }
@@ -752,28 +756,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return false;
         }
         return false;
-    }
-
-    /**
-     * Given an array of sources, will look for dependencies in the source name
-     * @param sources list of sources
-     * @param nodePrefix prefix to attach to extracted dependencies
-     * @param skip number of slash-separated name components to skip
-     * @return filtered list of dependent sources
-     */
-    private List<String> filterDependent(List<String> sources, String nodePrefix, String workflowId) {
-        List<String> filteredArray = new ArrayList<>();
-
-        for (String s : sources) {
-            if (s.startsWith(workflowId)) {
-                String[] split = s.substring(workflowId.length()).replaceFirst("^/", "").split("/");
-                if (split.length > 1) {
-                    filteredArray.add(nodePrefix + split[split.length - 2].replaceFirst("#", ""));
-                }
-            }
-        }
-
-        return filteredArray;
     }
 
     private VersionTypeValidation validateProcessSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath,
