@@ -47,7 +47,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -374,7 +373,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             // Process the parse workflow
             Workflow workflow = (Workflow)rootObject;
-            processWorkflow(workflow, null, null, 0, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+            processWorkflow(workflow, null, null, null, 0, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
             // Return the requested information
             if (type == LanguageHandlerInterface.Type.DAG) {
@@ -433,19 +432,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * This function converts the workflow step ID that cwljava returns, which includes the enclosing workflow IDS,
+     * This function converts the workflow step ID that cwljava returns, which is normalized and includes the enclosing workflow IDS,
      * to form that we use internally.
-     * For example, given the id "/#W1/S1/W2/S2", where W1 and W2 are the parent and child workflow IDs and
-     * S1 and S2 are the corresponding workflow step IDs, this function will return "S1.S2".
      */
-    private String convertStepId(String cwljavaStepId, String workflowId) {
-        LOG.error("STEP ID " + cwljavaStepId);
-        List<String> parts = Arrays.asList(cwljavaStepId.substring(workflowId.length()).replaceFirst("^/", "").split("/"));
-        return NODE_PREFIX + IntStream.range(0, parts.size()).filter(i -> i % 2 == 0).mapToObj(parts::get).collect(Collectors.joining("."));
+    private String convertStepId(String normalizedStepId, String parentStepId) {
+        LOG.error("STEP ID " + normalizedStepId);
+        String[] parts = normalizedStepId.split("/");
+        String thisStepId = parts[parts.length - 1];
+        return parentStepId == null ? thisStepId : parentStepId + "." + thisStepId;
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private void processWorkflow(Workflow workflow, RequirementOrHintState parentRequirementState,  RequirementOrHintState parentHintState, int depth, LanguageHandlerInterface.Type type, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
+    private void processWorkflow(Workflow workflow, String parentStepId, RequirementOrHintState parentRequirementState,  RequirementOrHintState parentHintState, int depth, LanguageHandlerInterface.Type type, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         // Join parent and current requirements and hints.
         RequirementOrHintState requirementState = addToRequirementOrHintState(parentRequirementState, workflow.getRequirements());
         RequirementOrHintState hintState = addToRequirementOrHintState(parentHintState, workflow.getHints());
@@ -455,7 +453,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         // Iterate through steps to find dependencies and docker requirements
         for (Object workflowStepObj: workflow.getSteps()) {
             WorkflowStep workflowStep = (WorkflowStep)workflowStepObj; // per the spec, the only possible type is WorkflowStep
-            String workflowStepId = convertStepId(deOptionalize(workflowStep.getId()), deOptionalize(workflow.getId()));
+            String rawStepId = convertStepId(deOptionalize(workflowStep.getId()), parentStepId);
+            String nodeStepId = NODE_PREFIX + rawStepId;
+            LOG.error("NODE STEP ID " + nodeStepId);
 
             if (depth == 0) {
                 String workflowId = deOptionalize(workflow.getId());
@@ -477,11 +477,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         LOG.error("D " + d);
                     }
                     if (stepDependencies.size() > 0) {
-                        toolInfoMap.computeIfPresent(workflowStepId, (toolId, toolInfo) -> {
+                        toolInfoMap.computeIfPresent(nodeStepId, (toolId, toolInfo) -> {
                             toolInfo.toolDependencyList.addAll(stepDependencies);
                             return toolInfo;
                         });
-                        toolInfoMap.computeIfAbsent(workflowStepId, toolId -> new ToolInfo(null, stepDependencies));
+                        toolInfoMap.computeIfAbsent(nodeStepId, toolId -> new ToolInfo(null, stepDependencies));
                     }
                 }
             }
@@ -501,18 +501,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 stepDockerPath = getDockerPull(
                     addToRequirementOrHintState(stepRequirementState, process.getRequirements()),
                     addToRequirementOrHintState(stepHintState, process.getHints()));
-                stepToType.put(workflowStepId, computeProcessType(process));
+                stepToType.put(nodeStepId, computeProcessType(process));
                 currentPath = getDockstoreMetadataHintValue(deOptionalize(process.getHints()), "path");
                 if (process instanceof Workflow) {
-                    processWorkflow((Workflow)process, stepRequirementState, stepHintState, depth + 1, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                    processWorkflow((Workflow)process, rawStepId, stepRequirementState, stepHintState, depth + 1, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 }
 
             } else if (run instanceof String) {
-                stepToType.put(workflowStepId, "n/a");
+                stepToType.put(nodeStepId, "n/a");
                 currentPath = run.toString();
 
             } else {
-                String message = CWLHandler.CWL_PARSE_SECONDARY_ERROR + "in workflow step " + workflowStepId;
+                String message = CWLHandler.CWL_PARSE_SECONDARY_ERROR + "in workflow step " + rawStepId;
                 LOG.error("Type of run object: " + className(run));
                 LOG.error(message);
                 throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
@@ -531,10 +531,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             }
 
             if (depth == 0 && type == LanguageHandlerInterface.Type.DAG) {
-                nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
+                nodePairs.add(new MutablePair<>(nodeStepId, dockerUrl));
             }
 
-            nodeDockerInfo.put(workflowStepId, new DockerInfo(currentPath, stepDockerPath, dockerUrl, dockerSpecifier));
+            nodeDockerInfo.put(nodeStepId, new DockerInfo(currentPath, stepDockerPath, dockerUrl, dockerSpecifier));
         }
     }
 
