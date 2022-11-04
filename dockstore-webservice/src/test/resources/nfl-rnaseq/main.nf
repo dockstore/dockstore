@@ -49,7 +49,7 @@ def helpMessage() {
       --gtf                         Path to GTF file
       --gff                         Path to GFF3 file
       --bed12                       Path to bed12 file
-      --saveReference               Save the generated reference files the the Results directory.
+      --saveReference               Save the generated reference files the Results directory.
       --saveTrimmed                 Save trimmed FastQ file intermediates
       --saveAlignedIntermediates    Save the BAM files from the Aligment step  - not done by default
 
