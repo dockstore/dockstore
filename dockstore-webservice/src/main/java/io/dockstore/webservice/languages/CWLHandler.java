@@ -560,20 +560,22 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     /**
      * Computes the dependencies from one or more output sources
-     * @param endDependencies List to which the computed dependencies are added
-     * @param sources a single String output source or List of String output sources
+     * @param endDependencies list to which the computed dependencies are added
+     * @param sourcesObj a single String output source or list of String output sources
      * @param nodePrefix prefix to attach to extracted dependencies
      * @param workflowId normalized workflow ID
      */
     private void processDependencies(List<String> endDependencies, Object sourcesObj, String nodePrefix, String workflowId) {
-        List<String> sources = sourcesObj instanceof String ? List.of((String)sourcesObj) : (List<String>)sourcesObj;
-        for (String s: sources) {
-            // If the source ID starts with the workflow ID, strip it off, split at the slashes, and if
-            // there are two or more parts, the dependency (workflow step name/id) is the second-to-last part.
-            if (s.startsWith(workflowId)) {
-                String[] split = s.substring(workflowId.length()).replaceFirst("^/", "").split("/");
-                if (split.length >= 2) {
-                    endDependencies.add(nodePrefix + split[split.length - 2].replaceFirst("#", ""));
+        if (sourcesObj != null) {
+            List<String> sources = sourcesObj instanceof String ? List.of((String)sourcesObj) : (List<String>)sourcesObj;
+            for (String s: sources) {
+                // If the source ID starts with the workflow ID, strip it off, split at the slashes, and if
+                // there are two or more parts, the dependency (workflow step name/id) is the second-to-last part.
+                if (s.startsWith(workflowId)) {
+                    String[] split = s.substring(workflowId.length()).replaceFirst("^/", "").split("/");
+                    if (split.length >= 2) {
+                        endDependencies.add(nodePrefix + split[split.length - 2].replaceFirst("#", ""));
+                    }
                 }
             }
         }
