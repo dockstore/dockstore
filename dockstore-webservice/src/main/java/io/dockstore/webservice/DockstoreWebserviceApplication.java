@@ -146,17 +146,9 @@ import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -174,7 +166,6 @@ import org.eclipse.jetty.util.component.LifeCycle;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
@@ -500,65 +491,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 }
             }
         });
-
-        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-            @Override
-            public void lifeCycleStarted(LifeCycle event) {
-                Session session = hibernate.getSessionFactory().openSession();
-                ManagedSessionContext.bind(session);
-                final Transaction transaction = session.beginTransaction();
-                try {
-                    final String errorPrefix = "could not update old style github token";
-                    TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
-                    // cannot use normal github library
-                    final java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().build();
-                    // exclude both gho tokens that the application generates and ghp tokens that we can insert for testing
-                    // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
-                    for (Token t : tokenDAO.findAllGitHubTokens()) {
-                        if (!t.getContent().startsWith("gho_") && !t.getContent().startsWith("ghp_")) {
-                            try {
-                                HttpRequest request = HttpRequest.newBuilder()
-                                    .uri(new URI("https://api.github.com/applications/" + configuration.getGithubClientID() + "/token"))
-                                    .header("Accept", "application/vnd.github+json")
-                                    .header("Authorization", getBasicAuthenticationHeader(configuration.getGithubClientID(), configuration.getGithubClientSecret()))
-                                    .method("PATCH", BodyPublishers.ofString("{\"access_token\":\"" + t.getContent() + "\"}"))
-                                    .build();
-                                final HttpResponse<ResetTokenModel> send = client.send(request, new JsonBodyHandler<>(ResetTokenModel.class));
-                                final ResetTokenModel body = send.body();
-                                if (send.statusCode() == HttpStatus.SC_OK) {
-                                    String newToken = body.token;
-                                    t.setContent(newToken);
-                                    tokenDAO.update(t);
-                                    LOG.info("updated token for {}", t.getUsername());
-                                } else {
-                                    LOG.error(errorPrefix + " for {}, error code {}, token was not found on github", t.getUsername(), send.statusCode());
-                                }
-                            } catch (IOException e) {
-                                LOG.error(errorPrefix + " for {}", t.getUsername());
-                                LOG.error(errorPrefix, e);
-                            } catch (URISyntaxException e) {
-                                LOG.error(errorPrefix + " for {} due to syntax issue", t.getUsername());
-                                LOG.error(errorPrefix, e);
-                            } catch (InterruptedException e) {
-                                LOG.error(errorPrefix + " for {} due to interruption", t.getUsername());
-                                LOG.error(errorPrefix, e);
-                                // Restore interrupted state... (sonarcloud suggestion)
-                                Thread.currentThread().interrupt();
-                                return;
-                            }
-                        }
-                    }
-                } finally {
-                    transaction.commit();
-                    ManagedSessionContext.unbind(hibernate.getSessionFactory());
-                }
-            }
-        });
-    }
-
-    private static String getBasicAuthenticationHeader(String username, String password) {
-        String valueToEncode = username + ":" + password;
-        return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes(StandardCharsets.UTF_8));
     }
 
     private void registerAPIsAndMisc(Environment environment) {
@@ -646,50 +578,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             SourceFile.restrictPaths(regex, violationMessage);
         } else {
             SourceFile.unrestrictPaths();
-        }
-    }
-
-
-    private static class ResetTokenModel {
-
-        private String token;
-
-        public String getToken() {
-            return token;
-        }
-
-        public void setToken(String token) {
-            this.token = token;
-        }
-    }
-
-    private static class JsonBodyHandler<W> implements HttpResponse.BodyHandler<W> {
-
-        private final Class<W> wClass;
-
-        JsonBodyHandler(Class<W> wClass) {
-            this.wClass = wClass;
-        }
-
-        @Override
-        public HttpResponse.BodySubscriber<W> apply(HttpResponse.ResponseInfo responseInfo) {
-            return asJSON(wClass);
-        }
-
-        public <T> HttpResponse.BodySubscriber<T> asJSON(Class<T> targetType) {
-            HttpResponse.BodySubscriber<String> upstream = HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8);
-
-            return HttpResponse.BodySubscribers.mapping(
-                upstream,
-                (String body) -> {
-                    try {
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-                        return objectMapper.readValue(body, targetType);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
         }
     }
 }
