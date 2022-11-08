@@ -695,7 +695,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     /**
      * Throw an exception if the specified value is null.
-     * Used to implement a controlled failure when a value is guaranteed by a constraint or process to be non-null, but for whatever reason, is not.
+     * Used to implement a controlled failure when we encounter a value that must be non-null (and should have been verified as such by a previous check), but for whatever reason, is not.
      */
     private <T> T checkNonNull(T value) {
         if (value == null) {
