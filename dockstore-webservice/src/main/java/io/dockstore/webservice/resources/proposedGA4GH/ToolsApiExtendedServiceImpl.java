@@ -235,10 +235,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         // This API is deprecated in 7.15.0; when we upgrade, we'll need to change the code
         // https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-high-indices-put-settings.html
         final UpdateSettingsRequest request = new UpdateSettingsRequest(nameOfIndex);
-        final Builder settingsBuilder = Settings.builder().put(settingKey,
-            config.getEsConfiguration().getRefreshInterval());
+        final String refreshInterval = config.getEsConfiguration().getRefreshInterval();
+        final Builder settingsBuilder = Settings.builder().put(settingKey, refreshInterval);
         request.settings(settingsBuilder);
         client.indices().putSettings(request, RequestOptions.DEFAULT);
+        LOG.info("{} index refresh interval set to {}", nameOfIndex, refreshInterval);
     }
 
     private void indexBatch(List<? extends Entry> published) {

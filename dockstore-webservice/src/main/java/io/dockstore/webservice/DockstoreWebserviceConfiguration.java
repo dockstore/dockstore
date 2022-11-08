@@ -639,7 +639,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String user;
         private String password;
         private Integer maxConcurrentSessions;
-        private String refreshInterval = "30s";
+        private String refreshInterval = "60s";
 
         public String getProtocol() {
             return protocol;
@@ -691,7 +691,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         /**
          * ElasticSearch refresh interval, see
          * https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-high-indices-put-settings.html
-         * I got an error once with 60s, the AWS recommended, so cut it back to 30s
          */
         public String getRefreshInterval() {
             return refreshInterval;
