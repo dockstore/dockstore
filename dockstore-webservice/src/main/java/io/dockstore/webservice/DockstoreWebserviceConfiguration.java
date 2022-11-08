@@ -639,7 +639,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String user;
         private String password;
         private Integer maxConcurrentSessions;
-        private String refreshInterval = "60s";
+        private String refreshInterval = "1s";
 
         public String getProtocol() {
             return protocol;
