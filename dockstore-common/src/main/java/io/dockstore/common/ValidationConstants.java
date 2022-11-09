@@ -25,7 +25,7 @@ public final class ValidationConstants {
 
     public static final String ENTRY_NAME_REGEX = "[a-zA-Z0-9]+([-_][a-zA-Z0-9]+)*+";
     public static final Pattern ENTRY_NAME_PATTERN = Pattern.compile(ENTRY_NAME_REGEX);
-    public static final String ENTRY_NAME_REGEX_MESSAGE = "must contain only letters, numbers, and internal hyphens and underscores";
+    public static final String ENTRY_NAME_REGEX_MESSAGE = "must only consist of alphanumerics and internal underscores and hyphens";
     public static final int ENTRY_NAME_LENGTH_MIN = 1;
     public static final int ENTRY_NAME_LENGTH_MAX = 256;
     public static final String ENTRY_NAME_LENGTH_MESSAGE = "must be non-empty and 256 characters or less";
