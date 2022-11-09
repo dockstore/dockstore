@@ -16,6 +16,7 @@
 
 package io.dockstore.common.yaml.constraints;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.yaml.YamlTool;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
@@ -31,7 +32,7 @@ public class ToolIsCwlValidator implements ConstraintValidator<ToolIsCwl, YamlTo
 
     @Override
     public boolean isValid(final YamlTool tool, final ConstraintValidatorContext context) {
-        if (!"cwl".equalsIgnoreCase(tool.getSubclass())) {
+        if (!DescriptorLanguage.CWL.getShortName().equalsIgnoreCase(tool.getSubclass())) {
             // create a violation that includes the 'subclass' property in the violation path.
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate()).addPropertyNode("subclass").addConstraintViolation();

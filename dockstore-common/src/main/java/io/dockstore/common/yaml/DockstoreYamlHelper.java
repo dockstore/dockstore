@@ -152,10 +152,6 @@ public final class DockstoreYamlHelper {
         return readContent(content, constructor, true);
     }
 
-    static DockstoreYaml readDockstoreYaml(final String content) throws DockstoreYamlException {
-        return readDockstoreYaml(content, false);
-    }
-
     static DockstoreYaml readDockstoreYaml(final String content, boolean validateEntries) throws DockstoreYamlException {
         final Optional<Version> maybeVersion = findValidVersion(content);
         if (maybeVersion.isPresent()) {
@@ -391,7 +387,7 @@ public final class DockstoreYamlHelper {
     }
 
     /**
-     * Performs constraint validation on an object, throwing an exception containing a descriptive error message if there violations.
+     * Performs constraint validation on an object, throwing an exception containing a descriptive error message if there are violations.
      * @param target object to validate
      * @param validateEntries determines whether to validate the entries in a target representing a .dockstore.yml, should be false for other types of target
      * @param targetDescription a very short description of the target, used to form error messages for top-level violations
@@ -404,7 +400,7 @@ public final class DockstoreYamlHelper {
         // If we're not interested in the the entry-related violations, filter them out.
         // If the @Valid annotation supported groups (it does not), we could have simply not generated the entry-related violations in the first place.
         if (!validateEntries) {
-            violations = violations.stream().filter(DockstoreYamlHelper::doesNotReferenceWorkflowish).collect(Collectors.toSet());
+            violations = violations.stream().filter(DockstoreYamlHelper::doesNotReferenceEntry).collect(Collectors.toSet());
         }
         if (!violations.isEmpty()) {
             throw new DockstoreYamlException(
@@ -442,20 +438,24 @@ public final class DockstoreYamlHelper {
         // Create the message by prepending the subject to the verb phrase in the violation message.
         String message = String.format("%s %s", subject, violation.getMessage());
 
-        // If there's a non-null invalid value, and it's a simple object (not the invalid bean), include it in the message.
+        // If there's a non-null invalid value and its toString() method overrides the base Object.toString(), include its string representation in the message.
         Object invalidValue = violation.getInvalidValue();
-        if (invalidValue != null && violation.getLeafBean() != invalidValue) {
+        if (invalidValue != null && !invalidValue.toString().equals(objectToString(invalidValue))) {
             message = String.format("%s (current value: \"%s\")", message, StringUtils.abbreviate(invalidValue.toString(), INVALID_VALUE_ECHO_LIMIT));
         }
 
         return message;
     }
 
+    private static String objectToString(Object obj) {
+        return obj.getClass().getName() + '@' + Integer.toHexString(obj.hashCode()); // Object.toString() definition per the official docs
+    }
+
     /**
      * Determine if a violation does not reference a property in .dockstore.yml that represents an entry (tool/workflow/etc).
      * @param violation
      */
-    private static <T> boolean doesNotReferenceWorkflowish(ConstraintViolation<T> violation) {
+    private static <T> boolean doesNotReferenceEntry(ConstraintViolation<T> violation) {
         javax.validation.Path propertyPath = violation.getPropertyPath();
         if (propertyPath == null) {
             return true;
