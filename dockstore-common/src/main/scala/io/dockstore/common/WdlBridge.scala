@@ -32,8 +32,7 @@ import wom.types.{WomCompositeType, WomOptionalType, WomType}
 import java.nio.file.{Files, Paths}
 import java.util
 import java.util.Optional
-import scala.collection.JavaConverters
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 
@@ -105,7 +104,7 @@ class WdlBridge {
     def getStringValueMetadata(metadata: Map[String, MetaValueElement]): java.util.Map[String, String] = {
       // Metadata is sometimes not a string (booleans for example), ignoring those
       val convertedWorkflowMap = metadata.collect{ case (k, v) if v.isInstanceOf[MetaValueElementString] => (k, v.asInstanceOf[MetaValueElementString].value)}
-      JavaConverters.mapAsJavaMap(convertedWorkflowMap)
+      convertedWorkflowMap.asJava
     }
 
     val bundle = getBundle(filePath, sourceFilePath)
@@ -415,7 +414,7 @@ class WdlBridge {
   def readFile(filePath: String): String = Try(Files.readAllLines(Paths.get(filePath)).asScala.mkString(System.lineSeparator())).get
 
   /**
-    * Get the the first non comment line in the file
+    * Get the first non comment line in the file
     * @param descriptorFilePath path to the file to read
     * @return Optional string containing the first line of code in the file
     */

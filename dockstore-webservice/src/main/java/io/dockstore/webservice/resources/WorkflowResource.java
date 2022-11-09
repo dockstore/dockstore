@@ -65,7 +65,6 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
-import io.dockstore.webservice.helpers.URIHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -210,8 +209,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         zenodoClientSecret = configuration.getZenodoClientSecret();
         dashboardPrefix = configuration.getDashboard();
 
-        dockstoreUrl = URIHelper.createBaseUrl(configuration.getExternalConfig().getScheme(),
-            configuration.getExternalConfig().getHostname(), configuration.getExternalConfig().getUiPort());
+        dockstoreUrl = configuration.getExternalConfig().computeBaseUrl();
 
         try {
             dockstoreGA4GHBaseUrl = ToolsImplCommon.baseURL(configuration);

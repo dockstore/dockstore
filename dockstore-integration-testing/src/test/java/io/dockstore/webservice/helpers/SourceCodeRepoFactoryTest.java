@@ -18,17 +18,41 @@ package io.dockstore.webservice.helpers;
 
 import static org.junit.Assert.assertEquals;
 
+import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.NonConfidentialTest;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Tool;
+import io.dropwizard.testing.DropwizardTestSupport;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /**
  * @author dyuen
  */
+@Category(NonConfidentialTest.class)
 public class SourceCodeRepoFactoryTest {
+
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+            DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
+
+
+    @Before
+    public void setUp() throws Exception {
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        SUPPORT.getEnvironment().healthChecks().shutdown();
+        SUPPORT.after();
+    }
 
     @Test
     public void parseGitUrl() {

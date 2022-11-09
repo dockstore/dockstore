@@ -38,6 +38,7 @@ import io.dropwizard.jackson.Jackson;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +48,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
@@ -345,7 +347,7 @@ public class ElasticListener implements StateListenerInterface {
      * This is not ideal, we should be including things we want indexed, not removing.
      * @param entry
      */
-    private static Entry removeIrrelevantProperties(final Entry entry) {
+    static Entry removeIrrelevantProperties(final Entry entry) {
         Entry detachedEntry;
         if (entry instanceof Tool) {
             Tool tool = (Tool) entry;
@@ -394,24 +396,42 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setTopicAutomatic(entry.getTopic());
         detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
-        String defaultVersion = entry.getDefaultVersion();
+        final String defaultVersion = defaultVersionWithFallback(entry);
         if (defaultVersion != null) {
-            boolean saneDefaultVersion = detachedVersions.stream().anyMatch(version -> defaultVersion.equals(version.getName()) || defaultVersion.equals(version.getReference()));
-            if (saneDefaultVersion) {
-                // If the tool/workflow has a default version, only keep the default version (and its sourcefile contents and description)
-                Set<Version> newWorkflowVersions = detachedEntry.getWorkflowVersions();
-                newWorkflowVersions.forEach(version -> {
-                    if (!defaultVersion.equals(version.getReference()) && !defaultVersion.equals(version.getName())) {
-                        version.setDescriptionAndDescriptionSource(null, null);
-                        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
-                        sourceFiles.forEach(sourceFile -> sourceFile.setContent(""));
-                    }
-                });
-            } else {
-                LOGGER.error("Entry has a default version that doesn't exist: " + entry.getEntryPath());
-            }
+            // If the tool/workflow has a default version, only keep the default version (and its sourcefile contents and description)
+            Set<Version> newWorkflowVersions = detachedEntry.getWorkflowVersions();
+            newWorkflowVersions.forEach(version -> {
+                if (!defaultVersion.equals(version.getReference()) && !defaultVersion.equals(version.getName())) {
+                    version.setDescriptionAndDescriptionSource(null, null);
+                    SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
+                    sourceFiles.forEach(sourceFile -> sourceFile.setContent(""));
+                }
+            });
         }
         return detachedEntry;
+    }
+
+    /**
+     * Similar to logic in https://github.com/dockstore/dockstore-ui2/blob/2.10.0/src/app/shared/entry.ts#L171
+     * except it will return a default version even if there is no valid version.
+     * @param entry
+     * @return
+     */
+    private static String defaultVersionWithFallback(Entry entry) {
+        if (entry.getActualDefaultVersion() != null) {
+            return entry.getActualDefaultVersion().getName();
+        }
+        final Stream<Version> stream = versionStream(entry.getWorkflowVersions());
+        return stream
+            .max(Comparator.comparing(Version::getId)).map(v -> v.getName()).orElse(null);
+    }
+
+    private static Stream<Version> versionStream(Set<Version> versions) {
+        if (versions.stream().anyMatch(Version::isValid)) {
+            return versions.stream().filter(Version::isValid);
+        } else {
+            return versions.stream();
+        }
     }
 
     private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions) {

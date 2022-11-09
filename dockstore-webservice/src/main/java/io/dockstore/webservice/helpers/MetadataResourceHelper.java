@@ -16,7 +16,7 @@ public final class MetadataResourceHelper {
     }
 
     public static void init(DockstoreWebserviceConfiguration config) {
-        baseUrl = createBaseURL(config);
+        baseUrl = config.getExternalConfig().computeBaseUrl();
     }
 
     public static String createWorkflowURL(Workflow workflow) {
@@ -40,10 +40,4 @@ public final class MetadataResourceHelper {
     public static String createToolURL(Tool tool) {
         return baseUrl + "/containers/" + tool.getToolPath();
     }
-
-    private static String createBaseURL(DockstoreWebserviceConfiguration config) {
-        return URIHelper.createBaseUrl(config.getExternalConfig().getScheme(), config.getExternalConfig().getHostname(),
-                config.getExternalConfig().getUiPort());
-    }
-
 }

@@ -124,7 +124,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final int discourseCategoryId;
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
+    private final String baseUrl;
     private final String hostName;
+    private final boolean isProduction;
     private final PermissionsInterface permissionsInterface;
 
     public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
@@ -144,7 +146,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         apiClient.addDefaultHeader("cache-control", "no-cache");
         apiClient.setBasePath(discourseUrl);
 
+        baseUrl = configuration.getExternalConfig().computeBaseUrl();
         hostName = configuration.getExternalConfig().getHostname();
+        isProduction = configuration.getExternalConfig().computeIsProduction();
         topicsApi = new TopicsApi(apiClient);
     }
 
@@ -454,27 +458,24 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         // Create title and link to entry
 
-        String entryLink = "https://dockstore.org/";
-        String title = "";
-        if (hostName.contains("staging")) {
-            entryLink = "https://staging.dockstore.org/";
-            title = "Staging ";
-        }
+        final String entryPath;
+        final String sitePath;
         if (entry instanceof BioWorkflow) {
-            title += ((BioWorkflow)(entry)).getWorkflowPath();
-            entryLink += "workflows/";
+            entryPath = ((BioWorkflow)entry).getWorkflowPath();
+            sitePath = "workflows/" + entryPath;
         } else if (entry instanceof Service) {
-            title += ((Service)(entry)).getWorkflowPath();
-            entryLink += "services/";
+            entryPath = ((Service)entry).getWorkflowPath();
+            sitePath = "services/" + entryPath;
         } else if (entry instanceof AppTool) {
-            title += ((AppTool)(entry)).getWorkflowPath();
-            entryLink += "tools/";
+            entryPath = ((AppTool)entry).getWorkflowPath();
+            sitePath = "tools/" + entryPath;
         } else {
-            title += ((Tool)(entry)).getToolPath();
-            entryLink += "tools/";
+            entryPath = ((Tool)entry).getToolPath();
+            sitePath = "tools/" + entryPath;
         }
 
-        entryLink += title;
+        final String title = isProduction ? entryPath : (baseUrl + " " + entryPath);
+        final String entryLink = baseUrl + "/" + sitePath;
 
         // Create description
         String description = "";

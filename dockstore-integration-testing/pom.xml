@@ -53,6 +53,10 @@
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.kohsuke</groupId>
+            <artifactId>github-api</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.dockstore</groupId>

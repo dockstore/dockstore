@@ -2897,6 +2897,36 @@ paths:
       responses:
         default:
           description: "successful operation"
+  /metadata/health:
+    get:
+      tags:
+      - "metadata"
+      summary: "Successful response if the health checks succeed"
+      description: "NO authentication"
+      operationId: "checkHealth"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "include"
+        in: "query"
+        description: "List of health checks to run. If unspecified, run all health\
+          \ checks"
+        required: false
+        type: "array"
+        items:
+          type: "string"
+          enum:
+          - "hibernate"
+          - "deadlocks"
+          - "connectionPool"
+        collectionFormat: "multi"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "object"
   /metadata/okHttpCachePerformance:
     get:
       tags:
@@ -4281,6 +4311,17 @@ paths:
               $ref: "#/definitions/User"
       security:
       - BEARER: []
+  /users/updateUserWorkflows:
+    post:
+      tags:
+      - "users"
+      operationId: "updateUserWorkflows"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        default:
+          description: "successful operation"
   /users/user:
     get:
       tags:

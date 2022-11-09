@@ -64,6 +64,8 @@ import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface.GitRepo;
+import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
@@ -122,6 +124,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
@@ -149,6 +152,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
+    private SessionFactory sessionFactory;
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
@@ -179,6 +183,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.deletedUsernameDAO = new DeletedUsernameDAO(sessionFactory);
+        this.sessionFactory = sessionFactory;
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
@@ -881,6 +886,49 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return userDAO.findAll();
     }
 
+    @POST
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/updateUserWorkflows")
+    @Operation(operationId = "checkWorkflowOwnership", description = "Check workflow ownership", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT
+        + "", description = "Successfully updated workflow ownership for all users")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    public Response updateUserWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User adminUser) {
+        final List<Long> allGitHubUsers = userDAO.findAllGitHubUserIds();
+        allGitHubUsers.forEach(userId -> {
+            // Break into many transactions so all workflows are not loaded into memory
+            try {
+                new TransactionHelper(sessionFactory).transaction(() -> {
+                    tokenDAO.findGithubByUserId(userId).stream().limit(1).forEach(gitHubToken -> {
+                        final SourceCodeRepoInterface sourceCodeRepo =
+                            SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken);
+                        final Set<String> orgMemberships = sourceCodeRepo.getOrganizationMemberships();
+                        final Set<GitRepo> gitRepos = sourceCodeRepo.getRepoLevelAccessRepositories();
+                        final User user = userDAO.findById(userId);
+                        user.getEntries().stream().filter(Workflow.class::isInstance)
+                            .map(Workflow.class::cast)
+                            .filter(workflow -> {
+                                final boolean userHasOrganizationAccess =
+                                    orgMemberships.contains(workflow.getOrganization());
+                                return !userHasOrganizationAccess && !hasRepoLevelAccess(gitRepos, workflow);
+                            })
+                            .forEach(workflow -> workflow.removeUser(user));
+                    });
+                });
+            } catch (Exception e) {
+                // LOG and continue -- don't let one user's invalid token or other problem block everybody
+                final String message = String.format("Error updating workflows for user %s", userId);
+                LOG.error(message, e);
+            }
+        });
+        return Response.noContent().build();
+    }
+
+    private static boolean hasRepoLevelAccess(final Set<GitRepo> gitRepos, final Workflow workflow) {
+        return gitRepos.contains(new GitRepo(workflow.getOrganization(), workflow.getRepository()));
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -1022,16 +1070,45 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .collect(Collectors.toList());
 
         scTokens.forEach(token -> {
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);
-            Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-            Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
-
-            organizations.forEach(organization -> {
-                List<Workflow> workflowsWithoutuser = workflowDAO.findByOrganizationWithoutUser(token.getTokenSource().getSourceControl(), organization, user);
-                workflowsWithoutuser.forEach(workflow -> workflow.addUser(user));
-            });
+            final SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);
+            final SourceControl sourceControl = token.getTokenSource().getSourceControl();
+            addUserToReposInOrgsWhereUserIsAMember(user, sourceControl, sourceCodeRepo);
+            addUserToReposWithRepoLevelMembership(user, sourceControl, sourceCodeRepo);
         });
         return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()));
+    }
+
+    /**
+     * Adds the user to all workflows whose repos the user direct access to. For example, if a user has been
+     * granted GitHub permissions to the GitHub organization "myorg" and the repository "anotherOrg/repo",
+     * this method will add the user to "anotherOrg/repo", only (if not already present).
+     * @param user
+     * @param sourceControl
+     * @param sourceCodeRepo
+     */
+    private void addUserToReposWithRepoLevelMembership(final User user, final SourceControl sourceControl,
+        final SourceCodeRepoInterface sourceCodeRepo) {
+        sourceCodeRepo.getRepoLevelAccessRepositories().forEach(gitRepo ->
+            workflowDAO.findByPathWithoutUser(sourceControl, gitRepo.getOrganization(), gitRepo.getRepository(),
+                    user)
+            .forEach(workflow -> workflow.addUser(user)));
+    }
+
+    /**
+     * Adds the user to all workflows against repos in organizations where the user is a member.
+     * For example, if a user has been
+     * granted GitHub permissions to the GitHub organization "myorg" and the repository "anotherOrg/repo",
+     * this method will add the user to all workflows based on repos in the "myorg" organization.
+     * @param user
+     * @param sourceControl
+     * @param sourceCodeRepo
+     */
+    private void addUserToReposInOrgsWhereUserIsAMember(final User user, final SourceControl sourceControl,
+        final SourceCodeRepoInterface sourceCodeRepo) {
+        final List<String> organizationMemberships = new ArrayList(sourceCodeRepo.getOrganizationMemberships());
+        workflowDAO.findByOrganizationsWithoutUser(sourceControl, organizationMemberships,
+                user)
+            .forEach(workflow -> workflow.addUser(user));
     }
 
     @PUT

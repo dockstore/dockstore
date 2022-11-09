@@ -267,6 +267,16 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return list(q);
     }
 
+    public List<Workflow> findByPathWithoutUser(SourceControl sourceControl, String organization, String repository,
+        final User user) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByPathWithoutUser")
+            .setParameter("sourcecontrol", sourceControl)
+            .setParameter("organization", organization)
+            .setParameter("repository", repository)
+            .setParameter("user", user));
+
+    }
+
     public List<Workflow> findByGitUrl(String giturl) {
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
             .setParameter("gitUrl", giturl));
@@ -288,6 +298,13 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
                 .setParameter("organization", organization)
                 .setParameter("user", user)
                 .setParameter("sourceControl", sourceControl));
+    }
+
+    public List<Workflow> findByOrganizationsWithoutUser(SourceControl sourceControl, List<String> organizations, User user) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationsWithoutUser")
+            .setParameter("organizations", organizations.stream().map(o -> o.toLowerCase()).collect(Collectors.toList()))
+            .setParameter("user", user)
+            .setParameter("sourceControl", sourceControl));
     }
 
     public Workflow findByAlias(String alias) {

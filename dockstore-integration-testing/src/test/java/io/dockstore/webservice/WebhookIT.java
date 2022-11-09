@@ -87,6 +87,12 @@ import org.junit.rules.ExpectedException;
 @Category(ConfidentialTest.class)
 public class WebhookIT extends BaseIT {
     private static final int LAMBDA_ERROR = 418;
+    private static final String DOCKSTORE_WHALESAY_WDL = "dockstore-whalesay-wdl";
+
+    /**
+     * You'd think there'd be an enum for this, but there's not
+     */
+    private static final String WORKFLOWS_ENTRY_SEARCH_TYPE = "WORKFLOWS";
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -110,6 +116,8 @@ public class WebhookIT extends BaseIT {
     private final String authorsRepo = "DockstoreTestUser2/test-authors";
     private final String multiEntryRepo = "dockstore-testing/multi-entry";
     private final String workflowDockstoreYmlRepo = "dockstore-testing/workflow-dockstore-yml";
+    private final String whalesay2Repo = "DockstoreTestUser/dockstore-whalesay-2";
+
     private FileDAO fileDAO;
 
     @Before
@@ -206,6 +214,100 @@ public class WebhookIT extends BaseIT {
         assertNull(workflowVersion.getCommitID());
     }
 
+    /**
+     * Tests discovering workflows. As background <code>BasicIT.USER_2_USERNAME</code> belongs to 3
+     * GitHub organizations:
+     * <ul>
+     *     <li>dockstoretesting</li>
+     *     <li>dockstore-testing</li>
+     *     <li>DockstoreTestUser2</li>
+     * </ul>
+     *
+     * and has rights to one repo not in any of those orgs:
+     * <ul>
+     *     <li>DockstoreTestUser/dockstore-whalesay-2</li>
+     * </ul>
+     */
+    @Test
+    public void testAddUserToDockstoreWorkflows() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+
+        registerWorkflowsForDiscoverTests(webClient);
+
+        // Disassociate all entries from all users
+        testingPostgres.runUpdateStatement("DELETE from user_entry");
+        assertEquals("User should have 0 entries", 0, usersApi.getUserEntries(10, null, null).size());
+
+        // Discover again
+        usersApi.addUserToDockstoreWorkflows(usersApi.getUser().getId(), "");
+
+        //
+        assertEquals("User should have 3 entries, 2 from DockstoreTestUser2 org and one from DockstoreTestUser/dockstore-whalesay-wdl",
+            3, usersApi.getUserEntries(10, null, null).size());
+    }
+
+    /**
+     * Tests that a user's workflow mapped to a repository that the user does not have GitHub permissions
+     * to, gets removed.
+     */
+    @Test
+    public void testUpdateUserWorkflows() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        registerWorkflowsForDiscoverTests(webClient);
+
+        // Create a workflow for a repo that USER_2_USERNAME does not have permissions to
+        final String sql = String.format(
+            "SELECT id FROM workflow WHERE organization = '%s' AND repository = '%s'", BasicIT.USER_1_USERNAME, DOCKSTORE_WHALESAY_WDL);
+        final Long entryId = testingPostgres.runSelectStatement(sql, Long.class);
+        final Long userId = usersApi.getUser().getId();
+
+        // Make the user an owner of the workflow that the user should not have permissions to.
+        final String userEntrySql =
+            String.format("INSERT INTO user_entry(userid, entryid) VALUES (%s, %s)", userId,
+                entryId);
+        testingPostgres.runUpdateStatement(userEntrySql);
+        assertEquals("User should have 4 workflows",
+            4, usersApi.getUserEntries(10, null, WORKFLOWS_ENTRY_SEARCH_TYPE).size());
+
+        final io.dockstore.openapi.client.api.UsersApi adminUsersApi =
+            new io.dockstore.openapi.client.api.UsersApi(
+                getOpenAPIWebClient(BaseIT.ADMIN_USERNAME, testingPostgres));
+
+        // This should drop the most recently added workflow; user doesn't have corresponding GitHub permissions
+        adminUsersApi.checkWorkflowOwnership();
+        assertEquals("User should now have 3 workflows",
+            3, usersApi.getUserEntries(10, null, WORKFLOWS_ENTRY_SEARCH_TYPE).size());
+
+    }
+
+    private void registerWorkflowsForDiscoverTests(final io.dockstore.openapi.client.ApiClient webClient) {
+        final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi =
+            new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        // Register 2 workflows in DockstoreTestUser2 org (user belongs to org)
+        final String githubFriendlyName = SourceControl.GITHUB.getFriendlyName();
+        workflowsApi
+            .manualRegister(githubFriendlyName, workflowRepo, "/Dockstore.wdl",
+                "foobar", "wdl", "/test.json");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "",
+            DescriptorLanguage.CWL.getShortName(), "/test.json");
+
+        // Register 1 workflow for DockstoreTestUser/dockstore-whalesay-2 (user has access to that repo only)
+        workflowsApi
+            .manualRegister(githubFriendlyName, whalesay2Repo, "/Dockstore.wdl",
+                "foobar", "wdl", "/test.json");
+
+        // Register DockstoreTestUser/dockstore-whalesay-wdl workflow (user does not have access to that repo nor org)
+        testingPostgres.addUnpublishedWorkflow(SourceControl.GITHUB, BasicIT.USER_1_USERNAME, DOCKSTORE_WHALESAY_WDL, DescriptorLanguage.WDL);
+
+        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        assertEquals("User should have 3 workflows, 2 from DockstoreTestUser2 org and one from DockstoreTestUser/dockstore-whalesay-wdl",
+            3, usersApi.getUserEntries(10, null, WORKFLOWS_ENTRY_SEARCH_TYPE).size());
+
+    }
     /**
      * This tests the GitHub release process
      */
