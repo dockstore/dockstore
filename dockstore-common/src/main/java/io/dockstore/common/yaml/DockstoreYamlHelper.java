@@ -382,24 +382,30 @@ public final class DockstoreYamlHelper {
         }
     }
 
-    public static <T> void validate(final T validatee) throws DockstoreYamlException {
-        validate(validatee, true);
+    public static <T> void validate(final T target) throws DockstoreYamlException {
+        validate(target, true);
     }
 
-    public static <T> void validate(final T validatee, final boolean validateEntries) throws DockstoreYamlException {
-        validate(validatee, validateEntries, ".dockstore.yml");
+    public static <T> void validate(final T target, final boolean validateEntries) throws DockstoreYamlException {
+        validate(target, validateEntries, ".dockstore.yml");
     }
 
     /**
      * Performs constraint validation on an object, throwing an exception containing a descriptive error message if there violations.
-     * @param validatee object to validate
-     * @param validateEntries determines whether to validate the entries in a validatee representing a .dockstore.yml, should be false for other types of validatee
-     * @param validateeDescription a very short description of the validatee, used to form error messages for top-level violations
+     * @param target object to validate
+     * @param validateEntries determines whether to validate the entries in a target representing a .dockstore.yml, should be false for other types of target
+     * @param targetDescription a very short description of the target, used to form error messages for top-level violations
      * @throws DockstoreYamlException an exception containing a descriptive error message that details all violations
      */
-    public static <T> void validate(final T validatee, final boolean validateEntries, final String validateeDescription) throws DockstoreYamlException {
+    public static <T> void validate(final T target, final boolean validateEntries, final String targetDescription) throws DockstoreYamlException {
+        // Generate a set of all validations.
         final Validator validator = createValidator();
-        final Set<ConstraintViolation<T>> violations = validator.validate(validatee).stream().filter(validateEntries ? v -> true : DockstoreYamlHelper::doesNotReferenceWorkflowish).collect(Collectors.toSet());
+        Set<ConstraintViolation<T>> violations = validator.validate(target);
+        // If we're not interested in the the entry-related violations, filter them out.
+        // If the @Valid annotation supported groups (it does not), we could have simply not generated the entry-related violations in the first place.
+        if (!validateEntries) {
+            violations = violations.stream().filter(DockstoreYamlHelper::doesNotReferenceWorkflowish).collect(Collectors.toSet());
+        }
         if (!violations.isEmpty()) {
             throw new DockstoreYamlException(
                 violations.stream()
@@ -407,20 +413,20 @@ public final class DockstoreYamlHelper {
                     // Sort them lexicographically by property path (ex "workflows[0].author[0].name").
                     // The result doesn't match their order in the yaml file, but is probably good enough for now...
                     .sorted((a, b) -> a.getPropertyPath().toString().compareTo(b.getPropertyPath().toString()))
-                    .map(v -> buildMessageFromViolation(v, validateeDescription))  // NOSONAR a lambda is more understandable than method reference here
+                    .map(v -> buildMessageFromViolation(v, targetDescription))  // NOSONAR a lambda is more understandable than method reference here
                     .collect(Collectors.joining("; ")));
         }
     }
 
     /**
      * Creates an error message from a constraint violation, using a description of the
-     * validatee (object being validated) if the property is not available.
+     * target (object being validated) if the property is not available.
      * @param violation constrain violation to convert
-     * @param validateeDescription string that described the object being validated (ex: ".dockstore.yml")
+     * @param targetDescription string that described the object being validated (ex: ".dockstore.yml")
      * @return a well-formed error message
      */
-    private static <T> String buildMessageFromViolation(ConstraintViolation<T> violation, String validateeDescription) {
-        // Determine the subject of the error message, either a property name or the validatee description.
+    private static <T> String buildMessageFromViolation(ConstraintViolation<T> violation, String targetDescription) {
+        // Determine the subject of the error message, either a property name or a description of the target.
         String subject = null;
         javax.validation.Path propertyPath = violation.getPropertyPath();
         if (propertyPath != null) {
@@ -430,7 +436,7 @@ public final class DockstoreYamlHelper {
             }
         }
         if (subject == null) {
-            subject = validateeDescription;
+            subject = targetDescription;
         }
 
         // Create the message by prepending the subject to the verb phrase in the violation message.
@@ -446,7 +452,7 @@ public final class DockstoreYamlHelper {
     }
 
     /**
-     * Determine if a violation references a property in .dockstore.yml that represents an entry (tool/workflow/etc).
+     * Determine if a violation does not reference a property in .dockstore.yml that represents an entry (tool/workflow/etc).
      * @param violation
      */
     private static <T> boolean doesNotReferenceWorkflowish(ConstraintViolation<T> violation) {
