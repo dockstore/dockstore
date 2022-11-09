@@ -22,9 +22,9 @@ import javax.validation.ConstraintValidatorContext;
 /**
  * Validates that a DockstoreYaml12 instance has at least one workflow, tool, or service
  */
-public class HasEntryValidator implements ConstraintValidator<HasEntry, DockstoreYaml12> {
+public class HasEntry12Validator implements ConstraintValidator<HasEntry12, DockstoreYaml12> {
     @Override
-    public void initialize(final HasEntry constraintAnnotation) {
+    public void initialize(final HasEntry12 constraintAnnotation) {
         // Intentionally empty
     }
 

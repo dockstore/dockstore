@@ -30,9 +30,9 @@ import org.apache.commons.lang3.ObjectUtils;
 /**
  * Validates that every entry of a `DockstoreYaml12` has a unique name.
  */
-public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUnique, DockstoreYaml12> {
+public class NamesAreUnique12Validator implements ConstraintValidator<NamesAreUnique12, DockstoreYaml12> {
     @Override
-    public void initialize(final NamesAreUnique constraintAnnotation) {
+    public void initialize(final NamesAreUnique12 constraintAnnotation) {
         // Intentionally empty
     }
 
@@ -68,7 +68,7 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
     }
 
     private static void addConstraintViolation(final ConstraintValidatorContext context, String reason) {
-        String msg = String.format("%s (%s)", NamesAreUnique.MUST_HAVE_A_UNIQUE_NAME, reason);
+        String msg = String.format("%s (%s)", NamesAreUnique12.MUST_HAVE_A_UNIQUE_NAME, reason);
         context.disableDefaultConstraintViolation();
         context.buildConstraintViolationWithTemplate(msg).addConstraintViolation();
     }

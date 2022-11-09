@@ -23,7 +23,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import io.dockstore.common.yaml.constraints.HasEntry;
+import io.dockstore.common.yaml.constraints.HasEntry12;
 import io.dropwizard.testing.FixtureHelpers;
 import java.io.IOException;
 import java.net.URL;
@@ -172,7 +172,7 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12("version: 1.2");
             fail("Dockstore yaml with no entries should fail");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            assertTrue(e.getMessage().contains(HasEntry.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
+            assertTrue(e.getMessage().contains(HasEntry12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
         }
     }
 
@@ -183,7 +183,7 @@ public class DockstoreYamlTest {
                 DockstoreYamlHelper.readDockstoreYaml(String.format("version: 1.2\n%s:\n", emptyProperty), true);
                 fail("Dockstore yaml with no entries should fail");
             } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-                assertTrue(e.getMessage().contains(HasEntry.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
+                assertTrue(e.getMessage().contains(HasEntry12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
             }
         }
     }
