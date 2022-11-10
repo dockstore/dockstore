@@ -32,7 +32,7 @@ import javax.validation.Payload;
 @Constraint(validatedBy = DescriptorLanguageShortNameValidator.class)
 public @interface DescriptorLanguageShortName {
 
-    String MUST_BE_VALID_SHORT_NAME = "must be a valid descriptor language short name";
+    String MUST_BE_VALID_SHORT_NAME = "must be a supported descriptor language (\"CWL\", \"WDL\", \"GALAXY\", or \"NFL\")";
 
     String message () default MUST_BE_VALID_SHORT_NAME;
     Class<?>[] groups () default {};
