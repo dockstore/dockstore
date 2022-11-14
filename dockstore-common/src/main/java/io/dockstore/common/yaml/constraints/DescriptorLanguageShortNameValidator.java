@@ -14,23 +14,31 @@
  * limitations under the License.
  */
 
-package io.dockstore.common.yaml;
+package io.dockstore.common.yaml.constraints;
 
+import io.dockstore.common.DescriptorLanguage;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
-import org.apache.commons.lang3.StringUtils;
 
 /**
- * Validates that an author has a non-empty name or ORCID.
+ * Validates a descriptor language short name.
  */
-public class AuthorHasNameOrOrcidValidator implements ConstraintValidator<AuthorHasNameOrOrcid, YamlAuthor> {
+public class DescriptorLanguageShortNameValidator implements ConstraintValidator<DescriptorLanguageShortName, String> {
     @Override
-    public void initialize(final AuthorHasNameOrOrcid constraintAnnotation) {
+    public void initialize(final DescriptorLanguageShortName constraintAnnotation) {
         // Intentionally empty
     }
 
     @Override
-    public boolean isValid(final YamlAuthor author, final ConstraintValidatorContext context) {
-        return StringUtils.isNotEmpty(author.getName()) || StringUtils.isNotEmpty(author.getOrcid());
+    public boolean isValid(final String shortName, final ConstraintValidatorContext context) {
+        if (shortName == null) {
+            return true;
+        }
+        try {
+            DescriptorLanguage.convertShortStringToEnum(shortName);
+            return true;
+        } catch (UnsupportedOperationException ex) {
+            return false;
+        }
     }
 }

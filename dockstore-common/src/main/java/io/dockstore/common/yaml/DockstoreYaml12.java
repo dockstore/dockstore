@@ -15,6 +15,8 @@
  */
 package io.dockstore.common.yaml;
 
+import io.dockstore.common.yaml.constraints.HasEntry12;
+import io.dockstore.common.yaml.constraints.NamesAreUnique12;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
@@ -22,17 +24,16 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
 /**
- * The preferred .dockstore.yml since 1.9. Supports workflows, one-step workflows (tools), and services .
+ * The preferred .dockstore.yml since 1.9. Supports workflows, one-step workflows (tools), and services.
  * Workflows and tools are allowed to have multiple instances.
- *
- * Validator requires at least one service or one workflow
  */
-@ValidDockstore12
+@HasEntry12
+@NamesAreUnique12
 public class DockstoreYaml12 implements DockstoreYaml {
 
     private String version;
     private List<YamlWorkflow> workflows = new ArrayList<>();
-    private List<YamlWorkflow> tools = new ArrayList<>();
+    private List<YamlTool> tools = new ArrayList<>();
     private Service12 service;
 
     public void setVersion(final String version) {
@@ -51,11 +52,11 @@ public class DockstoreYaml12 implements DockstoreYaml {
 
     @Valid
     @NotNull // But may be empty
-    public List<YamlWorkflow> getTools() {
+    public List<YamlTool> getTools() {
         return tools;
     }
 
-    public void setTools(final List<YamlWorkflow> tools) {
+    public void setTools(final List<YamlTool> tools) {
         this.tools = tools;
     }
 

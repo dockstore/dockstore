@@ -1091,6 +1091,7 @@
                             <includes>
                                 <include>io/dockstore/**</include>
                                 <include>io/github/**</include>
+                                <include>ValidationMessages.properties</include>
                             </includes>
                         </filter>
                         <filter>
