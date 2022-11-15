@@ -1,6 +1,7 @@
 package io.dockstore.webservice.permissions.sam;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -22,6 +23,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.permissions.Permission;
 import io.dockstore.webservice.permissions.Role;
+import io.dockstore.webservice.permissions.Role.Action;
 import io.swagger.sam.client.ApiClient;
 import io.swagger.sam.client.ApiException;
 import io.swagger.sam.client.api.ResourcesApi;
@@ -605,6 +607,35 @@ public class SamPermissionsImplTest {
             fail("Non-owner shouldn't be able to get permissions");
         } catch (CustomWebApplicationException e) {
             assertEquals("Forbidden", e.getErrorMessage());
+        }
+    }
+
+    /**
+     * Test that read operations fail with no exception but write operations fail with an exception
+     * asking the user to relink their Google token.
+     */
+    @Test
+    public void testUserHasNoGoogleToken() {
+        // Read operations fail silently
+        assertEquals(0, samPermissionsImpl.workflowsSharedWithUser(noGoogleUser).size());
+        assertEquals(false,
+            samPermissionsImpl.canDoAction(noGoogleUser, workflowInstance, Action.READ));
+        assertFalse(samPermissionsImpl.isSharing(noGoogleUser));
+        assertEquals(Optional.empty(), samPermissionsImpl.userIdForSharing(noGoogleUser));
+        assertEquals(0, samPermissionsImpl.getActionsForWorkflow(noGoogleUser, workflowInstance).size());
+
+        // Write operations should throw an exception
+        try {
+            samPermissionsImpl.setPermission(noGoogleUser, workflowInstance, writerPermission);
+            fail("Should not be able to set a permission without a Google token");
+        } catch (CustomWebApplicationException e) {
+            assertEquals(SamPermissionsImpl.GOOGLE_ACCOUNT_MUST_BE_LINKED, e.getErrorMessage());
+        }
+        try {
+            samPermissionsImpl.removePermission(noGoogleUser, workflowInstance, JOHN_SMITH_GMAIL_COM, Role.OWNER);
+            fail("Should not be able to set a permission without a Google token");
+        } catch (CustomWebApplicationException e) {
+            assertEquals(SamPermissionsImpl.GOOGLE_ACCOUNT_MUST_BE_LINKED, e.getErrorMessage());
         }
     }
 

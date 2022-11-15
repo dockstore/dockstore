@@ -90,6 +90,8 @@ import org.slf4j.LoggerFactory;
  */
 public class SamPermissionsImpl implements PermissionsInterface {
 
+    static final String GOOGLE_ACCOUNT_MUST_BE_LINKED = "Google account must be linked";
+
     private static final Logger LOG = LoggerFactory.getLogger(SamPermissionsImpl.class);
 
     /**
@@ -136,6 +138,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
      */
     @Override
     public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
+        checkHasGoogleToken(requester);
         // If original owner, you can't mess with their permissions
         checkEmailNotOriginalOwner(permission.getEmail(), workflow);
         ResourcesApi resourcesApi = getResourcesApi(requester); // Intentionally throwing if unable to get token
@@ -346,6 +349,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     @Override
     public void removePermission(User user, Workflow workflow, String email, Role role) {
+        checkHasGoogleToken(user);
         checkEmailNotOriginalOwner(email, workflow);
         ResourcesApi resourcesApi = getResourcesApi(user); // Intentionally throwing if unable to get token
         String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
@@ -361,6 +365,12 @@ public class SamPermissionsImpl implements PermissionsInterface {
         } catch (ApiException e) {
             LOG.error(MessageFormat.format("Error removing {0} from workflow {1}", email, encodedPath), e);
             throw new CustomWebApplicationException("Error removing permissions", e.getCode());
+        }
+    }
+
+    private void checkHasGoogleToken(final User user) {
+        if (!hasGoogleToken(user)) {
+            throw new CustomWebApplicationException(GOOGLE_ACCOUNT_MUST_BE_LINKED, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
