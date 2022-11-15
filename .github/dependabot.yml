@@ -6,6 +6,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    reviewers:
+      - "dockstore/dockstore"        
 
   # Maintain dependencies for Maven
   - package-ecosystem: "maven"
@@ -14,6 +16,8 @@ updates:
       interval: "daily"
     # start with security updates only https://stackoverflow.com/a/68254421
     open-pull-requests-limit: 0  
+    reviewers:
+      - "dockstore/dockstore"        
       
   # Maintain dependencies for Dockerfile
   - package-ecosystem: "docker"
@@ -22,3 +26,5 @@ updates:
       interval: "daily"
     # start with security updates only https://stackoverflow.com/a/68254421  
     open-pull-requests-limit: 0  
+    reviewers:
+      - "dockstore/dockstore"        
