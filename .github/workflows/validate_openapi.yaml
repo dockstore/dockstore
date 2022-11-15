@@ -12,6 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Validate OpenAPI definition
-        uses: char0n/swagger-editor-validate@v1
+        uses: char0n/swagger-editor-validate@v1.3.2
         with:
           definition-file: dockstore-webservice/src/main/resources/openapi3/openapi.yaml
