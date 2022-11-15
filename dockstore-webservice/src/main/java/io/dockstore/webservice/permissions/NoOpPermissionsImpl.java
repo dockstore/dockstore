@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.http.HttpStatus;
 
 /**
@@ -51,5 +52,10 @@ public class NoOpPermissionsImpl implements PermissionsInterface {
     @Override
     public boolean isSharing(User user) {
         return false;
+    }
+
+    @Override
+    public Optional<String> userIdForSharing(final User user) {
+        return Optional.of(user.getUsername());
     }
 }

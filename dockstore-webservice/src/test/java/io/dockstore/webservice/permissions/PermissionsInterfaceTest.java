@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.Assert;
 import org.junit.Before;
@@ -87,6 +88,11 @@ public class PermissionsInterfaceTest {
             public boolean isSharing(User user) {
                 return false;
             }
+
+            @Override
+            public Optional<String> userIdForSharing(final User user) {
+                return Optional.of(user.getUsername());
+            }
         };
     }
 
@@ -102,7 +108,7 @@ public class PermissionsInterfaceTest {
         mockedWorkflow = Mockito.mock(Workflow.class);
         when(mockedWorkflow.getUsers()).thenReturn(users);
 
-        Assert.assertEquals(1, PermissionsInterface.getOriginalOwnersForWorkflow(mockedWorkflow).size());
+        Assert.assertEquals(1, permissionsInterface.getOriginalOwnersForWorkflow(mockedWorkflow).size());
     }
 
     @Test
