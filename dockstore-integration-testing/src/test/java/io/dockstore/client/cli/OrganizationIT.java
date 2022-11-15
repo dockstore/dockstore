@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -855,9 +856,9 @@ public class OrganizationIT extends BaseIT {
         final long count2 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
         assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count2, 1, count2);
 
-        // There should exist a role that is not accepted
+        // There should exist a role that is pending
         final long count3 = testingPostgres.runSelectStatement(
-            "select count(*) from organization_user where accepted = false and organizationId = " + orgId + " and userId = '" + 2 + "'",
+            "select count(*) from organization_user where status = 'PENDING' and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
         assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
@@ -865,9 +866,9 @@ public class OrganizationIT extends BaseIT {
         memberships = usersOtherUser.getUserMemberships();
         assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
 
-        // Should not appear in the organization's members list because they haven't approved the request yet
+        // Should appear in the organization's members list even if they haven't approved the request yet
         List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(orgId);
-        assertEquals("There should be 1 user, there are " + users.size(), 1, users.size());
+        assertEquals("There should be 2 user, there are " + users.size(), 2, users.size());
 
         // Approve request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
@@ -882,7 +883,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should exist a role that is accepted
         final long count5 = testingPostgres.runSelectStatement(
-            "select count(*) from organization_user where accepted = true and organizationId = " + orgId + " and userId = '" + 2 + "'",
+            "select count(*) from organization_user where status = 'ACCEPTED' and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
 
@@ -1038,6 +1039,7 @@ public class OrganizationIT extends BaseIT {
     /**
      * Tests that an Organization admin can request a user to join.
      * The user can disapprove.
+     * Test that the organization admin can re-invite the user.
      */
     @Test
     public void testRequestUserJoinOrgAndDisapprove() {
@@ -1069,11 +1071,11 @@ public class OrganizationIT extends BaseIT {
         final long count2 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
         assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count2, 1, count2);
 
-        // There should exist a role that is not accepted
+        // There should exist a role that is pending
         final long count3 = testingPostgres.runSelectStatement(
-            "select count(*) from organization_user where accepted = false and organizationId = " + orgId + " and userId = '" + 2 + "'",
+            "select count(*) from organization_user where status = 'PENDING' and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
-        assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
+        assertEquals("There should be 1 pending role for user 2 and org 1, there are " + count3, 1, count3);
 
         // Disapprove request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, false);
@@ -1082,17 +1084,31 @@ public class OrganizationIT extends BaseIT {
         final long count4 = testingPostgres.runSelectStatement("select count(*) from event where type = 'REJECT_ORG_INVITE'", long.class);
         assertEquals("There should be 1 event of type REJECT_ORG_INVITE, there are " + count4, 1, count4);
 
-        // Should not have a role
+        // Should have a role that is rejected
         final long count5 = testingPostgres
-            .runSelectStatement("select count(*) from organization_user where organizationId = " + orgId + " and userId = '" + 2 + "'",
+            .runSelectStatement("select count(*) from organization_user where status = 'REJECTED' and organizationId = " + orgId + " and userId = '" + 2 + "'",
                 long.class);
-        assertEquals("There should be no roles for user 2 and org 1, there are " + count5, 0, count5);
+        assertEquals("There should be one role with the status 'REJECTED' for user 2 and org 1, there are " + count5, 1, count5);
 
         // Test that events are sorted by DESC dbCreateDate
         List<Event> events = organizationsApiUser2.getOrganizationEvents(orgId, 0, 5);
         assertEquals("Should have 3 events returned, there are " + events.size(), 3, events.size());
         assertEquals("First event should be most recent, which is REJECT_ORG_INVITE, but is actually " + events.get(0).getType().getValue(),
             "REJECT_ORG_INVITE", events.get(0).getType().getValue());
+
+        // Test that the admin can't update the role for a user who has rejected the invitation
+        assertThrows(ApiException.class, () -> organizationsApiUser2.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId));
+
+        // Test that adding the rejected user role updates the status to pending
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), userId, orgId, "");
+        // There should be two ADD_USER_TO_ORG event
+        final long count6 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
+        assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count6, 2, count6);
+        // There should exist a role that is pending
+        final long count7 = testingPostgres.runSelectStatement(
+                "select count(*) from organization_user where status = 'PENDING' and organizationId = " + orgId + " and userId = '" + 2 + "'",
+                long.class);
+        assertEquals("There should be 1 pending role for user 2 and org 1, there are " + count7, 1, count7);
 
         // Request a user that doesn't exist
         boolean throwsError = false;
@@ -2500,7 +2516,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     private void addAdminToOrg(String username, String orgName) {
-        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = '" + orgName + "'), id, true, 'ADMIN' from enduser where username = '" + username + "'");
+        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, status, role) select (select id from organization where name = '" + orgName + "'), id, 'ACCEPTED', 'ADMIN' from enduser where username = '" + username + "'");
     }
 
     private void addToCollection(String name, String orgName, Workflow workflow, Long versionId) {

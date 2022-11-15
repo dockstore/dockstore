@@ -8584,8 +8584,6 @@ components:
     OrganizationUser:
       type: object
       properties:
-        accepted:
-          type: boolean
         dbCreateDate:
           type: integer
           format: int64
@@ -8602,6 +8600,12 @@ components:
           - ADMIN
           - MAINTAINER
           - MEMBER
+        status:
+          type: string
+          enum:
+          - PENDING
+          - REJECTED
+          - ACCEPTED
         user:
           $ref: '#/components/schemas/User'
     OrganizationUserId:

@@ -1,5 +1,7 @@
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.core.OrganizationUser.InvitationStatus.ACCEPTED;
+import static io.dockstore.webservice.core.OrganizationUser.InvitationStatus.REJECTED;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
@@ -38,7 +40,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -315,12 +316,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Operation(operationId = "getOrganizationMembers", summary = "Retrieve all members for an organization.", description = "Retrieve all members for an organization. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Set<OrganizationUser> getOrganizationMembers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
-        Set<OrganizationUser> acceptedUsers = getOrganizationByIdOptionalAuth(user, id).getUsers()
-            .stream()
-            .filter(orgUser -> orgUser.isAccepted())
-            .collect(Collectors.toSet());
-
-        return acceptedUsers;
+        return getOrganizationByIdOptionalAuth(user, id).getUsers();
     }
 
     @GET
@@ -547,7 +543,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // Create Role for user creating the organization
         OrganizationUser organizationUser = new OrganizationUser(foundUser, organizationDAO.findById(id), OrganizationUser.Role.ADMIN);
-        organizationUser.setAccepted(true);
+        organizationUser.setStatus(ACCEPTED);
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.persist(organizationUser);
 
@@ -722,6 +718,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
                 OrganizationUser.Role.valueOf(role));
             Session currentSession = sessionFactory.getCurrentSession();
             currentSession.persist(organizationUser);
+        } else if (existingRole.getStatus() == REJECTED) {
+            existingRole.setStatus(OrganizationUser.InvitationStatus.PENDING);
         } else {
             updateUserRole(user, role, userId, organizationId);
         }
@@ -755,6 +753,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             String msg = "The user with id '" + userId + "' does not have a role in the organization with id '" + organizationId + "'.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+        } else if (existingRole.getStatus() == REJECTED) {
+            String msg = "The user with id '" + userId + "' rejected the organization invite for the organization with id '" + organizationId + "' and their role cannot be updated.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         } else {
             existingRole.setRole(OrganizationUser.Role.valueOf(role));
         }
@@ -830,7 +832,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
 
         // Check that the role is not already accepted
-        if (organizationUser.isAccepted()) {
+        if (organizationUser.getStatus() == ACCEPTED) {
             String msg =
                 "The user with id '" + user.getId() + "' has already accepted a role in the organization with id '" + organization.getId()
                     + "'.";
@@ -840,11 +842,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         if (accept) {
             // Set to accepted if true
-            organizationUser.setAccepted(true);
+            organizationUser.setStatus(ACCEPTED);
         } else {
-            // Delete role if false
-            Session currentSession = sessionFactory.getCurrentSession();
-            currentSession.delete(organizationUser);
+            organizationUser.setStatus(REJECTED);
         }
 
         Event.EventType eventType = accept ? Event.EventType.APPROVE_ORG_INVITE : Event.EventType.REJECT_ORG_INVITE;
