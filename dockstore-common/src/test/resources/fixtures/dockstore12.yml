@@ -23,8 +23,8 @@ workflows:
      primaryDescriptorPath: /Dockstore.cwl
      testParameterFiles:
        - /dockstore.cwl.json
-  # A workflow with no name:
   -  subclass: CWL
+     name: bloop
      primaryDescriptorPath: /Dockstore.cwl
      testParameterFiles:
        - /dockstore.cwl.json

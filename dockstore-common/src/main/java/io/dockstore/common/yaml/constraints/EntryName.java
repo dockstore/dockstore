@@ -14,27 +14,29 @@
  * limitations under the License.
  */
 
-package io.dockstore.common.yaml;
+package io.dockstore.common.yaml.constraints;
 
+import io.dockstore.common.ValidationConstants;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import javax.validation.Constraint;
 import javax.validation.Payload;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 
 /**
- * Defines the `AuthorHasNameOrOrcid` constraint annotation, which
- * is valid if a `YamlAuthor` has either a non-empty name or ORCID id.
+ * Defines the `EntryName` constraint annotation.
  */
-@Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+@Pattern(regexp = ValidationConstants.ENTRY_NAME_REGEX, message = ValidationConstants.ENTRY_NAME_REGEX_MESSAGE)
+@Size(min = ValidationConstants.ENTRY_NAME_LENGTH_MIN, max = ValidationConstants.ENTRY_NAME_LENGTH_MAX, message = ValidationConstants.ENTRY_NAME_LENGTH_MESSAGE)
+@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = AuthorHasNameOrOrcidValidator.class)
-public @interface AuthorHasNameOrOrcid {
+@Constraint(validatedBy = {})
+public @interface EntryName {
 
-    String AUTHOR_REQUIRES_NAME_OR_ORCID = "must have a name or an ORCID id";
-
-    String message () default AUTHOR_REQUIRES_NAME_OR_ORCID;
+    String message () default "";
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }
