@@ -1,12 +1,7 @@
 package io.dockstore.webservice.helpers;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Collection;
-import io.dockstore.webservice.core.Organization;
-import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.*;
 
 public final class MetadataResourceHelper {
 
@@ -40,4 +35,6 @@ public final class MetadataResourceHelper {
     public static String createToolURL(Tool tool) {
         return baseUrl + "/containers/" + tool.getToolPath();
     }
+
+    public static String createAppToolURL(AppTool appTool){ return baseUrl + "/apptools/" + appTool.getWorkflowPath(); }
 }

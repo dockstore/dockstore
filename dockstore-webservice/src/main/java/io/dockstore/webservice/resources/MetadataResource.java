@@ -38,21 +38,15 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.CLIInfo;
 import io.dockstore.webservice.api.Config;
 import io.dockstore.webservice.api.HealthCheckResult;
-import io.dockstore.webservice.core.Collection;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Organization;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.*;
+import io.dockstore.webservice.core.database.RSSAppToolPath;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.RSSListener;
 import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
-import io.dockstore.webservice.jdbi.BioWorkflowDAO;
-import io.dockstore.webservice.jdbi.CollectionDAO;
-import io.dockstore.webservice.jdbi.OrganizationDAO;
-import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.*;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApiService;
@@ -119,6 +113,7 @@ import org.kohsuke.github.PagedIterable;
 import org.kohsuke.github.extras.okhttp3.OkHttpGitHubConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.App;
 
 /**
  * @author dyuen
@@ -137,6 +132,7 @@ public class MetadataResource {
     private final OrganizationDAO organizationDAO;
     private final CollectionDAO collectionDAO;
     private final BioWorkflowDAO bioWorkflowDAO;
+    private final AppToolDAO appToolDAO;
     private final DockstoreWebserviceConfiguration config;
     private final SitemapListener sitemapListener;
     private final RSSListener rssListener;
@@ -151,6 +147,7 @@ public class MetadataResource {
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.config = config;
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
+        this.appToolDAO = new AppToolDAO(sessionFactory);
         this.sitemapListener = PublicStateManager.getInstance().getSitemapListener();
         this.rssListener = PublicStateManager.getInstance().getRSSListener();
     }
@@ -178,6 +175,7 @@ public class MetadataResource {
         SortedSet<String> urls = new TreeSet<>();
         urls.addAll(getToolPaths());
         urls.addAll(getBioWorkflowPaths());
+        urls.addAll(getAppToolPaths());
         urls.addAll(getOrganizationAndCollectionPaths());
         return urls;
     }
@@ -206,6 +204,10 @@ public class MetadataResource {
                 Collectors.toList());
     }
 
+    private List<String> getAppToolPaths() {
+        return appToolDAO.findAllPublishedPaths().stream().map(appToolPath ->createAppToolURL(appToolPath.getAppTool())).collect(Collectors.toList());
+    }
+
     private String createOrganizationURL(Organization organization) {
         return MetadataResourceHelper.createOrganizationURL(organization);
     }
@@ -220,6 +222,10 @@ public class MetadataResource {
 
     private String createToolURL(Tool tool) {
         return MetadataResourceHelper.createToolURL(tool);
+    }
+
+    private String createAppToolURL(AppTool appTool){
+        return MetadataResourceHelper.createAppToolURL(appTool);
     }
 
     @GET
@@ -242,10 +248,12 @@ public class MetadataResource {
         List<Tool> tools = toolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSToolPath::getTool).collect(Collectors.toList());
         List<Workflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).collect(
                 Collectors.toList());
-
+        List<AppTool> appTools = appToolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSAppToolPath::getAppTool).collect(
+                Collectors.toList());
         List<Entry<?, ?>> dbEntries =  new ArrayList<>();
         dbEntries.addAll(tools);
         dbEntries.addAll(workflows);
+        dbEntries.addAll(appTools);
         dbEntries.sort(Comparator.comparingLong(entry -> entry.getLastUpdated().getTime()));
 
         // TODO: after seeing if this works, make this more efficient than just returning everything
@@ -270,6 +278,12 @@ public class MetadataResource {
                 String workflowURL = createWorkflowURL(workflow);
                 entry.setGuid(workflowURL);
                 entry.setLink(workflowURL);
+            } else if (dbEntry instanceof AppTool) {
+                AppTool appTool = (AppTool)dbEntry;
+                entry.setTitle(appTool.getWorkflowPath());
+                String appToolURL = createAppToolURL(appTool);
+                entry.setGuid(appToolURL);
+                entry.setLink(appToolURL);
             } else if (dbEntry instanceof Tool) {
                 Tool tool = (Tool)dbEntry;
                 entry.setTitle(tool.getPath());

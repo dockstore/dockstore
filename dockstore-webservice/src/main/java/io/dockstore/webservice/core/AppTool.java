@@ -15,8 +15,11 @@
  */
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import javax.persistence.Entity;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -31,7 +34,10 @@ import javax.persistence.Table;
         "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteAppTool(a.sourceControl, a.organization, a.repository, a.workflowName, a.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
             + "FROM AppTool a LEFT JOIN a.workflowVersions v "
             + "WHERE a.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
-            + "GROUP BY a.sourceControl, a.organization, a.repository, a.workflowName, a.dbUpdateDate")
+            + "GROUP BY a.sourceControl, a.organization, a.repository, a.workflowName, a.dbUpdateDate"),
+    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.AppToolPath(c.sourceControl, c.organization, c.repository, c.workflowName) from AppTool c where c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.findAllPublishedPathsOrderByDbupdatedate", query = "SELECT new io.dockstore.webservice.core.database.RSSAppToolPath(c.sourceControl, c.organization, c.repository, c.workflowName, c.lastUpdated, c.description) from AppTool c where c.isPublished = true and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc"),
+
 })
 public class AppTool extends Workflow {
 
