@@ -205,7 +205,7 @@ public class MetadataResource {
     }
 
     private List<String> getAppToolPaths() {
-        return appToolDAO.findAllPublishedPaths().stream().map(appToolPath ->createAppToolURL(appToolPath.getAppTool())).collect(Collectors.toList());
+        return appToolDAO.findAllPublishedPaths().stream().map(appToolPath -> createAppToolURL(appToolPath.getAppTool())).collect(Collectors.toList());
     }
 
     private String createOrganizationURL(Organization organization) {
@@ -224,7 +224,7 @@ public class MetadataResource {
         return MetadataResourceHelper.createToolURL(tool);
     }
 
-    private String createAppToolURL(AppTool appTool){
+    private String createAppToolURL(AppTool appTool) {
         return MetadataResourceHelper.createAppToolURL(appTool);
     }
 
