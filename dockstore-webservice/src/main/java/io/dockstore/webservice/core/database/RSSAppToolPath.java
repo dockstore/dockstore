@@ -31,8 +31,8 @@ public class RSSAppToolPath {
         this.appTool.setRepository(repository);
         this.appTool.setWorkflowName(entryName);
         this.appTool.setLastUpdated(lastUpdated);
-        this.appTool.setDescription(description);
-    }
+        this.appTool.setDescription(description); }
+
     public AppTool getAppTool() {
         return appTool;
     }

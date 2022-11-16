@@ -1,7 +1,13 @@
 package io.dockstore.webservice.helpers;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.*;
+import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.AppTool;
 
 public final class MetadataResourceHelper {
 

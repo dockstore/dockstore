@@ -17,7 +17,6 @@ package io.dockstore.webservice.core.database;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
 
-import java.util.Date;
 
 /**
  * This class is only used to get data from the database in a more type-safe way
