@@ -1,3 +1,3 @@
 # the original file is dockstore/dockstore-webservice/src/main/resources/requirements/swagger-ui/requirements.template
 # do not edit if this is in the generated files directory
-swagger-ui=={ swagger-ui.version }
+swagger-ui==4.12.0
