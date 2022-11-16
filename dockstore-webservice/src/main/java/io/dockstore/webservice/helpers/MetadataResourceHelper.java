@@ -42,5 +42,7 @@ public final class MetadataResourceHelper {
         return baseUrl + "/containers/" + tool.getToolPath();
     }
 
-    public static String createAppToolURL(AppTool appTool){ return baseUrl + "/apptools/" + appTool.getWorkflowPath(); }
+    public static String createAppToolURL(AppTool appTool) {
+        return baseUrl + "/apptools/" + appTool.getWorkflowPath();
+    }
 }

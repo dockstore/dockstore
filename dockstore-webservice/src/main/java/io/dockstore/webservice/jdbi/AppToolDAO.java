@@ -28,7 +28,6 @@ import javax.persistence.criteria.Root;
 
 import io.dockstore.webservice.core.database.AppToolPath;
 import io.dockstore.webservice.core.database.RSSAppToolPath;
-import io.dockstore.webservice.core.database.WorkflowPath;
 import org.hibernate.SessionFactory;
 import java.util.List;
 

@@ -280,7 +280,7 @@ public class MetadataResource {
         List<RSSEntry> entries = new ArrayList<>();
         for (Entry<?, ?> dbEntry : dbEntries) {
             RSSEntry entry = new RSSEntry();
-             if (dbEntry instanceof AppTool) {
+            if (dbEntry instanceof AppTool) {
                 AppTool appTool = (AppTool)dbEntry;
                 entry.setTitle(appTool.getWorkflowPath());
                 String appToolURL = createAppToolURL(appTool);
