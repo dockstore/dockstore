@@ -37,21 +37,8 @@ public final class PipHelper {
         Version semVer = Version.valueOf(semVerString);
         if (semVer.greaterThanOrEqualTo(Version.valueOf("1.13.0"))) {
             return "1.13.0";
-        }
-        if (semVer.greaterThan(Version.valueOf("1.9.0"))) {
-            return "1.10.0";
-        }
-        // Use the 1.7.0 even for snapshot
-        if (semVer.greaterThan(Version.valueOf("1.6.0"))) {
-            return "1.7.0";
-        }
-        if (semVer.greaterThan(Version.valueOf("1.5.0"))) {
-            return "1.6.0";
-        }
-        if (semVer.greaterThan(Version.valueOf("1.4.0"))) {
-            return "1.5.0";
         } else {
-            return "1.4.0";
+            return "1.10.0";
         }
     }
 
