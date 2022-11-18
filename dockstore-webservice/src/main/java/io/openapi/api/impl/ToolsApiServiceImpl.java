@@ -54,6 +54,8 @@ import io.dockstore.webservice.permissions.Role;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.openapi.api.ToolsApiService;
 import io.openapi.model.Checksum;
+import io.openapi.model.DescriptorType;
+import io.openapi.model.DescriptorTypeWithPlain;
 import io.openapi.model.Error;
 import io.openapi.model.ExtendedFileWrapper;
 import io.openapi.model.FileWrapper;
@@ -76,6 +78,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.constraints.Pattern;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MediaType;
@@ -266,28 +269,28 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value, Optional<User> user) {
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
+    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String id, DescriptorTypeWithPlain type, String versionId, SecurityContext securityContext, ContainerRequestContext value,
+        Optional<User> user) {
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type.toString());
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType.get(), null,
-            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type, "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), user);
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
+    public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String id, DescriptorTypeWithPlain type, String versionId, @Pattern(regexp = ".+") String relativePath,
         SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         if (type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type.toString());
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType.get(), relativePath,
-            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type, "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), user);
     }
 
     private boolean contextContainsPlainText(ContainerRequestContext value) {
@@ -295,18 +298,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value, Optional<User> user) {
+    public Response toolsIdVersionsVersionIdTypeTestsGet(String id, DescriptorTypeWithPlain type, String versionId, SecurityContext securityContext, ContainerRequestContext value,
+        Optional<User> user) {
         if (type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type.toString());
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
-        boolean plainTextResponse = contextContainsPlainText(value) || type.toLowerCase().contains("plain");
+        boolean plainTextResponse = contextContainsPlainText(value) || type.toString().toLowerCase().contains("plain");
 
         final DescriptorLanguage.FileType fileTypeActual = fileType.get();
         final DescriptorLanguage descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(fileTypeActual);
@@ -323,9 +326,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
     @Override
-    public Response toolsGet(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
-        String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
-        ContainerRequestContext value, Optional<User> user) {
+    public Response toolsGet(String id, String alias, String toolClass, DescriptorType descriptorType, String registry, String organization, String name, String toolname, String description,
+        String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
 
         final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
         final String relativePath = value.getUriInfo().getRequestUri().getPath();
@@ -341,7 +343,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final List<Entry<?, ?>> all = new ArrayList<>();
         NumberOfEntityTypes numEntries;
         try {
-            numEntries = getEntries(all, id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user, actualLimit,
+            numEntries = getEntries(all, id, alias, toolClass, descriptorType.toString(), registry, organization, name, toolname, description, author, checker, user, actualLimit,
                 startIndex);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_REGISTRY_RESPONSE;
@@ -814,8 +816,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext containerRequestContext, Optional<User> user) {
+    public Response toolsIdVersionsVersionIdTypeFilesGet(String id, DescriptorType type, String versionId, String format, SecurityContext securityContext, ContainerRequestContext value,
+        Optional<User> user) {
         ParsedRegistryID parsedID = null;
         try {
             parsedID = new ParsedRegistryID(id);
@@ -837,7 +839,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
                     primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
                     Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, workflowVersion.getWorkingDirectory());
+                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), workflowVersion.getWorkingDirectory());
                     return Response.ok().entity(toolFiles).build();
                 } else {
                     return Response.noContent().build();
@@ -852,7 +854,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     primaryDescriptorPaths.add(tag.getCwlPath());
                     primaryDescriptorPaths.add(tag.getWdlPath());
                     Set<SourceFile> sourceFiles = tag.getSourceFiles();
-                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, tag.getWorkingDirectory());
+                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), tag.getWorkingDirectory());
                     return Response.ok().entity(toolFiles).build();
                 } else {
                     return Response.noContent().build();

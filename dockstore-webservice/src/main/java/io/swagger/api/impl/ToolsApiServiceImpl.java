@@ -18,6 +18,8 @@ package io.swagger.api.impl;
 
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
+import io.openapi.model.DescriptorType;
+import io.openapi.model.DescriptorTypeWithPlain;
 import io.swagger.api.ToolsApiService;
 import java.util.Optional;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -47,19 +49,19 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
-        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdVersionsVersionIdTypeDescriptorGet(type, id, versionId, securityContext, value, user));
+        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdVersionsVersionIdTypeDescriptorGet(id, DescriptorTypeWithPlain.fromValue(type), versionId, securityContext, value, user));
     }
 
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
         SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
-        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(type, id, versionId, relativePath, securityContext, value, user));
+        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(id, DescriptorTypeWithPlain.fromValue(type), versionId, relativePath, securityContext, value, user));
     }
 
     @Override
     public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
-        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdVersionsVersionIdTypeTestsGet(type, id, versionId, securityContext, value, user));
+        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdVersionsVersionIdTypeTestsGet(id, DescriptorTypeWithPlain.fromValue(type), versionId, securityContext, value, user));
     }
 
     @Override
@@ -81,6 +83,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext containerRequestContext, Optional<User> user) {
-        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdVersionsVersionIdTypeFilesGet(type, id, versionId, securityContext, containerRequestContext, user));
+        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsIdVersionsVersionIdTypeFilesGet(id, DescriptorType.fromValue(type),  versionId, null, securityContext, containerRequestContext, user));
     }
 }
