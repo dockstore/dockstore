@@ -25,6 +25,8 @@ import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.google.common.base.Splitter;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -59,6 +61,7 @@ import io.openapi.model.DescriptorTypeWithPlain;
 import io.openapi.model.Error;
 import io.openapi.model.ExtendedFileWrapper;
 import io.openapi.model.FileWrapper;
+import io.openapi.model.OneOfFileWrapperImageType;
 import io.openapi.model.ToolFile;
 import io.openapi.model.ToolVersion;
 import io.swagger.api.impl.ToolsImplCommon;
@@ -343,7 +346,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final List<Entry<?, ?>> all = new ArrayList<>();
         NumberOfEntityTypes numEntries;
         try {
-            numEntries = getEntries(all, id, alias, toolClass, descriptorType.toString(), registry, organization, name, toolname, description, author, checker, user, actualLimit,
+            numEntries = getEntries(all, id, alias, toolClass, descriptorType == null ? null : descriptorType.toString(), registry, organization, name, toolname, description, author, checker, user, actualLimit,
                 startIndex);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_REGISTRY_RESPONSE;
@@ -687,6 +690,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
                     for (SourceFile file : testSourceFiles) {
                         FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
+                        toolTests.setImageType(new EmptyImageType());
                         toolTestsList.add(toolTests);
                     }
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
@@ -698,11 +702,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         .filter(sourcefile -> sourcefile.getType() == DOCKERFILE).findFirst();
                     if (potentialDockerfile.isPresent()) {
                         ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
-                        //TODO: hook up file checksum here
                         dockerfile.setChecksum(convertToTRSChecksums(potentialDockerfile.get()));
                         dockerfile.setContent(potentialDockerfile.get().getContent());
                         dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
                         dockerfile.setOriginalFile(potentialDockerfile.get());
+                        dockerfile.setImageType(new EmptyImageType());
                         toolVersion.setContainerfile(true);
                         List<FileWrapper> containerfilesList = new ArrayList<>();
                         containerfilesList.add(dockerfile);
@@ -906,6 +910,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             ToolFile toolFile = new ToolFile();
             toolFile.setPath(path.relativize(Paths.get(file.getAbsolutePath())).toString());
             ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
+            // arbitrarily pick first checksum, seems like bug in specification, should probably be array
+            final List<Checksum> checksums = convertToTRSChecksums(file);
+            if (!checksums.isEmpty()) {
+                toolFile.setChecksum(convertToTRSChecksums(file).get(0));
+            }
             if (fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) && mainDescriptor.contains(file.getPath())) {
                 fileTypeEnum = ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
             }
@@ -1022,5 +1031,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         public long sum() {
             return numTools + numWorkflows + numAppTools + numServices;
         }
+    }
+
+    /**
+     * Placeholder for proper implementation of ImageType.
+     * Fill in with DescriptorType and ImageType
+     * DOCK-5248
+     */
+    @JsonInclude(Include.NON_EMPTY)
+    public static class EmptyImageType implements OneOfFileWrapperImageType {
     }
 }
