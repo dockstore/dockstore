@@ -929,6 +929,23 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     /**
+     * Safe version of io.openapi.model.DescriptorTypeWithPlain.DescriptorTypeWithPlain
+     * @param type
+     * @return
+     */
+    public static DescriptorTypeWithPlain safeDescriptorTypeWithPlainfromValue(String type) {
+        if (type == null) {
+            return null;
+        }
+        for (DescriptorTypeWithPlain b : DescriptorTypeWithPlain.values()) {
+            if (String.valueOf(b.toString()).equalsIgnoreCase(type.replace("-", "_"))) {
+                return b;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Used to parse localised IDs (no URL)
      * If tool, the id will look something like "registry.hub.docker.com/sequenza/sequenza"
      * If workflow, the id will look something like "#workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
