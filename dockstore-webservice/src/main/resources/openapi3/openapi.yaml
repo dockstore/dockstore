@@ -8798,6 +8798,9 @@ components:
           - GXFORMAT2_TEST_FILE
           - DOCKSTORE_SWL
           - SWL_TEST_JSON
+        typeVersion:
+          type: string
+          description: The version of the file type
         verifiedBySource:
           type: object
           additionalProperties:

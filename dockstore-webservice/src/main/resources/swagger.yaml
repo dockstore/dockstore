@@ -7937,6 +7937,10 @@ definitions:
         description: "The checksum(s) of the sourcefile's content"
         items:
           $ref: "#/definitions/Checksum"
+      typeVersion:
+        type: "string"
+        position: 7
+        description: "The version of the file type"
   StarRequest:
     type: "object"
     properties:

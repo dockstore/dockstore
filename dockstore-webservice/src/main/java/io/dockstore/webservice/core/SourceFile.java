@@ -116,6 +116,11 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "The checksum(s) of the sourcefile's content", position = 6)
     private List<Checksum> checksums = new ArrayList<>();
 
+    @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "The version of the file type", position = 7)
+    @Schema(description = "The version of the file type")
+    private String typeVersion;
+
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
@@ -232,6 +237,14 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
+    }
+
+    public String getTypeVersion() {
+        return typeVersion;
+    }
+
+    public void setTypeVersion(String typeVersion) {
+        this.typeVersion = typeVersion;
     }
 
     private static synchronized void checkPath(String path) {
