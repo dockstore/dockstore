@@ -5,8 +5,8 @@ import static io.dockstore.common.PipHelper.DEV_SEM_VER;
 import io.dockstore.webservice.core.User;
 import io.openapi.api.ServiceInfoApiService;
 import io.openapi.model.Service;
-import io.openapi.model.ServiceOrganization;
 import io.openapi.model.ServiceType;
+import io.openapi.model.TRSServiceOrganization;
 import io.swagger.api.impl.ToolsApiServiceImpl;
 import java.time.LocalDate;
 import java.time.Month;
@@ -60,8 +60,8 @@ public class ServiceInfoApiServiceImpl extends ServiceInfoApiService {
         return serviceType;
     }
 
-    private static ServiceOrganization getOrganization() {
-        ServiceOrganization organization = new ServiceOrganization();
+    private static TRSServiceOrganization getOrganization() {
+        TRSServiceOrganization organization = new TRSServiceOrganization();
         organization.setName("Dockstore");
         organization.setUrl("https://dockstore.org");
         return organization;

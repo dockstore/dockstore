@@ -2526,9 +2526,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Service'
+                $ref: '#/components/schemas/TRSService'
           description: A successful operation to request the service information about
-            this running service.
+            this running service.'
       summary: Show information about this service. It is assumed that removing this
         endpoint from a URL will result in a valid URL to query against
       tags:
@@ -8731,86 +8731,8 @@ components:
           type: string
     Service:
       type: object
-      description: GA4GH service
-      properties:
-        contactUrl:
-          type: string
-          description: "URL of the contact for the provider of this service, e.g.\
-            \ a link to a contact form (RFC 3986 format), or an email (RFC 2368 format)."
-          example: mailto:support@example.com
-        createdAt:
-          type: string
-          format: date-time
-          description: Timestamp describing when the service was first deployed and
-            available (RFC 3339 format)
-          example: 2019-06-04T12:58:19Z
-        description:
-          type: string
-          description: Description of the service. Should be human readable and provide
-            information about the service.
-          example: This service provides...
-        documentationUrl:
-          type: string
-          description: "URL of the documentation of this service (RFC 3986 format).\
-            \ This should help someone learn how to use your service, including any\
-            \ specifics required to access data, e.g. authentication."
-          example: https://docs.myservice.example.com
-        environment:
-          type: string
-          description: "Environment the service is running in. Use this to distinguish\
-            \ between production, development and testing/staging deployments. Suggested\
-            \ values are prod, test, dev, staging. However this is advised and not\
-            \ enforced."
-          example: test
-        id:
-          type: string
-          description: "Unique ID of this service. Reverse domain name notation is\
-            \ recommended, though not required. The identifier should attempt to be\
-            \ globally unique so it can be used in downstream aggregator services\
-            \ e.g. Service Registry."
-          example: org.ga4gh.myservice
-        name:
-          type: string
-          description: Name of this service. Should be human readable.
-          example: My project
-        organization:
-          $ref: '#/components/schemas/ServiceOrganization'
-        type:
-          $ref: '#/components/schemas/ServiceType'
-        updatedAt:
-          type: string
-          format: date-time
-          description: Timestamp describing when the service was last updated (RFC
-            3339 format)
-          example: 2019-06-04T12:58:19Z
-        version:
-          type: string
-          description: "Version of the service being described. Semantic versioning\
-            \ is recommended, but other identifiers, such as dates or commit hashes,\
-            \ are also allowed. The version should be changed whenever the service\
-            \ is updated."
-          example: 1.0.0
-      required:
-      - id
-      - name
-      - organization
-      - type
-      - version
-    ServiceOrganization:
-      type: object
-      description: Organization providing the service
-      properties:
-        name:
-          type: string
-          description: Name of the organization responsible for the service
-          example: My organization
-        url:
-          type: string
-          description: URL of the website of the organization (RFC 3986 format)
-          example: https://example.com
-      required:
-      - name
-      - url
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
     ServiceType:
       type: object
       description: Type of a GA4GH service
@@ -8913,6 +8835,88 @@ components:
       properties:
         star:
           type: boolean
+    TRSService:
+      type: object
+      description: GA4GH service
+      properties:
+        contactUrl:
+          type: string
+          description: "URL of the contact for the provider of this service, e.g.\
+            \ a link to a contact form (RFC 3986 format), or an email (RFC 2368 format)."
+          example: mailto:support@example.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp describing when the service was first deployed and
+            available (RFC 3339 format)
+          example: 2019-06-04T12:58:19Z
+        description:
+          type: string
+          description: Description of the service. Should be human readable and provide
+            information about the service.
+          example: This service provides...
+        documentationUrl:
+          type: string
+          description: "URL of the documentation of this service (RFC 3986 format).\
+            \ This should help someone learn how to use your service, including any\
+            \ specifics required to access data, e.g. authentication."
+          example: https://docs.myservice.example.com
+        environment:
+          type: string
+          description: "Environment the service is running in. Use this to distinguish\
+            \ between production, development and testing/staging deployments. Suggested\
+            \ values are prod, test, dev, staging. However this is advised and not\
+            \ enforced."
+          example: test
+        id:
+          type: string
+          description: "Unique ID of this service. Reverse domain name notation is\
+            \ recommended, though not required. The identifier should attempt to be\
+            \ globally unique so it can be used in downstream aggregator services\
+            \ e.g. Service Registry."
+          example: org.ga4gh.myservice
+        name:
+          type: string
+          description: Name of this service. Should be human readable.
+          example: My project
+        organization:
+          $ref: '#/components/schemas/TRSServiceOrganization'
+        type:
+          $ref: '#/components/schemas/ServiceType'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp describing when the service was last updated (RFC
+            3339 format)
+          example: 2019-06-04T12:58:19Z
+        version:
+          type: string
+          description: "Version of the service being described. Semantic versioning\
+            \ is recommended, but other identifiers, such as dates or commit hashes,\
+            \ are also allowed. The version should be changed whenever the service\
+            \ is updated."
+          example: 1.0.0
+      required:
+      - id
+      - name
+      - organization
+      - type
+      - version
+    TRSServiceOrganization:
+      type: object
+      description: Organization providing the service
+      properties:
+        name:
+          type: string
+          description: Name of the organization responsible for the service
+          example: My organization
+        url:
+          type: string
+          description: URL of the website of the organization (RFC 3986 format)
+          example: https://example.com
+      required:
+      - name
+      - url
     Tag:
       type: object
       properties:
