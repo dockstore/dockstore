@@ -88,6 +88,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
@@ -843,6 +844,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
                     primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
                     Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+                    if (format != null && "zip".equalsIgnoreCase(format)) {
+                        return getZipResponse(sourceFiles, workflow.getWorkflowPath(), workflowVersion.getName(), Paths.get(workflowVersion.getWorkingDirectory()));
+                    }
                     List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), workflowVersion.getWorkingDirectory());
                     return Response.ok().entity(toolFiles).build();
                 } else {
@@ -858,6 +862,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     primaryDescriptorPaths.add(tag.getCwlPath());
                     primaryDescriptorPaths.add(tag.getWdlPath());
                     Set<SourceFile> sourceFiles = tag.getSourceFiles();
+                    if (format != null && "zip".equalsIgnoreCase(format)) {
+                        return getZipResponse(sourceFiles, tool.getToolPath(), tag.getName(), Paths.get(tag.getWorkingDirectory()));
+                    }
                     List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), tag.getWorkingDirectory());
                     return Response.ok().entity(toolFiles).build();
                 } else {
@@ -869,6 +876,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } finally {
             versionDAO.disableNameFilter();
         }
+    }
+
+    private Response getZipResponse(Set<SourceFile> sourceFiles, String dockstoreID, String name, Path path) {
+        String fileName = EntryVersionHelper.generateZipFileName(dockstoreID, name);
+
+        return Response.ok().entity((StreamingOutput) output -> EntryVersionHelper.writeStreamAsZipStatic(sourceFiles, output, path))
+            .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 
     /**
