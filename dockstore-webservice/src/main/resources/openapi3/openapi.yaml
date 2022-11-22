@@ -2574,6 +2574,9 @@ paths:
         name: toolClass
         schema:
           type: string
+          enum:
+          - CommandLineTool
+          - Workflow
       - description: Filter tools by the name of the descriptor type
         in: query
         name: descriptorType

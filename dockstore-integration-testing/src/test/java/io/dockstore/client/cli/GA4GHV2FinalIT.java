@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.openapi.client.model.FileWrapper;
+import io.dockstore.openapi.client.model.TRSService;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.ToolClass;
 import io.dockstore.openapi.client.model.ToolFile;
@@ -93,7 +94,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
     @Test
     public void serviceInfoTest() {
         Response response = checkedResponse(baseURL + "service-info");
-        Service responseObject = response.readEntity(Service.class);
+        TRSService responseObject = response.readEntity(TRSService.class);
         Service service = getService();
         Assert.assertEquals(service.getDocumentationUrl(), responseObject.getDocumentationUrl());
         Assert.assertEquals(service.getContactUrl(), responseObject.getContactUrl());
