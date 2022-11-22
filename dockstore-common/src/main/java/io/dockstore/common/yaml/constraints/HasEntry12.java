@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.common.yaml;
+package io.dockstore.common.yaml.constraints;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -22,12 +22,12 @@ import java.lang.annotation.Target;
 import javax.validation.Constraint;
 import javax.validation.Payload;
 
-@Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = Dockstore12Validator.class)
-public @interface ValidDockstore12 {
+@Constraint(validatedBy = HasEntry12Validator.class)
+public @interface HasEntry12  {
 
-    String AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE = ".dockstore.yml must have at least 1 workflow, tool, or service";
+    String AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE = "must have at least 1 workflow, tool, or service";
 
     String message () default AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE;
     Class<?>[] groups () default {};

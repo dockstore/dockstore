@@ -63,7 +63,6 @@ import java.io.StringWriter;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -362,8 +361,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
 
-            checkDuplicateNames(dockstoreYaml12.getWorkflows(), dockstoreYaml12.getTools(), dockstoreYaml12.getService());
-
             // Process the service (if present) and the lists of workflows and apptools.
             // '&=' does not short-circuit, ensuring that all of the lists are processed.
             // 'isSuccessful &= x()' is equivalent to 'isSuccessful = isSuccessful & x()'.
@@ -471,27 +468,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return lambdaEvent;
     }
 
-    private void checkDuplicateNames(List<? extends Workflowish> workflows, List<? extends Workflowish> tools, Service12 service) {
-        List<Workflowish> entries = new ArrayList<>();
-        entries.addAll(workflows);
-        entries.addAll(tools);
-        Set<String> names = new HashSet<>();
-        for (Workflowish entry: entries) {
-            String name = entry.getName();
-            if (name == null) {
-                name = "";
-            }
-            if (!names.add(name)) {
-                String msg = "".equals(name) ? "At least two workflows or tools have no name." :
-                    String.format("At least two workflows or tools have the same name '%s'.", name);
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            }
-        }
-        if (service != null && names.contains("")) {
-            throw new CustomWebApplicationException("A service always has no name, so any workflows or tools must be named.", LAMBDA_FAILURE);
-        }
-    }
-
     /**
      * Create or retrieve workflows/GitHub App Tools based on Dockstore.yml, add or update tag version
      * ONLY WORKS FOR v1.2
@@ -514,13 +490,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         for (Workflowish wf : yamlWorkflows) {
             try {
                 if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+                    DockstoreYamlHelper.validate(wf, true, "a " + computeTermFromClass(workflowType));
+
                     // Update the workflow version in its own database transaction.
                     transactionHelper.transaction(() -> {
                         String subclass = wf.getSubclass().toString();
-                        if (workflowType == AppTool.class && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
-                            throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
-                        }
-
                         final String workflowName = workflowType == Service.class ? "" : wf.getName();
                         final Boolean publish = wf.getPublish();
                         final var defaultVersion = wf.getLatestTagAsDefault();
@@ -537,13 +511,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         publishWorkflowAndLog(workflow, publish, user, repository, gitReference);
                     });
                 }
-            } catch (RuntimeException ex) {
+            } catch (RuntimeException | DockstoreYamlHelper.DockstoreYamlException ex) {
                 // If there was a problem updating the workflow (an exception was thrown), either:
                 // a) rethrow certain exceptions to abort .dockstore.yml parsing, or
                 // b) log something helpful and move on to the next workflow.
                 isSuccessful = false;
-                rethrowIfFatal(ex, transactionHelper);
-                final String message = String.format("Error processing %s %s in .dockstore.yml:%n%s",
+                if (ex instanceof RuntimeException) {
+                    rethrowIfFatal((RuntimeException)ex, transactionHelper);
+                }
+                final String message = String.format("Error processing %s %s:%n%s",
                     computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
                 LOG.error(message, ex);
                 messageWriter.println(message);

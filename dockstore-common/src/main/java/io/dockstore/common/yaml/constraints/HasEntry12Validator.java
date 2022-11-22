@@ -13,17 +13,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.common.yaml;
+package io.dockstore.common.yaml.constraints;
 
+import io.dockstore.common.yaml.DockstoreYaml12;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
  * Validates that a DockstoreYaml12 instance has at least one workflow, tool, or service
  */
-public class Dockstore12Validator implements ConstraintValidator<ValidDockstore12, DockstoreYaml12> {
+public class HasEntry12Validator implements ConstraintValidator<HasEntry12, DockstoreYaml12> {
     @Override
-    public void initialize(final ValidDockstore12 constraintAnnotation) {
+    public void initialize(final HasEntry12 constraintAnnotation) {
         // Intentionally empty
     }
 

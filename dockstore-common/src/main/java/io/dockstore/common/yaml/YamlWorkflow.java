@@ -16,6 +16,8 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.yaml.constraints.DescriptorLanguageShortName;
+import io.dockstore.common.yaml.constraints.EntryName;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
@@ -52,7 +54,7 @@ public class YamlWorkflow implements Workflowish {
 
     private List<String> testParameterFiles = new ArrayList<>();
 
-
+    @EntryName
     public String getName() {
         return name;
     }
@@ -62,6 +64,7 @@ public class YamlWorkflow implements Workflowish {
     }
 
     @NotNull
+    @DescriptorLanguageShortName
     public String getSubclass() {
         if (NEW_GALAXY_SUBCLASS.equalsIgnoreCase(subclass)) {
             return DescriptorLanguage.GXFORMAT2.getShortName();

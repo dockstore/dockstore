@@ -433,4 +433,22 @@ public class CWLHandlerTest {
         when(sourceFile.getContent()).thenReturn(content);
         return sourceFile;
     }
+
+    /**
+     * Test a workflow with an ID that contains slashes.
+     */
+    @Test
+    public void testWorkflowWithIdThatContainsSlashes() throws IOException {
+        CWLHandler cwlHandler = new CWLHandler();
+
+        final String resourceRoot = "workflow-id-slashes";
+        final SourceFile primaryFile = mockSourceFile(resourceRoot, "/main.cwl");
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+
+        String toolTableContent = cwlHandler.getContent(primaryFile.getAbsolutePath(), primaryFile.getContent(), Set.of(mockSourceFile(resourceRoot, "/tool.cwl")), LanguageHandlerInterface.Type.TOOLS, toolDAO).get();
+        Assert.assertTrue("step id should be part of tool table content", toolTableContent.contains("step_name"));
+
+        String dagContent = cwlHandler.getContent(primaryFile.getAbsolutePath(), primaryFile.getContent(), Set.of(), LanguageHandlerInterface.Type.DAG, toolDAO).get();
+        Assert.assertTrue("step id should be part of dag content", dagContent.contains("step_name"));
+    }
 }

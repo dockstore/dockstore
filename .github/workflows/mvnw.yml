@@ -23,8 +23,14 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           distribution: 'adopt'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: java
+
       # Step that does that actual cache save and restore
-      - uses: actions/cache@v3.0.11
+      - uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -32,3 +38,6 @@ jobs:
            ${{ runner.os }}-maven-
       - name: Build with mvnw
         run: ./mvnw clean install
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2          
