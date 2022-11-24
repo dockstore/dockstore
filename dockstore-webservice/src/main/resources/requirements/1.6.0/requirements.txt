@@ -1,7 +1,0 @@
-setuptools==40.8.0
-cwl-runner
-cwltool==1.0.20181217162649
-schema-salad==3.0.20181206233650
-avro==1.8.2
-ruamel.yaml==0.15.77
-requests==2.21.0

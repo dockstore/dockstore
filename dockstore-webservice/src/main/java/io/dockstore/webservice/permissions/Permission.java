@@ -6,8 +6,12 @@ import java.util.Objects;
  * Contains an email and the associated {@link Role} for that
  * email.
  * <p>
- * The email is not necessarily a single user; it can be a group of
- * users.
+ * The email value is not necessarily for a single user; it can be an email of a group. In some
+ * implementations of {@link PermissionsInterface}, the value is a Dockstore username, not an email.
+ * We should rename the field, but that modifies the OpenAPI, which requires a new UI build to use
+ * it, and doesn't seem worth it at this point, given that only the
+ * {@link io.dockstore.webservice.permissions.sam.SamPermissionsImpl} implementation is used in
+ * production. The other implementations are for testing only.
  */
 public class Permission {
     private String email;
