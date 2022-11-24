@@ -17,11 +17,6 @@ package io.dockstore.webservice.core.database;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
 
-/**
- * This class is only used to get data from the database in a more type-safe way
- * @author hyunnaye
- * @since 1.13.0
- */
 
 public class AppToolPath {
     private final AppTool appTool = new AppTool();

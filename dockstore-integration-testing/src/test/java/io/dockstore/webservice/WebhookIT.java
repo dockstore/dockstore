@@ -146,8 +146,8 @@ public class WebhookIT extends BaseIT {
         final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
 
         // There should be no apptools
-        Assert.assertEquals(0, appToolDAO.findAllPublishedPaths().size());
-        Assert.assertEquals(0, appToolDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+        assertEquals(0, appToolDAO.findAllPublishedPaths().size());
+        assertEquals(0, appToolDAO.findAllPublishedPathsOrderByDbupdatedate().size());
 
         // create and publish apptool
         usersApi.syncUserWithGitHub();
@@ -157,8 +157,8 @@ public class WebhookIT extends BaseIT {
         workflowApi.publish(appTool.getId(), publishRequest);
 
         // There should be 1 apptool.
-        Assert.assertEquals(1, appToolDAO.findAllPublishedPaths().size());
-        Assert.assertEquals(1, appToolDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+        assertEquals(1, appToolDAO.findAllPublishedPaths().size());
+        assertEquals(1, appToolDAO.findAllPublishedPathsOrderByDbupdatedate().size());
 
     }
 
