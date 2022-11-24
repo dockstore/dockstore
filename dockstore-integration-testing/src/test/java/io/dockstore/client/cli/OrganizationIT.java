@@ -219,7 +219,7 @@ public class OrganizationIT extends BaseIT {
 
         // Create the organization
         Organization registeredOrganization = createOrg(organizationsApiUser2);
-        assertNotEquals(registeredOrganization.getStatus().getValue(), StatusEnum.APPROVED);
+        assertNotEquals(registeredOrganization.getStatus(), StatusEnum.APPROVED);
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
@@ -284,7 +284,7 @@ public class OrganizationIT extends BaseIT {
 
         // Update the organization
         String email = "another@email.com";
-        Organization newOrganization = stubOrgObject();
+        Organization newOrganization = organizationsApiUser2.getOrganizationById(organization.getId());
         newOrganization.setEmail(email);
         organization = organizationsApiUser2.updateOrganization(newOrganization, organization.getId());
 
@@ -898,7 +898,7 @@ public class OrganizationIT extends BaseIT {
 
         // Should be able to update email of Organization
         String email = "another@email.com";
-        Organization newOrganization = stubOrgObject();
+        Organization newOrganization = organizationsApiOtherUser.getOrganizationById(orgId);
         newOrganization.setEmail(email);
         organization = organizationsApiOtherUser.updateOrganization(newOrganization, orgId);
         assertEquals("Organization should be returned and have an updated email.", email, organization.getEmail());
