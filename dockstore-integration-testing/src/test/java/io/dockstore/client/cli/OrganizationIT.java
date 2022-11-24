@@ -1236,7 +1236,6 @@ public class OrganizationIT extends BaseIT {
         // Set up 3 logged-in users and one logged-out user
         final io.dockstore.openapi.client.ApiClient orgAdminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.OrganizationsApi orgAdminOrganizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(orgAdminWebClient);
-        io.dockstore.openapi.client.api.UsersApi orgAdminUsersApi = new io.dockstore.openapi.client.api.UsersApi(orgAdminWebClient);
 
         final io.dockstore.openapi.client.ApiClient orgMaintainerWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.OrganizationsApi orgMaintainerOrganizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(orgMaintainerWebClient);
@@ -1308,6 +1307,14 @@ public class OrganizationIT extends BaseIT {
         assertMembershipStatusAndRole(orgMaintainerUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.REJECTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MAINTAINER);
         assertEquals("Organization user with rejected maintainer role should see 2 user", 2, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size());
         assertTrue("Organization user with rejected maintainer role should only see accepted members",
+                orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+
+        // Re-invite rejected maintainer role and change the role to an admin to get a pending admin invitation
+        orgAdminOrganizationsApi.addUserToOrg(OrganizationUser.Role.ADMIN.toString(), orgMaintainerUserId, orgId, "");
+        assertMembershipStatusAndRole(orgMaintainerUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.ADMIN);
+        assertEquals("Organization user with pending admin role should see 2 user", 2, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size());
+        assertTrue("Organization user with pending admin role should only see accepted members",
                 orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
                         orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
 

@@ -319,14 +319,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = getOrganizationByIdOptionalAuth(user, id);
 
-        if (user.isPresent()) {
-            try {
-                // Ensure that the calling user is an accepted admin of the organization
-                checkUserOrgRole(organization, user.get().getId(), OrganizationUser.Role.ADMIN);
-                return organization.getUsers(); // Organization admins can view accepted, pending, and rejected users
-            } catch (CustomWebApplicationException e) {
-                LOG.info("User with id {} cannot view all organization members because they are not an admin of the organization", user.get().getId());
-            }
+        if (user.isPresent() && isUserAdmin(organization, user.get().getId())) {
+            return organization.getUsers(); // Organization admins can view accepted, pending, and rejected users
         }
 
         // Unauthorized users and non-admin organization members can only view accepted members
@@ -920,7 +914,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     /**
-     * Checks if the given user should know of the existence of the organization For a user to see an organization, either it must be approved or the user must have an accepted or pending role in the organization
+     * Checks if the given user should know of the existence of the organization.
+     * For a user to see an organization, either it must be approved or the user must have a role in the organization
      *
      * @param organizationId
      * @param userId
@@ -940,6 +935,20 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         return Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED) || (organizationUser != null);
     }
 
+    static boolean isUserAdmin(Organization organization, Long userId) {
+        if (organization == null) {
+            String msg = "Organization not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        OrganizationUser organizationUser = getUserOrgRole(organization, userId);
+        if (organizationUser == null) {
+            return false;
+        }
+
+        return organizationUser.getRole() == OrganizationUser.Role.ADMIN && organizationUser.getStatus() == ACCEPTED;
+    }
 
     static boolean isUserAdminOrMaintainer(Organization organization, Long userId) {
         if (organization == null) {
