@@ -844,7 +844,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
                     primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
                     Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                    if (format != null && "zip".equalsIgnoreCase(format)) {
+                    if ("zip".equalsIgnoreCase(format)) {
                         return getZipResponse(sourceFiles, workflow.getWorkflowPath(), workflowVersion.getName(), Paths.get(workflowVersion.getWorkingDirectory()));
                     }
                     List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), workflowVersion.getWorkingDirectory());
@@ -927,7 +927,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             // arbitrarily pick first checksum, seems like bug in specification, should probably be array
             final List<Checksum> checksums = convertToTRSChecksums(file);
             if (!checksums.isEmpty()) {
-                toolFile.setChecksum(convertToTRSChecksums(file).get(0));
+                toolFile.setChecksum(checksums.get(0));
             }
             if (fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) && mainDescriptor.contains(file.getPath())) {
                 fileTypeEnum = ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;

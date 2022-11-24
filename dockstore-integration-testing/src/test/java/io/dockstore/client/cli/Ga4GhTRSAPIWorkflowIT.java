@@ -157,6 +157,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
             assertTrue("zip file seems to have wdl files", zipFile.stream().anyMatch(file -> file.getName().endsWith(".wdl")));
             assertTrue("zip file seems to have a wdl file with stuff in it", zipFile.stream().filter(file -> file.getName().endsWith(".wdl")).findFirst().get().getSize() > 0);
         }
+        tempZip.deleteOnExit();
     }
 
     /**
