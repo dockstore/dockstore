@@ -7728,9 +7728,13 @@ definitions:
   OrganizationUser:
     type: "object"
     required:
+    - "accepted"
     - "role"
     - "status"
     properties:
+      accepted:
+        type: "boolean"
+        description: "Has the user accepted their membership."
       dbCreateDate:
         type: "integer"
         format: "int64"

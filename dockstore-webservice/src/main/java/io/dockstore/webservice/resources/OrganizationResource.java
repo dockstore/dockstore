@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -174,11 +175,11 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = organizationDAO.findById(id);
         throwExceptionForNullOrganization(organization);
-        OrganizationUser organizationUser = getUserOrgRole(organization, user.getId());
-        if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
-            String msg = "Organization not found";
+        boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(organization, user.getId());
+        if (!isUserAdminOrMaintainer) {
+            String msg = "You do not have permissions to request organization review.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
         if (Objects.equals(organization.getStatus(), Organization.ApplicationState.REJECTED)) {
@@ -316,7 +317,22 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Operation(operationId = "getOrganizationMembers", summary = "Retrieve all members for an organization.", description = "Retrieve all members for an organization. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Set<OrganizationUser> getOrganizationMembers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
-        return getOrganizationByIdOptionalAuth(user, id).getUsers();
+        Organization organization = getOrganizationByIdOptionalAuth(user, id);
+
+        if (user.isPresent()) {
+            try {
+                // Ensure that the calling user is an accepted admin of the organization
+                checkUserOrgRole(organization, user.get().getId(), OrganizationUser.Role.ADMIN);
+                return organization.getUsers(); // Organization admins can view accepted, pending, and rejected users
+            } catch (CustomWebApplicationException e) {
+                LOG.info("User with id {} cannot view all organization members because they are not an admin of the organization", user.get().getId());
+            }
+        }
+
+        // Unauthorized users and non-admin organization members can only view accepted members
+        return organization.getUsers().stream()
+                .filter(organizationUser -> organizationUser.getStatus() == ACCEPTED)
+                .collect(Collectors.toSet());
     }
 
     @GET
@@ -439,11 +455,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findById(organizationId);
         throwExceptionForNullOrganization(organization);
-        OrganizationUser orgUser = getUserOrgRole(organization, user.getId());
+        boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(organization, user.getId());
 
-        // If the user does not belong to the organization or if the user is not an admin of the organization
-        // and if the user is neither an admin nor curator, then throw an error
-        if ((orgUser == null || orgUser.getRole() != OrganizationUser.Role.ADMIN) && (!user.isCurator() && !user.getIsAdmin())) {
+        // If the user is not an admin or maintainer of the organization and if the user is neither an admin nor curator, then throw an error
+        if (!isUserAdminOrMaintainer && (!user.isCurator() && !user.getIsAdmin())) {
             throw new CustomWebApplicationException("You do not have access to delete this organization", HttpStatus.SC_FORBIDDEN);
         }
 
@@ -577,8 +592,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // Ensure that the user is an admin or maintainer of the organization
         if (!user.isCurator() && !user.getIsAdmin()) {
-            OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
-            if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
+            boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(organization, user.getId());
+            if (!isUserAdminOrMaintainer) {
                 String msg = "You do not have permissions to update the organization.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
@@ -720,6 +735,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             currentSession.persist(organizationUser);
         } else if (existingRole.getStatus() == REJECTED) {
             existingRole.setStatus(OrganizationUser.InvitationStatus.PENDING);
+            existingRole.setRole(OrganizationUser.Role.valueOf(role));
         } else {
             updateUserRole(user, role, userId, organizationId);
         }
@@ -868,7 +884,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     /**
-     * Checks if a user has the given role type in the organization Throws an error if the user has no roles or the wrong roles
+     * Checks if a user has the given role type in the organization
+     * Throws an error if the user has no roles, the wrong roles, or an unaccepted role
      *
      * @param organization
      * @param userId
@@ -887,6 +904,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
                     + "'.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+        } else if (organizationUser.getStatus() != ACCEPTED) {
+            String msg =
+                    "The user with id '" + userId + "' has not accepted their " + organizationUser.getRole().name().toLowerCase() + " invitation to the organization with id '" + organization.getId()
+                            + "'.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else {
             return organizationUser;
         }
@@ -897,7 +920,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     /**
-     * Checks if the given user should know of the existence of the organization For a user to see an organsation, either it must be approved or the user must have a role in the organization
+     * Checks if the given user should know of the existence of the organization For a user to see an organization, either it must be approved or the user must have an accepted or pending role in the organization
      *
      * @param organizationId
      * @param userId
@@ -930,7 +953,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             return false;
         }
 
-        return organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER;
+        return (organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER) && organizationUser.getStatus() == ACCEPTED;
     }
 
     static boolean isUserAdminOrMaintainer(Long organizationId, Long userId, OrganizationDAO organizationDAO) {

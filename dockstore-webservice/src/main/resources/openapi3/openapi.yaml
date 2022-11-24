@@ -8584,6 +8584,10 @@ components:
     OrganizationUser:
       type: object
       properties:
+        accepted:
+          type: boolean
+          deprecated: true
+          description: Has the user accepted their membership.
         dbCreateDate:
           type: integer
           format: int64
@@ -8602,12 +8606,16 @@ components:
           - MEMBER
         status:
           type: string
+          description: The status of the organization invitation
           enum:
           - PENDING
           - REJECTED
           - ACCEPTED
         user:
           $ref: '#/components/schemas/User'
+      required:
+      - accepted
+      - status
     OrganizationUserId:
       type: object
       properties:

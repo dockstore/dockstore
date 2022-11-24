@@ -47,10 +47,17 @@ public class OrganizationUser implements Serializable {
     @ApiModelProperty(value = "The role of the user in the organization", required = true)
     private Role role;
 
-    @Column(columnDefinition = "text default 'PENDING'", nullable = false)
+    @Deprecated(since = "1.14.0")
+    @Column(nullable = false)
+    @ApiModelProperty(value = "Has the user accepted their membership.", required = true)
+    @Schema(description = "Has the user accepted their membership.", required = true, deprecated = true)
+    private Boolean accepted;
+
+    @Column(nullable = false, columnDefinition = "text")
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "The status of the organization invitation", required = true)
-    private InvitationStatus status = InvitationStatus.PENDING;
+    @Schema(description = "The status of the organization invitation", required = true)
+    private InvitationStatus status;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -110,6 +117,24 @@ public class OrganizationUser implements Serializable {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    /**
+     * @return accepted
+     * @deprecated since 1.14.0. Use getStatus instead.
+     */
+    @Deprecated(since = "1.14.0")
+    public Boolean isAccepted() {
+        return accepted;
+    }
+
+    /**
+     * @param accepted
+     * @deprecated since 1.14.0. Use setStatus instead.
+     */
+    @Deprecated(since = "1.14.0")
+    public void setAccepted(Boolean accepted) {
+        this.accepted = accepted;
     }
 
     public InvitationStatus getStatus() {
