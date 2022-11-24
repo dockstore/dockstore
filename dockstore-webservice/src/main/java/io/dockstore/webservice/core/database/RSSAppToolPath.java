@@ -16,10 +16,8 @@
 
 package io.dockstore.webservice.core.database;
 
-
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
-
 import java.util.Date;
 
 public class RSSAppToolPath {

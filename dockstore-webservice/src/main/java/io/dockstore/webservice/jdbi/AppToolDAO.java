@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 OICR and UCSC
+ * Copyright 2022 OICR, UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,14 @@ import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.SourceControlConverter;
+import io.dockstore.webservice.core.database.AppToolPath;
+import io.dockstore.webservice.core.database.RSSAppToolPath;
+import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-
-import io.dockstore.webservice.core.database.AppToolPath;
-import io.dockstore.webservice.core.database.RSSAppToolPath;
 import org.hibernate.SessionFactory;
-import java.util.List;
 
 public class AppToolDAO extends EntryDAO<AppTool> {
     public AppToolDAO(SessionFactory factory) {

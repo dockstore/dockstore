@@ -1,6 +1,6 @@
 /*
  *
- *    Copyright 2020 OICR
+ *    Copyright 2022 OICR, UCSC
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -46,6 +46,8 @@ import io.dockstore.openapi.client.model.OrcidAuthorInformation;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.helpers.AppToolHelper;
+import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
@@ -117,14 +119,15 @@ public class WebhookIT extends BaseIT {
     private final String multiEntryRepo = "dockstore-testing/multi-entry";
     private final String workflowDockstoreYmlRepo = "dockstore-testing/workflow-dockstore-yml";
     private final String whalesay2Repo = "DockstoreTestUser/dockstore-whalesay-2";
-
     private FileDAO fileDAO;
+    private AppToolDAO appToolDAO;
 
     @Before
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
         this.fileDAO = new FileDAO(sessionFactory);
+        this.appToolDAO = new AppToolDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
@@ -133,6 +136,30 @@ public class WebhookIT extends BaseIT {
         // used to allow us to use tokenDAO outside of the web service
         Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
+    }
+    @Test
+    public void testAppToolDAOQuery() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        UsersApi usersApi = new UsersApi(webClient);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+
+        // There should be no apptools
+        Assert.assertEquals(0, appToolDAO.findAllPublishedPaths().size());
+        Assert.assertEquals(0, appToolDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+
+        // create and publish apptool
+        usersApi.syncUserWithGitHub();
+        AppToolHelper.registerAppTool(webClient);
+        workflowApi.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + taggedToolRepoPath, APPTOOL, "versions");
+        workflowApi.publish(appTool.getId(), publishRequest);
+
+        // There should be 1 apptool.
+        Assert.assertEquals(1, appToolDAO.findAllPublishedPaths().size());
+        Assert.assertEquals(1, appToolDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+
     }
 
     @Test

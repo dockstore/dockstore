@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2022 OICR, UCSC
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -38,12 +38,12 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.CLIInfo;
 import io.dockstore.webservice.api.Config;
 import io.dockstore.webservice.api.HealthCheckResult;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.database.RSSAppToolPath;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
@@ -51,11 +51,11 @@ import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.RSSListener;
 import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
+import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApiService;
@@ -213,7 +213,7 @@ public class MetadataResource {
     }
 
     private List<String> getAppToolPaths() {
-        return appToolDAO.findAllPublishedPaths().stream().map(appToolPath -> createAppToolURL(appToolPath.getAppTool())).collect(Collectors.toList());
+        return appToolDAO.findAllPublishedPaths().stream().map(appToolPath -> createWorkflowURL(appToolPath.getAppTool())).collect(Collectors.toList());
     }
 
     private String createOrganizationURL(Organization organization) {
@@ -232,9 +232,6 @@ public class MetadataResource {
         return MetadataResourceHelper.createToolURL(tool);
     }
 
-    private String createAppToolURL(AppTool appTool) {
-        return MetadataResourceHelper.createAppToolURL(appTool);
-    }
 
     @GET
     @Timed
@@ -268,7 +265,7 @@ public class MetadataResource {
         RSSFeed feed = new RSSFeed();
 
         RSSHeader header = new RSSHeader();
-        header.setCopyright("Copyright " + Year.now().getValue() + " OICR");
+        header.setCopyright("Copyright" + Year.now().getValue() + " OICR");
         header.setTitle("Dockstore");
         header.setDescription("Dockstore, developed by the Cancer Genome Collaboratory, is an open platform used by the GA4GH for sharing Docker-based tools described with either the Common Workflow Language (CWL) or the Workflow Description Language (WDL).");
         header.setLanguage("en");
@@ -283,7 +280,7 @@ public class MetadataResource {
             if (dbEntry instanceof AppTool) {
                 AppTool appTool = (AppTool)dbEntry;
                 entry.setTitle(appTool.getWorkflowPath());
-                String appToolURL = createAppToolURL(appTool);
+                String appToolURL = createWorkflowURL(appTool);
                 entry.setGuid(appToolURL);
                 entry.setLink(appToolURL);
             } else if (dbEntry instanceof Workflow) {
