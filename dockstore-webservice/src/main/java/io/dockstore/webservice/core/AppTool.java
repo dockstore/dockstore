@@ -34,11 +34,11 @@ import javax.persistence.Table;
             + "WHERE a.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
             + "GROUP BY a.sourceControl, a.organization, a.repository, a.workflowName, a.dbUpdateDate"),
     @NamedQuery(name = "io.dockstore.webservice.core.AppTool.findAllPublishedPaths",
-            query = "SELECT new io.dockstore.webservice.core.database.AppToolPath(c.sourceControl, c.organization, c.repository, c.workflowName) " +
-                    "from AppTool c where c.isPublished = true"),
+            query = "SELECT new io.dockstore.webservice.core.database.AppToolPath(c.sourceControl, c.organization, c.repository, c.workflowName) "
+                    + "from AppTool c where c.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.AppTool.findAllPublishedPathsOrderByDbupdatedate",
-            query = "SELECT new io.dockstore.webservice.core.database.RSSAppToolPath(c.sourceControl, c.organization, c.repository, c.workflowName, c.lastUpdated, c.description) " +
-                    "from AppTool c where c.isPublished = true and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc"),
+            query = "SELECT new io.dockstore.webservice.core.database.RSSAppToolPath(c.sourceControl, c.organization, c.repository, c.workflowName, c.lastUpdated, c.description) "
+                    + "from AppTool c where c.isPublished = true and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc"),
 
 })
 public class AppTool extends Workflow {
