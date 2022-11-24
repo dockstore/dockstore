@@ -265,7 +265,7 @@ public class MetadataResource {
         RSSFeed feed = new RSSFeed();
 
         RSSHeader header = new RSSHeader();
-        header.setCopyright("Copyright" + Year.now().getValue() + " OICR");
+        header.setCopyright("Copyright " + Year.now().getValue() + " OICR");
         header.setTitle("Dockstore");
         header.setDescription("Dockstore, developed by the Cancer Genome Collaboratory, is an open platform used by the GA4GH for sharing Docker-based tools described with either the Common Workflow Language (CWL) or the Workflow Description Language (WDL).");
         header.setLanguage("en");
