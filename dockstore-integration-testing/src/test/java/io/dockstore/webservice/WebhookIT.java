@@ -163,11 +163,11 @@ public class WebhookIT extends BaseIT {
 
         final MetadataApi metadataApi = new MetadataApi(webClient);
         String rssFeed = metadataApi.rssFeed();
-        assertTrue("RSS feed should contain 1 apptool", rssFeed.contains("http://localhost/apptools/github.com/dockstore-testing/tagged-apptool/md5sum"));
+        assertTrue("RSS feed should contain 1 apptool", rssFeed.contains("http://localhost/containers/github.com/dockstore-testing/tagged-apptool/md5sum"));
 
         String sitemap = metadataApi.sitemap();
         assertTrue("Sitemap with testing data should have 1 apptool",
-                sitemap.contains("http://localhost/apptools/github.com/dockstore-testing/tagged-apptool/md5sum"));
+                sitemap.contains("http://localhost/containers/github.com/dockstore-testing/tagged-apptool/md5sum"));
     }
 
     @Test

@@ -42,7 +42,7 @@ public final class MetadataResourceHelper {
         } else if (workflow instanceof Service) {
             return baseUrl + "/services/" + workflow.getWorkflowPath();
         } else if (workflow instanceof AppTool) {
-            return baseUrl + "/apptools/" + workflow.getWorkflowPath();
+            return baseUrl + "/containers/" + workflow.getWorkflowPath();
         }
         throw new UnsupportedOperationException("should be unreachable");
     }
