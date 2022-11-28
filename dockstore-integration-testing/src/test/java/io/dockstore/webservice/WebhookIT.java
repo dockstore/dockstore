@@ -23,13 +23,7 @@ import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT;
@@ -54,6 +48,7 @@ import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -138,7 +133,7 @@ public class WebhookIT extends BaseIT {
         ManagedSessionContext.bind(session);
     }
     @Test
-    public void testAppToolDAOQuery() {
+    public void testAppToolRSSFeedAndSiteMap() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -160,6 +155,13 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, appToolDAO.findAllPublishedPaths().size());
         assertEquals(1, appToolDAO.findAllPublishedPathsOrderByDbupdatedate().size());
 
+        final MetadataApi metadataApi = new MetadataApi(webClient);
+        String rssFeed = metadataApi.rssFeed();
+        assertTrue("RSS feed should contain 1 apptool", rssFeed.contains("http://localhost/apptools/github.com/dockstore-testing/tagged-apptool/md5sum"));
+
+        String sitemap = metadataApi.sitemap();
+        assertTrue("Sitemap with testing data should have 1 apptool",
+                sitemap.contains("http://localhost/apptools/github.com/dockstore-testing/tagged-apptool/md5sum"));
     }
 
     @Test
