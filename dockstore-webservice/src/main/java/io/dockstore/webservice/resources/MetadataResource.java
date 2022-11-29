@@ -277,13 +277,8 @@ public class MetadataResource {
         List<RSSEntry> entries = new ArrayList<>();
         for (Entry<?, ?> dbEntry : dbEntries) {
             RSSEntry entry = new RSSEntry();
-            if (dbEntry instanceof AppTool) {
-                AppTool appTool = (AppTool)dbEntry;
-                entry.setTitle(appTool.getWorkflowPath());
-                String appToolURL = createWorkflowURL(appTool);
-                entry.setGuid(appToolURL);
-                entry.setLink(appToolURL);
-            } else if (dbEntry instanceof Workflow) {
+            // AppTools, BioWorkflows, and Services are all subclasses of Workflows
+            if (dbEntry instanceof Workflow) {
                 Workflow workflow = (Workflow)dbEntry;
                 entry.setTitle(workflow.getWorkflowPath());
                 String workflowURL = createWorkflowURL(workflow);
