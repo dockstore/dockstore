@@ -449,10 +449,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findById(organizationId);
         throwExceptionForNullOrganization(organization);
-        boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(organization, user.getId());
+        boolean isUserAdmin = isUserAdmin(organization, user.getId());
 
-        // If the user is not an admin or maintainer of the organization and if the user is neither an admin nor curator, then throw an error
-        if (!isUserAdminOrMaintainer && (!user.isCurator() && !user.getIsAdmin())) {
+        // If the user is not an admin of the organization and if the user is neither an admin nor curator, then throw an error
+        if (!isUserAdmin && (!user.isCurator() && !user.getIsAdmin())) {
             throw new CustomWebApplicationException("You do not have access to delete this organization", HttpStatus.SC_FORBIDDEN);
         }
 

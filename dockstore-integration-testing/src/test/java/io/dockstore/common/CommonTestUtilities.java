@@ -235,10 +235,7 @@ public final class CommonTestUtilities {
      * @return
      */
     public static List<String> listMigrations(String... additionals) {
-        if (additionals.length > 0) {
-            return Stream.concat(COMMON_MIGRATIONS.stream(), Stream.of(additionals)).collect(Collectors.toList());
-        }
-        return COMMON_MIGRATIONS;
+        return Stream.concat(COMMON_MIGRATIONS.stream(), Stream.of(additionals)).collect(Collectors.toList());
     }
 
     public static void runMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
