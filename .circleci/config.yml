@@ -254,6 +254,7 @@ jobs:
           POSTGRES_DB: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_PASSWORD: postgres
+    parallelism: 2
     steps: # a collection of executable commands
       - checkout
       - restore_cache:
