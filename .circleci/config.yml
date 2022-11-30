@@ -256,6 +256,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
     parallelism: 2
     steps: # a collection of executable commands
+      - setup_test
       - checkout
       - restore_cache:
           key: dockstore-web-cache-unit-test-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
