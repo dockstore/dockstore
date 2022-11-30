@@ -301,7 +301,7 @@ jobs:
             if [ $CIRCLE_NODE_TOTAL != 1 ]
             then
               # check if this is the "first" node
-              if [ CIRCLE_NODE_INDEX == 0 ]
+              if [ $CIRCLE_NODE_INDEX == 0 ]
               then
                 # normal case, continue onwards below
                 echo "Running non-confidential tests as the 0'th node"
