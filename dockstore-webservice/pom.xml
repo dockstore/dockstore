@@ -1039,8 +1039,43 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <files>
+                                <file>src/main/resources/requirements/swagger-ui/requirements.properties</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
+                    <execution>
+                        <id>populate-swagger-properties</id>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>generated/src/main/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/resources/requirements/swagger-ui</directory>
+                                    <excludes>
+                                      <exclude>**/*.properties</exclude>
+                                    </excludes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>copy-resources</id>
                         <phase>compile</phase>
@@ -1340,9 +1375,10 @@
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
                 <configuration>
                     <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
-                    <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
-                    <!--  Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.1-beta.1-smk-galaxy/openapi/ga4gh-tool-discovery.yaml</inputSpec>
+                    <!-- <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
+                    <!-- Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
+		    <!-- note that the version of the TRS api in our fork is badly named and is not in sync with the main repo -->
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.6/openapi/openapi.yaml</inputSpec>
                     <language>jaxrs-jersey</language>
                     <configOptions>
                         <dateLibrary>java11</dateLibrary>

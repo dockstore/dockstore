@@ -358,7 +358,8 @@ public class GitHubWorkflowIT extends BaseIT {
         workflowsApi.refresh(workflow2.getId(), false);
 
         // Test TRS conversion
-        io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet(DescriptorLanguage.CWL.toString(), "#workflow/github.com/dockstore-testing/hello_world", "1.0.1");
+        io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet("#workflow/github.com/dockstore-testing/hello_world",
+            DescriptorLanguage.CWL.toString(), "1.0.1");
         verifyTRSSourcefileConversion(fileWrapper);
 
         testingPostgres.runUpdateStatement("update sourcefile set content = null");

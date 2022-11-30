@@ -25,6 +25,15 @@ updates:
     schedule:
       interval: "daily"
     # start with security updates only https://stackoverflow.com/a/68254421  
-    open-pull-requests-limit: 0  
+    open-pull-requests-limit: 0
+    reviewers:
+      - "dockstore/dockstore"   
+
+  # Maintain dependencies for swagger-ui and cwltool
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # start with security updates only https://stackoverflow.com/a/68254421
     reviewers:
       - "dockstore/dockstore"        

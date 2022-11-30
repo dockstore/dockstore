@@ -397,7 +397,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         List<FileWrapper> fileWrappers = ga4Ghv20Api.toolsIdVersionsVersionIdContainerfileGet("quay.io/dockstoretestuser2/quayandgithub/alternate", "master");
         verifyTRSSourceFileConversion(fileWrappers);
 
-        FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "quay.io/dockstoretestuser2/quayandgithub/alternate", "master");
+        FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet("quay.io/dockstoretestuser2/quayandgithub/alternate", "CWL", "master");
         fileWrappers.clear();
         fileWrappers.add(fileWrapper);
         verifyTRSSourceFileConversion(fileWrappers);
