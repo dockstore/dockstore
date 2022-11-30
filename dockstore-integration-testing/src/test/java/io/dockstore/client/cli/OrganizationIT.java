@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
@@ -175,6 +177,11 @@ public class OrganizationIT extends BaseIT {
         return organizationsApi.createOrganization(organization);
     }
 
+    public static io.dockstore.openapi.client.model.Organization createOpenAPIOrg(io.dockstore.openapi.client.api.OrganizationsApi organizationsApi) {
+        io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
+        return organizationsApi.createOrganization(organization);
+    }
+
     /**
      * Tests that a user can create an Organization and it will not be approved right away.
      * The user should be able to view and update the Organization before and after approval.
@@ -212,7 +219,7 @@ public class OrganizationIT extends BaseIT {
 
         // Create the organization
         Organization registeredOrganization = createOrg(organizationsApiUser2);
-        assertNotEquals(registeredOrganization.getStatus().getValue(), StatusEnum.APPROVED);
+        assertNotEquals(registeredOrganization.getStatus(), StatusEnum.APPROVED);
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
@@ -277,7 +284,7 @@ public class OrganizationIT extends BaseIT {
 
         // Update the organization
         String email = "another@email.com";
-        Organization newOrganization = stubOrgObject();
+        Organization newOrganization = organizationsApiUser2.getOrganizationById(organization.getId());
         newOrganization.setEmail(email);
         organization = organizationsApiUser2.updateOrganization(newOrganization, organization.getId());
 
@@ -855,9 +862,9 @@ public class OrganizationIT extends BaseIT {
         final long count2 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
         assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count2, 1, count2);
 
-        // There should exist a role that is not accepted
+        // There should exist a role that is pending
         final long count3 = testingPostgres.runSelectStatement(
-            "select count(*) from organization_user where accepted = false and organizationId = " + orgId + " and userId = '" + 2 + "'",
+            "select count(*) from organization_user where status = 'PENDING' and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
         assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
@@ -865,9 +872,9 @@ public class OrganizationIT extends BaseIT {
         memberships = usersOtherUser.getUserMemberships();
         assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
 
-        // Should not appear in the organization's members list because they haven't approved the request yet
+        // Should appear in the organization's members list even if they haven't approved the request yet
         List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(orgId);
-        assertEquals("There should be 1 user, there are " + users.size(), 1, users.size());
+        assertEquals("There should be 2 user, there are " + users.size(), 2, users.size());
 
         // Approve request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
@@ -882,7 +889,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should exist a role that is accepted
         final long count5 = testingPostgres.runSelectStatement(
-            "select count(*) from organization_user where accepted = true and organizationId = " + orgId + " and userId = '" + 2 + "'",
+            "select count(*) from organization_user where status = 'ACCEPTED' and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
 
@@ -891,7 +898,7 @@ public class OrganizationIT extends BaseIT {
 
         // Should be able to update email of Organization
         String email = "another@email.com";
-        Organization newOrganization = stubOrgObject();
+        Organization newOrganization = organizationsApiOtherUser.getOrganizationById(orgId);
         newOrganization.setEmail(email);
         organization = organizationsApiOtherUser.updateOrganization(newOrganization, orgId);
         assertEquals("Organization should be returned and have an updated email.", email, organization.getEmail());
@@ -929,73 +936,172 @@ public class OrganizationIT extends BaseIT {
 
     @Test
     public void testMembersArePowerless() {
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
-        OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
+        final io.dockstore.openapi.client.ApiClient webClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiUser2 = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser2);
+        io.dockstore.openapi.client.api.UsersApi usersApiUser2 = new io.dockstore.openapi.client.api.UsersApi(webClientUser2);
+        io.dockstore.openapi.client.model.User user2 = usersApiUser2.getUser();
 
         // Setup other user
-        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME, testingPostgres);
-        OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
-        UsersApi usersOtherUser = new UsersApi(webClientOtherUser);
+        final io.dockstore.openapi.client.ApiClient webClientOtherUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiOtherUser = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOtherUser);
+        io.dockstore.openapi.client.api.UsersApi usersApiOtherUser = new io.dockstore.openapi.client.api.UsersApi(webClientOtherUser);
+        io.dockstore.openapi.client.model.User otherUser = usersApiOtherUser.getUser();
 
         // Create org, invite user as member, and accept invitation
-        Organization organization = createOrg(organizationsApiUser2);
+        io.dockstore.openapi.client.model.Organization organization = createOpenAPIOrg(organizationsApiUser2);
+        io.dockstore.openapi.client.model.Collection collection = organizationsApiUser2.createCollection(openApiStubCollectionObject(), organization.getId());
         long orgId = organization.getId();
-        long userId = 1;
-        long otherUserId = 2;
-        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), otherUserId, orgId, "");
-        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
-
-        // Should not be able to update organization information
-        String email = "hello@email.com";
-        organization.setEmail(email);
-        try {
-            organization = organizationsApiOtherUser.updateOrganization(organization, orgId);
-            Assert.fail("Should not be able to update organization information");
-        } catch (ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
-        }
-
-        // Should not be able to invite another user
+        long userId = user2.getId();
+        long otherUserId = otherUser.getId();
         long thirdUser = 3;
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), otherUserId, orgId, "");
+        assertMembershipStatusAndRole(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MEMBER);
+        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
+        assertMembershipStatusAndRole(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MEMBER);
+        assertPowerlessAdminActions(organization, collection, userId, thirdUser, organizationsApiOtherUser);
+    }
+
+    /**
+     * Test that invited users who have not accepted their invitations are powerless. Tests all roles: Member, Maintainer, Admin
+     */
+    @Test
+    public void testPendingAndRejectedUsersArePowerless() {
+        final io.dockstore.openapi.client.ApiClient webClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiUser2 = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser2);
+        io.dockstore.openapi.client.api.UsersApi usersApiUser2 = new io.dockstore.openapi.client.api.UsersApi(webClientUser2);
+        io.dockstore.openapi.client.model.User user2 = usersApiUser2.getUser();
+
+        // Setup other user
+        final io.dockstore.openapi.client.ApiClient webClientOtherUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiOtherUser = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOtherUser);
+        io.dockstore.openapi.client.api.UsersApi usersApiOtherUser = new io.dockstore.openapi.client.api.UsersApi(webClientOtherUser);
+        io.dockstore.openapi.client.model.User otherUser = usersApiOtherUser.getUser();
+
+        // Create org, invite user as an admin, but leave the invitation as pending
+        io.dockstore.openapi.client.model.Organization organization = createOpenAPIOrg(organizationsApiUser2);
+        io.dockstore.openapi.client.model.Collection collection = organizationsApiUser2.createCollection(openApiStubCollectionObject(), organization.getId());
+        long orgId = organization.getId();
+        long userId = user2.getId();
+        long otherUserId = otherUser.getId();
+        long thirdUser = 3;
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.ADMIN.toString(), otherUserId, orgId, "");
+        assertMembershipStatusAndRole(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.ADMIN);
+        assertPowerlessAdminActions(organization, collection, userId, thirdUser, organizationsApiOtherUser);
+
+        // User rejects their admin invitation
+        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, false);
+        assertMembershipStatusAndRole(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.REJECTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.ADMIN);
+        assertPowerlessAdminActions(organization, collection, userId, thirdUser, organizationsApiOtherUser);
+
+        // Re-invite user as a maintainer
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MAINTAINER.toString(), otherUserId, orgId, "");
+        assertMembershipStatusAndRole(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MAINTAINER);
+        assertPowerlessMaintainerActions(organization, collection, organizationsApiOtherUser);
+
+        // User rejects their maintainer invitation
+        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, false);
+        assertMembershipStatusAndRole(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.REJECTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MAINTAINER);
+        assertPowerlessMaintainerActions(organization, collection, organizationsApiOtherUser);
+
+        // Re-invite user as a member
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), otherUserId, orgId, "");
+        assertMembershipStatusAndRole(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MEMBER);
+        assertPowerlessAdminActions(organization, collection, userId, thirdUser, organizationsApiOtherUser);
+
+        // User rejects their member invitation
+        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, false);
+        assertMembershipStatusAndRole(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.REJECTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MEMBER);
+        assertPowerlessAdminActions(organization, collection, userId, thirdUser, organizationsApiOtherUser);
+    }
+
+    private void assertMembershipStatusAndRole(io.dockstore.openapi.client.api.UsersApi usersApi, long orgId,
+            io.dockstore.openapi.client.model.OrganizationUser.StatusEnum expectedStatus,
+            io.dockstore.openapi.client.model.OrganizationUser.RoleEnum expectedRole) {
+        Optional<io.dockstore.openapi.client.model.OrganizationUser> organizationUser = usersApi.getUserMemberships().stream().filter(orgUser -> orgUser.getOrganization().getId() == orgId).findFirst();
+        assertTrue(organizationUser.isPresent());
+        assertEquals(expectedStatus, organizationUser.get().getStatus());
+        assertEquals(expectedRole, organizationUser.get().getRole());
+    }
+
+    /**
+     * Assert that the user cannot perform organization admin actions
+     * @param organization An organization to perform actions on
+     * @param collection A collection to perform actions on
+     * @param existingOrgUserId The user id of an existing member in the organization that actions are performed on
+     * @param orgUserToInviteId The user id of a user to invite to the organization
+     * @param organizationsApi OrganizationsApi with the user's credentials
+     */
+    private void assertPowerlessAdminActions(io.dockstore.openapi.client.model.Organization organization, io.dockstore.openapi.client.model.Collection collection,
+            long existingOrgUserId, long orgUserToInviteId, io.dockstore.openapi.client.api.OrganizationsApi organizationsApi) {
+        long orgId = organization.getId();
+        // Should not be able to invite another user
         try {
-            organizationsApiOtherUser.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), thirdUser, orgId, "");
-            Assert.fail("Member should not be able to add a user to organization");
-        } catch (ApiException ex) {
+            organizationsApi.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), orgUserToInviteId, orgId, "");
+            Assert.fail("Should not be able to add a user to organization");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
         // Should not be able to update another user's role
         try {
-            organizationsApiOtherUser.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId);
-            Assert.fail(" Should not be able to update another user's role");
-        } catch (ApiException ex) {
+            organizationsApi.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), existingOrgUserId, orgId);
+            Assert.fail("Should not be able to update another user's role");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+
+        // Should not be able to remove a member from the organization
+        try {
+            organizationsApi.deleteUserRole(existingOrgUserId, orgId);
+            Assert.fail("Should not be able to remove a member from the organization");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+
+        assertPowerlessMaintainerActions(organization, collection, organizationsApi);
+    }
+
+    /**
+     * Assert that the user cannot perform organization maintainer actions
+     * @param organization An organization to perform actions on
+     * @param collection A collection to perform actions on
+     * @param organizationsApi organizationsApi with the user's credentials
+     */
+    private void assertPowerlessMaintainerActions(io.dockstore.openapi.client.model.Organization organization, io.dockstore.openapi.client.model.Collection collection,
+            io.dockstore.openapi.client.api.OrganizationsApi organizationsApi) {
+        long orgId = organization.getId();
+        // Should not be able to update organization information
+        String email = "hello@email.com";
+        organization.setEmail(email);
+        try {
+            organizationsApi.updateOrganization(organization, orgId);
+            Assert.fail("Should not be able to update organization information");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
         // Should not be able to create a collection
-        Collection stubCollection = stubCollectionObject();
         try {
-            Collection collection = organizationsApiOtherUser.createCollection(orgId, stubCollection);
-            Assert.fail("Member should not be able to add a user to organization");
-        } catch (ApiException ex) {
-            Assert.assertEquals("Organization not found.", ex.getMessage());
+            organizationsApi.createCollection(openApiStubCollectionObject(), orgId);
+            Assert.fail("Should not be able to create a collection");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
-        // Should not be able to update a collection
-        Collection collection = organizationsApiUser2.createCollection(orgId, stubCollection);
+        // Should not be able to update an existing collection
         collection.setDescription("description");
         try {
-            collection = organizationsApiOtherUser.updateCollection(collection, organization.getId(), collection.getId());
+            organizationsApi.updateCollection(collection, orgId, collection.getId());
             Assert.fail("Should not be able to update a collection");
-        } catch (ApiException ex) {
-            Assert.assertEquals("User does not have rights to modify a collection from this organization.", ex.getMessage());
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
         try {
-            collection = organizationsApiOtherUser.updateCollectionDescription(organization.getId(), collection.getId(), "descriptin");
-            Assert.fail("Should not be able to update a collection");
-        } catch (ApiException ex) {
-            Assert.assertEquals("User does not have rights to modify a collection from this organization.", ex.getMessage());
+            organizationsApi.updateCollectionDescription("descriptin", orgId, collection.getId());
+            Assert.fail("Should not be able to update a collection description");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
     }
 
@@ -1038,6 +1144,7 @@ public class OrganizationIT extends BaseIT {
     /**
      * Tests that an Organization admin can request a user to join.
      * The user can disapprove.
+     * Test that the organization admin can re-invite the user.
      */
     @Test
     public void testRequestUserJoinOrgAndDisapprove() {
@@ -1069,11 +1176,11 @@ public class OrganizationIT extends BaseIT {
         final long count2 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
         assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count2, 1, count2);
 
-        // There should exist a role that is not accepted
+        // There should exist a role that is pending
         final long count3 = testingPostgres.runSelectStatement(
-            "select count(*) from organization_user where accepted = false and organizationId = " + orgId + " and userId = '" + 2 + "'",
+            "select count(*) from organization_user where status = 'PENDING' and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
-        assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
+        assertEquals("There should be 1 pending role for user 2 and org 1, there are " + count3, 1, count3);
 
         // Disapprove request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, false);
@@ -1082,17 +1189,31 @@ public class OrganizationIT extends BaseIT {
         final long count4 = testingPostgres.runSelectStatement("select count(*) from event where type = 'REJECT_ORG_INVITE'", long.class);
         assertEquals("There should be 1 event of type REJECT_ORG_INVITE, there are " + count4, 1, count4);
 
-        // Should not have a role
+        // Should have a role that is rejected
         final long count5 = testingPostgres
-            .runSelectStatement("select count(*) from organization_user where organizationId = " + orgId + " and userId = '" + 2 + "'",
+            .runSelectStatement("select count(*) from organization_user where status = 'REJECTED' and organizationId = " + orgId + " and userId = '" + 2 + "'",
                 long.class);
-        assertEquals("There should be no roles for user 2 and org 1, there are " + count5, 0, count5);
+        assertEquals("There should be one role with the status 'REJECTED' for user 2 and org 1, there are " + count5, 1, count5);
 
         // Test that events are sorted by DESC dbCreateDate
         List<Event> events = organizationsApiUser2.getOrganizationEvents(orgId, 0, 5);
         assertEquals("Should have 3 events returned, there are " + events.size(), 3, events.size());
         assertEquals("First event should be most recent, which is REJECT_ORG_INVITE, but is actually " + events.get(0).getType().getValue(),
             "REJECT_ORG_INVITE", events.get(0).getType().getValue());
+
+        // Test that the admin can't update the role for a user who has rejected the invitation
+        assertThrows(ApiException.class, () -> organizationsApiUser2.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId));
+
+        // Test that adding the rejected user role updates the status to pending
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), userId, orgId, "");
+        // There should be two ADD_USER_TO_ORG event
+        final long count6 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
+        assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count6, 2, count6);
+        // There should exist a role that is pending
+        final long count7 = testingPostgres.runSelectStatement(
+                "select count(*) from organization_user where status = 'PENDING' and organizationId = " + orgId + " and userId = '" + 2 + "'",
+                long.class);
+        assertEquals("There should be 1 pending role for user 2 and org 1, there are " + count7, 1, count7);
 
         // Request a user that doesn't exist
         boolean throwsError = false;
@@ -1105,6 +1226,105 @@ public class OrganizationIT extends BaseIT {
         if (!throwsError) {
             fail("Was able to add a user to an org with a username that does not exist");
         }
+    }
+
+    /**
+     * Tests that organization admins can view all members, including pending and rejected members. Non-admin members and non-members can only see accepted members
+     */
+    @Test
+    public void testGetOrganizationMembers() {
+        // Set up 3 logged-in users and one logged-out user
+        final io.dockstore.openapi.client.ApiClient orgAdminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi orgAdminOrganizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(orgAdminWebClient);
+
+        final io.dockstore.openapi.client.ApiClient orgMaintainerWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi orgMaintainerOrganizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(orgMaintainerWebClient);
+        io.dockstore.openapi.client.api.UsersApi orgMaintainerUsersApi = new io.dockstore.openapi.client.api.UsersApi(orgMaintainerWebClient);
+        io.dockstore.openapi.client.model.User orgMaintainerUser = orgMaintainerUsersApi.getUser();
+        long orgMaintainerUserId = orgMaintainerUser.getId();
+
+        final io.dockstore.openapi.client.ApiClient orgMemberWebClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi orgMemberOrganizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(orgMemberWebClient);
+        io.dockstore.openapi.client.api.UsersApi orgMemberUsersApi = new io.dockstore.openapi.client.api.UsersApi(orgMemberWebClient);
+        io.dockstore.openapi.client.model.User orgMemberUser = orgMemberUsersApi.getUser();
+        long orgMemberUserId = orgMemberUser.getId();
+
+        final io.dockstore.openapi.client.ApiClient anonymousWebClient = getAnonymousOpenAPIWebClient();
+        io.dockstore.openapi.client.api.OrganizationsApi anonymousOrganizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(anonymousWebClient);
+
+        // Create org, invite user as member, and accept invitation
+        io.dockstore.openapi.client.model.Organization organization = createOpenAPIOrg(orgAdminOrganizationsApi);
+        long orgId = organization.getId();
+
+        try {
+            anonymousOrganizationsApi.getOrganizationMembers(orgId);
+            fail("Anonymous user should not be able to get members for a pending organization");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
+
+        // Approve organization (the organization admin also happens to be a Dockstore admin)
+        orgAdminOrganizationsApi.approveOrganization(orgId);
+
+        // Anonymous user should be able to get members for the approved organization
+        assertEquals("Anonymous user should be able to see 1 user", 1, anonymousOrganizationsApi.getOrganizationMembers(orgId).size());
+        assertTrue("Anonymous user should only be able to see accepted members",
+                anonymousOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+
+        // Invite organization users, one with a member role and one with a maintainer role
+        orgAdminOrganizationsApi.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), orgMemberUserId, orgId, "");
+        orgAdminOrganizationsApi.addUserToOrg(OrganizationUser.Role.MAINTAINER.toString(), orgMaintainerUserId, orgId, "");
+        assertMembershipStatusAndRole(orgMemberUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MEMBER);
+        assertMembershipStatusAndRole(orgMaintainerUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MAINTAINER);
+
+        // Organization admin should be able to see pending members
+        assertEquals("Organization admin should see all users", 3, orgAdminOrganizationsApi.getOrganizationMembers(orgId).size());
+        assertTrue("Organization admin should be able to see pending member",
+                orgAdminOrganizationsApi.getOrganizationMembers(orgId).stream().anyMatch(
+                        orgUser -> orgUser.getStatus() == io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING));
+
+        // Check that the organization members with pending non-admin invitations can only see accepted organization users
+        assertEquals("Organization user with pending member role should see 1 user", 1, orgMemberOrganizationsApi.getOrganizationMembers(orgId).size());
+        assertTrue("Organization user with pending member role should only see accepted members",
+                orgMemberOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+        assertEquals("Organization user with pending maintainer role should see 1 user", 1, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size());
+        assertTrue("Organization user with pending maintainer role should only see accepted members",
+                orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+
+        // Organization user with member role accepts the invite
+        orgMemberOrganizationsApi.acceptOrRejectInvitation(orgId, true);
+        assertMembershipStatusAndRole(orgMemberUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MEMBER);
+        assertEquals("Organization user with member role should see 2 users", 2, orgMemberOrganizationsApi.getOrganizationMembers(orgId).size());
+        assertTrue("Organization user with member role should only see accepted members",
+                orgMemberOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+
+        // Organization user with maintainer role rejects the invite
+        orgMaintainerOrganizationsApi.acceptOrRejectInvitation(orgId, false);
+        assertMembershipStatusAndRole(orgMaintainerUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.REJECTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MAINTAINER);
+        assertEquals("Organization user with rejected maintainer role should see 2 user", 2, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size());
+        assertTrue("Organization user with rejected maintainer role should only see accepted members",
+                orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+
+        // Re-invite rejected maintainer role and change the role to an admin to get a pending admin invitation
+        orgAdminOrganizationsApi.addUserToOrg(OrganizationUser.Role.ADMIN.toString(), orgMaintainerUserId, orgId, "");
+        assertMembershipStatusAndRole(orgMaintainerUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.ADMIN);
+        assertEquals("Organization user with pending admin role should see 2 user", 2, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size());
+        assertTrue("Organization user with pending admin role should only see accepted members",
+                orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+
+        // Edit the organization user with member role to maintainer role. They should still only be able to see accepted members
+        orgAdminOrganizationsApi.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), orgMemberUserId, orgId);
+        assertMembershipStatusAndRole(orgMemberUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MAINTAINER);
+        assertEquals("Organization user with maintainer role should see 2 users", 2, orgMemberOrganizationsApi.getOrganizationMembers(orgId).size());
+        assertTrue("Organization user with maintainer role should only see accepted members",
+                orgMemberOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
     }
 
     /**
@@ -2353,6 +2573,95 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
+     * Tests the database trigger that syncs the organization_user status and accepted columns.
+     * This test should be removed when the organization_user accepted DB column and trigger are removed.
+     */
+    @Test
+    public void testSyncOrganizationUserStatusAndAcceptedColumns() {
+        final io.dockstore.openapi.client.ApiClient webClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiUser2 = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser2);
+        io.dockstore.openapi.client.api.UsersApi usersApiUser2 = new io.dockstore.openapi.client.api.UsersApi(webClientUser2);
+
+        // Setup other user
+        final io.dockstore.openapi.client.ApiClient webClientOtherUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiOtherUser = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOtherUser);
+        io.dockstore.openapi.client.api.UsersApi usersApiOtherUser = new io.dockstore.openapi.client.api.UsersApi(webClientOtherUser);
+        io.dockstore.openapi.client.model.User otherUser = usersApiOtherUser.getUser();
+
+        // Create organization
+        io.dockstore.openapi.client.model.Organization organization = createOpenAPIOrg(organizationsApiUser2);
+        long orgId = organization.getId();
+        long otherUserId = otherUser.getId();
+
+        // Check that the user who created the organization has the status and accepted columns synced
+        assertSyncMembershipStatusAndAccepted(usersApiUser2, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
+
+        // Add an organization user with accepted=false provided, but no status. This mimics a pre-1.14.0 webservice inviting a user to an organization
+        testingPostgres.runUpdateStatement(String.format("delete from organization_user where organizationid = %s and userid = %s", orgId, otherUserId));
+        testingPostgres.runUpdateStatement(String.format("insert into organization_user (organizationid, userid, accepted, role) values (%s, %s, false, 'MEMBER')", orgId, otherUserId));
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
+        // Update accepted to true
+        testingPostgres.runUpdateStatement(String.format("update organization_user set accepted = true where organizationid = %s and userid = %s", orgId, otherUserId));
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
+
+        // Add an organization user with accepted=true provided, but no status. This mimics a pre-1.14.0 webservice inviting a user to an organization
+        testingPostgres.runUpdateStatement(String.format("delete from organization_user where organizationid = %s and userid = %s", orgId, otherUserId));
+        testingPostgres.runUpdateStatement(String.format("insert into organization_user (organizationid, userid, accepted, role) values (%s, %s, true, 'MEMBER')", orgId, otherUserId));
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
+        // Update accepted to false
+        testingPostgres.runUpdateStatement(String.format("update organization_user set accepted = false where organizationid = %s and userid = %s", orgId, otherUserId));
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
+
+        // Add an organization user with status='PENDING' provided, but no accepted
+        testingPostgres.runUpdateStatement(String.format("delete from organization_user where organizationid = %s and userid = %s", orgId, otherUserId));
+        testingPostgres.runUpdateStatement(String.format("insert into organization_user (organizationid, userid, status, role) values (%s, %s, 'PENDING', 'MEMBER')", orgId, otherUserId));
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
+        // Update status to 'ACCEPTED'
+        testingPostgres.runUpdateStatement(String.format("update organization_user set status = 'ACCEPTED' where organizationid = %s and userid = %s", orgId, otherUserId));
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
+
+        // Add an organization user with status='ACCEPTED' provided, but no accepted
+        testingPostgres.runUpdateStatement(String.format("delete from organization_user where organizationid = %s and userid = %s", orgId, otherUserId));
+        testingPostgres.runUpdateStatement(String.format("insert into organization_user (organizationid, userid, status, role) values (%s, %s, 'ACCEPTED', 'MEMBER')", orgId, otherUserId));
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
+        // Update status to 'REJECTED'
+        testingPostgres.runUpdateStatement(String.format("update organization_user set status = 'REJECTED' where organizationid = %s and userid = %s", orgId, otherUserId));
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.REJECTED, false);
+        // Update status to 'PENDING'
+        testingPostgres.runUpdateStatement(String.format("update organization_user set status = 'PENDING' where organizationid = %s and userid = %s", orgId, otherUserId));
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
+
+        // Delete organization user and invite them using the API
+        testingPostgres.runUpdateStatement(String.format("delete from organization_user where organizationid = %s and userid = %s", orgId, otherUserId));
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), otherUserId, orgId, "");
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
+        // Organization user rejects the invitation
+        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, false);
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.REJECTED, false);
+        // Re-invite organization user
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), otherUserId, orgId, "");
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
+        // Organization user accepts the invitation
+        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
+        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
+    }
+
+    /**
+     * Asserts that the status and accepted columns are synced correctly
+     * @param usersApi UsersApi with the credentials of the user that we're checking organization membership for
+     * @param orgId Organization ID of the organization that the user belongs to
+     * @param expectedStatus The modified status
+     */
+    private void assertSyncMembershipStatusAndAccepted(io.dockstore.openapi.client.api.UsersApi usersApi, long orgId,
+            io.dockstore.openapi.client.model.OrganizationUser.StatusEnum expectedStatus, boolean expectedAccepted) {
+        Optional<io.dockstore.openapi.client.model.OrganizationUser> organizationUser = usersApi.getUserMemberships().stream().filter(orgUser -> orgUser.getOrganization().getId() == orgId).findFirst();
+        assertTrue(organizationUser.isPresent());
+        assertEquals(expectedStatus, organizationUser.get().getStatus());
+        final boolean accepted = testingPostgres.runSelectStatement(String.format("select accepted from organization_user where organizationid = %s and userid = %s", orgId, usersApi.getUser().getId()), boolean.class);
+        assertEquals(expectedAccepted, accepted);
+    }
+
+    /**
      * Test an admin user accessing a nonexistent organization.
      */
     @Test
@@ -2500,7 +2809,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     private void addAdminToOrg(String username, String orgName) {
-        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = '" + orgName + "'), id, true, 'ADMIN' from enduser where username = '" + username + "'");
+        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, status, role) select (select id from organization where name = '" + orgName + "'), id, 'ACCEPTED', 'ADMIN' from enduser where username = '" + username + "'");
     }
 
     private void addToCollection(String name, String orgName, Workflow workflow, Long versionId) {

@@ -11,7 +11,6 @@ import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
-import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.ParamHelper;
@@ -427,21 +426,14 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     public Collection createCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Collection to register.", required = true) @Parameter(description = "Collection to register.", name = "collection", required = true) Collection collection) {
-
-        // First check if the organization exists and that the user is an admin or maintainer
-        boolean isUserAdminOrMaintainer = OrganizationResource.isUserAdminOrMaintainer(organizationId, user.getId(), organizationDAO);
-        if (!isUserAdminOrMaintainer) {
-            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
-
         // Get the organization
         Organization organization = organizationDAO.findById(organizationId);
-        if (organization == null) {
-            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
+        // First check if the organization exists and that the user is an admin or maintainer
+        boolean isUserAdminOrMaintainer = OrganizationResource.isUserAdminOrMaintainer(organization, user.getId());
+        if (!isUserAdminOrMaintainer) {
+            String msg = "User does not have rights to create a collection in this organization.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
         // Check if any other collections in the organization exist with that name
@@ -654,8 +646,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         Organization organization = organizationDAO.findById(existingCollection.getOrganization().getId());
 
         // Check that the user has rights to the organization
-        OrganizationUser organizationUser = OrganizationResource.getUserOrgRole(organization, user.getId());
-        if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
+        boolean isUserAdminOrMaintainer = OrganizationResource.isUserAdminOrMaintainer(organization, user.getId());
+        if (!isUserAdminOrMaintainer) {
             String msg = "User does not have rights to modify a collection from this organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);

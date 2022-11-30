@@ -1,0 +1,92 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2022 OICR and UCSC
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.14.0">
+    <changeSet author="ktran (generated)" id="addInvitationStatusColumn">
+        <addColumn tableName="organization_user">
+            <column name="status" type="text"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            <comment>Migrate old organization user accepted column to the new invitation status column</comment>
+            UPDATE organization_user SET status='ACCEPTED' where accepted=true;
+            UPDATE organization_user SET status='PENDING' where accepted=false;
+        </sql>
+        <comment>Purposefully adding the not null constraint after migrating the accepted column so the new status column can be added without specifying a default value</comment>
+        <addNotNullConstraint tableName="organization_user" columnName="status"/>
+        <sql dbms="postgresql">
+            <comment>Create a trigger that syncs the old accepted column with the new status column</comment>
+            CREATE OR REPLACE FUNCTION insert_organization_user_sync_status_func()
+            RETURNS TRIGGER
+            AS
+            '
+            BEGIN
+                IF NEW.status IS NULL THEN
+                    IF NEW.accepted = true THEN
+                        NEW.status := ''ACCEPTED'';
+                    ELSE
+                        NEW.status := ''PENDING'';
+                    END IF;
+                ELSEIF NEW.accepted IS NULL THEN
+                    IF NEW.status = ''ACCEPTED'' THEN
+                        NEW.accepted := true;
+                    ELSE
+                        NEW.accepted := false;
+                    END IF;
+                END IF;
+                RETURN NEW;
+            END;
+            '
+            LANGUAGE plpgsql;
+
+            CREATE OR REPLACE FUNCTION update_organization_user_sync_status_func()
+            RETURNS TRIGGER
+            AS
+            '
+            BEGIN
+                IF OLD.accepted IS DISTINCT FROM NEW.accepted THEN
+                    IF NEW.accepted = true THEN
+                        NEW.status := ''ACCEPTED'';
+                    ELSE
+                        NEW.status := ''PENDING'';
+                    END IF;
+                ELSEIF OLD.status IS DISTINCT FROM NEW.status THEN
+                    IF NEW.status = ''ACCEPTED'' THEN
+                        NEW.accepted := true;
+                    ELSE
+                        NEW.accepted := false;
+                    END IF;
+                END IF;
+                RETURN NEW;
+            END;
+            '
+            LANGUAGE plpgsql;
+
+            CREATE TRIGGER insert_organization_user_sync_status_trigger
+            BEFORE INSERT ON organization_user
+            FOR EACH ROW
+            EXECUTE PROCEDURE insert_organization_user_sync_status_func();
+
+            CREATE TRIGGER update_organization_user_sync_status_trigger
+            BEFORE UPDATE ON organization_user
+            FOR EACH ROW
+            WHEN (OLD.accepted IS DISTINCT FROM NEW.accepted OR OLD.status IS DISTINCT FROM NEW.status)
+            EXECUTE PROCEDURE update_organization_user_sync_status_func();
+        </sql>
+    </changeSet>
+</databaseChangeLog>
