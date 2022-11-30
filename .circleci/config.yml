@@ -381,7 +381,9 @@ jobs:
             cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
       - run:
           name: Move cache miss log
-          command: cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
+          command: | 
+            touch /tmp/dockstore-web-cache.misses.log
+            cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
 
