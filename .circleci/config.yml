@@ -273,14 +273,14 @@ jobs:
           name: run the actual tests
           command: |            
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
-              then
-                TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
-                echo $TESTS_TO_RUN
-                ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp \
-                -Dtest=$TESTS_TO_RUN -DfailIfNoTests=false | grep  -v "^Running Changeset:"
-              else 
-                ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
-              fi
+            then
+              TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
+              echo $TESTS_TO_RUN
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp \
+              -Dtest=$TESTS_TO_RUN -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+            else 
+              ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
+            fi
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
 
       # store these twice since non-confidential tests also do a clean install
@@ -299,19 +299,16 @@ jobs:
           name: run the non-confidential integration tests
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ]
+            then
+              # check if this is the "first" node
+              if [ CIRCLE_NODE_INDEX == 0 ]
               then
-                # check if this is the "first" node
-                if [ CIRCLE_NODE_INDEX == 0 ]
-                  then
-                    # normal case, continue onwards below
-                    echo 0
-                  else
-                    exit 0
-                fi
-              else
                 # normal case, continue onwards below
-                echo 0
+                echo "Running non-confidential tests as the 0'th node"
+              else
+                exit 0
               fi
+            fi
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
             /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
             export SKIP_SIGNATURE_CHECK=false
