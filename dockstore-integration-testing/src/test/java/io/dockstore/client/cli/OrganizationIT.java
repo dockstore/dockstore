@@ -2574,7 +2574,7 @@ public class OrganizationIT extends BaseIT {
 
     /**
      * Tests the database trigger that syncs the organization_user status and accepted columns.
-     * This test should be removed when the deprecated OrganizationUser.accepted field is removed.
+     * This test should be removed when the organization_user accepted DB column and trigger are removed.
      */
     @Test
     public void testSyncOrganizationUserStatusAndAcceptedColumns() {
@@ -2657,7 +2657,8 @@ public class OrganizationIT extends BaseIT {
         Optional<io.dockstore.openapi.client.model.OrganizationUser> organizationUser = usersApi.getUserMemberships().stream().filter(orgUser -> orgUser.getOrganization().getId() == orgId).findFirst();
         assertTrue(organizationUser.isPresent());
         assertEquals(expectedStatus, organizationUser.get().getStatus());
-        assertEquals(expectedAccepted, organizationUser.get().isAccepted());
+        final boolean accepted = testingPostgres.runSelectStatement(String.format("select accepted from organization_user where organizationid = %s and userid = %s", orgId, usersApi.getUser().getId()), boolean.class);
+        assertEquals(expectedAccepted, accepted);
     }
 
     /**

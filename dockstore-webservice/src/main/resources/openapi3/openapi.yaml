@@ -8584,10 +8584,6 @@ components:
     OrganizationUser:
       type: object
       properties:
-        accepted:
-          type: boolean
-          deprecated: true
-          description: Has the user accepted their membership.
         dbCreateDate:
           type: integer
           format: int64
@@ -8614,7 +8610,6 @@ components:
         user:
           $ref: '#/components/schemas/User'
       required:
-      - accepted
       - status
     OrganizationUserId:
       type: object
