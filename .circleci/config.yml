@@ -270,13 +270,45 @@ jobs:
             python3 -V
       - run:
           name: run the actual tests
-          command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
+          command: |            
+            if [ $CIRCLE_NODE_TOTAL != 1 ] 
+              then
+                TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
+                echo $TESTS_TO_RUN
+                ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp \
+                -Dtest=$TESTS_TO_RUN -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+              else 
+                ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
+              fi
+            # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
+
+      # store these twice since non-confidential tests also do a clean install
+      - run:
+          name: Save test results
+          command: |
+            mkdir -p ~/junit/
+            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/junit/ \;
+          when: always
+      - store_test_results:
+          path: ~/junit
       - run:
           name: send coverage for unit tests
           command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
       - run:
           name: run the non-confidential integration tests
           command: |
+            if [ $CIRCLE_NODE_TOTAL != 1 ]
+              then
+                # check if this is the "first" node
+                if [ CIRCLE_NODE_INDEX == 0 ]
+                  then
+                    # normal case, continue onwards below
+                  else
+                    exit 0
+                fi
+              else
+                # normal case, continue onwards below
+              fi
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
             /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
             export SKIP_SIGNATURE_CHECK=false
