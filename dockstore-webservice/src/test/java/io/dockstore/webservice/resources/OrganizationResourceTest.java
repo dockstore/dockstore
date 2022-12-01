@@ -66,7 +66,7 @@ public class OrganizationResourceTest {
         OrganizationUser.OrganizationUserId id = new OrganizationUser.OrganizationUserId(user.getId(), organization.getId());
         when(organizationUser.getId()).thenReturn(id);
         when(organizationUser.getUser()).thenReturn(user);
-        when(organizationUser.isAccepted()).thenReturn(true);
+        when(organizationUser.getStatus()).thenReturn(OrganizationUser.InvitationStatus.ACCEPTED);
         when(organizationUser.getRole()).thenReturn(OrganizationUser.Role.MEMBER);
 
         return (organizationUser);

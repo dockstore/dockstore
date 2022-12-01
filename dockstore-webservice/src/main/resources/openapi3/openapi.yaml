@@ -8611,8 +8611,6 @@ components:
     OrganizationUser:
       type: object
       properties:
-        accepted:
-          type: boolean
         dbCreateDate:
           type: integer
           format: int64
@@ -8629,8 +8627,17 @@ components:
           - ADMIN
           - MAINTAINER
           - MEMBER
+        status:
+          type: string
+          description: The status of the organization invitation
+          enum:
+          - PENDING
+          - REJECTED
+          - ACCEPTED
         user:
           $ref: '#/components/schemas/User'
+      required:
+      - status
     OrganizationUserId:
       type: object
       properties:
