@@ -388,7 +388,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * Extract the workflow step ID from the full normalized ID that cwljava returns, then prepend the parent ID if it is not null.
+     * TODO
      */
     private List<Object> convertToList(Object listOrIdMap, String idMapKey) {
         if (listOrIdMap instanceof Map) {
@@ -473,29 +473,34 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String stepDockerPath = getDockerPull(stepRequirementState, stepHintState);
 
             // Check for docker requirement within workflow step file
-            Object run = workflowStep.getRun();
+            Object runObj = workflowStep.getRun();
             String currentPath;
 
-            /*
-            if (run instanceof Process) {
-                // If the run object is an instance of Process, it's either a Workflow, CommandLineTool, ExpressionTool, or Operation.
-                Process process = (Process)run;
+            if (runObj instanceof Map) {
+                // If the run object is a Map, it corresponds to a Workflow, CommandLineTool, ExpressionTool, or Operation.
+                Map<Object, Object> process = (Map<Object, Object>)runObj;
+
+                Object processClass = process.get("class");
+                List<Object> processRequirements = convertToList(process.get("requirements"), "class");
+                List<Object> processHints = convertToList(process.get("hints"), "class");
+
                 stepDockerPath = getDockerPull(
-                    addToRequirementOrHintState(stepRequirementState, process.getRequirements()),
-                    addToRequirementOrHintState(stepHintState, process.getHints()));
-                stepToType.put(nodeStepId, computeProcessType(process));
-                currentPath = getDockstoreMetadataHintValue(deOptionalize(process.getHints()), "path");
-                if (process instanceof Workflow) {
-                    processWorkflow((Workflow)process, rawStepId, stepRequirementState, stepHintState, depth + 1, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                    addToRequirementOrHintState(stepRequirementState, processRequirements),
+                    addToRequirementOrHintState(stepHintState, processHints));
+                stepToType.put(nodeStepId, computeProcessType(processClass));
+                currentPath = getDockstoreMetadataHintValue(processHints, "path");
+
+                if ("Workflow".equals(processClass)) {
+                    Workflow subWorkflow = parseWorkflow(process);
+                    processWorkflow(subWorkflow, fullStepId, stepRequirementState, stepHintState, depth + 1, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 }
 
-            } else if (run instanceof String) {
+            } else if (runObj instanceof String) {
                 stepToType.put(nodeStepId, "n/a");
-                currentPath = run.toString();
+                currentPath = runObj.toString();
 
             } else {
-                String message = CWLHandler.CWL_PARSE_SECONDARY_ERROR + "in workflow step " + rawStepId;
-                LOG.error("Type of run object: " + className(run));
+                String message = CWLHandler.CWL_PARSE_SECONDARY_ERROR + "in workflow step " + fullStepId;
                 LOG.error(message);
                 throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
@@ -503,6 +508,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             if (currentPath == null) {
                 currentPath = "";
             }
+            /*
 
             DockerSpecifier dockerSpecifier = null;
             String dockerUrl = null;
@@ -539,23 +545,14 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return (Map)list.stream().filter(e -> e instanceof Map && value.equals(((Map)e).get(key))).findFirst().orElse(null);
     }
 
-    /*
-    private String computeProcessType(Process process) {
-        if (process instanceof Workflow) {
-            return WORKFLOW_TYPE;
-        }
-        if (process instanceof CommandLineTool) {
-            return TOOL_TYPE;
-        }
-        if (process instanceof ExpressionTool) {
-            return EXPRESSION_TOOL_TYPE;
-        }
-        if (process instanceof Operation) {
-            return OPERATION_TYPE;
-        }
-        return "n/a";
+    private String computeProcessType(Object processClass) {
+        return Map.of(
+            "Workflow", WORKFLOW_TYPE,
+            "CommandLineTool", TOOL_TYPE,
+            "ExpressionTool", EXPRESSION_TOOL_TYPE,
+            "Operation", OPERATION_TYPE)
+            .getOrDefault(processClass, "n/a");
     }
-    */
 
     /**
      * Computes the dependencies from one or more output sources
