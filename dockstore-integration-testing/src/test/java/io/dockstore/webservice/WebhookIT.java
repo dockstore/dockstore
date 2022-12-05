@@ -1394,15 +1394,6 @@ public class WebhookIT extends BaseIT {
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
     }
 
-    /*
-     * TODO: reimplement
-     * This test broke when merged from a 1.12 hotfix into 1.13, because the test pushed a .dockstore.yml that
-     * contains two workflows with the same name, and 1.13 checks for duplicate names in .dockstore.yml, and
-     * generates an error about the duplicate names, instead.  To reimplement, we'll need to load a workflow
-     * into the db, then push a branch that updates it, containing a workflow with the same name but different
-     * descriptor language.
-     */
-    @Ignore
     @Test
     public void testDifferentLanguagesWithSameWorkflowName() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -1410,34 +1401,20 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.api.WorkflowsApi workflowClient = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
 
+        // Add a WDL version of a workflow should pass.
+        workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-WDL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+
+        // Add a CWL version of a workflow with the same name should cause error.
         try {
-            workflowClient.handleGitHubRelease("refs/heads/differentLanguagesWithSameWorkflowName", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
-            Assert.fail("should have thrown");
+            workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-CWL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            String message = ex.getMessage().toLowerCase();
+            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+            io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
+            String message = event.getMessage().toLowerCase();
+            System.out.println(message);
             assertTrue(message.contains("descriptor language"));
             assertTrue(message.contains("workflow"));
             assertTrue(message.contains("version"));
-        }
-        
-        // There should be one failure message
-        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
-        assertEquals(0, events.stream().filter(lambdaEvent -> lambdaEvent.isSuccess()).count());
-        assertEquals(1, events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
-        io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
-        String message = event.getMessage().toLowerCase();
-        assertTrue(message.contains("descriptor language"));
-        assertTrue(message.contains("workflow"));
-        assertTrue(message.contains("version"));
-
-        // No workflow should have been created.
-        // This will change in 1.13, wherein .dockstore.yml processing changes so that an error in one entry will not roll back the entire update, and a workflow with one version should have been created.
-
-        try {
-            io.dockstore.openapi.client.model.Workflow workflow = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo, WorkflowSubClass.BIOWORKFLOW, "versions,validations");
-            Assert.fail("should have thrown");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals("Entry not found", ex.getMessage());
         }
     }
     
