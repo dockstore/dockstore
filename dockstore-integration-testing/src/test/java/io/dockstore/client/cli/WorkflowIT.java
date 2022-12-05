@@ -39,6 +39,7 @@ import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import io.dockstore.webservice.languages.WDLHandler;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -725,9 +726,6 @@ public class WorkflowIT extends BaseIT {
         assertTrue("workflow dag is not as large as expected", map.get("nodes").size() >= 11 && map.get("edges").size() >= 13);
     }
 
-
-
-
     /**
      * Tests that snapshotting a workflow version fails if any of the images have no tag, use the 'latest' tag, or are specified using a parameter.
      */
@@ -1200,6 +1198,42 @@ public class WorkflowIT extends BaseIT {
         Assert.assertEquals(1, sourceFiles.size());
     }
 
+    /**
+     * Tests that the language version in WDL descriptor files is correct.
+     */
+    @Test
+    public void testWDLWorkflowLanguageVersion() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+
+        // Test WDL workflow without a 'version' specified in the descriptor file
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(),
+                DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion1 -> workflowVersion1.getName().equals("testWDL")).findFirst().get();
+        List<io.dockstore.openapi.client.model.SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(1, sourceFiles.size());
+        Assert.assertEquals("Language version of WDL descriptor without 'version' field should be the default version", WDLHandler.DEFAULT_WDL_VERSION, sourceFiles.get(0).getTypeVersion());
+
+        // Test WDL workflow with 'version 1.0'
+        workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/hello-wdl-workflow",
+                "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        workflowVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion1 -> workflowVersion1.getName().equals("master")).findFirst().get();
+        sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(2, sourceFiles.size());
+        sourceFiles.forEach(sourceFile -> {
+            if ("/Dockstore.wdl".equals(sourceFile.getAbsolutePath())) {
+                Assert.assertEquals(DescriptorLanguage.FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
+                Assert.assertEquals("Language version of WDL descriptor with 'version 1.0' should be 1.0", "1.0", sourceFile.getTypeVersion());
+            } else {
+                Assert.assertEquals(DescriptorLanguage.FileType.WDL_TEST_JSON.name(), sourceFile.getType().getValue());
+                Assert.assertNull("Test files should not have a version", sourceFile.getTypeVersion());
+            }
+        });
+    }
 
     /**
      * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.

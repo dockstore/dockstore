@@ -117,8 +117,8 @@ public class SourceFile implements Comparable<SourceFile> {
     private List<Checksum> checksums = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The version of the file type", position = 7)
-    @Schema(description = "The version of the file type")
+    @ApiModelProperty(value = "The language version for the given descriptor file type", position = 7)
+    @Schema(description = "The language version for the given descriptor file type")
     private String typeVersion;
 
     // database timestamps

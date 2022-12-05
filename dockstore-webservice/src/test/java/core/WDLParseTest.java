@@ -22,7 +22,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -155,72 +154,80 @@ public class WDLParseTest {
 
 
         workflowVersion = "";
-        File srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertFalse(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).isPresent());
+        SourceFile srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
+        assertFalse(wdlHandler.getSemanticVersionString(srcFile.getContent()).isPresent());
         workflowVersion = "version";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertFalse(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).isPresent());
+        assertFalse(wdlHandler.getSemanticVersionString(srcFile.getContent()).isPresent());
         workflowVersion = "version goat";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).get(), "goat");
+        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "goat");
         workflowVersion = "version draft-3";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).get(), "draft-3");
+        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "draft-3");
         workflowVersion = "version 1.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).get(), "1.0");
+        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "1.0");
         workflowVersion = "version 1.0.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).get(), "1.0.0");
+        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "1.0.0");
         workflowVersion = "version 1.0-alpha";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).get(), "1.0-alpha");
+        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "1.0-alpha");
         workflowVersion = "version 1.0-rc.2.5+build-2.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).get(), "1.0-rc.2.5+build-2.0");
+        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "1.0-rc.2.5+build-2.0");
 
         workflowVersion = "version 3.6";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).get(), "3.6");
+        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "3.6");
         workflowVersion = "version 1.4.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).get(), "1.4.0");
+        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "1.4.0");
         workflowVersion = "version 3.0-alpha";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).get(), "3.0-alpha");
+        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "3.0-alpha");
         workflowVersion = "version 3.0-rc.1.0+build-1.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getAbsolutePath()).get(), "3.0-rc.1.0+build-1.0");
+        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "3.0-rc.1.0+build-1.0");
 
         workflowVersion = "version";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertFalse(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getAbsolutePath()).isPresent());
+        assertFalse(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent()).isPresent());
         workflowVersion = "";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertFalse(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getAbsolutePath()).isPresent());
+        assertFalse(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent()).isPresent());
         workflowVersion = "version 1.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertFalse(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getAbsolutePath()).isPresent());
+        assertFalse(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent()).isPresent());
         workflowVersion = "version 3.6";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertTrue(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getAbsolutePath())
+        assertTrue(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent())
                 .get().contains("The version of this workflow is 3.6"));
-
     }
 
-    private static File getSimpleWorkflowSourcefileWithVersion(String version) throws IOException {
+    @Test
+    public void testGetLanguageVersion() throws IOException {
+        String languageVersion = "version 1.0";
+        SourceFile sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertEquals("1.0", WDLHandler.getLanguageVersion(sourceFile.getContent()));
+
+        languageVersion = "version 1.1"; //
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertEquals("1.1", WDLHandler.getLanguageVersion(sourceFile.getContent()));
+
+        languageVersion = ""; // No 'version' field specified
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertEquals(WDLHandler.DEFAULT_WDL_VERSION, WDLHandler.getLanguageVersion(sourceFile.getContent()));
+    }
+
+    private static SourceFile getSimpleWorkflowSourcefileWithVersion(String version) throws IOException {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setAbsolutePath("/Dockstore.wdl");
         sourceFile.setPath("Dockstore.wdl");
         sourceFile.setContent(version + "\n" + "\n" + "workflow helloworld {\n" + "call hello_world\n" + "}\n" + "\n"
                 + "task hello_world {\n" + "  command {echo hello world}\n" + "}\n");
-
-        File tempMainDescriptor = null;
-        tempMainDescriptor = File.createTempFile("main", "descriptor");
-        tempMainDescriptor.deleteOnExit();
-        Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(sourceFile.getContent());
-
-        return tempMainDescriptor;
+        return sourceFile;
     }
 
     @Test

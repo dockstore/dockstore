@@ -415,13 +415,12 @@ class WdlBridge {
 
   /**
     * Get the first non comment line in the file
-    * @param descriptorFilePath path to the file to read
+    * @param descriptorFileContent the content of the descriptor file
     * @return Optional string containing the first line of code in the file
     */
-  def getFirstCodeLine(descriptorFilePath: String): Optional[String] = {
+  def getFirstCodeLine(descriptorFileContent: String): Optional[String] = {
     val commentIndicators = List("#")
-    val content = readFile(descriptorFilePath)
-    val fileWithoutInitialWhitespace = content.linesIterator.toList.dropWhile { l =>
+    val fileWithoutInitialWhitespace = descriptorFileContent.linesIterator.toList.dropWhile { l =>
       l.forall(_.isWhitespace) || commentIndicators.exists(l.dropWhile(_.isWhitespace).startsWith(_))
     }
 

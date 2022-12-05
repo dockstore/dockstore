@@ -7944,7 +7944,7 @@ definitions:
       typeVersion:
         type: "string"
         position: 7
-        description: "The version of the file type"
+        description: "The language version for the given descriptor file type"
   StarRequest:
     type: "object"
     properties:

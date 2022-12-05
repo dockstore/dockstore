@@ -74,6 +74,8 @@ public class WDLHandler implements LanguageHandlerInterface {
     public static final String ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT = "Error parsing workflow. You may have a recursive import.";
     public static final String ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT = "Recursive local import detected: ";
     public static final String WDL_PARSE_ERROR = "Unable to parse WDL workflow, ";
+    // According to the WDL 1.0 spec, WDL files without a 'version' field should be treated as 'draft-2'
+    public static final String DEFAULT_WDL_VERSION = "draft-2";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     private static final String LATEST_SUPPORTED_WDL_VERSION = "1.0";
@@ -122,6 +124,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         }
 
         WdlBridge wdlBridge = new WdlBridge();
+        final SourceFile mainDescriptorSourceFile = sourceFiles.stream().filter(file -> filepath.equals(file.getAbsolutePath())).findFirst().orElse(null);
         final Map<String, String> secondaryFiles = sourceFiles.stream()
                 .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
         wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
@@ -130,6 +133,11 @@ public class WDLHandler implements LanguageHandlerInterface {
             tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
             try {
+                // Set the language version for the main descriptor source file
+                if (mainDescriptorSourceFile != null) {
+                    mainDescriptorSourceFile.setTypeVersion(getLanguageVersion(mainDescriptorSourceFile.getContent()));
+                }
+
                 List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath(), filepath);
                 Queue<String> authors = new LinkedList<>();
                 Queue<String> emails = new LinkedList<>();
@@ -189,7 +197,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 LOG.error("Unable to parse WDL file " + filepath, ex);
                 Map<String, String> validationMessageObject = new HashMap<>();
                 String errorMessage = "WDL file is malformed or missing, cannot extract metadata. " + ex.getMessage();
-                errorMessage = getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath()).orElse(errorMessage);
+                errorMessage = getUnsupportedWDLVersionErrorString(content).orElse(errorMessage);
                 validationMessageObject.put(filepath, errorMessage);
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
                 version.setDescriptionAndDescriptionSource(null, null);
@@ -418,6 +426,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 importFile.setContent(fileResponse);
                 importFile.setPath(importPath);
                 importFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+                importFile.setTypeVersion(getLanguageVersion(importFile.getContent()));
                 importFile.setAbsolutePath(absoluteImportPath);
                 imports.put(absoluteImportPath, importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));
@@ -566,13 +575,23 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     /**
+     * Get the version from the WDL descriptor file content. If no version is found, return the default WDL version defined by the WDL spec.
+     * @param descriptorContent
+     * @return
+     */
+    public static String getLanguageVersion(String descriptorContent) {
+        return getSemanticVersionString(descriptorContent).orElse(DEFAULT_WDL_VERSION);
+    }
+
+    /**
      * Get the semantic version string from the WDL file
-     * @param primaryDescriptorPath path to the primary WDL descriptor
+     * @param descriptorContent the file content of the primary WDL descriptor
      * @return the semantic version string, e.g. '1.0', which should be in the first code line, e.g. 'version 1.0' or 'draft-3'
      */
-    public static Optional<String> getSemanticVersionString(String primaryDescriptorPath) {
+    public static Optional<String> getSemanticVersionString(String descriptorContent) {
         WdlBridge wdlBridge = new WdlBridge();
-        Optional<String> firstCodeLine = wdlBridge.getFirstCodeLine(primaryDescriptorPath);
+        Optional<String> firstCodeLine = wdlBridge.getFirstCodeLine(descriptorContent);
+
         // https://www.scala-lang.org/files/archive/api/2.13.x/scala/jdk/javaapi/OptionConverters$.html
         // The WDL specification says that WDL descriptors from now on must have
         // a version string as the first line, e.g. 'version 1.0' or 'version draft-3'
@@ -594,8 +613,8 @@ public class WDLHandler implements LanguageHandlerInterface {
         return Optional.empty();
     }
 
-    public static Optional<String> getUnsupportedWDLVersionErrorString(String primaryDescriptorPath) {
-        Optional<String> semVersionString = getSemanticVersionString(primaryDescriptorPath);
+    public static Optional<String> getUnsupportedWDLVersionErrorString(String primaryDescriptorContent) {
+        Optional<String> semVersionString = getSemanticVersionString(primaryDescriptorContent);
         if (semVersionString.isPresent() && versionIsGreaterThanCurrentlySupported(semVersionString.get())) {
             return Optional.of("Dockstore only supports up to  WDL version " + LATEST_SUPPORTED_WDL_VERSION + ". The version of"
                     + " this workflow is " + semVersionString.get() + ". Dockstore cannot verify or parse this WDL version.");
