@@ -1589,6 +1589,34 @@ public class WebhookIT extends BaseIT {
         checkWorkflowMetadataWithDefaultVersionMetadata(workflow2, defaultVersion.get());
     }
 
+    /**
+     * Tests that the language version in WDL descriptor files is correct during a GitHub release
+     */
+    @Test
+    public void testDockstoreYmlWorkflowLanguageVersions() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        String wdlWorkflowRepo = "dockstore-testing/dockstore-whalesay2";
+
+        workflowsApi.handleGitHubRelease("refs/heads/master", installationId, wdlWorkflowRepo, BasicIT.USER_2_USERNAME);
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + wdlWorkflowRepo, WorkflowSubClass.BIOWORKFLOW, "versions");
+        io.dockstore.openapi.client.model.WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        List<io.dockstore.openapi.client.model.SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), version.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(2, sourceFiles.size());
+        sourceFiles.forEach(sourceFile -> {
+            if ("/Dockstore.wdl".equals(sourceFile.getAbsolutePath())) {
+                Assert.assertEquals(DescriptorLanguage.FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
+                Assert.assertEquals("Language version of WDL descriptor with 'version 1.0' should be 1.0", "1.0", sourceFile.getTypeVersion());
+            } else {
+                Assert.assertEquals(DescriptorLanguage.FileType.DOCKSTORE_YML.name(), sourceFile.getType().getValue());
+                Assert.assertNull(".dockstore.yml should not have a version", sourceFile.getTypeVersion());
+            }
+        });
+    }
+
     // Asserts that the workflow metadata is the same as the default version metadata
     private void checkWorkflowMetadataWithDefaultVersionMetadata(io.dockstore.openapi.client.model.Workflow workflow, io.dockstore.openapi.client.model.WorkflowVersion defaultVersion) {
         assertEquals("Workflow author should equal default version author", defaultVersion.getAuthor(), workflow.getAuthor());
