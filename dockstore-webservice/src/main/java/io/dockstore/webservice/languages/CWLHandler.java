@@ -15,6 +15,8 @@
  */
 package io.dockstore.webservice.languages;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -89,7 +91,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static final String EXPRESSION_TOOL_TYPE = "expressionTool";
     private static final String OPERATION_TYPE = "operation";
     private static final int CODE_SNIPPET_LENGTH = 50;
-
+    private static final ObjectMapper MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
@@ -436,6 +438,27 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         String[] parts = fullStepId.split("/");
         String thisStepId = parts[parts.length - 1];
         return parentStepId == null ? thisStepId : parentStepId + "." + thisStepId;
+    }
+
+    private List<Object> convertToList(Object listOrIdMap) {
+        if (listOrIdMap instanceof Map) {
+            Map<Object, Object> map = (Map<Object, Object>)listOrIdMap;
+            List<Object> list = new ArrayList<>();
+            map.forEach((key, value) -> {
+                if (value instanceof Map) {
+                    Map<Object, Object> valueMap = new HashMap<>((Map<Object, Object>)value);
+                    valueMap.put("id", key);
+                    list.add(valueMap);
+                } else {
+                    throw new CustomWebApplicationException("malformed cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
+                }
+            });
+            return list;
+        } else if (listOrIdMap instanceof List) {
+            return (List<Object>)listOrIdMap;
+        } else {
+            throw new CustomWebApplicationException("malformed cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
+        }
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
