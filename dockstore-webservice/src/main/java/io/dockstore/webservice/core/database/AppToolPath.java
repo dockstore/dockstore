@@ -17,7 +17,6 @@ package io.dockstore.webservice.core.database;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
 
-
 public class AppToolPath {
     private final AppTool appTool = new AppTool();
 
