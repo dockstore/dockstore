@@ -22,6 +22,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import io.cwl.avro.CommandLineTool;
+import io.cwl.avro.ExpressionTool;
+import io.cwl.avro.Workflow;
+import io.cwl.avro.WorkflowOutputParameter;
+import io.cwl.avro.WorkflowStep;
+import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.LanguageHandlerHelper;
@@ -56,20 +62,6 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3id.cwl.cwl1_2.CommandLineTool;
-import org.w3id.cwl.cwl1_2.DockerRequirement;
-import org.w3id.cwl.cwl1_2.ExpressionTool;
-import org.w3id.cwl.cwl1_2.Operation;
-import org.w3id.cwl.cwl1_2.Process;
-import org.w3id.cwl.cwl1_2.Workflow;
-import org.w3id.cwl.cwl1_2.WorkflowOutputParameter;
-import org.w3id.cwl.cwl1_2.WorkflowStep;
-import org.w3id.cwl.cwl1_2.WorkflowStepInput;
-import org.w3id.cwl.cwl1_2.utils.Fetcher;
-import org.w3id.cwl.cwl1_2.utils.LoadingOptions;
-import org.w3id.cwl.cwl1_2.utils.LoadingOptionsBuilder;
-import org.w3id.cwl.cwl1_2.utils.RootLoader;
-import org.w3id.cwl.cwl1_2.utils.ValidationException;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -294,27 +286,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return (Map<String, Object>)preprocessed;
     }
 
-    /**
-     * Create a "safe" LoadingOptions object, wherein the `urlJoin` and `fetchText` methods
-     * of the embedded `Fetcher` are essentially disabled.  Such an object is useful to ensure
-     * that the cwljava parser does not try to retrieve files from remote servers, since our
-     * preprocessor should have already retrieved and inlined the appropriate files.
-     */
-    private LoadingOptions constructSafeLoadingOptions() {
-        return new LoadingOptionsBuilder().setFetcher(
-            new Fetcher() {
-                @Override
-                public String urlJoin(final String baseUrl, final String url) {
-                    return url;
-                }
-                @Override
-                public String fetchText(final String url) {
-                    LOG.error("cwljava attempted to fetch url " + url);
-                    return "\"\"";
-                }
-            }).build();
-    }
-
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
@@ -358,24 +329,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 mapping = convertToolToSingleStepWorkflow(mapping);
             }
 
-            // Parse the preprocessed document using cwljava
-            Object rootObject;
-            try {
-                // Parse the document using a LoadingOptions instance which neutralizes any file loads, since all files should have already been inlined by the preprocesser.
-                rootObject = RootLoader.loadDocument(mapping, "/", constructSafeLoadingOptions());
-            } catch (ValidationException e) {
-                LOG.error("Validation exception: " + e.getMessage(), e);
-                throw new CustomWebApplicationException(CWL_PARSE_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
-            }
-            // The parse should always produce a Workflow object, because we converted any non-workflow to a one-step workflow, above.
-            if (!(rootObject instanceof Workflow)) {
-                LOG.error("Top level object was not a Workflow, class " + className(rootObject));
-                throw new CustomWebApplicationException(CWL_PARSE_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
-            }
-
             // Process the parse workflow
-            Workflow workflow = (Workflow)rootObject;
-            processWorkflow(workflow, null, null, null, 0, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+            Workflow workflow = MAPPER.convertValue(mapping, Workflow.class);
+            // processWorkflow(workflow, null, null, null, 0, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
             // Return the requested information
             if (type == LanguageHandlerInterface.Type.DAG) {
@@ -388,7 +344,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         if (outputParameterObj instanceof WorkflowOutputParameter) {
                             WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
                             Object sources = outputParameter.getOutputSource();
-                            processDependencies(endDependencies, sources, NODE_PREFIX, checkNonNull(deOptionalize(workflow.getId())));
+                            processDependencies(endDependencies, sources, NODE_PREFIX, String.valueOf(checkNonNull(workflow.getId())));
                         }
                     }
                 }
@@ -461,6 +417,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
     }
 
+    /*
     @SuppressWarnings("checkstyle:ParameterNumber")
     private void processWorkflow(Workflow workflow, String parentStepId, RequirementOrHintState parentRequirementState, RequirementOrHintState parentHintState, int depth, LanguageHandlerInterface.Type type, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         // Join parent and current requirements and hints.
@@ -546,6 +503,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             nodeDockerInfo.put(nodeStepId, new DockerInfo(currentPath, stepDockerPath, dockerUrl, dockerSpecifier));
         }
     }
+    */
 
     /**
      * Read the value for a given key from the dockstore metadata hint, which was added by the preprocessor.
@@ -565,6 +523,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return (Map)list.stream().filter(e -> e instanceof Map && value.equals(((Map)e).get(key))).findFirst().orElse(null);
     }
 
+    /*
     private String computeProcessType(Process process) {
         if (process instanceof Workflow) {
             return WORKFLOW_TYPE;
@@ -580,6 +539,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
         return "n/a";
     }
+    */
 
     /**
      * Computes the dependencies from one or more output sources
@@ -732,6 +692,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      * Computes a new requirement/hint state by adding information-of-interest from the specified list of CWL requirements/hints.
      * If there are no requirements/hints to be added, the original state is returned.
      */
+    /*
     private RequirementOrHintState addToRequirementOrHintState(RequirementOrHintState existing, Optional<List<Object>> optionalAdds) {
         if (existing == null) {
             existing = new RequirementOrHintState();
@@ -759,6 +720,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         });
         return sum;
     }
+    */
 
     /**
      * Checks that the CWL file is the correct version
