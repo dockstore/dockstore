@@ -65,6 +65,7 @@ import org.junit.rules.ExpectedException;
  *
  */
 @Category(ConfidentialTest.class)
+@Deprecated(since = "1.14")
 public class UserResourceSwaggerIT extends BaseIT {
     private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
     private static final String INSTALLATION_ID = "1179416";
