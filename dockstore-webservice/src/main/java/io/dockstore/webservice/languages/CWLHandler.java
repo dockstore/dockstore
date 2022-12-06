@@ -22,8 +22,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
-import io.cwl.avro.CommandLineTool;
-import io.cwl.avro.ExpressionTool;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
@@ -406,30 +404,35 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return list;
         } else if (listOrIdMap instanceof List) {
             return (List<Object>)listOrIdMap;
+        } else if (listOrIdMap == null) {
+            return null;
         } else {
             throw new CustomWebApplicationException("malformed cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
 
+    private Map<Object, Object> convertRequirementsAndHintsToLists(Map<Object, Object> map) {
+        map = new LinkedHashMap<>(map);
+        map.put("hints", convertToList(map.get("hints"), "class"));
+        map.put("requirements", convertToList(map.get("requirements"), "class"));
+        return map;
+    }
+
     private Workflow parseWorkflow(Object workflowObj) {
         if (workflowObj instanceof Map) {
-            Map<Object, Object> map = (Map<Object, Object>)workflowObj;
-            map.put("hints", convertToList(map.get("hints"), "class"));
-            map.put("requirements", convertToList(map.get("requirements"), "class"));
+            Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)workflowObj);
             return MAPPER.convertValue(map, Workflow.class);
         } else {
-            throw new CustomWebApplicationException("malformed cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            throw new CustomWebApplicationException("malformed workflow in cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
 
     private WorkflowStep parseWorkflowStep(Object workflowStepObj) {
         if (workflowStepObj instanceof Map) {
-            Map<Object, Object> map = (Map<Object, Object>)workflowStepObj;
-            map.put("hints", convertToList(map.get("hints"), "class"));
-            map.put("requirements", convertToList(map.get("requirements"), "class"));
+            Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)workflowStepObj);
             return MAPPER.convertValue(map, WorkflowStep.class);
         } else {
-            throw new CustomWebApplicationException("malformed cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            throw new CustomWebApplicationException("malformed workflow step in cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
 
@@ -439,7 +442,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         RequirementOrHintState requirementState = addToRequirementOrHintState(parentRequirementState, workflow.getRequirements());
         RequirementOrHintState hintState = addToRequirementOrHintState(parentHintState, workflow.getHints());
 
-        // Iterate through steps to find dependencies and docker requirements
+        // Iterate through steps to find dependencies and docker requirements.
         for (Object workflowStepObj: convertToList(workflow.getSteps(), "id")) {
 
             WorkflowStep workflowStep = parseWorkflowStep(workflowStepObj);
@@ -467,37 +470,44 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 }
             }
 
-            // Check workflow step for docker requirement and hints
+            // Process any requirements and/or hints.
             RequirementOrHintState stepRequirementState = addToRequirementOrHintState(requirementState, workflowStep.getRequirements());
             RequirementOrHintState stepHintState = addToRequirementOrHintState(hintState, workflowStep.getHints());
-            String stepDockerPath = getDockerPull(stepRequirementState, stepHintState);
 
-            // Check for docker requirement within workflow step file
+            // Process the run object.
             Object runObj = workflowStep.getRun();
+            String stepDockerPath;
             String currentPath;
 
             if (runObj instanceof Map) {
-                // If the run object is a Map, it corresponds to a Workflow, CommandLineTool, ExpressionTool, or Operation.
+                // If the run object is a Map, it is a CWL "process", which either a Workflow, CommandLineTool, ExpressionTool, or Operation.
                 Map<Object, Object> process = (Map<Object, Object>)runObj;
-
                 Object processClass = process.get("class");
+
+                // Process any requirements and/or hints from the process to be run.
                 List<Object> processRequirements = convertToList(process.get("requirements"), "class");
                 List<Object> processHints = convertToList(process.get("hints"), "class");
+                RequirementOrHintState runRequirementState = addToRequirementOrHintState(stepRequirementState, processRequirements);
+                RequirementOrHintState runHintState = addToRequirementOrHintState(stepHintState, processHints);
 
-                stepDockerPath = getDockerPull(
-                    addToRequirementOrHintState(stepRequirementState, processRequirements),
-                    addToRequirementOrHintState(stepHintState, processHints));
+                // Get the docker pull from the run object.
                 stepToType.put(nodeStepId, computeProcessType(processClass));
+                stepDockerPath = getDockerPull(runRequirementState, runHintState);
+
+                // Extract the current file path, which the preprocessor inserts as a special hint in each process.
                 currentPath = getDockstoreMetadataHintValue(processHints, "path");
 
+                // If the step is a workflow, recursively process it.
                 if ("Workflow".equals(processClass)) {
                     Workflow subWorkflow = parseWorkflow(process);
                     processWorkflow(subWorkflow, fullStepId, stepRequirementState, stepHintState, depth + 1, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 }
 
             } else if (runObj instanceof String) {
+                // If the run object is a String, it was a file reference which the preprocessor could not expand.
                 stepToType.put(nodeStepId, "n/a");
-                currentPath = runObj.toString();
+                stepDockerPath = getDockerPull(stepRequirementState, stepHintState);
+                currentPath = (String)runObj;
 
             } else {
                 String message = CWLHandler.CWL_PARSE_SECONDARY_ERROR + "in workflow step " + fullStepId;
@@ -508,22 +518,25 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             if (currentPath == null) {
                 currentPath = "";
             }
-            /*
 
-            DockerSpecifier dockerSpecifier = null;
-            String dockerUrl = null;
-            if ((run instanceof Workflow || run instanceof CommandLineTool) && !Strings.isNullOrEmpty(stepDockerPath)) {
+            // Extract some information from the docker pull, if it exists.
+            DockerSpecifier dockerSpecifier;
+            String dockerUrl;
+            if (!Strings.isNullOrEmpty(stepDockerPath)) {
                 // CWL doesn't support parameterized docker pulls. Must be a string.
                 dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerPath, DockerImageReference.LITERAL);
                 dockerUrl = getURLFromEntry(stepDockerPath, dao, dockerSpecifier);
+            } else {
+                dockerSpecifier = null;
+                dockerUrl = null;
             }
 
+            // Store the extracted information in the DAG/tool-list data structures.
             if (depth == 0 && type == LanguageHandlerInterface.Type.DAG) {
                 nodePairs.add(new MutablePair<>(nodeStepId, dockerUrl));
             }
 
             nodeDockerInfo.put(nodeStepId, new DockerInfo(currentPath, stepDockerPath, dockerUrl, dockerSpecifier));
-            */
         }
     }
 
