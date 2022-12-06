@@ -1,5 +1,5 @@
 
-Lists of 367 third-party dependencies.
+Lists of 368 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -112,6 +112,7 @@ Lists of 367 third-party dependencies.
      (Cromwell License https://github.com/broadinstitute/cromwell/blob/develop/LICENSE.txt) cromwell-wdl-transforms-shared (org.broadinstitute:cromwell-wdl-transforms-shared_2.13:84 - no url defined)
      (Cromwell License https://github.com/broadinstitute/cromwell/blob/develop/LICENSE.txt) cromwell-wom (org.broadinstitute:cromwell-wom_2.13:84 - no url defined)
      (Apache License, Version 2.0) cwlavro-generated (io.cwl:cwlavro-generated:2.0.4.7 - no url defined)
+     (Apache License, Version 2.0) cwlavro-tools (io.cwl:cwlavro-tools:2.0.4.7 - no url defined)
      (The Apache Software License, Version 2.0) docker-java-api (com.github.docker-java:docker-java-api:3.2.8 - https://github.com/docker-java/docker-java)
      (The Apache Software License, Version 2.0) docker-java-core (com.github.docker-java:docker-java-core:3.2.8 - https://github.com/docker-java/docker-java)
      (The Apache Software License, Version 2.0) docker-java-transport (com.github.docker-java:docker-java-transport:3.2.8 - https://github.com/docker-java/docker-java)

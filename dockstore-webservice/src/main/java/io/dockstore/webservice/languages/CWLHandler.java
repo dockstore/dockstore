@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import io.cwl.avro.CWL;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
@@ -419,18 +420,20 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     private Workflow parseWorkflow(Object workflowObj) {
+        Gson gson = CWL.getTypeSafeCWLToolDocument();
         if (workflowObj instanceof Map) {
             Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)workflowObj);
-            return MAPPER.convertValue(map, Workflow.class);
+            return gson.fromJson(gson.toJson(map), Workflow.class);
         } else {
             throw new CustomWebApplicationException("malformed workflow in cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
 
     private WorkflowStep parseWorkflowStep(Object workflowStepObj) {
+        Gson gson = CWL.getTypeSafeCWLToolDocument();
         if (workflowStepObj instanceof Map) {
             Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)workflowStepObj);
-            return MAPPER.convertValue(map, WorkflowStep.class);
+            return gson.fromJson(gson.toJson(map), WorkflowStep.class);
         } else {
             throw new CustomWebApplicationException("malformed workflow step in cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
@@ -480,7 +483,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String currentPath;
 
             if (runObj instanceof Map) {
-                // If the run object is a Map, it is a CWL "process", which either a Workflow, CommandLineTool, ExpressionTool, or Operation.
+                // The run object is a Map which describes a CWL "process", either a Workflow, CommandLineTool, ExpressionTool, or Operation.
                 Map<Object, Object> process = (Map<Object, Object>)runObj;
                 Object processClass = process.get("class");
 
@@ -504,10 +507,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 }
 
             } else if (runObj instanceof String) {
-                // If the run object is a String, it is the name of a file which the preprocessor could not expand.
+                // The run object is a String, which means it is a file name which the preprocessor could not expand.
                 stepToType.put(nodeStepId, "n/a");
                 stepDockerPath = getDockerPull(stepRequirementState, stepHintState);
-                currentPath = (String)runObj;
+                currentPath = runObj.toString();
 
             } else {
                 String message = CWLHandler.CWL_PARSE_SECONDARY_ERROR + "in workflow step " + fullStepId;
@@ -522,7 +525,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // Extract some information from the docker pull, if it exists.
             DockerSpecifier dockerSpecifier;
             String dockerUrl;
-            if (!Strings.isNullOrEmpty(stepDockerPath)) {
+            String stepType = stepToType.get(nodeStepId);
+            if ((WORKFLOW_TYPE.equals(stepType) || TOOL_TYPE.equals(stepType)) && !Strings.isNullOrEmpty(stepDockerPath)) {
                 // CWL doesn't support parameterized docker pulls. Must be a string.
                 dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerPath, DockerImageReference.LITERAL);
                 dockerUrl = getURLFromEntry(stepDockerPath, dao, dockerSpecifier);
@@ -559,6 +563,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     private String computeProcessType(Object processClass) {
+        if (processClass == null) {
+            return "n/a";
+        }
         return Map.of(
             "Workflow", WORKFLOW_TYPE,
             "CommandLineTool", TOOL_TYPE,

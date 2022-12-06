@@ -605,6 +605,10 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
+         <dependency>
+            <groupId>io.cwl</groupId>
+            <artifactId>cwlavro-tools</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-generated</artifactId>
