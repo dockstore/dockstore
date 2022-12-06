@@ -789,7 +789,7 @@ public class WorkflowIT extends BaseIT {
         // Confirm that correct number of sourcefiles are found
         githubWorkflow = workflowApi.getWorkflow(githubWorkflow.getId(), null);
         List<WorkflowVersion> versions = githubWorkflow.getWorkflowVersions();
-        assertEquals("There should be two versions", 2, versions.size());
+        assertEquals("There should be three versions", 3, versions.size());
 
         Optional<WorkflowVersion> loopVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "infinite-loop"))
             .findFirst();
