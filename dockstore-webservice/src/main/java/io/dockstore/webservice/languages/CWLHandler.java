@@ -342,7 +342,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         if (outputParameterObj instanceof WorkflowOutputParameter) {
                             WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
                             Object sources = outputParameter.getOutputSource();
-                            processDependencies(endDependencies, sources, NODE_PREFIX, String.valueOf(checkNonNull(workflow.getId())));
+                            processDependencies(endDependencies, sources, NODE_PREFIX);
                         }
                     }
                 }
@@ -458,7 +458,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (workflowStep.getIn() != null) {
                     for (WorkflowStepInput stepInput: workflowStep.getIn()) {
                         Object sources = stepInput.getSource();
-                        processDependencies(stepDependencies, sources, NODE_PREFIX, String.valueOf(checkNonNull(workflow.getId())));
+                        processDependencies(stepDependencies, sources, NODE_PREFIX);
                     }
                     if (stepDependencies.size() > 0) {
                         toolInfoMap.computeIfPresent(nodeStepId, (toolId, toolInfo) -> {
@@ -572,19 +572,16 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      * @param endDependencies list to which the computed dependencies are added
      * @param sourcesObj a single String output source or list of String output sources
      * @param nodePrefix prefix to attach to extracted dependencies
-     * @param workflowId normalized workflow ID
      */
-    private void processDependencies(List<String> endDependencies, Object sourcesObj, String nodePrefix, String workflowId) {
+    private void processDependencies(List<String> endDependencies, Object sourcesObj, String nodePrefix) {
         if (sourcesObj != null) {
             List<String> sources = sourcesObj instanceof String ? List.of((String)sourcesObj) : (List<String>)sourcesObj;
             for (String s: sources) {
-                // If the source ID starts with the workflow ID, strip it off, split at the slashes, and if
-                // there are two or more parts, the dependency (workflow step name/id) is the second-to-last part.
-                if (s.startsWith(workflowId)) {
-                    String[] split = s.substring(workflowId.length()).replaceFirst("^/", "").split("/");
-                    if (split.length >= 2) {
-                        endDependencies.add(nodePrefix + split[split.length - 2].replaceFirst("#", ""));
-                    }
+                // Split at the slashes, and if there are two or more parts, 
+                // the dependency (workflow step name/id) is the second-to-last part.
+                String[] split = s.split("/");
+                if (split.length >= 2) {
+                    endDependencies.add(nodePrefix + split[split.length - 2].replaceFirst("#", ""));
                 }
             }
         }
