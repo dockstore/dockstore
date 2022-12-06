@@ -503,10 +503,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // Process any requirements and/or hints.
             RequirementOrHintState stepRequirementState = addToRequirementOrHintState(requirementState, workflowStep.getRequirements());
             RequirementOrHintState stepHintState = addToRequirementOrHintState(hintState, workflowStep.getHints());
+            String stepDockerPath = getDockerPull(stepRequirementState, stepHintState);
 
             // Process the run object.
             Object runObj = workflowStep.getRun();
-            String stepDockerPath;
             String currentPath;
 
             if (isWorkflow(runObj)) {
@@ -530,7 +530,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 currentPath = getDockstoreMetadataHintValue(expressionTool.getHints(), "path");
 
             } else if (isOperation(runObj)) {
-                stepDockerPath = null;
                 stepToType.put(nodeStepId, OPERATION_TYPE);
                 List<Object> operationHints = convertToList(((Map<Object, Object>)runObj).get("hints"), "class");
                 currentPath = getDockstoreMetadataHintValue(operationHints, "path");
