@@ -419,24 +419,22 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return map;
     }
 
-    private Workflow parseWorkflow(Object workflowObj) {
-        Gson gson = CWL.getTypeSafeCWLToolDocument();
-        if (workflowObj instanceof Map) {
-            Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)workflowObj);
-            return gson.fromJson(gson.toJson(map), Workflow.class);
+    private <T> T parseWithClass(Object obj, Class<T> klass, String description) {
+        if (obj instanceof Map) {
+            Gson gson = CWL.getTypeSafeCWLToolDocument();
+            Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)obj);
+            return gson.fromJson(gson.toJson(map), klass);
         } else {
-            throw new CustomWebApplicationException("malformed workflow in cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            throw new CustomWebApplicationException(String.format("malformed %s", description), HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
 
+    private Workflow parseWorkflow(Object workflowObj) {
+        return parseWithClass(workflowObj, Workflow.class, "workflow");
+    }
+
     private WorkflowStep parseWorkflowStep(Object workflowStepObj) {
-        Gson gson = CWL.getTypeSafeCWLToolDocument();
-        if (workflowStepObj instanceof Map) {
-            Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)workflowStepObj);
-            return gson.fromJson(gson.toJson(map), WorkflowStep.class);
-        } else {
-            throw new CustomWebApplicationException("malformed workflow step in cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
-        }
+        return parseWithClass(workflowStepObj, WorkflowStep.class, "workflow step");
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -482,7 +480,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String stepDockerPath;
             String currentPath;
 
-            if (runObj instanceof Map) {
+            if (runObj instanceof Map && ((Map<Object, Object>)runObj).containsKey("class")) {
                 // The run object is a Map which describes a CWL "process", either a Workflow, CommandLineTool, ExpressionTool, or Operation.
                 Map<Object, Object> process = (Map<Object, Object>)runObj;
                 Object processClass = process.get("class");
