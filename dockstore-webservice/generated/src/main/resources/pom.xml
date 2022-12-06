@@ -677,22 +677,6 @@
     </dependency>
     <dependency>
       <groupId>io.cwl</groupId>
-      <artifactId>cwlavro-tools</artifactId>
-      <version>2.0.4.7</version>
-      <scope>compile</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient-osgi</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpcore-osgi</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>io.cwl</groupId>
       <artifactId>cwlavro-generated</artifactId>
       <version>2.0.4.7</version>
       <scope>compile</scope>
@@ -1095,12 +1079,6 @@
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
       <version>2.13.4</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.w3id.cwl.sdk</groupId>
-      <artifactId>cwljava</artifactId>
-      <version>1.0.0</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

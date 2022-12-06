@@ -823,21 +823,6 @@ POM as their parent.
             </dependency>
 
             <!--  cwl management -->
-            <dependency>
-                <groupId>io.cwl</groupId>
-                <artifactId>cwlavro-tools</artifactId>
-                <version>${cwlavro.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpclient-osgi</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpcore-osgi</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
             <!-- Used by cwlavro. Even though cwlavro uses 1.21, cwlavro's avro dependency uses 1.20 -->
             <dependency>
                 <groupId>io.cwl</groupId>

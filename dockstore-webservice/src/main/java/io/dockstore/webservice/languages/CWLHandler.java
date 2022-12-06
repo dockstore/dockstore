@@ -504,7 +504,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 }
 
             } else if (runObj instanceof String) {
-                // If the run object is a String, it was a file reference which the preprocessor could not expand.
+                // If the run object is a String, it is the name of a file which the preprocessor could not expand.
                 stepToType.put(nodeStepId, "n/a");
                 stepDockerPath = getDockerPull(stepRequirementState, stepHintState);
                 currentPath = (String)runObj;
