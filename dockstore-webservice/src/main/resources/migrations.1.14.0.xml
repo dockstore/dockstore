@@ -89,9 +89,15 @@
             EXECUTE PROCEDURE update_organization_user_sync_status_func();
         </sql>
     </changeSet>
-    <changeSet author="ktran (generated)" id="addSourceFileTypeVersion">
+    <changeSet author="ktran (generated)" id="addDescriptorTypeVersion">
         <addColumn tableName="sourcefile">
             <column name="typeversion" type="text"/>
+        </addColumn>
+        <addColumn tableName="tag">
+            <column name="descriptortypeversion" type="text"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="descriptortypeversion" type="text"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>

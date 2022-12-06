@@ -7962,6 +7962,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
+      descriptorTypeVersion:
+        type: "string"
+        description: "The language version for the version's descriptor files. If\
+          \ there are multiple versions, then this contains the highest version"
       id:
         type: "integer"
         format: "int64"
@@ -8642,6 +8646,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
+      descriptorTypeVersion:
+        type: "string"
+        description: "The language version for the version's descriptor files. If\
+          \ there are multiple versions, then this contains the highest version"
       id:
         type: "integer"
         format: "int64"
@@ -9068,6 +9076,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
+      descriptorTypeVersion:
+        type: "string"
+        description: "The language version for the version's descriptor files. If\
+          \ there are multiple versions, then this contains the highest version"
       id:
         type: "integer"
         format: "int64"

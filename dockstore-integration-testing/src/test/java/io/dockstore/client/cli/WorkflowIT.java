@@ -1215,6 +1215,7 @@ public class WorkflowIT extends BaseIT {
         Assert.assertNotNull(sourceFiles);
         Assert.assertEquals(1, sourceFiles.size());
         Assert.assertEquals("Language version of WDL descriptor without 'version' field should be the default version", WDLHandler.DEFAULT_WDL_VERSION, sourceFiles.get(0).getTypeVersion());
+        assertEquals(WDLHandler.DEFAULT_WDL_VERSION, workflowVersion.getDescriptorTypeVersion());
 
         // Test WDL workflow with 'version 1.0'
         workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/hello-wdl-workflow",
@@ -1233,6 +1234,7 @@ public class WorkflowIT extends BaseIT {
                 Assert.assertNull("Test files should not have a version", sourceFile.getTypeVersion());
             }
         });
+        assertEquals("1.0", workflowVersion.getDescriptorTypeVersion());
 
         // Test WDL workflow with imports
         workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl", "/Dockstore.wdl", "", "wdl", "/test.json");
@@ -1246,6 +1248,7 @@ public class WorkflowIT extends BaseIT {
             Assert.assertEquals(DescriptorLanguage.FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
             Assert.assertEquals("Language version of WDL descriptor with 'version 1.0' should be 1.0", "1.0", sourceFile.getTypeVersion());
         });
+        assertEquals("1.0", workflowVersion.getDescriptorTypeVersion());
     }
 
     /**

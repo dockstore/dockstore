@@ -135,7 +135,10 @@ public class WDLHandler implements LanguageHandlerInterface {
             try {
                 // Set the language version for the main descriptor source file
                 if (mainDescriptorSourceFile != null) {
-                    mainDescriptorSourceFile.setTypeVersion(getLanguageVersion(mainDescriptorSourceFile.getContent()));
+                    final String languageVersion = getLanguageVersion(mainDescriptorSourceFile.getContent());
+                    mainDescriptorSourceFile.setTypeVersion(languageVersion);
+                    // All WDL files used by a workflow must have the same version
+                    version.setDescriptorTypeVersion(languageVersion);
                 }
 
                 List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath(), filepath);

@@ -8956,6 +8956,8 @@ components:
           enum:
           - README
           - DESCRIPTOR
+        descriptorTypeVersion:
+          type: string
         dirtyBit:
           type: boolean
         dockerfile_path:
@@ -9562,6 +9564,8 @@ components:
           enum:
           - README
           - DESCRIPTOR
+        descriptorTypeVersion:
+          type: string
         dirtyBit:
           type: boolean
         doiStatus:
@@ -9890,6 +9894,8 @@ components:
           enum:
           - README
           - DESCRIPTOR
+        descriptorTypeVersion:
+          type: string
         dirtyBit:
           type: boolean
         doiStatus:

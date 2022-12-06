@@ -217,6 +217,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
 
+    @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "The language version for the version's descriptor files. If there are multiple versions, then this contains the highest version")
+    private String descriptorTypeVersion;
+
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
     private Set<EntryVersion> entryVersions = new HashSet<>();
@@ -588,6 +592,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setParent(Entry<?, ?> parent) {
         this.parent = parent;
+    }
+
+    public String getDescriptorTypeVersion() {
+        return descriptorTypeVersion;
+    }
+
+    public void setDescriptorTypeVersion(String descriptorTypeVersion) {
+        this.descriptorTypeVersion = descriptorTypeVersion;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

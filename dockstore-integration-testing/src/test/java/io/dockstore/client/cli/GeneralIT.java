@@ -446,6 +446,8 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
                     assertNull("Docker files should not have a version", sourceFile.getTypeVersion());
                 }
             });
+            
+            assertEquals(WDLHandler.DEFAULT_WDL_VERSION, tag.getDescriptorTypeVersion());
         });
     }
 
