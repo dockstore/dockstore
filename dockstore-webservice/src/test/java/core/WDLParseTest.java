@@ -219,6 +219,10 @@ public class WDLParseTest {
         languageVersion = ""; // No 'version' field specified
         sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
         assertEquals(WDLHandler.DEFAULT_WDL_VERSION, WDLHandler.getLanguageVersion(sourceFile.getContent()));
+
+        languageVersion = "# A comment can precede the version\nversion 1.0"; // No 'version' field specified
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertEquals("1.0", WDLHandler.getLanguageVersion(sourceFile.getContent()));
     }
 
     private static SourceFile getSimpleWorkflowSourcefileWithVersion(String version) throws IOException {
