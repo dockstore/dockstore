@@ -1411,7 +1411,6 @@ public class WebhookIT extends BaseIT {
             List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
             io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
             String message = event.getMessage().toLowerCase();
-            System.out.println(message);
             assertTrue(message.contains("descriptor language"));
             assertTrue(message.contains("workflow"));
             assertTrue(message.contains("version"));
