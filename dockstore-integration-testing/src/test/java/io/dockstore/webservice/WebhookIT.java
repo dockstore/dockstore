@@ -1406,6 +1406,7 @@ public class WebhookIT extends BaseIT {
         // Add a CWL version of a workflow with the same name should cause error.
         try {
             workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-CWL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+            Assert.fail("should have thrown");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
             io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
