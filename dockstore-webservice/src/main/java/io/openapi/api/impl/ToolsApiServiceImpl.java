@@ -168,6 +168,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @Override
     public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+
+        // https://github.com/ga4gh/tool-registry-service-schemas/issues/229 (text only doesn't make sense)
+        boolean consumesHeaderTextOnly = value.getAcceptableMediaTypes().stream().allMatch(foo -> foo.isCompatible(MediaType.TEXT_PLAIN_TYPE));
+        if (consumesHeaderTextOnly) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+
         ParsedRegistryID parsedID = null;
         try {
             parsedID = new ParsedRegistryID(id);
@@ -823,6 +830,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdTypeFilesGet(String id, DescriptorType type, String versionId, String format, SecurityContext securityContext, ContainerRequestContext value,
         Optional<User> user) {
+
+        // check for incompatible format option and header combination
+        boolean zipFormat = "zip".equalsIgnoreCase(format);
+        boolean consumesHeaderJsonOnly = value.getAcceptableMediaTypes().stream().allMatch(foo -> foo.isCompatible(MediaType.APPLICATION_JSON_TYPE));
+        if (zipFormat && consumesHeaderJsonOnly) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+
+        // accept header should also work
+        boolean consumesHeaderZipOnly = value.getAcceptableMediaTypes().stream().allMatch(foo -> foo.getType().equals("application") && foo.getSubtype().equals("zip"));
+
         ParsedRegistryID parsedID = null;
         try {
             parsedID = new ParsedRegistryID(id);
@@ -844,7 +862,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
                     primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
                     Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                    if ("zip".equalsIgnoreCase(format)) {
+                    if ("zip".equalsIgnoreCase(format) || consumesHeaderZipOnly) {
                         return getZipResponse(sourceFiles, workflow.getWorkflowPath(), workflowVersion.getName(), Paths.get(workflowVersion.getWorkingDirectory()));
                     }
                     List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), workflowVersion.getWorkingDirectory());
@@ -862,7 +880,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     primaryDescriptorPaths.add(tag.getCwlPath());
                     primaryDescriptorPaths.add(tag.getWdlPath());
                     Set<SourceFile> sourceFiles = tag.getSourceFiles();
-                    if (format != null && "zip".equalsIgnoreCase(format)) {
+                    if ("zip".equalsIgnoreCase(format) || consumesHeaderZipOnly) {
                         return getZipResponse(sourceFiles, tool.getToolPath(), tag.getName(), Paths.get(tag.getWorkingDirectory()));
                     }
                     List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), tag.getWorkingDirectory());

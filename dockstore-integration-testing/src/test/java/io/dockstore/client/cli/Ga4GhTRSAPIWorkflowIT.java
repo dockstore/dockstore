@@ -65,7 +65,9 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipFile;
 import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -158,6 +160,18 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
             assertTrue("zip file seems to have a wdl file with stuff in it", zipFile.stream().filter(file -> file.getName().endsWith(".wdl")).findFirst().get().getSize() > 0);
         }
         tempZip.deleteOnExit();
+
+        // test combination of zip only with json return (should fail)
+        try {
+            CommonTestUtilities.getArbitraryURL(
+                "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
+                + "/" + DescriptorTypeWithPlain.WDL
+                + "/files?format=zip", new GenericType<>() {
+                }, ownerWebClient, MediaType.APPLICATION_JSON);
+            fail("should have died with bad request");
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
     }
 
     /**

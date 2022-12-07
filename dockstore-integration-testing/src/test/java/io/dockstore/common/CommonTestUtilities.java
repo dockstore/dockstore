@@ -436,9 +436,16 @@ public final class CommonTestUtilities {
         return publishRequest;
     }
 
-    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
+    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client, String acceptType) {
         return client
-                .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
-                        new String[] { "BEARER" }, type).getData();
+            .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "application/zip",
+                new String[] { "BEARER" }, type).getData();
+    }
+
+    /**
+     * Get an arbitrary URL with the accept type defaulting to "application/zip".
+     */
+    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
+        return getArbitraryURL(url, type, client, "application/zip");
     }
 }
