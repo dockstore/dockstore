@@ -8956,8 +8956,16 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        descriptorTypeVersion:
-          type: string
+        descriptorTypeVersions:
+          type: array
+          items:
+            type: string
+        descriptorTypeVersionsFromSourceFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          uniqueItems: true
+          writeOnly: true
         dirtyBit:
           type: boolean
         dockerfile_path:
@@ -9564,8 +9572,16 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        descriptorTypeVersion:
-          type: string
+        descriptorTypeVersions:
+          type: array
+          items:
+            type: string
+        descriptorTypeVersionsFromSourceFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          uniqueItems: true
+          writeOnly: true
         dirtyBit:
           type: boolean
         doiStatus:
@@ -9894,8 +9910,16 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        descriptorTypeVersion:
-          type: string
+        descriptorTypeVersions:
+          type: array
+          items:
+            type: string
+        descriptorTypeVersionsFromSourceFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          uniqueItems: true
+          writeOnly: true
         dirtyBit:
           type: boolean
         doiStatus:

@@ -25,16 +25,20 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -217,9 +221,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
 
-    @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The language version for the version's descriptor files. If there are multiple versions, then this contains the highest version")
-    private String descriptorTypeVersion;
+    @Column(columnDefinition = "varchar")
+    @Convert(converter = DescriptorTypeVersionConverter.class)
+    @ApiModelProperty(value = "The language versions for the version's descriptor files")
+    private List<String> descriptorTypeVersions = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
@@ -594,12 +599,22 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.parent = parent;
     }
 
-    public String getDescriptorTypeVersion() {
-        return descriptorTypeVersion;
+    public List<String> getDescriptorTypeVersions() {
+        return descriptorTypeVersions;
     }
 
-    public void setDescriptorTypeVersion(String descriptorTypeVersion) {
-        this.descriptorTypeVersion = descriptorTypeVersion;
+    public void setDescriptorTypeVersions(List<String> descriptorTypeVersions) {
+        this.descriptorTypeVersions.clear();
+        this.descriptorTypeVersions = descriptorTypeVersions;
+    }
+
+    public void setDescriptorTypeVersionsFromSourceFiles(Set<SourceFile> sourceFilesWithDescriptorTypeVersions) {
+        List<String> languageVersions = sourceFilesWithDescriptorTypeVersions.stream()
+                .map(SourceFile::getTypeVersion)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        this.setDescriptorTypeVersions(languageVersions);
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

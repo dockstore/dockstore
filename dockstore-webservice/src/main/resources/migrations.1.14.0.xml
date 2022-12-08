@@ -94,10 +94,10 @@
             <column name="typeversion" type="text"/>
         </addColumn>
         <addColumn tableName="tag">
-            <column name="descriptortypeversion" type="text"/>
+            <column name="descriptortypeversions" type="varchar"/>
         </addColumn>
         <addColumn tableName="workflowversion">
-            <column name="descriptortypeversion" type="text"/>
+            <column name="descriptortypeversions" type="varchar"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>

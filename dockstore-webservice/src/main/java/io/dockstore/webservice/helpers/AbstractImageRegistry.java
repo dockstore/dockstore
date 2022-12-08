@@ -758,6 +758,7 @@ public abstract class AbstractImageRegistry {
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.setContent(newFile.getContent());
+                    oldFile.setTypeVersion(newFile.getTypeVersion());
                     newFiles.remove(newFile);
                     found = true;
                     break;

@@ -1615,7 +1615,8 @@ public class WebhookIT extends BaseIT {
                 Assert.assertNull(".dockstore.yml should not have a version", sourceFile.getTypeVersion());
             }
         });
-        assertEquals("1.0", version.getDescriptorTypeVersion());
+        assertEquals("Should only have one language version", 1, version.getDescriptorTypeVersions().size());
+        assertTrue(version.getDescriptorTypeVersions().contains("1.0"));
     }
 
     // Asserts that the workflow metadata is the same as the default version metadata

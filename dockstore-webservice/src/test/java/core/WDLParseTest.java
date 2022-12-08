@@ -399,6 +399,51 @@ public class WDLParseTest {
             assertEquals("incorrect author", 1, entry.getAuthor().split(",").length);
             assertEquals("incorrect email", "foobar@foo.com", entry.getEmail());
             assertTrue("incorrect description", entry.getDescription().length() > 0);
+            assertEquals(1, entry.getDescriptorTypeVersions().size());
+            assertEquals("1.0", entry.getDescriptorTypeVersions().get(0));
+        } catch (Exception e) {
+            Assert.fail("Should properly parse file and imports.");
+        }
+    }
+
+    @Test
+    public void testGetDescriptorTypeVersions() {
+        String type = "workflow";
+        File primaryWDL = new File(ResourceHelpers.resourceFilePath("importTesting.wdl"));
+        File importedWDL = new File(ResourceHelpers.resourceFilePath("md5sum.wdl"));
+        String primaryDescriptorFilePath = primaryWDL.getAbsolutePath();
+        SourceFile sourceFile = new SourceFile();
+        SourceFile importedFile = new SourceFile();
+        try {
+            sourceFile.setContent(FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8));
+            sourceFile.setAbsolutePath(primaryWDL.getAbsolutePath());
+            sourceFile.setPath(primaryWDL.getAbsolutePath());
+            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+
+            importedFile.setContent(FileUtils.readFileToString(importedWDL, StandardCharsets.UTF_8));
+            importedFile.setAbsolutePath(importedWDL.getAbsolutePath());
+            importedFile.setPath("./md5sum.wdl");
+            importedFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+
+            Set<SourceFile> sourceFileSet = new HashSet<>();
+            sourceFileSet.add(sourceFile);
+            sourceFileSet.add(importedFile);
+
+            WDLHandler wdlHandler = new WDLHandler();
+            wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
+
+            LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+            Version entry = sInterface
+                    .parseWorkflowContent(primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet, new WorkflowVersion());
+            assertEquals(1, entry.getDescriptorTypeVersions().size());
+            assertTrue(entry.getDescriptorTypeVersions().contains("1.0"));
+
+            // Make the primary descriptor version 1.1 so the primary descriptor and imported descriptor have different language versions
+            sourceFile.setContent(sourceFile.getContent().replace("version 1.0", "version 1.1"));
+            entry = sInterface
+                    .parseWorkflowContent(primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet, new WorkflowVersion());
+            assertEquals("Should have two language versions", 2, entry.getDescriptorTypeVersions().size());
+            assertTrue(entry.getDescriptorTypeVersions().contains("1.0") && entry.getDescriptorTypeVersions().contains("1.1"));
         } catch (Exception e) {
             Assert.fail("Should properly parse file and imports.");
         }

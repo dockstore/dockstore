@@ -124,7 +124,6 @@ public class WDLHandler implements LanguageHandlerInterface {
         }
 
         WdlBridge wdlBridge = new WdlBridge();
-        final SourceFile mainDescriptorSourceFile = sourceFiles.stream().filter(file -> filepath.equals(file.getAbsolutePath())).findFirst().orElse(null);
         final Map<String, String> secondaryFiles = sourceFiles.stream()
                 .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
         wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
@@ -133,13 +132,13 @@ public class WDLHandler implements LanguageHandlerInterface {
             tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
             try {
-                // Set the language version for the main descriptor source file
-                if (mainDescriptorSourceFile != null) {
-                    final String languageVersion = getLanguageVersion(mainDescriptorSourceFile.getContent());
-                    mainDescriptorSourceFile.setTypeVersion(languageVersion);
-                    // All WDL files used by a workflow must have the same version
-                    version.setDescriptorTypeVersion(languageVersion);
+                // Set language version for descriptor source files
+                for (SourceFile sourceFile : sourceFiles) {
+                    if (sourceFile.getType() == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
+                        sourceFile.setTypeVersion(getLanguageVersion(sourceFile.getContent()));
+                    }
                 }
+                version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
 
                 List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath(), filepath);
                 Queue<String> authors = new LinkedList<>();
@@ -429,7 +428,6 @@ public class WDLHandler implements LanguageHandlerInterface {
                 importFile.setContent(fileResponse);
                 importFile.setPath(importPath);
                 importFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-                importFile.setTypeVersion(getLanguageVersion(importFile.getContent()));
                 importFile.setAbsolutePath(absoluteImportPath);
                 imports.put(absoluteImportPath, importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));
