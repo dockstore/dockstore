@@ -242,7 +242,7 @@ public class TokenResourceIT {
         try {
             tokensApi1.addToken("");
         } catch (ApiException e) {
-            Assert.assertEquals("Could not retrieve github.com token", e.getMessage());
+            assertEquals("Could not retrieve github.com token", e.getMessage());
         }
     }
 
