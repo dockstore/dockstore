@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,13 +91,13 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
     }
 
     @Override
-    public Map<String, Pair<String, GenericFileType>> indexWorkflowFiles(String initialPath, String contents, FileReader reader) {
-        Map<String, Pair<String, GenericFileType>> results = new HashMap<>();
+    public Map<String, FileMetadata> indexWorkflowFiles(String initialPath, String contents, FileReader reader) {
+        Map<String, FileMetadata> results = new HashMap<>();
         for (String line : contents.split("\\r?\\n")) {
             if (line.startsWith("testFilePath")) {
                 final String[] s = line.split(":");
                 final String importedFile = reader.readFile(s[1].trim());
-                results.put(s[1].trim(), new ImmutablePair<>(importedFile, GenericFileType.TEST_PARAMETER_FILE));
+                results.put(s[1].trim(), new FileMetadata(importedFile, GenericFileType.TEST_PARAMETER_FILE, ""));
             }
         }
         return results;

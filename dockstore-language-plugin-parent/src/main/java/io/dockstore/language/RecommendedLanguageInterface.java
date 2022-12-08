@@ -20,11 +20,11 @@ import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
- * Recommended interface for new workflow languages
+ * Recommended interface for new workflow languages.
  * <p>
  * Unstructured information that we would like to know
- * 1) Grammar for your language in order to highlight your language so it looks nice for users. We use https://ace.c9.io/#nav=higlighter
- * but have some experience converting from Linguist grammars ( https://github.com/github/linguist )
+ * 1) Grammar for your language in order to highlight your language so it looks nice for users. We use <a href="https://ace.c9.io/#nav=higlighter">Ace</a>
+ * but have some experience converting from ( <a href="https://github.com/github/linguist">Linguist grammars</a> )
  */
 public interface RecommendedLanguageInterface extends MinimalLanguageInterface {
 

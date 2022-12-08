@@ -2,7 +2,6 @@ package io.dockstore.webservice.languages;
 
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
@@ -30,7 +29,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -171,7 +169,7 @@ public class LanguagePluginHandlerTest {
 
     public SourceFile createSourceFile(String filePath, String fileResourcePath, FileType fileType) throws IOException {
         File resourceFile = new File(ResourceHelpers.resourceFilePath(fileResourcePath));
-        String sourceFileContents = Files.asCharSource(resourceFile, Charsets.UTF_8).read();
+        String sourceFileContents = Files.asCharSource(resourceFile, StandardCharsets.UTF_8).read();
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(fileType);
         sourceFile.setContent(sourceFileContents);
@@ -194,19 +192,19 @@ public class LanguagePluginHandlerTest {
         }
 
         @Override
-        public Map<String, Pair<String, GenericFileType>> indexWorkflowFiles(String initialPath,
+        public Map<String, FileMetadata> indexWorkflowFiles(String initialPath,
             String contents, FileReader reader) {
-            Map<String, Pair<String, GenericFileType>> results = new HashMap<>();
+            Map<String, FileMetadata> results = new HashMap<>();
 
             // fake getting the imported descriptor contents from the main descriptor
             String importedContents = reader.readFile(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH);
-            results.put(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH, new ImmutablePair<>(importedContents, GenericFileType.IMPORTED_DESCRIPTOR));
+            results.put(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH, new FileMetadata(importedContents, GenericFileType.IMPORTED_DESCRIPTOR, "v1.2"));
             String testFileContents = reader.readFile(TEST_INPUT_FILE_RESOURCE_PATH);
-            results.put(TEST_INPUT_FILE_RESOURCE_PATH, new ImmutablePair<>(testFileContents, GenericFileType.TEST_PARAMETER_FILE));
+            results.put(TEST_INPUT_FILE_RESOURCE_PATH, new FileMetadata(testFileContents, GenericFileType.TEST_PARAMETER_FILE, null));
             String dockerfileContents = reader.readFile(DOCKERFILE_RESOURCE_PATH);
-            results.put(DOCKERFILE_RESOURCE_PATH, new ImmutablePair<>(dockerfileContents, GenericFileType.CONTAINERFILE));
+            results.put(DOCKERFILE_RESOURCE_PATH, new FileMetadata(dockerfileContents, GenericFileType.CONTAINERFILE, null));
             String serviceContents = reader.readFile(SERVICE_DESCRIPTOR_RESOURCE_PATH);
-            results.put(SERVICE_DESCRIPTOR_RESOURCE_PATH, new ImmutablePair<>(serviceContents, GenericFileType.IMPORTED_DESCRIPTOR));
+            results.put(SERVICE_DESCRIPTOR_RESOURCE_PATH, new FileMetadata(serviceContents, GenericFileType.IMPORTED_DESCRIPTOR, null));
             return results;
         }
 

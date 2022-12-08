@@ -21,6 +21,7 @@ import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
+import io.dockstore.language.MinimalLanguageInterface.FileMetadata;
 import io.dockstore.language.MinimalLanguageInterface.GenericFileType;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -171,13 +172,13 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
         };
 
-        final Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> stringPairMap = minimalLanguageInterface
+        final Map<String, FileMetadata> stringPairMap = minimalLanguageInterface
             .indexWorkflowFiles(filepath, content, reader);
         Map<String, SourceFile> results = new HashMap<>();
-        for (Map.Entry<String, Pair<String, MinimalLanguageInterface.GenericFileType>> entry : stringPairMap.entrySet()) {
+        for (Map.Entry<String, FileMetadata> entry : stringPairMap.entrySet()) {
             final SourceFile sourceFile = new SourceFile();
             sourceFile.setPath(entry.getKey());
-            sourceFile.setContent(entry.getValue().getLeft());
+            sourceFile.setContent(entry.getValue().content());
             if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
@@ -190,9 +191,9 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             // however this may not be true for some languages, and we may have to change this
             if (sourceFile.getType() == null) {
                 DescriptorLanguage.FileType importedFileType = null;
-                if (entry.getValue().getRight() == GenericFileType.IMPORTED_DESCRIPTOR) {
+                if (entry.getValue().genericFileType() == GenericFileType.IMPORTED_DESCRIPTOR) {
                     importedFileType = minimalLanguageInterface.getDescriptorLanguage().getFileType();
-                } else if (entry.getValue().getRight() == GenericFileType.TEST_PARAMETER_FILE) {
+                } else if (entry.getValue().genericFileType() == GenericFileType.TEST_PARAMETER_FILE) {
                     importedFileType = minimalLanguageInterface.getDescriptorLanguage().getTestParamType();
                 } else {
                     // For some languages this may be incorrect
