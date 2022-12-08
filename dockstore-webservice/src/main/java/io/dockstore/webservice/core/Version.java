@@ -604,7 +604,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void setDescriptorTypeVersions(List<String> descriptorTypeVersions) {
-        this.descriptorTypeVersions.clear();
         this.descriptorTypeVersions = descriptorTypeVersions;
     }
 
