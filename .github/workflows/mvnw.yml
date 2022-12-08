@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '11', '17.0.4+8' ]
+        java: [ '17.0.4+8' ]
 
     steps:
       - name: install git secrets
