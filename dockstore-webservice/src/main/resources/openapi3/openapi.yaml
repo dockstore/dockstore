@@ -2545,11 +2545,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolClass'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolClass'
           description: A list of potential tool classes.
       security:
       - BEARER: []
@@ -2582,7 +2577,7 @@ paths:
           enum:
           - CommandLineTool
           - Workflow
-      - description: Filter tools by the name of the descriptor type (#/definitions/DescriptorType)
+      - description: Filter tools by the name of the descriptor type
         in: query
         name: descriptorType
         schema:
@@ -2591,9 +2586,9 @@ paths:
           - CWL
           - WDL
           - NFL
-          - SERVICE
           - GALAXY
           - SMK
+          - SERVICE
       - description: The image registry that contains the image.
         in: query
         name: registry
@@ -2649,11 +2644,6 @@ paths:
         "200":
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tool'
-            text/plain:
               schema:
                 type: array
                 items:
@@ -2721,11 +2711,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolVersion'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolVersion'
           description: An array of tool versions.
       security:
       - BEARER: []
@@ -2758,16 +2743,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ToolVersion'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/ToolVersion'
           description: A tool version.
         "404":
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
           description: The tool can not be found.
@@ -2791,8 +2770,9 @@ paths:
         required: true
         schema:
           type: string
-      - description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`."
+      - description: "An identifier of the tool version, scoped to this registry,\
+          \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
+          \  (For example, `1.0.0` instead of `develop`)"
         in: path
         name: version_id
         required: true
@@ -2806,18 +2786,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
           description: The tool payload.
         "404":
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
           description: There are no container specifications for this tool.
@@ -2829,19 +2801,9 @@ paths:
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
     get:
       description: "Returns the descriptor for the specified tool (examples include\
-        \ CWL, WDL, Nextflow, or Galaxy documents)."
+        \ CWL, WDL, Nextflow, Galaxy, or Snakemake documents)."
       operationId: toolsIdVersionsVersionIdTypeDescriptorGet
       parameters:
-      - description: "The output type of the descriptor. Plain types return the bare\
-          \ descriptor while the \"non-plain\" types return a descriptor wrapped with\
-          \ metadata. Allowable values include \"CWL\", \"WDL\", \"NFL\", \"GALAXY\"\
-          , \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\", \"PLAIN_GALAXY\"\
-          , \"PLAIN_SMK\"."
-        in: path
-        name: type
-        required: true
-        schema:
-          type: string
       - description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`."
         in: path
@@ -2849,8 +2811,28 @@ paths:
         required: true
         schema:
           type: string
+      - description: The output type of the descriptor. Plain types return the bare
+          descriptor while the "non-plain" types return a descriptor wrapped with
+          metadata.
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - GALAXY
+          - SMK
+          - PLAIN_CWL
+          - PLAIN_WDL
+          - PLAIN_NFL
+          - PLAIN_GALAXY
+          - PLAIN_SMK
       - description: "An identifier of the tool version, scoped to this registry,\
-          \ for example `v1`."
+          \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
+          \  (For example, `1.0.0` instead of `develop`)"
         in: path
         name: version_id
         required: true
@@ -2891,17 +2873,6 @@ paths:
         parameters and containerfiles.
       operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
       parameters:
-      - description: "The output type of the descriptor. If not specified, it is up\
-          \ to the underlying implementation to determine which output type to return.\
-          \ Plain types return the bare descriptor while the \"non-plain\" types return\
-          \ a descriptor wrapped with metadata. Allowable values are \"CWL\", \"WDL\"\
-          , \"NFL\", \"GALAXY\", \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\"\
-          , \"PLAIN_GALAXY\", \"PLAIN_SMK\"."
-        in: path
-        name: type
-        required: true
-        schema:
-          type: string
       - description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`."
         in: path
@@ -2909,8 +2880,28 @@ paths:
         required: true
         schema:
           type: string
-      - description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`."
+      - description: The output type of the descriptor. Plain types return the bare
+          descriptor while the "non-plain" types return a descriptor wrapped with
+          metadata.
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - GALAXY
+          - SMK
+          - PLAIN_CWL
+          - PLAIN_WDL
+          - PLAIN_NFL
+          - PLAIN_GALAXY
+          - PLAIN_SMK
+      - description: "An identifier of the tool version, scoped to this registry,\
+          \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
+          \  (For example, `1.0.0` instead of `develop`)"
         in: path
         name: version_id
         required: true
@@ -2954,16 +2945,9 @@ paths:
     get:
       description: "Get a list of objects that contain the relative path and file\
         \ type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path\
-        \ : .+} endpoint."
+        \ : .+} endpoint. Returns a zip file of all files when format=zip is specified."
       operationId: toolsIdVersionsVersionIdTypeFilesGet
       parameters:
-      - description: "The output type of the descriptor. Examples of allowable values\
-          \ are \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"SMK\"."
-        in: path
-        name: type
-        required: true
-        schema:
-          type: string
       - description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`."
         in: path
@@ -2971,13 +2955,34 @@ paths:
         required: true
         schema:
           type: string
-      - description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`."
+      - description: The output type of the descriptor.
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - GALAXY
+          - SMK
+          - SERVICE
+      - description: "An identifier of the tool version, scoped to this registry,\
+          \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
+          \  (For example, `1.0.0` instead of `develop`)"
         in: path
         name: version_id
         required: true
         schema:
           type: string
+      - description: Returns a zip file of all files when format=zip is specified.
+        in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - zip
       responses:
         "200":
           content:
@@ -2986,7 +2991,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolFile'
-            text/plain:
+            application/zip:
               schema:
                 type: array
                 items:
@@ -2997,7 +3002,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-            text/plain:
+            application/zip:
               schema:
                 $ref: '#/components/schemas/Error'
           description: The tool can not be output in the specified type.
@@ -3012,16 +3017,6 @@ paths:
         suitable for use with this descriptor type.
       operationId: toolsIdVersionsVersionIdTypeTestsGet
       parameters:
-      - description: "The type of the underlying descriptor. Allowable values include\
-          \ \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\"\
-          , \"PLAIN_NFL\", \"PLAIN_GALAXY\", \"PLAIN_SMK\". For example, \"CWL\" would\
-          \ return an list of ToolTests objects while \"PLAIN_CWL\" would return a\
-          \ bare JSON list with the content of the tests."
-        in: path
-        name: type
-        required: true
-        schema:
-          type: string
       - description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`."
         in: path
@@ -3029,8 +3024,28 @@ paths:
         required: true
         schema:
           type: string
-      - description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`."
+      - description: The output type of the descriptor. Plain types return the bare
+          descriptor while the "non-plain" types return a descriptor wrapped with
+          metadata.
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - GALAXY
+          - SMK
+          - PLAIN_CWL
+          - PLAIN_WDL
+          - PLAIN_NFL
+          - PLAIN_GALAXY
+          - PLAIN_SMK
+      - description: "An identifier of the tool version, scoped to this registry,\
+          \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
+          \  (For example, `1.0.0` instead of `develop`)"
         in: path
         name: version_id
         required: true
@@ -7471,10 +7486,11 @@ components:
           type: string
     Checksum:
       type: object
-      description: The checksum value and its type
+      description: "A production (immutable) tool version is required to have a hashcode.\
+        \ Not required otherwise, but might be useful to detect changes. "
       example:
-      - checksum: 77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182
-        type: sha256
+      - checksum: ea2a5db69bd20a42976838790bc29294df3af02b
+        type: sha1
       properties:
         checksum:
           type: string
@@ -8212,19 +8228,24 @@ components:
           description: "A production (immutable) tool version is required to have\
             \ a hashcode. Not required otherwise, but might be useful to detect changes. "
           example:
-          - checksum: 77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182
-            type: sha256
+          - checksum: ea2a5db69bd20a42976838790bc29294df3af02b
+            type: sha1
           items:
             $ref: '#/components/schemas/Checksum'
         content:
           type: string
           description: The content of the file itself. One of url or content is required.
+        image_type:
+          $ref: '#/components/schemas/OneOfFileWrapperImageType'
         url:
           type: string
           description: "Optional url to the underlying content, should include version\
             \ information, and can include a git hash.  Note that this URL should\
             \ resolve to the raw unwrapped content that would otherwise be available\
             \ in content. One of url or content is required."
+          example: "{\"descriptorfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\"\
+            },\"containerfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile\"\
+            }}"
     HealthCheckResult:
       type: object
       properties:
@@ -8294,6 +8315,7 @@ components:
           type: string
           description: Used in conjunction with a registry_url if provided to locate
             images.
+          example: "[\"quay.io/seqware/seqware_full/1.1\",\"ubuntu:latest\"]"
         image_type:
           type: string
           enum:
@@ -8304,6 +8326,7 @@ components:
           type: string
           description: A docker registry or a URL to a Singularity registry. Used
             along with image_name to locate a specific image.
+          example: "[\"registry.hub.docker.com\"]"
         size:
           type: integer
           format: int64
@@ -8488,6 +8511,10 @@ components:
           enum:
           - SITEWIDE
           - NEWSBODY
+    OneOfFileWrapperImageType:
+      type: object
+      description: Optionally return additional information on the type of file this
+        is
     OrcidAuthor:
       type: object
       properties:
@@ -8584,8 +8611,6 @@ components:
     OrganizationUser:
       type: object
       properties:
-        accepted:
-          type: boolean
         dbCreateDate:
           type: integer
           format: int64
@@ -8602,8 +8627,17 @@ components:
           - ADMIN
           - MAINTAINER
           - MEMBER
+        status:
+          type: string
+          description: The status of the organization invitation
+          enum:
+          - PENDING
+          - REJECTED
+          - ACCEPTED
         user:
           $ref: '#/components/schemas/User'
+      required:
+      - status
     OrganizationUserId:
       type: object
       properties:
@@ -9173,6 +9207,8 @@ components:
     ToolFile:
       type: object
       properties:
+        checksum:
+          $ref: '#/components/schemas/Checksum'
         file_type:
           type: string
           enum:
@@ -9272,9 +9308,50 @@ components:
             - CWL
             - WDL
             - NFL
-            - SERVICE
             - GALAXY
             - SMK
+            - SERVICE
+        descriptor_type_version:
+          type: object
+          additionalProperties:
+            type: array
+            description: "A map providing information about the language versions\
+              \ used in this tool. The keys should be the same values used in the\
+              \ `descriptor_type` field, and the value should be an array of all the\
+              \ language versions used for the given `descriptor_type`. Depending\
+              \ on the `descriptor_type` (e.g. CWL) multiple version values may be\
+              \ used in a single tool."
+            example:
+              CWL:
+              - v1.0.2
+              NFL:
+              - DSL2
+              WDL:
+              - "1.0"
+              - "1.0"
+            items:
+              type: string
+              description: "A map providing information about the language versions\
+                \ used in this tool. The keys should be the same values used in the\
+                \ `descriptor_type` field, and the value should be an array of all\
+                \ the language versions used for the given `descriptor_type`. Depending\
+                \ on the `descriptor_type` (e.g. CWL) multiple version values may\
+                \ be used in a single tool."
+              example: "{\"WDL\":[\"1.0\",\"1.0\"],\"CWL\":[\"v1.0.2\"],\"NFL\":[\"\
+                DSL2\"]}"
+          description: "A map providing information about the language versions used\
+            \ in this tool. The keys should be the same values used in the `descriptor_type`\
+            \ field, and the value should be an array of all the language versions\
+            \ used for the given `descriptor_type`. Depending on the `descriptor_type`\
+            \ (e.g. CWL) multiple version values may be used in a single tool."
+          example:
+            CWL:
+            - v1.0.2
+            NFL:
+            - DSL2
+            WDL:
+            - "1.0"
+            - "1.0"
         id:
           type: string
           description: An identifier of the version of this tool for this particular

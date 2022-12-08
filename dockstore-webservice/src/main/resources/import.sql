@@ -60,3 +60,7 @@ CREATE UNIQUE INDEX collection_name_index ON collection (LOWER(name), organizati
 CREATE UNIQUE INDEX collection_displayname_index ON collection (LOWER(displayname), organizationid) WHERE NOT deleted;
 
 CREATE UNIQUE INDEX collection_categoryname_index ON collection (LOWER(name)) WHERE dtype = 'Category' AND deleted = false;
+
+-- Need to add the accepted column to pass check_migrations.sh because the OrganizationUser JPA class doesn't have the accepted field
+-- Remove this when the accepted column is dropped in the migrations file
+ALTER TABLE organization_user ADD COLUMN accepted boolean NOT NULL;

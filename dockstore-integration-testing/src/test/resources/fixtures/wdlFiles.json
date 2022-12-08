@@ -1,18 +1,34 @@
 [
   {
-    "path": "Dockerfile",
-    "file_type": "CONTAINERFILE"
+    "checksum": {
+      "checksum": "e91c254ad58860a02c788dfb5c1a65d6a8846ab1dc649631c7db16fef4af2dec",
+      "type": "sha-256"
+    },
+    "file_type": "CONTAINERFILE",
+    "path": "Dockerfile"
   },
   {
-    "path": "Dockstore.wdl",
-    "file_type": "PRIMARY_DESCRIPTOR"
+    "checksum": {
+      "checksum": "e91c254ad58860a02c788dfb5c1a65d6a8846ab1dc649631c7db16fef4af2dec",
+      "type": "sha-256"
+    },
+    "file_type": "PRIMARY_DESCRIPTOR",
+    "path": "Dockstore.wdl"
   },
   {
+    "checksum": {
+      "checksum": "26262f713128947c6629aae9d3049fdb6bf82104ff87aa4f76a01cca7c0d685b",
+      "type": "sha-256"
+    },
     "file_type": "TEST_FILE",
     "path": "nested/test.wdl.json"
   },
   {
-    "path": "test.wdl.json",
-    "file_type": "TEST_FILE"
+    "checksum": {
+      "checksum": "e91c254ad58860a02c788dfb5c1a65d6a8846ab1dc649631c7db16fef4af2dec",
+      "type": "sha-256"
+    },
+    "file_type": "TEST_FILE",
+    "path": "test.wdl.json"
   }
 ]

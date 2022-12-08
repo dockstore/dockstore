@@ -1,5 +1,7 @@
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.core.OrganizationUser.InvitationStatus.ACCEPTED;
+import static io.dockstore.webservice.core.OrganizationUser.InvitationStatus.REJECTED;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
@@ -173,11 +175,11 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = organizationDAO.findById(id);
         throwExceptionForNullOrganization(organization);
-        OrganizationUser organizationUser = getUserOrgRole(organization, user.getId());
-        if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
-            String msg = "Organization not found";
+        boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(organization, user.getId());
+        if (!isUserAdminOrMaintainer) {
+            String msg = "You do not have permissions to request organization review.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
         if (Objects.equals(organization.getStatus(), Organization.ApplicationState.REJECTED)) {
@@ -315,12 +317,16 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Operation(operationId = "getOrganizationMembers", summary = "Retrieve all members for an organization.", description = "Retrieve all members for an organization. Supports optional authentication.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     public Set<OrganizationUser> getOrganizationMembers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
-        Set<OrganizationUser> acceptedUsers = getOrganizationByIdOptionalAuth(user, id).getUsers()
-            .stream()
-            .filter(orgUser -> orgUser.isAccepted())
-            .collect(Collectors.toSet());
+        Organization organization = getOrganizationByIdOptionalAuth(user, id);
 
-        return acceptedUsers;
+        if (user.isPresent() && isUserAdmin(organization, user.get().getId())) {
+            return organization.getUsers(); // Organization admins can view accepted, pending, and rejected users
+        }
+
+        // Unauthorized users and non-admin organization members can only view accepted members
+        return organization.getUsers().stream()
+                .filter(organizationUser -> organizationUser.getStatus() == ACCEPTED)
+                .collect(Collectors.toSet());
     }
 
     @GET
@@ -443,11 +449,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findById(organizationId);
         throwExceptionForNullOrganization(organization);
-        OrganizationUser orgUser = getUserOrgRole(organization, user.getId());
+        boolean isUserAdmin = isUserAdmin(organization, user.getId());
 
-        // If the user does not belong to the organization or if the user is not an admin of the organization
-        // and if the user is neither an admin nor curator, then throw an error
-        if ((orgUser == null || orgUser.getRole() != OrganizationUser.Role.ADMIN) && (!user.isCurator() && !user.getIsAdmin())) {
+        // If the user is not an admin of the organization and if the user is neither an admin nor curator, then throw an error
+        if (!isUserAdmin && (!user.isCurator() && !user.getIsAdmin())) {
             throw new CustomWebApplicationException("You do not have access to delete this organization", HttpStatus.SC_FORBIDDEN);
         }
 
@@ -547,7 +552,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // Create Role for user creating the organization
         OrganizationUser organizationUser = new OrganizationUser(foundUser, organizationDAO.findById(id), OrganizationUser.Role.ADMIN);
-        organizationUser.setAccepted(true);
+        organizationUser.setStatus(ACCEPTED);
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.persist(organizationUser);
 
@@ -581,8 +586,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // Ensure that the user is an admin or maintainer of the organization
         if (!user.isCurator() && !user.getIsAdmin()) {
-            OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
-            if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
+            boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(organization, user.getId());
+            if (!isUserAdminOrMaintainer) {
                 String msg = "You do not have permissions to update the organization.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
@@ -722,6 +727,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
                 OrganizationUser.Role.valueOf(role));
             Session currentSession = sessionFactory.getCurrentSession();
             currentSession.persist(organizationUser);
+        } else if (existingRole.getStatus() == REJECTED) {
+            existingRole.setStatus(OrganizationUser.InvitationStatus.PENDING);
+            existingRole.setRole(OrganizationUser.Role.valueOf(role));
         } else {
             updateUserRole(user, role, userId, organizationId);
         }
@@ -755,6 +763,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             String msg = "The user with id '" + userId + "' does not have a role in the organization with id '" + organizationId + "'.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+        } else if (existingRole.getStatus() == REJECTED) {
+            String msg = "The user with id '" + userId + "' rejected the organization invite for the organization with id '" + organizationId + "' and their role cannot be updated.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         } else {
             existingRole.setRole(OrganizationUser.Role.valueOf(role));
         }
@@ -830,7 +842,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
 
         // Check that the role is not already accepted
-        if (organizationUser.isAccepted()) {
+        if (organizationUser.getStatus() == ACCEPTED) {
             String msg =
                 "The user with id '" + user.getId() + "' has already accepted a role in the organization with id '" + organization.getId()
                     + "'.";
@@ -840,11 +852,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         if (accept) {
             // Set to accepted if true
-            organizationUser.setAccepted(true);
+            organizationUser.setStatus(ACCEPTED);
         } else {
-            // Delete role if false
-            Session currentSession = sessionFactory.getCurrentSession();
-            currentSession.delete(organizationUser);
+            organizationUser.setStatus(REJECTED);
         }
 
         Event.EventType eventType = accept ? Event.EventType.APPROVE_ORG_INVITE : Event.EventType.REJECT_ORG_INVITE;
@@ -868,7 +878,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     /**
-     * Checks if a user has the given role type in the organization Throws an error if the user has no roles or the wrong roles
+     * Checks if a user has the given role type in the organization
+     * Throws an error if the user has no roles, the wrong roles, or an unaccepted role
      *
      * @param organization
      * @param userId
@@ -887,6 +898,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
                     + "'.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+        } else if (organizationUser.getStatus() != ACCEPTED) {
+            String msg =
+                    "The user with id '" + userId + "' has not accepted their " + organizationUser.getRole().name().toLowerCase() + " invitation to the organization with id '" + organization.getId()
+                            + "'.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else {
             return organizationUser;
         }
@@ -897,7 +914,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     /**
-     * Checks if the given user should know of the existence of the organization For a user to see an organsation, either it must be approved or the user must have a role in the organization
+     * Checks if the given user should know of the existence of the organization.
+     * For a user to see an organization, either it must be approved or the user must have a role in the organization
      *
      * @param organizationId
      * @param userId
@@ -917,6 +935,20 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         return Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED) || (organizationUser != null);
     }
 
+    static boolean isUserAdmin(Organization organization, Long userId) {
+        if (organization == null) {
+            String msg = "Organization not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        OrganizationUser organizationUser = getUserOrgRole(organization, userId);
+        if (organizationUser == null) {
+            return false;
+        }
+
+        return organizationUser.getRole() == OrganizationUser.Role.ADMIN && organizationUser.getStatus() == ACCEPTED;
+    }
 
     static boolean isUserAdminOrMaintainer(Organization organization, Long userId) {
         if (organization == null) {
@@ -930,7 +962,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             return false;
         }
 
-        return organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER;
+        return (organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER) && organizationUser.getStatus() == ACCEPTED;
     }
 
     static boolean isUserAdminOrMaintainer(Long organizationId, Long userId, OrganizationDAO organizationDAO) {

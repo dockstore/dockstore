@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.ws.rs.core.GenericType;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
@@ -54,6 +55,8 @@ import org.slf4j.LoggerFactory;
 public final class CommonTestUtilities {
 
     public static final String OLD_DOCKSTORE_VERSION = "1.12.0";
+    public static final List<String> COMMON_MIGRATIONS = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "1.7.0",
+            "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0");
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
     public static final String PUBLIC_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
@@ -91,8 +94,7 @@ public final class CommonTestUtilities {
     public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support,
         String dropwizardConfigurationFile) {
         LOG.info("Dropping and Recreating the database with no test data");
-        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        dropAllAndRunMigration(migrations, support.newApplication(), dropwizardConfigurationFile);
+        dropAllAndRunMigration(listMigrations(), support.newApplication(), dropwizardConfigurationFile);
     }
 
     /**
@@ -107,8 +109,7 @@ public final class CommonTestUtilities {
     public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
         String dropwizardConfigurationFile)  {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
-        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        dropAllAndRunMigration(migrations, getApplication(support, isNewApplication), dropwizardConfigurationFile);
+        dropAllAndRunMigration(listMigrations("test", "test_1.5.0"), getApplication(support, isNewApplication), dropwizardConfigurationFile);
     }
 
     /**
@@ -135,8 +136,7 @@ public final class CommonTestUtilities {
     public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
             String dropwizardConfigurationFile) {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
-        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test", "add_test_tools", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        dropAllAndRunMigration(migrations, getApplication(support, isNewApplication), dropwizardConfigurationFile);
+        dropAllAndRunMigration(listMigrations("test", "add_test_tools", "test_1.5.0"), getApplication(support, isNewApplication), dropwizardConfigurationFile);
     }
 
     /**
@@ -226,8 +226,16 @@ public final class CommonTestUtilities {
      * @param configPath
      */
     private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) {
-        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        dropAllAndRunMigration(migrations, support.getApplication(), configPath);
+        dropAllAndRunMigration(listMigrations("test.confidential1", "test.confidential1_1.5.0"), support.getApplication(), configPath);
+    }
+
+    /**
+     * Returns a list of migrations containing COMMON_MIGRATIONS and additional migrations
+     * @param additionals
+     * @return
+     */
+    public static List<String> listMigrations(String... additionals) {
+        return Stream.concat(COMMON_MIGRATIONS.stream(), Stream.of(additionals)).collect(Collectors.toList());
     }
 
     public static void runMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
@@ -291,8 +299,7 @@ public final class CommonTestUtilities {
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
         boolean isNewApplication) {
-        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        dropAllAndRunMigration(migrations, getApplication(support, isNewApplication), configPath);
+        dropAllAndRunMigration(listMigrations("test.confidential2", "test.confidential2_1.5.0"), getApplication(support, isNewApplication), configPath);
     }
 
     /**
@@ -320,8 +327,7 @@ public final class CommonTestUtilities {
 
     public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
             boolean isNewApplication) {
-        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "add_test_tools", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        dropAllAndRunMigration(migrations, getApplication(support, isNewApplication), configPath);
+        dropAllAndRunMigration(listMigrations("test.confidential2", "add_test_tools", "test.confidential2_1.5.0"), getApplication(support, isNewApplication), configPath);
     }
 
     public static Application<DockstoreWebserviceConfiguration> getApplication(final DropwizardTestSupport<DockstoreWebserviceConfiguration> support, final boolean isNewApplication) {
@@ -336,8 +342,7 @@ public final class CommonTestUtilities {
      */
     public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         LOG.info("Migrating samepaths migrations");
-        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "samepaths", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        dropAllAndRunMigration(migrations, support.newApplication(), CONFIDENTIAL_CONFIG_PATH);
+        dropAllAndRunMigration(listMigrations("samepaths"), support.newApplication(), CONFIDENTIAL_CONFIG_PATH);
     }
 
     /**
@@ -348,8 +353,7 @@ public final class CommonTestUtilities {
      */
     public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         LOG.info("Migrating testworkflow migrations");
-        List<String> migrations = List.of("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        dropAllAndRunMigration(migrations, support.getApplication(), CONFIDENTIAL_CONFIG_PATH);
+        dropAllAndRunMigration(listMigrations("test", "testworkflow", "test_1.5.0"), support.getApplication(), CONFIDENTIAL_CONFIG_PATH);
     }
 
     public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws RuntimeException {

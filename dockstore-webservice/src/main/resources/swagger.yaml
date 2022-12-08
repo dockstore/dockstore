@@ -7728,12 +7728,9 @@ definitions:
   OrganizationUser:
     type: "object"
     required:
-    - "accepted"
     - "role"
+    - "status"
     properties:
-      accepted:
-        type: "boolean"
-        description: "Has the user accepted their membership."
       dbCreateDate:
         type: "integer"
         format: "int64"
@@ -7751,6 +7748,13 @@ definitions:
         - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
+      status:
+        type: "string"
+        description: "The status of the organization invitation"
+        enum:
+        - "PENDING"
+        - "REJECTED"
+        - "ACCEPTED"
       user:
         $ref: "#/definitions/User"
   OrganizationUserId:

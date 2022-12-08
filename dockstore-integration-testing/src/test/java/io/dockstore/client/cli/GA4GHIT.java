@@ -319,7 +319,7 @@ public abstract class GA4GHIT {
                 jsonArray.forEach(this::parseJSONElementForURLs);
             } else {
                 if (!jsonElement.isJsonPrimitive()) {
-                    Assert.fail("Unknown type: " + jsonElement.toString());
+                    Assert.fail("Unknown type: " + jsonElement);
                 }
             }
         }

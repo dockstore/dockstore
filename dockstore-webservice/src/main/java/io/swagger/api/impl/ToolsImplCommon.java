@@ -36,6 +36,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.openapi.api.impl.ToolsApiServiceImpl;
+import io.openapi.api.impl.ToolsApiServiceImpl.EmptyImageType;
 import io.openapi.model.Checksum;
 import io.openapi.model.DescriptorType;
 import io.openapi.model.ExtendedFileWrapper;
@@ -56,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -93,6 +95,7 @@ public final class ToolsImplCommon {
         toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
+        toolDescriptor.setImageType(new EmptyImageType());
         return toolDescriptor;
     }
 
@@ -204,6 +207,8 @@ public final class ToolsImplCommon {
             }
 
             toolVersion.setDescriptorType(MoreObjects.firstNonNull(toolVersion.getDescriptorType(), Lists.newArrayList()));
+            // hook-up DOCK-5247 here
+            toolVersion.setDescriptorTypeVersion(new HashMap<>());
             // ensure that descriptor is non-null before adding to list
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
@@ -491,6 +496,8 @@ public final class ToolsImplCommon {
         String[] toolVerifiedSources = version.getVerifiedSources();
         toolVersion.setVerifiedSource(Lists.newArrayList(toolVerifiedSources));
         toolVersion.setContainerfile(false);
+        // hook-up DOCK-5247 here
+        toolVersion.setDescriptorTypeVersion(new HashMap<>());
         return toolVersion;
     }
 
