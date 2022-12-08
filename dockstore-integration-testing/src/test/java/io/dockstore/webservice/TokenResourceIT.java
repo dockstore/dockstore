@@ -236,6 +236,15 @@ public class TokenResourceIT {
         assertNotEquals(usersApi2.getUser().getUsername(), CUSTOM_USERNAME2);
         assertEquals(usersApi2.changeUsername("better.name").getUsername(), "better.name");
     }
+    @Test
+    public void testNullGithubUser() {
+        TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        try {
+            tokensApi1.addToken("");
+        } catch (ApiException e) {
+            Assert.assertEquals("Could not retrieve github.com token", e.getMessage());
+        }
+    }
 
     /**
      * Super large test that generally revolves around 3 accounts
