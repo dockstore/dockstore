@@ -592,14 +592,19 @@ public class WDLHandler implements LanguageHandlerInterface {
         }
 
         final String primaryDescriptorContent = primaryDescriptor.get().getContent();
-        final Map<String, String> secondaryFiles = sourceFiles.stream()
+        Map<String, String> secondaryFiles = new HashMap<>();
+        sourceFiles.stream()
                 .filter(sourceFile -> !sourceFile.getAbsolutePath().equals(primaryDescriptorPath))
-                .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
+                .forEach(descriptorSourceFile -> {
+                    secondaryFiles.put(descriptorSourceFile.getAbsolutePath(), descriptorSourceFile.getContent());
+                });
         wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
 
-        File tempMainDescriptor = null;
+        File tempDir = null;
+        File tempMainDescriptor;
         try {
-            tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+            tempDir = Files.createTempDir();
+            tempMainDescriptor = File.createTempFile("main", "descriptor", tempDir);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptorContent);
             // It's possible for isVersionValid to be false for a valid 'version' so we must double-check by trying to find a 'version' string in the content
             // Ex: Cromwell doesn't support WDL 1.1 so a 'version 1.1' workflow will return false for isVersionValid
@@ -616,10 +621,11 @@ public class WDLHandler implements LanguageHandlerInterface {
             }
             return parsedVersionString;
         } catch (IOException e) {
-            LOG.error("Error creating temporary file for descriptor {}", primaryDescriptorPath);
+            LOG.error("Error creating temporary file for descriptor {}", primaryDescriptorPath, e);
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
-            FileUtils.deleteQuietly(tempMainDescriptor);
+            // Delete the temp directory and its contents
+            FileUtils.deleteQuietly(tempDir);
         }
     }
 

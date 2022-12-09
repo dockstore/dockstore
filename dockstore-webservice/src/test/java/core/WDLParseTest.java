@@ -228,6 +228,10 @@ public class WDLParseTest {
         sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
         assertEquals("1.0", WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
 
+        languageVersion = "  version 1.0"; // Leading whitespace before version
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertEquals("1.0", WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
+
         // Test invalid 'version' fields
         languageVersion = "version"; // User forgot to specify a numerical version
         sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
