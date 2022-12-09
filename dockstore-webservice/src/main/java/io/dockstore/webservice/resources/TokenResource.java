@@ -567,8 +567,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             final String code = getCodeFromSatellizerObject(satellizerObject);
             final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
             return handleGitHubUser(null, code, registerUser);
-        }
-        else {
+        } else {
             LOG.error("Retrieving accessToken was unsuccessful");
             throw new CustomWebApplicationException("Could not retrieve github.com token", HttpStatus.SC_BAD_REQUEST);
         }
