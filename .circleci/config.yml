@@ -426,9 +426,8 @@ commands:
       - run:
           name: install pip
           command: |
-            export DEBIAN_FRONTEND=noninteractive
             sudo apt update
-            sudo apt install libxml2-dev libxslt-dev
+            sudo NEEDRESTART_MODE=a apt install libxml2-dev libxslt-dev
             # For debug purposes, a python3 version was installed in the image, pip is untagged
             python3 --version
             pip3 --version
