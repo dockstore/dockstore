@@ -110,100 +110,98 @@ public class WDLParseTest {
 
     @Test
     public void testHandlingVariousWorkflowVersions() throws IOException {
-        WDLHandler wdlHandler = new WDLHandler();
-
         String workflowVersion = "draft-3";
-        assertTrue(wdlHandler.enhanceSemanticVersionString(workflowVersion).equals("draft-3"));
+        assertEquals("draft-3", WDLHandler.enhanceSemanticVersionString(workflowVersion));
         workflowVersion = "1.0";
-        assertTrue(wdlHandler.enhanceSemanticVersionString(workflowVersion).equals("1.0.0"));
+        assertEquals("1.0.0", WDLHandler.enhanceSemanticVersionString(workflowVersion));
         workflowVersion = "1.0.0";
-        assertTrue(wdlHandler.enhanceSemanticVersionString(workflowVersion).equals("1.0.0"));
+        assertEquals("1.0.0", WDLHandler.enhanceSemanticVersionString(workflowVersion));
         workflowVersion = "1.0-alpha";
-        assertTrue(wdlHandler.enhanceSemanticVersionString(workflowVersion).equals("1.0.0-alpha"));
+        assertEquals("1.0.0-alpha", WDLHandler.enhanceSemanticVersionString(workflowVersion));
         workflowVersion = "1.0-rc.2.5+build-2.0";
-        assertTrue(wdlHandler.enhanceSemanticVersionString(workflowVersion).equals("1.0.0-rc.2.5+build-2.0"));
+        assertEquals("1.0.0-rc.2.5+build-2.0", WDLHandler.enhanceSemanticVersionString(workflowVersion));
 
         workflowVersion = "3.60";
-        assertTrue(wdlHandler.enhanceSemanticVersionString(workflowVersion).equals("3.60.0"));
+        assertEquals("3.60.0", WDLHandler.enhanceSemanticVersionString(workflowVersion));
         workflowVersion = "10.4.0";
-        assertTrue(wdlHandler.enhanceSemanticVersionString(workflowVersion).equals("10.4.0"));
+        assertEquals("10.4.0", WDLHandler.enhanceSemanticVersionString(workflowVersion));
         workflowVersion = "30.0-alpha";
-        assertTrue(wdlHandler.enhanceSemanticVersionString(workflowVersion).equals("30.0.0-alpha"));
+        assertEquals("30.0.0-alpha", WDLHandler.enhanceSemanticVersionString(workflowVersion));
         workflowVersion = "3.0-rc.1.0.0+build-1.0";
-        assertTrue(wdlHandler.enhanceSemanticVersionString(workflowVersion).equals("3.0.0-rc.1.0.0+build-1.0"));
+        assertEquals("3.0.0-rc.1.0.0+build-1.0", WDLHandler.enhanceSemanticVersionString(workflowVersion));
 
 
         workflowVersion = "draft-3";
-        assertFalse(wdlHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
+        assertFalse(WDLHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
         workflowVersion = "1.0";
-        assertFalse(wdlHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
+        assertFalse(WDLHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
         workflowVersion = "1.0.0";
-        assertFalse(wdlHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
+        assertFalse(WDLHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
         workflowVersion = "1.0-alpha";
-        assertFalse(wdlHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
+        assertFalse(WDLHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
         workflowVersion = "1.0-rc.2.5+build-2.0";
-        assertFalse(wdlHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
+        assertFalse(WDLHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
 
         workflowVersion = "3.6";
-        assertTrue(wdlHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
+        assertTrue(WDLHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
         workflowVersion = "1.4.0";
-        assertTrue(wdlHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
+        assertTrue(WDLHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
         workflowVersion = "3.0-alpha";
-        assertTrue(wdlHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
+        assertTrue(WDLHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
         workflowVersion = "3.0-rc.1.0+build-1.0";
-        assertTrue(wdlHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
+        assertTrue(WDLHandler.versionIsGreaterThanCurrentlySupported(workflowVersion));
 
 
         workflowVersion = "";
         SourceFile srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertFalse(wdlHandler.getSemanticVersionString(srcFile.getContent()).isPresent());
+        assertFalse(WDLHandler.getSemanticVersionString(srcFile.getContent()).isPresent());
         workflowVersion = "version";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertFalse(wdlHandler.getSemanticVersionString(srcFile.getContent()).isPresent());
+        assertFalse(WDLHandler.getSemanticVersionString(srcFile.getContent()).isPresent());
         workflowVersion = "version goat";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "goat");
+        assertEquals("goat", WDLHandler.getSemanticVersionString(srcFile.getContent()).get());
         workflowVersion = "version draft-3";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "draft-3");
+        assertEquals("draft-3", WDLHandler.getSemanticVersionString(srcFile.getContent()).get());
         workflowVersion = "version 1.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "1.0");
+        assertEquals("1.0", WDLHandler.getSemanticVersionString(srcFile.getContent()).get());
         workflowVersion = "version 1.0.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "1.0.0");
+        assertEquals("1.0.0", WDLHandler.getSemanticVersionString(srcFile.getContent()).get());
         workflowVersion = "version 1.0-alpha";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "1.0-alpha");
+        assertEquals("1.0-alpha", WDLHandler.getSemanticVersionString(srcFile.getContent()).get());
         workflowVersion = "version 1.0-rc.2.5+build-2.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "1.0-rc.2.5+build-2.0");
+        assertEquals("1.0-rc.2.5+build-2.0", WDLHandler.getSemanticVersionString(srcFile.getContent()).get());
 
         workflowVersion = "version 3.6";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "3.6");
+        assertEquals("3.6", WDLHandler.getSemanticVersionString(srcFile.getContent()).get());
         workflowVersion = "version 1.4.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "1.4.0");
+        assertEquals("1.4.0", WDLHandler.getSemanticVersionString(srcFile.getContent()).get());
         workflowVersion = "version 3.0-alpha";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "3.0-alpha");
+        assertEquals("3.0-alpha", WDLHandler.getSemanticVersionString(srcFile.getContent()).get());
         workflowVersion = "version 3.0-rc.1.0+build-1.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertEquals(wdlHandler.getSemanticVersionString(srcFile.getContent()).get(), "3.0-rc.1.0+build-1.0");
+        assertEquals("3.0-rc.1.0+build-1.0", WDLHandler.getSemanticVersionString(srcFile.getContent()).get());
 
         workflowVersion = "version";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertFalse(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent()).isPresent());
+        assertFalse(WDLHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent()).isPresent());
         workflowVersion = "";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertFalse(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent()).isPresent());
+        assertFalse(WDLHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent()).isPresent());
         workflowVersion = "version 1.0";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertFalse(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent()).isPresent());
+        assertFalse(WDLHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent()).isPresent());
         workflowVersion = "version 3.6";
         srcFile = getSimpleWorkflowSourcefileWithVersion(workflowVersion);
-        assertTrue(wdlHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent())
+        assertTrue(WDLHandler.getUnsupportedWDLVersionErrorString(srcFile.getContent())
                 .get().contains("The version of this workflow is 3.6"));
     }
 
