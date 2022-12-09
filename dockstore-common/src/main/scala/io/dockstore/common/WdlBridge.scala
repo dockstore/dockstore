@@ -351,6 +351,7 @@ class WdlBridge {
   /**
     * Get the WomBundle for a workflow
     * @param filePath absolute path to file
+    * @param sourceFilePath the path of the source file
     * @return WomBundle
     */
   def getBundle(filePath: String, sourceFilePath: String): WomBundle = {
@@ -402,8 +403,31 @@ class WdlBridge {
         new WdlBiscayneLanguageFactory(ConfigFactory.empty()))
       .find(_.looksParsable(fileContent))
       .getOrElse(new WdlDraft2LanguageFactory(ConfigFactory.empty()))
-
     languageFactory
+  }
+
+  /**
+   * A workflow's 'version' field is considered valid if the WomBundle is retrieved successfully
+   * or the WomBundle throws an error that is not related to the version.
+   * Note that a workflow with no 'version' field is considered valid.
+   *
+   * @param filePath       absolute path to file
+   * @param sourceFilePath the path of the source file
+   * @return Boolean indicating if the 'version' field is valid in the workflow
+   */
+  def isVersionFieldValid(filePath: String, sourceFilePath: String): Boolean = {
+    try {
+      getBundle(filePath, sourceFilePath)
+    } catch {
+      case ex: WdlParser.SyntaxError =>
+        val error = ex.getMessage
+        val firstCodeLine = getFirstCodeLine(readFile(filePath))
+        // Need to check if the error is a parsing error because other syntax errors could be in the first line if there is no 'version' field
+        val errorContainsFirstCodeLine = firstCodeLine.isPresent && error.contains(firstCodeLine.get) && error.contains("Finished parsing without consuming all tokens")
+        val errorContainsVersion = error.contains("version")
+        return !errorContainsVersion && !errorContainsFirstCodeLine
+    }
+    true
   }
 
   /**

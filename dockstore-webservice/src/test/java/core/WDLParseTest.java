@@ -15,6 +15,7 @@
  */
 package core;
 
+import static io.dockstore.webservice.languages.WDLHandler.DEFAULT_WDL_VERSION;
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT;
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
 import static org.junit.Assert.assertEquals;
@@ -208,21 +209,56 @@ public class WDLParseTest {
 
     @Test
     public void testGetLanguageVersion() throws IOException {
+        // Test valid 'version' fields
         String languageVersion = "version 1.0";
         SourceFile sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
-        assertEquals("1.0", WDLHandler.getLanguageVersion(sourceFile.getContent()));
+        assertEquals("1.0", WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
 
-        languageVersion = "version 1.1"; //
+        languageVersion = "version 1.1";
         sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
-        assertEquals("1.1", WDLHandler.getLanguageVersion(sourceFile.getContent()));
+        assertEquals("1.1", WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
 
         languageVersion = ""; // No 'version' field specified
         sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
-        assertEquals(WDLHandler.DEFAULT_WDL_VERSION, WDLHandler.getLanguageVersion(sourceFile.getContent()));
+        assertEquals(WDLHandler.DEFAULT_WDL_VERSION, WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
 
-        languageVersion = "# A comment can precede the version\nversion 1.0"; // No 'version' field specified
+        languageVersion = "# A comment can precede the version\nversion 1.0";
         sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
-        assertEquals("1.0", WDLHandler.getLanguageVersion(sourceFile.getContent()));
+        assertEquals("1.0", WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
+
+        languageVersion = "version 1.0 # comment on the same line";
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertEquals("1.0", WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
+
+        // Test invalid 'version' fields
+        languageVersion = "version"; // User forgot to specify a numerical version
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertTrue(WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).isEmpty());
+
+        languageVersion = "version 1 0"; // User forgot to a '.'
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertTrue(WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).isEmpty());
+
+        languageVersion = "Version 1.0"; // Capitalize 'Version'
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertTrue(WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).isEmpty());
+
+        languageVersion = "vision 1.0"; // Misspelled version
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertTrue(WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).isEmpty());
+
+        // Test valid and invalid 'version' fields with a workflow containing syntax errors
+        languageVersion = "version 1.0\n\nimport brokenbrokenbroken"; // A workflow with a valid version but syntax errors
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertEquals("1.0", WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
+
+        languageVersion = "import brokenbrokenbroken"; // A workflow with no version and syntax errors
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertEquals(DEFAULT_WDL_VERSION, WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
+
+        languageVersion = "version 1 0\n\nimport brokenbrokenbroken"; // A workflow with an invalid version and syntax errors
+        sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
+        assertTrue(WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).isEmpty());
     }
 
     private static SourceFile getSimpleWorkflowSourcefileWithVersion(String version) throws IOException {
@@ -415,12 +451,14 @@ public class WDLParseTest {
         SourceFile sourceFile = new SourceFile();
         SourceFile importedFile = new SourceFile();
         try {
-            sourceFile.setContent(FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8));
+            final String primaryWDLString = FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8);
+            sourceFile.setContent(primaryWDLString);
             sourceFile.setAbsolutePath(primaryWDL.getAbsolutePath());
             sourceFile.setPath(primaryWDL.getAbsolutePath());
             sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
 
-            importedFile.setContent(FileUtils.readFileToString(importedWDL, StandardCharsets.UTF_8));
+            final String importedWDLString = FileUtils.readFileToString(importedWDL, StandardCharsets.UTF_8);
+            importedFile.setContent(importedWDLString);
             importedFile.setAbsolutePath(importedWDL.getAbsolutePath());
             importedFile.setPath("./md5sum.wdl");
             importedFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
@@ -439,13 +477,27 @@ public class WDLParseTest {
             assertTrue(entry.getDescriptorTypeVersions().contains("1.0"));
 
             // Make the primary descriptor version 1.1 so the primary descriptor and imported descriptor have different language versions
-            sourceFile.setContent(sourceFile.getContent().replace("version 1.0", "version 1.1"));
+            sourceFile.setContent(primaryWDLString.replace("version 1.0", "version 1.1"));
             entry = sInterface
-                    .parseWorkflowContent(primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet, new WorkflowVersion());
+                    .parseWorkflowContent(primaryWDL.getAbsolutePath(), sourceFile.getContent(), sourceFileSet, new WorkflowVersion());
             assertEquals("Should have two language versions", 2, entry.getDescriptorTypeVersions().size());
             assertTrue(entry.getDescriptorTypeVersions().contains("1.0") && entry.getDescriptorTypeVersions().contains("1.1"));
+
+            // Add a syntax error to the imported descriptor
+            importedFile.setContent(importedWDLString.replace("version 1.0", "version 1.0\n\nimport brokenbrokenbroken"));
+            entry = sInterface
+                    .parseWorkflowContent(primaryWDL.getAbsolutePath(), sourceFile.getContent(), sourceFileSet, new WorkflowVersion());
+            assertEquals("Should have two language versions", 2, entry.getDescriptorTypeVersions().size());
+            assertTrue(entry.getDescriptorTypeVersions().contains("1.0") && entry.getDescriptorTypeVersions().contains("1.1"));
+
+            // Use an invalid 'version' for the imported file. The imported source file should not have a version set
+            importedFile.setContent(importedWDLString.replace("version 1.0", "version 1 0"));
+            entry = sInterface
+                    .parseWorkflowContent(primaryWDL.getAbsolutePath(), sourceFile.getContent(), sourceFileSet, new WorkflowVersion());
+            assertEquals("Should have one language version", 1, entry.getDescriptorTypeVersions().size());
+            assertTrue(entry.getDescriptorTypeVersions().contains("1.1"));
         } catch (Exception e) {
-            Assert.fail("Should properly parse file and imports.");
+            Assert.fail("Should properly parse language versions.");
         }
     }
 }

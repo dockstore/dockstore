@@ -135,7 +135,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 // Set language version for descriptor source files
                 for (SourceFile sourceFile : sourceFiles) {
                     if (sourceFile.getType() == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
-                        sourceFile.setTypeVersion(getLanguageVersion(sourceFile.getContent()));
+                        sourceFile.setTypeVersion(getLanguageVersion(sourceFile.getAbsolutePath(), sourceFiles).orElse(null));
                     }
                 }
                 version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
@@ -577,11 +577,50 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     /**
      * Get the version from the WDL descriptor file content. If no version is found, return the default WDL version defined by the WDL spec.
-     * @param descriptorContent
+     * If the version is invalid, return Optional.empty()
+     *
+     * @param primaryDescriptorPath The absolute path of the descriptor SourceFile to get the 'version' from
+     * @param sourceFiles           A set of SourceFiles containing the primary descriptor SourceFile and any imports
      * @return
      */
-    public static String getLanguageVersion(String descriptorContent) {
-        return getSemanticVersionString(descriptorContent).orElse(DEFAULT_WDL_VERSION);
+    public static Optional<String> getLanguageVersion(String primaryDescriptorPath, Set<SourceFile> sourceFiles) {
+        WdlBridge wdlBridge = new WdlBridge();
+
+        Optional<SourceFile> primaryDescriptor = sourceFiles.stream().filter(sourceFile -> sourceFile.getAbsolutePath().equals(primaryDescriptorPath)).findFirst();
+        if (primaryDescriptor.isEmpty()) {
+            return Optional.empty();
+        }
+
+        final String primaryDescriptorContent = primaryDescriptor.get().getContent();
+        final Map<String, String> secondaryFiles = sourceFiles.stream()
+                .filter(sourceFile -> !sourceFile.getAbsolutePath().equals(primaryDescriptorPath))
+                .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
+        wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
+
+        File tempMainDescriptor = null;
+        try {
+            tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+            Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptorContent);
+            // It's possible for isVersionValid to be false for a valid 'version' so we must double-check by trying to find a 'version' string in the content
+            // Ex: Cromwell doesn't support WDL 1.1 so a 'version 1.1' workflow will return false for isVersionValid
+            final boolean isVersionValid = wdlBridge.isVersionFieldValid(tempMainDescriptor.getAbsolutePath(), primaryDescriptorPath);
+            Optional<String> parsedVersionString = getSemanticVersionString(primaryDescriptorContent);
+
+            if (parsedVersionString.isEmpty()) {
+                if (isVersionValid) {
+                    // Return default version if there's no parsed 'version' field and the version is valid (no 'version' is valid)
+                    return Optional.of(DEFAULT_WDL_VERSION);
+                }
+                // If there's no parsed 'version' string and the version isn't valid, then there's likely something wrong with the version
+                return Optional.empty();
+            }
+            return parsedVersionString;
+        } catch (IOException e) {
+            LOG.error("Error creating temporary file for descriptor {}", primaryDescriptorPath);
+            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } finally {
+            FileUtils.deleteQuietly(tempMainDescriptor);
+        }
     }
 
     /**
@@ -600,8 +639,11 @@ public class WDLHandler implements LanguageHandlerInterface {
         // however some very old WDL scripts may not have a version string line
         // Check to see if we found the first line of code and that it has two parts
         if (firstCodeLine.isPresent()) {
+            String wdlCommentSymbol = "#";
             String semanticVersionLine = firstCodeLine.get();
-            String[] semanticVersionStringArray = semanticVersionLine.split("\\s+");
+            // Remove comment in lines like 'version 1.0 # this is a comment'
+            String semanticVersionStringWithoutComments = semanticVersionLine.split(wdlCommentSymbol)[0];
+            String[] semanticVersionStringArray = semanticVersionStringWithoutComments.split("\\s+");
             // If there is a version string line the first part should be 'version'
             if (semanticVersionStringArray[0].equals("version") && semanticVersionStringArray.length == 2) {
                 // Return the version such as '1.0' or 'draft-3'

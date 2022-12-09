@@ -1249,7 +1249,7 @@ public class WorkflowIT extends BaseIT {
         sourceFiles.forEach(sourceFile -> {
             // This workflow has three descriptor files and no test file
             assertEquals(DescriptorLanguage.FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
-            assertEquals("Language version of WDL descriptors with 'version' field should be default version", WDLHandler.DEFAULT_WDL_VERSION, sourceFile.getTypeVersion());
+            assertEquals("Language version of WDL descriptors with no 'version' field should be default version", WDLHandler.DEFAULT_WDL_VERSION, sourceFile.getTypeVersion());
         });
         assertEquals("Should only have one language version", 1, workflowVersion.getDescriptorTypeVersions().size());
         assertTrue(workflowVersion.getDescriptorTypeVersions().contains(WDLHandler.DEFAULT_WDL_VERSION));
