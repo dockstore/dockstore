@@ -561,13 +561,14 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "A post method is required by satellizer to send the GitHub token", response = Token.class)
     public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
-        try {
-            JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
+        JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
+        if (element != null) {
             JsonObject satellizerObject = element.getAsJsonObject();
             final String code = getCodeFromSatellizerObject(satellizerObject);
             final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
             return handleGitHubUser(null, code, registerUser);
-        } catch (NullPointerException ex) {
+        }
+        else {
             LOG.error("Retrieving accessToken was unsuccessful");
             throw new CustomWebApplicationException("Could not retrieve github.com token", HttpStatus.SC_BAD_REQUEST);
         }
