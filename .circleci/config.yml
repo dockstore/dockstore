@@ -160,6 +160,7 @@ jobs:
       TESTING_PROFILE: language-parsing-tests
     steps:
       - setup_machine
+      - install-pip
       - run:
           name: install pip dependencies
           command: scripts/install-tests.sh
