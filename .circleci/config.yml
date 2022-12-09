@@ -420,6 +420,20 @@ commands:
             tar -zxf git-secrets-1.3.0.tar.gz
             cd git-secrets-1.3.0
             sudo make install
+
+  install-pip-dependencies:
+    steps:
+      - run:
+          name: install pip
+          command: |
+            export DEBIAN_FRONTEND=noninteractive
+            sudo apt update
+            sudo apt install libxml2-dev libxslt-dev
+            # For debug purposes, a python3 version was installed in the image, pip is untagged
+            python3 --version
+            pip3 --version
+            alias pip=pip3            
+
   install-pip:
     steps:
       - run:
