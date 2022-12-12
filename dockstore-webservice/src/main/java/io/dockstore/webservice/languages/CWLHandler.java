@@ -394,7 +394,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      * @param listOrIdMap the object to be converted
      * @param idMapKey the key in the chld maps that each key in the parent map corresponds to
      */
-    private List<Object> convertToList(Object listOrIdMap, String idMapKey) {
+    private List<Object> convertToList(Object listOrIdMap, String idMapKey, String where) {
         if (listOrIdMap instanceof Map) {
             Map<Object, Object> map = (Map<Object, Object>)listOrIdMap;
             List<Object> list = new ArrayList<>();
@@ -404,7 +404,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     valueMap.put(idMapKey, key);
                     list.add(valueMap);
                 } else {
-                    throw new CustomWebApplicationException("malformed cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
+                    parseError("malformed cwl", where);
                 }
             });
             return list;
@@ -413,27 +413,41 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         } else if (listOrIdMap == null) {
             return null;
         } else {
-            throw new CustomWebApplicationException("malformed cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            parseError("malformed cwl", where);
         }
     }
 
-    private Map<Object, Object> convertRequirementsAndHintsToLists(Map<Object, Object> map) {
+    private Map<Object, Object> convertRequirementsAndHintsToLists(Map<Object, Object> map, String where) {
         map = new LinkedHashMap<>(map);
-        map.computeIfPresent("hints", (k, v) -> convertToList(v, "class"));
-        map.computeIfPresent("requirements", (k, v) -> convertToList(v, "class"));
+        map.computeIfPresent("hints", (k, v) -> convertToList(v, "class", where));
+        map.computeIfPresent("requirements", (k, v) -> convertToList(v, "class", where));
         return map;
     }
 
+    /**
+     * Parse the object to the given class.
+     * @param obj the object to parse
+     * @param klass the class to parse to
+     * @param description description of the object we are parsing, for error reporting purposes
+     */
     private <T> T parseWithClass(Object obj, Class<T> klass, String description) {
         if (obj instanceof Map) {
             Gson gson = CWL.getTypeSafeCWLToolDocument();
-            Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)obj);
+            Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)obj, "in requirements/hints of " + description);
             return gson.fromJson(gson.toJson(map), klass);
         } else {
-            String message = CWL_PARSE_ERROR + String.format("malformed %s", description);
-            LOG.error(message);
-            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            parseError("malformed cwl", "in " + description);
         }
+    }
+
+    private void parseError(String reason, String where) {
+        String message = reason;
+        if (where != null) {
+            message = String.format("%s %s", message, where);
+        }
+        message = CWL_PARSE_ERROR + message;
+        LOG.error(message);
+        throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
     }
 
     private Workflow parseWorkflow(Object workflowObj) {
@@ -489,7 +503,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         RequirementOrHintState hintState = addToRequirementOrHintState(parentHintState, workflow.getHints());
 
         // Iterate through steps to find dependencies and docker requirements.
-        for (Object workflowStepObj: convertToList(workflow.getSteps(), "id")) {
+        for (Object workflowStepObj: convertToList(workflow.getSteps(), "id", "in workflow steps")) {
 
             WorkflowStep workflowStep = parseWorkflowStep(workflowStepObj);
 
@@ -546,7 +560,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             } else if (isOperation(runObj)) {
                 stepToType.put(nodeStepId, OPERATION_TYPE);
-                List<Object> operationHints = convertToList(((Map<Object, Object>)runObj).get("hints"), "class");
+                List<Object> operationHints = convertToList(((Map<Object, Object>)runObj).get("hints"), "class", "in Operation hints");
                 currentPath = getDockstoreMetadataHintValue(operationHints, "path");
 
             } else if (runObj instanceof String) {
