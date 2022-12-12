@@ -393,6 +393,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      * If the passed object is a list, it is returned unchanged.
      * @param listOrIdMap the object to be converted
      * @param idMapKey the key in the chld maps that each key in the parent map corresponds to
+     * @param where a description of the location of this construct in the CWL file (ex: "in workflow step", "at line 13")
      */
     private List<Object> convertToList(Object listOrIdMap, String idMapKey, String where) {
         if (listOrIdMap instanceof Map) {
@@ -404,7 +405,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     valueMap.put(idMapKey, key);
                     list.add(valueMap);
                 } else {
-                    parseError("malformed cwl", where);
+                    String message = CWL_PARSE_ERROR + "malformed cwl " + where;
+                    LOG.error(message);
+                    throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
                 }
             });
             return list;
@@ -413,10 +416,17 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         } else if (listOrIdMap == null) {
             return null;
         } else {
-            parseError("malformed cwl", where);
+            String message = CWL_PARSE_ERROR + "malformed cwl " + where;
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
 
+    /**
+     * Convert the hints and requirements in the given map to list format.
+     * @param map map to be converted
+     * @param where where a description of the location of this construct in the CWL file (ex: "in workflow step", "at line 13")
+     */
     private Map<Object, Object> convertRequirementsAndHintsToLists(Map<Object, Object> map, String where) {
         map = new LinkedHashMap<>(map);
         map.computeIfPresent("hints", (k, v) -> convertToList(v, "class", where));
@@ -433,21 +443,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private <T> T parseWithClass(Object obj, Class<T> klass, String description) {
         if (obj instanceof Map) {
             Gson gson = CWL.getTypeSafeCWLToolDocument();
-            Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)obj, "in requirements/hints of " + description);
+            Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)obj, "in the requirements/hints of " + description);
             return gson.fromJson(gson.toJson(map), klass);
         } else {
-            parseError("malformed cwl", "in " + description);
+            String message = CWL_PARSE_ERROR + "malformed cwl in " + description;
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
-    }
-
-    private void parseError(String reason, String where) {
-        String message = reason;
-        if (where != null) {
-            message = String.format("%s %s", message, where);
-        }
-        message = CWL_PARSE_ERROR + message;
-        LOG.error(message);
-        throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
     }
 
     private Workflow parseWorkflow(Object workflowObj) {
