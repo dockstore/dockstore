@@ -170,7 +170,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
 
         // https://github.com/ga4gh/tool-registry-service-schemas/issues/229 (text only doesn't make sense)
-        boolean consumesHeaderTextOnly = value.getAcceptableMediaTypes().stream().allMatch(foo -> foo.isCompatible(MediaType.TEXT_PLAIN_TYPE));
+        boolean consumesHeaderTextOnly = value.getAcceptableMediaTypes().stream().allMatch(foo -> foo.isCompatible(MediaType.TEXT_PLAIN_TYPE) && !foo.isCompatible(MediaType.APPLICATION_JSON_TYPE));
         if (consumesHeaderTextOnly) {
             return Response.status(Status.BAD_REQUEST).build();
         }
