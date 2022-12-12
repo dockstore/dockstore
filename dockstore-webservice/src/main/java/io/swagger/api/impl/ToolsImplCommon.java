@@ -57,8 +57,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -157,7 +157,7 @@ public final class ToolsImplCommon {
         }
         tool.setAliases(new ArrayList<>(container.getAliases().keySet()));
 
-        for (Version version : inputVersions) {
+        for (Version<?> version : inputVersions) {
             if (shouldHideToolVersion(version, showHiddenTags, container.isHosted())) {
                 continue;
             }
@@ -207,8 +207,6 @@ public final class ToolsImplCommon {
             }
 
             toolVersion.setDescriptorType(MoreObjects.firstNonNull(toolVersion.getDescriptorType(), Lists.newArrayList()));
-            // hook-up DOCK-2282 here
-            toolVersion.setDescriptorTypeVersion(new HashMap<>());
             // ensure that descriptor is non-null before adding to list
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
@@ -223,6 +221,8 @@ public final class ToolsImplCommon {
                 if (!descriptorType.isEmpty()) {
                     EnumSet<DescriptorType> set = EnumSet.copyOf(descriptorType);
                     toolVersion.setDescriptorType(Lists.newArrayList(set));
+                    // can assume in Dockstore that a single version only has one language
+                    toolVersion.setDescriptorTypeVersion(Map.of(set.stream().findFirst().get().toString(), Lists.newArrayList(version.getDescriptorTypeVersions())));
                 }
                 tool.getVersions().add(toolVersion);
             }
@@ -496,13 +496,11 @@ public final class ToolsImplCommon {
         String[] toolVerifiedSources = version.getVerifiedSources();
         toolVersion.setVerifiedSource(Lists.newArrayList(toolVerifiedSources));
         toolVersion.setContainerfile(false);
-        // hook-up DOCK-2282 here
-        toolVersion.setDescriptorTypeVersion(new HashMap<>());
         return toolVersion;
     }
 
     /**
-     * Set most of the GA4GH's Tool information that is not dependant on Dockstore's Tags or WorkflowVersions
+     * Set most of the GA4GH's Tool information that is not dependent on Dockstore's Tags or WorkflowVersions
      *
      * @param tool      The GA4GH Tool that will be modified
      * @param container The Dockstore Tool or Workflow

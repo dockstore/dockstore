@@ -33,6 +33,8 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -1237,6 +1239,13 @@ public class WorkflowIT extends BaseIT {
         });
         assertEquals("Should only have one language version", 1, workflowVersion.getDescriptorTypeVersions().size());
         assertTrue(workflowVersion.getDescriptorTypeVersions().contains("1.0"));
+
+        // test that versions coming back from TRS 2.0.1 look sane
+        workflowsApi.publish1(workflow.getId(), new io.dockstore.openapi.client.model.PublishRequest().publish(true));
+        final Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
+        final ToolVersion toolVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", "master");
+        final Map<String, List<String>> descriptorTypeVersion = toolVersion.getDescriptorTypeVersion();
+        assertTrue(descriptorTypeVersion.containsKey("WDL") && descriptorTypeVersion.get("WDL").contains("1.0"));
 
         // Test WDL workflow with imports
         workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl", "/Dockstore.wdl", "", "wdl", "/test.json");
