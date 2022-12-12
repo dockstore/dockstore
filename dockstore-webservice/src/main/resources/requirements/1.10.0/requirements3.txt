@@ -1,6 +1,6 @@
 bagit==1.7.0
 CacheControl==0.11.7
-certifi==2020.6.20
+certifi==2022.12.7
 chardet==3.0.4
 coloredlogs==14.0
 cwl-runner==1.0
