@@ -16,7 +16,6 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
-import static io.dockstore.webservice.resources.UserResource.USER_PROFILES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -30,9 +29,6 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
-import io.dockstore.openapi.client.model.PrivilegeRequest;
-import io.dockstore.openapi.client.model.UserInfo;
-import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.helpers.AppToolHelper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -48,10 +44,8 @@ import io.swagger.client.model.OrganizationUpdateTime;
 import io.swagger.client.model.Profile;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -67,9 +61,12 @@ import org.junit.rules.ExpectedException;
  * Tests operations from the UserResource
  *
  * @author dyuen
+ * @deprecated uses old swagger-based clients, new tests should only use openapi
+ *
  */
 @Category(ConfidentialTest.class)
-public class UserResourceIT extends BaseIT {
+@Deprecated(since = "1.14")
+public class UserResourceSwaggerIT extends BaseIT {
     private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
     private static final String INSTALLATION_ID = "1179416";
 
@@ -92,7 +89,7 @@ public class UserResourceIT extends BaseIT {
     }
 
     @Test
-    public void testAddUserToOrgs() throws Exception {
+    public void testAddUserToOrgs() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
@@ -187,12 +184,6 @@ public class UserResourceIT extends BaseIT {
 
         openApiUserWebClient.banUser(false, user.getId());
         assertFalse(testingPostgres.runSelectStatement(String.format("select isbanned from enduser where id = '%s'", user.getId()), boolean.class));
-    }
-
-    @Test
-    public void longAvatarUrlTest() {
-        String generatedString = RandomStringUtils.randomAlphanumeric(9001);
-        testingPostgres.runUpdateStatement(String.format("update enduser set avatarurl='%s'", generatedString));
     }
 
     /**
@@ -354,34 +345,7 @@ public class UserResourceIT extends BaseIT {
         assertEquals(3, userCount);
     }
 
-    @Test
-    public void testGettingUserEmails() {
-        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
-        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi adminUserApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
 
-        List<UserInfo> userInfo = adminUserApi.getAllUserEmails();
-        assertTrue(userInfo.size() >= 2);
-
-
-        testingPostgres.runUpdateStatement("UPDATE user_profile set email = 'fakeEmail@example.com'");
-        userInfo = adminUserApi.getAllUserEmails();
-        userInfo.stream().forEach(info -> {
-            assertNotNull(info.getDockstoreUsername());
-            assertEquals("fakeEmail@example.com", info.getThirdPartyEmail());
-            assertNotNull(info.getThirdPartyUsername());
-            assertNotNull(info.getTokenType());
-        });
-
-        try {
-            userApi.getAllUserEmails();
-            fail("Should not be able to successfully call endpoint unless the user is an admin.");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertTrue(ex.getMessage().contains("User not authorized."));
-        }
-
-    }
 
     @Test
     public void testDeletedUsernameReuse() {
@@ -547,204 +511,7 @@ public class UserResourceIT extends BaseIT {
         fail("should not be able to get here");
     }
 
-    @Test
-    public void testSetUserPrivilege() {
-        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-
-        io.dockstore.openapi.client.model.PrivilegeRequest privilegeRequest = new PrivilegeRequest();
-        io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
-        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
-        io.dockstore.openapi.client.model.User admin = adminApi.getUser();
-        io.dockstore.openapi.client.model.User user = userApi.getUser();
-
-        privilegeRequest.setAdmin(false);
-        privilegeRequest.setCurator(false);
-        adminApi.setUserPrivileges(privilegeRequest, user.getId());
-        assertFalse(userApi.getUser().isIsAdmin());
-        assertFalse(userApi.getUser().isCurator());
-
-        privilegeRequest.setAdmin(false);
-        privilegeRequest.setCurator(true);
-        adminApi.setUserPrivileges(privilegeRequest, user.getId());
-        assertFalse(userApi.getUser().isIsAdmin());
-        assertTrue(userApi.getUser().isCurator());
-
-        // At this point in the code, the user is a curator.
-        for (boolean adminValue: Arrays.asList(Boolean.FALSE, Boolean.TRUE)) {
-            for (boolean curatorValue: Arrays.asList(Boolean.FALSE, Boolean.TRUE)) {
-                privilegeRequest.setAdmin(adminValue);
-                privilegeRequest.setCurator(curatorValue);
-                try {
-                    userApi.setUserPrivileges(privilegeRequest, admin.getId());
-                    fail("Curator should not be able to set any permissions");
-                } catch (io.dockstore.openapi.client.ApiException ex) {
-                    assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
-                }
-            }
-        }
-
-        privilegeRequest.setAdmin(true);
-        privilegeRequest.setCurator(false);
-        adminApi.setUserPrivileges(privilegeRequest, user.getId());
-        assertTrue(userApi.getUser().isIsAdmin());
-        assertFalse(userApi.getUser().isCurator());
-
-        privilegeRequest.setAdmin(false);
-        privilegeRequest.setCurator(false);
-        try {
-            adminApi.setUserPrivileges(privilegeRequest, admin.getId());
-            fail("User should not be able to set their own permissions");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
-        }
-
-        privilegeRequest.setAdmin(false);
-        privilegeRequest.setCurator(false);
-        adminApi.setUserPrivileges(privilegeRequest, user.getId());
-        assertFalse(userApi.getUser().isIsAdmin());
-        assertFalse(userApi.getUser().isCurator());
-        try {
-            userApi.setUserPrivileges(privilegeRequest, admin.getId());
-            fail("User with no curator or admin rights should not be able to access the API call");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
-        }
-    }
-
-    /**
-     * tests that a normal user can grab the user profile for a different user to support user pages
-     */
-    @Test
-    public void testUserProfiles() {
-        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
-        // The API call updateUserMetadata() should not throw an error and exit if any users' tokens are out of date or absent
-        // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
-        adminApi.updateUserMetadata();
-
-        io.dockstore.openapi.client.ApiClient unauthUserWebClient = CommonTestUtilities.getOpenAPIWebClient(false, null, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi unauthUserApi = new io.dockstore.openapi.client.api.UsersApi(unauthUserWebClient);
 
 
-        final io.dockstore.openapi.client.model.User userProfile = unauthUserApi.listUser(USER_2_USERNAME, USER_PROFILES);
-        assertFalse(userProfile.getUserProfiles().isEmpty());
 
-        // check to see that DB actually had an email in the first place and the test above wasn't true by default
-        final String email = testingPostgres.runSelectStatement(String.format("select email from user_profile  WHERE username = '%s' and token_type = 'github.com'", "DockstoreTestUser2"),
-            String.class);
-        assertFalse(email.isEmpty());
-    }
-
-    /**
-     * Tests the endpoint used to sync all users' Github information called by a user who has a valid GitHub token
-     * and one user who has a missing or outdated GitHub token
-     */
-    @Test
-    public void testUpdateUserMetadataWithTokens() {
-        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
-        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
-        io.dockstore.openapi.client.model.User admin = adminApi.getUser();
-        io.dockstore.openapi.client.model.Profile userProfile = userApi.getUser().getUserProfiles().get("github.com");
-
-        // Should add a test above this to check that the API call should pass once the admin tokens are up to date
-        // Testing that the updateLoggedInUserMetadata() should fail if GitHub tokens are expired or absent
-        testingPostgres.runUpdateStatement(String.format("DELETE FROM token WHERE userid = %d and tokensource = 'github.com'", admin.getId()));
-        try {
-            adminApi.updateLoggedInUserMetadata("github.com");
-            fail("API call should fail and throw an error when no GitHub tokens are found or if tokens are out of date");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
-        }
-
-        // DockstoreUser2's profile elements should be initially set to null since the GitHub metadata isn't synced yet
-        assertNull(userProfile.getName());
-        assertNull(userProfile.getAvatarURL());
-        assertNull(userProfile.getLocation());
-        assertNull(userProfile.getBio());
-        assertNull(userProfile.getCompany());
-        assertNull(userProfile.getLink());
-
-        // The API call updateUserMetadata() should not throw an error and exit if any users' tokens are out of date or absent
-        // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
-        adminApi.updateUserMetadata();
-
-        userProfile = userApi.getUser().getUserProfiles().get("github.com");
-        assertNull(userProfile.getName());
-        assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
-        assertEquals("Toronto", userProfile.getLocation());
-        assertEquals("I am a test user", userProfile.getBio());
-        assertNull(userProfile.getCompany());
-        assertNull(userProfile.getLink());
-        assertEquals("DockstoreTestUser2", userProfile.getUsername());
-    }
-
-    /**
-     * Tests the endpoint while all users have no valid GitHub token and the caller also does not have a valid token
-     */
-    @Test
-    public void testUpdateUserMetadataWithoutTokens() {
-        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
-        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
-        io.dockstore.openapi.client.model.Profile userProfile = userApi.getUser().getUserProfiles().get("github.com");
-
-        // Delete all of the tokens (except for Dockstore tokens) for every user
-        testingPostgres.runUpdateStatement("DELETE FROM token WHERE tokensource <> 'dockstore'");
-
-        assertNull(userProfile.getName());
-        assertNull(userProfile.getAvatarURL());
-        assertNull(userProfile.getLocation());
-        assertNull(userProfile.getBio());
-        assertNull(userProfile.getCompany());
-        assertNull(userProfile.getLink());
-
-        // Call the API method while the caller has no token
-        // An error should not be thrown and the call should pass, but every user should not have their GitHub information synced
-        adminApi.updateUserMetadata();
-
-        userProfile = userApi.getUser().getUserProfiles().get("github.com");
-        assertNull(userProfile.getName());
-        assertNull(userProfile.getAvatarURL());
-        assertNull(userProfile.getLocation());
-        assertNull(userProfile.getBio());
-        assertNull(userProfile.getCompany());
-        assertNull(userProfile.getLink());
-    }
-
-    @Test
-    public void testGetStarredWorkflowsAndServices() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
-        final long userId = usersApi.getUser().getId();
-
-        // Add service
-        workflowsApi.handleGitHubRelease("refs/tags/1.0", INSTALLATION_ID, SERVICE_REPO, USER_2_USERNAME);
-        assertEquals(1, usersApi.userServices(userId).size());
-        assertEquals(0, usersApi.userWorkflows(userId).size());
-
-        // Star service
-        io.dockstore.openapi.client.model.Workflow service = workflowsApi.getWorkflowByPath("github.com/" + SERVICE_REPO, WorkflowSubClass.SERVICE, "");
-        io.dockstore.openapi.client.model.StarRequest starRequest = new io.dockstore.openapi.client.model.StarRequest().star(true);
-        workflowsApi.starEntry1(service.getId(), starRequest);
-        assertEquals(1, usersApi.getStarredServices().size());
-        assertEquals(0, usersApi.getStarredWorkflows().size());
-
-        // Add workflow
-        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME,
-                "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
-        workflow = workflowsApi.refresh1(workflow.getId(), false);
-        assertEquals(1, usersApi.userServices(userId).size());
-        assertEquals(1, usersApi.userWorkflows(userId).size());
-
-        // Star workflow
-        workflowsApi.starEntry1(workflow.getId(), starRequest);
-        assertEquals(1, usersApi.getStarredServices().size());
-        assertEquals(1, usersApi.getStarredWorkflows().size());
-    }
 }
