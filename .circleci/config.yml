@@ -427,7 +427,11 @@ commands:
           name: install pip
           command: |
             sudo apt update
+            # https://askubuntu.com/questions/1367139/apt-get-upgrade-auto-restart-services
             sudo NEEDRESTART_MODE=a apt install libxml2-dev libxslt-dev
+            # https://bytemeta.vip/repo/ckan/ckanext-dcat/issues/205
+            pip install --force-reinstall 'setuptools<58.0.0'
+            
             # For debug purposes, a python3 version was installed in the image, pip is untagged
             python3 --version
             pip3 --version
