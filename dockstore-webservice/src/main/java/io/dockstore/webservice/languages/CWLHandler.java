@@ -15,7 +15,6 @@
  */
 package io.dockstore.webservice.languages;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -387,7 +386,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * TODO
+     * Convert the passed object to list representation.  CWL allows some lists of object to be
+     * represented in either of two forms:
+     * https://www.commonwl.org/v1.2/Workflow.html#map
+     * If the passed object is in map form, it is converted to the corresponding list.
+     * If the passed object is a list, it is returned unchanged.
+     * @param listOrIdMap the object to be converted
+     * @param idMapKey the key in the chld maps that each key in the parent map corresponds to
      */
     private List<Object> convertToList(Object listOrIdMap, String idMapKey) {
         if (listOrIdMap instanceof Map) {
@@ -414,8 +419,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     private Map<Object, Object> convertRequirementsAndHintsToLists(Map<Object, Object> map) {
         map = new LinkedHashMap<>(map);
-        map.put("hints", convertToList(map.get("hints"), "class"));
-        map.put("requirements", convertToList(map.get("requirements"), "class"));
+        map.computeIfPresent("hints", (k, v) -> convertToList(v, "class"));
+        map.computeIfPresent("requirements", (k, v) -> convertToList(v, "class"));
         return map;
     }
 
@@ -425,7 +430,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)obj);
             return gson.fromJson(gson.toJson(map), klass);
         } else {
-            throw new CustomWebApplicationException(String.format("malformed %s", description), HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            String message = CWL_PARSE_ERROR + String.format("malformed %s", description);
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
 
@@ -465,6 +472,16 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return isProcessWithClass(candidate, "Operation");
     }
 
+    private String getWorkflowStepId(WorkflowStep workflowStep) {
+        CharSequence id = workflowStep.getId();
+        if (id == null) {
+            String message = CWL_PARSE_ERROR + "missing id in workflow step";
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+        }
+        return id.toString();
+    }
+
     @SuppressWarnings("checkstyle:ParameterNumber")
     private void processWorkflow(Workflow workflow, String parentStepId, RequirementOrHintState parentRequirementState, RequirementOrHintState parentHintState, int depth, LanguageHandlerInterface.Type type, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         // Join parent and current requirements and hints.
@@ -476,7 +493,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             WorkflowStep workflowStep = parseWorkflowStep(workflowStepObj);
 
-            String thisStepId = checkNonNull(workflowStep.getId()).toString();
+            String thisStepId = getWorkflowStepId(workflowStep);
             String fullStepId = parentStepId == null ? thisStepId : parentStepId + "." + thisStepId;
             String nodeStepId = NODE_PREFIX + fullStepId;
 
