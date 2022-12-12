@@ -7941,6 +7941,10 @@ definitions:
         description: "The checksum(s) of the sourcefile's content"
         items:
           $ref: "#/definitions/Checksum"
+      typeVersion:
+        type: "string"
+        position: 7
+        description: "The language version for the given descriptor file type"
   StarRequest:
     type: "object"
     properties:
@@ -7958,6 +7962,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
+      descriptorTypeVersions:
+        type: "array"
+        description: "The language versions for the version's descriptor files"
+        items:
+          type: "string"
       id:
         type: "integer"
         format: "int64"
@@ -8638,6 +8647,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
+      descriptorTypeVersions:
+        type: "array"
+        description: "The language versions for the version's descriptor files"
+        items:
+          type: "string"
       id:
         type: "integer"
         format: "int64"
@@ -9064,6 +9078,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
+      descriptorTypeVersions:
+        type: "array"
+        description: "The language versions for the version's descriptor files"
+        items:
+          type: "string"
       id:
         type: "integer"
         format: "int64"
