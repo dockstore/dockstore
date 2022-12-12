@@ -8832,6 +8832,9 @@ components:
           - GXFORMAT2_TEST_FILE
           - DOCKSTORE_SWL
           - SWL_TEST_JSON
+        typeVersion:
+          type: string
+          description: The language version for the given descriptor file type
         verifiedBySource:
           type: object
           additionalProperties:
@@ -8953,6 +8956,16 @@ components:
           enum:
           - README
           - DESCRIPTOR
+        descriptorTypeVersions:
+          type: array
+          items:
+            type: string
+        descriptorTypeVersionsFromSourceFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          uniqueItems: true
+          writeOnly: true
         dirtyBit:
           type: boolean
         dockerfile_path:
@@ -9559,6 +9572,16 @@ components:
           enum:
           - README
           - DESCRIPTOR
+        descriptorTypeVersions:
+          type: array
+          items:
+            type: string
+        descriptorTypeVersionsFromSourceFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          uniqueItems: true
+          writeOnly: true
         dirtyBit:
           type: boolean
         doiStatus:
@@ -9887,6 +9910,16 @@ components:
           enum:
           - README
           - DESCRIPTOR
+        descriptorTypeVersions:
+          type: array
+          items:
+            type: string
+        descriptorTypeVersionsFromSourceFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          uniqueItems: true
+          writeOnly: true
         dirtyBit:
           type: boolean
         doiStatus:
