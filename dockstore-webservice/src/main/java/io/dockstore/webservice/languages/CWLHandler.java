@@ -16,7 +16,6 @@
 package io.dockstore.webservice.languages;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -84,7 +83,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static final String EXPRESSION_TOOL_TYPE = "expressionTool";
     private static final String OPERATION_TYPE = "operation";
     private static final int CODE_SNIPPET_LENGTH = 50;
-    private static final ObjectMapper MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
