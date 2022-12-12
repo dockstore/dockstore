@@ -207,7 +207,7 @@ public final class ToolsImplCommon {
             }
 
             toolVersion.setDescriptorType(MoreObjects.firstNonNull(toolVersion.getDescriptorType(), Lists.newArrayList()));
-            // hook-up DOCK-5247 here
+            // hook-up DOCK-2282 here
             toolVersion.setDescriptorTypeVersion(new HashMap<>());
             // ensure that descriptor is non-null before adding to list
             if (!toolVersion.getDescriptorType().isEmpty()) {
@@ -496,7 +496,7 @@ public final class ToolsImplCommon {
         String[] toolVerifiedSources = version.getVerifiedSources();
         toolVersion.setVerifiedSource(Lists.newArrayList(toolVerifiedSources));
         toolVersion.setContainerfile(false);
-        // hook-up DOCK-5247 here
+        // hook-up DOCK-2282 here
         toolVersion.setDescriptorTypeVersion(new HashMap<>());
         return toolVersion;
     }

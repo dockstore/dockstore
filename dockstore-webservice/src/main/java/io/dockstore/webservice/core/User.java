@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -562,6 +563,7 @@ public class User implements Principal, Comparable<User>, Serializable {
      * The order of the properties are important, the UI lists these properties in this order.
      */
     @Embeddable
+    @JsonFilter("emailFilter")
     public static class Profile implements Serializable {
         @Column(columnDefinition = "text")
         public String name;
