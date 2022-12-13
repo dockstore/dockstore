@@ -798,7 +798,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         };
     }
 
-    /**
+    /**W
      * Return a matching source file
      *
      * @param sourceFiles      files to look through
@@ -833,13 +833,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         // check for incompatible format option and header combination
         boolean zipFormat = "zip".equalsIgnoreCase(format);
-        boolean consumesHeaderJsonOnly = value.getAcceptableMediaTypes().stream().allMatch(foo -> foo.isCompatible(MediaType.APPLICATION_JSON_TYPE));
+        boolean consumesHeaderJsonOnly = value.getAcceptableMediaTypes().stream().allMatch(mediaType -> mediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE));
         if (zipFormat && consumesHeaderJsonOnly) {
             return Response.status(Status.BAD_REQUEST).build();
         }
 
         // accept header should also work
-        boolean consumesHeaderZipOnly = value.getAcceptableMediaTypes().stream().allMatch(foo -> foo.getType().equals("application") && foo.getSubtype().equals("zip"));
+        boolean consumesHeaderZipOnly = value.getAcceptableMediaTypes().stream().allMatch(mediaType -> mediaType.getType().equals("application") && mediaType.getSubtype().equals("zip"));
 
         ParsedRegistryID parsedID = null;
         try {

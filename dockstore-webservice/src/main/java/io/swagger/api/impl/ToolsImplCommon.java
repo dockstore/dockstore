@@ -222,7 +222,7 @@ public final class ToolsImplCommon {
                     EnumSet<DescriptorType> set = EnumSet.copyOf(descriptorType);
                     toolVersion.setDescriptorType(Lists.newArrayList(set));
                     // can assume in Dockstore that a single version only has one language
-                    toolVersion.setDescriptorTypeVersion(Map.of(set.stream().findFirst().get().toString(), Lists.newArrayList(version.getDescriptorTypeVersions())));
+                    toolVersion.setDescriptorTypeVersion(Map.of(descriptorType.get(0).toString(), Lists.newArrayList(version.getDescriptorTypeVersions())));
                 }
                 tool.getVersions().add(toolVersion);
             }
