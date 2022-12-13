@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice;
 
+import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME1;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME2;
@@ -50,11 +51,11 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.TokensApi;
 import io.swagger.client.api.UsersApi;
+
+import java.lang.reflect.Type;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -74,6 +75,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+
+import javax.ws.rs.core.GenericType;
 
 /**
  * This test does not require confidential data. It does however require the Hoverfly's self-signed certificate.
@@ -241,8 +244,20 @@ public class TokenResourceIT {
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         try {
             tokensApi1.addToken("");
+            fail("Should not be able to add a null github token");
         } catch (ApiException e) {
             assertEquals("Could not retrieve github.com token", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testAddGithubUserWithInvalidJson() {
+        TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        try {
+            tokensApi1.addToken("garbagetest");
+            fail("Invalid request body provided");
+        } catch (ApiException e) {
+            assertEquals("Request body is an invalid JSON", e.getMessage());
         }
     }
 

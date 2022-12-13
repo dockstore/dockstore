@@ -37,6 +37,7 @@ import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -562,11 +563,17 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
+        System.out.println(element);
         if (element != null) {
-            JsonObject satellizerObject = element.getAsJsonObject();
-            final String code = getCodeFromSatellizerObject(satellizerObject);
-            final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
-            return handleGitHubUser(null, code, registerUser);
+            try {
+                JsonObject satellizerObject = element.getAsJsonObject();
+                final String code = getCodeFromSatellizerObject(satellizerObject);
+                final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
+                return handleGitHubUser(null, code, registerUser);
+            } catch (IllegalStateException ex) {
+                throw new CustomWebApplicationException("Request body is an invalid JSON", HttpStatus.SC_BAD_REQUEST);
+            }
+
         } else {
             LOG.error("Retrieving accessToken was unsuccessful");
             throw new CustomWebApplicationException("Could not retrieve github.com token", HttpStatus.SC_BAD_REQUEST);
