@@ -82,6 +82,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static final String EXPRESSION_TOOL_TYPE = "expressionTool";
     private static final String OPERATION_TYPE = "operation";
     private static final int CODE_SNIPPET_LENGTH = 50;
+    private static final String COMMAND_LINE_TOOL = "CommandLineTool";
+    private static final String WORKFLOW = "Workflow";
+    private static final String EXPRESSION_TOOL = "ExpressionTool";
+    private static final String OPERATION = "Operation";
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
@@ -323,7 +327,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             // If the descriptor describes something other than a workflow, wrap and process it as a single-step workflow
             final Object cwlClass = mapping.get("class");
-            if (!"Workflow".equals(cwlClass)) {
+            if (!WORKFLOW.equals(cwlClass)) {
                 mapping = convertToolToSingleStepWorkflow(mapping);
             }
 
@@ -371,7 +375,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         Map<String, Object> workflow = new HashMap<>();
         workflow.put("cwlVersion", "v1.2");
         workflow.put("id", "_dockstore_wrapper");
-        workflow.put("class", "Workflow");
+        workflow.put("class", WORKFLOW);
         workflow.put("inputs", Map.of());
         workflow.put("outputs", Map.of());
         workflow.put("steps", Map.of("tool", Map.of("run", tool, "in", List.of(), "out", List.of())));
@@ -466,19 +470,19 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     private boolean isWorkflow(Object candidate) {
-        return isProcessWithClass(candidate, "Workflow");
+        return isProcessWithClass(candidate, WORKFLOW);
     }
 
     private boolean isTool(Object candidate) {
-        return isProcessWithClass(candidate, "CommandLineTool");
+        return isProcessWithClass(candidate, COMMAND_LINE_TOOL);
     }
 
     private boolean isExpressionTool(Object candidate) {
-        return isProcessWithClass(candidate, "ExpressionTool");
+        return isProcessWithClass(candidate, EXPRESSION_TOOL);
     }
 
     private boolean isOperation(Object candidate) {
-        return isProcessWithClass(candidate, "Operation");
+        return isProcessWithClass(candidate, OPERATION);
     }
 
     private String getWorkflowStepId(WorkflowStep workflowStep) {
@@ -846,12 +850,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     @Override
     public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
-        return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "workflow", Set.of("Workflow"), "tool", Set.of("CommandLineTool", "ExpressionTool"));
+        return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "workflow", Set.of(WORKFLOW), "tool", Set.of(COMMAND_LINE_TOOL, EXPRESSION_TOOL));
     }
 
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
-        return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "tool", Set.of("CommandLineTool", "ExpressionTool"), "workflow", Set.of("Workflow"));
+        return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "tool", Set.of(COMMAND_LINE_TOOL, EXPRESSION_TOOL), "workflow", Set.of(WORKFLOW));
     }
 
     @Override
@@ -1096,7 +1100,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         private boolean isProcess(Map<String, Object> cwl) {
             Object c = cwl.get("class");
-            return "Workflow".equals(c) || "CommandLineTool".equals(c) || "ExpressionTool".equals(c) || "Operation".equals(c);
+            return WORKFLOW.equals(c) || COMMAND_LINE_TOOL.equals(c) || EXPRESSION_TOOL.equals(c) || OPERATION.equals(c);
         }
 
         private String setIdIfAbsent(Map<String, Object> entryCwl) {
