@@ -338,12 +338,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 List<String> endDependencies = new ArrayList<>();
 
                 if (workflow.getOutputs() != null) {
-                    for (Object outputParameterObj : workflow.getOutputs()) {
-                        if (outputParameterObj instanceof WorkflowOutputParameter) {
-                            WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
-                            Object sources = outputParameter.getOutputSource();
-                            processDependencies(endDependencies, sources, NODE_PREFIX);
-                        }
+                    for (WorkflowOutputParameter outputParameter: workflow.getOutputs()) {
+                        Object sources = outputParameter.getOutputSource();
+                        processDependencies(endDependencies, sources, NODE_PREFIX);
                     }
                 }
 
@@ -381,10 +378,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return workflow;
     }
 
-    private String className(Object obj) {
-        return obj != null ? obj.getClass().getName() : "null object";
-    }
-
     /**
      * Convert the passed object to list representation.  CWL allows some lists of object to be
      * represented in either of two forms:
@@ -414,7 +407,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         } else if (listOrIdMap instanceof List) {
             return (List<Object>)listOrIdMap;
         } else if (listOrIdMap == null) {
-            return null;
+            return List.of();
         } else {
             String message = CWL_PARSE_ERROR + "malformed cwl " + where;
             LOG.error(message);
@@ -759,26 +752,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return getDockerPull(
             addToRequirementOrHintState(requirementState, additonalRequirements),
             addToRequirementOrHintState(hintState, additionalHints));
-    }
-
-    private <T> T deOptionalize(Optional<T> optional) {
-        // The cwljava parser did actually return a null Optional reference, thus necessitating the following if statement
-        if (optional == null) {
-            return null;
-        }
-        return optional.orElse(null);
-    }
-
-    /**
-     * Throw an exception if the specified value is null.
-     * Used to implement a controlled failure when we encounter a value that must be non-null (and should have been verified as such by a previous check), but for whatever reason, is not.
-     */
-    private <T> T checkNonNull(T value) {
-        if (value == null) {
-            LOG.error("During CWL processing, got a null value where a non-null value was required.");
-            throw new CustomWebApplicationException(CWL_PARSE_ERROR + "internal processing error", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        return value;
     }
 
     /**
