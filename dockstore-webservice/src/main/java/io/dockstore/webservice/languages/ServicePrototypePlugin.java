@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +45,7 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
 
     @Override
     public VersionTypeValidation validateWorkflowSet(String initialPath, String contents,
-        Map<String, Pair<String, GenericFileType>> indexedFiles) {
+        Map<String, FileMetadata> indexedFiles) {
 
         String validationMessage = "";
         Map<String, String> validationMessageObject = new HashMap<>();
@@ -81,7 +80,7 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
     }
 
     @Override
-    public VersionTypeValidation validateTestParameterSet(Map<String, Pair<String, GenericFileType>> indexedFiles) {
+    public VersionTypeValidation validateTestParameterSet(Map<String, FileMetadata> indexedFiles) {
         return new VersionTypeValidation(true, Collections.emptyMap());
     }
 
@@ -105,7 +104,7 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
 
     @Override
     public WorkflowMetadata parseWorkflowForMetadata(String initialPath, String contents,
-        Map<String, Pair<String, GenericFileType>> indexedFiles) {
+        Map<String, FileMetadata> indexedFiles) {
         WorkflowMetadata metadata = new WorkflowMetadata();
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(contents);

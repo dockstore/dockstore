@@ -41,8 +41,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,8 +105,8 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
      * @param sourceFiles set of sourcefiles
      * @return Generic indexed files mapping
      */
-    private Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> sourcefilesToIndexedFiles(Set<SourceFile> sourceFiles) {
-        Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> indexedFiles = new HashMap<>();
+    private Map<String, FileMetadata> sourcefilesToIndexedFiles(Set<SourceFile> sourceFiles) {
+        Map<String, FileMetadata> indexedFiles = new HashMap<>();
 
         for (SourceFile file : sourceFiles) {
             String content = file.getContent();
@@ -139,7 +137,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 throw new CustomWebApplicationException("Could not determine file type category for source file "
                     + file.getPath(), HttpStatus.SC_METHOD_FAILURE);
             }
-            Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, genericFileType);
+            FileMetadata indexedFile = new FileMetadata(content, genericFileType, null);
             indexedFiles.put(absolutePath, indexedFile);
         }
         return indexedFiles;

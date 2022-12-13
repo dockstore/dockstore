@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
@@ -210,7 +209,7 @@ public class LanguagePluginHandlerTest {
 
         @Override
         public WorkflowMetadata parseWorkflowForMetadata(String initialPath, String contents,
-            Map<String, Pair<String, GenericFileType>> indexedFiles) {
+            Map<String, FileMetadata> indexedFiles) {
             WorkflowMetadata workflowMetadata = new WorkflowMetadata();
             workflowMetadata.setAuthor("Shakespeare");
             workflowMetadata.setEmail("globetheater@bard.com");
@@ -225,33 +224,33 @@ public class LanguagePluginHandlerTest {
         }
 
         @Override
-        public VersionTypeValidation validateWorkflowSet(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles) {
+        public VersionTypeValidation validateWorkflowSet(String initialPath, String contents, Map<String, FileMetadata> indexedFiles) {
             // This will be executed via the sourcefilesToIndexedFilesViaValidateWorkflowSetNullTypeTest test code
             // and some files may not be present depending on the inputs to the test
             if (indexedFiles.containsKey(MAIN_DESCRIPTOR_CWL)) {
-                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(MAIN_DESCRIPTOR_CWL).getRight());
+                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(MAIN_DESCRIPTOR_CWL).genericFileType());
             }
             if (indexedFiles.containsKey(SECONDARY_DESCRIPTOR_CWL)) {
-                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(SECONDARY_DESCRIPTOR_CWL).getRight());
+                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(SECONDARY_DESCRIPTOR_CWL).genericFileType());
             }
             if (indexedFiles.containsKey(TEST_INPUT_FILE)) {
-                Assert.assertSame(GenericFileType.TEST_PARAMETER_FILE, indexedFiles.get(TEST_INPUT_FILE).getRight());
+                Assert.assertSame(GenericFileType.TEST_PARAMETER_FILE, indexedFiles.get(TEST_INPUT_FILE).genericFileType());
             }
             if (indexedFiles.containsKey(DOCKERFILE)) {
-                Assert.assertSame(GenericFileType.CONTAINERFILE, indexedFiles.get(DOCKERFILE).getRight());
+                Assert.assertSame(GenericFileType.CONTAINERFILE, indexedFiles.get(DOCKERFILE).genericFileType());
             }
             if (indexedFiles.containsKey(PRIMARY_DESCRIPTOR)) {
-                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(PRIMARY_DESCRIPTOR).getRight());
+                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(PRIMARY_DESCRIPTOR).genericFileType());
             }
             if (indexedFiles.containsKey(OTHER_FILE)) {
-                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(OTHER_FILE).getRight());
+                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(OTHER_FILE).genericFileType());
             }
 
             return new VersionTypeValidation(true, Collections.emptyMap());
         }
 
         @Override
-        public VersionTypeValidation validateTestParameterSet(Map<String, Pair<String, GenericFileType>> indexedFiles) {
+        public VersionTypeValidation validateTestParameterSet(Map<String, FileMetadata> indexedFiles) {
             return null;
         }
     }

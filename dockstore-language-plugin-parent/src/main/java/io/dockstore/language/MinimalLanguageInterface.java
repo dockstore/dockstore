@@ -19,7 +19,6 @@ import io.dockstore.common.DescriptorLanguage;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.apache.commons.lang3.tuple.Pair;
 import org.pf4j.ExtensionPoint;
 
 /**
@@ -63,7 +62,7 @@ public interface MinimalLanguageInterface extends ExtensionPoint {
      * @param indexedFiles the set of files indexed above
      * @return the workflow metadata that we will show to users
      */
-    WorkflowMetadata parseWorkflowForMetadata(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
+    WorkflowMetadata parseWorkflowForMetadata(String initialPath, String contents, Map<String, FileMetadata> indexedFiles);
 
     /**
      * When indexing, Dockstore will distinguish between extra files that hold things like extra code, tools, configuration (imported descriptors) and test parameter files (example parameter sets used to run a workflow)

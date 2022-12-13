@@ -17,7 +17,6 @@ package io.dockstore.language;
 
 import io.dockstore.common.VersionTypeValidation;
 import java.util.Map;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Recommended interface for new workflow languages.
@@ -46,7 +45,7 @@ public interface RecommendedLanguageInterface extends MinimalLanguageInterface {
      * @param indexedFiles the set of files indexed from MinimalLanguageInterface
      * @return validity and if not, messages that would help a user debug
      */
-    VersionTypeValidation validateWorkflowSet(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
+    VersionTypeValidation validateWorkflowSet(String initialPath, String contents, Map<String, FileMetadata> indexedFiles);
 
     /**
      * Given a set of indexed files from MinimalLanguageInterface cut down to just test parameters, says whether the test
@@ -55,5 +54,5 @@ public interface RecommendedLanguageInterface extends MinimalLanguageInterface {
      * @param indexedFiles the set of files indexed from MinimalLanguageInterface
      * @return validity and if not, messages that would help a user debug
      */
-    VersionTypeValidation validateTestParameterSet(Map<String, Pair<String, GenericFileType>> indexedFiles);
+    VersionTypeValidation validateTestParameterSet(Map<String, FileMetadata> indexedFiles);
 }
