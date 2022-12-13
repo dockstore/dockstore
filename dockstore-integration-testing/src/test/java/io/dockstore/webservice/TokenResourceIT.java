@@ -15,7 +15,6 @@
  */
 package io.dockstore.webservice;
 
-import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME1;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME2;
@@ -52,9 +51,11 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.TokensApi;
 import io.swagger.client.api.UsersApi;
 
-import java.lang.reflect.Type;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
@@ -75,8 +76,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-
-import javax.ws.rs.core.GenericType;
 
 /**
  * This test does not require confidential data. It does however require the Hoverfly's self-signed certificate.
