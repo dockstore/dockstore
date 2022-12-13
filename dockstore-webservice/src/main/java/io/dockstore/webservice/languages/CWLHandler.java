@@ -423,7 +423,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * Convert the hints and requirements in the given map to list format.
+     * Produce a new map in which the the hints and requirements in the given map are converted to list format.
      * @param map map to be converted
      * @param where where a description of the location of this construct in the CWL file (ex: "in workflow step", "at line 13")
      */
@@ -435,7 +435,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * Parse the object to the given class.
+     * Parse a map to an instance of the specified class.
      * @param obj the object to parse
      * @param klass the class to parse to
      * @param description description of the object we are parsing, for error reporting purposes
