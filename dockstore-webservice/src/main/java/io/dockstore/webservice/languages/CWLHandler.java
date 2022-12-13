@@ -572,6 +572,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 currentPath = runObj.toString();
 
             } else {
+                LOG.error("Unexpected run object: " + runObj);
                 String message = CWLHandler.CWL_PARSE_SECONDARY_ERROR + "in workflow step " + fullStepId;
                 LOG.error(message);
                 throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
@@ -617,6 +618,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return (Map)list.stream().filter(e -> e instanceof Map && value.equals(((Map)e).get(key))).findFirst().orElse(null);
     }
 
+    private List<String> convertToSourceList(Object obj) {
+        if (obj instanceof List) {
+            return (List<String>)obj;
+        } else if (obj instanceof String) {
+            return List.of((String)obj);
+        } else {
+            String message = CWLHandler.CWL_PARSE_ERROR + "unexpected format of input/output list";
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+        }
+    }
+
     /**
      * Computes the dependencies from one or more output sources
      * @param endDependencies list to which the computed dependencies are added
@@ -625,7 +638,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      */
     private void processDependencies(List<String> endDependencies, Object sourcesObj, String nodePrefix) {
         if (sourcesObj != null) {
-            List<String> sources = sourcesObj instanceof String ? List.of((String)sourcesObj) : (List<String>)sourcesObj;
+            List<String> sources = convertToSourceList(sourcesObj);
             for (String s: sources) {
                 // Split at the slashes, and if there are two or more parts, 
                 // the dependency (workflow step name/id) is the second-to-last part.
