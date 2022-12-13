@@ -562,7 +562,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
-        System.out.println(element);
         if (element != null) {
             try {
                 JsonObject satellizerObject = element.getAsJsonObject();
