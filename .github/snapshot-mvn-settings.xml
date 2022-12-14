@@ -2,7 +2,7 @@
   <servers>
     <server>
       <id>snapshots</id>
-      <username>dockstore-snapshot-bot</username>
+      <username>dyuen</username>
       <password>${env.SNAPSHOT_DEPLOY_TOKEN}</password>
     </server>
   </servers>
