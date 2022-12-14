@@ -50,6 +50,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.languages.WDLHandler;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -415,6 +416,38 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
                     assertEquals(SHA_TYPE, checksum.getType());
                 });
             });
+        });
+    }
+
+    /**
+     * Tests that the language version in WDL tools are set correctly.
+     */
+    @Test
+    public void testWDLToolLanguageVersion() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(client);
+
+        io.dockstore.openapi.client.model.DockstoreTool tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithubwdl", null);
+        tool = containersApi.refresh(tool.getId());
+        assertEquals(1, tool.getDescriptorType().size());
+        assertEquals("WDL", tool.getDescriptorType().get(0));
+
+        // All the versions in this tool don't specify the WDL version using the 'version' field
+        tool.getWorkflowVersions().forEach(tag -> {
+            List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(tag.getId());
+            assertEquals(2, sourceFiles.size());
+
+            sourceFiles.forEach(sourceFile -> {
+                if ("/Dockstore.wdl".equals(sourceFile.getAbsolutePath())) {
+                    assertEquals(DescriptorLanguage.FileType.DOCKSTORE_WDL, sourceFile.getType());
+                    assertEquals("Language version of WDL descriptor with no 'version' field should be default version", WDLHandler.DEFAULT_WDL_VERSION, sourceFile.getTypeVersion());
+                } else {
+                    assertEquals(DescriptorLanguage.FileType.DOCKERFILE, sourceFile.getType());
+                    assertNull("Docker files should not have a version", sourceFile.getTypeVersion());
+                }
+            });
+            assertEquals("Should only have one language version", 1, tag.getDescriptorTypeVersions().size());
+            assertTrue(tag.getDescriptorTypeVersions().contains(WDLHandler.DEFAULT_WDL_VERSION));
         });
     }
 
