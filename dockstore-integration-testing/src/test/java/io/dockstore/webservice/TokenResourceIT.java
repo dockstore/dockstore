@@ -50,11 +50,13 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.TokensApi;
 import io.swagger.client.api.UsersApi;
+
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -235,6 +237,27 @@ public class TokenResourceIT {
         UsersApi usersApi2 = new UsersApi(getWebClient(true, token.getUsername(), testingPostgres));
         assertNotEquals(usersApi2.getUser().getUsername(), CUSTOM_USERNAME2);
         assertEquals(usersApi2.changeUsername("better.name").getUsername(), "better.name");
+    }
+    @Test
+    public void testNullGithubUser() {
+        TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        try {
+            tokensApi1.addToken("");
+            fail("Should not be able to add a null github token");
+        } catch (ApiException e) {
+            assertEquals("Could not retrieve github.com token", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testAddGithubUserWithInvalidJson() {
+        TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        try {
+            tokensApi1.addToken("garbagetest");
+            fail("Invalid request body provided");
+        } catch (ApiException e) {
+            assertEquals("Request body is an invalid JSON", e.getMessage());
+        }
     }
 
     /**
