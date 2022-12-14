@@ -1,6 +1,6 @@
 /*
  *
- *    Copyright 2020 OICR
+ *    Copyright 2022 OICR, UCSC
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -46,12 +46,15 @@ import io.dockstore.openapi.client.model.OrcidAuthorInformation;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.helpers.AppToolHelper;
+import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -72,7 +75,6 @@ import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -117,14 +119,15 @@ public class WebhookIT extends BaseIT {
     private final String multiEntryRepo = "dockstore-testing/multi-entry";
     private final String workflowDockstoreYmlRepo = "dockstore-testing/workflow-dockstore-yml";
     private final String whalesay2Repo = "DockstoreTestUser/dockstore-whalesay-2";
-
     private FileDAO fileDAO;
+    private AppToolDAO appToolDAO;
 
     @Before
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
         this.fileDAO = new FileDAO(sessionFactory);
+        this.appToolDAO = new AppToolDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
@@ -133,6 +136,37 @@ public class WebhookIT extends BaseIT {
         // used to allow us to use tokenDAO outside of the web service
         Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
+    }
+    @Test
+    public void testAppToolRSSFeedAndSiteMap() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        UsersApi usersApi = new UsersApi(webClient);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+
+        // There should be no apptools
+        assertEquals(0, appToolDAO.findAllPublishedPaths().size());
+        assertEquals(0, appToolDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+
+        // create and publish apptool
+        usersApi.syncUserWithGitHub();
+        AppToolHelper.registerAppTool(webClient);
+        workflowApi.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + taggedToolRepoPath, APPTOOL, "versions");
+        workflowApi.publish(appTool.getId(), publishRequest);
+
+        // There should be 1 apptool.
+        assertEquals(1, appToolDAO.findAllPublishedPaths().size());
+        assertEquals(1, appToolDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+
+        final MetadataApi metadataApi = new MetadataApi(webClient);
+        String rssFeed = metadataApi.rssFeed();
+        assertTrue("RSS feed should contain 1 apptool", rssFeed.contains("http://localhost/containers/github.com/dockstore-testing/tagged-apptool/md5sum"));
+
+        String sitemap = metadataApi.sitemap();
+        assertTrue("Sitemap with testing data should have 1 apptool",
+                sitemap.contains("http://localhost/containers/github.com/dockstore-testing/tagged-apptool/md5sum"));
     }
 
     @Test
@@ -1359,15 +1393,6 @@ public class WebhookIT extends BaseIT {
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
     }
 
-    /*
-     * TODO: reimplement
-     * This test broke when merged from a 1.12 hotfix into 1.13, because the test pushed a .dockstore.yml that
-     * contains two workflows with the same name, and 1.13 checks for duplicate names in .dockstore.yml, and
-     * generates an error about the duplicate names, instead.  To reimplement, we'll need to load a workflow
-     * into the db, then push a branch that updates it, containing a workflow with the same name but different
-     * descriptor language.
-     */
-    @Ignore
     @Test
     public void testDifferentLanguagesWithSameWorkflowName() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -1375,34 +1400,20 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.api.WorkflowsApi workflowClient = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
 
+        // Add a WDL version of a workflow should pass.
+        workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-WDL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+
+        // Add a CWL version of a workflow with the same name should cause error.
         try {
-            workflowClient.handleGitHubRelease("refs/heads/differentLanguagesWithSameWorkflowName", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+            workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-CWL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
             Assert.fail("should have thrown");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            String message = ex.getMessage().toLowerCase();
+            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+            io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
+            String message = event.getMessage().toLowerCase();
             assertTrue(message.contains("descriptor language"));
             assertTrue(message.contains("workflow"));
             assertTrue(message.contains("version"));
-        }
-        
-        // There should be one failure message
-        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
-        assertEquals(0, events.stream().filter(lambdaEvent -> lambdaEvent.isSuccess()).count());
-        assertEquals(1, events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
-        io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
-        String message = event.getMessage().toLowerCase();
-        assertTrue(message.contains("descriptor language"));
-        assertTrue(message.contains("workflow"));
-        assertTrue(message.contains("version"));
-
-        // No workflow should have been created.
-        // This will change in 1.13, wherein .dockstore.yml processing changes so that an error in one entry will not roll back the entire update, and a workflow with one version should have been created.
-
-        try {
-            io.dockstore.openapi.client.model.Workflow workflow = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo, WorkflowSubClass.BIOWORKFLOW, "versions,validations");
-            Assert.fail("should have thrown");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals("Entry not found", ex.getMessage());
         }
     }
     
@@ -1552,6 +1563,36 @@ public class WebhookIT extends BaseIT {
         workflow2 = getFoobar2Workflow(workflowsApi);
         checkWorkflowMetadataWithDefaultVersionMetadata(workflow, defaultVersion.get());
         checkWorkflowMetadataWithDefaultVersionMetadata(workflow2, defaultVersion.get());
+    }
+
+    /**
+     * Tests that the language version in WDL descriptor files is correct during a GitHub release
+     */
+    @Test
+    public void testDockstoreYmlWorkflowLanguageVersions() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        String wdlWorkflowRepo = "dockstore-testing/dockstore-whalesay2";
+
+        workflowsApi.handleGitHubRelease("refs/heads/master", installationId, wdlWorkflowRepo, BasicIT.USER_2_USERNAME);
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + wdlWorkflowRepo, WorkflowSubClass.BIOWORKFLOW, "versions");
+        io.dockstore.openapi.client.model.WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        List<io.dockstore.openapi.client.model.SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), version.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(2, sourceFiles.size());
+        sourceFiles.forEach(sourceFile -> {
+            if ("/Dockstore.wdl".equals(sourceFile.getAbsolutePath())) {
+                Assert.assertEquals(DescriptorLanguage.FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
+                Assert.assertEquals("Language version of WDL descriptor with 'version 1.0' should be 1.0", "1.0", sourceFile.getTypeVersion());
+            } else {
+                Assert.assertEquals(DescriptorLanguage.FileType.DOCKSTORE_YML.name(), sourceFile.getType().getValue());
+                Assert.assertNull(".dockstore.yml should not have a version", sourceFile.getTypeVersion());
+            }
+        });
+        assertEquals("Should only have one language version", 1, version.getDescriptorTypeVersions().size());
+        assertTrue(version.getDescriptorTypeVersions().contains("1.0"));
     }
 
     // Asserts that the workflow metadata is the same as the default version metadata

@@ -391,7 +391,10 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param workingDirectory need a working directory to translate relative paths (which we store) to absolute paths
      */
     default void writeStreamAsZip(Set<SourceFile> sourceFiles, OutputStream outputStream, Path workingDirectory) {
+        writeStreamAsZipStatic(sourceFiles, outputStream, workingDirectory);
+    }
 
+    static void writeStreamAsZipStatic(Set<SourceFile> sourceFiles, OutputStream outputStream, Path workingDirectory) {
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             List<String> paths = new ArrayList<>();
 

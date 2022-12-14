@@ -36,6 +36,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.openapi.api.impl.ToolsApiServiceImpl;
+import io.openapi.api.impl.ToolsApiServiceImpl.EmptyImageType;
 import io.openapi.model.Checksum;
 import io.openapi.model.DescriptorType;
 import io.openapi.model.ExtendedFileWrapper;
@@ -57,6 +58,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -93,6 +95,7 @@ public final class ToolsImplCommon {
         toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
+        toolDescriptor.setImageType(new EmptyImageType());
         return toolDescriptor;
     }
 
@@ -154,7 +157,7 @@ public final class ToolsImplCommon {
         }
         tool.setAliases(new ArrayList<>(container.getAliases().keySet()));
 
-        for (Version version : inputVersions) {
+        for (Version<?> version : inputVersions) {
             if (shouldHideToolVersion(version, showHiddenTags, container.isHosted())) {
                 continue;
             }
@@ -218,6 +221,8 @@ public final class ToolsImplCommon {
                 if (!descriptorType.isEmpty()) {
                     EnumSet<DescriptorType> set = EnumSet.copyOf(descriptorType);
                     toolVersion.setDescriptorType(Lists.newArrayList(set));
+                    // can assume in Dockstore that a single version only has one language
+                    toolVersion.setDescriptorTypeVersion(Map.of(descriptorType.get(0).toString(), Lists.newArrayList(version.getDescriptorTypeVersions())));
                 }
                 tool.getVersions().add(toolVersion);
             }
@@ -495,7 +500,7 @@ public final class ToolsImplCommon {
     }
 
     /**
-     * Set most of the GA4GH's Tool information that is not dependant on Dockstore's Tags or WorkflowVersions
+     * Set most of the GA4GH's Tool information that is not dependent on Dockstore's Tags or WorkflowVersions
      *
      * @param tool      The GA4GH Tool that will be modified
      * @param container The Dockstore Tool or Workflow

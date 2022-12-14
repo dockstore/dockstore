@@ -20,6 +20,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import io.cwl.avro.CWL;
+import io.cwl.avro.CommandLineTool;
+import io.cwl.avro.ExpressionTool;
+import io.cwl.avro.Workflow;
+import io.cwl.avro.WorkflowOutputParameter;
+import io.cwl.avro.WorkflowStep;
+import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.LanguageHandlerHelper;
@@ -54,20 +61,6 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3id.cwl.cwl1_2.CommandLineTool;
-import org.w3id.cwl.cwl1_2.DockerRequirement;
-import org.w3id.cwl.cwl1_2.ExpressionTool;
-import org.w3id.cwl.cwl1_2.Operation;
-import org.w3id.cwl.cwl1_2.Process;
-import org.w3id.cwl.cwl1_2.Workflow;
-import org.w3id.cwl.cwl1_2.WorkflowOutputParameter;
-import org.w3id.cwl.cwl1_2.WorkflowStep;
-import org.w3id.cwl.cwl1_2.WorkflowStepInput;
-import org.w3id.cwl.cwl1_2.utils.Fetcher;
-import org.w3id.cwl.cwl1_2.utils.LoadingOptions;
-import org.w3id.cwl.cwl1_2.utils.LoadingOptionsBuilder;
-import org.w3id.cwl.cwl1_2.utils.RootLoader;
-import org.w3id.cwl.cwl1_2.utils.ValidationException;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -89,7 +82,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static final String EXPRESSION_TOOL_TYPE = "expressionTool";
     private static final String OPERATION_TYPE = "operation";
     private static final int CODE_SNIPPET_LENGTH = 50;
-
+    private static final String COMMAND_LINE_TOOL = "CommandLineTool";
+    private static final String WORKFLOW = "Workflow";
+    private static final String EXPRESSION_TOOL = "ExpressionTool";
+    private static final String OPERATION = "Operation";
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
@@ -292,27 +288,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return (Map<String, Object>)preprocessed;
     }
 
-    /**
-     * Create a "safe" LoadingOptions object, wherein the `urlJoin` and `fetchText` methods
-     * of the embedded `Fetcher` are essentially disabled.  Such an object is useful to ensure
-     * that the cwljava parser does not try to retrieve files from remote servers, since our
-     * preprocessor should have already retrieved and inlined the appropriate files.
-     */
-    private LoadingOptions constructSafeLoadingOptions() {
-        return new LoadingOptionsBuilder().setFetcher(
-            new Fetcher() {
-                @Override
-                public String urlJoin(final String baseUrl, final String url) {
-                    return url;
-                }
-                @Override
-                public String fetchText(final String url) {
-                    LOG.error("cwljava attempted to fetch url " + url);
-                    return "\"\"";
-                }
-            }).build();
-    }
-
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
@@ -352,27 +327,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             // If the descriptor describes something other than a workflow, wrap and process it as a single-step workflow
             final Object cwlClass = mapping.get("class");
-            if (!"Workflow".equals(cwlClass)) {
+            if (!WORKFLOW.equals(cwlClass)) {
                 mapping = convertToolToSingleStepWorkflow(mapping);
             }
 
-            // Parse the preprocessed document using cwljava
-            Object rootObject;
-            try {
-                // Parse the document using a LoadingOptions instance which neutralizes any file loads, since all files should have already been inlined by the preprocesser.
-                rootObject = RootLoader.loadDocument(mapping, "/", constructSafeLoadingOptions());
-            } catch (ValidationException e) {
-                LOG.error("Validation exception: " + e.getMessage(), e);
-                throw new CustomWebApplicationException(CWL_PARSE_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
-            }
-            // The parse should always produce a Workflow object, because we converted any non-workflow to a one-step workflow, above.
-            if (!(rootObject instanceof Workflow)) {
-                LOG.error("Top level object was not a Workflow, class " + className(rootObject));
-                throw new CustomWebApplicationException(CWL_PARSE_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
-            }
-
             // Process the parse workflow
-            Workflow workflow = (Workflow)rootObject;
+            Workflow workflow = parseWorkflow(mapping);
             processWorkflow(workflow, null, null, null, 0, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
             // Return the requested information
@@ -382,12 +342,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 List<String> endDependencies = new ArrayList<>();
 
                 if (workflow.getOutputs() != null) {
-                    for (Object outputParameterObj : workflow.getOutputs()) {
-                        if (outputParameterObj instanceof WorkflowOutputParameter) {
-                            WorkflowOutputParameter outputParameter = (WorkflowOutputParameter)outputParameterObj;
-                            Object sources = outputParameter.getOutputSource();
-                            processDependencies(endDependencies, sources, NODE_PREFIX, checkNonNull(deOptionalize(workflow.getId())));
-                        }
+                    for (WorkflowOutputParameter outputParameter: workflow.getOutputs()) {
+                        Object sources = outputParameter.getOutputSource();
+                        processDependencies(endDependencies, sources, NODE_PREFIX);
                     }
                 }
 
@@ -418,24 +375,124 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         Map<String, Object> workflow = new HashMap<>();
         workflow.put("cwlVersion", "v1.2");
         workflow.put("id", "_dockstore_wrapper");
-        workflow.put("class", "Workflow");
+        workflow.put("class", WORKFLOW);
         workflow.put("inputs", Map.of());
         workflow.put("outputs", Map.of());
         workflow.put("steps", Map.of("tool", Map.of("run", tool, "in", List.of(), "out", List.of())));
         return workflow;
     }
 
-    private String className(Object obj) {
-        return obj != null ? obj.getClass().getName() : "null object";
+    /**
+     * Convert the passed object to list representation.  CWL allows some lists of object to be
+     * represented in either of two forms:
+     * https://www.commonwl.org/v1.2/Workflow.html#map
+     * If the passed object is in map form, it is converted to the corresponding list.
+     * If the passed object is a list, it is returned unchanged.
+     * @param listOrIdMap the object to be converted
+     * @param idMapKey the key in the chld maps that each key in the parent map corresponds to
+     * @param where a description of the location of this construct in the CWL file (ex: "in workflow step", "at line 13")
+     */
+    private List<Object> convertToList(Object listOrIdMap, String idMapKey, String where) {
+        if (listOrIdMap instanceof Map) {
+            Map<Object, Object> map = (Map<Object, Object>)listOrIdMap;
+            List<Object> list = new ArrayList<>();
+            map.forEach((key, value) -> {
+                if (value instanceof Map) {
+                    Map<Object, Object> valueMap = new LinkedHashMap<>((Map<Object, Object>)value);
+                    valueMap.put(idMapKey, key);
+                    list.add(valueMap);
+                } else {
+                    String message = CWL_PARSE_ERROR + "malformed cwl " + where;
+                    LOG.error(message);
+                    throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+                }
+            });
+            return list;
+        } else if (listOrIdMap instanceof List) {
+            return (List<Object>)listOrIdMap;
+        } else if (listOrIdMap == null) {
+            return List.of();
+        } else {
+            String message = CWL_PARSE_ERROR + "malformed cwl " + where;
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+        }
     }
 
     /**
-     * Extract the workflow step ID from the full normalized ID that cwljava returns, then prepend the parent ID if it is not null.
+     * Produce a new map in which the the hints and requirements in the given map are converted to list format.
+     * @param map map to be converted
+     * @param where where a description of the location of this construct in the CWL file (ex: "in workflow step", "at line 13")
      */
-    private String convertStepId(String fullStepId, String parentStepId) {
-        String[] parts = fullStepId.split("/");
-        String thisStepId = parts[parts.length - 1];
-        return parentStepId == null ? thisStepId : parentStepId + "." + thisStepId;
+    private Map<Object, Object> convertRequirementsAndHintsToLists(Map<Object, Object> map, String where) {
+        map = new LinkedHashMap<>(map);
+        map.computeIfPresent("hints", (k, v) -> convertToList(v, "class", where));
+        map.computeIfPresent("requirements", (k, v) -> convertToList(v, "class", where));
+        return map;
+    }
+
+    /**
+     * Parse a map to an instance of the specified class.
+     * @param obj the object to parse
+     * @param klass the class to parse to
+     * @param description description of the object we are parsing, for error reporting purposes
+     */
+    private <T> T parseWithClass(Object obj, Class<T> klass, String description) {
+        if (obj instanceof Map) {
+            Gson gson = CWL.getTypeSafeCWLToolDocument();
+            Map<Object, Object> map = convertRequirementsAndHintsToLists((Map<Object, Object>)obj, "in the requirements/hints of " + description);
+            return gson.fromJson(gson.toJson(map), klass);
+        } else {
+            String message = CWL_PARSE_ERROR + "malformed cwl in " + description;
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    private Workflow parseWorkflow(Object workflowObj) {
+        return parseWithClass(workflowObj, Workflow.class, "workflow");
+    }
+
+    private CommandLineTool parseTool(Object toolObj) {
+        return parseWithClass(toolObj, CommandLineTool.class, "tool");
+    }
+
+    private ExpressionTool parseExpressionTool(Object expressionToolObj) {
+        return parseWithClass(expressionToolObj, ExpressionTool.class, "expression tool");
+    }
+
+    private WorkflowStep parseWorkflowStep(Object workflowStepObj) {
+        return parseWithClass(workflowStepObj, WorkflowStep.class, "workflow step");
+    }
+
+    private boolean isProcessWithClass(Object candidate, String classValue) {
+        return candidate instanceof Map && classValue.equals(((Map<Object, Object>)candidate).get("class"));
+    }
+
+    private boolean isWorkflow(Object candidate) {
+        return isProcessWithClass(candidate, WORKFLOW);
+    }
+
+    private boolean isTool(Object candidate) {
+        return isProcessWithClass(candidate, COMMAND_LINE_TOOL);
+    }
+
+    private boolean isExpressionTool(Object candidate) {
+        return isProcessWithClass(candidate, EXPRESSION_TOOL);
+    }
+
+    private boolean isOperation(Object candidate) {
+        return isProcessWithClass(candidate, OPERATION);
+    }
+
+    private String getWorkflowStepId(WorkflowStep workflowStep) {
+        CharSequence id = workflowStep.getId();
+        if (id == null) {
+            String message = CWL_PARSE_ERROR + "missing id in workflow step";
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+        }
+        return id.toString();
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -444,23 +501,22 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         RequirementOrHintState requirementState = addToRequirementOrHintState(parentRequirementState, workflow.getRequirements());
         RequirementOrHintState hintState = addToRequirementOrHintState(parentHintState, workflow.getHints());
 
-        // Iterate through steps to find dependencies and docker requirements
-        for (Object workflowStepObj: workflow.getSteps()) {
-            WorkflowStep workflowStep = (WorkflowStep)workflowStepObj; // per the spec, the only possible type is WorkflowStep
-            String rawStepId = convertStepId(checkNonNull(deOptionalize(workflowStep.getId())), parentStepId);
-            String nodeStepId = NODE_PREFIX + rawStepId;
+        // Iterate through steps to find dependencies and docker requirements.
+        for (Object workflowStepObj: convertToList(workflow.getSteps(), "id", "in workflow steps")) {
+
+            WorkflowStep workflowStep = parseWorkflowStep(workflowStepObj);
+
+            String thisStepId = getWorkflowStepId(workflowStep);
+            String fullStepId = parentStepId == null ? thisStepId : parentStepId + "." + thisStepId;
+            String nodeStepId = NODE_PREFIX + fullStepId;
 
             if (depth == 0) {
+                // Iterate over source and get the dependencies.
                 ArrayList<String> stepDependencies = new ArrayList<>();
-
-                // Iterate over source and get the dependencies
                 if (workflowStep.getIn() != null) {
-                    for (Object stepInputObj : workflowStep.getIn()) {
-                        if (stepInputObj instanceof WorkflowStepInput) {
-                            WorkflowStepInput stepInput = (WorkflowStepInput)stepInputObj;
-                            Object sources = stepInput.getSource();
-                            processDependencies(stepDependencies, sources, NODE_PREFIX, checkNonNull(deOptionalize(workflow.getId())));
-                        }
+                    for (WorkflowStepInput stepInput: workflowStep.getIn()) {
+                        Object sources = stepInput.getSource();
+                        processDependencies(stepDependencies, sources, NODE_PREFIX);
                     }
                     if (stepDependencies.size() > 0) {
                         toolInfoMap.computeIfPresent(nodeStepId, (toolId, toolInfo) -> {
@@ -472,34 +528,49 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 }
             }
 
-            // Check workflow step for docker requirement and hints
+            // Process any requirements and/or hints.
             RequirementOrHintState stepRequirementState = addToRequirementOrHintState(requirementState, workflowStep.getRequirements());
             RequirementOrHintState stepHintState = addToRequirementOrHintState(hintState, workflowStep.getHints());
             String stepDockerPath = getDockerPull(stepRequirementState, stepHintState);
 
-            // Check for docker requirement within workflow step file
-            Object run = workflowStep.getRun();
+            // Process the run object.
+            Object runObj = workflowStep.getRun();
             String currentPath;
 
-            if (run instanceof Process) {
-                // If the run object is an instance of Process, it's either a Workflow, CommandLineTool, ExpressionTool, or Operation.
-                Process process = (Process)run;
-                stepDockerPath = getDockerPull(
-                    addToRequirementOrHintState(stepRequirementState, process.getRequirements()),
-                    addToRequirementOrHintState(stepHintState, process.getHints()));
-                stepToType.put(nodeStepId, computeProcessType(process));
-                currentPath = getDockstoreMetadataHintValue(deOptionalize(process.getHints()), "path");
-                if (process instanceof Workflow) {
-                    processWorkflow((Workflow)process, rawStepId, stepRequirementState, stepHintState, depth + 1, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
-                }
+            if (isWorkflow(runObj)) {
+                Workflow stepWorkflow = parseWorkflow(runObj);
+                stepDockerPath = getDockerPull(stepRequirementState, stepWorkflow.getRequirements(), stepHintState, stepWorkflow.getHints());
+                stepToType.put(nodeStepId, WORKFLOW_TYPE);
+                currentPath = getDockstoreMetadataHintValue(stepWorkflow.getHints(), "path");
+                // Process the subworkflow.
+                processWorkflow(stepWorkflow, fullStepId, stepRequirementState, stepHintState, depth + 1, type, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
-            } else if (run instanceof String) {
+            } else if (isTool(runObj)) {
+                CommandLineTool tool = parseTool(runObj);
+                stepDockerPath = getDockerPull(stepRequirementState, tool.getRequirements(), stepHintState, tool.getHints());
+                stepToType.put(nodeStepId, TOOL_TYPE);
+                currentPath = getDockstoreMetadataHintValue(tool.getHints(), "path");
+
+            } else if (isExpressionTool(runObj)) {
+                ExpressionTool expressionTool = parseExpressionTool(runObj);
+                stepDockerPath = getDockerPull(stepRequirementState, expressionTool.getRequirements(), stepHintState, expressionTool.getHints());
+                stepToType.put(nodeStepId, EXPRESSION_TOOL_TYPE);
+                currentPath = getDockstoreMetadataHintValue(expressionTool.getHints(), "path");
+
+            } else if (isOperation(runObj)) {
+                stepToType.put(nodeStepId, OPERATION_TYPE);
+                List<Object> operationHints = convertToList(((Map<Object, Object>)runObj).get("hints"), "class", "in Operation hints");
+                currentPath = getDockstoreMetadataHintValue(operationHints, "path");
+
+            } else if (runObj instanceof String) {
+                // The run object is a String, which means it is a file name which the preprocessor could not expand.
+                stepDockerPath = getDockerPull(stepRequirementState, stepHintState);
                 stepToType.put(nodeStepId, "n/a");
-                currentPath = run.toString();
+                currentPath = runObj.toString();
 
             } else {
-                String message = CWLHandler.CWL_PARSE_SECONDARY_ERROR + "in workflow step " + rawStepId;
-                LOG.error("Type of run object: " + className(run));
+                LOG.error("Unexpected run object: " + runObj);
+                String message = CWLHandler.CWL_PARSE_SECONDARY_ERROR + "in workflow step " + fullStepId;
                 LOG.error(message);
                 throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
@@ -508,18 +579,20 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 currentPath = "";
             }
 
+            // Extract some information from the docker pull, if it exists.
             DockerSpecifier dockerSpecifier = null;
             String dockerUrl = null;
-            if ((run instanceof Workflow || run instanceof CommandLineTool) && !Strings.isNullOrEmpty(stepDockerPath)) {
+            String stepType = stepToType.get(nodeStepId);
+            if ((WORKFLOW_TYPE.equals(stepType) || TOOL_TYPE.equals(stepType)) && !Strings.isNullOrEmpty(stepDockerPath)) {
                 // CWL doesn't support parameterized docker pulls. Must be a string.
                 dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerPath, DockerImageReference.LITERAL);
                 dockerUrl = getURLFromEntry(stepDockerPath, dao, dockerSpecifier);
             }
 
+            // Store the extracted information in the DAG/tool-list data structures.
             if (depth == 0 && type == LanguageHandlerInterface.Type.DAG) {
                 nodePairs.add(new MutablePair<>(nodeStepId, dockerUrl));
             }
-
             nodeDockerInfo.put(nodeStepId, new DockerInfo(currentPath, stepDockerPath, dockerUrl, dockerSpecifier));
         }
     }
@@ -542,20 +615,16 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return (Map)list.stream().filter(e -> e instanceof Map && value.equals(((Map)e).get(key))).findFirst().orElse(null);
     }
 
-    private String computeProcessType(Process process) {
-        if (process instanceof Workflow) {
-            return WORKFLOW_TYPE;
+    private List<String> convertToSourceList(Object obj) {
+        if (obj instanceof List) {
+            return (List<String>)obj;
+        } else if (obj instanceof String) {
+            return List.of((String)obj);
+        } else {
+            String message = CWLHandler.CWL_PARSE_ERROR + "unexpected format of input/output list";
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
-        if (process instanceof CommandLineTool) {
-            return TOOL_TYPE;
-        }
-        if (process instanceof ExpressionTool) {
-            return EXPRESSION_TOOL_TYPE;
-        }
-        if (process instanceof Operation) {
-            return OPERATION_TYPE;
-        }
-        return "n/a";
     }
 
     /**
@@ -563,19 +632,16 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      * @param endDependencies list to which the computed dependencies are added
      * @param sourcesObj a single String output source or list of String output sources
      * @param nodePrefix prefix to attach to extracted dependencies
-     * @param workflowId normalized workflow ID
      */
-    private void processDependencies(List<String> endDependencies, Object sourcesObj, String nodePrefix, String workflowId) {
+    private void processDependencies(List<String> endDependencies, Object sourcesObj, String nodePrefix) {
         if (sourcesObj != null) {
-            List<String> sources = sourcesObj instanceof String ? List.of((String)sourcesObj) : (List<String>)sourcesObj;
+            List<String> sources = convertToSourceList(sourcesObj);
             for (String s: sources) {
-                // If the source ID starts with the workflow ID, strip it off, split at the slashes, and if
-                // there are two or more parts, the dependency (workflow step name/id) is the second-to-last part.
-                if (s.startsWith(workflowId)) {
-                    String[] split = s.substring(workflowId.length()).replaceFirst("^/", "").split("/");
-                    if (split.length >= 2) {
-                        endDependencies.add(nodePrefix + split[split.length - 2].replaceFirst("#", ""));
-                    }
+                // Split at the slashes, and if there are two or more parts, 
+                // the dependency (workflow step name/id) is the second-to-last part.
+                String[] split = s.split("/");
+                if (split.length >= 2) {
+                    endDependencies.add(nodePrefix + split[split.length - 2].replaceFirst("#", ""));
                 }
             }
         }
@@ -685,45 +751,26 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return hintState.getDockerPull();
     }
 
-    private <T> T deOptionalize(Optional<T> optional) {
-        // The cwljava parser did actually return a null Optional reference, thus necessitating the following if statement
-        if (optional == null) {
-            return null;
-        }
-        return optional.orElse(null);
-    }
-
-    /**
-     * Throw an exception if the specified value is null.
-     * Used to implement a controlled failure when we encounter a value that must be non-null (and should have been verified as such by a previous check), but for whatever reason, is not.
-     */
-    private <T> T checkNonNull(T value) {
-        if (value == null) {
-            LOG.error("During CWL processing, got a null value where a non-null value was required.");
-            throw new CustomWebApplicationException(CWL_PARSE_ERROR + "internal processing error", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        return value;
+    private String getDockerPull(RequirementOrHintState requirementState, List<Object> additonalRequirements,
+        RequirementOrHintState hintState, List<Object> additionalHints) {
+        return getDockerPull(
+            addToRequirementOrHintState(requirementState, additonalRequirements),
+            addToRequirementOrHintState(hintState, additionalHints));
     }
 
     /**
      * Computes a new requirement/hint state by adding information-of-interest from the specified list of CWL requirements/hints.
      * If there are no requirements/hints to be added, the original state is returned.
      */
-    private RequirementOrHintState addToRequirementOrHintState(RequirementOrHintState existing, Optional<List<Object>> optionalAdds) {
+    private RequirementOrHintState addToRequirementOrHintState(RequirementOrHintState existing, List<Object> adds) {
         if (existing == null) {
             existing = new RequirementOrHintState();
         }
-        List<Object> adds = deOptionalize(optionalAdds);
         if (adds == null || adds.isEmpty()) {
             return existing;
         }
         RequirementOrHintState sum = new RequirementOrHintState(existing);
         adds.forEach(add -> {
-            // The cwljava parser has an oddity: given a requirement R and a hint H, where R and H are equivalent, cwljava does not parse them to the same representation.
-            // Thus, we must handle two cases: a) the requirement/hint is a DockerRequirement object, and b) the requirement/hint is the equivalent Map.
-            if (add instanceof DockerRequirement) {
-                sum.setDockerPull(deOptionalize(((DockerRequirement)add).getDockerPull()));
-            }
             if (add instanceof Map) {
                 Map map = (Map)add;
                 if ("DockerRequirement".equals(map.get("class"))) {
@@ -803,12 +850,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     @Override
     public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
-        return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "workflow", Set.of("Workflow"), "tool", Set.of("CommandLineTool", "ExpressionTool"));
+        return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "workflow", Set.of(WORKFLOW), "tool", Set.of(COMMAND_LINE_TOOL, EXPRESSION_TOOL));
     }
 
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
-        return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "tool", Set.of("CommandLineTool", "ExpressionTool"), "workflow", Set.of("Workflow"));
+        return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "tool", Set.of(COMMAND_LINE_TOOL, EXPRESSION_TOOL), "workflow", Set.of(WORKFLOW));
     }
 
     @Override
@@ -1053,7 +1100,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         private boolean isProcess(Map<String, Object> cwl) {
             Object c = cwl.get("class");
-            return "Workflow".equals(c) || "CommandLineTool".equals(c) || "ExpressionTool".equals(c) || "Operation".equals(c);
+            return WORKFLOW.equals(c) || COMMAND_LINE_TOOL.equals(c) || EXPRESSION_TOOL.equals(c) || OPERATION.equals(c);
         }
 
         private String setIdIfAbsent(Map<String, Object> entryCwl) {

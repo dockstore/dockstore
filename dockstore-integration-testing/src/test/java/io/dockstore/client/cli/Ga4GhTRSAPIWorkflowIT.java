@@ -29,8 +29,10 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.openapi.model.DescriptorTypeWithPlain;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -50,14 +52,22 @@ import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.WorkflowVersion;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.ZipFile;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -115,7 +125,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      * the workflow, putting it here
      */
     @Test
-    public void testGa4ghEndpointForComplexWdlWorkflow() {
+    public void testGa4ghEndpointForComplexWdlWorkflow() throws IOException {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
         Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
@@ -132,6 +142,36 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
             // TRS paths are relative
             assertTrue(sourceFiles.stream().anyMatch(sf -> sf.getAbsolutePath().equals("/" + path)));
         });
+
+        // test zip download via GA4GH TRS 2.0.1
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+        final List<io.dockstore.openapi.client.model.ToolFile> toolFiles = ga4Ghv20Api.toolsIdVersionsVersionIdTypeFilesGet("#workflow/" + refresh.getFullWorkflowPath(),
+            DescriptorTypeWithPlain.WDL.toString(), GATK_SV_TAG, null);
+        byte[] arbitraryURL = CommonTestUtilities.getArbitraryURL(
+            "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
+                + "/" + DescriptorTypeWithPlain.WDL
+                + "/files?format=zip", new GenericType<>() {
+                }, ownerWebClient);
+        File tempZip = File.createTempFile("temp", "zip");
+        Path write = Files.write(tempZip.toPath(), arbitraryURL);
+        try (ZipFile zipFile = new ZipFile(write.toFile())) {
+            assertTrue("zip file seems to have files", zipFile.size() > 0);
+            assertTrue("zip file seems to have wdl files", zipFile.stream().anyMatch(file -> file.getName().endsWith(".wdl")));
+            assertTrue("zip file seems to have a wdl file with stuff in it", zipFile.stream().filter(file -> file.getName().endsWith(".wdl")).findFirst().get().getSize() > 0);
+        }
+        tempZip.deleteOnExit();
+
+        // test combination of zip only with json return (should fail)
+        try {
+            CommonTestUtilities.getArbitraryURL(
+                "/ga4gh/trs/v2/tools/" + URLEncoder.encode("#workflow/" + refresh.getFullWorkflowPath(), StandardCharsets.UTF_8) + "/versions/" + URLEncoder.encode(GATK_SV_TAG, StandardCharsets.UTF_8)
+                + "/" + DescriptorTypeWithPlain.WDL
+                + "/files?format=zip", new GenericType<>() {
+                }, ownerWebClient, MediaType.APPLICATION_JSON);
+            fail("should have died with bad request");
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
     }
 
     /**

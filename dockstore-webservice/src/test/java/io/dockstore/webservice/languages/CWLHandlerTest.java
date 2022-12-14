@@ -357,7 +357,7 @@ public class CWLHandlerTest {
             Assert.fail("Expected parse error: value of workflow step run field should be a string, workflow, or tool");
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
-            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_ERROR);
+            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);
         }
     }
 

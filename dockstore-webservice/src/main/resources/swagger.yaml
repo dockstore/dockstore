@@ -43,7 +43,7 @@ tags:
     \ and is considered final (not subject to change)"
 - name: "GA4GHV20"
   description: "A curated subset of resources proposed as a common standard for tool\
-    \ repositories. Implements TRS [2.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0)."
+    \ repositories. Implements TRS [2.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.1)."
 - name: "hosted"
   description: "Created and modify hosted entries in the dockstore"
 - name: "lambdaEvents"
@@ -7728,12 +7728,9 @@ definitions:
   OrganizationUser:
     type: "object"
     required:
-    - "accepted"
     - "role"
+    - "status"
     properties:
-      accepted:
-        type: "boolean"
-        description: "Has the user accepted their membership."
       dbCreateDate:
         type: "integer"
         format: "int64"
@@ -7751,6 +7748,13 @@ definitions:
         - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
+      status:
+        type: "string"
+        description: "The status of the organization invitation"
+        enum:
+        - "PENDING"
+        - "REJECTED"
+        - "ACCEPTED"
       user:
         $ref: "#/definitions/User"
   OrganizationUserId:
@@ -7937,6 +7941,10 @@ definitions:
         description: "The checksum(s) of the sourcefile's content"
         items:
           $ref: "#/definitions/Checksum"
+      typeVersion:
+        type: "string"
+        position: 7
+        description: "The language version for the given descriptor file type"
   StarRequest:
     type: "object"
     properties:
@@ -7954,6 +7962,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
+      descriptorTypeVersions:
+        type: "array"
+        description: "The language versions for the version's descriptor files"
+        items:
+          type: "string"
       id:
         type: "integer"
         format: "int64"
@@ -8634,6 +8647,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
+      descriptorTypeVersions:
+        type: "array"
+        description: "The language versions for the version's descriptor files"
+        items:
+          type: "string"
       id:
         type: "integer"
         format: "int64"
@@ -9060,6 +9078,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
+      descriptorTypeVersions:
+        type: "array"
+        description: "The language versions for the version's descriptor files"
+        items:
+          type: "string"
       id:
         type: "integer"
         format: "int64"
