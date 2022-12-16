@@ -186,7 +186,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.10.1</version>
                     <configuration>
-                        <release>11</release>
+                        <release>17</release>
                         <showDeprecation>true</showDeprecation>
                         <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     </configuration>
@@ -275,16 +275,18 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>2.8.2</version>
+                    <version>3.0.0</version>
                     <configuration>
-                        <uniqueVersion>false</uniqueVersion>
-                        <deployAtEnd>false</deployAtEnd>
+                        <deployAtEnd>true</deployAtEnd>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>2.5.2</version>
+                    <version>3.1.0</version>
+                    <configuration>
+                        <installAtEnd>true</installAtEnd>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -572,7 +574,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <!-- toggle this when we want the jar to only support Java 17, unless we read up on multi-release jars -->
-                    <release>11</release>
+                    <release>17</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -654,7 +656,7 @@
             <plugin>
                 <groupId>net.revelc.code</groupId>
                 <artifactId>impsort-maven-plugin</artifactId>
-                <version>1.6.2</version>
+                <version>1.8.0</version>
                 <executions>
                     <execution>
                         <id>sort-imports</id>
@@ -663,6 +665,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <compliance>17</compliance>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>io.github.git-commit-id</groupId>

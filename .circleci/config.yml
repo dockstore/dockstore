@@ -30,7 +30,7 @@ executors:
     resource_class: medium+
   machine_integration_test_exec:
     machine: # run the steps with Ubuntu VM, warning this VM does not have a Java 17 equivalent (yet)
-      image: ubuntu-2004:202104-01
+      image: ubuntu-2204:2022.10.1
     environment:
       PGHOST: 127.0.0.1
     resource_class: medium
@@ -160,7 +160,7 @@ jobs:
       TESTING_PROFILE: language-parsing-tests
     steps:
       - setup_machine
-      - install-pip
+      - install-pip-machine
       - run:
           name: install pip dependencies
           command: scripts/install-tests.sh
@@ -420,6 +420,21 @@ commands:
             tar -zxf git-secrets-1.3.0.tar.gz
             cd git-secrets-1.3.0
             sudo make install
+
+  install-pip-machine:
+    steps:
+      - run:
+          name: install pip
+          command: |
+            sudo apt update
+            # https://askubuntu.com/questions/1367139/apt-get-upgrade-auto-restart-services
+            sudo NEEDRESTART_MODE=a apt install libxml2-dev libxslt-dev
+            
+            # For debug purposes, a python3 version was installed in the image, pip is untagged
+            python3 --version
+            pip3 --version
+            alias pip=pip3            
+
   install-pip:
     steps:
       - run:

@@ -61,12 +61,11 @@ POM as their parent.
         <logback.version>1.2.11</logback.version>
         <aws.version>2.17.186</aws.version>
         <powermock.version>2.0.4</powermock.version>
-        <postgresql.version>42.4.1</postgresql.version>
+        <postgresql.version>42.4.3</postgresql.version>
         <mockito.version>3.12.4</mockito.version>
         <cwlavro.version>2.0.4.7</cwlavro.version>
         <okhttp.version>4.10.0</okhttp.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <swagger-ui.version>3.25.0</swagger-ui.version>
         <httpcomponents.version>4.5.13</httpcomponents.version>
         <httpcore.version>4.4.15</httpcore.version>
         <httpasyncclient.version>4.1.4</httpasyncclient.version>
@@ -1237,6 +1236,22 @@ POM as their parent.
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <installAtEnd>true</installAtEnd>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <deployAtEnd>true</deployAtEnd>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>

@@ -572,6 +572,9 @@ public abstract class SourceCodeRepoInterface {
 
         // If source file is found and valid then add it
         if (sourceFile != null && sourceFile.getContent() != null) {
+            // carry over metadata from plugins
+            final Optional<SourceFile> matchingFile = sourceFileSet.stream().filter(f -> f.getPath().equals(sourceFile.getPath())).findFirst();
+            matchingFile.ifPresent(file -> sourceFile.setTypeVersion(file.getTypeVersion()));
             version.getSourceFiles().add(sourceFile);
         }
 

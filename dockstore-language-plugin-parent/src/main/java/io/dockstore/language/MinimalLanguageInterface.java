@@ -19,7 +19,6 @@ import io.dockstore.common.DescriptorLanguage;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.apache.commons.lang3.tuple.Pair;
 import org.pf4j.ExtensionPoint;
 
 /**
@@ -52,7 +51,7 @@ public interface MinimalLanguageInterface extends ExtensionPoint {
      * @param reader      get additional files and their content
      * @return a map from absolute paths (relative to the root of the repo, e.g. "common.cwl" as opposed to "../common.cwl") to their file types and content
      */
-    Map<String, Pair<String, GenericFileType>> indexWorkflowFiles(String initialPath, String contents, FileReader reader);
+    Map<String, FileMetadata> indexWorkflowFiles(String initialPath, String contents, FileReader reader);
 
     /**
      * Given the primary descriptor and the files indexed from indexWorkflowFiles, return relevant metadata
@@ -63,7 +62,7 @@ public interface MinimalLanguageInterface extends ExtensionPoint {
      * @param indexedFiles the set of files indexed above
      * @return the workflow metadata that we will show to users
      */
-    WorkflowMetadata parseWorkflowForMetadata(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
+    WorkflowMetadata parseWorkflowForMetadata(String initialPath, String contents, Map<String, FileMetadata> indexedFiles);
 
     /**
      * When indexing, Dockstore will distinguish between extra files that hold things like extra code, tools, configuration (imported descriptors) and test parameter files (example parameter sets used to run a workflow)
@@ -90,6 +89,15 @@ public interface MinimalLanguageInterface extends ExtensionPoint {
          */
         List<String> listFiles(String pathToDirectory);
     }
+
+    /**
+     * Record a file and metadata about it.
+     * @param content content of the file
+     * @param genericFileType type of file this is
+     * @param languageVersion language version, some languages may or may not allow mix and matching of language version. The validation methods in
+     *                        the complete language interface can define whether mixed versions is a validation error
+     */
+    record FileMetadata(String content, GenericFileType genericFileType, String languageVersion) { }
 
     /**
      * Information that can be parsed from a specific version of a workflow and would be useful to display to users.

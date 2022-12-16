@@ -21,6 +21,7 @@ import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
+import io.dockstore.language.MinimalLanguageInterface.FileMetadata;
 import io.dockstore.language.MinimalLanguageInterface.GenericFileType;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -40,8 +41,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +70,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             author.setEmail(workflowMetadata.getEmail());
             version.addAuthor(author);
         }
+        version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
         version.setDescriptionAndDescriptionSource(workflowMetadata.getDescription(), DescriptionSource.DESCRIPTOR);
         // TODO: hook up validation object to version for parsing metadata
         return version;
@@ -106,8 +106,8 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
      * @param sourceFiles set of sourcefiles
      * @return Generic indexed files mapping
      */
-    private Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> sourcefilesToIndexedFiles(Set<SourceFile> sourceFiles) {
-        Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> indexedFiles = new HashMap<>();
+    private Map<String, FileMetadata> sourcefilesToIndexedFiles(Set<SourceFile> sourceFiles) {
+        Map<String, FileMetadata> indexedFiles = new HashMap<>();
 
         for (SourceFile file : sourceFiles) {
             String content = file.getContent();
@@ -138,7 +138,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 throw new CustomWebApplicationException("Could not determine file type category for source file "
                     + file.getPath(), HttpStatus.SC_METHOD_FAILURE);
             }
-            Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, genericFileType);
+            FileMetadata indexedFile = new FileMetadata(content, genericFileType, null);
             indexedFiles.put(absolutePath, indexedFile);
         }
         return indexedFiles;
@@ -171,13 +171,14 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
         };
 
-        final Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> stringPairMap = minimalLanguageInterface
+        final Map<String, FileMetadata> stringPairMap = minimalLanguageInterface
             .indexWorkflowFiles(filepath, content, reader);
         Map<String, SourceFile> results = new HashMap<>();
-        for (Map.Entry<String, Pair<String, MinimalLanguageInterface.GenericFileType>> entry : stringPairMap.entrySet()) {
+        for (Map.Entry<String, FileMetadata> entry : stringPairMap.entrySet()) {
             final SourceFile sourceFile = new SourceFile();
             sourceFile.setPath(entry.getKey());
-            sourceFile.setContent(entry.getValue().getLeft());
+            sourceFile.setContent(entry.getValue().content());
+            sourceFile.setTypeVersion(entry.getValue().languageVersion());
             if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
@@ -190,9 +191,9 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             // however this may not be true for some languages, and we may have to change this
             if (sourceFile.getType() == null) {
                 DescriptorLanguage.FileType importedFileType = null;
-                if (entry.getValue().getRight() == GenericFileType.IMPORTED_DESCRIPTOR) {
+                if (entry.getValue().genericFileType() == GenericFileType.IMPORTED_DESCRIPTOR) {
                     importedFileType = minimalLanguageInterface.getDescriptorLanguage().getFileType();
-                } else if (entry.getValue().getRight() == GenericFileType.TEST_PARAMETER_FILE) {
+                } else if (entry.getValue().genericFileType() == GenericFileType.TEST_PARAMETER_FILE) {
                     importedFileType = minimalLanguageInterface.getDescriptorLanguage().getTestParamType();
                 } else {
                     // For some languages this may be incorrect
