@@ -2,7 +2,6 @@ package io.dockstore.webservice.languages;
 
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
@@ -30,8 +29,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
@@ -171,7 +168,7 @@ public class LanguagePluginHandlerTest {
 
     public SourceFile createSourceFile(String filePath, String fileResourcePath, FileType fileType) throws IOException {
         File resourceFile = new File(ResourceHelpers.resourceFilePath(fileResourcePath));
-        String sourceFileContents = Files.asCharSource(resourceFile, Charsets.UTF_8).read();
+        String sourceFileContents = Files.asCharSource(resourceFile, StandardCharsets.UTF_8).read();
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(fileType);
         sourceFile.setContent(sourceFileContents);
@@ -194,25 +191,25 @@ public class LanguagePluginHandlerTest {
         }
 
         @Override
-        public Map<String, Pair<String, GenericFileType>> indexWorkflowFiles(String initialPath,
+        public Map<String, FileMetadata> indexWorkflowFiles(String initialPath,
             String contents, FileReader reader) {
-            Map<String, Pair<String, GenericFileType>> results = new HashMap<>();
+            Map<String, FileMetadata> results = new HashMap<>();
 
             // fake getting the imported descriptor contents from the main descriptor
             String importedContents = reader.readFile(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH);
-            results.put(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH, new ImmutablePair<>(importedContents, GenericFileType.IMPORTED_DESCRIPTOR));
+            results.put(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH, new FileMetadata(importedContents, GenericFileType.IMPORTED_DESCRIPTOR, "v1.2"));
             String testFileContents = reader.readFile(TEST_INPUT_FILE_RESOURCE_PATH);
-            results.put(TEST_INPUT_FILE_RESOURCE_PATH, new ImmutablePair<>(testFileContents, GenericFileType.TEST_PARAMETER_FILE));
+            results.put(TEST_INPUT_FILE_RESOURCE_PATH, new FileMetadata(testFileContents, GenericFileType.TEST_PARAMETER_FILE, null));
             String dockerfileContents = reader.readFile(DOCKERFILE_RESOURCE_PATH);
-            results.put(DOCKERFILE_RESOURCE_PATH, new ImmutablePair<>(dockerfileContents, GenericFileType.CONTAINERFILE));
+            results.put(DOCKERFILE_RESOURCE_PATH, new FileMetadata(dockerfileContents, GenericFileType.CONTAINERFILE, null));
             String serviceContents = reader.readFile(SERVICE_DESCRIPTOR_RESOURCE_PATH);
-            results.put(SERVICE_DESCRIPTOR_RESOURCE_PATH, new ImmutablePair<>(serviceContents, GenericFileType.IMPORTED_DESCRIPTOR));
+            results.put(SERVICE_DESCRIPTOR_RESOURCE_PATH, new FileMetadata(serviceContents, GenericFileType.IMPORTED_DESCRIPTOR, null));
             return results;
         }
 
         @Override
         public WorkflowMetadata parseWorkflowForMetadata(String initialPath, String contents,
-            Map<String, Pair<String, GenericFileType>> indexedFiles) {
+            Map<String, FileMetadata> indexedFiles) {
             WorkflowMetadata workflowMetadata = new WorkflowMetadata();
             workflowMetadata.setAuthor("Shakespeare");
             workflowMetadata.setEmail("globetheater@bard.com");
@@ -227,33 +224,33 @@ public class LanguagePluginHandlerTest {
         }
 
         @Override
-        public VersionTypeValidation validateWorkflowSet(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles) {
+        public VersionTypeValidation validateWorkflowSet(String initialPath, String contents, Map<String, FileMetadata> indexedFiles) {
             // This will be executed via the sourcefilesToIndexedFilesViaValidateWorkflowSetNullTypeTest test code
             // and some files may not be present depending on the inputs to the test
             if (indexedFiles.containsKey(MAIN_DESCRIPTOR_CWL)) {
-                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(MAIN_DESCRIPTOR_CWL).getRight());
+                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(MAIN_DESCRIPTOR_CWL).genericFileType());
             }
             if (indexedFiles.containsKey(SECONDARY_DESCRIPTOR_CWL)) {
-                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(SECONDARY_DESCRIPTOR_CWL).getRight());
+                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(SECONDARY_DESCRIPTOR_CWL).genericFileType());
             }
             if (indexedFiles.containsKey(TEST_INPUT_FILE)) {
-                Assert.assertSame(GenericFileType.TEST_PARAMETER_FILE, indexedFiles.get(TEST_INPUT_FILE).getRight());
+                Assert.assertSame(GenericFileType.TEST_PARAMETER_FILE, indexedFiles.get(TEST_INPUT_FILE).genericFileType());
             }
             if (indexedFiles.containsKey(DOCKERFILE)) {
-                Assert.assertSame(GenericFileType.CONTAINERFILE, indexedFiles.get(DOCKERFILE).getRight());
+                Assert.assertSame(GenericFileType.CONTAINERFILE, indexedFiles.get(DOCKERFILE).genericFileType());
             }
             if (indexedFiles.containsKey(PRIMARY_DESCRIPTOR)) {
-                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(PRIMARY_DESCRIPTOR).getRight());
+                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(PRIMARY_DESCRIPTOR).genericFileType());
             }
             if (indexedFiles.containsKey(OTHER_FILE)) {
-                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(OTHER_FILE).getRight());
+                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(OTHER_FILE).genericFileType());
             }
 
             return new VersionTypeValidation(true, Collections.emptyMap());
         }
 
         @Override
-        public VersionTypeValidation validateTestParameterSet(Map<String, Pair<String, GenericFileType>> indexedFiles) {
+        public VersionTypeValidation validateTestParameterSet(Map<String, FileMetadata> indexedFiles) {
             return null;
         }
     }

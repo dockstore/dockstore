@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     # Should only release tags
     # TODO: should only release tags where the required status checks are passing
@@ -29,6 +29,12 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
            ${{ runner.os }}-maven-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17.0.4+8'
+          distribution: 'adopt'
 
       - name: Store Maven project version 
         run: echo "maven_project_version=$(mvn help:evaluate -Dexpression=project.version -Dchangelist=${{ github.event.inputs.changelist }} -q -DforceStdout)" >> $GITHUB_ENV

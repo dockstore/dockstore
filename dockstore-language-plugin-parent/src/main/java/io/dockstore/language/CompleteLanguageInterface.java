@@ -18,7 +18,6 @@ package io.dockstore.language;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Complete interface for new languages
@@ -31,9 +30,9 @@ public interface CompleteLanguageInterface extends RecommendedLanguageInterface 
      * @param initialPath  the path to the primary descriptor
      * @param contents     contents of the primary descriptor
      * @param indexedFiles the set of files indexed from MinimalLanguageInterface
-     * @return cytoscape compatible data structure http://manual.cytoscape.org/en/stable/Supported_Network_File_Formats.html#cytoscape-js-json
+     * @return cytoscape compatible <a href="http://manual.cytoscape.org/en/stable/Supported_Network_File_Formats.html#cytoscape-js-json">data structure</a>
      */
-    Map<String, Object> loadCytoscapeElements(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
+    Map<String, Object> loadCytoscapeElements(String initialPath, String contents, Map<String, FileMetadata> indexedFiles);
 
     /**
      * Generate table containing information on the steps of the workflow, potentially including ids, URLs to more information, Docker containers
@@ -42,10 +41,10 @@ public interface CompleteLanguageInterface extends RecommendedLanguageInterface 
      * @param indexedFiles the set of files indexed from MinimalLanguageInterface
      * @return table with row type data
      */
-    List<RowData> generateToolsTable(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
+    List<RowData> generateToolsTable(String initialPath, String contents, Map<String, FileMetadata> indexedFiles);
 
     /**
-     * One row of the table per unique workflow step (i.e. do not need to create muliple elements for scattered operations
+     * One row of the table per unique workflow step (i.e. do not need to create multiple elements for scattered operations
      */
     class RowData {
         public RowType rowType;
@@ -59,7 +58,7 @@ public interface CompleteLanguageInterface extends RecommendedLanguageInterface 
     }
 
     /**
-     * A step of a workflow can be a subworkflow (i.e. not one unique dockerContainer, tool, etc.)
+     * A step of a workflow can be a sub-workflow (i.e. not one unique dockerContainer, tool, etc.)
      */
     enum RowType {
         TOOL,
