@@ -29,7 +29,10 @@ public class QuayImageRegistryTest {
     /**
      * Normally, we are only able to get 500 tags without using the paginated endpoint.
      * This tests that when there are over 500 tags, we can use the paginated endpoint to retrieve all of them instead.
-     * Using calico/node because it has over 3838 tags
+     * Originally, this used calico/node with 3838 tags but it now has 8960 tags on 2022-12-19
+     * Openshift-release-dev/ocp-release had 6737 on 2022-12-19
+     * Slowing the test to 256.195 seconds.
+     * Pointing the test at some of our repos reduces time to 5 seconds but is less thorough
      */
     @Test
     public void getOver500TagsTest() {
@@ -38,11 +41,11 @@ public class QuayImageRegistryTest {
         QuayImageRegistry quayImageRegistry = new QuayImageRegistry(token);
         Tool tool = new Tool();
         tool.setRegistry("quay.io");
-        tool.setNamespace("calico");
-        tool.setName("node");
+        tool.setNamespace("dockstore");
+        tool.setName("dockstore-webservice");
         List<Tag> tags = quayImageRegistry.getTags(tool);
         int size = tags.size();
-        Assert.assertTrue("Should be able to get more than the default 500 tags", size > 3838);
+        Assert.assertTrue("Should be able to get more than the default 500 tags", size > 500);
         tags.forEach(tag -> {
             Assert.assertTrue("Images should be populated", tag.getImages().size() > 0);
             Assert.assertTrue("things look kinda sane", !tag.getName().isEmpty() && tag.getImages().stream().noneMatch(img -> img.getImageUpdateDate().isEmpty()));
@@ -56,8 +59,8 @@ public class QuayImageRegistryTest {
         Assert.assertEquals("There should be no tags with the same name", size, distinctSize);
 
         // This Quay repo has tags with > 1 manifest per image
-        tool.setNamespace("openshift-release-dev");
-        tool.setName("ocp-release");
+        tool.setNamespace("dockstore");
+        tool.setName("multi_manifest_test");
         tags = quayImageRegistry.getTags(tool);
         Optional<Tag> tagWithMoreThanOneImage = tags.stream().filter(tag -> tag.getImages().size() > 1).findFirst();
         if (tagWithMoreThanOneImage.isEmpty()) {
