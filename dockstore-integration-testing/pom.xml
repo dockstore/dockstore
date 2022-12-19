@@ -28,6 +28,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <argLine></argLine>
     </properties>
 
     <dependencies>
@@ -195,8 +196,8 @@
                     <!-- nothing to do with the JAVA_TOOL_OPTIONS in .cirleci/config.yml because surefire has its own JVM-->
                     <!-- This plus the .circle/config.yml must add to a bit less than 4GB -->
                     <argLine>
-                        ${argLine}
                         -Xmx4g
+                        @{argLine}
                     </argLine>
                     <!-- seems like some form of Jackson fork issue for this module with random order -->
                     <runOrder>filesystem</runOrder>
