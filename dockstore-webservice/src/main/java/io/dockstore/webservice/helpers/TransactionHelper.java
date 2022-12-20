@@ -122,9 +122,9 @@ public final class TransactionHelper {
 
     private void check() {
         if (thrown != null) {
-            LOG.error("operation on session that has previously thrown", thrown);
-            thrown = new Error("operation on session that has previously thrown");
-            rethrow(thrown);
+            LOG.error("operation on session that has thrown", thrown);
+            thrown = new RuntimeException("operation on session that has thrown");
+            throw thrown;
         }
     }
 
