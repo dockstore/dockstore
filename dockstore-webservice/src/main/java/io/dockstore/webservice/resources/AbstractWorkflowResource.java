@@ -370,16 +370,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, AppTool.class, messageWriter);
 
-        } catch (Exception ex) {
+        } catch (RuntimeException | DockstoreYamlHelper.DockstoreYamlException | Error throwable) {
 
-            // If an exception propagates to here, log something helpful and abort .dockstore.yml processing.
+            // If an exception or error propagates to here, log something helpful and abort .dockstore.yml processing.
             isSuccessful = false;
-            String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + generateMessageFromException(ex);
-            LOG.info(msg, ex);
+            String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + generateMessageFromThrowable(throwable);
+            LOG.info(msg, throwable);
             messageWriter.println(msg);
             messageWriter.println("Terminated processing of .dockstore.yml.");
 
-            throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
+            throw new CustomWebApplicationException(msg, statusCodeForLambda(throwable));
 
         } finally {
 
@@ -410,11 +410,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Determines whether to signal lambda to try again
-     * @param ex
+     * @param throwable
      * @return
      */
-    private int statusCodeForLambda(Exception ex) {
+    private int statusCodeForLambda(Throwable throwable) {
         // 5xx tells lambda to retry. Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
+        if (!(throwable instanceof Exception)) {
+            LOG.error("Error thrown within processing code.", throwable);
+            return HttpStatus.SC_INTERNAL_SERVER_ERROR;
+        }
+        Exception ex = (Exception)throwable;
         if (isGitHubRateLimitError(ex)) {
             LOG.info("GitHub rate limit hit, signaling lambda to retry.", ex);
             return HttpStatus.SC_INTERNAL_SERVER_ERROR;
@@ -521,7 +526,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     rethrowIfFatal((RuntimeException)ex, transactionHelper);
                 }
                 final String message = String.format("Error processing %s %s:%n%s",
-                    computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
+                    computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromThrowable(ex));
                 LOG.error(message, ex);
                 messageWriter.println(message);
                 messageWriter.println("Entry skipped.");
@@ -593,18 +598,17 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return name != null ? String.format("%s/%s", repository, name) : repository;
     }
 
-    private String generateMessageFromException(Exception ex) {
+    private String generateMessageFromThrowable(Throwable throwable) {
         // ClassCastException has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
         // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
         // so return a generic one.
-        if (ex instanceof ClassCastException) {
+        if (throwable instanceof ClassCastException) {
             return "Could not parse input.";
+        } else if (throwable instanceof DockstoreYamlHelper.DockstoreYamlException) {
+            return DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML + throwable.getMessage();
+        } else {
+            return throwable instanceof CustomWebApplicationException ? ((CustomWebApplicationException)throwable).getErrorMessage() : throwable.getMessage();
         }
-        String message = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
-        if (ex instanceof DockstoreYamlHelper.DockstoreYamlException) {
-            message = DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML + message;
-        }
-        return message;
     }
 
     /**
