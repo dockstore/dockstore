@@ -221,7 +221,8 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             try {
                 rowData = ((CompleteLanguageInterface)minimalLanguageInterface)
                         .generateToolsTable(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
-            } catch (NullPointerException e) {
+             }
+            catch (RuntimeException e) {
                 LOG.error("could not parse tools from workflow", e);
                 return Optional.empty();
             }
