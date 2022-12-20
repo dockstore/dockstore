@@ -5,8 +5,12 @@ import io.dockstore.client.cli.BasicIT;
 import io.dockstore.client.cli.OrganizationIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.yaml.DockstoreYamlHelper;
+import io.dockstore.openapi.client.model.LambdaEvent;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
+import java.util.List;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -15,6 +19,9 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.mockito.ArgumentMatchers;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 /**
  * Like WebhookIT but with only openapi classes to avoid having to give fully defined classes everywhere
@@ -75,5 +82,25 @@ public class OpenAPIWebhookIT extends BaseIT {
         // uncomment this after DOCK-1890 and delete from WebhookIT
         // Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
         // assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
+    }
+
+    @Test
+    public void testErrorThrownDuringInRelease() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
+
+        // Mock DockstoreYamlHelper.readAsDockstoreYaml12 to throw an Error, then try a release.
+        // We do this within a try-resource block so that the mock is reverted at the end.
+        try (MockedStatic<DockstoreYamlHelper> helper = Mockito.mockStatic(DockstoreYamlHelper.class)) {
+            helper.when(() -> DockstoreYamlHelper.readAsDockstoreYaml12(ArgumentMatchers.anyString())).thenThrow(new Error("synthesized error"));
+            // Do the release.
+            client.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+            // Confirm that the release failed and was logged correctly.
+            List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+            Assert.assertEquals("There should be one event", 1, events.stream().count());
+            Assert.assertEquals("There should be no successful events", 0, events.stream().filter(LambdaEvent::isSuccess).count());
+        }
     }
 }
