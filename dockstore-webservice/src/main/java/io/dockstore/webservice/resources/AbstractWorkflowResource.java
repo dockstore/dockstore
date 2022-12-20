@@ -599,15 +599,17 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private String generateMessageFromThrowable(Throwable throwable) {
-        // ClassCastException has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
-        // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
-        // so return a generic one.
         if (throwable instanceof ClassCastException) {
+            // ClassCastException has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
+            // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
+            // so return a generic one.
             return "Could not parse input.";
         } else if (throwable instanceof DockstoreYamlHelper.DockstoreYamlException) {
             return DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML + throwable.getMessage();
+        } else if (throwable instanceof CustomWebApplicationException) {
+            return ((CustomWebApplicationException)throwable).getErrorMessage();
         } else {
-            return throwable instanceof CustomWebApplicationException ? ((CustomWebApplicationException)throwable).getErrorMessage() : throwable.getMessage();
+            return throwable.getMessage();
         }
     }
 

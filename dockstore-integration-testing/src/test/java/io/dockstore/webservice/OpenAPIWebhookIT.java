@@ -102,5 +102,10 @@ public class OpenAPIWebhookIT extends BaseIT {
             Assert.assertEquals("There should be one event", 1, events.stream().count());
             Assert.assertEquals("There should be no successful events", 0, events.stream().filter(LambdaEvent::isSuccess).count());
         }
+
+        // Try the release again, with no Error, to confirm it succeeds.
+        client.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+        Assert.assertEquals("There should be one successful event", 1, events.stream().filter(LambdaEvent::isSuccess).count());
     }
 }
