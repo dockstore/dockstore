@@ -124,7 +124,7 @@ public final class TransactionHelper {
         if (thrown != null) {
             LOG.error("operation on session that has thrown", thrown);
             thrown = new RuntimeException("operation on session that has thrown");
-            throw thrown;
+            rethrow(thrown);
         }
     }
 
