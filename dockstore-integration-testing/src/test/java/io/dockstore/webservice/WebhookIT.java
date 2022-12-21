@@ -40,7 +40,6 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ValidationConstants;
-import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.dockstore.openapi.client.model.OrcidAuthorInformation;
@@ -83,9 +82,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-import org.mockito.ArgumentMatchers;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 /**
  * @author agduncan
@@ -1617,22 +1613,16 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
 
-        // Mock DockstoreYamlHelper.readAsDockstoreYaml12 to throw an Error, then try a release.
-        // We do this within a try-with-resource block so that the mocked static method is reverted at the end.
-        // Uses functionality from mockito-inline: https://www.davidvlijmincx.com/posts/writing_higher_quality_tests_with_mockitos_inline_mock_maker/
-        try (MockedStatic<DockstoreYamlHelper> helper = Mockito.mockStatic(DockstoreYamlHelper.class)) {
-            helper.when(() -> DockstoreYamlHelper.readAsDockstoreYaml12(ArgumentMatchers.anyString())).thenThrow(new Error("synthesized error"));
-            // Do the release.
-            client.handleGitHubRelease("refs/tags/1.0", installationId, taggedToolRepo, BasicIT.USER_2_USERNAME);
+        // Attempt to process a repo containing a recursive WDL.  Internally, we use Cromwell to process WDLs.
+        // It should throw a StackOverflowError, which will bubble out of the .dockstore.yml processing code.
+        try {
+            client.handleGitHubRelease("refs/heads/main", installationId, "svonworl/recursive-wdl", BasicIT.USER_2_USERNAME);
+            Assert.fail("should have thrown");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             // Confirm that the release failed and was logged correctly.
             List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
             Assert.assertEquals("There should be one event", 1, events.stream().count());
             Assert.assertEquals("There should be no successful events", 0, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count());
         }
-
-        // Try the release again, with no Error, to confirm it succeeds.
-        client.handleGitHubRelease("refs/tags/1.0", installationId, taggedToolRepo, BasicIT.USER_2_USERNAME);
-        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
-        Assert.assertEquals("There should be one successful event", 1, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count());
     }
 }

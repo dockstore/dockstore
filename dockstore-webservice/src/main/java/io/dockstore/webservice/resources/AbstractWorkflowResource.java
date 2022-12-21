@@ -599,7 +599,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private String generateMessageFromThrowable(Throwable throwable) {
-        if (throwable instanceof ClassCastException) {
+        if (throwable instanceof Error) {
+            return "Internal processing error: " + throwable.getClass().getSimpleName();
+        } else if (throwable instanceof ClassCastException) {
             // ClassCastException has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
             // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
             // so return a generic one.
