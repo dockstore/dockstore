@@ -212,22 +212,23 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
         ToolDAO dao) {
 
         if (type == Type.DAG && minimalLanguageInterface instanceof CompleteLanguageInterface) {
-            final Map<String, Object> maps = ((CompleteLanguageInterface)minimalLanguageInterface)
+            final Map<String, Object> maps = ((CompleteLanguageInterface) minimalLanguageInterface)
                 .loadCytoscapeElements(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
             return Optional.of(gson.toJson(maps));
         } else if (type == Type.TOOLS && minimalLanguageInterface instanceof CompleteLanguageInterface) {
             // TODO: hook up tools here for Galaxy
             List<CompleteLanguageInterface.RowData> rowData = new ArrayList<>();
             try {
-                rowData = ((CompleteLanguageInterface)minimalLanguageInterface)
-                        .generateToolsTable(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
-            } catch (NullPointerException e) {
+                rowData = ((CompleteLanguageInterface) minimalLanguageInterface)
+                    .generateToolsTable(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
+            } catch (RuntimeException e) {
                 LOG.error("could not parse tools from workflow", e);
                 return Optional.empty();
             }
             final Map<String, DockerInfo> collect = rowData.stream()
-                    .collect(Collectors.toMap(row -> row.toolid,
-                            row -> new DockerInfo("TBD".equals(row.filename) ? null : row.filename, "TBD".equals(row.dockerContainer) ? null : row.dockerContainer, row.link == null ? null : row.link.toString())));
+                .collect(Collectors.toMap(row -> row.toolid,
+                    row -> new DockerInfo("TBD".equals(row.filename) ? null : row.filename, "TBD".equals(row.dockerContainer) ? null : row.dockerContainer,
+                        row.link == null ? null : row.link.toString())));
             return Optional.of(getJSONTableToolContent(collect));
         }
         return Optional.empty();

@@ -45,6 +45,7 @@ public class SourceCodeRepoFactoryTest {
 
     @Before
     public void setUp() throws Exception {
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, CommonTestUtilities.PUBLIC_CONFIG_PATH);
         SUPPORT.before();
     }
 
