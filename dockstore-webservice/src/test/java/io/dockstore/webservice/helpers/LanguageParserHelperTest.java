@@ -10,9 +10,11 @@ import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import java.io.IOException;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Category(LanguageParsingTest.class)
+@Tag("io.dockstore.common.LanguageParsingTest")
 public class LanguageParserHelperTest {
 
     @Test
