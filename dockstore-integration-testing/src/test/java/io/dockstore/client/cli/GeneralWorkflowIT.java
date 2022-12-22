@@ -499,7 +499,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // confirm the default workflow topic settings
         final String topicAutomatic = workflow.getTopicAutomatic();
         Assert.assertEquals("test repo for CWL and WDL workflows", topicAutomatic);
-        Assert.assertEquals(null, workflow.getTopicManual());
+        Assert.assertNull(workflow.getTopicManual());
         Assert.assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection());
 
         // set the automatic topic to a garbage string, change the manual topic, and select it

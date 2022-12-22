@@ -1,5 +1,8 @@
 package io.dockstore.webservice.helpers;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.google.api.services.oauth2.model.Tokeninfo;
@@ -7,8 +10,7 @@ import com.google.api.services.oauth2.model.Userinfoplus;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class GoogleHelperTest {
@@ -27,9 +29,9 @@ public class GoogleHelperTest {
         GoogleHelper.setConfig(config);
         final Tokeninfo tokeninfo = Mockito.mock(Tokeninfo.class);
         when(tokeninfo.getAudience()).thenReturn(AUDIENCE1).thenReturn(EXTERNAL_AUDIENCE).thenReturn(INVALID_AUDIENCE);
-        Assert.assertTrue(GoogleHelper.isValidAudience(tokeninfo));
-        Assert.assertTrue(GoogleHelper.isValidAudience(tokeninfo));
-        Assert.assertFalse(GoogleHelper.isValidAudience(tokeninfo));
+        assertTrue(GoogleHelper.isValidAudience(tokeninfo));
+        assertTrue(GoogleHelper.isValidAudience(tokeninfo));
+        assertFalse(GoogleHelper.isValidAudience(tokeninfo));
     }
 
     @Test
@@ -44,10 +46,10 @@ public class GoogleHelperTest {
         when(userinfoplus.getEmail()).thenReturn(email);
         when(userinfoplus.getName()).thenReturn(username);
         GoogleHelper.updateUserFromGoogleUserinfoplus(userinfoplus, user);
-        Assert.assertEquals(pictureUrl, user.getAvatarUrl());
+        assertEquals(pictureUrl, user.getAvatarUrl());
         final User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
-        Assert.assertEquals(email, profile.email);
-        Assert.assertEquals(username, profile.name);
-        Assert.assertEquals(pictureUrl, profile.avatarURL);
+        assertEquals(email, profile.email);
+        assertEquals(username, profile.name);
+        assertEquals(pictureUrl, profile.avatarURL);
     }
 }

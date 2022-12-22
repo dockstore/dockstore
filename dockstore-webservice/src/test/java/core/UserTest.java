@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.jackson.Jackson;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author xliu

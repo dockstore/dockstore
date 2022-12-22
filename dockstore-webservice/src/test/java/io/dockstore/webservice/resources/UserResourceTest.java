@@ -1,11 +1,13 @@
 package io.dockstore.webservice.resources;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import io.dockstore.webservice.CustomWebApplicationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class UserResourceTest {
 
@@ -16,9 +18,9 @@ public class UserResourceTest {
         for (String username : invalidUsernames) {
             try {
                 UserResource.restrictUsername(username);
-                Assert.fail("Should not be able to create a username with a keyword.");
+                fail("Should not be able to create a username with a keyword.");
             } catch (CustomWebApplicationException ex) {
-                Assert.assertTrue(ex.errorMessage.contains("because it contains one or more of the following keywords:"));
+                assertTrue(ex.errorMessage.contains("because it contains one or more of the following keywords:"));
             }
         }
     }
@@ -30,8 +32,8 @@ public class UserResourceTest {
         List<String> ids = new ArrayList<>(List.of("11111", "1234567", "999999999", "987654"));
         for (String avatarUrl : avatarUrls) {
             Matcher m = UserResource.GITHUB_ID_PATTERN.matcher(avatarUrl);
-            Assert.assertTrue(m.matches());
-            Assert.assertTrue(ids.stream().anyMatch(id -> id.equals(m.group(1))));
+            assertTrue(m.matches());
+            assertTrue(ids.stream().anyMatch(id -> id.equals(m.group(1))));
         }
     }
 

@@ -15,7 +15,7 @@
  */
 package io.openapi.api.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
@@ -38,10 +38,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author wshands
@@ -51,7 +49,7 @@ public class ToolsImplCommonTest {
     private static final String PLACEHOLDER_CONTENT = "potato";
     private static DockstoreWebserviceConfiguration actualConfig = new DockstoreWebserviceConfiguration();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         actualConfig.getExternalConfig().setHostname("localhost");
         actualConfig.getExternalConfig().setPort("8080");
@@ -138,18 +136,18 @@ public class ToolsImplCommonTest {
         io.openapi.model.ToolVersion toolVersion = new io.openapi.model.ToolVersion();
         toolVersion.setImages(new ArrayList<>());
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
-        Assert.assertEquals("There should be the same amount of images as the Tag", 2, toolVersion.getImages().size());
-        List<Long> sortedSizes = toolVersion.getImages().stream().map(ImageData::getSize).sorted().collect(Collectors.toList());
-        Assert.assertEquals(Long.valueOf(1L), sortedSizes.get(0));
-        Assert.assertEquals(Long.valueOf(2L), sortedSizes.get(1));
+        assertEquals(2, toolVersion.getImages().size(), "There should be the same amount of images as the Tag");
+        List<Long> sortedSizes = toolVersion.getImages().stream().map(ImageData::getSize).sorted().toList();
+        assertEquals(Long.valueOf(1L), sortedSizes.get(0));
+        assertEquals(Long.valueOf(2L), sortedSizes.get(1));
         toolVersion = new io.openapi.model.ToolVersion();
         tag.setImages(new HashSet<>());
         tool = new io.dockstore.webservice.core.Tool();
         tool.addWorkflowVersion(tag);
         toolVersion.setImages(new ArrayList<>());
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
-        Assert.assertEquals("There should be one default image when the Tag has none", 1, toolVersion.getImages().size());
-        Assert.assertEquals(Long.valueOf(0L), toolVersion.getImages().get(0).getSize());
+        assertEquals(1, toolVersion.getImages().size(), "There should be one default image when the Tag has none");
+        assertEquals(Long.valueOf(0L), toolVersion.getImages().get(0).getSize());
     }
 
     @Test

@@ -20,6 +20,7 @@ import static io.dockstore.client.cli.GeneralWorkflowRegressionIT.KNOWN_BREAKAGE
 import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -314,7 +315,7 @@ public class GeneralRegressionIT extends BaseIT {
 
         published = testingPostgres.runSelectStatement("select ispublished from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname IS NULL;", boolean.class);
-        assertTrue("tool not unpublished", !published);
+        assertFalse("tool not unpublished", published);
     }
 
     /**

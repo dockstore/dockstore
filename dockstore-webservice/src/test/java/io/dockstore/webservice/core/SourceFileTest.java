@@ -1,12 +1,13 @@
 package io.dockstore.webservice.core;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import io.dockstore.webservice.CustomWebApplicationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.regex.Pattern;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SourceFileTest {
 
@@ -33,14 +34,14 @@ public class SourceFileTest {
         SourceFile a = new SourceFile();
         try {
             a.setPath(badPath);
-            Assert.fail("should have thrown the appropriate exception");
+            fail("should have thrown the appropriate exception");
         } catch (CustomWebApplicationException e) {
             // expected execution path on successful test
         }
         SourceFile b = new SourceFile();
         try {
             b.setAbsolutePath(badPath);
-            Assert.fail("should have thrown the appropriate exception");
+            fail("should have thrown the appropriate exception");
         } catch (CustomWebApplicationException e) {
             // expected execution path on successful test
         }

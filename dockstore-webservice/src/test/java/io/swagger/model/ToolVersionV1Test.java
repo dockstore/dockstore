@@ -1,8 +1,10 @@
 package io.swagger.model;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.util.Collections;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ToolVersionV1Test {
     /**
@@ -16,7 +18,7 @@ public class ToolVersionV1Test {
         toolVersion.setDescriptorType(Collections.emptyList());
         toolVersion.setUrl("https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.7");
         ToolVersionV1 toolVersionV1 = new ToolVersionV1(toolVersion);
-        Assert.assertEquals("https://dockstore.org/api/api/ga4gh/v1/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.7", toolVersionV1.getUrl());
+        assertEquals("https://dockstore.org/api/api/ga4gh/v1/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.7", toolVersionV1.getUrl());
     }
 
     /**
@@ -29,7 +31,7 @@ public class ToolVersionV1Test {
         toolVersion.setVerified(true);
         toolVersion.setDescriptorType(Collections.emptyList());
         ToolVersionV1 toolVersionV1 = new ToolVersionV1(toolVersion);
-        Assert.assertEquals(null, toolVersionV1.getUrl());
+        assertNull(toolVersionV1.getUrl());
     }
 }
 

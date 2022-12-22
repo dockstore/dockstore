@@ -1,5 +1,5 @@
 
-Lists of 368 third-party dependencies.
+Lists of 374 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -264,6 +264,10 @@ Lists of 368 third-party dependencies.
      (Revised BSD License) JSONLD Java :: Core (com.github.jsonld-java:jsonld-java:0.8.3 - http://github.com/jsonld-java/jsonld-java/jsonld-java/)
      (MIT License) JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.36 - http://www.slf4j.org)
      (Eclipse Public License 1.0) JUnit (junit:junit:4.13.2 - http://junit.org)
+     (Eclipse Public License v2.0) JUnit Jupiter API (org.junit.jupiter:junit-jupiter-api:5.9.1 - https://junit.org/junit5/)
+     (Eclipse Public License v2.0) JUnit Platform Commons (org.junit.platform:junit-platform-commons:1.9.1 - https://junit.org/junit5/)
+     (Eclipse Public License v2.0) JUnit Platform Engine API (org.junit.platform:junit-platform-engine:1.9.1 - https://junit.org/junit5/)
+     (Eclipse Public License v2.0) JUnit Vintage Engine (org.junit.vintage:junit-vintage-engine:5.9.1 - https://junit.org/junit5/)
      (Apache License 2.0) JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.12 - https://metrics.dropwizard.io/metrics-jvm)
      (The Apache License, Version 2.0) Kotlin Stdlib (org.jetbrains.kotlin:kotlin-stdlib:1.6.20 - https://kotlinlang.org/)
      (The Apache License, Version 2.0) Kotlin Stdlib Common (org.jetbrains.kotlin:kotlin-stdlib-common:1.6.20 - https://kotlinlang.org/)
@@ -320,6 +324,8 @@ Lists of 368 third-party dependencies.
      (The Apache License, Version 2.0) OpenCensus (io.opencensus:opencensus-api:0.31.0 - https://github.com/census-instrumentation/opencensus-java)
      (Apache 2) opencsv (com.opencsv:opencsv:5.6 - http://opencsv.sf.net)
      (MIT License) ORCID - Model (org.orcid:orcid-model:3.0.4 - http://github.com/ORCID/orcid-model)
+     (The Apache License, Version 2.0) org.apiguardian:apiguardian-api (org.apiguardian:apiguardian-api:1.1.2 - https://github.com/apiguardian-team/apiguardian)
+     (The Apache License, Version 2.0) org.opentest4j:opentest4j (org.opentest4j:opentest4j:1.2.0 - https://github.com/ota4j-team/opentest4j)
      (EPL 2.0) (GPL2 w/ CPE) OSGi resource locator (org.glassfish.hk2:osgi-resource-locator:1.0.3 - https://projects.eclipse.org/projects/ee4j/osgi-resource-locator)
      (The Apache Software License, Version 2.0) PF4J (org.pf4j:pf4j:3.2.0 - http://nexus.sonatype.org/oss-repository-hosting.html/pf4j-parent/pf4j)
      (BSD-2-Clause) PostgreSQL JDBC Driver (org.postgresql:postgresql:42.4.3 - https://jdbc.postgresql.org)

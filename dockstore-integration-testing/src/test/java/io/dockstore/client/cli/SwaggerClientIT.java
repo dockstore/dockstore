@@ -323,7 +323,7 @@ public class SwaggerClientIT extends BaseIT {
 
         final io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
-        assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        assertEquals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, tool.getId());
         // get versions
         final List<ToolVersionV1> toolVersions = toolApi.toolsIdVersionsGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertEquals(1, toolVersions.size());
@@ -334,7 +334,7 @@ public class SwaggerClientIT extends BaseIT {
             final ToolVersionV1 foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
             assertNotNull(foobar); // this should be unreachable
         } catch (ApiException e) {
-            assertEquals(e.getCode(), HttpStatus.SC_NOT_FOUND);
+            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
         }
     }
 
@@ -348,7 +348,7 @@ public class SwaggerClientIT extends BaseIT {
 
         io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
-        assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        assertEquals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, tool.getId());
         List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
         assertEquals(2, tags.size());
         // register more tags
@@ -451,7 +451,7 @@ public class SwaggerClientIT extends BaseIT {
         containers.forEach(tool -> Assert.assertNull(tool.getAliases()));
         final Set<String> collect = new HashSet<>(containers.get(0).getDescriptorType());
         assertEquals(collect.size(), containers.get(0).getDescriptorType().size());
-        assertEquals(containers.get(0).getPath(), QUAY_IO_TEST_ORG_TEST6);
+        assertEquals(QUAY_IO_TEST_ORG_TEST6, containers.get(0).getPath());
 
         containers = containersApi.allPublishedContainers(null, null, "test52", null, null);
         assertTrue(containers.isEmpty());
@@ -798,7 +798,7 @@ public class SwaggerClientIT extends BaseIT {
         final String fullWorkflowPath2 = hostedWorkflow2.getFullWorkflowPath();
 
         // User 2 should have no workflows shared with
-        Assert.assertEquals(user2WorkflowsApi.sharedWorkflows().size(), 0);
+        Assert.assertEquals(0, user2WorkflowsApi.sharedWorkflows().size());
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
@@ -840,7 +840,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // Deleting the version should not fail
         Workflow deleteVersionFromWorkflow1 = user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflowVersions.get(0).getName());
-        assertTrue(deleteVersionFromWorkflow1.getWorkflowVersions().size() == 0);
+        assertEquals(0, deleteVersionFromWorkflow1.getWorkflowVersions().size());
 
         // Publishing the workflow should fail
         final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);

@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class EncryptionTest {
 

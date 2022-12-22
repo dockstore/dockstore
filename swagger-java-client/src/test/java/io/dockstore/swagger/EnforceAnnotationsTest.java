@@ -1,9 +1,10 @@
 package io.dockstore.swagger;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.swagger.client.model.Workflow;
 import java.lang.annotation.Annotation;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class EnforceAnnotationsTest {
 
@@ -27,7 +28,7 @@ public class EnforceAnnotationsTest {
                 hasJsonSubTypes = true;
             }
         }
-        Assert.assertTrue(hasJsonSubTypes);
+        assertTrue(hasJsonSubTypes);
     }
 
 }

@@ -18,14 +18,17 @@
 
 package io.dockstore.webservice.core.tooltester;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.google.common.collect.Maps;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * TODO: Add more tests
@@ -41,13 +44,13 @@ public class ToolTesterS3ClientTest {
     @Test
     public void convertToolIdToPartialKey() throws UnsupportedEncodingException {
         String toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container/encode-mapping-cwl";
-        Assert.assertEquals("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
+        assertEquals("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
         toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container";
-        Assert.assertEquals("workflow/github.com/ENCODE-DCC/pipeline-container", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
+        assertEquals("workflow/github.com/ENCODE-DCC/pipeline-container", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
         toolId = "quay.io/pancancer/pcawg-bwa-mem-workflow";
-        Assert.assertEquals("tool/quay.io/pancancer/pcawg-bwa-mem-workflow", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
+        assertEquals("tool/quay.io/pancancer/pcawg-bwa-mem-workflow", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
         toolId = "quay.io/pancancer/pcawg-bwa-mem-workflow/thing";
-        Assert.assertEquals("tool/quay.io/pancancer/pcawg-bwa-mem-workflow%2Fthing", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
+        assertEquals("tool/quay.io/pancancer/pcawg-bwa-mem-workflow%2Fthing", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
     }
 
     /**
@@ -62,21 +65,21 @@ public class ToolTesterS3ClientTest {
         userMetadata.put("test_file_path", "test1.json");
         userMetadata.put("runner", "cwltool");
         ToolTesterLog toolTesterLog = ToolTesterS3Client.convertUserMetadataToToolTesterLog(userMetadata, "10101011.log");
-        Assert.assertEquals("quay.io/pancancer/pcawg-bwa-mem-workflow", toolTesterLog.getToolId());
-        Assert.assertEquals("2.7.0", toolTesterLog.getToolVersionName());
-        Assert.assertEquals("test1.json", toolTesterLog.getTestFilename());
-        Assert.assertEquals("cwltool", toolTesterLog.getRunner());
-        Assert.assertEquals("10101011.log", toolTesterLog.getFilename());
+        assertEquals("quay.io/pancancer/pcawg-bwa-mem-workflow", toolTesterLog.getToolId());
+        assertEquals("2.7.0", toolTesterLog.getToolVersionName());
+        assertEquals("test1.json", toolTesterLog.getTestFilename());
+        assertEquals("cwltool", toolTesterLog.getRunner());
+        assertEquals("10101011.log", toolTesterLog.getFilename());
     }
 
     @Test
-    @Ignore("this works to check if tooltester retrieval works, but you need the right creds")
+    @Disabled("this works to check if tooltester retrieval works, but you need the right creds")
     public void testLocal() throws IOException {
         ToolTesterS3Client client = new ToolTesterS3Client("dockstore.tooltester.backup");
         List<ToolTesterLog> toolTesterLogs = client.getToolTesterLogs("quay.io/briandoconnor/dockstore-tool-md5sum", "1.0.4");
         String cwltool = client
                 .getToolTesterLog("quay.io/briandoconnor/dockstore-tool-md5sum", "1.0.4", "test.json", "cwltool", "1554477725708.log");
-        Assert.assertTrue((toolTesterLogs.size() > 10));
-        Assert.assertNotNull(cwltool);
+        assertTrue((toolTesterLogs.size() > 10));
+        assertNotNull(cwltool);
     }
 }

@@ -511,12 +511,12 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
         assertNull(workflow2.getDefaultVersion());
         io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
-        assertEquals(null, workflow.getDefaultVersion());
+        assertNull(workflow.getDefaultVersion());
         client.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         workflow2 = getFoobar2Workflow(client);
         assertEquals("The new tag says the latest tag should be the default version", "0.4", workflow2.getDefaultVersion());
         workflow = getFoobar1Workflow(client);
-        assertEquals(null, workflow.getDefaultVersion());
+        assertNull(workflow.getDefaultVersion());
 
     }
 
@@ -723,7 +723,7 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
         assertTrue("Should be valid", workflow.getWorkflowVersions().get(0).isValid());
-        assertTrue("Lambda event message should be empty", getLatestLambdaEventMessage("0", usersApi) == null);
+        assertNull("Lambda event message should be empty", getLatestLambdaEventMessage("0", usersApi));
 
         // Push missingPrimaryDescriptor on GitHub - one existing wdl workflow, missing primary descriptor
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingPrimaryDescriptor", installationId);
@@ -1213,7 +1213,7 @@ public class WebhookIT extends BaseIT {
         String newTopic = "this is a new topic";
         appTool.setTopicManual(newTopic);
         appTool = client.updateWorkflow(appTool.getId(), appTool);
-        assertEquals(appTool.getTopicManual(), newTopic);
+        assertEquals(newTopic, appTool.getTopicManual());
     }
 
     @Test
@@ -1233,7 +1233,7 @@ public class WebhookIT extends BaseIT {
         String newTopic = "this is a new topic";
         appTool.setTopicManual(newTopic);
         appTool = client.updateWorkflow(appTool.getId(), appTool);
-        assertEquals(appTool.getTopicManual(), newTopic);
+        assertEquals(newTopic, appTool.getTopicManual());
     }
 
     @Test

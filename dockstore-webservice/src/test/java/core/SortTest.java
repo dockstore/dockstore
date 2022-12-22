@@ -15,11 +15,12 @@
  */
 package core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.dockstore.webservice.core.SourceFile;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SortTest {
 
@@ -34,7 +35,7 @@ public class SortTest {
         createAndAddFile(files, "tool.cwl", "/tool.cwl");
         createAndAddFile(files, "extra.js", "/extra.js");
 
-        Assert.assertEquals("/Dockstore.cwl", files.iterator().next().getPath());
+        assertEquals("/Dockstore.cwl", files.iterator().next().getPath());
     }
 
     @Test
@@ -48,7 +49,7 @@ public class SortTest {
         createAndAddFile(files, "tool.cwl", "/tool.cwl");
         createAndAddFile(files, "extra.js", "/extra.js");
 
-        Assert.assertEquals("/Dockstore.wdl", files.iterator().next().getPath());
+        assertEquals("/Dockstore.wdl", files.iterator().next().getPath());
     }
 
     private void createAndAddFile(SortedSet<SourceFile> files, String path, String absolutePath) {

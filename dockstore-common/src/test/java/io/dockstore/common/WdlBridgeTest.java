@@ -1,13 +1,13 @@
 package io.dockstore.common;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dropwizard.testing.FixtureHelpers;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import wdl.draft3.parser.WdlParser;
 import wom.callable.ExecutableCallable;
 import wom.executable.WomBundle;
@@ -54,9 +54,11 @@ public class WdlBridgeTest {
         ArrayList<Map<String, String>> metadata = wdlBridge.getMetadata(filePath, sourceFilePath);
         // Known number of metadata objects
         final int knownMetadataObjectSize = 4;
-        assertEquals("There should be 4 sets of metadata (3 from tasks, 1 from workflow)", knownMetadataObjectSize, metadata.size());
-        Assert.assertTrue("The metadata from a task should be gotten", metadata.get(0).containsValue("Removes alignment information while retaining recalibrated base qualities and original alignment tags"));
-        Assert.assertTrue("The metadata from the main workflow should be gotten", metadata.get(2).containsValue("Takes in an hg38 bam or cram and outputs VCF of SNP/Indel calls on the mitochondria."));
+        assertEquals(knownMetadataObjectSize, metadata.size(), "There should be 4 sets of metadata (3 from tasks, 1 from workflow)");
+        assertTrue(metadata.get(0).containsValue("Removes alignment information while retaining recalibrated base qualities and original alignment tags"),
+            "The metadata from a task should be gotten");
+        assertTrue(metadata.get(2).containsValue("Takes in an hg38 bam or cram and outputs VCF of SNP/Indel calls on the mitochondria."),
+            "The metadata from the main workflow should be gotten");
     }
 
     @Test
@@ -68,7 +70,7 @@ public class WdlBridgeTest {
         ArrayList<Map<String, String>> metadata = wdlBridge.getMetadata(filePath, sourceFilePath);
         // Known number of metadata objects
         final int knownMetadataObjectSize = 0;
-        assertEquals("There should be 0 sets of string value metadata (all metadata in this WDL is boolean only) ", knownMetadataObjectSize, metadata.size());
+        assertEquals(knownMetadataObjectSize, metadata.size(), "There should be 0 sets of string value metadata (all metadata in this WDL is boolean only) ");
     }
 
 }

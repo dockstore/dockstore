@@ -218,7 +218,7 @@ public class TokenResourceIT {
         assertTrue(shouldFail);
 
         // ninja user2 by taking its name
-        assertEquals(usersApi1.changeUsername(CUSTOM_USERNAME2).getUsername(), CUSTOM_USERNAME2);
+        assertEquals(CUSTOM_USERNAME2, usersApi1.changeUsername(CUSTOM_USERNAME2).getUsername());
 
         // registering user1 again should still fail
         shouldFail = false;
@@ -233,8 +233,8 @@ public class TokenResourceIT {
         TokensApi tokensApi2 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.TokenAuth token = tokensApi2.addToken(getSatellizer(SUFFIX2, true));
         UsersApi usersApi2 = new UsersApi(getWebClient(true, token.getUsername(), testingPostgres));
-        assertNotEquals(usersApi2.getUser().getUsername(), CUSTOM_USERNAME2);
-        assertEquals(usersApi2.changeUsername("better.name").getUsername(), "better.name");
+        assertNotEquals(CUSTOM_USERNAME2, usersApi2.getUser().getUsername());
+        assertEquals("better.name", usersApi2.changeUsername("better.name").getUsername());
     }
     @Test
     public void testNullGithubUser() {
@@ -300,7 +300,7 @@ public class TokenResourceIT {
             unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
             fail("An admin should not be able to log in via Google");
         } catch (ApiException ex) {
-            assertEquals(ex.getMessage(), TokenResource.ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE);
+            assertEquals(TokenResource.ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE, ex.getMessage());
         }
         // Verify a non-admin can still login with Google
         setAdmin(false);
@@ -484,7 +484,7 @@ public class TokenResourceIT {
         io.swagger.client.model.TokenAuth token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         // Check token properly added (redundant assertion)
         long googleUserID = token.getUserId();
-        Assert.assertEquals(token.getUsername(), GOOGLE_ACCOUNT_USERNAME1);
+        Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, token.getUsername());
 
         TokensApi gitHubTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
         // Google account dockstore token + Google account Google token

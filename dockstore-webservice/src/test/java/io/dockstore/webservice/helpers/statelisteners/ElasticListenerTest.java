@@ -17,7 +17,8 @@
 
 package io.dockstore.webservice.helpers.statelisteners;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -29,8 +30,8 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import java.util.List;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ElasticListenerTest {
 
@@ -49,7 +50,7 @@ public class ElasticListenerTest {
     private AppTool appTool;
 
 
-    @Before
+    @BeforeEach
     public void setup() throws IllegalAccessException {
 
         bioWorkflow = new BioWorkflow();
@@ -146,7 +147,7 @@ public class ElasticListenerTest {
         entry.getWorkflowVersions().forEach(v -> {
             final Version version = (Version) v;
             if (version.getName().equals(versionName)) {
-                version.getSourceFiles().forEach(sf -> assertTrue(!((SourceFile)sf).getContent().isEmpty()));
+                version.getSourceFiles().forEach(sf -> assertFalse(((SourceFile) sf).getContent().isEmpty()));
             } else {
                 version.getSourceFiles().forEach(sf -> assertTrue(((SourceFile)sf).getContent().isEmpty()));
             }

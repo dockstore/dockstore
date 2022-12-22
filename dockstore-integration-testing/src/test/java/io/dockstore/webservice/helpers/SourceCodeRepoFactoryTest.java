@@ -16,7 +16,10 @@
 
 package io.dockstore.webservice.helpers;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
@@ -27,11 +30,10 @@ import io.dockstore.webservice.core.Tool;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author dyuen
@@ -43,13 +45,13 @@ public class SourceCodeRepoFactoryTest {
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
 
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, CommonTestUtilities.PUBLIC_CONFIG_PATH);
         SUPPORT.before();
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();
@@ -61,50 +63,50 @@ public class SourceCodeRepoFactoryTest {
         // test format 1
         final Optional<Map<String, String>> stringStringMapOpt = SourceCodeRepoFactory
                 .parseGitUrl("git@github.com:dockstore/dockstore-ui.git");
-        Assert.assertNotNull(stringStringMapOpt);
-        Assert.assertEquals("github.com", stringStringMapOpt.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
-        Assert.assertEquals("dockstore", stringStringMapOpt.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY));
-        Assert.assertEquals("dockstore-ui", stringStringMapOpt.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY));
+        assertNotNull(stringStringMapOpt);
+        assertEquals("github.com", stringStringMapOpt.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
+        assertEquals("dockstore", stringStringMapOpt.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY));
+        assertEquals("dockstore-ui", stringStringMapOpt.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY));
 
         final Optional<Map<String, String>> stringStringMap1 = SourceCodeRepoFactory
                 .parseGitUrl("git@github.com:dockstore/dockstore-ui.git", Optional.of("github.com"));
-        Assert.assertNotNull(stringStringMap1);
-        Assert.assertEquals("github.com", stringStringMap1.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
-        Assert.assertEquals("dockstore", stringStringMap1.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY));
-        Assert.assertEquals("dockstore-ui", stringStringMap1.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY));
+        assertNotNull(stringStringMap1);
+        assertEquals("github.com", stringStringMap1.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
+        assertEquals("dockstore", stringStringMap1.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY));
+        assertEquals("dockstore-ui", stringStringMap1.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY));
 
         final Optional<Map<String, String>> repoMapWithPeriodAndHyphen = SourceCodeRepoFactory
                 .parseGitUrl("git@github.com:DockstoreTestUser2/wdl-1.0-work_flow.git", Optional.of("github.com"));
-        Assert.assertNotNull(repoMapWithPeriodAndHyphen);
-        Assert.assertEquals("github.com", repoMapWithPeriodAndHyphen.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
-        Assert.assertEquals("DockstoreTestUser2", repoMapWithPeriodAndHyphen.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY));
-        Assert.assertEquals("wdl-1.0-work_flow", repoMapWithPeriodAndHyphen.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY));
+        assertNotNull(repoMapWithPeriodAndHyphen);
+        assertEquals("github.com", repoMapWithPeriodAndHyphen.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
+        assertEquals("DockstoreTestUser2", repoMapWithPeriodAndHyphen.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY));
+        assertEquals("wdl-1.0-work_flow", repoMapWithPeriodAndHyphen.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY));
 
         // test format 2
         final Optional<Map<String, String>> stringStringMap2 = SourceCodeRepoFactory
                 .parseGitUrl("git://github.com/denis-yuen/dockstore-whalesay.git");
-        Assert.assertNotNull(stringStringMap2);
-        Assert.assertEquals("github.com", stringStringMap2.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
-        Assert.assertEquals("denis-yuen", stringStringMap2.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY));
-        Assert.assertEquals("dockstore-whalesay", stringStringMap2.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY));
+        assertNotNull(stringStringMap2);
+        assertEquals("github.com", stringStringMap2.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
+        assertEquals("denis-yuen", stringStringMap2.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY));
+        assertEquals("dockstore-whalesay", stringStringMap2.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY));
 
         final Optional<Map<String, String>> repoMapWithPeriodAndHyphen2 = SourceCodeRepoFactory
                 .parseGitUrl("git://github.com/DockstoreTestUser2/wdl-1.0-work_flow.git");
-        Assert.assertNotNull(repoMapWithPeriodAndHyphen2);
-        Assert.assertEquals("github.com", repoMapWithPeriodAndHyphen2.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
-        Assert.assertEquals("DockstoreTestUser2", repoMapWithPeriodAndHyphen2.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY));
-        Assert.assertEquals("wdl-1.0-work_flow", repoMapWithPeriodAndHyphen2.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY));
+        assertNotNull(repoMapWithPeriodAndHyphen2);
+        assertEquals("github.com", repoMapWithPeriodAndHyphen2.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
+        assertEquals("DockstoreTestUser2", repoMapWithPeriodAndHyphen2.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY));
+        assertEquals("wdl-1.0-work_flow", repoMapWithPeriodAndHyphen2.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY));
 
         // test garbage
         Optional<Map<String, String>> stringStringMap3 = SourceCodeRepoFactory.parseGitUrl("mostly harmless");
-        Assert.assertTrue(stringStringMap3.isEmpty());
+        assertTrue(stringStringMap3.isEmpty());
 
         stringStringMap3 = SourceCodeRepoFactory.parseGitUrl("mostly harmless", Optional.of("github.com"));
-        Assert.assertTrue(stringStringMap3.isEmpty());
+        assertTrue(stringStringMap3.isEmpty());
 
         final Optional<Map<String, String>> stringStringMapBadOpt = SourceCodeRepoFactory
                 .parseGitUrl("git@github.com:dockstore/dockstore-ui.git", Optional.of("bad source"));
-        Assert.assertTrue(stringStringMapBadOpt.isEmpty());
+        assertTrue(stringStringMapBadOpt.isEmpty());
 
     }
 
@@ -119,40 +121,40 @@ public class SourceCodeRepoFactoryTest {
         /* Test good URLs */
         entry.setGitUrl("git@gitlab.com:dockstore/dockstore-ui.git");
         String gitlabId = repo.getRepositoryId(entry);
-        assertEquals("gitlab ID parse check", "dockstore/dockstore-ui", gitlabId);
+        assertEquals("dockstore/dockstore-ui", gitlabId, "gitlab ID parse check");
 
         entry.setGitUrl("git@gitlab.com:dockstore-cow/goat.git");
         gitlabId = repo.getRepositoryId(entry);
-        assertEquals("gitlab ID parse check", "dockstore-cow/goat", gitlabId);
+        assertEquals("dockstore-cow/goat", gitlabId, "gitlab ID parse check");
 
         entry.setGitUrl("git@gitlab.com:dockstore.dot/goat.bat.git");
         gitlabId = repo.getRepositoryId(entry);
-        assertEquals("gitlab ID parse check", "dockstore.dot/goat.bat", gitlabId);
+        assertEquals("dockstore.dot/goat.bat", gitlabId, "gitlab ID parse check");
 
         entry.setGitUrl("git@gitlab.com:dockstore.dot/goat.git");
         gitlabId = repo.getRepositoryId(entry);
-        assertEquals("gitlab ID parse check", "dockstore.dot/goat", gitlabId);
+        assertEquals("dockstore.dot/goat", gitlabId, "gitlab ID parse check");
 
         /* Test bad URLs */
         entry.setGitUrl("git@gitlab.com/dockstore/dockstore-ui.git");
         gitlabId = repo.getRepositoryId(entry);
-        assertEquals("gitlab ID parse check", null, gitlabId);
+        assertNull(gitlabId, "gitlab ID parse check");
 
         entry.setGitUrl("git@gitlab.com:dockstore:dockstore-ui.git");
         gitlabId = repo.getRepositoryId(entry);
-        assertEquals("gitlab ID parse check", null, gitlabId);
+        assertNull(gitlabId, "gitlab ID parse check");
 
         entry.setGitUrl("git@gitlab.com:/dockstore-ui.git");
         gitlabId = repo.getRepositoryId(entry);
-        assertEquals("gitlab ID parse check", null, gitlabId);
+        assertNull(gitlabId, "gitlab ID parse check");
 
         entry.setGitUrl("git@gitlab.com:dockstore");
         gitlabId = repo.getRepositoryId(entry);
-        assertEquals("gitlab ID parse check", null, gitlabId);
+        assertNull(gitlabId, "gitlab ID parse check");
 
         entry.setGitUrl("git@gitlab.com:dockstore/dockstore-ui");
         gitlabId = repo.getRepositoryId(entry);
-        assertEquals("gitlab ID parse check", null, gitlabId);
+        assertNull(gitlabId, "gitlab ID parse check");
 
     }
 
@@ -167,40 +169,40 @@ public class SourceCodeRepoFactoryTest {
         /* Test good URLs */
         entry.setGitUrl("git@github.com:dockstore/dockstore-ui.git");
         String githubId = repo.getRepositoryId(entry);
-        assertEquals("GitHub ID parse check", "dockstore/dockstore-ui", githubId);
+        assertEquals("dockstore/dockstore-ui", githubId, "GitHub ID parse check");
 
         entry.setGitUrl("git@github.com:dockstore-cow/goat.git");
         githubId = repo.getRepositoryId(entry);
-        assertEquals("GitHub ID parse check", "dockstore-cow/goat", githubId);
+        assertEquals("dockstore-cow/goat", githubId, "GitHub ID parse check");
 
         entry.setGitUrl("git@github.com:dockstore.dot/goat.bat.git");
         githubId = repo.getRepositoryId(entry);
-        assertEquals("GitHub ID parse check", "dockstore.dot/goat.bat", githubId);
+        assertEquals("dockstore.dot/goat.bat", githubId, "GitHub ID parse check");
 
         entry.setGitUrl("git@github.com:dockstore.dot/goat.git");
         githubId = repo.getRepositoryId(entry);
-        assertEquals("GitHub ID parse check", "dockstore.dot/goat", githubId);
+        assertEquals("dockstore.dot/goat", githubId, "GitHub ID parse check");
 
         /* Test bad URLs */
         entry.setGitUrl("git@github.com/dockstore/dockstore-ui.git");
         githubId = repo.getRepositoryId(entry);
-        assertEquals("GitHub ID parse check", null, githubId);
+        assertNull(githubId, "GitHub ID parse check");
 
         entry.setGitUrl("git@github.com:dockstore:dockstore-ui.git");
         githubId = repo.getRepositoryId(entry);
-        assertEquals("GitHub ID parse check", null, githubId);
+        assertNull(githubId, "GitHub ID parse check");
 
         entry.setGitUrl("git@github.com:/dockstore-ui.git");
         githubId = repo.getRepositoryId(entry);
-        assertEquals("GitHub ID parse check", null, githubId);
+        assertNull(githubId, "GitHub ID parse check");
 
         entry.setGitUrl("git@github.com:dockstore");
         githubId = repo.getRepositoryId(entry);
-        assertEquals("GitHub ID parse check", null, githubId);
+        assertNull(githubId, "GitHub ID parse check");
 
         entry.setGitUrl("git@github.com:dockstore/dockstore-ui");
         githubId = repo.getRepositoryId(entry);
-        assertEquals("GitHub ID parse check", null, githubId);
+        assertNull(githubId, "GitHub ID parse check");
 
     }
 

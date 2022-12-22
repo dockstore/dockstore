@@ -59,13 +59,13 @@ public class ToolsWorkflowTestIT extends BaseIT {
         Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, testWorkflowName, descType, "/test.json");
 
         // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string
-        Assert.assertEquals(githubWorkflow.getWorkflowName(), testWorkflowName);
+        Assert.assertEquals(testWorkflowName, githubWorkflow.getWorkflowName());
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId(), false);
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
-        Assert.assertEquals(refresh.getWorkflowName(), testWorkflowName);
+        Assert.assertEquals(testWorkflowName, refresh.getWorkflowName());
 
         Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals(branch))
             .findFirst();
@@ -129,7 +129,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two tools", countNode, 2);
+        Assert.assertEquals("JSON should have two tools", 2, countNode);
         Assert.assertTrue("tool should have hello as id", strings.get(0).contains("hello"));
         Assert.assertTrue("hello docker and link should not be blank", strings.get(0).contains(
             "\"id\":\"hello\"," + "\"file\":\"/hello.wdl\"," + "\"docker\":\"ubuntu:latest\","
@@ -149,7 +149,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have no tools", countNode, 0);
+        Assert.assertEquals("JSON should have no tools", 0, countNode);
         Assert.assertFalse("ps should not exist", strings.get(0).contains("\"id\":\"ps\""));
         Assert.assertFalse("cgrep should not exist", strings.get(0).contains("\"id\":\"cgrep\","));
         Assert.assertFalse("wc should not exist", strings.get(0).contains("\"id\":\"wc\""));
@@ -167,7 +167,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "cwl", "testCWL");
 
         //JSON will have node:[] and edges:[]
-        Assert.assertEquals("JSON should not have any data tools", strings.size(), 1);
+        Assert.assertEquals("JSON should not have any data tools", 1, strings.size());
     }
 
     @Test
@@ -182,7 +182,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_wdl", "/hello.wdl", "wdl", "missing_docker");
 
         //JSON will have no content at all
-        Assert.assertEquals("JSON should be blank", strings.size(), 0);
+        Assert.assertEquals("JSON should be blank", 0, strings.size());
     }
 
     @Test
@@ -216,7 +216,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have 5 tools", countNode, 5);
+        Assert.assertEquals("JSON should have 5 tools", 5, countNode);
         Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
         Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
         Assert.assertTrue("pass_filter should have docker link", strings.get(0).contains(
@@ -240,7 +240,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have 5 tools", countNode, 5);
+        Assert.assertEquals("JSON should have 5 tools", 5, countNode);
         Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
         Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
         Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains(

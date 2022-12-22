@@ -12,8 +12,8 @@ import io.swagger.quay.client.model.InlineResponse2001;
 import io.swagger.quay.client.model.PullRobot;
 import io.swagger.quay.client.model.QuayBuild;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class QuayModelTest {
 
@@ -60,8 +60,8 @@ public class QuayModelTest {
     }
 
     private void pullRobotAssertions(PullRobot pullRobot) {
-        Assert.assertEquals("user", pullRobot.getKind());
-        Assert.assertEquals("ucsc_cgl+robot", pullRobot.getName());
-        Assert.assertEquals(true, pullRobot.isIsRobot());
+        Assertions.assertEquals("user", pullRobot.getKind());
+        Assertions.assertEquals("ucsc_cgl+robot", pullRobot.getName());
+        Assertions.assertEquals(true, pullRobot.isIsRobot());
     }
 }

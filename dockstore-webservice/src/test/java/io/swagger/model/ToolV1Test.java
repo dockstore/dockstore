@@ -1,7 +1,9 @@
 package io.swagger.model;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import org.junit.jupiter.api.Test;
 
 public class ToolV1Test {
     /**
@@ -14,7 +16,7 @@ public class ToolV1Test {
         tool.setSigned(true);
         tool.setUrl("https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.7");
         ToolV1 toolV1 = new ToolV1(tool);
-        Assert.assertEquals("https://dockstore.org/api/api/ga4gh/v1/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.7", toolV1.getUrl());
+        assertEquals("https://dockstore.org/api/api/ga4gh/v1/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.7", toolV1.getUrl());
     }
 
     /**
@@ -26,6 +28,6 @@ public class ToolV1Test {
         tool.setVerified(true);
         tool.setSigned(true);
         ToolV1 toolV1 = new ToolV1(tool);
-        Assert.assertNull(toolV1.getUrl());
+        assertNull(toolV1.getUrl());
     }
 }
