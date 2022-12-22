@@ -104,9 +104,11 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                 String builder = Stream.of(descriptionInProgress, helpMessage).filter(s -> s != null && !s.isEmpty())
                     .collect(Collectors.joining(""));
                 version.setDescriptionAndDescriptionSource(builder, DescriptionSource.DESCRIPTOR);
+            } else {
+                createValidationForMissingMainScript(version, filepath, finalMainScriptPath);
             }
         } catch (NextflowUtilities.NextflowParsingException e) {
-            createValidationMessageForGeneralFailure(version, filepath);
+            createValidationForGeneralFailure(version, filepath);
         }
         return version;
     }
@@ -127,7 +129,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         try {
             configuration = NextflowUtilities.grabConfig(content);
         } catch (Exception e) {
-            createValidationMessageForGeneralFailure(version, filepath);
+            createValidationForGeneralFailure(version, filepath);
             return imports;
         }
 
@@ -207,10 +209,18 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         return importPath;
     }
 
-    private void createValidationMessageForGeneralFailure(Version version, String filepath) {
+    private void createValidationForGeneralFailure(Version version, String filepath) {
+        createValidation(version, filepath, "Nextflow config file is malformed or missing, cannot extract metadata", false);
+    }
+
+    private void createValidationForMissingMainScript(Version version, String filepath, String mainScriptName) {
+        createValidation(version, filepath, String.format("Could not find main script file %s", mainScriptName), false);
+    }
+
+    private void createValidation(Version version, String filepath, String message, boolean success) {
         Map<String, String> validationMessageObject = new HashMap<>();
-        validationMessageObject.put(filepath, "Nextflow config file is malformed or missing, cannot extract metadata");
-        version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.NEXTFLOW_CONFIG, false, validationMessageObject));
+        validationMessageObject.put(filepath, message);
+        version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.NEXTFLOW_CONFIG, success, validationMessageObject));
     }
 
     private void handleNextflowImports(String repositoryId, Version version, SourceCodeRepoInterface sourceCodeRepoInterface,
