@@ -33,12 +33,14 @@ import java.util.Optional;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
  * @author dyuen
  */
 @Category(NonConfidentialTest.class)
+@Tag("io.dockstore.common.NonConfidentialTest")
 public class SourceCodeRepoFactoryTest {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
