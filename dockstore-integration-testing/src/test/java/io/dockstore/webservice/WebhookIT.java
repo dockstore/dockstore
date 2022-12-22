@@ -1616,7 +1616,7 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
 
         // Attempt to process a repo containing a recursive WDL.  Internally, we use the same libraries that Cromwell does to process WDLs.
-        // The WDL processing code should throw a StackOverflowError, which is remap to a more explanatory CustomWebApplicationException, which will trigger a typical registration failure.
+        // The WDL processing code should throw a StackOverflowError, which is remapped to a more explanatory CustomWebApplicationException, which will trigger a typical registration failure.
         try {
             client.handleGitHubRelease("refs/heads/main", installationId, "dockstore-testing/recursive-wdl", BasicIT.USER_2_USERNAME);
             Assert.fail("should have thrown");
