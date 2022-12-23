@@ -401,7 +401,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     }
 
     @Override
-    public Optional<String> getContent(String mainPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
+    public Optional<String> getContent(String configPath, String configContent, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
 
@@ -414,7 +414,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
 
         Configuration configuration;
         try {
-            configuration = NextflowUtilities.grabConfig(mainDescriptor);
+            configuration = NextflowUtilities.grabConfig(configContent);
         } catch (NextflowUtilities.NextflowParsingException e) {
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
