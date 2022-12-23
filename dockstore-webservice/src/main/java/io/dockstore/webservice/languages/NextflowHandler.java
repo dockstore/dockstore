@@ -401,7 +401,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     }
 
     @Override
-    public Optional<String> getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
+    public Optional<String> getContent(String mainPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
 
@@ -412,14 +412,14 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         // nextflow uses the main script from the manifest as the main descriptor
         // add the Nextflow scripts
 
-        Configuration configuration = null;
+        Configuration configuration;
         try {
             configuration = NextflowUtilities.grabConfig(mainDescriptor);
         } catch (NextflowUtilities.NextflowParsingException e) {
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
         final String mainScriptPath = getMainScriptPath(configuration);
-        mainDescriptor = findSourceFileByPath(secondarySourceFiles, mainScriptPath).map(sf -> sf.getContent()).orElse(null);
+        final String mainScriptContent = findSourceFileByPath(secondarySourceFiles, mainScriptPath).map(sf -> sf.getContent()).orElse(null);
 
         // Get default container (process.container takes precedence over params.container)
         String defaultContainer = null;
@@ -436,15 +436,15 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
 
         // Add all DockerMap from each secondary sourcefile
         if (!secondarySourceFiles.isEmpty()) {
-            secondarySourceFiles.forEach(sourceFile -> callToDockerMap.putAll(this.getCallsToDockerMap(sourceFile.getContent(), finalDefaultContainer)));
+            secondarySourceFiles.forEach(sourceFile -> callToDockerMap.putAll(getCallsToDockerMap(sourceFile.getContent(), finalDefaultContainer)));
         }
 
-        callToDockerMap.putAll(this.getCallsToDockerMap(mainDescriptor, defaultContainer));
+        callToDockerMap.putAll(getCallsToDockerMap(mainScriptContent, defaultContainer));
         // Iterate over each call, determine dependencies
         // Mapping of stepId -> array of dependencies for the step
-        Map<String, List<String>> callToDependencies = this.getCallsToDependencies(mainDescriptor);
+        Map<String, List<String>> callToDependencies = getCallsToDependencies(mainScriptContent);
         // Get import files
-        Map<String, String> namespaceToPath = this.getImportMap(mainDescriptor);
+        Map<String, String> namespaceToPath = getImportMap(mainScriptContent);
         Map<String, ToolInfo> toolInfoMap = WDLHandler.mapConverterToToolInfo(callToDockerMap, callToDependencies);
         return convertMapsToContent(mainScriptPath, type, dao, callType, toolType, toolInfoMap, namespaceToPath);
     }
