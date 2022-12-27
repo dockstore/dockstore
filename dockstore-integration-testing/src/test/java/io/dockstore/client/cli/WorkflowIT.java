@@ -702,7 +702,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
 
-        Workflow workflowByPathGithub = manualRegisterAndPublish(workflowApi, "svonworl/nextflow-broken", "", "nfl", SourceControl.GITHUB,
+        Workflow workflowByPathGithub = manualRegisterAndPublish(workflowApi, "dockstore-testing/nextflow-broken", "", "nfl", SourceControl.GITHUB,
             "/nextflow.config", false);
 
         // need to set paths properly
@@ -710,15 +710,13 @@ public class WorkflowIT extends BaseIT {
         workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/svonworl/nextflow-broken", BIOWORKFLOW, null);
+        workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/nextflow-broken", BIOWORKFLOW, null);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         WorkflowVersion workflowVersion = refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("no-main-script")).findFirst().get();
         List<Validation> validations = workflowVersion.getValidations();
 
-        assertEquals("should have one validation", 1, validations.size());
-        assertFalse("validation should not be valid", validations.get(0).isValid());
-        assertTrue("validation should have a descriptive message", validations.get(0).getMessage().contains("not find main script"));
+        assertEquals("should have a descriptive invalid validation", 1, validations.stream().filter(v -> !v.isValid() && v.getMessage() != null && v.getMessage().contains("not find main script")).count());
     }
 
     @Test

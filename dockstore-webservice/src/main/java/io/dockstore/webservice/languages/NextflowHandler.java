@@ -205,7 +205,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     }
 
     private void createValidationForMissingMainScript(Version version, String filepath, String mainScriptName) {
-        createValidation(version, filepath, String.format("Could not find main script file %s", mainScriptName), false);
+        createValidation(version, filepath, String.format("Could not find main script file '%s'", mainScriptName), false);
     }
 
     private void createValidation(Version version, String filepath, String message, boolean success) {
