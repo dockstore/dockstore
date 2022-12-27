@@ -201,17 +201,17 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     }
 
     private void createValidationForGeneralFailure(Version version, String filepath) {
-        createValidation(version, filepath, "Nextflow config file is malformed or missing, cannot extract metadata", false);
+        createValidation(version, false, filepath, "Nextflow config file is malformed or missing, cannot extract metadata");
     }
 
     private void createValidationForMissingMainScript(Version version, String filepath, String mainScriptName) {
-        createValidation(version, filepath, String.format("Could not find main script file '%s'", mainScriptName), false);
+        createValidation(version, false, filepath, String.format("Could not find main script file '%s'", mainScriptName));
     }
 
-    private void createValidation(Version version, String filepath, String message, boolean success) {
+    private void createValidation(Version version, boolean valid, String filepath, String message) {
         Map<String, String> validationMessageObject = new HashMap<>();
         validationMessageObject.put(filepath, message);
-        version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.NEXTFLOW_CONFIG, success, validationMessageObject));
+        version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.NEXTFLOW_CONFIG, valid, validationMessageObject));
     }
 
     private void handleNextflowImports(String repositoryId, Version version, SourceCodeRepoInterface sourceCodeRepoInterface,
