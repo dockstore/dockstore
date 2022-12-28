@@ -463,7 +463,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     }
 
     private Optional<SourceFile> findSourceFileByPath(Set<SourceFile> sourceFiles, String path) {
-        return sourceFiles.stream().filter(sourceFile -> sourceFile.getPath().equals(path)).findFirst();
+        return sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), path)).findFirst();
     }
 
     /**
