@@ -206,6 +206,8 @@ public class WDLHandler implements LanguageHandlerInterface {
                 version.getAuthors().clear();
                 version.getOrcidAuthors().clear();
                 return version;
+            } catch (StackOverflowError error) {
+                throw createStackOverflowThrowable(error);
             }
         } catch (IOException e) {
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -325,6 +327,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (Exception e) {
                 LOG.error("Unhandled exception", e);
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } catch (StackOverflowError error) {
+                throw createStackOverflowThrowable(error);
             } finally {
                 FileUtils.deleteQuietly(tempMainDescriptor);
             }
@@ -486,6 +490,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             final String exMsg = "Could not process request, " + ex.getMessage();
             LOG.error(exMsg, ex);
             throw new CustomWebApplicationException(exMsg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (StackOverflowError error) {
+            throw createStackOverflowThrowable(error);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }
@@ -623,6 +629,8 @@ public class WDLHandler implements LanguageHandlerInterface {
         } catch (IOException e) {
             LOG.error("Error creating temporary file for descriptor {}", primaryDescriptorPath, e);
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (StackOverflowError error) {
+            throw createStackOverflowThrowable(error);
         } finally {
             // Delete the temp directory and its contents
             FileUtils.deleteQuietly(tempDir);
@@ -670,5 +678,9 @@ public class WDLHandler implements LanguageHandlerInterface {
         } else {
             return Optional.empty();
         }
+    }
+
+    private static RuntimeException createStackOverflowThrowable(StackOverflowError error) {
+        throw new CustomWebApplicationException(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, HttpStatus.SC_UNPROCESSABLE_ENTITY);
     }
 }
