@@ -20,7 +20,7 @@ public class ChecksumConverterTest {
 
 
     @Test
-    void checksumConverter() {
+    public void checksumConverter() {
         final ChecksumConverter cs = new ChecksumConverter();
         final String[] stringTypes = {"sha256", "sha512", "md5"};
         final String[] stringChecksums = {"fakeSHA256Checksum", "fakeSHA512Checksum", "fakeMD5Checksum"};

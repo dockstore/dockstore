@@ -89,7 +89,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    void testAddUserToOrgs() {
+    public void testAddUserToOrgs() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
@@ -133,7 +133,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    void testUserProfileLoading() throws ApiException {
+    public void testUserProfileLoading() throws ApiException {
         // Get the user
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
@@ -148,7 +148,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    void testChangingNameSuccess() throws ApiException {
+    public void testChangingNameSuccess() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         userApi.changeUsername("foo");
@@ -162,7 +162,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    void testUserTermination() throws ApiException {
+    public void testUserTermination() throws ApiException {
         ApiClient userWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.ApiClient openApiAdminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
 
@@ -215,7 +215,7 @@ public class UserResourceSwaggerIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    void testChangeUsernameAfterOrgCreation() throws ApiException {
+    public void testChangeUsernameAfterOrgCreation() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
 
@@ -230,7 +230,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    void testSelfDestruct() throws ApiException {
+    public void testSelfDestruct() throws ApiException {
         ApiClient client = getAnonymousWebClient();
         UsersApi userApi = new UsersApi(client);
 
@@ -322,7 +322,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    void testAdminLevelSelfDestruct() {
+    public void testAdminLevelSelfDestruct() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
@@ -348,7 +348,7 @@ public class UserResourceSwaggerIT extends BaseIT {
 
 
     @Test
-    void testDeletedUsernameReuse() {
+    public void testDeletedUsernameReuse() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
@@ -386,7 +386,7 @@ public class UserResourceSwaggerIT extends BaseIT {
 
 
     @Test
-    void testGetUserEntries() {
+    public void testGetUserEntries() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -409,7 +409,7 @@ public class UserResourceSwaggerIT extends BaseIT {
      * Tests the endpoints used for logged in homepage to retrieve recent entries and organizations
      */
     @Test
-    void testLoggedInHomepageEndpoints() {
+    public void testLoggedInHomepageEndpoints() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -473,7 +473,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    void testUpdateUserMetadataFromGithub() {
+    public void testUpdateUserMetadataFromGithub() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         Profile userProfile = usersApi.getUser().getUserProfiles().get("github.com");

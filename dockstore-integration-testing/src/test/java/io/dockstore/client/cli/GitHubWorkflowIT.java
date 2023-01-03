@@ -105,7 +105,7 @@ public class GitHubWorkflowIT extends BaseIT {
      * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
-    void testPublishingAndListingOfPublished() throws ApiException {
+    public void testPublishingAndListingOfPublished() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -200,7 +200,7 @@ public class GitHubWorkflowIT extends BaseIT {
      * Tests that the info for quay images included in CWL workflows are grabbed and that the trs endpoints convert this info correctly
      */
     @Test
-    void testGettingImagesFromQuay() {
+    public void testGettingImagesFromQuay() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -225,7 +225,7 @@ public class GitHubWorkflowIT extends BaseIT {
     }
 
     @Test
-    void testGettingMultiArchImagesFromQuay() {
+    public void testGettingMultiArchImagesFromQuay() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -282,7 +282,7 @@ public class GitHubWorkflowIT extends BaseIT {
     }
 
     @Test
-    void testGettingImagesFromGitHubContainerRegistry() {
+    public void testGettingImagesFromGitHubContainerRegistry() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -301,7 +301,7 @@ public class GitHubWorkflowIT extends BaseIT {
     }
 
     @Test
-    void testGettingImagesFromAmazonECR() {
+    public void testGettingImagesFromAmazonECR() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -322,7 +322,7 @@ public class GitHubWorkflowIT extends BaseIT {
      * Tests the a checksum is calculated for workflow sourcefiles on refresh or snapshot. Also checks that trs endpoints convert correctly.
      * */
     @Test
-    void testChecksumsForSourceFiles() {
+    public void testChecksumsForSourceFiles() {
         // Test grabbing checksum on refresh
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -403,7 +403,7 @@ public class GitHubWorkflowIT extends BaseIT {
      * multiple images for a single version, one for each os/architecture).
      */
     @Test
-    void testTRSImageName() {
+    public void testTRSImageName() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -452,7 +452,7 @@ public class GitHubWorkflowIT extends BaseIT {
     }
 
     @Test
-    void testGettingImagesFromDockerHub() {
+    public void testGettingImagesFromDockerHub() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -477,7 +477,7 @@ public class GitHubWorkflowIT extends BaseIT {
      * Validation
      */
     @Test
-    void cwlVersion11() {
+    public void cwlVersion11() {
         final ApiClient userApiClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi userWorkflowsApi = new WorkflowsApi(userApiClient);
         userWorkflowsApi.manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/metadata.cwl", "metadata", "cwl",
@@ -527,7 +527,7 @@ public class GitHubWorkflowIT extends BaseIT {
      * This tests that you can get all workflows by path (ignores workflow name)
      */
     @Test
-    void testGetAllWorkflowByPath() {
+    public void testGetAllWorkflowByPath() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         String path = "github.com/DockstoreTestUser2/nested-wdl";
@@ -548,7 +548,7 @@ public class GitHubWorkflowIT extends BaseIT {
      * This tests that you can get a workflows by full workflow path
      */
     @Test
-    void testGetWorkflowByPath() {
+    public void testGetWorkflowByPath() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
 

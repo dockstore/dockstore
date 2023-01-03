@@ -93,7 +93,7 @@ public class BasicIT extends BaseIT {
      */
 
     @Test
-    void testDisallowedOrgRefresh() {
+    public void testDisallowedOrgRefresh() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         try {
@@ -108,7 +108,7 @@ public class BasicIT extends BaseIT {
      * Tests that registration works with non-short names
      */
     @Test
-    void testRegistrationWithNonLowerCase() {
+    public void testRegistrationWithNonLowerCase() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -122,7 +122,7 @@ public class BasicIT extends BaseIT {
     }
 
     @Test
-    void testRefreshToolNoVersions() {
+    public void testRefreshToolNoVersions() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/noautobuild", null);
@@ -143,7 +143,7 @@ public class BasicIT extends BaseIT {
      * Tests that refresh workflows works, also that refreshing without a github token should not destroy workflows or their existing versions
      */
     @Test
-    void testRefreshWorkflow() {
+    public void testRefreshWorkflow() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -199,7 +199,7 @@ public class BasicIT extends BaseIT {
      * Tests manually adding, updating, and removing a dockerhub tool
      */
     @Test
-    void testVersionTagDockerhub() {
+    public void testVersionTagDockerhub() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
@@ -255,7 +255,7 @@ public class BasicIT extends BaseIT {
 
     }
     @Test
-    void testRecentEventsByUser() {
+    public void testRecentEventsByUser() {
 
         // Create API client for user
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
@@ -318,7 +318,7 @@ public class BasicIT extends BaseIT {
     }
 
     @Test
-    void testRecentEventsByUserWithNullInput() {
+    public void testRecentEventsByUserWithNullInput() {
 
         // Create a second client and query for the starred event from the first user
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -338,7 +338,7 @@ public class BasicIT extends BaseIT {
      * Tests the case where a manually registered quay tool matching an automated build should be treated as a separate auto build (see issue 106)
      */
     @Test
-    void testManualQuaySameAsAutoQuay() {
+    public void testManualQuaySameAsAutoQuay() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -357,7 +357,7 @@ public class BasicIT extends BaseIT {
      * Tests the case where a manually registered quay tool has the same path as an auto build but different git repo
      */
     @Test
-    void testManualQuayToAutoSamePathDifferentGitRepo() {
+    public void testManualQuayToAutoSamePathDifferentGitRepo() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -375,7 +375,7 @@ public class BasicIT extends BaseIT {
      * Tests that a manually published tool still becomes manual even after the existing similar auto tools all have toolnames (see issue 120)
      */
     @Test
-    void testManualQuayToAutoNoAutoWithoutToolname() {
+    public void testManualQuayToAutoNoAutoWithoutToolname() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -398,7 +398,7 @@ public class BasicIT extends BaseIT {
      * UPDATE: Should fail because you can't publish a tool with no valid tags
      */
     @Test
-    void testManualQuayManualBuild() {
+    public void testManualQuayManualBuild() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -416,7 +416,7 @@ public class BasicIT extends BaseIT {
      * Tests the case where a manually registered quay tool does not have any tags
      */
     @Test
-    void testManualQuayNoTags() {
+    public void testManualQuayNoTags() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -434,7 +434,7 @@ public class BasicIT extends BaseIT {
      * Tests that a quick registered quay tool with no autobuild can be updated to have a manually set CWL file from git (see issue 19)
      */
     @Test
-    void testQuayNoAutobuild() {
+    public void testQuayNoAutobuild() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -462,7 +462,7 @@ public class BasicIT extends BaseIT {
      * Tests a user trying to add a quay tool that they do not own and are not in the owning organization
      */
     @Test
-    void testAddQuayRepoOfNonOwnedOrg() {
+    public void testAddQuayRepoOfNonOwnedOrg() {
         // Repo user isn't part of org
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
@@ -485,7 +485,7 @@ public class BasicIT extends BaseIT {
      * - Checks if the tag is back
      */
     @Test
-    void testRefreshAfterDeletingAVersion() {
+    public void testRefreshAfterDeletingAVersion() {
         // Get the tool id of the entry whose path is quay.io/dockstoretestuser/quayandgithub
         final long id = testingPostgres
             .runSelectStatement("select id from tool where name = 'quayandgithub' and namespace='dockstoretestuser' and registry='quay.io'",
@@ -523,7 +523,7 @@ public class BasicIT extends BaseIT {
      * Tests that a git reference for a tool can include branches named like feature/...
      */
     @Test
-    void testGitReferenceFeatureBranch() {
+    public void testGitReferenceFeatureBranch() {
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where reference = 'feature/test'", long.class);
         Assert.assertEquals("there should be 2 tags with the reference feature/test", 2, count);
     }
@@ -532,7 +532,7 @@ public class BasicIT extends BaseIT {
      * This tests that a tool's default version can be automatically set during refresh
      */
     @Test
-    void testUpdateToolDefaultVersionDuringRefresh() {
+    public void testUpdateToolDefaultVersionDuringRefresh() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "regular",
@@ -550,7 +550,7 @@ public class BasicIT extends BaseIT {
      * Tests that a WDL file is supported
      */
     @Test
-    void testQuayGithubQuickRegisterWithWDL() {
+    public void testQuayGithubQuickRegisterWithWDL() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
@@ -566,7 +566,7 @@ public class BasicIT extends BaseIT {
      * This tests that a tool can be updated to have default version, and that metadata is set related to the default version
      */
     @Test
-    void testSetDefaultTag() {
+    public void testSetDefaultTag() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         // Update tool with default version that has metadata
@@ -603,7 +603,7 @@ public class BasicIT extends BaseIT {
      * Also tests for entry not found when a broken path is used
      */
     @Test
-    void testManualPublishToolNoDescriptorPaths() {
+    public void testManualPublishToolNoDescriptorPaths() {
         // Manual publish, should fail
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
@@ -635,7 +635,7 @@ public class BasicIT extends BaseIT {
      * This tests the dirty bit attribute for tool tags with quay
      */
     @Test
-    void testQuayDirtyBit() {
+    public void testQuayDirtyBit() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
@@ -688,7 +688,7 @@ public class BasicIT extends BaseIT {
      * This tests basic concepts with tool test parameter files
      */
     @Test
-    void testTestJson() {
+    public void testTestJson() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
@@ -770,7 +770,7 @@ public class BasicIT extends BaseIT {
     }
 
     @Test
-    void testTestParameterOtherUsers() {
+    public void testTestParameterOtherUsers() {
         final ApiClient correctWebClient = getWebClient(BaseIT.USER_1_USERNAME, testingPostgres);
         final ApiClient otherWebClient = getWebClient(BaseIT.OTHER_USERNAME, testingPostgres);
 
@@ -827,7 +827,7 @@ public class BasicIT extends BaseIT {
      * This tests some cases for private tools
      */
     @Test
-    void testPrivateManualPublish() {
+    public void testPrivateManualPublish() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -871,7 +871,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can convert a published public tool to private if it has a tool maintainer email set
      */
     @Test
-    void testPublicToPrivateToPublicTool() {
+    public void testPublicToPrivateToPublicTool() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -909,7 +909,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can change a tool from public to private without a tool maintainer email, as long as an email is found in the descriptor
      */
     @Test
-    void testDefaultToEmailInDescriptorForPrivateRepos() {
+    public void testDefaultToEmailInDescriptorForPrivateRepos() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -959,7 +959,7 @@ public class BasicIT extends BaseIT {
      * This tests that you cannot manually publish a private tool unless it has a tool maintainer email
      */
     @Test
-    void testPrivateManualPublishNoToolMaintainerEmail() {
+    public void testPrivateManualPublishNoToolMaintainerEmail() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1002,7 +1002,7 @@ public class BasicIT extends BaseIT {
      * - A private Amazon ECR image (has a "*.dkr.ecr.*.amazonaws.com" path) as a public tool
      */
     @Test
-    void testManualPublishPrivateAccessAmazonECR() {
+    public void testManualPublishPrivateAccessAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1035,7 +1035,7 @@ public class BasicIT extends BaseIT {
      * Public and private Amazon ECR repositories have different docker paths, and an Amazon ECR repository cannot change its visibility once it's created.
      */
     @Test
-    void testManualPublishPrivateAccessUpdateAmazonECR() {
+    public void testManualPublishPrivateAccessUpdateAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1087,7 +1087,7 @@ public class BasicIT extends BaseIT {
      * but end up with the same tool paths.
      */
     @Test
-    void testManualPublishDuplicatePublicAmazonECR() {
+    public void testManualPublishDuplicatePublicAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1129,7 +1129,7 @@ public class BasicIT extends BaseIT {
      * but end up with the same tool paths.
      */
     @Test
-    void testManualPublishDuplicatePrivateAmazonECR() {
+    public void testManualPublishDuplicatePrivateAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1172,7 +1172,7 @@ public class BasicIT extends BaseIT {
      * Specifically testing this because Amazon ECR supports slashes in its repository names.
      */
     @Test
-    void testGetContainerByPathsAmazonECR() {
+    public void testGetContainerByPathsAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool;
@@ -1254,7 +1254,7 @@ public class BasicIT extends BaseIT {
      * This tests that entry paths are split into their registry, org, repo, and entry name components correctly.
      */
     @Test
-    void testSplitPath() {
+    public void testSplitPath() {
         final int registryIndex = 0;
         final int orgIndex = 1;
         final int repoIndex = 2;
@@ -1311,7 +1311,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can manually publish a private only registry (Seven Bridges), but you can't change the tool to public
      */
     @Test
-    void testManualPublishSevenBridgesTool() {
+    public void testManualPublishSevenBridgesTool() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1340,7 +1340,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can't manually publish a private only registry (Seven Bridges) with an incorrect registry path
      */
     @Test
-    void testManualPublishSevenBridgesToolIncorrectRegistryPath() {
+    public void testManualPublishSevenBridgesToolIncorrectRegistryPath() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1372,7 +1372,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can't manually publish a private only registry as public
      */
     @Test
-    void testManualPublishPrivateOnlyRegistryAsPublic() {
+    public void testManualPublishPrivateOnlyRegistryAsPublic() {
         // Manual publish
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
@@ -1392,7 +1392,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can't manually publish a tool from a registry that requires a custom docker path without specifying the path
      */
     @Test
-    void testManualPublishCustomDockerPathRegistry() {
+    public void testManualPublishCustomDockerPathRegistry() {
         // Manual publish
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
@@ -1409,7 +1409,7 @@ public class BasicIT extends BaseIT {
 
 
     @Test
-    void testGettingSourceFilesForTag() {
+    public void testGettingSourceFilesForTag() {
         final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);

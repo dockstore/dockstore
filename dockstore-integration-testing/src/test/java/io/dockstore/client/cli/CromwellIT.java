@@ -48,7 +48,7 @@ public class CromwellIT {
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Test
-    void testWDL2Json() {
+    public void testWDL2Json() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         WdlBridge wdlBridge = new WdlBridge();
         try {
@@ -60,7 +60,7 @@ public class CromwellIT {
     }
 
     @Test
-    void testWDLResolver() {
+    public void testWDLResolver() {
         // If resolver works, this should throw no errors
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl-sanger-workflow.wdl"));
         WdlBridge wdlBridge = new WdlBridge();
@@ -87,7 +87,7 @@ public class CromwellIT {
      * This tests compatibility with Cromwell 30.2 by converting to JSON (https://github.com/dockstore/dockstore/issues/1211)
      */
     @Test
-    void testWDL2JsonIssue() {
+    public void testWDL2JsonIssue() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("hello_world.wdl"));
         WdlBridge wdlBridge = new WdlBridge();
         try {
@@ -102,7 +102,7 @@ public class CromwellIT {
      * Tests that we can generate a DAG for https://staging.dockstore.org/workflows/github.com/HumanCellAtlas/skylab/Snap-ATAC:gl_576?tab=info
      */
     @Test
-    void testSnapAtacDag() {
+    public void testSnapAtacDag() {
         final File file = new File(ResourceHelpers.resourceFilePath("snap_atac.wdl"));
         final WdlBridge wdlBridge = new WdlBridge();
         final Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(file.getAbsolutePath(), "snap_atac.wdl");
@@ -110,7 +110,7 @@ public class CromwellIT {
     }
 
     @Test
-    void testPathResolver() {
+    public void testPathResolver() {
         Assert.assertEquals("/module00a/Module00a.wdl", LanguageHandlerHelper
                 .unsafeConvertRelativePathToAbsolutePath("/GATKSVPipelineClinical.wdl", "module00a/Module00a.wdl"));
         Assert.assertEquals("/a/importA.wdl", LanguageHandlerHelper

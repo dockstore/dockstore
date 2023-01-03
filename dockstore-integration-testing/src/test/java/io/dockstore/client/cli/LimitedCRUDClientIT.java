@@ -127,7 +127,7 @@ public class LimitedCRUDClientIT {
     }
 
     @Test
-    void testToolCreation() {
+    public void testToolCreation() {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
@@ -162,7 +162,7 @@ public class LimitedCRUDClientIT {
     }
 
     @Test
-    void testOverrideEntryLimit() {
+    public void testOverrideEntryLimit() {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
 
@@ -190,7 +190,7 @@ public class LimitedCRUDClientIT {
     }
 
     @Test
-    void testToolVersionCreation() throws IOException {
+    public void testToolVersionCreation() throws IOException {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
@@ -211,7 +211,7 @@ public class LimitedCRUDClientIT {
     }
 
     @Test
-    void testGettingDescriptorType() throws IOException {
+    public void testGettingDescriptorType() throws IOException {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
@@ -229,7 +229,7 @@ public class LimitedCRUDClientIT {
     }
 
     @Test
-    void testOverrideVersionLimit() throws IOException {
+    public void testOverrideVersionLimit() throws IOException {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
 
         // Change limits for current user
@@ -262,7 +262,7 @@ public class LimitedCRUDClientIT {
     }
 
     @Test
-    void testUploadZipHonorsVersionLimit() {
+    public void testUploadZipHonorsVersionLimit() {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
         final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);

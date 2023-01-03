@@ -93,13 +93,13 @@ public class ExtendedTRSIT extends BaseIT {
     }
 
     @Test
-    void testVerificationOnSourceFileLevelForWorkflowsAsAdmin() throws ApiException {
+    public void testVerificationOnSourceFileLevelForWorkflowsAsAdmin() throws ApiException {
         // can verify anyone's workflow as an admin
         testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(ADMIN_USERNAME, testingPostgres));
     }
 
     @Test
-    void testVerificationOnSourceFileLevelForWorkflowsAsCurator() throws ApiException {
+    public void testVerificationOnSourceFileLevelForWorkflowsAsCurator() throws ApiException {
         // or as a curator
         testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(curatorUsername, testingPostgres));
     }
@@ -188,7 +188,7 @@ public class ExtendedTRSIT extends BaseIT {
      * Also tests that the tag verification endpoint can fix a potential sync issue
      */
     @Test
-    void testVerificationOnSourceFileLevelForTools() {
+    public void testVerificationOnSourceFileLevelForTools() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi containertagsApi = new ContainertagsApi(webClient);

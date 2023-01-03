@@ -78,14 +78,14 @@ public class TransactionHelperIT extends BaseIT {
     }
 
     @Test
-    void testTransactionAutoCommit() {
+    public void testTransactionAutoCommit() {
         TransactionHelper helper = new TransactionHelper(session);
         helper.transaction(() -> insert());
         helper.transaction(() -> Assert.assertEquals(1, count()));
     }
 
     @Test
-    void testTransactionAutoRollback() {
+    public void testTransactionAutoRollback() {
         TransactionHelper helper = new TransactionHelper(session);
         shouldThrow(() -> helper.transaction(() -> {
             insert();
@@ -96,7 +96,7 @@ public class TransactionHelperIT extends BaseIT {
     }
 
     @Test
-    void testRepeatedCommitsAndRollbacks() {
+    public void testRepeatedCommitsAndRollbacks() {
         TransactionHelper helper = new TransactionHelper(session);
         helper.commit();
         helper.rollback();
@@ -115,7 +115,7 @@ public class TransactionHelperIT extends BaseIT {
     }
 
     @Test
-    void testThrowsOnClosedSession() {
+    public void testThrowsOnClosedSession() {
         TransactionHelper helper = new TransactionHelper(session);
         session.close();
         shouldThrow(() -> helper.begin());

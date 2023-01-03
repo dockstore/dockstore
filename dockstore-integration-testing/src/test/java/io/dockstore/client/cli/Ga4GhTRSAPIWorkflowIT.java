@@ -125,7 +125,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      * the workflow, putting it here
      */
     @Test
-    void testGa4ghEndpointForComplexWdlWorkflow() throws IOException {
+    public void testGa4ghEndpointForComplexWdlWorkflow() throws IOException {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
         Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
@@ -180,7 +180,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    void testRefreshAllForAUser() throws ApiException {
+    public void testRefreshAllForAUser() throws ApiException {
 
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         long userId = 1;
@@ -267,7 +267,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      * Tests for https://github.com/dockstore/dockstore/issues/2154
      */
     @Test
-    void testMoreCWLImportsStructure() throws ApiException, URISyntaxException, IOException {
+    public void testMoreCWLImportsStructure() throws ApiException, URISyntaxException, IOException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi
@@ -296,7 +296,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
     // working on https://github.com/dockstore/dockstore/issues/3335
     @Test
-    void testWeirdPathCase() throws ApiException, URISyntaxException, IOException {
+    public void testWeirdPathCase() throws ApiException, URISyntaxException, IOException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi
@@ -326,7 +326,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
-    void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException, URISyntaxException, IOException {
+    public void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException, URISyntaxException, IOException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
@@ -405,7 +405,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     }
 
     @Test
-    void testRelativeSecondaryFileOperations() throws ApiException, URISyntaxException, IOException {
+    public void testRelativeSecondaryFileOperations() throws ApiException, URISyntaxException, IOException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
@@ -486,7 +486,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     }
 
     @Test
-    void testAnonAndAdminGA4GH() throws ApiException, URISyntaxException, IOException {
+    public void testAnonAndAdminGA4GH() throws ApiException, URISyntaxException, IOException {
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
@@ -555,7 +555,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     }
 
     @Test
-    void testAliasOperations() throws ApiException {
+    public void testAliasOperations() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");

@@ -55,14 +55,14 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    void setPermissionTest() {
+    public void setPermissionTest() {
         final Permission permission = new Permission(JANE_DOE_EXAMPLE_COM, Role.WRITER);
         final List<Permission> permissions = inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
         Assert.assertTrue(permissions.contains(permission));
     }
 
     @Test
-    void workflowsSharedWithUser() {
+    public void workflowsSharedWithUser() {
         Assert.assertEquals(0, inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size());
         final Permission permission = new Permission();
         permission.setRole(Role.WRITER);
@@ -78,7 +78,7 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    void removePermission() {
+    public void removePermission() {
         Assert.assertEquals(0, inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size());
         final Permission permission = new Permission("jane", Role.WRITER);
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
@@ -93,7 +93,7 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    void canDoAction() {
+    public void canDoAction() {
         Assert.assertEquals(0, inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size());
         final Permission permission = new Permission(janeDoeUser.getUsername(), Role.READER);
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
@@ -102,14 +102,14 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    void setPermissionsUnauthorized() {
+    public void setPermissionsUnauthorized() {
         final Permission permission = new Permission("whatever", Role.READER);
         thrown.expect(CustomWebApplicationException.class);
         inMemoryPermissions.setPermission(janeDoeUser, fooWorkflow, permission);
     }
 
     @Test
-    void testOwnersActions() {
+    public void testOwnersActions() {
         // Test that reader can see her own permission even if she is not an owner
         final Permission permission = new Permission("jane", Role.OWNER);
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
@@ -118,7 +118,7 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    void testWritersActions() {
+    public void testWritersActions() {
         // Test that reader can see her own permission even if she is not an owner
         final Permission permission = new Permission("jane", Role.WRITER);
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
@@ -128,7 +128,7 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    void testReadersActions() {
+    public void testReadersActions() {
         // Test that reader can see her own permission even if she is not an owner
         final Permission permission = new Permission("jane", Role.READER);
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
@@ -138,14 +138,14 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    void testNoPermissions() {
+    public void testNoPermissions() {
         // Test that user without permissions querying permissions gets an exception
         thrown.expect(CustomWebApplicationException.class);
         inMemoryPermissions.getPermissionsForWorkflow(janeDoeUser, fooWorkflow);
     }
 
     @Test
-    void testIsSharing() {
+    public void testIsSharing() {
         // Nothing shared at all
         Assert.assertFalse(inMemoryPermissions.isSharing(johnDoeUser));
 
@@ -156,7 +156,7 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    void testSelfDestruct() {
+    public void testSelfDestruct() {
         // Nothing shared at all
         Assert.assertFalse(inMemoryPermissions.isSharing(johnDoeUser));
 

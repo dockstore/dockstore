@@ -102,7 +102,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    void testWorkflowDAGCWL() throws ApiException {
+    public void testWorkflowDAGCWL() throws ApiException {
         // Input: 1st-workflow.cwl
         // Repo: test_workflow_cwl
         // Branch: master
@@ -122,7 +122,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    void testWorkflowDAGCWLRequirementMap() throws ApiException {
+    public void testWorkflowDAGCWLRequirementMap() throws ApiException {
         // Input: snaptools_create_snap_file.cwl
         // Repo: SnapTools
         // Branch: feature/docker_cwl_req_in_min
@@ -141,7 +141,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    void testWorkflowDAGWDLSingleNode() throws ApiException {
+    public void testWorkflowDAGWDLSingleNode() throws ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: master
@@ -166,7 +166,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    void testWorkflowDAGWDLMultipleNodes() throws ApiException {
+    public void testWorkflowDAGWDLMultipleNodes() throws ApiException {
         // Input: hello.wdl
         // Repo: hello-dockstore-workflow
         // Branch: master
@@ -195,7 +195,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    void testWorkflowDAGCWLMissingTool() throws ApiException {
+    public void testWorkflowDAGCWLMissingTool() throws ApiException {
         // Input: Dockstore.cwl
         // Repo: hello-dockstore-workflow
         // Branch: testCWL
@@ -224,7 +224,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    void testDAGImportSyntax() throws ApiException {
+    public void testDAGImportSyntax() throws ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
         // Branch: update-to-valid-cwl
@@ -243,7 +243,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    void testDAGCWL1Syntax() throws ApiException {
+    public void testDAGCWL1Syntax() throws ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: develop
@@ -260,7 +260,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    void testHintsExpressionTool() throws ApiException {
+    public void testHintsExpressionTool() throws ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: hints_ExpressionTool
@@ -290,7 +290,7 @@ public class DAGWorkflowTestIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    void testHugeWorkflowWithManyImports() throws ApiException {
+    public void testHugeWorkflowWithManyImports() throws ApiException {
         // Input: /workflows/dnaseq/transform.cwl
         // Repo: gdc-dnaseq-cwl
         // Branch: master
@@ -310,7 +310,7 @@ public class DAGWorkflowTestIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    void testGetStepsArrayInsteadOfObject() throws ApiException {
+    public void testGetStepsArrayInsteadOfObject() throws ApiException {
         // Input: /gp_workflow.cwl
         // Repo: cwl-gene-prioritization
         // Branch: master
@@ -334,7 +334,7 @@ public class DAGWorkflowTestIT extends BaseIT {
      */
     @SuppressWarnings("checkstyle:EmptyCatchBlock")
     @Test
-    void testComplexImportWdlWorkflow() throws ApiException {
+    public void testComplexImportWdlWorkflow() throws ApiException {
         // Input: /parent/parent.wdl
         // Repo: ComplexImportsWdl
         // Branch: master
@@ -349,7 +349,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    void testReallyComplexImportedWdlWorkflow() throws ApiException {
+    public void testReallyComplexImportedWdlWorkflow() throws ApiException {
         final List<String> strings = getJSON("dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl", "wdl", "1.0");
         assertEquals(1, strings.size());
         final Gson gson = new Gson();

@@ -43,7 +43,7 @@ public class CheckUrlHelperIT {
     public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(CHECK_URL_SOURCE, localConfigs().destination(fakeCheckUrlLambdaBaseURL));
 
     @Test
-    void checkUrlsFromLambdaGood() throws IOException {
+    public void checkUrlsFromLambdaGood() throws IOException {
         Map<String, String> state = new HashMap<>();
         state.put("status", "good");
         hoverflyRule.setState(state);
@@ -57,7 +57,7 @@ public class CheckUrlHelperIT {
     }
 
     @Test
-    void checkUrlsFromLambdaBad() throws IOException {
+    public void checkUrlsFromLambdaBad() throws IOException {
         Map<String, String> state = new HashMap<>();
         state.put("status", "bad");
         hoverflyRule.setState(state);
@@ -71,7 +71,7 @@ public class CheckUrlHelperIT {
     }
 
     @Test
-    void checkUrlsFromLambdaSomeBad() throws IOException {
+    public void checkUrlsFromLambdaSomeBad() throws IOException {
         Map<String, String> state = new HashMap<>();
         state.put("status", "someGoodSomeBad");
         hoverflyRule.setState(state);
@@ -85,7 +85,7 @@ public class CheckUrlHelperIT {
     }
 
     @Test
-    void checkUrlsFromLambdaTerriblyWrong() throws IOException {
+    public void checkUrlsFromLambdaTerriblyWrong() throws IOException {
         Map<String, String> state = new HashMap<>();
         state.put("status", "terriblyWrong");
         hoverflyRule.setState(state);

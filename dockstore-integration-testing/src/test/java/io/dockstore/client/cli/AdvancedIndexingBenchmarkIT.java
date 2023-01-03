@@ -128,7 +128,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     }
 
     @Test
-    void testCreate10000Tools() {
+    public void testCreate10000Tools() {
         this.sessionFactory = application.getHibernate().getSessionFactory();
         try {
             Transaction transaction = this.sessionFactory.openSession().getTransaction();

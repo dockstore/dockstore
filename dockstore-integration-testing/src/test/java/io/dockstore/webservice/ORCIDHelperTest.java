@@ -59,7 +59,7 @@ public class ORCIDHelperTest {
     }
 
     @Test
-    void exportEntry() throws JAXBException, IOException, DatatypeConfigurationException, URISyntaxException, InterruptedException {
+    public void exportEntry() throws JAXBException, IOException, DatatypeConfigurationException, URISyntaxException, InterruptedException {
         Workflow entry = new BioWorkflow();
         entry.setSourceControl(SourceControl.GITHUB);
         entry.setOrganization("dockstore");
@@ -94,7 +94,7 @@ public class ORCIDHelperTest {
     }
 
     @Test
-    void testOrcidAuthor() throws URISyntaxException, IOException, InterruptedException {
+    public void testOrcidAuthor() throws URISyntaxException, IOException, InterruptedException {
         Optional<String> accessToken = ORCIDHelper.getOrcidAccessToken();
         Assert.assertTrue(accessToken.isPresent());
 

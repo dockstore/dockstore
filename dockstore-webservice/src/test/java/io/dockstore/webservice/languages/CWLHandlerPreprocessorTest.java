@@ -58,69 +58,69 @@ public class CWLHandlerPreprocessorTest {
     }
 
     @Test
-    void testImport() {
+    public void testImport() {
         final String imported = "test: value";
         Assert.assertEquals(parse(imported), preprocess("$import: b", set(file("/b", imported))));
     }
 
     @Test
-    void testInclude() {
+    public void testInclude() {
         final String included = "abcde";
         Assert.assertEquals(included, preprocess("$import: b", set(file("/b", included))));
     }
 
     @Test
-    void testMixin() {
+    public void testMixin() {
         Assert.assertEquals(parse(V1_0 + WORKFLOW + metadataHint("a") + "a: z\nb: y"), preprocess(V1_0 + WORKFLOW + "a: z\n$mixin: b", set(file("/b", "a: x\nb: y"))));
         Assert.assertEquals(parse(V1_1 + WORKFLOW + metadataHint("a") + "$mixin: v"), preprocess(V1_1 + WORKFLOW + "$mixin: v", set()));
     }
 
     @Test
-    void testRun() {
+    public void testRun() {
         final String runContent = "something: torun";
         Assert.assertEquals(parse("run:\n  " + runContent), preprocess("run: b", set(file("/b", runContent))));
         Assert.assertEquals(parse("run:\n  " + runContent), preprocess("run:\n  $import: b", set(file("/b", runContent))));
     }
 
     @Test
-    void testMissingFile() {
+    public void testMissingFile() {
         Assert.assertEquals(Collections.emptyMap(), preprocess("$import: b", set()));
         Assert.assertEquals("", preprocess("$include: b", set()));
         Assert.assertEquals(parse(V1_0 + WORKFLOW + metadataHint("a") + "a: x"), preprocess(V1_0 + WORKFLOW + "a: x\n$mixin: b", set()));
     }
 
     @Test
-    void testMultilevelImports() {
+    public void testMultilevelImports() {
         final String imported = "levels: two";
         Assert.assertEquals(parse(imported), preprocess("$import: b", set(file("/b", "$import: c"), file("/c", imported))));
     }
 
     @Test
-    void testRelativeImport() {
+    public void testRelativeImport() {
         final String imported = "some: content";
         Assert.assertEquals(parse(imported), preprocess("$import: subsub/b", set(file("/sub/subsub/b", imported)), "/sub/a"));
     }
 
     @Test
-    void testAbsoluteImport() {
+    public void testAbsoluteImport() {
         final String imported = "some: content";
         Assert.assertEquals(parse(imported), preprocess("$import: /b", set(file("/b", imported)), "/sub/a"));
     }
 
     @Test
-    void testHttpUrlImport() {
+    public void testHttpUrlImport() {
         Assert.assertEquals(Collections.emptyMap(), preprocess("$import: http://www.foo.com/bar", set()));
         Assert.assertEquals(Collections.emptyMap(), preprocess("$import: https://www.foo.com/bar", set()));
     }
 
     @Test
-    void testFileUrlImport() {
+    public void testFileUrlImport() {
         final String imported = "some: thing";
         Assert.assertEquals(parse(imported), preprocess("$import: file://b", set(file("/b", imported))));
     }
 
     @Test
-    void testRunOfNonexistentFile() {
+    public void testRunOfNonexistentFile() {
         final String runImport = "run:\n  $import: filename";
         final String runReduced = "run: filename";
         Assert.assertEquals(parse(runReduced), preprocess(runImport, set()));

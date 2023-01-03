@@ -129,7 +129,7 @@ public class ConfigurationIT {
     }
 
     @Test
-    void testSourceFilePathsDefaultConfiguration() throws Exception {
+    public void testSourceFilePathsDefaultConfiguration() throws Exception {
         runWithSupport(createSupport(), () -> {
             testGoodSourceFilePath(VANILLA_SOURCEFILE_PATH);
             testGoodSourceFilePath("/ " + VANILLA_SOURCEFILE_PATH);
@@ -138,7 +138,7 @@ public class ConfigurationIT {
     }
 
     @Test
-    void testSourceFilePathsEffectivelyUnrestricted() throws Exception {
+    public void testSourceFilePathsEffectivelyUnrestricted() throws Exception {
         runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", ".*")), () -> {
             testGoodSourceFilePath(VANILLA_SOURCEFILE_PATH);
             getSomeWeirdPaths().forEach(this::testGoodSourceFilePath);
@@ -146,7 +146,7 @@ public class ConfigurationIT {
     }
 
     @Test
-    void testSourceFilePathsVeryTightlyRestricted() throws Exception {
+    public void testSourceFilePathsVeryTightlyRestricted() throws Exception {
         runWithSupport(createSupport(ConfigOverride.config("sourceFilePathRegex", "this regex literally only matches itself")), () -> {
             testBadSourceFilePath(VANILLA_SOURCEFILE_PATH);
             getSomeWeirdPaths().forEach(this::testBadSourceFilePath);

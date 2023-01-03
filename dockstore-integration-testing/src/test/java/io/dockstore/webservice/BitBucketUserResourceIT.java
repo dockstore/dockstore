@@ -73,7 +73,7 @@ public class BitBucketUserResourceIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    void testWizardEndpoints() throws ApiException {
+    public void testWizardEndpoints() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);

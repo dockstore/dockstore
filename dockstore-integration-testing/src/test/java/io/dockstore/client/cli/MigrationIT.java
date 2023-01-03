@@ -69,20 +69,20 @@ public class MigrationIT {
      * In other words, running migration again should be ok
      */
     @Test
-    void testDB1WithNormalDatabase() throws Exception {
+    public void testDB1WithNormalDatabase() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
         SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test");
     }
 
     @Test
-    void testDB1WithStandardMigration() throws Exception {
+    public void testDB1WithStandardMigration() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
         SUPPORT.getApplication()
             .run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test.confidential1");
     }
 
     @Test
-    void testDB2WithStandardMigration() throws Exception {
+    public void testDB2WithStandardMigration() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         SUPPORT.getApplication()
             .run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test.confidential2");
@@ -94,7 +94,7 @@ public class MigrationIT {
      * @throws Exception
      */
     @Test
-    void testDB1WithFunkyMigration() throws Exception {
+    public void testDB1WithFunkyMigration() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
         checkOnMigration();
     }
@@ -115,7 +115,7 @@ public class MigrationIT {
     }
 
     @Test
-    void testDB2WithFunkyMigration() throws Exception {
+    public void testDB2WithFunkyMigration() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         checkOnMigration();
     }

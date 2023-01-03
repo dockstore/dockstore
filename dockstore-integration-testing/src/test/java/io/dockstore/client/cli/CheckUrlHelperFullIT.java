@@ -71,7 +71,7 @@ public class CheckUrlHelperFullIT {
      * parameter file had no URL to check
      */
     @Test
-    void settingVersionMetadata() throws Exception {
+    public void settingVersionMetadata() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(RULE.getTestSupport(), false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);

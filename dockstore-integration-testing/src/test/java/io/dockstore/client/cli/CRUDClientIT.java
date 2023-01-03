@@ -106,7 +106,7 @@ public class CRUDClientIT extends BaseIT {
     }
 
     @Test
-    void testToolCreation() {
+    public void testToolCreation() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
@@ -206,7 +206,7 @@ public class CRUDClientIT extends BaseIT {
     }
 
     @Test
-    void testWorkflowCreation() {
+    public void testWorkflowCreation() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         Workflow hostedTool = api.createHostedWorkflow("awesomeWorkflow", null, CWL.getShortName(), null, null);
@@ -233,7 +233,7 @@ public class CRUDClientIT extends BaseIT {
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
-    void testWorkflowEditing() throws IOException {
+    public void testWorkflowEditing() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
@@ -333,7 +333,7 @@ public class CRUDClientIT extends BaseIT {
     }
 
     @Test
-    void testDeletingFrozenVersion() throws IOException {
+    public void testDeletingFrozenVersion() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, CWL.getShortName(), null, null);
@@ -357,7 +357,7 @@ public class CRUDClientIT extends BaseIT {
     }
 
     @Test
-    void testWorkflowEditingWithAuthorMetadataCWL() throws IOException {
+    public void testWorkflowEditingWithAuthorMetadataCWL() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api
             .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
@@ -373,7 +373,7 @@ public class CRUDClientIT extends BaseIT {
     }
 
     @Test
-    void testWorkflowEditingWithAuthorMetadataWDL() throws IOException {
+    public void testWorkflowEditingWithAuthorMetadataWDL() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api
             .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
@@ -389,7 +389,7 @@ public class CRUDClientIT extends BaseIT {
     }
 
     @Test
-    void testValidHostedFileNames() throws IOException {
+    public void testValidHostedFileNames() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api
                 .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.WDL.toString(), null, null);
@@ -423,7 +423,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that only valid descriptor types can be used to create a hosted tool
      */
     @Test
-    void testToolCreationInvalidDescriptorType() {
+    public void testToolCreationInvalidDescriptorType() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
@@ -446,7 +446,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted tools cannot be refreshed (this tests individual refresh)
      */
     @Test
-    void testRefreshingHostedTool() {
+    public void testRefreshingHostedTool() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -463,7 +463,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted tools cannot be updated
      */
     @Test
-    void testUpdatingHostedTool() {
+    public void testUpdatingHostedTool() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -482,7 +482,7 @@ public class CRUDClientIT extends BaseIT {
      * and that a hosted tool can be deleted.
      */
     @Test
-    void testUpdatingDefaultVersionHostedTool() throws IOException {
+    public void testUpdatingDefaultVersionHostedTool() throws IOException {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         ContainertagsApi containertagsApi = new ContainertagsApi(webClient);
@@ -531,7 +531,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted workflows can have their default path updated
      */
     @Test
-    void testUpdatingDefaultVersionHostedWorkflow() throws IOException {
+    public void testUpdatingDefaultVersionHostedWorkflow() throws IOException {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres));
@@ -558,7 +558,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted tools cannot have new test parameter files added
      */
     @Test
-    void testAddingTestParameterFilesHostedTool() {
+    public void testAddingTestParameterFilesHostedTool() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -573,7 +573,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted tools cannot have their test parameter files deleted
      */
     @Test
-    void testDeletingTestParameterFilesHostedTool() {
+    public void testDeletingTestParameterFilesHostedTool() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -587,7 +587,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that only valid descriptor types can be used to create a hosted workflow
      */
     @Test
-    void testWorkflowCreationInvalidDescriptorType() {
+    public void testWorkflowCreationInvalidDescriptorType() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         api.createHostedWorkflow("awesomeToolCwl", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
@@ -600,7 +600,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted workflows cannot be refreshed (this tests individual refresh)
      */
     @Test
-    void testRefreshingHostedWorkflow() {
+    public void testRefreshingHostedWorkflow() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -614,7 +614,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted workflows cannot be restubed
      */
     @Test
-    void testRestubHostedWorkflow() {
+    public void testRestubHostedWorkflow() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -628,7 +628,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted workflows cannot be updated
      */
     @Test
-    void testUpdatingHostedWorkflow() {
+    public void testUpdatingHostedWorkflow() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -643,7 +643,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted workflows cannot have their paths updated
      */
     @Test
-    void testUpdatingWorkflowPathHostedWorkflow() {
+    public void testUpdatingWorkflowPathHostedWorkflow() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -658,7 +658,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted workflows cannot have new test parameter files added
      */
     @Test
-    void testAddingTestParameterFilesHostedWorkflow() {
+    public void testAddingTestParameterFilesHostedWorkflow() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -672,7 +672,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted workflows cannot have their test parameter files deleted
      */
     @Test
-    void testDeletingTestParameterFilesHostedWorkflow() {
+    public void testDeletingTestParameterFilesHostedWorkflow() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -686,7 +686,7 @@ public class CRUDClientIT extends BaseIT {
      * Tests that the tool name is validated when registering a hosted tool.
      */
     @Test
-    void testHostedToolNameValidation() {
+    public void testHostedToolNameValidation() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
 

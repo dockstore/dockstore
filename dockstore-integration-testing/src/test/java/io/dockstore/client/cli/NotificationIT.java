@@ -55,7 +55,7 @@ public class NotificationIT extends BaseIT {
     }
 
     @Test
-    void testGetNotifications() {
+    public void testGetNotifications() {
 
         // enter test notifications in the database
         Notification expired = testNotification();
@@ -70,7 +70,7 @@ public class NotificationIT extends BaseIT {
     }
 
     @Test
-    void testCreateNewNotification() {
+    public void testCreateNewNotification() {
 
         // set up a test notification
         Notification notification = testNotification();
@@ -92,7 +92,7 @@ public class NotificationIT extends BaseIT {
     }
 
     @Test
-    void testDeleteNotification() {
+    public void testDeleteNotification() {
 
         // create a test notification and add it to the database
         Notification notification = curationApiAdmin.createNotification(testNotification());
@@ -115,7 +115,7 @@ public class NotificationIT extends BaseIT {
     }
 
     @Test
-    void testUpdateNotification() {
+    public void testUpdateNotification() {
 
         // create a test notification and add it to the database
         Notification notification = curationApiAdmin.createNotification(testNotification());
@@ -142,7 +142,7 @@ public class NotificationIT extends BaseIT {
     }
 
     @Test
-    void testLongNotification() throws IOException {
+    public void testLongNotification() throws IOException {
 
         // create a notification that is on the edge
         Notification notification = longNotification(1024);

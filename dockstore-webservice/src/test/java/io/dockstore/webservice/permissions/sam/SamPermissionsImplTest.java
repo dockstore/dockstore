@@ -177,7 +177,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testAccessPolicyResponseEntryToUserPermissions() {
+    public void testAccessPolicyResponseEntryToUserPermissions() {
         final List<Permission> permissions = samPermissionsImpl
                 .accessPolicyResponseEntryToUserPermissions(Arrays.asList(ownerPolicy, writerPolicy));
         assertEquals(2, permissions.size());
@@ -187,7 +187,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testRemoveDuplicateEmails() {
+    public void testRemoveDuplicateEmails() {
         // If a user belongs to two different roles, which the UI does not support, just return
         // the most powerful role.
         final List<Permission> permissions = samPermissionsImpl
@@ -200,7 +200,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testReadValue() {
+    public void testReadValue() {
         String response = "{\n" + "\"statusCode\": 400,\n" + "\"source\": \"sam\",\n" + "\"causes\": [],\n" + "\"stackTrace\": [],\n"
             + "\"message\": \"jane_doe@yahoo.com not found\"\n" + "}";
         Optional<ErrorReport> errorReport = samPermissionsImpl.readValue(response, ErrorReport.class);
@@ -210,7 +210,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testWorkflowsSharedWithUser() throws ApiException, UnsupportedEncodingException {
+    public void testWorkflowsSharedWithUser() throws ApiException, UnsupportedEncodingException {
         ResourceAndAccessPolicy reader = new ResourceAndAccessPolicy();
         reader.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME);
         reader.setAccessPolicyName(SamConstants.READ_POLICY);
@@ -233,7 +233,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testCanRead() throws ApiException {
+    public void testCanRead() throws ApiException {
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME, Role.Action.READ.toString())).thenReturn(Boolean.TRUE);
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + GOO_WORKFLOW_NAME, Role.Action.READ.toString())).thenReturn(Boolean.FALSE);
         when(samPermissionsImpl.getResourcesApi(janeDoeUserMock)).thenReturn(resourcesApiMock);
@@ -246,7 +246,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testCanWrite() throws ApiException {
+    public void testCanWrite() throws ApiException {
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME, Role.Action.WRITE.toString())).thenReturn(Boolean.TRUE);
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + GOO_WORKFLOW_NAME, Role.Action.WRITE.toString())).thenReturn(Boolean.FALSE);
         when(samPermissionsImpl.getResourcesApi(janeDoeUserMock)).thenReturn(resourcesApiMock);
@@ -259,7 +259,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testSetPermission() throws ApiException {
+    public void testSetPermission() throws ApiException {
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME))
                 .thenReturn(Collections.emptyList(), Collections.singletonList(readerAccessPolicyResponseEntry));
         Permission permission = new Permission();
@@ -270,7 +270,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void setPermissionTest1() {
+    public void setPermissionTest1() {
         try {
             when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME)).thenThrow(new ApiException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Server error"));
             final Permission permission = new Permission();
@@ -286,7 +286,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void setPermissionTest2() {
+    public void setPermissionTest2() {
         try {
             final Permission permission = new Permission();
             permission.setEmail(JOHN_SMITH_GMAIL_COM);
@@ -315,7 +315,7 @@ public class SamPermissionsImplTest {
      * @throws ApiException
      */
     @Test
-    void setPermissionRemovesExistingPermission() throws ApiException {
+    public void setPermissionRemovesExistingPermission() throws ApiException {
         final Permission localReaderPermission = new Permission(JOHN_SMITH_GMAIL_COM, Role.READER);
         final String encodedPath = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, encodedPath))
@@ -331,7 +331,7 @@ public class SamPermissionsImplTest {
 
 
     @Test
-    void removePermissionTest() throws ApiException {
+    public void removePermissionTest() throws ApiException {
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX  + FOO_WORKFLOW_NAME))
                 .thenReturn(Collections.singletonList(readerAccessPolicyResponseEntry),
                     Collections.singletonList(readerAccessPolicyResponseEntry), Collections.EMPTY_LIST);
@@ -346,7 +346,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void userNotInSamReturnsEmptyMap() throws ApiException {
+    public void userNotInSamReturnsEmptyMap() throws ApiException {
         // https://github.com/dockstore/dockstore/issues/1597
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)).thenThrow(new ApiException(HttpStatus.SC_UNAUTHORIZED, "Unauthorized"));
         final Map<Role, List<String>> sharedWithUser = samPermissionsImpl.workflowsSharedWithUser(
@@ -355,7 +355,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testOwnersActions() throws ApiException {
+    public void testOwnersActions() throws ApiException {
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
                 .thenReturn(Boolean.TRUE);
@@ -364,7 +364,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testWritersActions() throws ApiException {
+    public void testWritersActions() throws ApiException {
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
                 .thenReturn(Boolean.FALSE);
@@ -377,7 +377,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testReadersActions() throws ApiException {
+    public void testReadersActions() throws ApiException {
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
                 .thenReturn(Boolean.FALSE);
@@ -392,7 +392,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testDockstoreOwnerNoSamPermissions() {
+    public void testDockstoreOwnerNoSamPermissions() {
         when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(
             janeDoeUserMock)));
         final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(janeDoeUserMock, workflowInstance);
@@ -404,7 +404,7 @@ public class SamPermissionsImplTest {
      * @throws ApiException
      */
     @Test
-    void testNoPermissions() throws ApiException {
+    public void testNoPermissions() throws ApiException {
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
                 .thenThrow(new ApiException(HttpStatus.SC_FORBIDDEN, "Unauthorized"));
@@ -417,7 +417,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testUserInTwoPoliciesForSameResource() throws ApiException {
+    public void testUserInTwoPoliciesForSameResource() throws ApiException {
         // https://github.com/dockstore/dockstore/issues/1609, second item
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         ResourceAndAccessPolicy reader = new ResourceAndAccessPolicy();
@@ -444,7 +444,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testNotOriginalOwnerWithEmailNotUsername() {
+    public void testNotOriginalOwnerWithEmailNotUsername() {
         when(janeDoeUserMock.getUsername()).thenReturn(JANE_DOE_GITHUB_ID);
         when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(
             janeDoeUserMock)));
@@ -454,14 +454,14 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testIsSharingNotInSam() throws ApiException {
+    public void testIsSharingNotInSam() throws ApiException {
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
                 .thenThrow(new ApiException(HttpStatus.SC_UNAUTHORIZED, "Unauthorized"));
         assertFalse(samPermissionsImpl.isSharing(janeDoeUserMock));
     }
 
     @Test
-    void testIsSharingUserInSam() throws ApiException {
+    public void testIsSharingUserInSam() throws ApiException {
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         ResourceAndAccessPolicy reader = resourceAndAccessPolicyHelper(SamConstants.READ_POLICY);
         ResourceAndAccessPolicy writer = resourceAndAccessPolicyHelper(SamConstants.WRITE_POLICY);
@@ -493,7 +493,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testSelfDestruct() throws ApiException {
+    public void testSelfDestruct() throws ApiException {
         // Case 0. User doesn't have Google token
         samPermissionsImpl.selfDestruct(noGoogleUser);
 
@@ -547,7 +547,7 @@ public class SamPermissionsImplTest {
      * @throws ApiException
      */
     @Test
-    void testSetPermissionWhenResourceCreatedWithoutAllPolicies() throws ApiException {
+    public void testSetPermissionWhenResourceCreatedWithoutAllPolicies() throws ApiException {
         when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(
             janeDoeUserMock)));
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
@@ -561,7 +561,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testSamPolicyOwnedbyAnother() throws ApiException {
+    public void testSamPolicyOwnedbyAnother() throws ApiException {
         when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(
             janeDoeUserMock)));
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
@@ -580,7 +580,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testAddingOwnerDoesNotCreateSecondOwnerPolicy() throws ApiException { //https://github.com/dockstore/dockstore/issues/1805
+    public void testAddingOwnerDoesNotCreateSecondOwnerPolicy() throws ApiException { //https://github.com/dockstore/dockstore/issues/1805
         when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(
             janeDoeUserMock)));
         ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(SamConstants.OWNER_POLICY);
@@ -592,7 +592,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testOwnerCanGetPermissions() {
+    public void testOwnerCanGetPermissions() {
         final List<Permission> permissions =
             samPermissionsImpl.getPermissionsForWorkflow(janeDoeUserMock, workflowInstance);
         assertEquals(1, permissions.size());
@@ -602,7 +602,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    void testNonOwnerCannotGetPermissions() {
+    public void testNonOwnerCannotGetPermissions() {
         try {
             samPermissionsImpl.getPermissionsForWorkflow(johnSmithUserMock, workflowInstance);
             fail("Non-owner shouldn't be able to get permissions");
@@ -616,7 +616,7 @@ public class SamPermissionsImplTest {
      * asking the user to relink their Google token.
      */
     @Test
-    void testUserHasNoGoogleToken() {
+    public void testUserHasNoGoogleToken() {
         // Read operations fail silently
         assertEquals(0, samPermissionsImpl.workflowsSharedWithUser(noGoogleUser).size());
         assertFalse(samPermissionsImpl.canDoAction(noGoogleUser, workflowInstance, Action.READ));

@@ -253,7 +253,7 @@ public class GA4GHV1IT extends GA4GHIT {
      * can be retrieved separately
      */
     @Test
-    void toolsIdGet4Workflows() throws Exception {
+    public void toolsIdGet4Workflows() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupSamePathsTest(SUPPORT);
         Response response2 = checkedResponse(baseURL + "tools");

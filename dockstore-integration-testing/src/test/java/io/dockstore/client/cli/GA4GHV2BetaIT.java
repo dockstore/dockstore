@@ -233,13 +233,13 @@ public class GA4GHV2BetaIT extends GA4GHIT {
      * This tests the /tools/{id}/versions/{version_id}/{type}/files endpoint
      */
     @Test
-    void toolsIdVersionsVersionIdTypeFile() throws Exception {
+    public void toolsIdVersionsVersionIdTypeFile() throws Exception {
         toolsIdVersionsVersionIdTypeFileCWL();
         toolsIdVersionsVersionIdTypeFileWDL();
     }
 
     @Test
-    void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
+    public void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor//Dockstore.cwl");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
@@ -252,7 +252,7 @@ public class GA4GHV2BetaIT extends GA4GHIT {
      * Tool with non-encoded non-nested cwl test parameter file
      */
     @Test
-    void relativePathEndpointToolTestParameterFileNoEncode() {
+    public void relativePathEndpointToolTestParameterFileNoEncode() {
         Response response = checkedResponse(
             baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor//nested/test.cwl.json");
         String responseObject = response.readEntity(String.class);
@@ -272,7 +272,7 @@ public class GA4GHV2BetaIT extends GA4GHIT {
      * Workflow with non-encoded non-nested cwl test parameter file
      */
     @Test
-    void relativePathEndpointWorkflowTestParameterFileNoEncode() throws Exception {
+    public void relativePathEndpointWorkflowTestParameterFileNoEncode() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
@@ -337,7 +337,7 @@ public class GA4GHV2BetaIT extends GA4GHIT {
      * can be retrieved separately.  In the test database, the author happens to uniquely identify the workflows.
      */
     @Test
-    void toolsIdGet4Workflows() throws Exception {
+    public void toolsIdGet4Workflows() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupSamePathsTest(SUPPORT);
 

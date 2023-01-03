@@ -135,7 +135,7 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
 
 
     @Test
-    void testTargettedRefresh() throws ApiException, URISyntaxException, IOException {
+    public void testTargettedRefresh() throws ApiException, URISyntaxException, IOException {
 
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
@@ -224,7 +224,7 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
      * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
-    void testManualRegisterThenPublish() throws ApiException {
+    public void testManualRegisterThenPublish() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 

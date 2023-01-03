@@ -77,7 +77,7 @@ public class GA4GHV2CwltoolIT {
      * that will reference the GA4GH V2 Beta endpoint
      */
     @Test
-    void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFilesV2Beta() throws Exception {
+    public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFilesV2Beta() throws Exception {
         final String apiVersion = "api/ga4gh/v2/";
         cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles(apiVersion);
     }
@@ -87,7 +87,7 @@ public class GA4GHV2CwltoolIT {
      * that will reference the GA4GH V2 Final endpoint
      */
     @Test
-    void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFilesV2Final() throws Exception {
+    public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFilesV2Final() throws Exception {
         final String apiVersion = "ga4gh/trs/v2/";
         cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles(apiVersion);
 

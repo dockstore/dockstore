@@ -38,7 +38,7 @@ public class CheckUrlHelperTest {
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Test
-    void getUrlsFromJSON() throws IOException {
+    public void getUrlsFromJSON() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("testParameterFile1.json"));
         String s = Files.asCharSource(file, Charsets.UTF_8).read();
         Set<String> urls = CheckUrlHelper.getUrlsFromJSON(s);
@@ -47,7 +47,7 @@ public class CheckUrlHelperTest {
     }
 
     @Test
-    void getUrlsFromYAML() throws IOException {
+    public void getUrlsFromYAML() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("testParameterFile1.yaml"));
         String s = Files.asCharSource(file, Charsets.UTF_8).read();
         Set<String> urls = CheckUrlHelper.getUrlsFromYAML(s);
@@ -56,7 +56,7 @@ public class CheckUrlHelperTest {
     }
 
     @Test
-    void getUrlsFromInvalidFile() throws IOException {
+    public void getUrlsFromInvalidFile() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("valid_description_example.wdl"));
         String s = Files.asCharSource(file, Charsets.UTF_8).read();
         Assert.assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.YAML).isEmpty());

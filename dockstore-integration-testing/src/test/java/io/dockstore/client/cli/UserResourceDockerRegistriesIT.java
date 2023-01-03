@@ -33,7 +33,7 @@ public class UserResourceDockerRegistriesIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
     }
     @Test
-    void getUserDockerRegistriesTest() {
+    public void getUserDockerRegistriesTest() {
         ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         List<String> actualRegistries = usersApi.getUserDockerRegistries();
@@ -42,7 +42,7 @@ public class UserResourceDockerRegistriesIT extends BaseIT {
     }
 
     @Test
-    void getDockerRegistryOrganizationTest() {
+    public void getDockerRegistryOrganizationTest() {
         ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         List<String> actualNamespaces = usersApi.getDockerRegistriesOrganization("quay.io");
@@ -57,7 +57,7 @@ public class UserResourceDockerRegistriesIT extends BaseIT {
     }
 
     @Test
-    void getDockerRegistryOrganizationRepositoriesTest() {
+    public void getDockerRegistryOrganizationRepositoriesTest() {
         ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         List<String> actualRepositories = usersApi.getDockerRegistryOrganizationRepositories("quay.io", "dockstoretestuser");

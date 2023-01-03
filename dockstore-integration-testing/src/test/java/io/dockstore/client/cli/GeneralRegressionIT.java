@@ -117,7 +117,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests adding/editing/deleting container related labels (for search)
      */
     @Test
-    void testAddEditRemoveLabelOldClient() {
+    public void testAddEditRemoveLabelOldClient() {
         // Test adding/removing labels for different containers
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
@@ -179,7 +179,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests adding tag tags to a manually registered container
      */
     @Test
-    void testAddVersionTagManualContainerOldClient() {
+    public void testAddVersionTagManualContainerOldClient() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
                 Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
@@ -255,7 +255,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Will test deleting a tag tag from a manually registered container
      */
     @Test
-    void testVersionTagDeleteOldClient() {
+    public void testVersionTagDeleteOldClient() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
                 Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
@@ -280,7 +280,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests that tool2JSON works for entries on Dockstore
      */
     @Test
-    void testTool2JsonWdlOldClient() {
+    public void testTool2JsonWdlOldClient() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });
@@ -292,7 +292,7 @@ public class GeneralRegressionIT extends BaseIT {
     }
 
     @Test
-    void registerUnregisterAndCopyOldClient() {
+    public void registerUnregisterAndCopyOldClient() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });
@@ -322,7 +322,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests that WDL2JSON works for local file
      */
     @Test
-    void testWDL2JSONOld() {
+    public void testWDL2JSONOld() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "wdl2json", "--wdl",
@@ -331,7 +331,7 @@ public class GeneralRegressionIT extends BaseIT {
     }
 
     @Test
-    void testCWL2JSONOld() {
+    public void testCWL2JSONOld() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2json", "--cwl",
@@ -340,7 +340,7 @@ public class GeneralRegressionIT extends BaseIT {
     }
 
     @Test
-    void testCWL2YAMLOld() {
+    public void testCWL2YAMLOld() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2yaml", "--cwl",
@@ -372,7 +372,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests that a developer can launch a CWL Tool locally, instead of getting files from Dockstore
      */
     @Test
-    void testLocalLaunchCWLOld() {
+    public void testLocalLaunchCWLOld() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
                 ResourceHelpers.resourceFilePath("arrays.cwl"), "--json",
@@ -385,7 +385,7 @@ public class GeneralRegressionIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    void testUpdateToolPathCWL() throws ApiException {
+    public void testUpdateToolPathCWL() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -409,7 +409,7 @@ public class GeneralRegressionIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    void testUpdateToolPathWDL() throws ApiException {
+    public void testUpdateToolPathWDL() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -432,7 +432,7 @@ public class GeneralRegressionIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    void testUpdateToolPathDockerfile() throws ApiException {
+    public void testUpdateToolPathDockerfile() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
