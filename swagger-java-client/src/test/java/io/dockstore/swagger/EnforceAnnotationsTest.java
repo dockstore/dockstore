@@ -6,7 +6,7 @@ import io.swagger.client.model.Workflow;
 import java.lang.annotation.Annotation;
 import org.junit.jupiter.api.Test;
 
-public class EnforceAnnotationsTest {
+class EnforceAnnotationsTest {
 
     @Test
     void checkAnnotations() {
