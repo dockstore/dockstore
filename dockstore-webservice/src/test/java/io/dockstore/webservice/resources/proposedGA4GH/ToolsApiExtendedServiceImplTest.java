@@ -11,7 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
-public class ToolsApiExtendedServiceImplTest {
+class ToolsApiExtendedServiceImplTest {
 
     /**
      * Tests that ES requests with long search terms fail.
@@ -19,7 +19,7 @@ public class ToolsApiExtendedServiceImplTest {
      * @throws IOException
      */
     @Test
-    public void testCheckSearchTermLimit() throws IOException {
+    void testCheckSearchTermLimit() throws IOException {
         String searchRequestExceedsLimitMessage = "Search request exceeds limit";
 
         try {

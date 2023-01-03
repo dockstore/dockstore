@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class SimpleAuthenticatorTest {
+class SimpleAuthenticatorTest {
 
     private static final Long USER_ID = 1L;
     private static final String USER_EMAIL = "jdoe@example.com";
@@ -39,7 +39,7 @@ public class SimpleAuthenticatorTest {
     }
 
     @Test
-    public void authenticateDockstoreToken() {
+    void authenticateDockstoreToken() {
         when(token.getUserId()).thenReturn(USER_ID);
         when(tokenDAO.findByContent(credentials)).thenReturn(token);
         when(userDAO.findById(USER_ID)).thenReturn(user);
@@ -48,7 +48,7 @@ public class SimpleAuthenticatorTest {
     }
 
     @Test
-    public void authenticateGoogleTokenExistingUser() {
+    void authenticateGoogleTokenExistingUser() {
         when(tokenDAO.findByContent(credentials)).thenReturn(null);
         doReturn(Optional.of(userinfoplus)).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         when(userinfoplus.getEmail()).thenReturn(USER_EMAIL);
@@ -58,7 +58,7 @@ public class SimpleAuthenticatorTest {
     }
 
     @Test
-    public void authenticateGoogleTokenNewUser() {
+    void authenticateGoogleTokenNewUser() {
         when(tokenDAO.findByContent(credentials)).thenReturn(null);
         doReturn(Optional.of(userinfoplus)).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         when(userinfoplus.getEmail()).thenReturn(USER_EMAIL);
@@ -68,7 +68,7 @@ public class SimpleAuthenticatorTest {
     }
 
     @Test
-    public void authenticateBadToken() {
+    void authenticateBadToken() {
         doReturn(Optional.empty()).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         assertFalse(simpleAuthenticator.authenticate(credentials).isPresent());
     }

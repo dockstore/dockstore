@@ -5,12 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
-public class ToolV1Test {
+class ToolV1Test {
     /**
      * This tests that urls with /ga4gh/v1/ api requests correctly have V1 urls in response after api conversion.
      */
     @Test
-    public void checkToolV1URL() {
+    void checkToolV1URL() {
         Tool tool = new Tool();
         tool.setVerified(true);
         tool.setSigned(true);
@@ -23,7 +23,7 @@ public class ToolV1Test {
      * This tests that a null value url is not effected by url api version check
      */
     @Test
-    public void checkToolV1Null() {
+    void checkToolV1Null() {
         Tool tool = new Tool();
         tool.setVerified(true);
         tool.setSigned(true);

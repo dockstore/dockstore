@@ -33,7 +33,7 @@ public class ElasticSearchHelperIT extends BaseIT {
     }
 
     @Test
-    public void testDoMappingsExist() throws IOException {
+    void testDoMappingsExist() throws IOException {
         RestHighLevelClient esClient = ElasticSearchHelper.restHighLevelClient();
         Assert.assertTrue("Should return true because mappings should exist upon startup", ElasticSearchHelper.doMappingsExist());
         deleteIndex(ElasticListener.TOOLS_INDEX, esClient);
@@ -43,7 +43,7 @@ public class ElasticSearchHelperIT extends BaseIT {
     }
 
     @Test
-    public void testAcquireAndReleaseLock() {
+    void testAcquireAndReleaseLock() {
         Assert.assertTrue(ElasticSearchHelper.acquireLock());
         Assert.assertFalse("Should not be able to acquire lock if the lock is being used", ElasticSearchHelper.acquireLock());
         Assert.assertTrue("Should be able to release lock successfully", ElasticSearchHelper.releaseLock());

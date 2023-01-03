@@ -11,10 +11,10 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import org.junit.jupiter.api.Test;
 
-public class StringInputValidationHelperTest {
+class StringInputValidationHelperTest {
 
     @Test
-    public void testCheckEntryName() {
+    void testCheckEntryName() {
         try {
             StringInputValidationHelper.checkEntryName(Tool.class, "!@#$/%^&*<foo><bar>");
             fail("Entry name with special characters that are not underscores and hyphens should fail validation.");

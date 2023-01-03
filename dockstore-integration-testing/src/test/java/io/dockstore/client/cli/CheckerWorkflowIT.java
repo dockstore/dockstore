@@ -82,7 +82,7 @@ public class CheckerWorkflowIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testCWLToolAddCheckerRefreshPublishUnpublish() throws ApiException {
+    void testCWLToolAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -193,22 +193,22 @@ public class CheckerWorkflowIT extends BaseIT {
      */
 
     @Test
-    public void testCheckerWorkflowAndRefreshIssueByAll() {
+    void testCheckerWorkflowAndRefreshIssueByAll() {
         testCheckerWorkflowAndRefresh(true, true);
     }
 
     @Test
-    public void testCheckerWorkflowAndRefreshIssueByOrganization() {
+    void testCheckerWorkflowAndRefreshIssueByOrganization() {
         testCheckerWorkflowAndRefresh(true, false);
     }
 
     @Test
-    public void testCheckerWorkflowAndRefreshIssueByAllToolVersion() {
+    void testCheckerWorkflowAndRefreshIssueByAllToolVersion() {
         testCheckerWorkflowAndRefresh(false, true);
     }
 
     @Test
-    public void testCheckerWorkflowAndRefreshIssueByOrganizationToolVersion() {
+    void testCheckerWorkflowAndRefreshIssueByOrganizationToolVersion() {
         testCheckerWorkflowAndRefresh(false, false);
     }
 
@@ -291,7 +291,7 @@ public class CheckerWorkflowIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testCWLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
+    void testCWLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -384,7 +384,7 @@ public class CheckerWorkflowIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testWDLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
+    void testWDLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -454,7 +454,7 @@ public class CheckerWorkflowIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testAddCheckerToStub() throws ApiException {
+    void testAddCheckerToStub() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -479,7 +479,7 @@ public class CheckerWorkflowIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testRegisteringToolWithUnderscoreInName() throws ApiException {
+    void testRegisteringToolWithUnderscoreInName() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
@@ -506,7 +506,7 @@ public class CheckerWorkflowIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testRegisteringWorkflowWithUnderscoreInName() throws ApiException {
+    void testRegisteringWorkflowWithUnderscoreInName() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);

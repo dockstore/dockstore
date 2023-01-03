@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.zip.ZipFile;
 import org.junit.jupiter.api.Test;
 
-public class ZipSourceFileHelperTest {
+class ZipSourceFileHelperTest {
 
     private static final String SMART_SEQ_ZIP_PATH = ResourceHelpers.resourceFilePath("smartseq.zip");
     /**
@@ -21,7 +21,7 @@ public class ZipSourceFileHelperTest {
     private static final String WHALESAY_ZIP_PATH = ResourceHelpers.resourceFilePath("whalesayinsubdir.zip");
 
     @Test
-    public void validateZip() throws IOException {
+    void validateZip() throws IOException {
         ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH));
         try {
             ZipSourceFileHelper.validateZip(smartSeqZipFile, 1, 1);
@@ -39,7 +39,7 @@ public class ZipSourceFileHelperTest {
     }
 
     @Test
-    public void sourceFilesFromZip() throws IOException {
+    void sourceFilesFromZip() throws IOException {
         try (ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH))) {
             final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromZip(smartSeqZipFile, DescriptorLanguage.FileType.DOCKSTORE_WDL);
             assertEquals("SmartSeq2SingleSample.wdl", sourceFiles.getPrimaryDescriptor().getPath());
@@ -50,7 +50,7 @@ public class ZipSourceFileHelperTest {
     }
 
     @Test
-    public void sourceFilesFromZipWithFolder() throws IOException {
+    void sourceFilesFromZipWithFolder() throws IOException {
         try (ZipFile whalesayZipFile = new ZipFile(new File(WHALESAY_ZIP_PATH))) {
             final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromZip(whalesayZipFile, DescriptorLanguage.FileType.DOCKSTORE_WDL);
             assertEquals("subdir/Dockstore.wdl", sourceFiles.getPrimaryDescriptor().getPath());
@@ -60,7 +60,7 @@ public class ZipSourceFileHelperTest {
     }
 
     @Test
-    public void validateType() throws IOException {
+    void validateType() throws IOException {
         ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH));
         try {
             ZipSourceFileHelper.sourceFilesFromZip(smartSeqZipFile, DescriptorLanguage.FileType.DOCKSTORE_CWL);

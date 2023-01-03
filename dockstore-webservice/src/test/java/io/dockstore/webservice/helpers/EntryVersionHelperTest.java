@@ -13,10 +13,10 @@ import java.util.HashSet;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-public class EntryVersionHelperTest {
+class EntryVersionHelperTest {
 
     @Test
-    public void removeWorkingDirectory() {
+    void removeWorkingDirectory() {
         assertEquals("Dockstore.cwl", EntryVersionHelper.removeWorkingDirectory("/Dockstore.cwl", "Dockstore.cwl"));
         assertEquals("foo/Dockstore.cwl", EntryVersionHelper.removeWorkingDirectory("foo/Dockstore.cwl", "Dockstore.cwl"));
         assertEquals("foo/Dockstore.cwl", EntryVersionHelper.removeWorkingDirectory("./foo/Dockstore.cwl", "Dockstore.cwl"));
@@ -38,7 +38,7 @@ public class EntryVersionHelperTest {
      * @throws IOException
      */
     @Test
-    public void testWriteStreamAsZip() throws IOException {
+    void testWriteStreamAsZip() throws IOException {
         EntryVersionHelper anonymousClass = () -> null;
         SourceFile sourceFile1 = new SourceFile();
         sourceFile1.setContent(null);
@@ -78,7 +78,7 @@ public class EntryVersionHelperTest {
     }
 
     @Test
-    public void testZipFileName() {
+    void testZipFileName() {
         String path = "github.com/dockstore/hello_world";
         String versionName = "master";
         assertEquals("github.com-dockstore-hello_world-master.zip", EntryVersionHelper.generateZipFileName(path, versionName));

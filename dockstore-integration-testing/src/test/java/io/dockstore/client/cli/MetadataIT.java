@@ -39,7 +39,7 @@ public class MetadataIT extends BaseIT {
     }
 
     @Test
-    public void testValidClientVersion() {
+    void testValidClientVersion() {
         String endpoint = "/metadata/runner_dependencies";
         List<Pair> queryParams = this.queryParams();
         queryParams.addAll(apiClient.parameterToPairs("", "client_version", "1.13.0"));
@@ -48,7 +48,7 @@ public class MetadataIT extends BaseIT {
     }
 
     @Test
-    public void testPrereleaseClientVersion() {
+    void testPrereleaseClientVersion() {
         String endpoint = "/metadata/runner_dependencies";
         List<Pair> queryParams = this.queryParams();
         queryParams.addAll(apiClient.parameterToPairs("", "client_version", "1.13.0-alpha.7"));
@@ -57,7 +57,7 @@ public class MetadataIT extends BaseIT {
     }
 
     @Test
-    public void testDevelopmentSemanticVersion() {
+    void testDevelopmentSemanticVersion() {
         String endpoint = "/metadata/runner_dependencies";
         List<Pair> queryParams = this.queryParams();
         queryParams.addAll(apiClient.parameterToPairs("", "client_version", PipHelper.DEV_SEM_VER));
@@ -66,7 +66,7 @@ public class MetadataIT extends BaseIT {
     }
 
     @Test
-    public void testInvalidClientVersion() {
+    void testInvalidClientVersion() {
         String endpoint = "/metadata/runner_dependencies";
         List<Pair> queryParams = this.queryParams();
         queryParams.addAll(apiClient.parameterToPairs("", "client_version", "1.2"));

@@ -24,14 +24,14 @@ import org.junit.jupiter.api.Test;
  * @author gluu
  * @since 1.8.0
  */
-public class DAGHelperTest {
+class DAGHelperTest {
 
     /**
      * Tests that a unclean DAG is converted to a clean one.
      * Also tests that a clean DAG is unaffected.
      */
     @Test
-    public void cleanDAGTest() {
+    void cleanDAGTest() {
         String uncleanDAG = fixture("fixtures/uncleanDAG.json");
         String cleanDAG = DAGHelper.cleanDAG(uncleanDAG);
         assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanDAG.trim());

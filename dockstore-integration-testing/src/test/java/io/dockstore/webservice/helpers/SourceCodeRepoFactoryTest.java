@@ -60,7 +60,7 @@ public class SourceCodeRepoFactoryTest {
     }
 
     @Test
-    public void parseGitUrl() {
+    void parseGitUrl() {
         // https://stackoverflow.com/questions/59081778/rules-for-special-characters-in-github-repository-name
         // test format 1
         final Optional<Map<String, String>> stringStringMapOpt = SourceCodeRepoFactory
@@ -116,7 +116,7 @@ public class SourceCodeRepoFactoryTest {
      * Tests that parsing a GitLab URL works
      */
     @Test
-    public void testGitLabUrlRegexParsing() {
+    void testGitLabUrlRegexParsing() {
         GitLabSourceCodeRepo repo = new GitLabSourceCodeRepo("fakeUser", "fakeToken");
         final BioWorkflow entry = new BioWorkflow();
 
@@ -164,7 +164,7 @@ public class SourceCodeRepoFactoryTest {
      * Tests that parsing a GitHub URL works
      */
     @Test
-    public void testGitHubUrlRegexParsing() {
+    void testGitHubUrlRegexParsing() {
         GitHubSourceCodeRepo repo = new GitHubSourceCodeRepo("fakeUser", "fakeToken");
         final Tool entry = new Tool();
 

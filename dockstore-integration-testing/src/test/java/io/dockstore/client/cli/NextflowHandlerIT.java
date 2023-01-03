@@ -44,7 +44,7 @@ public class NextflowHandlerIT extends BaseIT {
      * Nextflow DSL2 with imports that import
      */
     @Test
-    public void testProcessImportsRnaseq() {
+    void testProcessImportsRnaseq() {
         final String githubRepository = "dockstore-testing/rnaseq-nf";
         WorkflowVersion workflowVersion = new WorkflowVersion();
         workflowVersion.setName("2.0.1");
@@ -79,7 +79,7 @@ public class NextflowHandlerIT extends BaseIT {
      * Nextflow DSL2 with an import statement spans multiple lines
      */
     @Test
-    public void testProcessImportsCalliNGS() {
+    void testProcessImportsCalliNGS() {
         final String githubRepository = "dockstore-testing/CalliNGS-NF";
         WorkflowVersion workflowVersion = new WorkflowVersion();
         workflowVersion.setName("1.0.1");
@@ -104,7 +104,7 @@ public class NextflowHandlerIT extends BaseIT {
      * Import also has the same file name as another file
      */
     @Test
-    public void testProcessImportsSamtools() {
+    void testProcessImportsSamtools() {
         final String githubRepository = "dockstore-testing/modules";
         WorkflowVersion workflowVersion = new WorkflowVersion();
         workflowVersion.setName("0.0.1");

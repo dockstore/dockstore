@@ -151,7 +151,7 @@ public class GalaxyPluginIT {
     }
 
     @Test
-    public void testGalaxyLanguagePlugin() {
+    void testGalaxyLanguagePlugin() {
         MetadataApi metadataApi = new MetadataApi(getWebClient(false, "n/a", testingPostgres));
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         // should have default languages plus galaxy via plugin
@@ -169,7 +169,7 @@ public class GalaxyPluginIT {
     }
 
     @Test
-    public void testFilterByDescriptorType() {
+    void testFilterByDescriptorType() {
         final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -201,7 +201,7 @@ public class GalaxyPluginIT {
     }
 
     @Test
-    public void testTestParameterPaths() {
+    void testTestParameterPaths() {
         final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.handleGitHubRelease(galaxyWorkflowRepo, BaseIT.USER_2_USERNAME, "refs/heads/validTestParameterFiles", installationId);
@@ -213,7 +213,7 @@ public class GalaxyPluginIT {
     }
 
     @Test
-    public void testSnapshotWorkflow() {
+    void testSnapshotWorkflow() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         final String validVersion = "0.1";

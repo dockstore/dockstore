@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 public class EnforceAnnotationsTest {
 
     @Test
-    public void checkAnnotations() {
+    void checkAnnotations() {
         // we had a bizarre issue where the Workflow would lose an annotation that was required for dockstore-cli to work properly
         Workflow workflow = new Workflow();
         Class<? extends Workflow> cls = workflow.getClass();

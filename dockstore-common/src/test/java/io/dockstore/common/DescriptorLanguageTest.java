@@ -25,10 +25,10 @@ import org.junit.jupiter.api.Test;
 /**
  * @author dyuen
  */
-public class DescriptorLanguageTest {
+class DescriptorLanguageTest {
 
     @Test
-    public void testGetFileType() {
+    void testGetFileType() {
         assertEquals(FileType.DOCKSTORE_CWL, DescriptorLanguage.getOptionalFileType("CWL").get());
         assertEquals(FileType.DOCKSTORE_CWL, DescriptorLanguage.getOptionalFileType("PLAIN_CWL").get());
         assertEquals(FileType.DOCKSTORE_WDL, DescriptorLanguage.getOptionalFileType("WDL").get());
@@ -41,21 +41,21 @@ public class DescriptorLanguageTest {
     }
 
     @Test
-    public void testGetTestParamFileType() {
+    void testGetTestParamFileType() {
         assertEquals(FileType.CWL_TEST_JSON, DescriptorLanguage.CWL.getTestParamType());
         assertEquals(FileType.WDL_TEST_JSON, DescriptorLanguage.WDL.getTestParamType());
         assertEquals(FileType.NEXTFLOW_TEST_PARAMS, DescriptorLanguage.NEXTFLOW.getTestParamType());
     }
 
     @Test
-    public void testGetTestFileTypeFromDescriptorLanguageString() {
+    void testGetTestFileTypeFromDescriptorLanguageString() {
         assertEquals(FileType.CWL_TEST_JSON, DescriptorLanguage.getTestFileTypeFromDescriptorLanguageString(DescriptorLanguage.CWL.toString()));
         assertEquals(FileType.WDL_TEST_JSON, DescriptorLanguage.getTestFileTypeFromDescriptorLanguageString(DescriptorLanguage.WDL.toString()));
         assertEquals(FileType.NEXTFLOW_TEST_PARAMS, DescriptorLanguage.getTestFileTypeFromDescriptorLanguageString(DescriptorLanguage.NEXTFLOW.toString()));
     }
 
     @Test
-    public void testgetDescriptorLanguage() {
+    void testgetDescriptorLanguage() {
         assertEquals(DescriptorLanguage.CWL, DescriptorLanguage.getDescriptorLanguage(FileType.DOCKSTORE_CWL));
         assertEquals(DescriptorLanguage.CWL, DescriptorLanguage.getDescriptorLanguage(FileType.CWL_TEST_JSON));
         assertEquals(DescriptorLanguage.SERVICE, DescriptorLanguage.getDescriptorLanguage(FileType.DOCKSTORE_SERVICE_OTHER));

@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-public class MetadataResourceTest {
+class MetadataResourceTest {
     @Test
-    public void testPreReleaseVersionIsGreaterThanLatest() {
+    void testPreReleaseVersionIsGreaterThanLatest() {
         assertFalse(MetadataResource.preReleaseVersionIsGreaterThanLatest("1.12.0-rc.0", "1.13.0"));
         assertFalse(MetadataResource.preReleaseVersionIsGreaterThanLatest("1.12.0-rc.0", "1.12.0"));
         assertTrue(MetadataResource.preReleaseVersionIsGreaterThanLatest("1.12.0-rc.0", "1.11.0"));

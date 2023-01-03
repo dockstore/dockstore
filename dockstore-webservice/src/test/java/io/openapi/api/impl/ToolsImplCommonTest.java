@@ -88,7 +88,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void testGalaxyConversion() {
+    void testGalaxyConversion() {
         Workflow workflow = new BioWorkflow();
         workflow.setSourceControl(SourceControl.GITHUB);
         workflow.setRepository("fakeRepository");
@@ -123,7 +123,7 @@ public class ToolsImplCommonTest {
      */
 
     @Test
-    public void processImageDataForToolVersionTest() {
+    void processImageDataForToolVersionTest() {
         io.dockstore.webservice.core.Tool tool = new io.dockstore.webservice.core.Tool();
         Tag tag = new Tag();
         Image image = new Image(new ArrayList<>(), "dummy", "dummy", "a", Registry.QUAY_IO, 1L, "now");
@@ -151,7 +151,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void getDescriptorTypeFromFileTypeTest() {
+    void getDescriptorTypeFromFileTypeTest() {
         assertEquals(DescriptorType.CWL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_CWL).get());
         assertEquals(DescriptorType.CWL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.CWL_TEST_JSON).get());
         assertEquals(DescriptorType.GALAXY, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_GXFORMAT2).get());
@@ -163,7 +163,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void getDescriptorTypeFromDescriptorLanguageTest() {
+    void getDescriptorTypeFromDescriptorLanguageTest() {
         assertEquals(DescriptorType.SMK, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.SMK).get());
         assertEquals(DescriptorType.CWL, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.CWL).get());
         assertEquals(DescriptorType.GALAXY, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.GXFORMAT2).get());

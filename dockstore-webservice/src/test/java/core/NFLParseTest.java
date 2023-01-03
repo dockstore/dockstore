@@ -32,10 +32,10 @@ import java.util.HashSet;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
-public class NFLParseTest {
+class NFLParseTest {
 
     @Test
-    public void testNFLCoreMetadataNoAuthorExample() throws IOException {
+    void testNFLCoreMetadataNoAuthorExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-chipseq/nextflow.config");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
         Version entry = sInterface
@@ -45,7 +45,7 @@ public class NFLParseTest {
     }
 
     @Test
-    public void testNFLCoreMetadataWithAuthorExample() throws IOException {
+    void testNFLCoreMetadataWithAuthorExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-rnaseq/nextflow.config");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
         Version entry = sInterface
@@ -55,7 +55,7 @@ public class NFLParseTest {
     }
 
     @Test
-    public void testNFLNotCoreExample() throws IOException {
+    void testNFLNotCoreExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-ampa/nextflow.config");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
         Version entry = sInterface

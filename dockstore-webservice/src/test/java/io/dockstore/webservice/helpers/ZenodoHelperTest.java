@@ -13,10 +13,10 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import org.junit.jupiter.api.Test;
 
-public class ZenodoHelperTest {
+class ZenodoHelperTest {
 
     @Test
-    public void testcreateWorkflowTrsUrl() {
+    void testcreateWorkflowTrsUrl() {
         final Workflow workflow = new BioWorkflow();
 
         final WorkflowVersion workflowVersion = new WorkflowVersion();
@@ -35,21 +35,21 @@ public class ZenodoHelperTest {
     }
 
     @Test
-    public void extractDoiFromDoiUrl() {
+    void extractDoiFromDoiUrl() {
         String doiUrl = "https://doi.org/10.5072/zenodo.372767";
         String doi = ZenodoHelper.extractDoiFromDoiUrl(doiUrl);
         assertEquals("10.5072/zenodo.372767", doi);
     }
 
     @Test
-    public void extractDoiFromBadDoiUrl() {
+    void extractDoiFromBadDoiUrl() {
         String doiUrl = "https://doi.org/blah/10.5072/zenodo.372767";
         String doi = ZenodoHelper.extractDoiFromDoiUrl(doiUrl);
         assertNotEquals("10.5072/zenodo.372767", doi);
     }
 
     @Test
-    public void checkAliasCreationFromDoiWithInvalidPrefix() {
+    void checkAliasCreationFromDoiWithInvalidPrefix() {
         String doi = "drs:10.5072/zenodo.372767";
         try {
             ZenodoHelper.createAliasUsingDoi(doi);
@@ -60,7 +60,7 @@ public class ZenodoHelperTest {
     }
 
     @Test
-    public void checkCreationFromValidDoi() {
+    void checkCreationFromValidDoi() {
         String doi = "10.5072/zenodo.372767";
         ZenodoHelper.createAliasUsingDoi(doi);
     }

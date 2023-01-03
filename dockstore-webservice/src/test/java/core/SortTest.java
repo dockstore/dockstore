@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 public class SortTest {
 
     @Test
-    public void testCWLSourceFileSortOrder() {
+    void testCWLSourceFileSortOrder() {
         // for the GUI, we should try to sort `/Dockstore.cwl` first before relative files
         SortedSet<SourceFile> files = new TreeSet<>();
 
@@ -39,7 +39,7 @@ public class SortTest {
     }
 
     @Test
-    public void testWDLSourceFileSortOrder() {
+    void testWDLSourceFileSortOrder() {
         // for the GUI, we should try to sort `/Dockstore.wdl` first before relative files
         SortedSet<SourceFile> files = new TreeSet<>();
 

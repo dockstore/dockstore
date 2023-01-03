@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 // TODO add coverage for CompleteLanguageInterface
-public class LanguagePluginHandlerTest {
+class LanguagePluginHandlerTest {
     public static final String MAIN_DESCRIPTOR_CWL_RESOURCE_PATH = "tools-cwl-workflow-experiments/cwl/workflow_docker.cwl";
     public static final String MAIN_DESCRIPTOR_CWL = "/" + MAIN_DESCRIPTOR_CWL_RESOURCE_PATH;
     public static final String SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH = "tools-cwl-workflow-experiments/cwl/complex_computation_docker.cwl";
@@ -53,7 +53,7 @@ public class LanguagePluginHandlerTest {
     public static final String SERVICE_DESCRIPTOR_RESOURCE_PATH = "tools-cwl-workflow-experiments/cwl/service.yml";
 
     @Test
-    public void parseWorkflowContentTest() throws IOException {
+    void parseWorkflowContentTest() throws IOException {
         Set<SourceFile> sourceFileSet = new TreeSet<>();
 
         SourceFile mainDescriptorSourceFile = createSourceFile(MAIN_DESCRIPTOR_CWL, MAIN_DESCRIPTOR_CWL_RESOURCE_PATH, FileType.DOCKSTORE_CWL);
@@ -70,7 +70,7 @@ public class LanguagePluginHandlerTest {
     }
 
     @Test
-    public void sourcefilesToIndexedFilesViaValidateWorkflowSetNullTypeTest() throws IOException {
+    void sourcefilesToIndexedFilesViaValidateWorkflowSetNullTypeTest() throws IOException {
         Set<SourceFile> sourceFileSet = new TreeSet<>();
 
         SourceFile otherFileSourceFile = createSourceFile(OTHER_FILE, OTHER_FILE_RESOURCE_PATH, FileType.DOCKSTORE_YML);
@@ -126,7 +126,7 @@ public class LanguagePluginHandlerTest {
 
     // TODO add coverage for CompleteLanguageInterface
     @Test
-    public void getContentTest() throws IOException {
+    void getContentTest() throws IOException {
         Set<SourceFile> secondarySourceFiles = new TreeSet<>();
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
@@ -148,7 +148,7 @@ public class LanguagePluginHandlerTest {
     }
 
     @Test
-    public void processImportsTest() throws IOException {
+    void processImportsTest() throws IOException {
         SourceFile mainDescriptorSourceFile = createSourceFile(MAIN_DESCRIPTOR_CWL, MAIN_DESCRIPTOR_CWL_RESOURCE_PATH, FileType.DOCKSTORE_CWL);
         LanguagePluginHandler minimalLanguageHandler = new LanguagePluginHandler(TestLanguage.class);
         Version emptyVersion = new WorkflowVersion();

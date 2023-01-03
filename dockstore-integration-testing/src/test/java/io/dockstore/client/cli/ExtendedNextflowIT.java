@@ -67,7 +67,7 @@ public class ExtendedNextflowIT extends BaseIT {
     }
 
     @Test
-    public void testNextflowSecondaryFiles() throws Exception {
+    void testNextflowSecondaryFiles() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
         final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -102,7 +102,7 @@ public class ExtendedNextflowIT extends BaseIT {
     }
 
     @Test
-    public void testGitlabNextflowWorkflow() {
+    void testGitlabNextflowWorkflow() {
         // TODO: need to look into the SlowTest situation but we also need to reactivate the tests against API V4 for 1.5.0
     }
 

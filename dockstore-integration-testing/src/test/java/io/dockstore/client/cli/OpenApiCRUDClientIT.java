@@ -78,7 +78,7 @@ public class OpenApiCRUDClientIT extends BaseIT {
     public ExpectedException thrown = ExpectedException.none();
 
     @Test
-    public void testToolCreation() {
+    void testToolCreation() {
         ApiClient webClient = new ApiClient();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
@@ -89,7 +89,7 @@ public class OpenApiCRUDClientIT extends BaseIT {
     }
 
     @Test
-    public void testMinimalTRSV2Final() {
+    void testMinimalTRSV2Final() {
         ApiClient webClient = new ApiClient();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
@@ -100,7 +100,7 @@ public class OpenApiCRUDClientIT extends BaseIT {
     }
 
     @Test
-    public void testGA4GHClassFiltering() {
+    void testGA4GHClassFiltering() {
         ApiClient webClient = new ApiClient();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
@@ -119,7 +119,7 @@ public class OpenApiCRUDClientIT extends BaseIT {
 
 
     @Test
-    public void testGA4GHBigPaging() throws IOException {
+    void testGA4GHBigPaging() throws IOException {
         ApiClient webClient = new ApiClient();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());

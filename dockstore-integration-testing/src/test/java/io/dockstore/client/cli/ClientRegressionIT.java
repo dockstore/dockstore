@@ -88,21 +88,21 @@ public class ClientRegressionIT extends BaseIT {
     }
 
     @Test
-    public void testListEntriesOld() throws IOException, ApiException {
+    void testListEntriesOld() throws IOException, ApiException {
         String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list", "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         checkToolList(stringStringImmutablePair.getLeft());
     }
 
     @Test
-    public void testDebugModeListEntriesOld() throws IOException, ApiException {
+    void testDebugModeListEntriesOld() throws IOException, ApiException {
         String[] commandArray = new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list", "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         checkToolList(stringStringImmutablePair.getLeft());
     }
 
     @Test
-    public void testPluginEnableOldClient() {
+    void testPluginEnableOldClient() {
         String[] commandArray1 = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin",
             "download" };
         runOldDockstoreClient(dockstore, commandArray1);
@@ -116,7 +116,7 @@ public class ClientRegressionIT extends BaseIT {
     }
 
     @Test
-    public void testPluginDisableOldClient() {
+    void testPluginDisableOldClient() {
         String[] commandArray = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin",
             "download" };
         runOldDockstoreClient(dockstore, commandArray);
@@ -129,7 +129,7 @@ public class ClientRegressionIT extends BaseIT {
     }
 
     @Test
-    public void testMetadataMethodsOld() throws IOException {
+    void testMetadataMethodsOld() throws IOException {
         String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "--version" };
         ImmutablePair<String, String> stringStringImmutablePair;
         try {
@@ -146,13 +146,13 @@ public class ClientRegressionIT extends BaseIT {
     }
 
     @Test
-    public void testCacheCleaningOld() throws IOException {
+    void testCacheCleaningOld() throws IOException {
         runOldDockstoreClient(dockstore, new String[] { "--config", TestUtility.getConfigFileLocation(true), "--clean-cache" });
         systemOutRule.clearLog();
     }
 
     @Test
-    public void pluginDownloadOld() throws IOException {
+    void pluginDownloadOld() throws IOException {
         String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "plugin", "download" };
         runOldDockstoreClient(dockstore, commandArray);
         systemOutRule.clearLog();
@@ -162,7 +162,7 @@ public class ClientRegressionIT extends BaseIT {
      * Tests that the unpublished tool can be published, refreshed, then launched once the json and input file is attained
      */
     @Test
-    public void testActualToolLaunch() {
+    void testActualToolLaunch() {
         // manual publish the workflow
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry",

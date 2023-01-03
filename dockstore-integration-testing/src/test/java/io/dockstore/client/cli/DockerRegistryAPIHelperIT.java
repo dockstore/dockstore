@@ -34,7 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @Category(NonConfidentialTest.class)
-public class DockerRegistryAPIHelperIT {
+class DockerRegistryAPIHelperIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
@@ -56,7 +56,7 @@ public class DockerRegistryAPIHelperIT {
      * Test that the calculated digest matches the actual digest of the image.
      */
     @Test
-    public void testCalculateDockerImageDigest() {
+    void testCalculateDockerImageDigest() {
         // GHCR image used: ghcr.io/helm/tiller@sha256:4c43eb385032945cad047d2350e4945d913b90b3ab43ee61cecb32a495c6df0f (associated tag is 'v2.17.0')
         String repo = "helm/tiller";
         String digest = "sha256:4c43eb385032945cad047d2350e4945d913b90b3ab43ee61cecb32a495c6df0f";

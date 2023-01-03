@@ -35,7 +35,7 @@ public class QuayImageRegistryTest {
      * Pointing the test at some of our repos reduces time to 5 seconds but is less thorough
      */
     @Test
-    public void getOver500TagsTest() {
+    void getOver500TagsTest() {
         Token token = new Token();
         token.setContent("fakeQuayTokenBecauseWeDontReallyNeedOne");
         QuayImageRegistry quayImageRegistry = new QuayImageRegistry(token);
@@ -77,7 +77,7 @@ public class QuayImageRegistryTest {
     }
 
     @Test
-    public void testGetQuayTag() throws ApiException {
+    void testGetQuayTag() throws ApiException {
         final String repo = "calico/node";
         final String tag = "master";
         QuayImageRegistry quayImageRegistry = new QuayImageRegistry();
@@ -87,7 +87,7 @@ public class QuayImageRegistryTest {
     }
 
     @Test
-    public void testHandleMultiArchTags() throws ApiException {
+    void testHandleMultiArchTags() throws ApiException {
         final QuayImageRegistry quayImageRegistry = new QuayImageRegistry();
         String repo = "skopeo/stable";
         String tag = "latest"; // This is a multi-arch image built using the docker manifest method

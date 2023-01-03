@@ -11,10 +11,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import org.junit.jupiter.api.Test;
 
-public class NextflowHandlerTest {
+class NextflowHandlerTest {
 
     @Test
-    public void testGetRelativeImportPathFromLine() {
+    void testGetRelativeImportPathFromLine() {
         assertEquals("modules/rnaseq.nf", NextflowHandler.getRelativeImportPathFromLine("include { RNASEQ } from './modules/rnaseq'", "/main.nf"));
         assertEquals("modules/rnaseq.nf", NextflowHandler.getRelativeImportPathFromLine("include { RNASEQ } from './modules/rnaseq.nf'", "/main.nf"));
         // TODO: Replace with Java 12's http://openjdk.java.net/jeps/326
@@ -26,7 +26,7 @@ public class NextflowHandlerTest {
     }
 
     @Test
-    public void testImportPattern() {
+    void testImportPattern() {
         String content = "#include { RNASEQ } from './modules/rnaseq'\", \"/main.nf";
         Matcher m = NextflowHandler.IMPORT_PATTERN.matcher(content);
         boolean matches = m.matches();
@@ -38,7 +38,7 @@ public class NextflowHandlerTest {
     }
 
     @Test
-    public void testDockerImageReference() {
+    void testDockerImageReference() {
         NextflowHandler nextflowHandler = new NextflowHandler();
         final String dockerImagesNextflow = FixtureHelpers.fixture("fixtures/dockerImages.nf");
         final Map<String, DockerParameter> callsToDockerMap = nextflowHandler.getCallsToDockerMap(dockerImagesNextflow, "");

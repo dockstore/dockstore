@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 /**
  * @author xliu
  */
-public class UserTest {
+class UserTest {
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
 
     private User getUser() {
@@ -39,14 +39,14 @@ public class UserTest {
     }
 
     @Test
-    public void serializesToJson() throws Exception {
+    void serializesToJson() throws Exception {
         final User user = getUser();
         final String expected = MAPPER.writeValueAsString(MAPPER.readValue(fixture("fixtures/user.json"), User.class));
         assertThat(MAPPER.writeValueAsString(user)).isEqualTo(expected);
     }
 
     @Test
-    public void deserializesFromJSON() throws Exception {
+    void deserializesFromJSON() throws Exception {
         final User user = getUser();
         assertThat(MAPPER.readValue(fixture("fixtures/user.json"), User.class)).isEqualTo(user);
     }

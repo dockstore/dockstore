@@ -13,7 +13,7 @@ import io.dockstore.webservice.core.User;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class GoogleHelperTest {
+class GoogleHelperTest {
 
     private static final String SUFFIX = "-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com";
     private static final String AUDIENCE1 = "123456789012" + SUFFIX;
@@ -22,7 +22,7 @@ public class GoogleHelperTest {
     private static final String INVALID_AUDIENCE = "extremelyunlikelyaudiencewithoutadash";
 
     @Test
-    public void isValidAudience() {
+    void isValidAudience() {
         final DockstoreWebserviceConfiguration config = new DockstoreWebserviceConfiguration();
         config.setGoogleClientID(AUDIENCE1);
         config.getExternalGoogleClientIdPrefixes().add(EXTERNAL_PREFIX);
@@ -35,7 +35,7 @@ public class GoogleHelperTest {
     }
 
     @Test
-    public void updateUserFromGoogleUserinfoplus() {
+    void updateUserFromGoogleUserinfoplus() {
         String pictureUrl = "https://example.com/picture";
         final String email = "jdoe@example.com";
         final String username = "Jane Doe";

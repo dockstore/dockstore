@@ -107,7 +107,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests that smart refresh correctly refreshes the right versions based on some scenarios for GitHub
      */
     @Test
-    public void testSmartRefreshGitHub() {
+    void testSmartRefreshGitHub() {
         commonSmartRefreshTest(SourceControl.GITHUB, "DockstoreTestUser2/hello-dockstore-workflow", "testBoth");
     }
 
@@ -115,7 +115,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests that smart refresh correctly refreshes the right versions based on some scenarios for Gitlab
      */
     @Test
-    public void testSmartRefreshGitlab() {
+    void testSmartRefreshGitlab() {
         commonSmartRefreshTest(SourceControl.GITLAB, "dockstore.test.user2/dockstore-workflow-example", "master");
     }
 
@@ -124,7 +124,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This test checks that refresh all workflows (with a mix of stub and full) and refresh individual.  It then tries to publish them
      */
     @Test
-    public void testRefreshAndPublish() {
+    void testRefreshAndPublish() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -186,7 +186,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This test manually publishing a workflow
      */
     @Test
-    public void testManualPublish() {
+    void testManualPublish() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "wdl", SourceControl.GITHUB,
@@ -197,7 +197,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests attempting to manually publish a workflow with no valid versions
      */
     @Test
-    public void testManualPublishInvalid() {
+    void testManualPublishInvalid() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         // try and publish
@@ -213,7 +213,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests adding and removing labels from a workflow
      */
     @Test
-    public void testLabelFormat() {
+    void testLabelFormat() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -237,7 +237,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests adding and removing labels from a workflow
      */
     @Test
-    public void testLabelEditing() {
+    void testLabelEditing() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -264,7 +264,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests manually publishing a duplicate workflow (should fail)
      */
     @Test
-    public void testManualPublishDuplicate() {
+    void testManualPublishDuplicate() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -286,7 +286,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests that a user can update a workflow version
      */
     @Test
-    public void testUpdateWorkflowVersion() {
+    void testUpdateWorkflowVersion() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -318,7 +318,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests that a restub will work on an unpublished, full workflow
      */
     @Test
-    public void testRestub() {
+    void testRestub() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -337,7 +337,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests that a restub will not work on an published, full workflow
      */
     @Test
-    public void testRestubError() {
+    void testRestubError() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -360,7 +360,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * Tests updating workflow descriptor type when a workflow is FULL and when it is a STUB
      */
     @Test
-    public void testDescriptorTypes() {
+    void testDescriptorTypes() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -383,7 +383,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * Tests updating a workflow tag with invalid workflow descriptor path
      */
     @Test
-    public void testWorkflowVersionIncorrectPath() {
+    void testWorkflowVersionIncorrectPath() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -430,7 +430,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
 
     @Test
-    public void testUpdateWorkflowPath() throws ApiException {
+    void testUpdateWorkflowPath() throws ApiException {
         // Set up webservice
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -460,7 +460,7 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testAddingWorkflowForumUrlAndTopic() throws ApiException {
+    void testAddingWorkflowForumUrlAndTopic() throws ApiException {
         // Set up webservice
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -489,7 +489,7 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testTopicAfterRefresh() throws ApiException {
+    void testTopicAfterRefresh() throws ApiException {
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
@@ -524,7 +524,7 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowFreezingWithNoFiles() {
+    void testWorkflowFreezingWithNoFiles() {
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
@@ -552,7 +552,7 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowFreezing() throws ApiException {
+    void testWorkflowFreezing() throws ApiException {
         // Set up webservice
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -660,7 +660,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * Specifically, this is a particular CWL CommandLineTool registered as a Workflow
      */
     @Test
-    public void testFreezingInvalidWorkflow() {
+    void testFreezingInvalidWorkflow() {
         String versionToSnapshot = "1.0";
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -685,7 +685,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests that a workflow's default version can be automatically set during refresh
      */
     @Test
-    public void testUpdateWorkflowDefaultVersionDuringRefresh() {
+    void testUpdateWorkflowDefaultVersionDuringRefresh() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         // Manually register workflow
@@ -709,7 +709,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * WorkflowVersion 953 is testWWL
      */
     @Test
-    public void testUpdateWorkflowDefaultVersion() {
+    void testUpdateWorkflowDefaultVersion() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -774,7 +774,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This test tests a bunch of different assumptions for how refresh should work for workflows
      */
     @Test
-    public void testRefreshRelatedConcepts() {
+    void testRefreshRelatedConcepts() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -835,7 +835,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests the dirty bit attribute for workflow versions with github
      */
     @Test
-    public void testGithubDirtyBit() {
+    void testGithubDirtyBit() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -881,7 +881,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This is a high level test to ensure that gitlab basics are working for gitlab as a workflow repo
      */
     @Test
-    public void testGitlab() {
+    void testGitlab() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -985,7 +985,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests manually publishing a gitlab workflow
      */
     @Test
-    public void testManualPublishGitlab() {
+    void testManualPublishGitlab() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -1039,7 +1039,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests that WDL files are properly parsed for secondary WDL files
      */
     @Test
-    public void testWDLWithImports() {
+    void testWDLWithImports() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -1056,7 +1056,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests basic concepts with workflow test parameter files
      */
     @Test
-    public void testTestParameterFile() {
+    void testTestParameterFile() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -1134,7 +1134,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * If the user has metadata, test will pass as long as the user's metadata isn't the same as Github already
      */
     @Test
-    public void testRefreshingUserMetadata() {
+    void testRefreshingUserMetadata() {
         // Refresh all workflows
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
@@ -1151,7 +1151,7 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testGenerateDOIFrozenVersion() throws ApiException {
+    void testGenerateDOIFrozenVersion() throws ApiException {
         // Set up webservice
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);

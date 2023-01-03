@@ -7,10 +7,10 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class Sha256ConverterTest {
+class Sha256ConverterTest {
 
     @Test
-    public void convertToDatabaseColumn() {
+    void convertToDatabaseColumn() {
         final Sha256Converter sha256Converter = new Sha256Converter();
         final String fakeDigest = "1234567890";
         final List<Checksum> checksums = sha256Converter.convertToEntityAttribute("\\x" + fakeDigest);
@@ -19,7 +19,7 @@ public class Sha256ConverterTest {
     }
 
     @Test
-    public void convertToEntityAttribute() {
+    void convertToEntityAttribute() {
         final Sha256Converter sha256Converter = new Sha256Converter();
         assertEquals(0, sha256Converter.convertToEntityAttribute(null).size());
         final String fakeDigest = "1234567890";

@@ -12,18 +12,18 @@ import wdl.draft3.parser.WdlParser;
 import wom.callable.ExecutableCallable;
 import wom.executable.WomBundle;
 
-public class WdlBridgeTest {
+class WdlBridgeTest {
 
     private static final String DOCKER_IMAGES_WDL_10 = FixtureHelpers.fixture("fixtures/dockerImages10.wdl");
     private static final String DOCKER_IMAGES_WDL_PRE_10 = FixtureHelpers.fixture("fixtures/dockerImagesPre10.wdl");
 
     @Test
-    public void testGetCallsToDockerMapWdl10() {
+    void testGetCallsToDockerMapWdl10() {
         checkDockerImageReferences(getDockerParameterMap(DOCKER_IMAGES_WDL_10));
     }
 
     @Test
-    public void testGetCallsToDockerMapWdlPre10() {
+    void testGetCallsToDockerMapWdlPre10() {
         checkDockerImageReferences(getDockerParameterMap(DOCKER_IMAGES_WDL_PRE_10));
     }
 
@@ -46,7 +46,7 @@ public class WdlBridgeTest {
     }
 
     @Test
-    public void testBooleanMetadata() throws WdlParser.SyntaxError {
+    void testBooleanMetadata() throws WdlParser.SyntaxError {
         WdlBridge wdlBridge = new WdlBridge();
         File file = new File("src/test/resources/MitocondriaPipeline.wdl");
         String filePath = file.getAbsolutePath();
@@ -62,7 +62,7 @@ public class WdlBridgeTest {
     }
 
     @Test
-    public void testBooleanMetadata2() throws WdlParser.SyntaxError {
+    void testBooleanMetadata2() throws WdlParser.SyntaxError {
         WdlBridge wdlBridge = new WdlBridge();
         File file = new File("src/test/resources/GvsExtractCallset.wdl");
         String filePath = file.getAbsolutePath();

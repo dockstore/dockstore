@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by kcao on 21/03/17.
  */
-public class JsonLdRetrieverTest {
+class JsonLdRetrieverTest {
     private void getSchema(String cwl, String json) throws Exception {
         Tool tool = new Tool();
         Tag tag = new Tag();
@@ -62,12 +62,12 @@ public class JsonLdRetrieverTest {
     }
 
     @Test
-    public void getSchemaHasSchema() throws Exception {
+    void getSchemaHasSchema() throws Exception {
         getSchema("schema.cwl", "schema.json");
     }
 
     @Test
-    public void getSchemaNoSchema() throws Exception {
+    void getSchemaNoSchema() throws Exception {
         getSchema("noSchema.cwl", "noSchema.json");
     }
 }

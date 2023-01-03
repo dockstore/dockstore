@@ -23,10 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
-public class ORCIDHelperTest {
+class ORCIDHelperTest {
 
     @Test
-    public void testDoiToUrl() {
+    void testDoiToUrl() {
 
         // Valid DOIs should be converted to a URL that references the doi.org proxy.
         // A valid DOI starts with "10." and contains a slash.
@@ -41,7 +41,7 @@ public class ORCIDHelperTest {
     }
 
     @Test
-    public void testIsValidOrcidId() {
+    void testIsValidOrcidId() {
         assertTrue(ORCIDHelper.isValidOrcidId("1234-1234-1234-1234"));
         assertTrue(ORCIDHelper.isValidOrcidId("0000-0002-9079-593X"));
         assertFalse(ORCIDHelper.isValidOrcidId("0000-0002-9079-593P"));

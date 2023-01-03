@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import org.junit.jupiter.api.Test;
 
-public class UserResourceTest {
+class UserResourceTest {
 
     @Test
-    public void usernameRestrictionsTest() {
+    void usernameRestrictionsTest() {
         List<String> invalidUsernames = new ArrayList<>(List.of("dockstore", "DOCKSTORE", "thisIsDoCkStOrE", "admin", "aaaaadminbbb", "curator",
                 "asdflkCURATORSrrr", "system", "SYSTEMMMMMM", "manager", "withoutaMANAGER"));
         for (String username : invalidUsernames) {
@@ -26,7 +26,7 @@ public class UserResourceTest {
     }
 
     @Test
-    public void gitHubIdRegexTest() {
+    void gitHubIdRegexTest() {
         List<String> avatarUrls = new ArrayList<>(List.of("https://avatars3.githubusercontent.com/u/11111?v=4", "https://avatars2.githubusercontent.com/u/1234567?v=4",
                 "https://avatars.githubusercontent.com/u/999999999?v=4", "https://avatars3.githubusercontent.com/u/987654?v=3"));
         List<String> ids = new ArrayList<>(List.of("11111", "1234567", "999999999", "987654"));

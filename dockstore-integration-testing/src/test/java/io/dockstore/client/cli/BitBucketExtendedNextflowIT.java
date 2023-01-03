@@ -75,7 +75,7 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
 
 
     @Test
-    public void testBitbucketNextflowWorkflow() throws Exception {
+    void testBitbucketNextflowWorkflow() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -138,7 +138,7 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
 
 
     @Test
-    public void testBitbucketBinaryWorkflow() throws Exception {
+    void testBitbucketBinaryWorkflow() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);

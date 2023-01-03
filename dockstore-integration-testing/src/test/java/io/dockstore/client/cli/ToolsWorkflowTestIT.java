@@ -94,7 +94,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolCWL() throws IOException, ApiException {
+    void testWorkflowToolCWL() throws IOException, ApiException {
         // https://github.com/DockstoreTestUser2/test_workflow_cwl
         // Input: 1st-workflow.cwl
         // Repo: test_workflow_cwl
@@ -118,7 +118,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolWDLSingleNode() throws IOException, ApiException {
+    void testWorkflowToolWDLSingleNode() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: master
@@ -138,7 +138,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolWDLMultipleNodes() throws IOException, ApiException {
+    void testWorkflowToolWDLMultipleNodes() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: hello-dockstore-workflow
         // Branch: master
@@ -157,7 +157,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolCWLMissingTool() throws IOException, ApiException {
+    void testWorkflowToolCWLMissingTool() throws IOException, ApiException {
         // Input: Dockstore.cwl
         // Repo: hello-dockstore-workflow
         // Branch: testCWL
@@ -186,7 +186,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testToolImportAndIncludeSyntax() throws IOException, ApiException {
+    void testToolImportAndIncludeSyntax() throws IOException, ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
         // Branch: master
@@ -205,7 +205,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testToolCWL1Syntax() throws IOException, ApiException {
+    void testToolCWL1Syntax() throws IOException, ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: develop
@@ -228,7 +228,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testToolCWL1SyntaxCorrectLink() throws IOException, ApiException {
+    void testToolCWL1SyntaxCorrectLink() throws IOException, ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: correct_docker_link

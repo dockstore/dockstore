@@ -53,7 +53,7 @@ public class DockstoreYamlTest {
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Test
-    public void testFindVersion() {
+    void testFindVersion() {
         assertTrue(DockstoreYamlHelper.findValidVersion("abc").isEmpty());
         assertTrue(DockstoreYamlHelper.findValidVersion("service: 1.0 garbage").isEmpty());
         assertTrue(DockstoreYamlHelper.findValidVersion("#service: 1.0").isEmpty());
@@ -66,13 +66,13 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testReadDockstore10Yaml() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testReadDockstore10Yaml() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml10 dockstoreYaml = (DockstoreYaml10)DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE10_YAML, true);
         assertEquals("SmartSeq2SingleSample.wdl", dockstoreYaml.primaryDescriptor);
     }
 
     @Test
-    public void testReadDockstore11Yaml() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testReadDockstore11Yaml() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml dockstoreYaml = DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE11_YAML, true);
         assertSame(dockstoreYaml.getClass(), DockstoreYaml11.class);
         DockstoreYaml11 dockstoreYaml11 = (DockstoreYaml11)dockstoreYaml;
@@ -84,7 +84,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testReadDockstoreYaml12() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testReadDockstoreYaml12() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml12 dockstoreYaml = (DockstoreYaml12)DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML, true);
         final List<YamlWorkflow> workflows = dockstoreYaml.getWorkflows();
         assertEquals(3, workflows.size());
@@ -126,7 +126,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testOptionalName() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testOptionalName() throws DockstoreYamlHelper.DockstoreYamlException {
         // create an input that contains a unnamed workflow and no service
         final String unnamedWorkflow = DOCKSTORE12_YAML.replace("name: bloop", "#").replaceFirst("(?s)service:.*$", "");
         final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(unnamedWorkflow);
@@ -137,7 +137,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testMissingPrimaryDescriptor() {
+    void testMissingPrimaryDescriptor() {
         try {
             final String content = DOCKSTORE10_YAML.replaceFirst("(?m)^primaryDescriptor.*$", "");
             DockstoreYamlHelper.readDockstoreYaml(content, true);
@@ -150,7 +150,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testInvalidSubclass() {
+    void testInvalidSubclass() {
         final String content = DOCKSTORE12_YAML.replace("DOCKER_COMPOSE", "invalid sub class");
         try {
             DockstoreYamlHelper.readDockstoreYaml(content, true);
@@ -161,14 +161,14 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testRead11As12() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testRead11As12() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE11_YAML);
         assertEquals(0, dockstoreYaml12.getWorkflows().size());
         assertNotNull(dockstoreYaml12.getService());
     }
 
     @Test
-    public void testEmptyDockstore12() {
+    void testEmptyDockstore12() {
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12("version: 1.2");
             fail("Dockstore yaml with no entries should fail");
@@ -178,7 +178,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testEffectivelyEmptyDockstore12() {
+    void testEffectivelyEmptyDockstore12() {
         for (String emptyProperty: List.of("workflows", "tools", "service")) {
             try {
                 DockstoreYamlHelper.readDockstoreYaml(String.format("version: 1.2\n%s:\n", emptyProperty), true);
@@ -190,7 +190,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testMaliciousDockstore12() {
+    void testMaliciousDockstore12() {
         // This test will show its not added, but doesn't prove it was never run. To do that
         // we need to set up a server that checks the classpath (or another payload with
         // simpler side effects?)
@@ -212,7 +212,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testMalformedDockstoreYaml() throws IOException {
+    void testMalformedDockstoreYaml() throws IOException {
         final String spec = "https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/"
                 + ".dockstore.yml";
         final String content = IOUtils.toString(new URL(spec), StandardCharsets.UTF_8);
@@ -225,7 +225,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testMissingSubclass()  {
+    void testMissingSubclass()  {
         // Replace:
         // ...
         // - subclass: DOCKER_COMPOSE
@@ -243,7 +243,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testWrongKeys() {
+    void testWrongKeys() {
         final String content = DOCKSTORE_GALAXY_YAML;
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(content);
@@ -276,7 +276,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testDuplicateKeys() {
+    void testDuplicateKeys() {
         try {
             DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML + "\nworkflows: []\n", true);
             Assert.fail("Should have thrown because of duplicate key");
@@ -286,7 +286,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testDifferentCaseForWorkflowSubclass() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testDifferentCaseForWorkflowSubclass() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE12_YAML);
         final List<YamlWorkflow> workflows = dockstoreYaml12.getWorkflows();
         assertEquals(3, workflows.size());
@@ -304,13 +304,13 @@ public class DockstoreYamlTest {
      * @throws DockstoreYamlHelper.DockstoreYamlException
      */
     @Test
-    public void testGalaxySubclass() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testGalaxySubclass() throws DockstoreYamlHelper.DockstoreYamlException {
         final List<YamlWorkflow> workflows = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE_GALAXY_YAML).getWorkflows();
         assertEquals(4, workflows.stream().filter(w -> w.getSubclass().equalsIgnoreCase("gxformat2")).count());
     }
 
     @Test
-    public void testGitReferenceFilter() {
+    void testGitReferenceFilter() {
         // Empty filters allow anything
         Filters filters = new Filters();
         assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/anything"), filters));
@@ -383,7 +383,7 @@ public class DockstoreYamlTest {
 
 
     @Test
-    public void testGetSuggestedDockstoreYamlProperty() {
+    void testGetSuggestedDockstoreYamlProperty() {
         Class dockstoreYamlClass = DockstoreYaml12.class;
 
         String suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "z");
@@ -409,7 +409,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testGetDockstoreYamlProperties() {
+    void testGetDockstoreYamlProperties() {
         Set<String> properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml12.class);
         assertEquals("Should have the correct number of unique properties for a version 1.2 .dockstore.yml", 33, properties.size());
 
@@ -418,7 +418,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testValidateDockstoreYamlProperties() {
+    void testValidateDockstoreYamlProperties() {
         try {
             DockstoreYamlHelper.validateDockstoreYamlProperties(DOCKSTORE12_YAML.replace("publish", "published"));
             fail("Should not pass property validation because there's an unknown property");
@@ -435,7 +435,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testAuthorHasNameOrOrcid() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testAuthorHasNameOrOrcid() throws DockstoreYamlHelper.DockstoreYamlException {
         // Original .dockstore.yml should validate correctly
         DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML, true);
 
@@ -459,7 +459,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testAuthorEmail() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testAuthorEmail() throws DockstoreYamlHelper.DockstoreYamlException {
         DockstoreYamlHelper.readDockstoreYaml(replaceOrcid(DOCKSTORE12_YAML, "email: test@test.com"), true);
         try {
             DockstoreYamlHelper.readDockstoreYaml(replaceOrcid(DOCKSTORE12_YAML, "email: bad"), true);
@@ -474,7 +474,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testWorkflowSubclass() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testWorkflowSubclass() throws DockstoreYamlHelper.DockstoreYamlException {
         DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replace("subclass: wdl", "subclass: WDL"), true);
         try {
             DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replace("subclass: wdl", "subclass: BogusWL"), true);

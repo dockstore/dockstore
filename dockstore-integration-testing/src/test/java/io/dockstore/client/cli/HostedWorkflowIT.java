@@ -89,7 +89,7 @@ public class HostedWorkflowIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
     @Test
-    public void testHostedEditAndDelete() {
+    void testHostedEditAndDelete() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
@@ -116,7 +116,7 @@ public class HostedWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testHiddenAndDefaultVersions() {
+    void testHiddenAndDefaultVersions() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -182,7 +182,7 @@ public class HostedWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testCreationOfIncorrectHostedWorkflowTypeGarbage() {
+    void testCreationOfIncorrectHostedWorkflowTypeGarbage() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         thrown.expect(ApiException.class);
@@ -190,7 +190,7 @@ public class HostedWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testGetEntryByPath() {
+    void testGetEntryByPath() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
@@ -242,7 +242,7 @@ public class HostedWorkflowIT extends BaseIT {
         }
     }
     @Test
-    public void testDuplicateHostedWorkflowCreation() {
+    void testDuplicateHostedWorkflowCreation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
@@ -251,7 +251,7 @@ public class HostedWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testDuplicateHostedToolCreation() {
+    void testDuplicateHostedToolCreation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
@@ -260,7 +260,7 @@ public class HostedWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testAmazonECRHostedToolCreation() {
+    void testAmazonECRHostedToolCreation() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
         io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(webClient);
@@ -275,7 +275,7 @@ public class HostedWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testDuplicateAmazonECRHostedToolCreation() {
+    void testDuplicateAmazonECRHostedToolCreation() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
         String alreadyExistsMessage = "already exists";
@@ -302,7 +302,7 @@ public class HostedWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testHostedWorkflowMetadata() throws IOException {
+    void testHostedWorkflowMetadata() throws IOException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);

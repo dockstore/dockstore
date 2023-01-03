@@ -15,14 +15,14 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class QuayModelTest {
+class QuayModelTest {
 
     /**
      * Tests that the swagger-generated Quay.io api can deserialize a sample PullRobot JSON (that isn't just null)
      * @throws JsonProcessingException  If cannot deserialize
      */
     @Test
-    public void testPullRobot() throws JsonProcessingException {
+    void testPullRobot() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         PullRobot pullRobot = objectMapper.readValue(fixture("fixtures/pullRobot.json"), PullRobot.class);
         pullRobotAssertions(pullRobot);
@@ -34,7 +34,7 @@ public class QuayModelTest {
      * @throws JsonProcessingException If cannot deserialize
      */
     @Test
-    public void testInlineResponse2001() throws JsonProcessingException {
+    void testInlineResponse2001() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         InlineResponse2001 inlineResponse2001 = objectMapper.readValue(fixture("fixtures/inlineResponse2001.json"), InlineResponse2001.class);
         inlineResponse2001.getBuilds().forEach(build -> {
@@ -49,7 +49,7 @@ public class QuayModelTest {
      * @throws ApiException If cannot deserialize or reach Quay.io
      */
     @Test
-    public void testGetRepoBuildsWithPullRobot() throws ApiException {
+    void testGetRepoBuildsWithPullRobot() throws ApiException {
         ApiClient apiClient = Configuration.getDefaultApiClient();
         BuildApi buildApi = new BuildApi(apiClient);
         final List<QuayBuild> builds = buildApi.getRepoBuilds("ucsc_cgl/kallisto", null, 5).getBuilds();

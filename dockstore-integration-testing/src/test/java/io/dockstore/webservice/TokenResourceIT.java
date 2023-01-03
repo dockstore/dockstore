@@ -150,7 +150,7 @@ public class TokenResourceIT {
      * For a non-existing user, checks that two tokens (Dockstore and Google) were created
      */
     @Test
-    public void getGoogleTokenNewUser() {
+    void getGoogleTokenNewUser() {
         TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.TokenAuth token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
 
@@ -203,7 +203,7 @@ public class TokenResourceIT {
      * We should generate something sane then let the user change their name.
      */
     @Test
-    public void testNinjaedGitHubUser() {
+    void testNinjaedGitHubUser() {
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         tokensApi1.addToken(getSatellizer(SUFFIX1, true));
         UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1, testingPostgres));
@@ -237,7 +237,7 @@ public class TokenResourceIT {
         assertEquals("better.name", usersApi2.changeUsername("better.name").getUsername());
     }
     @Test
-    public void testNullGithubUser() {
+    void testNullGithubUser() {
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         try {
             tokensApi1.addToken("");
@@ -248,7 +248,7 @@ public class TokenResourceIT {
     }
 
     @Test
-    public void testAddGithubUserWithInvalidJson() {
+    void testAddGithubUserWithInvalidJson() {
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         try {
             tokensApi1.addToken("garbagetest");
@@ -266,7 +266,7 @@ public class TokenResourceIT {
      * Account 3: GitHub-created Dockstore account that is called GITHUB_ACCOUNT_USERNAME and has GITHUB_ACCOUNT_USERNAME GitHub account linked
      */
     @Test
-    public void loginRegisterTestWithMultipleAccounts() {
+    void loginRegisterTestWithMultipleAccounts() {
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
         createAccount2(unAuthenticatedTokensApi);
@@ -292,7 +292,7 @@ public class TokenResourceIT {
     }
 
     @Test
-    public void adminsAndCuratorsMayNotLoginWithGoogle() {
+    void adminsAndCuratorsMayNotLoginWithGoogle() {
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
         setAdmin(true);
@@ -321,7 +321,7 @@ public class TokenResourceIT {
     }
 
     @Test
-    public void recreateAccountsAfterSelfDestruct() {
+    void recreateAccountsAfterSelfDestruct() {
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
         registerNewUsersAfterSelfDestruct(unAuthenticatedTokensApi);
@@ -551,7 +551,7 @@ public class TokenResourceIT {
      * For an existing user without a Google token, checks that a token (Google) was created exactly once.
      */
     @Test
-    public void getGoogleTokenExistingUserNoGoogleToken() {
+    void getGoogleTokenExistingUserNoGoogleToken() {
         // check that the user has the correct one token
         List<Token> byUserId = tokenDAO.findByUserId(getFakeUser().getId());
         Assert.assertEquals(1, byUserId.size());
@@ -579,7 +579,7 @@ public class TokenResourceIT {
      * For an existing user with a Google token, checks that no tokens were created
      */
     @Test
-    public void getGoogleTokenExistingUserWithGoogleToken() {
+    void getGoogleTokenExistingUserWithGoogleToken() {
         // check that the user has the correct one token
         long id = getFakeUser().getId();
         List<Token> byUserId = tokenDAO.findByUserId(id);

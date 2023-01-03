@@ -66,7 +66,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * Tests that refresh all works, also that refreshing without a quay.io token should not destroy tools
      */
     @Test
-    public void testRefresh() {
+    void testRefresh() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
 
@@ -98,7 +98,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * Check that refreshing an existing tool with a different tool name will not throw an error
      */
     @Test
-    public void testRefreshCorrectTool() {
+    void testRefreshCorrectTool() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandbitbucket", "");
@@ -128,7 +128,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * Tests auto registration of tools
      */
     @Test
-    public void testAutoRegistration() {
+    void testAutoRegistration() {
         autoRegistrationHelper(Registry.QUAY_IO, "github.com", 5);
         autoRegistrationHelper(Registry.QUAY_IO, "bitbucket.org", 2);
         autoRegistrationHelper(Registry.QUAY_IO, "gitlab.com", 2);
@@ -147,7 +147,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * Tests publishing tools with non-standard structure
      */
     @Test
-    public void testPublishAlternateStructure() {
+    void testPublishAlternateStructure() {
         publishAlternateStructureHelper("quay.io/dockstoretestuser/quayandgithubalternate");
         publishAlternateStructureHelper("quay.io/dockstoretestuser/quayandbitbucketalternate");
         publishAlternateStructureHelper("quay.io/dockstoretestuser/quayandgitlabalternate");
@@ -169,14 +169,14 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * Tests publishing tools with normal structure
      */
     @Test
-    public void testPublishAndUnpublishTool() {
+    void testPublishAndUnpublishTool() {
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgithub");
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandbitbucket");
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgitlab");
     }
 
     @Test
-    public void testPublishToolEvents() {
+    void testPublishToolEvents() {
         Assert.assertEquals("There should be no publish events", 0, testingPostgres.getPublishEventCount());
         Assert.assertEquals("There should be no unpublish events", 0, testingPostgres.getUnpublishEventCount());
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgithub");
@@ -212,7 +212,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * Tests publishing tools with non-standard structure
      */
     @Test
-    public void testPublishAndUnpublishAlternateStructure() {
+    void testPublishAndUnpublishAlternateStructure() {
         publishAndUnpublishAlternateStructureHelper("dockstoretestuser", "quayandgithubalternate",
             "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git");
         publishAndUnpublishAlternateStructureHelper("dockstoretestuser", "quayandbitbucketalternate",
@@ -246,7 +246,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * Tests registering a tool that already exists
      */
     @Test
-    public void testManuallyRegisterDuplicate() {
+    void testManuallyRegisterDuplicate() {
         manuallyRegisterDuplicateHelper("dockstoretestuser", "quayandgithub", "git@github.com:DockstoreTestUser/dockstore-whalesay.git");
         manuallyRegisterDuplicateHelper("dockstoretestuser", "quayandbitbucket",
             "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git");
@@ -272,7 +272,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * Tests the manual registration of a standard workflow
      */
     @Test
-    public void testManualRegistration() {
+    void testManualRegistration() {
         manualRegistrationHelper("dockstoretestuser", "dockerhubandgithub", "git@github.com:DockstoreTestUser/dockstore-whalesay.git");
         manualRegistrationHelper("dockstoretestuser", "dockerhubandbitbucket",
             "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git");
@@ -304,7 +304,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * Tests the manual registration of a non-standard workflow
      */
     @Test
-    public void testManualRegistrationAlternativeStructure() {
+    void testManualRegistrationAlternativeStructure() {
         manualRegistrationAlternativeStructureHelper("dockstoretestuser", "dockerhubandgithub",
             "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git");
         manualRegistrationAlternativeStructureHelper("dockstoretestuser", "dockerhubandbitbucket",
@@ -338,7 +338,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * Tests the manual registration of an existing workflow
      */
     @Test
-    public void testManuallyRegisteringDuplicates() {
+    void testManuallyRegisteringDuplicates() {
         manuallyRegisteringDuplicatesHelper("dockstoretestuser", "dockerhubandgithub",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git");
         manuallyRegisteringDuplicatesHelper("dockstoretestuser", "dockerhubandbitbucket",
@@ -389,7 +389,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
      * If the user has metadata, test will pass as long as the user's metadata isn't the same as Github already
      */
     @Test
-    public void testRefreshingUserMetadata() {
+    void testRefreshingUserMetadata() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 

@@ -22,7 +22,7 @@ public class GitHelperTest {
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Test
-    public void testGitReferenceParsing() {
+    void testGitReferenceParsing() {
         Optional<String> reference = GitHelper.parseGitHubReference("refs/heads/foobar");
         assertEquals("foobar", reference.get());
 

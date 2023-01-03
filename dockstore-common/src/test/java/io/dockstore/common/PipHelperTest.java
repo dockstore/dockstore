@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test;
  * @author gluu
  * @since 14/08/18
  */
-public class PipHelperTest {
+class PipHelperTest {
     @Test
-    public void convertSemVerToAvailableVersion() {
+    void convertSemVerToAvailableVersion() {
         assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion(PipHelper.DEV_SEM_VER));
         assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion(null));
         assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion("9000.9000.9000"));

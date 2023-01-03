@@ -28,13 +28,13 @@ import org.junit.jupiter.api.Test;
  * @author dyuen
  */
 @Category(BitBucketTest.class)
-public class BitBucketSourceCodeRepoFactoryTest {
+class BitBucketSourceCodeRepoFactoryTest {
 
     /**
      * Tests that parsing a BitBucket URL works
      */
     @Test
-    public void testBitBucketUrlParsing() {
+    void testBitBucketUrlParsing() {
         BitBucketSourceCodeRepo repo = new BitBucketSourceCodeRepo("fakeUser", "fakeToken");
         final BioWorkflow entry = new BioWorkflow();
 

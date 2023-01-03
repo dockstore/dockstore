@@ -57,7 +57,7 @@ import org.junit.jupiter.api.Test;
  * @author gluu
  * @since 17/01/18
  */
-public class ToolsImplCommonTest {
+class ToolsImplCommonTest {
     private static final String PLACEHOLDER_CONTENT = "potato";
     private static DockstoreWebserviceConfiguration actualConfig = new DockstoreWebserviceConfiguration();
 
@@ -69,7 +69,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void wdlSourceFileToToolDescriptor() {
+    void wdlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         sourceFile.setPath("/Dockstore.wdl");
@@ -84,7 +84,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void cwlSourceFileToToolDescriptor() {
+    void cwlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         sourceFile.setPath("/Dockstore.cwl");
@@ -106,7 +106,7 @@ public class ToolsImplCommonTest {
      * Tests a tool with/without a toolname
      */
     @Test
-    public void convertDockstoreToolToTool() {
+    void convertDockstoreToolToTool() {
         convertDockstoreToolToTool("potato");
         convertDockstoreToolToTool(null);
     }
@@ -253,7 +253,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void testGalaxyConversion() {
+    void testGalaxyConversion() {
         Workflow workflow = new BioWorkflow();
         workflow.setSourceControl(SourceControl.GITHUB);
         workflow.setRepository("fakeRepository");
@@ -287,7 +287,7 @@ public class ToolsImplCommonTest {
      * Tests a workflow with/without a workflowname
      */
     @Test
-    public void convertDockstoreWorkflowToTool() throws IOException {
+    void convertDockstoreWorkflowToTool() throws IOException {
         convertDockstoreWorkflowToTool("potato", false);
         convertDockstoreWorkflowToTool(null, false);
 
@@ -507,7 +507,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void sourceFileToToolTests() {
+    void sourceFileToToolTests() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
         sourceFile.setPath("/test.cwl.json");
@@ -522,7 +522,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void processImageDataForToolVersionTest() {
+    void processImageDataForToolVersionTest() {
         io.dockstore.webservice.core.Tool tool = new io.dockstore.webservice.core.Tool();
         Tag tag = new Tag();
         Image image = new Image(new ArrayList<>(), "dummy", "dummy", "a", Registry.QUAY_IO, 1L, "now");

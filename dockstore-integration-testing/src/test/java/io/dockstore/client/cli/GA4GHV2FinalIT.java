@@ -78,7 +78,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
     }
 
     @Test
-    public void testOnlyPublishedWorkflowsAreReturned() throws Exception {
+    void testOnlyPublishedWorkflowsAreReturned() throws Exception {
         long count = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = 't'", long.class);
         count = count + testingPostgres.runSelectStatement("select count(*) from tool where ispublished = 't'", long.class);
         Response response = checkedResponse(baseURL + "tools");
@@ -92,7 +92,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * TODO: Test organization
      */
     @Test
-    public void serviceInfoTest() {
+    void serviceInfoTest() {
         Response response = checkedResponse(baseURL + "service-info");
         TRSService responseObject = response.readEntity(TRSService.class);
         Service service = getService();
@@ -164,7 +164,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
     }
 
     @Test
-    public void testToolsIdVersionsVersionIdFakeVersion() throws Exception {
+    void testToolsIdVersionsVersionIdFakeVersion() throws Exception {
         checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/master%25%27%20AND%20%28SELECT%209506%20FROM%20%28SELECT%28SLEEP%285%29%29%29yafC%29%23", HttpStatus.SC_BAD_REQUEST);
         checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2Fkaushik-work%2Felixir-gwas/versions/master%25%27%20AND%20%28SELECT%209506%20FROM%20%28SELECT%28SLEEP%285%29%29%29yafC%29%23/plain_cwl/descriptor", HttpStatus.SC_BAD_REQUEST);
     }
@@ -268,13 +268,13 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * This tests the /tools/{id}/versions/{version_id}/{type}/files endpoint
      */
     @Test
-    public void toolsIdVersionsVersionIdTypeFile() throws Exception {
+    void toolsIdVersionsVersionIdTypeFile() throws Exception {
         toolsIdVersionsVersionIdTypeFileCWL();
         toolsIdVersionsVersionIdTypeFileWDL();
     }
 
     @Test
-    public void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
+    void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor//Dockstore.cwl");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
@@ -287,7 +287,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * Tool with non-encoded non-nested cwl test parameter file
      */
     @Test
-    public void relativePathEndpointToolTestParameterFileNoEncode() {
+    void relativePathEndpointToolTestParameterFileNoEncode() {
         Response response = checkedResponse(
             baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor//nested/test.cwl.json");
         String responseObject = response.readEntity(String.class);
@@ -307,7 +307,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * Workflow with non-encoded non-nested cwl test parameter file
      */
     @Test
-    public void relativePathEndpointWorkflowTestParameterFileNoEncode() throws Exception {
+    void relativePathEndpointWorkflowTestParameterFileNoEncode() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
@@ -374,7 +374,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * can be retrieved separately.  In the test database, the author happens to uniquely identify the workflows.
      */
     @Test
-    public void toolsIdGet4Workflows() throws Exception {
+    void toolsIdGet4Workflows() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupSamePathsTest(SUPPORT);
 
@@ -401,7 +401,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
     }
 
     @Test
-    public void testGetHeaderLinksContainFilters() throws Exception {
+    void testGetHeaderLinksContainFilters() throws Exception {
         Response response = checkedResponse(baseURL + "tools?toolClass=Tool&limit=1");
         MultivaluedMap<String, Object> headers = response.getHeaders();
         Assert.assertTrue(headers.get("self_link").toString().contains("toolClass=Tool"));

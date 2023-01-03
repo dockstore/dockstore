@@ -61,7 +61,7 @@ public class WDLParseTest {
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Test
-    public void testWDLMetadataExample() throws IOException {
+    void testWDLMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
@@ -71,7 +71,7 @@ public class WDLParseTest {
     }
 
     @Test
-    public void testWDLMetadataExampleWithMerge() throws IOException {
+    void testWDLMetadataExampleWithMerge() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example1.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
@@ -84,7 +84,7 @@ public class WDLParseTest {
     }
 
     @Test
-    public void testWDLMetadataExampleWithWorkflowMeta() throws IOException {
+    void testWDLMetadataExampleWithWorkflowMeta() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
@@ -99,7 +99,7 @@ public class WDLParseTest {
     }
 
     @Test
-    public void testRecursiveImportsMetadata() {
+    void testRecursiveImportsMetadata() {
         try {
             WDLHandler.checkForRecursiveLocalImports(getSourceFile1().getContent(), getSourceFiles(), new HashSet<>(), "/");
             Assert.fail("Should have detected recursive local import");
@@ -109,7 +109,7 @@ public class WDLParseTest {
     }
 
     @Test
-    public void testHandlingVariousWorkflowVersions() throws IOException {
+    void testHandlingVariousWorkflowVersions() throws IOException {
         String workflowVersion = "draft-3";
         assertEquals("draft-3", WDLHandler.enhanceSemanticVersionString(workflowVersion));
         workflowVersion = "1.0";
@@ -206,7 +206,7 @@ public class WDLParseTest {
     }
 
     @Test
-    public void testGetLanguageVersion() throws IOException {
+    void testGetLanguageVersion() throws IOException {
         // Test valid 'version' fields
         String languageVersion = "version 1.0";
         SourceFile sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
@@ -273,7 +273,7 @@ public class WDLParseTest {
     }
 
     @Test
-    public void parseRecursiveWorkflowContent() {
+    void parseRecursiveWorkflowContent() {
         WDLHandler wdlHandler = new WDLHandler();
         WorkflowVersion version = new WorkflowVersion();
         wdlHandler.parseWorkflowContent(getSourceFile1().getAbsolutePath(), getSourceFile1().getContent(), getSourceFiles(), version);
@@ -312,7 +312,7 @@ public class WDLParseTest {
      * Tests that Dockstore can handle a workflow with locally recursive imports
      */
     @Test
-    public void testLocallyRecursiveImport() {
+    void testLocallyRecursiveImport() {
         String type = "workflow";
         File recursiveWDL = new File(ResourceHelpers.resourceFilePath("local-recursive-import/localrecursive.wdl"));
         String primaryDescriptorFilePath = "localrecursive.wdl";
@@ -352,7 +352,7 @@ public class WDLParseTest {
      * Tests that Dockstore can handle a workflow with recursive imports
      */
     @Test
-    public void testRecursiveImport() {
+    void testRecursiveImport() {
         String type = "workflow";
         File recursiveWDL = new File(ResourceHelpers.resourceFilePath("recursive.wdl"));
         String primaryDescriptorFilePath = recursiveWDL.getAbsolutePath();
@@ -380,7 +380,7 @@ public class WDLParseTest {
      * Tests that Dockstore can handle a workflow with something that kinda looks recursive but isn't
      */
     @Test
-    public void testNotReallyRecursiveImport() {
+    void testNotReallyRecursiveImport() {
         String type = "workflow";
         File recursiveWDL = new File(ResourceHelpers.resourceFilePath("not-really-recursive/not-really-recursive.wdl"));
         String primaryDescriptorFilePath = recursiveWDL.getAbsolutePath();
@@ -406,7 +406,7 @@ public class WDLParseTest {
      * Also tests metadata in WDL 1.0 files
      */
     @Test
-    public void testDraft3Code() {
+    void testDraft3Code() {
         String type = "workflow";
         File primaryWDL = new File(ResourceHelpers.resourceFilePath("importTesting.wdl"));
         File importedWDL = new File(ResourceHelpers.resourceFilePath("md5sum.wdl"));
@@ -445,7 +445,7 @@ public class WDLParseTest {
     }
 
     @Test
-    public void testGetDescriptorTypeVersions() {
+    void testGetDescriptorTypeVersions() {
         String type = "workflow";
         File primaryWDL = new File(ResourceHelpers.resourceFilePath("importTesting.wdl"));
         File importedWDL = new File(ResourceHelpers.resourceFilePath("md5sum.wdl"));

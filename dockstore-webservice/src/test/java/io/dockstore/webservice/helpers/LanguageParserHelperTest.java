@@ -15,10 +15,10 @@ import org.junit.jupiter.api.Test;
 
 @Category(LanguageParsingTest.class)
 @Tag("io.dockstore.common.LanguageParsingTest")
-public class LanguageParserHelperTest {
+class LanguageParserHelperTest {
 
     @Test
-    public void sendToLambdaSyncTest() throws IOException, InterruptedException {
+    void sendToLambdaSyncTest() throws IOException, InterruptedException {
         LanguageParsingRequest languageParsingRequest = getLanguageParsingRequest();
         LanguageParsingResponse languageParsingResponse = LanguageParserHelper.sendToLambdaSync(languageParsingRequest);
         assertTrue(languageParsingResponse.getVersionTypeValidation().isValid());
@@ -33,7 +33,7 @@ public class LanguageParserHelperTest {
      * web service endpoint)
      */
     @Test
-    public void sendToLambdaAsyncTest() {
+    void sendToLambdaAsyncTest() {
         LanguageParsingRequest languageParsingRequest = getLanguageParsingRequest();
         try {
             LanguageParserHelper.sendToLambdaAsync(languageParsingRequest);

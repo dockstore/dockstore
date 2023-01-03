@@ -39,7 +39,7 @@ public class MetadataResourceIT extends BaseIT {
     }
 
     @Test
-    public void testCheckHealth() {
+    void testCheckHealth() {
         ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();
         MetadataApi metadataApi = new MetadataApi(anonymousApiClient);
 

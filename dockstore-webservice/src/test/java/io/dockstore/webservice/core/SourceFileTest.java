@@ -9,7 +9,7 @@ import java.util.Random;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
-public class SourceFileTest {
+class SourceFileTest {
 
     private static final List<String> SAFE_PATHS = List.of("/", ".", "-", "_", "abcz", "ABCZ", "01239", "some/good-path/under_score.cwl", ".dockstore.yml");
 
@@ -48,7 +48,7 @@ public class SourceFileTest {
     }
 
     @Test
-    public void testSettingPathsUnrestricted() {
+    void testSettingPathsUnrestricted() {
         SourceFile.unrestrictPaths();
         Random random = new Random(1234);
         for (int i = 0; i < 10000; i++) {
@@ -63,7 +63,7 @@ public class SourceFileTest {
     }
 
     @Test
-    public void testSettingPathsRestricted() {
+    void testSettingPathsRestricted() {
         SourceFile.restrictPaths(Pattern.compile("[-a-zA-Z0-9./_]*"), "Unsafe characters in path.");
         for (String goodPath: SAFE_PATHS) {
             new SourceFile().setPath(goodPath);

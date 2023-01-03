@@ -165,7 +165,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This tests adding and removing labels from a workflow
      */
     @Test
-    public void testLabelEditingOld() {
+    void testLabelEditingOld() {
 
         // Set up workflow
         runOldDockstoreClient(dockstore,
@@ -278,7 +278,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * Tests that a developer can launch a WDL workflow with a File input being a directory
      */
     @Test
-    public void testLocalLaunchWDLWithDirOld() {
+    void testLocalLaunchWDLWithDirOld() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry",
                 ResourceHelpers.resourceFilePath("directorytest.wdl"), "--json", ResourceHelpers.resourceFilePath("directorytest.json"),
@@ -286,7 +286,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
     }
 
     @Test
-    public void testUpdateWorkflowPath() throws ApiException {
+    void testUpdateWorkflowPath() throws ApiException {
         // Set up webservice
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -713,7 +713,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * Tests that the workflow can be manually registered (and published) and then launched once the json and input file is attained
      */
     @Test
-    public void testActualWorkflowLaunch() {
+    void testActualWorkflowLaunch() {
         // manual publish the workflow
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",

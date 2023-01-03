@@ -9,10 +9,10 @@ import io.dockstore.webservice.core.DescriptorTypeVersionConverter;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class DescriptorTypeConverterTest {
+class DescriptorTypeConverterTest {
 
     @Test
-    public void testConvertToDatabaseColumn() {
+    void testConvertToDatabaseColumn() {
         final DescriptorTypeVersionConverter descriptorTypeConverter = new DescriptorTypeVersionConverter();
         List<String> descriptorTypeVersions = List.of("1.0", "1.1");
         assertEquals("1.0\t1.1", descriptorTypeConverter.convertToDatabaseColumn(descriptorTypeVersions));
@@ -22,7 +22,7 @@ public class DescriptorTypeConverterTest {
     }
 
     @Test
-    public void testConvertToEntityAttribute() {
+    void testConvertToEntityAttribute() {
         final DescriptorTypeVersionConverter descriptorTypeConverter = new DescriptorTypeVersionConverter();
 
         List<String> descriptorTypeVersions = descriptorTypeConverter.convertToEntityAttribute(null);

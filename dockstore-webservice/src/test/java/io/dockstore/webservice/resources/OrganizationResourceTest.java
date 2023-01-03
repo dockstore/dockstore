@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class OrganizationResourceTest {
+class OrganizationResourceTest {
 
     private User normalUser;
     private User adminUser;
@@ -119,7 +119,7 @@ public class OrganizationResourceTest {
      * Test that {@link OrganizationResource#doesOrganizationExistToUser} implements the correct organization visibility policy.
      */
     @Test
-    public void doesOrganizationExistToUserTest() {
+    void doesOrganizationExistToUserTest() {
         final Long bogusUserID = -1L;
         final Long bogusOrganizationID = -1L;
 

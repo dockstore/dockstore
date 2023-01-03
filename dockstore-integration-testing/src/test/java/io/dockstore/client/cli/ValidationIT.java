@@ -138,7 +138,7 @@ public class ValidationIT extends BaseIT {
      * Requires GitHub Repo DockstoreTestUser2/TestEntryValidation, master branch
      */
     @Test
-    public void testWdlWorkflow() {
+    void testWdlWorkflow() {
         // Setup webservice and get workflows api
         WorkflowsApi workflowsApi = setupWorkflowWebService();
 
@@ -205,7 +205,7 @@ public class ValidationIT extends BaseIT {
      * Requires GitHub Repo DockstoreTestUser2/TestEntryValidation, master branch
      */
     @Test
-    public void testCwlWorkflow() {
+    void testCwlWorkflow() {
         // Setup webservice and get workflows api
         WorkflowsApi workflowsApi = setupWorkflowWebService();
 
@@ -266,7 +266,7 @@ public class ValidationIT extends BaseIT {
      * Requires GitHub Repo DockstoreTestUser2/TestEntryValidation, master branch
      */
     @Test
-    public void testTool() {
+    void testTool() {
         // Setup webservice and get tool api
         ContainersApi toolsApi = setupToolWebService();
 
@@ -396,7 +396,7 @@ public class ValidationIT extends BaseIT {
      * Requires GitHub Repo DockstoreTestUser2/test-service, missingFile branch
      */
     @Test
-    public void testService() {
+    void testService() {
         WorkflowsApi client = setupWorkflowWebService();
         String serviceRepo = "DockstoreTestUser2/test-service";
         String installationId = "1179416";
@@ -410,7 +410,7 @@ public class ValidationIT extends BaseIT {
     }
 
     @Test
-    public void readmePathTest() {
+    void readmePathTest() {
         final List<String> readmePaths = new ArrayList<>(
                 Arrays.asList("README.md", "readme.md", "/README.md", "/readme.md", "README", "readme", "/README", "/readme"));
         readmePaths.forEach(readmePath -> {

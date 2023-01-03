@@ -134,7 +134,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testListUsersTools() throws ApiException {
+    void testListUsersTools() throws ApiException {
         ApiClient client = getAdminWebClient();
 
         UsersApi usersApi = new UsersApi(client);
@@ -145,7 +145,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testFailedContainerRegistration() throws ApiException {
+    void testFailedContainerRegistration() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);
@@ -177,7 +177,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testToolLabelling() throws ApiException {
+    void testToolLabelling() throws ApiException {
         ContainersApi userApi1 = new ContainersApi(getWebClient(true, false));
         ContainersApi userApi2 = new ContainersApi(getWebClient(false, false));
 
@@ -193,7 +193,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowLabelling() throws ApiException {
+    void testWorkflowLabelling() throws ApiException {
 
         WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
         WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
@@ -258,7 +258,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testFailedDuplicateManualImageRegistration() throws ApiException {
+    void testFailedDuplicateManualImageRegistration() throws ApiException {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
@@ -269,7 +269,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testGA4GHPath() throws IOException {
+    void testGA4GHPath() throws IOException {
         // we need to explictly test the path rather than use the swagger generated client classes to enforce the path
         ApiClient client = getAdminWebClient();
         final String basePath = client.getBasePath();
@@ -284,7 +284,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testGA4GHMetadata() throws ApiException {
+    void testGA4GHMetadata() throws ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         final MetadataV1 metadata = toolApi.metadataGet();
@@ -292,7 +292,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testGA4GHListContainers() throws ApiException {
+    void testGA4GHListContainers() throws ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
@@ -315,7 +315,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testGetSpecificTool() throws ApiException {
+    void testGetSpecificTool() throws ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
@@ -339,7 +339,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testAddDuplicateTagsForTool() throws ApiException {
+    void testAddDuplicateTagsForTool() throws ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
@@ -368,7 +368,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testGetFiles() throws IOException, ApiException {
+    void testGetFiles() throws IOException, ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
@@ -443,7 +443,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testContainerSearch() throws ApiException {
+    void testContainerSearch() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
@@ -458,7 +458,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testHidingTags() throws ApiException {
+    void testHidingTags() throws ApiException {
         ApiClient client = getAdminWebClient();
 
         ContainersApi containersApi = new ContainersApi(client);
@@ -474,7 +474,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testListTokens() throws ApiException {
+    void testListTokens() throws ApiException {
         ApiClient client = getWebClient();
 
         UsersApi usersApi = new UsersApi(client);
@@ -486,7 +486,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testStarUnpublishedTool() throws ApiException {
+    void testStarUnpublishedTool() throws ApiException {
         ApiClient client = getWebClient(true, true);
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test1", null);
@@ -513,7 +513,7 @@ public class SwaggerClientIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testStarringUnpublishedTool() throws ApiException {
+    void testStarringUnpublishedTool() throws ApiException {
         ApiClient apiClient = getWebClient();
         ContainersApi containersApi = new ContainersApi(apiClient);
         try {
@@ -538,7 +538,7 @@ public class SwaggerClientIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testStarringUnpublishedWorkflow() throws ApiException {
+    void testStarringUnpublishedWorkflow() throws ApiException {
         ApiClient apiClient = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         ApiClient adminApiClient = getAdminWebClient();
@@ -568,7 +568,7 @@ public class SwaggerClientIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testStarStarredTool() throws ApiException {
+    void testStarStarredTool() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         testingPostgres.runUpdateStatement("update tool set ispublished = true;");
@@ -593,7 +593,7 @@ public class SwaggerClientIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testUnstarUnstarredTool() throws ApiException {
+    void testUnstarUnstarredTool() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2", null);
@@ -611,7 +611,7 @@ public class SwaggerClientIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testStarStarredWorkflow() throws ApiException {
+    void testStarStarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
@@ -632,7 +632,7 @@ public class SwaggerClientIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testUnstarUnstarredWorkflow() throws ApiException {
+    void testUnstarUnstarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(client);
         Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
@@ -649,7 +649,7 @@ public class SwaggerClientIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testStarredToolsOrder() throws ApiException {
+    void testStarredToolsOrder() throws ApiException {
         ApiClient apiClient = getAdminWebClient();
         UsersApi usersApi = new UsersApi(apiClient);
         ContainersApi containersApi = new ContainersApi(apiClient);
@@ -664,7 +664,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testEnumMetadataEndpoints() throws ApiException {
+    void testEnumMetadataEndpoints() throws ApiException {
         ApiClient apiClient = getWebClient();
         MetadataApi metadataApi = new MetadataApi(apiClient);
         final List<RegistryBean> dockerRegistries = metadataApi.getDockerRegistries();
@@ -680,7 +680,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testCacheMetadataEndpoint() throws ApiException {
+    void testCacheMetadataEndpoint() throws ApiException {
         ApiClient apiClient = getWebClient();
         MetadataApi metadataApi = new MetadataApi(apiClient);
         final Map<String, Object> cachePerformance = metadataApi.getCachePerformance();
@@ -688,7 +688,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testRSSPlusSiteMap() throws ApiException, IOException, ParserConfigurationException, SAXException {
+    void testRSSPlusSiteMap() throws ApiException, IOException, ParserConfigurationException, SAXException {
         ApiClient apiClient = getWebClient();
         MetadataApi metadataApi = new MetadataApi(apiClient);
         String rssFeed = metadataApi.rssFeed();
@@ -712,12 +712,12 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testDuplicateHostedWorkflowCreationNull() {
+    void testDuplicateHostedWorkflowCreationNull() {
         registerHostedWorkflow(null);
     }
 
     @Test
-    public void testDuplicateHostedWorkflowCreation() {
+    void testDuplicateHostedWorkflowCreation() {
         registerHostedWorkflow("");
     }
 
@@ -730,7 +730,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testDuplicateHostedToolCreation() {
+    void testDuplicateHostedToolCreation() {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
         userHostedApi
@@ -741,7 +741,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testUploadZip() {
+    void testUploadZip() {
         final ApiClient webClient = getWebClient();
         final HostedApi hostedApi = new HostedApi(webClient);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -759,7 +759,7 @@ public class SwaggerClientIT extends BaseIT {
      * Test that the config endpoint doesn't fail and validates one random property
      */
     @Test
-    public void testConfig() {
+    void testConfig() {
         final ApiClient webClient = getWebClient();
         final MetadataApi metadataApi = new MetadataApi(webClient);
         final Config config = metadataApi.getConfig();
@@ -774,7 +774,7 @@ public class SwaggerClientIT extends BaseIT {
      * it seemed better to do the setup and variations all in this one method.
      */
     @Test
-    public void testSharing() {
+    void testSharing() {
         // Setup for sharing
         final ApiClient user1WebClient = getWebClient(true, true); // Admin user
         final ApiClient user2WebClient = getWebClient(true, false);

@@ -36,13 +36,13 @@ import org.junit.jupiter.api.Test;
  * @author gluu
  * @since 03/05/19
  */
-public class ToolTesterS3ClientTest {
+class ToolTesterS3ClientTest {
     /**
      * TODO: Remove this once ToolTester and this webservice's convertToolIdToPartialKey() function is merged and reused
      * @throws UnsupportedEncodingException
      */
     @Test
-    public void convertToolIdToPartialKey() throws UnsupportedEncodingException {
+    void convertToolIdToPartialKey() throws UnsupportedEncodingException {
         String toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container/encode-mapping-cwl";
         assertEquals("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
         toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container";
@@ -57,7 +57,7 @@ public class ToolTesterS3ClientTest {
      * Test whether the metadata and filename of an s3 object can be converted into the ToolTesterLog object that the UI reads
      */
     @Test
-    public void convertUserMetadataToToolTesterLog() {
+    void convertUserMetadataToToolTesterLog() {
         // weird, looks like they got rid of ObjectMetadata https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/s3/model/HeadObjectResponse.html#metadata--
         Map<String, String> userMetadata = Maps.newHashMap();
         userMetadata.put("tool_id", "quay.io/pancancer/pcawg-bwa-mem-workflow");
@@ -74,7 +74,7 @@ public class ToolTesterS3ClientTest {
 
     @Test
     @Disabled("this works to check if tooltester retrieval works, but you need the right creds")
-    public void testLocal() throws IOException {
+    void testLocal() throws IOException {
         ToolTesterS3Client client = new ToolTesterS3Client("dockstore.tooltester.backup");
         List<ToolTesterLog> toolTesterLogs = client.getToolTesterLogs("quay.io/briandoconnor/dockstore-tool-md5sum", "1.0.4");
         String cwltool = client

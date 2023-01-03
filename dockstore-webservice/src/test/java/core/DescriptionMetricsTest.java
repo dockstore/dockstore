@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import org.junit.jupiter.api.Test;
 
-public class DescriptionMetricsTest {
+class DescriptionMetricsTest {
 
     @Test
-    public void testEntropyAndLengthCalculation() {
+    void testEntropyAndLengthCalculation() {
         final String testString1 = "abcdef";
         DescriptionMetrics descriptionMetrics = new DescriptionMetrics(testString1);
         assertEquals(6, descriptionMetrics.getDescriptionLength(), "Incorrect description length");
@@ -26,7 +26,7 @@ public class DescriptionMetricsTest {
     }
 
     @Test
-    public void testWordCountCalculation() {
+    void testWordCountCalculation() {
         final String testString1 = "one two three four, I declare S#P$E*C)I*A!L characters";
         DescriptionMetrics descriptionMetrics = new DescriptionMetrics(testString1);
         assertEquals(8, descriptionMetrics.getCalculatedWordCount(), "Incorrect word count");
@@ -45,7 +45,7 @@ public class DescriptionMetricsTest {
     }
 
     @Test
-    public void testNullDescription() {
+    void testNullDescription() {
         DescriptionMetrics descriptionMetrics = new DescriptionMetrics(null);
         assertEquals(0, descriptionMetrics.getCalculatedWordCount(), "A null description has no words");
         assertEquals(0, descriptionMetrics.getDescriptionLength(), "A null description has no length");

@@ -83,13 +83,13 @@ public class UserResourceOpenApiIT extends BaseIT {
 
 
     @Test
-    public void longAvatarUrlTest() {
+    void longAvatarUrlTest() {
         String generatedString = RandomStringUtils.randomAlphanumeric(9001);
         testingPostgres.runUpdateStatement(String.format("update enduser set avatarurl='%s'", generatedString));
     }
 
     @Test
-    public void testGettingUserEmails() {
+    void testGettingUserEmails() {
         ApiClient client = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -118,7 +118,7 @@ public class UserResourceOpenApiIT extends BaseIT {
     }
 
     @Test
-    public void testSetUserPrivilege() {
+    void testSetUserPrivilege() {
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
 
@@ -187,7 +187,7 @@ public class UserResourceOpenApiIT extends BaseIT {
      * and one user who has a missing or outdated GitHub token
      */
     @Test
-    public void testUpdateUserMetadataWithTokens() {
+    void testUpdateUserMetadataWithTokens() {
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi adminApi = new UsersApi(adminWebClient);
@@ -231,7 +231,7 @@ public class UserResourceOpenApiIT extends BaseIT {
      * Tests the endpoint while all users have no valid GitHub token and the caller also does not have a valid token
      */
     @Test
-    public void testUpdateUserMetadataWithoutTokens() {
+    void testUpdateUserMetadataWithoutTokens() {
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi adminApi = new UsersApi(adminWebClient);
@@ -262,7 +262,7 @@ public class UserResourceOpenApiIT extends BaseIT {
     }
 
     @Test
-    public void testGetStarredWorkflowsAndServices() throws Exception {
+    void testGetStarredWorkflowsAndServices() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -298,7 +298,7 @@ public class UserResourceOpenApiIT extends BaseIT {
      * tests that a normal user can grab the user profile for a different user to support user pages
      */
     @Test
-    public void testUserProfiles() {
+    void testUserProfiles() {
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         UsersApi adminApi = new UsersApi(adminWebClient);
         // The API call updateUserMetadata() should not throw an error and exit if any users' tokens are out of date or absent
