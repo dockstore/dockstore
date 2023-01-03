@@ -11,6 +11,9 @@ Many tickets will likely be between these two extremes, so some judgement may be
 **Issue**
 A link to a github issue or SEAB- ticket (using that as a prefix)
 
+**Security**
+If there are any concerns that require extra attention from the security team, highlight them here.
+
 Please make sure that you've checked the following before submitting your pull request. Thanks!
 
 - [ ] Check that you pass the basic style checks and unit tests by running `mvn clean install`

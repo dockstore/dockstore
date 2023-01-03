@@ -49,6 +49,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.languages.WDLHandler;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.swagger.api.impl.ToolsImplCommon;
@@ -1600,5 +1601,31 @@ public class WebhookIT extends BaseIT {
         assertEquals("Workflow author should equal default version author", defaultVersion.getAuthor(), workflow.getAuthor());
         assertEquals("Workflow email should equal default version email", defaultVersion.getEmail(), workflow.getEmail());
         assertEquals("Workflow description should equal default version description", defaultVersion.getDescription(), workflow.getDescription());
+    }
+
+    /**
+     * Tests that an attempt to register a WDL that contains recursive
+     * remote references will result in failure.
+     * https://ucsc-cgl.atlassian.net/browse/DOCK-2299
+     */
+    @Test
+    public void testRegistrationOfRecursiveWDL() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
+
+        // Attempt to process a repo containing a recursive WDL.  Internally, we use the same libraries that Cromwell does to process WDLs.
+        // The WDL processing code should throw a StackOverflowError, which is remapped to a more explanatory CustomWebApplicationException, which will trigger a typical registration failure.
+        try {
+            client.handleGitHubRelease("refs/heads/main", installationId, "dockstore-testing/recursive-wdl", BasicIT.USER_2_USERNAME);
+            Assert.fail("should have thrown");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            // Confirm that the release failed and was logged correctly.
+            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+            Assert.assertEquals("There should be one event", 1, events.stream().count());
+            Assert.assertEquals("There should be no successful events", 0, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count());
+            Assert.assertTrue("Event message should indicate the problem", events.get(0).getMessage().contains(WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
+        }
     }
 }
