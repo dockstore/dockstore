@@ -16,9 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
@@ -50,6 +47,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -170,7 +168,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         List<Tool> tools = response.readEntity(new GenericType<List<Tool>>() {
         });
         int actualToolCount = tools.size();
-        assertEquals("Supposed to have " + TOOL_COUNT + " tools.  Instead got " + actualToolCount + " tools.", actualToolCount, TOOL_COUNT);
+        Assert.assertEquals("Supposed to have " + TOOL_COUNT + " tools.  Instead got " + actualToolCount + " tools.", TOOL_COUNT, actualToolCount);
         LOGGER.error("Amount of tools created: " + String.valueOf(actualToolCount));
         for (Long indexTime : indexTimes) {
             LOGGER.error(String.valueOf(indexTime));
@@ -193,7 +191,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
             .queryParam("labels", randomlyGeneratedQueryLabels()).request()
             .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken").put(Entity.entity("asdf", MediaType.APPLICATION_JSON_TYPE));
         Tool registeredTool = registerPutLabelResponse.readEntity(Tool.class);
-        assertEquals(id, registeredTool.getId());
+        Assert.assertEquals(id, registeredTool.getId());
     }
 
     // Directly injecting into database to avoid authentication issues
@@ -204,7 +202,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
             .post(Entity.entity(tool, MediaType.APPLICATION_JSON_TYPE));
 
         Tool registeredTool = registerManualResponse.readEntity(Tool.class);
-        assertEquals(registeredTool.getName(), tool.getName());
+        Assert.assertEquals(registeredTool.getName(), tool.getName());
         refreshAndBuildIndex(registeredTool.getId());
     }
 
@@ -225,7 +223,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
             set.add(randomIdentifier());
         }
         ArrayList<String> authors = new ArrayList<>(set);
-        assertEquals(authors.size(), MAX_AUTHORS);
+        Assert.assertEquals(MAX_AUTHORS, authors.size());
         return authors;
     }
 
@@ -269,7 +267,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         Registry[] registries = { Registry.AMAZON_ECR, Registry.DOCKER_HUB, Registry.GITLAB };
         int length = registries.length;
         int random = RAND.nextInt(length);
-        assertTrue(random >= 0 && random < length);
+        Assert.assertTrue(random >= 0 && random < length);
         if (random == 0) {
             return "test.dkr.ecr.test.amazonaws.com";
         } else {

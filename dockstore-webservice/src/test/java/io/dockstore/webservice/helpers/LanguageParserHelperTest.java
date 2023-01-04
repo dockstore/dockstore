@@ -1,30 +1,31 @@
 package io.dockstore.webservice.helpers;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.common.LanguageParsingTest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import java.io.IOException;
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Category(LanguageParsingTest.class)
-public class LanguageParserHelperTest {
+@Tag("io.dockstore.common.LanguageParsingTest")
+class LanguageParserHelperTest {
 
     @Test
-    public void sendToLambdaSyncTest() throws IOException, InterruptedException {
+    void sendToLambdaSyncTest() throws IOException, InterruptedException {
         LanguageParsingRequest languageParsingRequest = getLanguageParsingRequest();
         LanguageParsingResponse languageParsingResponse = LanguageParserHelper.sendToLambdaSync(languageParsingRequest);
         assertTrue(languageParsingResponse.getVersionTypeValidation().isValid());
         assertTrue(languageParsingResponse.getVersionTypeValidation().isValid());
         assertTrue(languageParsingResponse.getClonedRepositoryAbsolutePath().contains("/tmp"));
-        assertFalse(
-            "Main descriptor isn't a secondary file path",
-            languageParsingResponse.getSecondaryFilePaths().contains("GATKSVPipelineClinical.wdl"));
-        Assert.assertEquals(languageParsingRequest.getBranch(), languageParsingResponse.getLanguageParsingRequest().getBranch());
+        assertFalse(languageParsingResponse.getSecondaryFilePaths().contains("GATKSVPipelineClinical.wdl"), "Main descriptor isn't a secondary file path");
+        assertEquals(languageParsingRequest.getBranch(), languageParsingResponse.getLanguageParsingRequest().getBranch());
     }
 
     /**
@@ -32,12 +33,12 @@ public class LanguageParserHelperTest {
      * web service endpoint)
      */
     @Test
-    public void sendToLambdaAsyncTest() {
+    void sendToLambdaAsyncTest() {
         LanguageParsingRequest languageParsingRequest = getLanguageParsingRequest();
         try {
             LanguageParserHelper.sendToLambdaAsync(languageParsingRequest);
         } catch (Exception e) {
-            Assert.fail("Should not have any exceptions");
+            fail("Should not have any exceptions");
         }
     }
 

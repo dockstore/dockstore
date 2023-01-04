@@ -323,7 +323,7 @@ public class SwaggerClientIT extends BaseIT {
 
         final io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
-        assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        assertEquals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, tool.getId());
         // get versions
         final List<ToolVersionV1> toolVersions = toolApi.toolsIdVersionsGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertEquals(1, toolVersions.size());
@@ -334,7 +334,7 @@ public class SwaggerClientIT extends BaseIT {
             final ToolVersionV1 foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
             assertNotNull(foobar); // this should be unreachable
         } catch (ApiException e) {
-            assertEquals(e.getCode(), HttpStatus.SC_NOT_FOUND);
+            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
         }
     }
 
@@ -348,7 +348,7 @@ public class SwaggerClientIT extends BaseIT {
 
         io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
-        assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        assertEquals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, tool.getId());
         List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
         assertEquals(2, tags.size());
         // register more tags
@@ -451,7 +451,7 @@ public class SwaggerClientIT extends BaseIT {
         containers.forEach(tool -> Assert.assertNull(tool.getAliases()));
         final Set<String> collect = new HashSet<>(containers.get(0).getDescriptorType());
         assertEquals(collect.size(), containers.get(0).getDescriptorType().size());
-        assertEquals(containers.get(0).getPath(), QUAY_IO_TEST_ORG_TEST6);
+        assertEquals(QUAY_IO_TEST_ORG_TEST6, containers.get(0).getPath());
 
         containers = containersApi.allPublishedContainers(null, null, "test52", null, null);
         assertTrue(containers.isEmpty());
@@ -521,14 +521,14 @@ public class SwaggerClientIT extends BaseIT {
             Assert.fail("Should've encountered problems for trying to star an unpublished tool");
         } catch (ApiException e) {
             Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("Forbidden"));
-            Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_FORBIDDEN, e.getCode());
+            assertEquals("Should've gotten a status message", HttpStatus.SC_FORBIDDEN, e.getCode());
         }
         try {
             containersApi.starEntry(1L, UNSTAR_REQUEST);
             Assert.fail("Should've encountered problems for trying to unstar an unpublished tool");
         } catch (ApiException e) {
             Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("cannot unstar"));
-            Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_BAD_REQUEST, e.getCode());
+            assertEquals("Should've gotten a status message", HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
     }
 
@@ -550,14 +550,14 @@ public class SwaggerClientIT extends BaseIT {
             Assert.fail("Should've encountered problems for trying to star an unpublished workflow");
         } catch (ApiException e) {
             Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("Forbidden"));
-            Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_FORBIDDEN, e.getCode());
+            assertEquals("Should've gotten a status message", HttpStatus.SC_FORBIDDEN, e.getCode());
         }
         try {
             workflowsApi.starEntry(11L, UNSTAR_REQUEST);
             Assert.fail("Should've encountered problems for trying to unstar an unpublished workflow");
         } catch (ApiException e) {
             Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("cannot unstar"));
-            Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_BAD_REQUEST, e.getCode());
+            assertEquals("Should've gotten a status message", HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
     }
 
@@ -580,7 +580,7 @@ public class SwaggerClientIT extends BaseIT {
 
         containersApi.starEntry(containerId, STAR_REQUEST);
         List<User> starredUsers = containersApi.getStarredUsers(container.getId());
-        Assert.assertEquals(1, starredUsers.size());
+        assertEquals(1, starredUsers.size());
         starredUsers.forEach(user -> assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
         thrown.expect(ApiException.class);
         containersApi.starEntry(containerId, STAR_REQUEST);
@@ -619,7 +619,7 @@ public class SwaggerClientIT extends BaseIT {
         assertEquals(11, workflowId);
         workflowsApi.starEntry(workflowId, STAR_REQUEST);
         List<User> starredUsers = workflowsApi.getStarredUsers(workflow.getId());
-        Assert.assertEquals(1, starredUsers.size());
+        assertEquals(1, starredUsers.size());
         starredUsers.forEach(user -> assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
         thrown.expect(ApiException.class);
         workflowsApi.starEntry(workflowId, STAR_REQUEST);
@@ -747,12 +747,12 @@ public class SwaggerClientIT extends BaseIT {
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
         // Created workflow, no versions
-        Assert.assertEquals(0, hostedWorkflow.getWorkflowVersions().size());
+        assertEquals(0, hostedWorkflow.getWorkflowVersions().size());
         final String smartseqZip = ResourceHelpers.resourceFilePath("smartseq.zip");
         final Workflow updatedWorkflow = hostedApi.addZip(hostedWorkflow.getId(), new File(smartseqZip));
         // A version should now exist.
 
-        Assert.assertEquals(1, workflowsApi.getWorkflowVersions(updatedWorkflow.getId()).size());
+        assertEquals(1, workflowsApi.getWorkflowVersions(updatedWorkflow.getId()).size());
     }
 
     /**
@@ -763,7 +763,7 @@ public class SwaggerClientIT extends BaseIT {
         final ApiClient webClient = getWebClient();
         final MetadataApi metadataApi = new MetadataApi(webClient);
         final Config config = metadataApi.getConfig();
-        Assert.assertEquals("read:org,user:email", config.getGitHubScope());
+        assertEquals("read:org,user:email", config.getGitHubScope());
     }
 
     /**
@@ -798,14 +798,14 @@ public class SwaggerClientIT extends BaseIT {
         final String fullWorkflowPath2 = hostedWorkflow2.getFullWorkflowPath();
 
         // User 2 should have no workflows shared with
-        Assert.assertEquals(user2WorkflowsApi.sharedWorkflows().size(), 0);
+        assertEquals(0, user2WorkflowsApi.sharedWorkflows().size());
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
             user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, BIOWORKFLOW, null);
             Assert.fail("User 2 should not have rights to hosted workflow");
         } catch (ApiException e) {
-            Assert.assertEquals(403, e.getCode());
+            assertEquals(403, e.getCode());
         }
 
         // User 1 shares workflow with user 2 as a reader
@@ -813,11 +813,11 @@ public class SwaggerClientIT extends BaseIT {
 
         // User 2 should now have 1 workflow shared with
         sharedWorkflows = user2WorkflowsApi.sharedWorkflows();
-        Assert.assertEquals(1, sharedWorkflows.size());
+        assertEquals(1, sharedWorkflows.size());
 
         firstShared = sharedWorkflows.get(0);
-        Assert.assertEquals(SharedWorkflows.RoleEnum.READER, firstShared.getRole());
-        Assert.assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
+        assertEquals(SharedWorkflows.RoleEnum.READER, firstShared.getRole());
+        assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
         user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, BIOWORKFLOW, null);
@@ -828,7 +828,7 @@ public class SwaggerClientIT extends BaseIT {
             user2HostedApi.editHostedWorkflow(hostedWorkflow1.getId(), Collections.emptyList());
             Assert.fail("User 2 can unexpectedly edit a readonly workflow");
         } catch (ApiException ex) {
-            Assert.assertEquals(403, ex.getCode());
+            assertEquals(403, ex.getCode());
         }
 
         // Now give write permission to user 2
@@ -840,7 +840,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // Deleting the version should not fail
         Workflow deleteVersionFromWorkflow1 = user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflowVersions.get(0).getName());
-        assertTrue(deleteVersionFromWorkflow1.getWorkflowVersions().size() == 0);
+        assertEquals(0, deleteVersionFromWorkflow1.getWorkflowVersions().size());
 
         // Publishing the workflow should fail
         final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
@@ -848,7 +848,7 @@ public class SwaggerClientIT extends BaseIT {
             user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
             Assert.fail("User 2 can unexpectedly publish a read/write workflow");
         } catch (ApiException ex) {
-            Assert.assertEquals(403, ex.getCode());
+            assertEquals(403, ex.getCode());
         }
 
         // Give Owner permission to user 2
@@ -864,18 +864,18 @@ public class SwaggerClientIT extends BaseIT {
         sharedWorkflows = user2WorkflowsApi.sharedWorkflows();
 
         // User 2 should now have one workflow shared from user 1 and one from user 3
-        Assert.assertEquals(2, sharedWorkflows.size());
+        assertEquals(2, sharedWorkflows.size());
 
         firstShared = sharedWorkflows.stream().filter(shared -> shared.getRole() == SharedWorkflows.RoleEnum.OWNER).findFirst()
             .orElse(null);
         secondShared = sharedWorkflows.stream().filter(shared -> shared.getRole() == SharedWorkflows.RoleEnum.READER).findFirst()
             .orElse(null);
 
-        Assert.assertEquals(SharedWorkflows.RoleEnum.OWNER, firstShared.getRole());
-        Assert.assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
+        assertEquals(SharedWorkflows.RoleEnum.OWNER, firstShared.getRole());
+        assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
-        Assert.assertEquals(SharedWorkflows.RoleEnum.READER, secondShared.getRole());
-        Assert.assertEquals(fullWorkflowPath2, secondShared.getWorkflows().get(0).getFullWorkflowPath());
+        assertEquals(SharedWorkflows.RoleEnum.READER, secondShared.getRole());
+        assertEquals(fullWorkflowPath2, secondShared.getWorkflows().get(0).getFullWorkflowPath());
     }
 
     private void shareWorkflow(WorkflowsApi workflowsApi, String user, String path, Permission.RoleEnum role) {
@@ -890,7 +890,7 @@ public class SwaggerClientIT extends BaseIT {
             anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), BIOWORKFLOW, null);
             Assert.fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
         } catch (ApiException ex) {
-            Assert.assertEquals(401, ex.getCode());
+            assertEquals(401, ex.getCode());
         }
     }
 

@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -73,7 +74,7 @@ public class DockstoreYamlTest {
     @Test
     public void testReadDockstore11Yaml() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml dockstoreYaml = DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE11_YAML, true);
-        assertTrue(dockstoreYaml.getClass() == DockstoreYaml11.class);
+        assertSame(dockstoreYaml.getClass(), DockstoreYaml11.class);
         DockstoreYaml11 dockstoreYaml11 = (DockstoreYaml11)dockstoreYaml;
         assertEquals("7222", dockstoreYaml11.getService().getEnvironment().get("httpPort").getDefault());
         final YamlService11.DataSet dataset1 = dockstoreYaml11.getService().getData().get("dataset_1");

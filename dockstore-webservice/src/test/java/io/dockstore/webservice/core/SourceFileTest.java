@@ -1,14 +1,15 @@
 package io.dockstore.webservice.core;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import io.dockstore.webservice.CustomWebApplicationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.regex.Pattern;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class SourceFileTest {
+class SourceFileTest {
 
     private static final List<String> SAFE_PATHS = List.of("/", ".", "-", "_", "abcz", "ABCZ", "01239", "some/good-path/under_score.cwl", ".dockstore.yml");
 
@@ -33,21 +34,21 @@ public class SourceFileTest {
         SourceFile a = new SourceFile();
         try {
             a.setPath(badPath);
-            Assert.fail("should have thrown the appropriate exception");
+            fail("should have thrown the appropriate exception");
         } catch (CustomWebApplicationException e) {
             // expected execution path on successful test
         }
         SourceFile b = new SourceFile();
         try {
             b.setAbsolutePath(badPath);
-            Assert.fail("should have thrown the appropriate exception");
+            fail("should have thrown the appropriate exception");
         } catch (CustomWebApplicationException e) {
             // expected execution path on successful test
         }
     }
 
     @Test
-    public void testSettingPathsUnrestricted() {
+    void testSettingPathsUnrestricted() {
         SourceFile.unrestrictPaths();
         Random random = new Random(1234);
         for (int i = 0; i < 10000; i++) {
@@ -62,7 +63,7 @@ public class SourceFileTest {
     }
 
     @Test
-    public void testSettingPathsRestricted() {
+    void testSettingPathsRestricted() {
         SourceFile.restrictPaths(Pattern.compile("[-a-zA-Z0-9./_]*"), "Unsafe characters in path.");
         for (String goodPath: SAFE_PATHS) {
             new SourceFile().setPath(goodPath);

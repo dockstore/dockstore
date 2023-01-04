@@ -258,7 +258,7 @@ public class GitHubWorkflowIT extends BaseIT {
                 for (ImageData imageData :trsVersion.getImages()) {
                     assertNotNull(imageData.getChecksum());
                     imageData.getChecksum().stream().forEach(checksum -> {
-                        assertEquals(checksum.getType(), DOCKER_IMAGE_SHA_TYPE_FOR_TRS);
+                        assertEquals(DOCKER_IMAGE_SHA_TYPE_FOR_TRS, checksum.getType());
                         assertFalse(checksum.getChecksum().isEmpty());
                     });
                     assertNotNull(imageData.getSize());

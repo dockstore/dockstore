@@ -255,7 +255,7 @@ public class CheckerWorkflowIT extends BaseIT {
         final Entry checkerWorkflowBase = workflowApi
             .registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", baseEntryId, "cwl", null);
         final Workflow stubCheckerWorkflow = workflowApi.getWorkflow(checkerWorkflowBase.getCheckerId(), null);
-        assertSame(stubCheckerWorkflow.getMode(), Workflow.ModeEnum.STUB);
+        assertSame(Workflow.ModeEnum.STUB, stubCheckerWorkflow.getMode());
 
         // should be able to refresh all or the organization when a checker stub is present without a failure (constraints issue from #1405)
         List<Workflow> workflows = new ArrayList<>();
@@ -371,7 +371,7 @@ public class CheckerWorkflowIT extends BaseIT {
             workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
         }
     }
 

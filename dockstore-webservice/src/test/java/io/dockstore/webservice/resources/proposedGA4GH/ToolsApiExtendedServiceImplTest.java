@@ -1,7 +1,7 @@
 package io.dockstore.webservice.resources.proposedGA4GH;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
@@ -9,9 +9,9 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ToolsApiExtendedServiceImplTest {
+class ToolsApiExtendedServiceImplTest {
 
     /**
      * Tests that ES requests with long search terms fail.
@@ -19,7 +19,7 @@ public class ToolsApiExtendedServiceImplTest {
      * @throws IOException
      */
     @Test
-    public void testCheckSearchTermLimit() throws IOException {
+    void testCheckSearchTermLimit() throws IOException {
         String searchRequestExceedsLimitMessage = "Search request exceeds limit";
 
         try {

@@ -142,10 +142,10 @@ public class ExtendedTRSIT extends BaseIT {
                     && ((Map)stringObjectMap.get(AWESOME_PLATFORM)).size() == 3 && ((Map)stringObjectMap.get(AWESOME_PLATFORM))
                     .get("metadata").equals("metadata"));
             Assert
-                .assertEquals("AWESOME_PLATFORM has the wrong version", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"),
-                    "2.0.0");
-            Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"),
-                "1.0.0");
+                .assertEquals("AWESOME_PLATFORM has the wrong version", "2.0.0",
+                    ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"));
+            Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", "1.0.0",
+                ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"));
 
             // verification on a sourcefile level should flow up to to version and entry level
             Ga4GhApi api = new Ga4GhApi(verifyingUser);
@@ -164,10 +164,10 @@ public class ExtendedTRSIT extends BaseIT {
                     "new metadata", true);
             Assert.assertEquals(2, stringObjectMap.size());
             Assert
-                .assertEquals("AWESOME_PLATFORM has the wrong version", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"),
-                    "2.0.0");
-            Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"),
-                "1.0.0");
+                .assertEquals("AWESOME_PLATFORM has the wrong version", "2.0.0",
+                    ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"));
+            Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", "1.0.0",
+                ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"));
         }
 
         {
@@ -225,10 +225,10 @@ public class ExtendedTRSIT extends BaseIT {
             .toolsIdVersionsVersionIdTypeTestsPost("CWL", TRS_ID, VERSION_NAME, "/examples/cgpmap/bamOut/bam_input.json", "crummy platform",
                 "1.0.0", "metadata", true);
         Assert.assertEquals(2, stringObjectMap.size());
-        Assert.assertEquals("AWESOME_PLATFORM has the wrong version", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"),
-            "2.0.0");
-        Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"),
-            "1.0.0");
+        Assert.assertEquals("AWESOME_PLATFORM has the wrong version", "2.0.0",
+            ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"));
+        Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", "1.0.0",
+            ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"));
     }
 
     private Tag getSpecificVersion(DockstoreTool dockstoreTool) {

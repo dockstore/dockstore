@@ -179,7 +179,7 @@ public class UserResourceSwaggerIT extends BaseIT {
             userUserWebClient.getUser();
             fail("should be unreachable, user must not have been banned properly");
         } catch (ApiException e) {
-            assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
         }
 
         openApiUserWebClient.banUser(false, user.getId());
@@ -288,7 +288,7 @@ public class UserResourceSwaggerIT extends BaseIT {
             adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
 
         } catch (ApiException e) {
-            assertEquals(e.getCode(), HttpStatus.SC_NOT_FOUND);
+            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
             expectedAdminAccessToFail = true;
         }
         assertTrue(expectedAdminAccessToFail);
@@ -298,7 +298,7 @@ public class UserResourceSwaggerIT extends BaseIT {
         try {
             adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, SERVICE, null);
         } catch (ApiException e) {
-            assertEquals(e.getCode(), HttpStatus.SC_NOT_FOUND);
+            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
             expectedAdminServiceAccessToFail = true;
         }
         assertTrue(expectedAdminServiceAccessToFail);

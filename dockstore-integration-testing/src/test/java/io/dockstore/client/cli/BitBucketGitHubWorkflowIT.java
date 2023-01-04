@@ -168,7 +168,7 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
         assertTrue("should see at least 1 tags", refreshBitbucket.getWorkflowVersions().stream()
             .filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.TAG).count() >= 1);
 
-        assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
+        assertSame("github workflow is not in full mode", Workflow.ModeEnum.FULL, refreshGithub.getMode());
         assertTrue("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(),
                 4 <= refreshGithub.getWorkflowVersions().size());
         assertEquals("should find two versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
@@ -178,7 +178,7 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
                 .filter(WorkflowVersion::isValid).count(), 2,
             refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
-        assertSame("bitbucket workflow is not in full mode", refreshBitbucket.getMode(), Workflow.ModeEnum.FULL);
+        assertSame("bitbucket workflow is not in full mode", Workflow.ModeEnum.FULL, refreshBitbucket.getMode());
 
         assertEquals("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), 5,
             refreshBitbucket.getWorkflowVersions().size());

@@ -17,8 +17,8 @@
 
 package io.dockstore.webservice.helpers.statelisteners;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.dockstore.common.DescriptorLanguage;
@@ -36,10 +36,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class ElasticListenerTest {
+class ElasticListenerTest {
 
     private static final String FIRST_VERSION_NAME = "First";
     private static final String SECOND_VERSION_NAME = "Second";
@@ -56,7 +56,7 @@ public class ElasticListenerTest {
     private AppTool appTool;
 
 
-    @Before
+    @BeforeEach
     public void setup() throws IllegalAccessException {
 
         bioWorkflow = new BioWorkflow();
@@ -112,7 +112,7 @@ public class ElasticListenerTest {
     }
 
     @Test
-    public void testNoValidVersions() {
+    void testNoValidVersions() {
         // If there are no valid versions, the latest version id wins out
         List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
             final Entry detachedEntry = ElasticListener.removeIrrelevantProperties(entry);
@@ -121,7 +121,7 @@ public class ElasticListenerTest {
     }
 
     @Test
-    public void testNoVersions() {
+    void testNoVersions() {
         // In theory I don't think this should happen with a published entry, but just in case...
         List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
             entry.getWorkflowVersions().clear();
@@ -131,7 +131,7 @@ public class ElasticListenerTest {
     }
 
     @Test
-    public void testDefaultVersionSet() {
+    void testDefaultVersionSet() {
         bioWorkflow.setActualDefaultVersion(firstWorkflowVersion);
         validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(bioWorkflow),
             FIRST_VERSION_NAME);
@@ -155,7 +155,7 @@ public class ElasticListenerTest {
     }
 
     @Test
-    public void testValidVersionsNoDefault() {
+    void testValidVersionsNoDefault() {
         firstWorkflowVersion.setValid(true);
         firstTag.setValid(true);
         firstAppToolVersion.setValid(true);
@@ -170,7 +170,7 @@ public class ElasticListenerTest {
         entry.getWorkflowVersions().forEach(v -> {
             final Version version = (Version) v;
             if (version.getName().equals(versionName)) {
-                version.getSourceFiles().forEach(sf -> assertTrue(!((SourceFile)sf).getContent().isEmpty()));
+                version.getSourceFiles().forEach(sf -> assertFalse(((SourceFile) sf).getContent().isEmpty()));
             } else {
                 version.getSourceFiles().forEach(sf -> assertTrue(((SourceFile)sf).getContent().isEmpty()));
             }

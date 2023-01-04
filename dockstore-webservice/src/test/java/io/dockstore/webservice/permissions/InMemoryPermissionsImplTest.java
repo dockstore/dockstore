@@ -63,7 +63,7 @@ public class InMemoryPermissionsImplTest {
 
     @Test
     public void workflowsSharedWithUser() {
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size(), 0);
+        Assert.assertEquals(0, inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size());
         final Permission permission = new Permission();
         permission.setRole(Role.WRITER);
         permission.setEmail(janeDoeUser.getUsername());
@@ -79,7 +79,7 @@ public class InMemoryPermissionsImplTest {
 
     @Test
     public void removePermission() {
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size(), 0);
+        Assert.assertEquals(0, inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size());
         final Permission permission = new Permission("jane", Role.WRITER);
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
         inMemoryPermissions.setPermission(johnDoeUser, gooWorkflow, permission);
@@ -94,7 +94,7 @@ public class InMemoryPermissionsImplTest {
 
     @Test
     public void canDoAction() {
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size(), 0);
+        Assert.assertEquals(0, inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size());
         final Permission permission = new Permission(janeDoeUser.getUsername(), Role.READER);
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
         Assert.assertTrue(inMemoryPermissions.canDoAction(janeDoeUser, fooWorkflow, Role.Action.READ));

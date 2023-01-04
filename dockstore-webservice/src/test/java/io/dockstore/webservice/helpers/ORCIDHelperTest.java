@@ -16,35 +16,38 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.util.Arrays;
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ORCIDHelperTest {
+import java.util.Arrays;
+import org.junit.jupiter.api.Test;
+
+class ORCIDHelperTest {
 
     @Test
-    public void testDoiToUrl() {
+    void testDoiToUrl() {
 
         // Valid DOIs should be converted to a URL that references the doi.org proxy.
         // A valid DOI starts with "10." and contains a slash.
         for (String doi: Arrays.asList("10.5281/zenodo.5541915", "10.3.14159/foobar")) {
-            Assert.assertEquals("https://doi.org/" + doi, ORCIDHelper.doiToUrl(doi));
+            assertEquals("https://doi.org/" + doi, ORCIDHelper.doiToUrl(doi));
         }
 
         // Invalid DOIs, including DOI URLs, should be returned as-is.
         for (String nonDoi: Arrays.asList("https://doi.org/10.5281/zenodo.5541915", "12.13.14/potato", "")) {
-            Assert.assertEquals(nonDoi, ORCIDHelper.doiToUrl(nonDoi));
+            assertEquals(nonDoi, ORCIDHelper.doiToUrl(nonDoi));
         }
     }
 
     @Test
-    public void testIsValidOrcidId() {
-        Assert.assertTrue(ORCIDHelper.isValidOrcidId("1234-1234-1234-1234"));
-        Assert.assertTrue(ORCIDHelper.isValidOrcidId("0000-0002-9079-593X"));
-        Assert.assertFalse(ORCIDHelper.isValidOrcidId("0000-0002-9079-593P"));
-        Assert.assertFalse(ORCIDHelper.isValidOrcidId("0000-0002-9079-59X3"));
-        Assert.assertFalse(ORCIDHelper.isValidOrcidId("https://orcid.org/1234-1234-1234-1234"));
-        Assert.assertFalse(ORCIDHelper.isValidOrcidId("1-1-1-1"));
-        Assert.assertFalse(ORCIDHelper.isValidOrcidId("orcidId"));
+    void testIsValidOrcidId() {
+        assertTrue(ORCIDHelper.isValidOrcidId("1234-1234-1234-1234"));
+        assertTrue(ORCIDHelper.isValidOrcidId("0000-0002-9079-593X"));
+        assertFalse(ORCIDHelper.isValidOrcidId("0000-0002-9079-593P"));
+        assertFalse(ORCIDHelper.isValidOrcidId("0000-0002-9079-59X3"));
+        assertFalse(ORCIDHelper.isValidOrcidId("https://orcid.org/1234-1234-1234-1234"));
+        assertFalse(ORCIDHelper.isValidOrcidId("1-1-1-1"));
+        assertFalse(ORCIDHelper.isValidOrcidId("orcidId"));
     }
 }

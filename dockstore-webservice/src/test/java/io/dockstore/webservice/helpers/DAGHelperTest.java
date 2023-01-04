@@ -16,26 +16,26 @@
 package io.dockstore.webservice.helpers;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author gluu
  * @since 1.8.0
  */
-public class DAGHelperTest {
+class DAGHelperTest {
 
     /**
      * Tests that a unclean DAG is converted to a clean one.
      * Also tests that a clean DAG is unaffected.
      */
     @Test
-    public void cleanDAGTest() {
+    void cleanDAGTest() {
         String uncleanDAG = fixture("fixtures/uncleanDAG.json");
         String cleanDAG = DAGHelper.cleanDAG(uncleanDAG);
-        Assert.assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanDAG.trim());
+        assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanDAG.trim());
         String cleanerDAG = DAGHelper.cleanDAG(cleanDAG);
-        Assert.assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanerDAG.trim());
+        assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanerDAG.trim());
     }
 }

@@ -15,6 +15,10 @@
  */
 package core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Validation;
@@ -28,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.SortedSet;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
@@ -48,8 +51,8 @@ public class CWLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Keiran Raine", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "keiranmraine@gmail.com", entry.getEmail());
+        assertEquals("incorrect author", "Keiran Raine", entry.getAuthor());
+        assertEquals("incorrect email", "keiranmraine@gmail.com", entry.getEmail());
     }
 
     @Test
@@ -57,8 +60,8 @@ public class CWLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
+        assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
+        assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
     }
 
     /**
@@ -71,9 +74,9 @@ public class CWLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example1.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
-        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription());
+        assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
+        assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
+        assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription());
     }
 
     /**
@@ -85,9 +88,9 @@ public class CWLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example2.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
-        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription());
+        assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
+        assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
+        assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription());
     }
 
     /**
@@ -99,9 +102,9 @@ public class CWLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example3.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
-        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.", entry.getDescription());
+        assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
+        assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
+        assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.", entry.getDescription());
     }
 
     /**
@@ -114,9 +117,9 @@ public class CWLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         // This checks the version is not created but not that it was never parsed
-        Assert.assertEquals(false, entry.isValid());
+        assertFalse(entry.isValid());
         SortedSet<Validation> validations = entry.getValidations();
-        Assert.assertTrue(validations.first().getMessage().contains("CWL file is malformed or missing"));
+        assertTrue(validations.first().getMessage().contains("CWL file is malformed or missing"));
     }
 
     @Test
@@ -124,7 +127,7 @@ public class CWLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example3.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
+        assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
+        assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
     }
 }
