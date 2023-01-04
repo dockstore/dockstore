@@ -16,50 +16,51 @@
 
 package io.dockstore.webservice.helpers;
 
-import com.google.api.client.util.Charsets;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.google.common.io.Files;
 import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.Test;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 public class CheckUrlHelperTest {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     @Test
     public void getUrlsFromJSON() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("testParameterFile1.json"));
-        String s = Files.asCharSource(file, Charsets.UTF_8).read();
+        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
         Set<String> urls = CheckUrlHelper.getUrlsFromJSON(s);
-        Assert.assertEquals("Should have two from GitHub, 1 from FTP",
-            3, urls.size());
+        assertEquals(3, urls.size(), "Should have two from GitHub, 1 from FTP");
     }
 
     @Test
     public void getUrlsFromYAML() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("testParameterFile1.yaml"));
-        String s = Files.asCharSource(file, Charsets.UTF_8).read();
+        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
         Set<String> urls = CheckUrlHelper.getUrlsFromYAML(s);
-        Assert.assertEquals("Should have same amount of URLs as the JSON equivalent above",
-            3, urls.size());
+        assertEquals(3, urls.size(), "Should have same amount of URLs as the JSON equivalent above");
     }
 
     @Test
     public void getUrlsFromInvalidFile() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("valid_description_example.wdl"));
-        String s = Files.asCharSource(file, Charsets.UTF_8).read();
-        Assert.assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.YAML).isEmpty());
-        Assert.assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.JSON).isEmpty());
+        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
+        assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.YAML).isEmpty());
+        assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.JSON).isEmpty());
     }
 }

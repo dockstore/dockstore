@@ -1,10 +1,10 @@
 package io.dockstore.webservice.permissions.sam;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -46,17 +46,15 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.http.HttpStatus;
 import org.hamcrest.CoreMatchers;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 public class SamPermissionsImplTest {
 
@@ -66,24 +64,19 @@ public class SamPermissionsImplTest {
     private static final String JANE_DOE_GMAIL_COM = "jane.doe@gmail.com";
     private static final String JOHN_SMITH_GMAIL_COM = "john.smith@gmail.com";
     private static final String JANE_DOE_GITHUB_ID = "jdoe";
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
+
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+
     private AccessPolicyResponseEntry ownerPolicy;
     private AccessPolicyResponseEntry writerPolicy;
     private SamPermissionsImpl samPermissionsImpl;
-    private User janeDoeUserMock = Mockito.mock(User.class);
-    private User johnSmithUserMock = Mockito.mock(User.class);
-    private User noGoogleUser = Mockito.mock(User.class);
+    private final User janeDoeUserMock = Mockito.mock(User.class);
+    private final User johnSmithUserMock = Mockito.mock(User.class);
+    private final User noGoogleUser = Mockito.mock(User.class);
     /**
      * A workflow mock with <code>janeDoeUserMock</code> as its user
      */
@@ -97,7 +90,7 @@ public class SamPermissionsImplTest {
     private Permission readerPermission;
     private AccessPolicyResponseEntry readerAccessPolicyResponseEntry;
 
-    @Before
+    @BeforeEach
     public void setup() {
         ownerPolicy = new AccessPolicyResponseEntry();
         ownerPolicy.setPolicyName(SamConstants.OWNER_POLICY);
@@ -145,9 +138,8 @@ public class SamPermissionsImplTest {
         ownerPermission = new Permission();
         ownerPermission.setEmail("jdoe@ucsc.edu");
         ownerPermission.setRole(Role.OWNER);
-        assertThat(samPermissionsImpl
-                        .accessPolicyResponseEntryToUserPermissions(Collections.singletonList(ownerPolicy)),
-                CoreMatchers.is(Collections.singletonList(ownerPermission)));
+        MatcherAssert.assertThat(samPermissionsImpl
+                        .accessPolicyResponseEntryToUserPermissions(Collections.singletonList(ownerPolicy)), CoreMatchers.is(Collections.singletonList(ownerPermission)));
 
         writerPermission = new Permission();
         writerPermission.setEmail(JOHN_SMITH_GMAIL_COM);
@@ -192,8 +184,7 @@ public class SamPermissionsImplTest {
         // the most powerful role.
         final List<Permission> permissions = samPermissionsImpl
                 .removeDuplicateEmails(Arrays.asList(ownerPermission, writerPermission, readerPermission));
-        assertEquals(
-            2, permissions.size());
+        assertEquals(2, permissions.size());
         assertTrue(permissions.contains(ownerPermission));
         assertTrue(permissions.contains(writerPermission));
         assertFalse(permissions.contains(readerPermission));
@@ -240,9 +231,9 @@ public class SamPermissionsImplTest {
 
         Workflow fooWorkflow = Mockito.mock(Workflow.class);
         when(fooWorkflow.getWorkflowPath()).thenReturn(FOO_WORKFLOW_NAME, GOO_WORKFLOW_NAME);
-        assertTrue(samPermissionsImpl.canDoAction(janeDoeUserMock, fooWorkflow, Role.Action.READ));
+        assertTrue(samPermissionsImpl.canDoAction(janeDoeUserMock, fooWorkflow, Action.READ));
         Workflow gooWorkflow = Mockito.mock(Workflow.class);
-        assertFalse(samPermissionsImpl.canDoAction(janeDoeUserMock, gooWorkflow, Role.Action.READ));
+        assertFalse(samPermissionsImpl.canDoAction(janeDoeUserMock, gooWorkflow, Action.READ));
     }
 
     @Test
@@ -252,10 +243,10 @@ public class SamPermissionsImplTest {
         when(samPermissionsImpl.getResourcesApi(janeDoeUserMock)).thenReturn(resourcesApiMock);
 
         when(workflowInstance.getWorkflowPath()).thenReturn(FOO_WORKFLOW_NAME);
-        assertTrue(samPermissionsImpl.canDoAction(janeDoeUserMock, workflowInstance, Role.Action.WRITE));
+        assertTrue(samPermissionsImpl.canDoAction(janeDoeUserMock, workflowInstance, Action.WRITE));
         Workflow gooWorkflow = Mockito.mock(Workflow.class);
         when(gooWorkflow.getWorkflowPath()).thenReturn(GOO_WORKFLOW_NAME);
-        assertFalse(samPermissionsImpl.canDoAction(janeDoeUserMock, gooWorkflow, Role.Action.WRITE));
+        assertFalse(samPermissionsImpl.canDoAction(janeDoeUserMock, gooWorkflow, Action.WRITE));
     }
 
     @Test
@@ -276,9 +267,7 @@ public class SamPermissionsImplTest {
             final Permission permission = new Permission();
             permission.setEmail("jdoe@example.com");
             permission.setRole(Role.WRITER);
-            thrown.expect(CustomWebApplicationException.class);
-            samPermissionsImpl.setPermission(janeDoeUserMock, workflowInstance, permission);
-            fail("setPermissions did not throw Exception");
+            assertThrows(CustomWebApplicationException.class, () -> samPermissionsImpl.setPermission(janeDoeUserMock, workflowInstance, permission));
         } catch (ApiException e) {
             fail();
             e.printStackTrace();
@@ -360,7 +349,7 @@ public class SamPermissionsImplTest {
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
                 .thenReturn(Boolean.TRUE);
         final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(janeDoeUserMock, workflowInstance);
-        assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
+        assertEquals(Action.values().length, actions.size()); // Owner can perform all actions
     }
 
     @Test
@@ -373,7 +362,7 @@ public class SamPermissionsImplTest {
         when(johnSmithUserMock.getTemporaryCredential()).thenReturn("whatever");
         final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(johnSmithUserMock, workflowInstance);
         assertEquals(2, actions.size());
-        assertTrue(actions.contains(Role.Action.WRITE) && actions.contains(Role.Action.READ));
+        assertTrue(actions.contains(Action.WRITE) && actions.contains(Action.READ));
     }
 
     @Test
@@ -388,7 +377,7 @@ public class SamPermissionsImplTest {
         final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(
             johnSmithUserMock, workflowInstance);
         assertEquals(1, actions.size());
-        assertTrue(actions.contains(Role.Action.READ));
+        assertTrue(actions.contains(Action.READ));
     }
 
     @Test
@@ -396,7 +385,7 @@ public class SamPermissionsImplTest {
         when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(
             janeDoeUserMock)));
         final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(janeDoeUserMock, workflowInstance);
-        assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
+        assertEquals(Action.values().length, actions.size()); // Owner can perform all actions
     }
 
     /**
@@ -412,8 +401,7 @@ public class SamPermissionsImplTest {
                 .thenReturn(Boolean.FALSE);
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.WRITE)))
                 .thenReturn(Boolean.FALSE);
-        thrown.expect(CustomWebApplicationException.class);
-        samPermissionsImpl.getPermissionsForWorkflow(janeDoeUserMock, workflowInstance);
+        assertThrows(CustomWebApplicationException.class, () -> samPermissionsImpl.getPermissionsForWorkflow(janeDoeUserMock, workflowInstance));
     }
 
     @Test
@@ -448,9 +436,10 @@ public class SamPermissionsImplTest {
         when(janeDoeUserMock.getUsername()).thenReturn(JANE_DOE_GITHUB_ID);
         when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(
             janeDoeUserMock)));
-        thrown.expect(CustomWebApplicationException.class);
-        samPermissionsImpl.checkEmailNotOriginalOwner(JANE_DOE_GMAIL_COM, workflowInstance);
-        samPermissionsImpl.checkEmailNotOriginalOwner("johndoe@example.com", workflowInstance);
+        assertThrows(CustomWebApplicationException.class, () -> {
+            samPermissionsImpl.checkEmailNotOriginalOwner(JANE_DOE_GMAIL_COM, workflowInstance);
+            samPermissionsImpl.checkEmailNotOriginalOwner("johndoe@example.com", workflowInstance);
+        });
     }
 
     @Test
@@ -529,9 +518,7 @@ public class SamPermissionsImplTest {
 
         // Case 5. User is owner and has shared
         onlyOwner.getPolicy().getMemberEmails().add("jdoe@ucsc.edu");
-        thrown.expect(CustomWebApplicationException.class);
-        samPermissionsImpl.selfDestruct(janeDoeUserMock);
-
+        assertThrows(CustomWebApplicationException.class, () -> samPermissionsImpl.selfDestruct(janeDoeUserMock));
     }
 
     /**

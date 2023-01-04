@@ -1,18 +1,20 @@
 package io.dockstore.webservice.helpers;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 public class ConfigHelperTest {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     /**
      * Tests that a mock git.properties file can be read to surface
@@ -23,12 +25,12 @@ public class ConfigHelperTest {
     public void readGitProperties() {
         String gitPropertiesFile = "fixtures/git.properties";
         final ConfigHelper.GitInfo gitInfo = ConfigHelper.readGitProperties(gitPropertiesFile);
-        Assert.assertEquals("test-id-short", gitInfo.commitId);
-        Assert.assertEquals("test-version",  gitInfo.buildVersion);
+        assertEquals("test-id-short", gitInfo.commitId);
+        assertEquals("test-version", gitInfo.buildVersion);
 
         String failGitPropertiesFile = "fail.git.properties";
         final ConfigHelper.GitInfo failGitInfo = ConfigHelper.readGitProperties(failGitPropertiesFile);
-        Assert.assertEquals("git property not found", failGitInfo.commitId);
-        Assert.assertEquals("git property not found", failGitInfo.buildVersion);
+        assertEquals("git property not found", failGitInfo.commitId);
+        assertEquals("git property not found", failGitInfo.buildVersion);
     }
 }
