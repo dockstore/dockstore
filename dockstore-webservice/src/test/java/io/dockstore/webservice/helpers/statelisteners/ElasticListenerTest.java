@@ -200,7 +200,7 @@ public class ElasticListenerTest {
         descriptorTypeVersions = entry.get("descriptor_type_versions");
         assertEquals("Should not have descriptor type versions if there's more than one language", 0, descriptorTypeVersions.size());
 
-        // appTool has one descriptor type version
+        // appTool has no descriptor type versions
         entry = ElasticListener.dockstoreEntryToElasticSearchObject(appTool);
         descriptorTypeVersions = entry.get("descriptor_type_versions");
         assertEquals(0, descriptorTypeVersions.size());

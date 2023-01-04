@@ -183,6 +183,9 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool deleteHostedVersion(User user, Long entryId, String version) {
         Tool tool = super.deleteHostedVersion(user, entryId, version);
+        // Deleting a version can change the descriptor types of the tool
+        List<String> descriptorTypes =  tool.calculateDescriptorType();
+        tool.setDescriptorType(descriptorTypes);
         PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
         return tool;
     }

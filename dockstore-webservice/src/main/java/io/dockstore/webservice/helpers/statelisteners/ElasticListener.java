@@ -487,7 +487,7 @@ public class ElasticListener implements StateListenerInterface {
     private static List<String> getDistinctDescriptorTypeVersions(Entry entry, Set<? extends Version> workflowVersions) {
         String language;
         if (entry instanceof Tool && ((Tool)entry).getDescriptorType().size() == 1) {
-            // Only set descriptor type versions if there's one descriptor type...WDL tools will be gone soon
+            // Only set descriptor type versions if there's one descriptor type otherwise we can't tell which version belongs to which type without looking at the source files
             language = ((Tool)entry).getDescriptorType().get(0);
         } else if (entry instanceof BioWorkflow || entry instanceof AppTool) {
             language = ((Workflow)entry).getDescriptorType().toString();
