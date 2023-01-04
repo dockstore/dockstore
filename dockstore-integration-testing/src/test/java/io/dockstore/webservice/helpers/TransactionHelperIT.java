@@ -16,43 +16,44 @@
 
 package io.dockstore.webservice.helpers;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Test the TransactionHelper class.
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category(ConfidentialTest.class)
 public class TransactionHelperIT extends BaseIT {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     private Session session;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -71,7 +72,7 @@ public class TransactionHelperIT extends BaseIT {
     private void shouldThrow(Runnable runnable) {
         try {
             runnable.run();
-            Assert.fail("should have thrown");
+            fail("should have thrown");
         } catch (Exception e) {
             // expected path of execution
         }
@@ -80,8 +81,8 @@ public class TransactionHelperIT extends BaseIT {
     @Test
     public void testTransactionAutoCommit() {
         TransactionHelper helper = new TransactionHelper(session);
-        helper.transaction(() -> insert());
-        helper.transaction(() -> Assert.assertEquals(1, count()));
+        helper.transaction(this::insert);
+        helper.transaction(() -> assertEquals(1, count()));
     }
 
     @Test
@@ -91,8 +92,8 @@ public class TransactionHelperIT extends BaseIT {
             insert();
             throw new RuntimeException("foo");
         }));
-        helper.transaction(() -> Assert.assertEquals(0, count()));
-        Assert.assertNull(helper.thrown());
+        helper.transaction(() -> assertEquals(0, count()));
+        assertNull(helper.thrown());
     }
 
     @Test
@@ -100,27 +101,27 @@ public class TransactionHelperIT extends BaseIT {
         TransactionHelper helper = new TransactionHelper(session);
         helper.commit();
         helper.rollback();
-        helper.transaction(() -> insert());
+        helper.transaction(this::insert);
         helper.rollback();
         helper.rollback();
         helper.commit();
         helper.commit();
-        shouldThrow(() -> helper.transaction(() -> insert()));
-        Assert.assertNull(helper.thrown());
+        shouldThrow(() -> helper.transaction(this::insert));
+        assertNull(helper.thrown());
         helper.commit();
         helper.commit();
         helper.rollback();
         helper.rollback();
-        helper.transaction(() -> Assert.assertEquals(1, count()));
+        helper.transaction(() -> assertEquals(1, count()));
     }
 
     @Test
     public void testThrowsOnClosedSession() {
         TransactionHelper helper = new TransactionHelper(session);
         session.close();
-        shouldThrow(() -> helper.begin());
-        Assert.assertNotNull(helper.thrown());
-        shouldThrow(() -> helper.transaction(() -> insert()));
-        Assert.assertNotNull(helper.thrown());
+        shouldThrow(helper::begin);
+        assertNotNull(helper.thrown());
+        shouldThrow(() -> helper.transaction(this::insert));
+        assertNotNull(helper.thrown());
     }
 }

@@ -50,13 +50,16 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Focuses on creating a large amount of tools to test indexing
@@ -65,6 +68,7 @@ import org.slf4j.LoggerFactory;
  */
 @Category({ BenchmarkTest.class, ToolTest.class })
 @Ignore("more like benchmarking than a test per say")
+@ExtendWith(SystemStubsExtension.class)
 public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     private static final int TOOL_COUNT = 10;
@@ -74,10 +78,11 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     private static final String LEXICON = "ABCDEFGHIJKLMNOPQRSTUVWXYZ12345674890";
     private static final java.util.Random RAND = new java.util.Random();
     private static final Set<String> IDENTIFIERS = new HashSet<>();
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
     private DockstoreWebserviceApplication application;
     private Session session;
     private ArrayList<String> fixedStringLabels;

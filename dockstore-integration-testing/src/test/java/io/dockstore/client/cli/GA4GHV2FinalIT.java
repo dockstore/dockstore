@@ -18,8 +18,8 @@ package io.dockstore.client.cli;
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static io.openapi.api.impl.ServiceInfoApiServiceImpl.getService;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
@@ -35,8 +35,7 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author dyuen
@@ -85,7 +84,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
         List<Tool> responseObject = response.readEntity(new GenericType<>() {
         });
 
-        Assert.assertEquals(count, responseObject.size());
+        assertEquals(count, responseObject.size());
     }
 
     /**
@@ -96,15 +95,15 @@ public class GA4GHV2FinalIT extends GA4GHIT {
         Response response = checkedResponse(baseURL + "service-info");
         TRSService responseObject = response.readEntity(TRSService.class);
         Service service = getService();
-        Assert.assertEquals(service.getDocumentationUrl(), responseObject.getDocumentationUrl());
-        Assert.assertEquals(service.getContactUrl(), responseObject.getContactUrl());
-        Assert.assertEquals(service.getDescription(), responseObject.getDescription());
-        Assert.assertEquals(service.getEnvironment(), responseObject.getEnvironment());
-        Assert.assertEquals(service.getName(), responseObject.getName());
-        Assert.assertEquals(service.getType().getArtifact(), responseObject.getType().getArtifact());
-        Assert.assertEquals(service.getType().getGroup(), responseObject.getType().getGroup());
-        Assert.assertEquals(service.getType().getVersion(), responseObject.getType().getVersion());
-        Assert.assertEquals(service.getVersion(), responseObject.getVersion());
+        assertEquals(service.getDocumentationUrl(), responseObject.getDocumentationUrl());
+        assertEquals(service.getContactUrl(), responseObject.getContactUrl());
+        assertEquals(service.getDescription(), responseObject.getDescription());
+        assertEquals(service.getEnvironment(), responseObject.getEnvironment());
+        assertEquals(service.getName(), responseObject.getName());
+        assertEquals(service.getType().getArtifact(), responseObject.getType().getArtifact());
+        assertEquals(service.getType().getGroup(), responseObject.getType().getGroup());
+        assertEquals(service.getType().getVersion(), responseObject.getType().getVersion());
+        assertEquals(service.getVersion(), responseObject.getVersion());
     }
 
     private void toolsIdTool() throws Exception {
@@ -112,10 +111,10 @@ public class GA4GHV2FinalIT extends GA4GHIT {
         Tool responseObject = response.readEntity(Tool.class);
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
         // regression test for #1248
-        assertTrue("registry_url should never be null", responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
-            .allMatch(version -> version.getImages().get(0).getRegistryHost() != null));
-        assertTrue("imageName should never be null", responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
-            .allMatch(version -> version.getImages().get(0).getImageName() != null));
+        assertTrue(responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
+            .allMatch(version -> version.getImages().get(0).getRegistryHost() != null), "registry_url should never be null");
+        assertTrue(responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
+            .allMatch(version -> version.getImages().get(0).getImageName() != null), "imageName should never be null");
         // search by id
         response = checkedResponse(baseURL + "tools?id=quay.io%2Ftest_org%2Ftest6");
         List<Tool> responseList = response.readEntity(new GenericType<>() {
@@ -404,9 +403,9 @@ public class GA4GHV2FinalIT extends GA4GHIT {
     public void testGetHeaderLinksContainFilters() throws Exception {
         Response response = checkedResponse(baseURL + "tools?toolClass=Tool&limit=1");
         MultivaluedMap<String, Object> headers = response.getHeaders();
-        Assert.assertTrue(headers.get("self_link").toString().contains("toolClass=Tool"));
-        Assert.assertTrue(headers.get("last_page").toString().contains("toolClass=Tool"));
-        Assert.assertTrue(headers.get("next_page").toString().contains("toolClass=Tool"));
+        assertTrue(headers.get("self_link").toString().contains("toolClass=Tool"));
+        assertTrue(headers.get("last_page").toString().contains("toolClass=Tool"));
+        assertTrue(headers.get("next_page").toString().contains("toolClass=Tool"));
     }
 
 }

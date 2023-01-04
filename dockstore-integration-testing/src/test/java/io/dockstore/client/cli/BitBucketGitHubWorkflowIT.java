@@ -16,12 +16,15 @@
 
 package io.dockstore.client.cli;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
@@ -41,7 +44,9 @@ import io.swagger.client.model.FileWrapper;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.Workflow.ModeEnum;
 import io.swagger.client.model.WorkflowVersion;
+import io.swagger.client.model.WorkflowVersion.ReferenceTypeEnum;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -52,15 +57,15 @@ import org.apache.commons.io.IOUtils;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Extra confidential integration tests, focus on testing workflow interactions
@@ -68,6 +73,8 @@ import org.junit.rules.ExpectedException;
  *
  * @author dyuen
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category(BitBucketTest.class)
 public class BitBucketGitHubWorkflowIT extends BaseIT {
     public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
@@ -78,21 +85,17 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW =
         SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
 
     private WorkflowDAO workflowDAO;
     private FileDAO fileDAO;
     private WorkflowVersionDAO workflowVersionDAO;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -106,7 +109,7 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
         ManagedSessionContext.bind(session);
 
     }
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
@@ -144,7 +147,7 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
 
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
-        Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
+        assertNotEquals(null, user.getUserProfiles(), "getUser() endpoint should actually return the user profile");
 
         workflowApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "",
                 DescriptorLanguage.CWL.getShortName(), "/test.json");
@@ -163,31 +166,29 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
         final Workflow refreshBitbucket = workflowApi.refresh(workflowByPathBitbucket.getId(), false);
 
         // tests for reference type for bitbucket workflows
-        assertTrue("should see at least 4 branches", refreshBitbucket.getWorkflowVersions().stream()
-            .filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.BRANCH).count() >= 4);
-        assertTrue("should see at least 1 tags", refreshBitbucket.getWorkflowVersions().stream()
-            .filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.TAG).count() >= 1);
+        assertTrue(refreshBitbucket.getWorkflowVersions().stream()
+            .filter(version -> version.getReferenceType() == ReferenceTypeEnum.BRANCH).count() >= 4, "should see at least 4 branches");
+        assertTrue(refreshBitbucket.getWorkflowVersions().stream()
+            .filter(version -> version.getReferenceType() == ReferenceTypeEnum.TAG).count() >= 1, "should see at least 1 tags");
 
-        assertSame("github workflow is not in full mode", Workflow.ModeEnum.FULL, refreshGithub.getMode());
-        assertTrue("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(),
-                4 <= refreshGithub.getWorkflowVersions().size());
-        assertEquals("should find two versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
-                .filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count(), 2,
-            refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count());
-        assertEquals("should find two valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
-                .filter(WorkflowVersion::isValid).count(), 2,
-            refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
+        assertSame(ModeEnum.FULL, refreshGithub.getMode(), "github workflow is not in full mode");
+        assertTrue(4 <= refreshGithub.getWorkflowVersions().size(), "github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size());
+        assertEquals(2, refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count(),
+            "should find two versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
+                    .filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count());
+        assertEquals(2, refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count(),
+            "should find two valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
+                    .filter(WorkflowVersion::isValid).count());
 
-        assertSame("bitbucket workflow is not in full mode", Workflow.ModeEnum.FULL, refreshBitbucket.getMode());
+        assertSame(ModeEnum.FULL, refreshBitbucket.getMode(), "bitbucket workflow is not in full mode");
 
-        assertEquals("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), 5,
-            refreshBitbucket.getWorkflowVersions().size());
-        assertEquals("should find 4 versions with files for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
-                .filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count(), 4,
-            refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count());
-        assertEquals("should find 0 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
-                .filter(WorkflowVersion::isValid).count(), 0,
-            refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
+        assertEquals(5, refreshBitbucket.getWorkflowVersions().size(), "bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size());
+        assertEquals(4, refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count(),
+            "should find 4 versions with files for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
+                    .filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count());
+        assertEquals(0, refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count(),
+            "should find 0 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
+                    .filter(WorkflowVersion::isValid).count());
 
         // should not be able to get content normally
         Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(CommonTestUtilities.getWebClient(false, null, testingPostgres));
@@ -202,7 +203,7 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
         assertTrue(exceptionThrown);
         FileWrapper adminToolDescriptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL");
-        assertTrue("could not get content via optional auth", adminToolDescriptor != null && !adminToolDescriptor.getContent().isEmpty());
+        assertTrue(adminToolDescriptor != null && !adminToolDescriptor.getContent().isEmpty(), "could not get content via optional auth");
 
         workflowApi.publish(refreshGithub.getId(), CommonTestUtilities.createPublishRequest(true));
         // check on URLs for workflows via ga4gh calls
@@ -214,7 +215,7 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
 
         // check on commit ids for github
         boolean allHaveCommitIds = refreshGithub.getWorkflowVersions().stream().noneMatch(version -> version.getCommitID().isEmpty());
-        assertTrue("not all workflows seem to have commit ids", allHaveCommitIds);
+        assertTrue(allHaveCommitIds, "not all workflows seem to have commit ids");
     }
 
 
@@ -234,7 +235,7 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
             .manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "altname", "wdl", "/test.json");
-        Assert.assertEquals("test repo for CWL and WDL workflows", githubWorkflow.getTopicAutomatic());
+        assertEquals("test repo for CWL and WDL workflows", githubWorkflow.getTopicAutomatic());
 
         // Manually register workflow bitbucket
         Workflow bitbucketWorkflow = workflowApi
@@ -243,9 +244,9 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
         // Assert some things
         final long count = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
-        assertEquals("No workflows are in full mode", 0, count);
+        assertEquals(0, count, "No workflows are in full mode");
         final long count2 = testingPostgres.runSelectStatement("select count(*) from workflow where workflowname = 'altname'", long.class);
-        assertEquals("There should be two workflows with name altname, there are " + count2, 2, count2);
+        assertEquals(2, count2, "There should be two workflows with name altname, there are " + count2);
 
         // Publish github workflow
         Workflow refreshedWorkflow = workflowApi.refresh(githubWorkflow.getId(), false);
@@ -255,7 +256,8 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
         final String tagName = "1.0.0";
 
         Optional<WorkflowVersion> testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(tagName)).findFirst();
-        Assert.assertTrue("A workflow version with a descriptor that does not have a description should fall back to README", testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"));
+        assertTrue(testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"),
+            "A workflow version with a descriptor that does not have a description should fall back to README");
 
         // Intentionally mess up description to test if refresh fixes it
         testingPostgres.runUpdateStatement("update version_metadata set description='bad_potato'");
@@ -264,21 +266,21 @@ public class BitBucketGitHubWorkflowIT extends BaseIT {
         workflowApi.publish(githubWorkflow.getId(), publishRequest);
 
         testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(tagName)).findFirst();
-        Assert.assertTrue("A workflow version that had a README description should get updated", testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"));
+        assertTrue(testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"), "A workflow version that had a README description should get updated");
 
         // Assert some things
-        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size(),
-            1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size());
+        assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size(),
+            "should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size());
         final long count3 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
-        assertEquals("One workflow is in full mode", 1, count3);
+        assertEquals(1, count3, "One workflow is in full mode");
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid = 't'", long.class);
-        assertTrue("There should be at least 2 valid version tags, there are " + count4, 2 <= count4);
+        assertTrue(2 <= count4, "There should be at least 2 valid version tags, there are " + count4);
 
         workflowApi.refresh(bitbucketWorkflow.getId(), false);
-        thrown.expect(ApiException.class);
         // Publish bitbucket workflow, will fail now since the workflow test case is actually invalid now
-        workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
+        assertThrows(ApiException.class, () -> workflowApi.publish(bitbucketWorkflow.getId(), publishRequest));
+
     }
 
     /**

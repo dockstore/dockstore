@@ -18,9 +18,12 @@ package io.dockstore.client.cli;
 
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.Lists;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
@@ -47,35 +50,30 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Tests CRUD style operations using OpenApi3
  *
  * @author dyuen
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 public class OpenApiCRUDClientIT extends BaseIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
 
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     @Test
     public void testToolCreation() {
@@ -85,7 +83,7 @@ public class OpenApiCRUDClientIT extends BaseIT {
         webClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         MetadataApi metadataApi = new MetadataApi(webClient);
         final List<SourceControlBean> sourceControlList = metadataApi.getSourceControlList();
-        Assert.assertFalse(sourceControlList.isEmpty());
+        assertFalse(sourceControlList.isEmpty());
     }
 
     @Test
@@ -96,7 +94,7 @@ public class OpenApiCRUDClientIT extends BaseIT {
         webClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
         final List<ToolClass> toolClasses = ga4Ghv20Api.toolClassesGet();
-        Assert.assertTrue(toolClasses.size() >= 2);
+        assertTrue(toolClasses.size() >= 2);
     }
 
     @Test
@@ -112,9 +110,9 @@ public class OpenApiCRUDClientIT extends BaseIT {
                 .toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         final List<Tool> tools = ga4Ghv20Api
                 .toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
-        Assert.assertFalse(workflows.isEmpty());
-        Assert.assertFalse(tools.isEmpty());
-        Assert.assertEquals(workflows.size() + tools.size(), allStuff.size());
+        assertFalse(workflows.isEmpty());
+        assertFalse(tools.isEmpty());
+        assertEquals(workflows.size() + tools.size(), allStuff.size());
     }
 
 
@@ -151,7 +149,7 @@ public class OpenApiCRUDClientIT extends BaseIT {
             dockerfile.setPath("/Dockerfile");
             dockerfile.setAbsolutePath("/Dockerfile");
             DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
-            assertTrue("a tool lacks a date", dockstoreTool.getLastModifiedDate() != null && dockstoreTool.getLastModified() != 0);
+            assertTrue(dockstoreTool.getLastModifiedDate() != null && dockstoreTool.getLastModified() != 0, "a tool lacks a date");
 
             SourceFile file2 = new SourceFile();
             file2.setContent("{\"message\": \"Hello world!\"}");
@@ -179,26 +177,26 @@ public class OpenApiCRUDClientIT extends BaseIT {
         System.out.println(workflows.size());
         System.out.println(tools.size());
 
-        Assert.assertFalse(workflows.isEmpty());
-        Assert.assertFalse(tools.isEmpty());
+        assertFalse(workflows.isEmpty());
+        assertFalse(tools.isEmpty());
         // capped due to page size
-        Assert.assertEquals(100, allStuff.size());
-        Assert.assertEquals(1, workflows.size());
-        Assert.assertEquals(100, tools.size());
+        assertEquals(100, allStuff.size());
+        assertEquals(1, workflows.size());
+        assertEquals(100, tools.size());
 
         // check on paging structure when not mixing tools and workflows
         final List<Tool> firstToolPage = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, "0", 10);
-        Assert.assertEquals("awesomeTool0", firstToolPage.get(0).getName());
-        Assert.assertEquals("awesomeTool9", firstToolPage.get(firstToolPage.size() - 1).getName());
+        assertEquals("awesomeTool0", firstToolPage.get(0).getName());
+        assertEquals("awesomeTool9", firstToolPage.get(firstToolPage.size() - 1).getName());
         final List<Tool> secondToolPage = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, "1", 10);
-        Assert.assertEquals("awesomeTool10", secondToolPage.get(0).getName());
-        Assert.assertEquals("awesomeTool19", secondToolPage.get(firstToolPage.size() - 1).getName());
+        assertEquals("awesomeTool10", secondToolPage.get(0).getName());
+        assertEquals("awesomeTool19", secondToolPage.get(firstToolPage.size() - 1).getName());
         final List<Tool> lastToolPage = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, "9", 10);
-        Assert.assertEquals("awesomeTool90", lastToolPage.get(0).getName());
-        Assert.assertEquals("awesomeTool99", lastToolPage.get(firstToolPage.size() - 1).getName());
+        assertEquals("awesomeTool90", lastToolPage.get(0).getName());
+        assertEquals("awesomeTool99", lastToolPage.get(firstToolPage.size() - 1).getName());
 
         // check on paging structure when mixing tools and workflows
         final List<Tool> mixedPage = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, "3", 30);
-        Assert.assertEquals(2, mixedPage.stream().map(Tool::getToolclass).distinct().count());
+        assertEquals(2, mixedPage.stream().map(Tool::getToolclass).distinct().count());
     }
 }

@@ -23,21 +23,23 @@ import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.client.cli.BasicIT;
 import io.dockstore.client.cli.OrganizationIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ValidationConstants;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
@@ -64,7 +66,10 @@ import io.swagger.client.model.LambdaEvent;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Validation;
+import io.swagger.client.model.Validation.TypeEnum;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.Workflow.DescriptorTypeEnum;
+import io.swagger.client.model.Workflow.ModeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,19 +79,21 @@ import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * @author agduncan
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category(ConfidentialTest.class)
 public class WebhookIT extends BaseIT {
     private static final int LAMBDA_ERROR = 418;
@@ -97,17 +104,10 @@ public class WebhookIT extends BaseIT {
      */
     private static final String WORKFLOWS_ENTRY_SEARCH_TYPE = "WORKFLOWS";
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
@@ -123,7 +123,7 @@ public class WebhookIT extends BaseIT {
     private FileDAO fileDAO;
     private AppToolDAO appToolDAO;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -163,11 +163,10 @@ public class WebhookIT extends BaseIT {
 
         final MetadataApi metadataApi = new MetadataApi(webClient);
         String rssFeed = metadataApi.rssFeed();
-        assertTrue("RSS feed should contain 1 apptool", rssFeed.contains("http://localhost/containers/github.com/dockstore-testing/tagged-apptool/md5sum"));
+        assertTrue(rssFeed.contains("http://localhost/containers/github.com/dockstore-testing/tagged-apptool/md5sum"), "RSS feed should contain 1 apptool");
 
         String sitemap = metadataApi.sitemap();
-        assertTrue("Sitemap with testing data should have 1 apptool",
-                sitemap.contains("http://localhost/containers/github.com/dockstore-testing/tagged-apptool/md5sum"));
+        assertTrue(sitemap.contains("http://localhost/containers/github.com/dockstore-testing/tagged-apptool/md5sum"), "Sitemap with testing data should have 1 apptool");
     }
 
     @Test
@@ -184,21 +183,21 @@ public class WebhookIT extends BaseIT {
 
         // Refresh should work
         workflow = workflowApi.refresh(workflow.getId(), false);
-        assertEquals("Workflow should be FULL mode", Workflow.ModeEnum.FULL, workflow.getMode());
-        assertTrue("All versions should be legacy", workflow.getWorkflowVersions().stream().allMatch(WorkflowVersion::isLegacyVersion));
+        assertEquals(ModeEnum.FULL, workflow.getMode(), "Workflow should be FULL mode");
+        assertTrue(workflow.getWorkflowVersions().stream().allMatch(WorkflowVersion::isLegacyVersion), "All versions should be legacy");
 
         // Webhook call should convert workflow to DOCKSTORE_YML
         workflowApi.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
         workflow = workflowApi.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "versions");
-        assertEquals("Workflow should be DOCKSTORE_YML mode", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
-        assertTrue("One version should be not legacy", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> !workflowVersion.isLegacyVersion()));
+        assertEquals(ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Workflow should be DOCKSTORE_YML mode");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> !workflowVersion.isLegacyVersion()), "One version should be not legacy");
 
         // Refresh should now no longer work
         try {
             workflowApi.refresh(workflow.getId(), false);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
-            assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should not be able to refresh a dockstore.yml workflow.");
         }
 
         // Should be able to refresh a legacy version
@@ -221,8 +220,8 @@ public class WebhookIT extends BaseIT {
         }
 
         List<Workflow> workflows = usersApi.addUserToDockstoreWorkflows(usersApi.getUser().getId(), "");
-        assertTrue("There should still be a dockstore.yml workflow", workflows.stream().anyMatch(wf -> Objects.equals(wf.getMode(), Workflow.ModeEnum.DOCKSTORE_YML)));
-        assertTrue("There should be at least one stub workflow", workflows.stream().anyMatch(wf -> Objects.equals(wf.getMode(), Workflow.ModeEnum.STUB)));
+        assertTrue(workflows.stream().anyMatch(wf -> Objects.equals(wf.getMode(), ModeEnum.DOCKSTORE_YML)), "There should still be a dockstore.yml workflow");
+        assertTrue(workflows.stream().anyMatch(wf -> Objects.equals(wf.getMode(), ModeEnum.STUB)), "There should be at least one stub workflow");
 
         // Test that refreshing a frozen version doesn't update the version
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET commitid = NULL where name = '0.2'");
@@ -273,14 +272,13 @@ public class WebhookIT extends BaseIT {
 
         // Disassociate all entries from all users
         testingPostgres.runUpdateStatement("DELETE from user_entry");
-        assertEquals("User should have 0 entries", 0, usersApi.getUserEntries(10, null, null).size());
+        assertEquals(0, usersApi.getUserEntries(10, null, null).size(), "User should have 0 entries");
 
         // Discover again
         usersApi.addUserToDockstoreWorkflows(usersApi.getUser().getId(), "");
 
         //
-        assertEquals("User should have 3 entries, 2 from DockstoreTestUser2 org and one from DockstoreTestUser/dockstore-whalesay-wdl",
-            3, usersApi.getUserEntries(10, null, null).size());
+        assertEquals(3, usersApi.getUserEntries(10, null, null).size(), "User should have 3 entries, 2 from DockstoreTestUser2 org and one from DockstoreTestUser/dockstore-whalesay-wdl");
     }
 
     /**
@@ -305,8 +303,7 @@ public class WebhookIT extends BaseIT {
             String.format("INSERT INTO user_entry(userid, entryid) VALUES (%s, %s)", userId,
                 entryId);
         testingPostgres.runUpdateStatement(userEntrySql);
-        assertEquals("User should have 4 workflows",
-            4, usersApi.getUserEntries(10, null, WORKFLOWS_ENTRY_SEARCH_TYPE).size());
+        assertEquals(4, usersApi.getUserEntries(10, null, WORKFLOWS_ENTRY_SEARCH_TYPE).size(), "User should have 4 workflows");
 
         final io.dockstore.openapi.client.api.UsersApi adminUsersApi =
             new io.dockstore.openapi.client.api.UsersApi(
@@ -314,8 +311,7 @@ public class WebhookIT extends BaseIT {
 
         // This should drop the most recently added workflow; user doesn't have corresponding GitHub permissions
         adminUsersApi.checkWorkflowOwnership();
-        assertEquals("User should now have 3 workflows",
-            3, usersApi.getUserEntries(10, null, WORKFLOWS_ENTRY_SEARCH_TYPE).size());
+        assertEquals(3, usersApi.getUserEntries(10, null, WORKFLOWS_ENTRY_SEARCH_TYPE).size(), "User should now have 3 workflows");
 
     }
 
@@ -339,8 +335,8 @@ public class WebhookIT extends BaseIT {
         testingPostgres.addUnpublishedWorkflow(SourceControl.GITHUB, BasicIT.USER_1_USERNAME, DOCKSTORE_WHALESAY_WDL, DescriptorLanguage.WDL);
 
         final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
-        assertEquals("User should have 3 workflows, 2 from DockstoreTestUser2 org and one from DockstoreTestUser/dockstore-whalesay-wdl",
-            3, usersApi.getUserEntries(10, null, WORKFLOWS_ENTRY_SEARCH_TYPE).size());
+        assertEquals(3, usersApi.getUserEntries(10, null, WORKFLOWS_ENTRY_SEARCH_TYPE).size(),
+            "User should have 3 workflows, 2 from DockstoreTestUser2 org and one from DockstoreTestUser/dockstore-whalesay-wdl");
 
     }
     /**
@@ -364,9 +360,9 @@ public class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
-        assertEquals("Should be a WDL workflow", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
-        assertEquals("Should be type DOCKSTORE_YML", io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
-        assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
+        assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
+        assertEquals(1, workflow.getWorkflowVersions().size(), "Should have one version 0.1");
         assertEquals("A repo that includes .dockstore.yml", workflow.getTopicAutomatic());
 
         // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
@@ -379,9 +375,9 @@ public class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
-        assertEquals("Should be a CWL workflow", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType());
-        assertEquals("Should be type DOCKSTORE_YML", io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode());
-        assertEquals("Should have one version 0.2", 1, workflow2.getWorkflowVersions().size());
+        assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType(), "Should be a CWL workflow");
+        assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode(), "Should be type DOCKSTORE_YML");
+        assertEquals(1, workflow2.getWorkflowVersions().size(), "Should have one version 0.2");
 
 
         // Unset the license information to simulate license change
@@ -393,45 +389,52 @@ public class WebhookIT extends BaseIT {
         List<io.dockstore.openapi.client.model.Workflow> workflows = new ArrayList<>();
         workflows.add(workflow);
         workflows.add(workflow2);
-        assertEquals("Should only have two workflows", 2, workflows.size());
+        assertEquals(2, workflows.size(), "Should only have two workflows");
         workflows.forEach(workflowIndividual -> {
-            assertEquals("Should be able to get license after manual GitHub App version update", "Apache License 2.0", workflowIndividual.getLicenseInformation().getLicenseName());
-            assertEquals("Should be able to get topic from GitHub after GitHub App version update", "A repo that includes .dockstore.yml", workflowIndividual.getTopicAutomatic());
+            assertEquals("Apache License 2.0", workflowIndividual.getLicenseInformation().getLicenseName(), "Should be able to get license after manual GitHub App version update");
+            assertEquals("A repo that includes .dockstore.yml", workflowIndividual.getTopicAutomatic(), "Should be able to get topic from GitHub after GitHub App version update");
         });
 
         workflow = getFoobar1Workflow(client);
-        assertTrue("Should have a master version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
-        assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
-        assertTrue("Should have a 0.2 version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")),
+            "Should have a master version.");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")),
+            "Should have a 0.1 version.");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")),
+            "Should have a 0.2 version.");
 
         workflow2 = getFoobar2Workflow(client);
-        assertTrue("Should have a master version.", workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
-        assertTrue("Should have a 0.2 version.", workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+        assertTrue(workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")),
+            "Should have a master version.");
+        assertTrue(workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")),
+            "Should have a 0.2 version.");
 
 
 
         // Master version should have metadata set
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = workflow.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
-        assertEquals("Should have author set", "Test User", masterVersion.get().getAuthor());
-        assertEquals("Should have email set", "test@dockstore.org", masterVersion.get().getEmail());
-        assertEquals("Should have email set", "This is a description", masterVersion.get().getDescription());
+        assertEquals("Test User", masterVersion.get().getAuthor(), "Should have author set");
+        assertEquals("test@dockstore.org", masterVersion.get().getEmail(), "Should have email set");
+        assertEquals("This is a description", masterVersion.get().getDescription(), "Should have email set");
 
         masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
-        assertEquals("Should have author set", "Test User", masterVersion.get().getAuthor());
-        assertTrue("Should be valid", masterVersion.get().isValid());
-        assertEquals("Should have email set", "test@dockstore.org", masterVersion.get().getEmail());
-        assertEquals("Should have email set", "This is a description", masterVersion.get().getDescription());
+        assertEquals("Test User", masterVersion.get().getAuthor(), "Should have author set");
+        assertTrue(masterVersion.get().isValid(), "Should be valid");
+        assertEquals("test@dockstore.org", masterVersion.get().getEmail(), "Should have email set");
+        assertEquals("This is a description", masterVersion.get().getDescription(), "Should have email set");
 
         boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(
                 io.dockstore.openapi.client.model.WorkflowVersion::isLegacyVersion);
-        assertFalse("Workflow should not have any legacy refresh versions.", hasLegacyVersion);
+        assertFalse(hasLegacyVersion, "Workflow should not have any legacy refresh versions.");
 
         // Delete tag 0.2
         client.handleGitHubBranchDeletion(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.2", installationId);
         workflow = getFoobar1Workflow(client);
-        assertTrue("Should not have a 0.2 version.", workflow.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+        assertTrue(workflow.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")),
+            "Should not have a 0.2 version.");
         workflow2 = getFoobar2Workflow(client);
-        assertTrue("Should not have a 0.2 version.", workflow2.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+        assertTrue(workflow2.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")),
+            "Should not have a 0.2 version.");
 
         // Add version that doesn't exist
         try {
@@ -439,48 +442,47 @@ public class WebhookIT extends BaseIT {
             fail("Should fail and not reach this point");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             List<io.dockstore.openapi.client.model.LambdaEvent> failureEvents = usersApi.getUserGitHubEvents("0", 10);
-            assertEquals("There should be 1 unsuccessful event", 1,
-                    failureEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
+            assertEquals(1, failureEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be 1 unsuccessful event");
         }
 
         // There should be 5 successful lambda events
         List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
-        assertEquals("There should be 5 successful events", 5,
-                events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count());
+        assertEquals(5, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be 5 successful events");
 
         // Test pagination for user github events
         events = usersApi.getUserGitHubEvents("2", 2);
-        assertEquals("There should be 2 events (id 3 and 4)", 2, events.size());
-        assertTrue("Should have event with ID 3", events.stream().anyMatch(lambdaEvent -> Objects.equals(3L, lambdaEvent.getId())));
-        assertTrue("Should have event with ID 4", events.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())));
+        assertEquals(2, events.size(), "There should be 2 events (id 3 and 4)");
+        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(3L, lambdaEvent.getId())), "Should have event with ID 3");
+        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())), "Should have event with ID 4");
 
         // Test the organization events endpoint
         List<io.dockstore.openapi.client.model.LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
-        assertEquals("There should be 6 events", 6, orgEvents.size());
+        assertEquals(6, orgEvents.size(), "There should be 6 events");
 
         // Test pagination
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "2", 2);
-        assertEquals("There should be 2 events (id 3 and 4)", 2, orgEvents.size());
-        assertTrue("Should have event with ID 3", orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(3L, lambdaEvent.getId())));
-        assertTrue("Should have event with ID 4", orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())));
+        assertEquals(2, orgEvents.size(), "There should be 2 events (id 3 and 4)");
+        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(3L, lambdaEvent.getId())), "Should have event with ID 3");
+        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())), "Should have event with ID 4");
 
         // Change organization to test filter
         testingPostgres.runUpdateStatement("UPDATE lambdaevent SET repository = 'workflow-dockstore-yml', organization = 'DockstoreTestUser3' WHERE id = '1'");
 
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
-        assertEquals("There should now be 5 events", 5, orgEvents.size());
+        assertEquals(5, orgEvents.size(), "There should now be 5 events");
 
         try {
             lambdaEventsApi.getLambdaEventsByOrganization("IAmMadeUp", "0", 10);
             fail("Should not reach this statement");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals("Should fail because user cannot access org.", HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode(), "Should fail because user cannot access org.");
         }
 
         // Try adding version with empty test parameter file (should work)
         client.handleGitHubRelease("refs/heads/emptytestparameter", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         workflow2 = getFoobar2Workflow(client);
-        assertTrue("Should have emptytestparameter version that is valid", workflow2.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "emptytestparameter")).findFirst().get().isValid());
+        assertTrue(workflow2.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "emptytestparameter")).findFirst().get().isValid(),
+            "Should have emptytestparameter version that is valid");
         testValidationUpdate(client);
         testDefaultVersion(client);
     }
@@ -497,15 +499,15 @@ public class WebhookIT extends BaseIT {
         final String dockstoreTestUser = "DockstoreTestUser";
         assertTrue(userOrganizations.contains(dockstoreTestUser)); // User has access to only one repo in the org, DockstoreTestUser/dockstore-whalesay-2
 
-        assertEquals("No events at all works", 0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size());
+        assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size(), "No events at all works");
 
         testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization) values ('whatevs', 'repo-no-access', 'DockstoreTestUser')");
-        assertEquals("Can't see event for repo with no access", 0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size());
+        assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size(), "Can't see event for repo with no access");
 
         testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization) values ('whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser')");
         final List<io.dockstore.openapi.client.model.LambdaEvent> events =
             lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10);
-        assertEquals("Can see event for repo with access, not one without", 1, events.size());
+        assertEquals(1, events.size(), "Can see event for repo with access, not one without");
     }
 
     private void testDefaultVersion(io.dockstore.openapi.client.api.WorkflowsApi client) {
@@ -515,7 +517,7 @@ public class WebhookIT extends BaseIT {
         assertNull(workflow.getDefaultVersion());
         client.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         workflow2 = getFoobar2Workflow(client);
-        assertEquals("The new tag says the latest tag should be the default version", "0.4", workflow2.getDefaultVersion());
+        assertEquals("0.4", workflow2.getDefaultVersion(), "The new tag says the latest tag should be the default version");
         workflow = getFoobar1Workflow(client);
         assertNull(workflow.getDefaultVersion());
 
@@ -542,12 +544,12 @@ public class WebhookIT extends BaseIT {
 
         io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
-        assertFalse("Master version should be invalid because it was manually changed", masterVersion.get().isValid());
+        assertFalse(masterVersion.get().isValid(), "Master version should be invalid because it was manually changed");
 
         client.handleGitHubRelease("refs/heads/master", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         workflow2 = getFoobar2Workflow(client);
         masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
-        assertTrue("Master version should be valid after GitHub App triggered again", masterVersion.get().isValid());
+        assertTrue(masterVersion.get().isValid(), "Master version should be valid after GitHub App triggered again");
     }
 
     /**
@@ -562,27 +564,27 @@ public class WebhookIT extends BaseIT {
         // Add 1.0 tag and set as default version
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
         Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
-        assertEquals("should have 1 version", 1, workflow.getWorkflowVersions().size());
-        assertNull("should have no default version until set", workflow.getDefaultVersion());
+        assertEquals(1, workflow.getWorkflowVersions().size(), "should have 1 version");
+        assertNull(workflow.getDefaultVersion(), "should have no default version until set");
         workflow = client.updateWorkflowDefaultVersion(workflow.getId(), workflow.getWorkflowVersions().get(0).getName());
-        assertNotNull("should have a default version after setting", workflow.getDefaultVersion());
+        assertNotNull(workflow.getDefaultVersion(), "should have a default version after setting");
 
         // Add 2.0 tag
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/2.0", installationId);
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
-        assertEquals("should have 2 versions", 2, workflow.getWorkflowVersions().size());
+        assertEquals(2, workflow.getWorkflowVersions().size(), "should have 2 versions");
 
         // Delete 1.0 tag, should reassign 2.0 as the default version
         client.handleGitHubBranchDeletion(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
-        assertEquals("should have 1 version after deletion", 1, workflow.getWorkflowVersions().size());
-        assertNotNull("should have reassigned the default version during deletion", workflow.getDefaultVersion());
+        assertEquals(1, workflow.getWorkflowVersions().size(), "should have 1 version after deletion");
+        assertNotNull(workflow.getDefaultVersion(), "should have reassigned the default version during deletion");
 
         // Delete 2.0 tag, unset default version
         client.handleGitHubBranchDeletion(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/2.0", installationId);
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
-        assertEquals("should have 0 versions after deletion", 0, workflow.getWorkflowVersions().size());
-        assertNull("should have no default version after final version is deleted", workflow.getDefaultVersion());
+        assertEquals(0, workflow.getWorkflowVersions().size(), "should have 0 versions after deletion");
+        assertNull(workflow.getDefaultVersion(), "should have no default version after final version is deleted");
     }
 
     /**
@@ -600,22 +602,22 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
 
         Workflow workflow = getFoobar1Workflow(client);
-        assertEquals("Should be able to get license after GitHub App register", "Apache License 2.0", workflow.getLicenseInformation().getLicenseName());
+        assertEquals("Apache License 2.0", workflow.getLicenseInformation().getLicenseName(), "Should be able to get license after GitHub App register");
 
         // Ensure that new workflow is created and is what is expected
 
-        assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
-        assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
-        assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")), "Should have a 0.1 version.");
         boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(WorkflowVersion::isLegacyVersion);
-        assertFalse("Workflow should not have any legacy refresh versions.", hasLegacyVersion);
+        assertFalse(hasLegacyVersion, "Workflow should not have any legacy refresh versions.");
 
         // Refresh
         try {
             client.refresh(workflow.getId(), false);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
-            assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should not be able to refresh a dockstore.yml workflow.");
         }
     }
 
@@ -630,9 +632,9 @@ public class WebhookIT extends BaseIT {
 
         try {
             client.handleGitHubRelease(workflowRepo, "thisisafakeuser", "refs/tags/0.1", installationId);
-            Assert.fail("Should not reach this statement.");
+            fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should not be able to add a workflow when user does not exist on Dockstore.", LAMBDA_ERROR, ex.getCode());
+            assertEquals(LAMBDA_ERROR, ex.getCode(), "Should not be able to add a workflow when user does not exist on Dockstore.");
         }
     }
 
@@ -656,20 +658,22 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
         // Ensure that new workflow is created and is what is expected
         Workflow workflow = getFoobar1Workflow(client);
-        assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
-        assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
-        assertEquals("Should have one version", 1, workflow.getWorkflowVersions().size());
-        assertFalse("Should be invalid (wrong language, bad version)", workflow.getWorkflowVersions().get(0).isValid());
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
+        assertEquals(1, workflow.getWorkflowVersions().size(), "Should have one version");
+        assertFalse(workflow.getWorkflowVersions().get(0).isValid(), "Should be invalid (wrong language, bad version)");
 
         workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.CWL.toString());
         io.dockstore.openapi.client.model.Workflow updatedWorkflowAfterModifyingDescriptorType = workflowsApi.getWorkflow(workflow.getId(), "");
-        assertEquals("The descriptor language should have been changed", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType());
-        assertEquals("The old versions should have been removed", 0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size());
+        assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType(),
+            "The descriptor language should have been changed");
+        assertEquals(0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size(), "The old versions should have been removed");
 
         workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.WDL.toString());
         updatedWorkflowAfterModifyingDescriptorType = workflowsApi.getWorkflow(workflow.getId(), "versions");
-        assertEquals("The descriptor language should have been changed", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType());
-        assertEquals("The old versions should have been removed", 0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size());
+        assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType(),
+            "The descriptor language should have been changed");
+        assertEquals(0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size(), "The old versions should have been removed");
 
         // Release 0.1 on GitHub - one new wdl workflow
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
@@ -678,10 +682,10 @@ public class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         workflow = getFoobar1Workflow(client);
-        assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
-        assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
-        assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
-        assertTrue("Should be valid", workflow.getWorkflowVersions().get(0).isValid());
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
+        assertEquals(1, workflow.getWorkflowVersions().size(), "Should have one version 0.1");
+        assertTrue(workflow.getWorkflowVersions().get(0).isValid(), "Should be valid");
         try {
             workflowsApi
                     .updateDescriptorType(workflow.getId(), DescriptorLanguage.CWL.toString());
@@ -720,11 +724,11 @@ public class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         Workflow workflow = getFoobar1Workflow(client);
-        assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
-        assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
-        assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
-        assertTrue("Should be valid", workflow.getWorkflowVersions().get(0).isValid());
-        assertNull("Lambda event message should be empty", getLatestLambdaEventMessage("0", usersApi));
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
+        assertEquals(1, workflow.getWorkflowVersions().size(), "Should have one version 0.1");
+        assertTrue(workflow.getWorkflowVersions().get(0).isValid(), "Should be valid");
+        assertNull(getLatestLambdaEventMessage("0", usersApi), "Lambda event message should be empty");
 
         // Push missingPrimaryDescriptor on GitHub - one existing wdl workflow, missing primary descriptor
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingPrimaryDescriptor", installationId);
@@ -734,18 +738,21 @@ public class WebhookIT extends BaseIT {
         // Ensure that new version is in the correct state (invalid)
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "validations");
         assertNotNull(workflow);
-        assertEquals("Should have two versions", 2, workflow.getWorkflowVersions().size());
+        assertEquals(2, workflow.getWorkflowVersions().size(), "Should have two versions");
 
         WorkflowVersion missingPrimaryDescriptorVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "missingPrimaryDescriptor")).findFirst().get();
-        assertFalse("Version should be invalid", missingPrimaryDescriptorVersion.isValid());
+        assertFalse(missingPrimaryDescriptorVersion.isValid(), "Version should be invalid");
 
         // Check existence of files and validations
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(missingPrimaryDescriptorVersion.getId());
-        assertTrue("Should have .dockstore.yml file", sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
-        assertTrue("Should not have doesnotexist.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/doesnotexist.wdl")).findFirst().isEmpty());
-        assertFalse("Should have invalid .dockstore.yml", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
-        assertFalse("Should have invalid doesnotexist.wdl", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
-        assertTrue("Refers to missing primary descriptor", getLatestLambdaEventMessage("0", usersApi).contains("descriptor"));
+        assertTrue(sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)), "Should have .dockstore.yml file");
+        assertTrue(sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/doesnotexist.wdl")).findFirst().isEmpty(),
+            "Should not have doesnotexist.wdl file");
+        assertFalse(missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid(),
+            "Should have invalid .dockstore.yml");
+        assertFalse(missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid(),
+            "Should have invalid doesnotexist.wdl");
+        assertTrue(getLatestLambdaEventMessage("0", usersApi).contains("descriptor"), "Refers to missing primary descriptor");
 
         // Push missingTestParameterFile on GitHub - one existing wdl workflow, missing a test parameter file
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingTestParameterFile", installationId);
@@ -755,19 +762,22 @@ public class WebhookIT extends BaseIT {
         // Ensure that new version is in the correct state (invalid)
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "validations");
         assertNotNull(workflow);
-        assertEquals("Should have three versions", 3, workflow.getWorkflowVersions().size());
+        assertEquals(3, workflow.getWorkflowVersions().size(), "Should have three versions");
 
         WorkflowVersion missingTestParameterFileVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "missingTestParameterFile")).findFirst().get();
-        assertTrue("Version should be valid (missing test parameter doesn't make the version invalid)", missingTestParameterFileVersion.isValid());
+        assertTrue(missingTestParameterFileVersion.isValid(), "Version should be valid (missing test parameter doesn't make the version invalid)");
 
         // Check existence of files and validations
         sourceFiles = fileDAO.findSourceFilesByVersion(missingTestParameterFileVersion.getId());
-        assertTrue("Should have .dockstore.yml file", sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
-        assertTrue("Should not have /test/doesnotexist.txt file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/test/doesnotexist.txt")).findFirst().isEmpty());
-        assertTrue("Should have Dockstore2.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent());
-        assertFalse("Should have invalid .dockstore.yml", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
-        assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
-        assertTrue("Refers to missing test file", getLatestLambdaEventMessage("0", usersApi).contains("/idonotexist.json"));
+        assertTrue(sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)), "Should have .dockstore.yml file");
+        assertTrue(sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/test/doesnotexist.txt")).findFirst().isEmpty(),
+            "Should not have /test/doesnotexist.txt file");
+        assertTrue(sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent(), "Should have Dockstore2.wdl file");
+        assertFalse(missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid(),
+            "Should have invalid .dockstore.yml");
+        assertTrue(missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid(),
+            "Should have valid Dockstore2.wdl");
+        assertTrue(getLatestLambdaEventMessage("0", usersApi).contains("/idonotexist.json"), "Refers to missing test file");
 
         // Push unknownProperty on GitHub - one existing wdl workflow, incorrectly spelled testParameterFiles property
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/unknownProperty", installationId);
@@ -777,23 +787,26 @@ public class WebhookIT extends BaseIT {
         // Ensure that new version is in the correct state (valid)
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "validations");
         assertNotNull(workflow);
-        assertEquals("Should have four versions", 4, workflow.getWorkflowVersions().size());
+        assertEquals(4, workflow.getWorkflowVersions().size(), "Should have four versions");
 
         WorkflowVersion unknownPropertyVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "unknownProperty")).findFirst().get();
-        assertTrue("Version should be valid (unknown property doesn't make the version invalid)", unknownPropertyVersion.isValid());
+        assertTrue(unknownPropertyVersion.isValid(), "Version should be valid (unknown property doesn't make the version invalid)");
 
         // Check existence of files and validations
         sourceFiles = fileDAO.findSourceFilesByVersion(unknownPropertyVersion.getId());
-        assertTrue("Should have .dockstore.yml file", sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
-        assertTrue("Should not have /dockstore.wdl.json file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/dockstore.wdl.json")).findFirst().isEmpty());
-        assertTrue("Should have Dockstore2.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent());
-        assertFalse("Should have invalid .dockstore.yml", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
-        assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
-        assertTrue("Refers to misspelled property", getLatestLambdaEventMessage("0", usersApi).contains("testParameterFilets"));
+        assertTrue(sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)), "Should have .dockstore.yml file");
+        assertTrue(sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/dockstore.wdl.json")).findFirst().isEmpty(),
+            "Should not have /dockstore.wdl.json file");
+        assertTrue(sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent(), "Should have Dockstore2.wdl file");
+        assertFalse(missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid(),
+            "Should have invalid .dockstore.yml");
+        assertTrue(missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid(),
+            "Should have valid Dockstore2.wdl");
+        assertTrue(getLatestLambdaEventMessage("0", usersApi).contains("testParameterFilets"), "Refers to misspelled property");
 
         // There should be 4 successful lambda events
         List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
-        assertEquals("There should be 4 successful events", 4, events.stream().filter(LambdaEvent::isSuccess).count());
+        assertEquals(4, events.stream().filter(LambdaEvent::isSuccess).count(), "There should be 4 successful events");
 
         final int versionCountBeforeInvalidDockstoreYml = getFoobar1Workflow(client).getWorkflowVersions().size();
         // Push branch with invalid dockstore.yml
@@ -802,9 +815,8 @@ public class WebhookIT extends BaseIT {
             fail("Should not reach this statement");
         } catch (ApiException ex) {
             List<LambdaEvent> failEvents = usersApi.getUserGitHubEvents("0", 10);
-            assertEquals("There should be 1 unsuccessful event", 1,
-                    failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
-            assertEquals("Number of versions should be the same", versionCountBeforeInvalidDockstoreYml, getFoobar1Workflow(client).getWorkflowVersions().size());
+            assertEquals(1, failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be 1 unsuccessful event");
+            assertEquals(versionCountBeforeInvalidDockstoreYml, getFoobar1Workflow(client).getWorkflowVersions().size(), "Number of versions should be the same");
         }
     }
 
@@ -829,7 +841,7 @@ public class WebhookIT extends BaseIT {
         Workflow workflow = getFoobar1Workflow(client);
         WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
-        assertTrue("Test file should have the expected path", sourceFiles.stream().filter(sourceFile -> sourceFile.getPath().equals("/dockstore.wdl.json")).findFirst().isPresent());
+        assertTrue(sourceFiles.stream().filter(sourceFile -> sourceFile.getPath().equals("/dockstore.wdl.json")).findFirst().isPresent(), "Test file should have the expected path");
     }
 
     /**
@@ -973,27 +985,27 @@ public class WebhookIT extends BaseIT {
         assertEquals(2, version.getAuthors().size());
         assertEquals(2, version.getOrcidAuthors().size());
         final String wdlDescriptorAuthorName = "Descriptor Author";
-        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)));
+        assertTrue(version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)), "Should not have any author from the descriptor");
         // CWL workflow
         workflow = client.getWorkflowByPath(cwlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
         assertEquals(1, version.getAuthors().size());
         assertEquals(1, version.getOrcidAuthors().size());
         final String cwlDescriptorAuthorName = "Test User";
-        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(cwlDescriptorAuthorName)));
+        assertTrue(version.getAuthors().stream().noneMatch(author -> author.getName().equals(cwlDescriptorAuthorName)), "Should not have any author from the descriptor");
         // Nextflow workflow
         workflow = client.getWorkflowByPath(nextflowWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
         assertEquals(1, version.getAuthors().size());
         assertEquals(1, version.getOrcidAuthors().size());
         final String nextflowDescriptorAuthorName = "Nextflow Test Author";
-        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(nextflowDescriptorAuthorName)));
+        assertTrue(version.getAuthors().stream().noneMatch(author -> author.getName().equals(nextflowDescriptorAuthorName)), "Should not have any author from the descriptor");
         // WDL workflow containing 1 descriptor author, 1 ORCID author, and 0 non-ORCID authors
         workflow = client.getWorkflowByPath(wdl2WorkflowRepoPath, BIOWORKFLOW, "versions,authors");
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
         assertEquals(0, version.getAuthors().size());
         assertEquals(1, version.getOrcidAuthors().size());
-        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)));
+        assertTrue(version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)), "Should not have any author from the descriptor");
 
         // WDL workflow containing only .dockstore.yml authors
         client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDockstoreYmlAuthors", installationId);
@@ -1081,10 +1093,9 @@ public class WebhookIT extends BaseIT {
         try {
             workflowsApi.handleGitHubRelease("refs/heads/invalidWorkflowName", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals("Should not be able to add a workflow with an invalid name", LAMBDA_ERROR, ex.getCode());
+            assertEquals(LAMBDA_ERROR, ex.getCode(), "Should not be able to add a workflow with an invalid name");
             List<io.dockstore.openapi.client.model.LambdaEvent> failEvents = usersApi.getUserGitHubEvents("0", 10);
-            assertEquals("There should be 1 unsuccessful event", 1,
-                    failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
+            assertEquals(1, failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be 1 unsuccessful event");
             assertTrue(failEvents.get(0).getMessage().contains(ValidationConstants.ENTRY_NAME_REGEX_MESSAGE));
         }
     }
@@ -1146,7 +1157,7 @@ public class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
         client.publish(appTool.getId(), publishRequest);
         client.publish(workflow.getId(), publishRequest);
-        Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
+        assertFalse(systemOutRule.getText().contains("Could not submit index to elastic search"));
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
         final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
@@ -1163,10 +1174,7 @@ public class WebhookIT extends BaseIT {
         publishRequest.setPublish(false);
         client.publish(appTool.getId(), publishRequest);
         client.publish(workflow.getId(), publishRequest);
-        Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
-
-
-
+        assertFalse(systemOutRule.getText().contains("Could not submit index to elastic search"));
     }
 
     @Test
@@ -1407,7 +1415,7 @@ public class WebhookIT extends BaseIT {
         // Add a CWL version of a workflow with the same name should cause error.
         try {
             workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-CWL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
-            Assert.fail("should have thrown");
+            fail("should have thrown");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
             io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
@@ -1514,8 +1522,8 @@ public class WebhookIT extends BaseIT {
         assertEquals(0, countWorkflows());
         assertEquals(2, countTools());
         LambdaEvent lambdaEvent = getLatestLambdaEvent("0", usersApi);
-        assertFalse("The event should be unsuccessful", lambdaEvent.isSuccess());
-        assertTrue("Should contain the word 'absolute'", lambdaEvent.getMessage().toLowerCase().contains("absolute"));
+        assertFalse(lambdaEvent.isSuccess(), "The event should be unsuccessful");
+        assertTrue(lambdaEvent.getMessage().toLowerCase().contains("absolute"), "Should contain the word 'absolute'");
     }
 
     /**
@@ -1535,20 +1543,20 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(workflowsApi); // dockstore.yml for foobar doesn't have latestTagAsDefault set
         io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(workflowsApi); // dockstore.yml for foobar2 has latestTagAsDefault set
         assertNull(workflow.getDefaultVersion());
-        assertEquals("Should have latest tag set as default version", "0.4", workflow2.getDefaultVersion());
+        assertEquals("0.4", workflow2.getDefaultVersion(), "Should have latest tag set as default version");
 
         workflowsApi.updateDefaultVersion1(workflow.getId(), "0.4"); // Set default version for workflow that doesn't have one
         workflow = getFoobar1Workflow(workflowsApi);
-        assertEquals("Should have default version set", "0.4", workflow.getDefaultVersion());
+        assertEquals("0.4", workflow.getDefaultVersion(), "Should have default version set");
 
         // Find WorkflowVersion for default version and make sure it has metadata set
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> defaultVersion = workflow.getWorkflowVersions().stream()
                 .filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.4"))
                 .findFirst();
         assertTrue(defaultVersion.isPresent());
-        assertEquals("Version should have author set", "Test User", defaultVersion.get().getAuthor());
-        assertEquals("Version should have email set", "test@dockstore.org", defaultVersion.get().getEmail());
-        assertEquals("Version should have email set", "This is a description", defaultVersion.get().getDescription());
+        assertEquals("Test User", defaultVersion.get().getAuthor(), "Version should have author set");
+        assertEquals("test@dockstore.org", defaultVersion.get().getEmail(), "Version should have email set");
+        assertEquals("This is a description", defaultVersion.get().getDescription(), "Version should have email set");
 
         // Check that the workflow metadata is the same as the default version's metadata
         checkWorkflowMetadataWithDefaultVersionMetadata(workflow, defaultVersion.get());
@@ -1581,32 +1589,32 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + wdlWorkflowRepo, WorkflowSubClass.BIOWORKFLOW, "versions");
         io.dockstore.openapi.client.model.WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
         List<io.dockstore.openapi.client.model.SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), version.getId(), null);
-        Assert.assertNotNull(sourceFiles);
-        Assert.assertEquals(2, sourceFiles.size());
+        assertNotNull(sourceFiles);
+        assertEquals(2, sourceFiles.size());
         sourceFiles.forEach(sourceFile -> {
             if ("/Dockstore.wdl".equals(sourceFile.getAbsolutePath())) {
-                Assert.assertEquals(DescriptorLanguage.FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
-                Assert.assertEquals("Language version of WDL descriptor with 'version 1.0' should be 1.0", "1.0", sourceFile.getTypeVersion());
+                assertEquals(FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
+                assertEquals("1.0", sourceFile.getTypeVersion(), "Language version of WDL descriptor with 'version 1.0' should be 1.0");
             } else {
-                Assert.assertEquals(DescriptorLanguage.FileType.DOCKSTORE_YML.name(), sourceFile.getType().getValue());
-                Assert.assertNull(".dockstore.yml should not have a version", sourceFile.getTypeVersion());
+                assertEquals(FileType.DOCKSTORE_YML.name(), sourceFile.getType().getValue());
+                assertNull(sourceFile.getTypeVersion(), ".dockstore.yml should not have a version");
             }
         });
-        assertEquals("Should only have one language version", 1, version.getDescriptorTypeVersions().size());
+        assertEquals(1, version.getDescriptorTypeVersions().size(), "Should only have one language version");
         assertTrue(version.getDescriptorTypeVersions().contains("1.0"));
     }
 
     // Asserts that the workflow metadata is the same as the default version metadata
     private void checkWorkflowMetadataWithDefaultVersionMetadata(io.dockstore.openapi.client.model.Workflow workflow, io.dockstore.openapi.client.model.WorkflowVersion defaultVersion) {
-        assertEquals("Workflow author should equal default version author", defaultVersion.getAuthor(), workflow.getAuthor());
-        assertEquals("Workflow email should equal default version email", defaultVersion.getEmail(), workflow.getEmail());
-        assertEquals("Workflow description should equal default version description", defaultVersion.getDescription(), workflow.getDescription());
+        assertEquals(defaultVersion.getAuthor(), workflow.getAuthor(), "Workflow author should equal default version author");
+        assertEquals(defaultVersion.getEmail(), workflow.getEmail(), "Workflow email should equal default version email");
+        assertEquals(defaultVersion.getDescription(), workflow.getDescription(), "Workflow description should equal default version description");
     }
 
     /**
      * Tests that an attempt to register a WDL that contains recursive
      * remote references will result in failure.
-     * https://ucsc-cgl.atlassian.net/browse/DOCK-2299
+     * <a href="https://ucsc-cgl.atlassian.net/browse/DOCK-2299">...</a>
      */
     @Test
     public void testRegistrationOfRecursiveWDL() {
@@ -1619,13 +1627,13 @@ public class WebhookIT extends BaseIT {
         // The WDL processing code should throw a StackOverflowError, which is remapped to a more explanatory CustomWebApplicationException, which will trigger a typical registration failure.
         try {
             client.handleGitHubRelease("refs/heads/main", installationId, "dockstore-testing/recursive-wdl", BasicIT.USER_2_USERNAME);
-            Assert.fail("should have thrown");
+            fail("should have thrown");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // Confirm that the release failed and was logged correctly.
             List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
-            Assert.assertEquals("There should be one event", 1, events.stream().count());
-            Assert.assertEquals("There should be no successful events", 0, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count());
-            Assert.assertTrue("Event message should indicate the problem", events.get(0).getMessage().contains(WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
+            assertEquals(1, events.stream().count(), "There should be one event");
+            assertEquals(0, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be no successful events");
+            assertTrue(events.get(0).getMessage().contains(WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT), "Event message should indicate the problem");
         }
     }
 }

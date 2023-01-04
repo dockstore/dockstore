@@ -1,8 +1,11 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -17,43 +20,34 @@ import io.swagger.client.model.Workflow;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import java.util.stream.Stream;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * This integration test provides support to make testing different webservice configurations easier.
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category(ConfidentialTest.class)
 public class ConfigurationIT {
 
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
     private static final String VANILLA_SOURCEFILE_PATH = "/some-unique_file.json";
 
-    private static AtomicLong id = new AtomicLong();
+    private static final AtomicLong ID = new AtomicLong();
     private static TestingPostgres testingPostgres;
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
+
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     private void before(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         CommonTestUtilities.cleanStatePrivate2(support, true, testingPostgres);
@@ -94,7 +88,7 @@ public class ConfigurationIT {
     private void createWorkflow(String sourceFilePath) {
         ApiClient webClient = getWebClient(true, BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeWorkflow" + id.incrementAndGet(), null, DescriptorLanguage.CWL.getShortName(), null, null);
+        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeWorkflow" + ID.incrementAndGet(), null, DescriptorLanguage.CWL.getShortName(), null, null);
         SourceFile file = new SourceFile();
         file.setContent("cwlVersion: v1.0\nclass: Workflow");
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -110,22 +104,22 @@ public class ConfigurationIT {
 
     private void testGoodSourceFilePath(String path) {
         createWorkflow(path);
-        Assert.assertEquals("should find sourcefile with path " + path, 1L, countSourceFilesWithPath(path));
+        assertEquals(1L, countSourceFilesWithPath(path), "should find sourcefile with path " + path);
     }
 
     private void testBadSourceFilePath(String path) {
         try {
             createWorkflow(path);
-            Assert.fail("should have thrown");
+            fail("should have thrown");
         } catch (ApiException e) {
             // expected execution path
         }
-        Assert.assertEquals("should not find sourcefile with path " + path, 0L, countSourceFilesWithPath(path));
+        assertEquals(0L, countSourceFilesWithPath(path), "should not find sourcefile with path " + path);
     }
 
     @SuppressWarnings("checkstyle:AvoidEscapedUnicodeCharacters")
     private List<String> getSomeWeirdPaths() {
-        return List.of("\t", "`", "$", "@", "\u00f1", "\u1200").stream().map(w -> ("/" + w + VANILLA_SOURCEFILE_PATH)).collect(Collectors.toList());
+        return Stream.of("\t", "`", "$", "@", "ñ", "ሀ").map(w -> ("/" + w + VANILLA_SOURCEFILE_PATH)).collect(Collectors.toList());
     }
 
     @Test

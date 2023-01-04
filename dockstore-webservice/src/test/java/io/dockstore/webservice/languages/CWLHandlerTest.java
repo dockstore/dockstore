@@ -33,8 +33,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
@@ -44,6 +46,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author gluu
  * @since 1.5.0
  */
+@ExtendWith(SystemStubsExtension.class)
 public class CWLHandlerTest {
 
     private Set<String> toValues(Set<FileFormat> formats) {

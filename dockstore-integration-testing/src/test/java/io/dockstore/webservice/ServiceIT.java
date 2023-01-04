@@ -19,12 +19,14 @@ import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -60,43 +62,37 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * @author dyuen
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category(ConfidentialTest.class)
 public class ServiceIT extends BaseIT {
 
-    private final boolean servicesExposedInTRS = false;
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
     private WorkflowDAO workflowDAO;
     private ServiceDAO serviceDAO;
     private Session session;
     private UserDAO userDAO;
     private FileDAO fileDAO;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -137,7 +133,7 @@ public class ServiceIT extends BaseIT {
     }
 
     @Test
-    @Ignore("https://github.com/dockstore/dockstore/pull/4720")
+    @Disabled("https://github.com/dockstore/dockstore/pull/4720")
     public void testTRSOutputOfService() {
         new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
@@ -145,6 +141,7 @@ public class ServiceIT extends BaseIT {
         final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null);
         assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("workflow")).count() >= 1);
         // TODO: change boolean once services are exposed
+        boolean servicesExposedInTRS = false;
         if (servicesExposedInTRS) {
             assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("service")).count() >= 2);
         }
@@ -219,32 +216,32 @@ public class ServiceIT extends BaseIT {
         io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, SERVICE, "versions");
 
         assertNotNull(service);
-        assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
+        assertEquals(1, service.getWorkflowVersions().size(), "Should have a new version");
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(service.getWorkflowVersions().get(0).getId());
-        assertEquals("Should have 3 source files", 3, sourceFiles.size());
+        assertEquals(3, sourceFiles.size(), "Should have 3 source files");
 
         long users = testingPostgres.runSelectStatement("select count(*) from user_entry where entryid = '" + service.getId() + "'", long.class);
-        assertEquals("Should have 1 user", 1, users);
+        assertEquals(1, users, "Should have 1 user");
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
             long.class);
-        Assert.assertEquals("there should be one matching service", 1, count);
+        assertEquals(1, count, "there should be one matching service");
 
         // Test user endpoints
         UsersApi usersApi = new UsersApi(webClient);
         final long userId = testingPostgres.runSelectStatement("select userid from user_entry where entryid = '" + service.getId() + "'", long.class);
         List<io.swagger.client.model.Workflow> services = usersApi.userServices(userId);
         List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(userId);
-        assertEquals("There should be one service", 1, services.size());
-        assertEquals("There should be no workflows", 0, workflows.size());
+        assertEquals(1, services.size(), "There should be one service");
+        assertEquals(0, workflows.size(), "There should be no workflows");
 
         // Should not be able to refresh service
         try {
             client.refresh(services.get(0).getId(), false);
             fail("Should not be able refresh a service");
         } catch (ApiException ex) {
-            assertEquals("Should fail since you cannot refresh services.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should fail since you cannot refresh services.");
         }
     }
 
@@ -266,13 +263,13 @@ public class ServiceIT extends BaseIT {
             client.handleGitHubRelease(serviceRepo, "iamnotarealuser", "refs/tags/1.0", installationId);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+            assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
         }
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
             long.class);
-        Assert.assertEquals("there should be no matching service", 0, count);
+        assertEquals(0, count, "there should be no matching service");
     }
 
     /**
@@ -307,13 +304,13 @@ public class ServiceIT extends BaseIT {
         // test retrieval
         final io.swagger.client.model.Workflow returnedWorkflow = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, BIOWORKFLOW, "",  null);
         final io.swagger.client.model.Workflow returnedService = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, SERVICE, "",  null);
-        Assert.assertNotSame(returnedWorkflow.getId(), returnedService.getId());
+        assertNotSame(returnedWorkflow.getId(), returnedService.getId());
 
         // test GA4GH retrieval
         Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
         final Tool tool1 = ga4GhApi.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/" + github + "/" + serviceRepo);
         final Tool tool2 = ga4GhApi.toolsIdGet(ToolsImplCommon.SERVICE_PREFIX + "/" + github + "/" + serviceRepo);
-        Assert.assertNotSame(tool1.getId(), tool2.getId());
+        assertNotSame(tool1.getId(), tool2.getId());
     }
 
     /**
@@ -334,7 +331,7 @@ public class ServiceIT extends BaseIT {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/1.0-fake", installationId);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+            assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
         }
     }
 
@@ -355,7 +352,7 @@ public class ServiceIT extends BaseIT {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/no-yml", installationId);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+            assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
         }
 
         // Add version that has invalid dockstore.yml
@@ -363,7 +360,7 @@ public class ServiceIT extends BaseIT {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/invalid-yml", installationId);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+            assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
         }
     }
 
@@ -391,7 +388,7 @@ public class ServiceIT extends BaseIT {
             client.refresh(service.getId(), false);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
-            assertEquals("Should not be able to refresh a dockstore.yml service.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should not be able to refresh a dockstore.yml service.");
         }
     }
 
@@ -412,7 +409,7 @@ public class ServiceIT extends BaseIT {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/1.0", installationId);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+            assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
         }
     }
 

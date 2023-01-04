@@ -16,13 +16,14 @@
 
 package io.dockstore.webservice;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.SourceControl;
@@ -36,32 +37,28 @@ import io.swagger.client.model.Repository;
 import io.swagger.client.model.Workflow;
 import java.util.List;
 import java.util.Objects;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category(BitBucketTest.class)
 public class BitBucketUserResourceIT extends BaseIT {
 
 
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
@@ -93,32 +90,28 @@ public class BitBucketUserResourceIT extends BaseIT {
 
         List<Repository> repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()));
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && !repo.isPresent()));
+        assertTrue(repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()));
+        assertTrue(repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && !repo.isPresent()));
 
         // Register a workflow
         BioWorkflow ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
-        assertNotNull("GitHub workflow should be added", ghWorkflow);
+        assertNotNull(ghWorkflow, "GitHub workflow should be added");
         assertEquals("github.com/dockstoretesting/basic-workflow", ghWorkflow.getFullWorkflowPath());
 
         // dockstoretesting/basic-workflow should be present now
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()));
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent()));
+        assertTrue(repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()));
+        assertTrue(repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent()));
 
         // Try deleting a workflow
         workflowsApi.deleteWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
         Workflow deletedWorkflow = null;
         try {
             deletedWorkflow = workflowsApi.getWorkflow(ghWorkflow.getId(), null);
-            assertFalse("Should not reach here as entry should not exist", false);
+            assertFalse(false, "Should not reach here as entry should not exist");
         } catch (ApiException ex) {
-            assertNull("Workflow should be null", deletedWorkflow);
+            assertNull(deletedWorkflow, "Workflow should be null");
         }
 
         // Try making a repo undeletable
@@ -126,8 +119,7 @@ public class BitBucketUserResourceIT extends BaseIT {
         workflowsApi.refresh(ghWorkflow.getId(), false);
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent() && !repo.isCanDelete()));
+        assertTrue(repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent() && !repo.isCanDelete()));
 
         // Test Gitlab
         orgs = userApi.getUserOrganizations(SourceControl.GITLAB.name());
@@ -136,10 +128,8 @@ public class BitBucketUserResourceIT extends BaseIT {
 
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
         assertTrue(repositories.size() > 0);
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-md5sum-unified") && !repo.isPresent()));
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && !repo.isPresent()));
+        assertTrue(repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-md5sum-unified") && !repo.isPresent()));
+        assertTrue(repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && !repo.isPresent()));
 
         // Register a workflow
         BioWorkflow glWorkflow = workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
@@ -148,23 +138,22 @@ public class BitBucketUserResourceIT extends BaseIT {
         // dockstore.test.user2/dockstore-workflow-example should be present now
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
         assertTrue(repositories.size() > 0);
-        assertTrue(
-            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && repo.isPresent()));
+        assertTrue(repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && repo.isPresent()));
 
         // Try registering the workflow again (duplicate) should fail
         try {
             workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
-            assertFalse("Should not reach this, should fail", false);
+            assertFalse(false, "Should not reach this, should fail");
         } catch (ApiException ex) {
-            assertTrue("Should have error message that workflow already exists.", ex.getMessage().contains("already exists"));
+            assertTrue(ex.getMessage().contains("already exists"), "Should have error message that workflow already exists.");
         }
 
         // Try registering a hosted workflow
         try {
             BioWorkflow dsWorkflow = workflowsApi.addWorkflow(SourceControl.DOCKSTORE.name(), "foo", "bar");
-            assertFalse("Should not reach this, should fail", false);
+            assertFalse(false, "Should not reach this, should fail");
         } catch (ApiException ex) {
-            assertTrue("Should have error message that hosted workflows cannot be added this way.", ex.getMessage().contains(WorkflowResource.SC_REGISTRY_ACCESS_MESSAGE));
+            assertTrue(ex.getMessage().contains(WorkflowResource.SC_REGISTRY_ACCESS_MESSAGE), "Should have error message that hosted workflows cannot be added this way.");
         }
 
     }

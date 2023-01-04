@@ -16,6 +16,11 @@
 
 package io.dockstore.client.cli;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.WdlBridge;
 import io.dropwizard.testing.ResourceHelpers;
@@ -23,12 +28,13 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 import wdl.draft3.parser.WdlParser;
 
 /**
@@ -36,16 +42,14 @@ import wdl.draft3.parser.WdlParser;
  *
  * @author dyuen
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 public class CromwellIT {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     @Test
     public void testWDL2Json() {
@@ -53,9 +57,9 @@ public class CromwellIT {
         WdlBridge wdlBridge = new WdlBridge();
         try {
             String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath(), "/wdl.wdl");
-            Assert.assertTrue(inputs.contains("three_step.cgrep.pattern"));
+            assertTrue(inputs.contains("three_step.cgrep.pattern"));
         } catch (WdlParser.SyntaxError ex) {
-            Assert.fail("There should not be any parsing errors");
+            fail("There should not be any parsing errors");
         }
     }
 
@@ -67,24 +71,58 @@ public class CromwellIT {
         @SuppressWarnings("checkstyle:IllegalType")
         HashMap<String, String> secondaryFiles = new HashMap<>();
         secondaryFiles.put("wdl.wdl",
-            "task ps {\n" + "  command {\n" + "    ps\n" + "  }\n" + "  output {\n" + "    File procs = stdout()\n" + "  }\n" + "}\n" + "\n"
-                + "task cgrep {\n" + "  String pattern\n" + "  File in_file\n" + "  command {\n"
-                + "    grep '${pattern}' ${in_file} | wc -l\n" + "  }\n" + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n"
-                + "}\n" + "\n" + "task wc {\n" + "  File in_file\n" + "  command {\n" + "    cat ${in_file} | wc -l\n" + "  }\n"
-                + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n" + "}\n" + "\n" + "workflow three_step {\n"
-                + "  call ps\n" + "  call cgrep {\n" + "    input: in_file=ps.procs\n" + "  }\n" + "  call wc {\n"
-                + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
+            """
+                task ps {
+                  command {
+                    ps
+                  }
+                  output {
+                    File procs = stdout()
+                  }
+                }
+
+                task cgrep {
+                  String pattern
+                  File in_file
+                  command {
+                    grep '${pattern}' ${in_file} | wc -l
+                  }
+                  output {
+                    Int count = read_int(stdout())
+                  }
+                }
+
+                task wc {
+                  File in_file
+                  command {
+                    cat ${in_file} | wc -l
+                  }
+                  output {
+                    Int count = read_int(stdout())
+                  }
+                }
+
+                workflow three_step {
+                  call ps
+                  call cgrep {
+                    input: in_file=ps.procs
+                  }
+                  call wc {
+                    input: in_file=ps.procs
+                  }
+                }
+                """);
         wdlBridge.setSecondaryFiles(secondaryFiles);
         try {
             wdlBridge.validateWorkflow(sourceFile.getAbsolutePath(), "/wdl-sanger-workflow.wdl");
         } catch (WdlParser.SyntaxError ex) {
-            Assert.fail("Should not fail parsing file");
+            fail("Should not fail parsing file");
         }
     }
 
 
     /**
-     * This tests compatibility with Cromwell 30.2 by converting to JSON (https://github.com/dockstore/dockstore/issues/1211)
+     * This tests compatibility with Cromwell 30.2 by converting to JSON (<a href="https://github.com/dockstore/dockstore/issues/1211">...</a>)
      */
     @Test
     public void testWDL2JsonIssue() {
@@ -92,28 +130,29 @@ public class CromwellIT {
         WdlBridge wdlBridge = new WdlBridge();
         try {
             String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath(), "/hello_world.wdl");
-            Assert.assertTrue(inputs.contains("wf.hello_world.hello_input"));
+            assertTrue(inputs.contains("wf.hello_world.hello_input"));
         } catch (WdlParser.SyntaxError ex) {
-            Assert.fail("Should properly parse document");
+            fail("Should properly parse document");
         }
     }
 
     /**
-     * Tests that we can generate a DAG for https://staging.dockstore.org/workflows/github.com/HumanCellAtlas/skylab/Snap-ATAC:gl_576?tab=info
+     * Tests that we can generate a DAG for <a href="https://staging.dockstore.org/workflows/github.com/HumanCellAtlas/skylab/Snap-ATAC:gl_576?tab=info">
+     *     </a>
      */
     @Test
     public void testSnapAtacDag() {
         final File file = new File(ResourceHelpers.resourceFilePath("snap_atac.wdl"));
         final WdlBridge wdlBridge = new WdlBridge();
         final Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(file.getAbsolutePath(), "snap_atac.wdl");
-        Assert.assertEquals(5, callsToDependencies.size());
+        assertEquals(5, callsToDependencies.size());
     }
 
     @Test
     public void testPathResolver() {
-        Assert.assertEquals("/module00a/Module00a.wdl", LanguageHandlerHelper
+        assertEquals("/module00a/Module00a.wdl", LanguageHandlerHelper
                 .unsafeConvertRelativePathToAbsolutePath("/GATKSVPipelineClinical.wdl", "module00a/Module00a.wdl"));
-        Assert.assertEquals("/a/importA.wdl", LanguageHandlerHelper
+        assertEquals("/a/importA.wdl", LanguageHandlerHelper
                 .unsafeConvertRelativePathToAbsolutePath("/parent/parent.wdl", "../a/importA.wdl"));
     }
 }

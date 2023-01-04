@@ -26,6 +26,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.permissions.Permission;
 import io.dockstore.webservice.permissions.Role;
 import io.dockstore.webservice.permissions.Role.Action;
+import io.dockstore.webservice.permissions.sam.SamPermissionsImplTest.TestStatus;
 import io.swagger.sam.client.ApiClient;
 import io.swagger.sam.client.ApiException;
 import io.swagger.sam.client.api.ResourcesApi;
@@ -49,13 +50,19 @@ import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestWatcher;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 public class SamPermissionsImplTest {
 
     private static final String FOO_WORKFLOW_NAME = "foo";
@@ -640,6 +647,18 @@ public class SamPermissionsImplTest {
         policy.setResourceId("%23workflow%2Ffoo");
         policy.setAccessPolicyName(policyName);
         return policy;
+    }
+
+    public static class TestStatus implements TestWatcher {
+        @Override
+        public void testSuccessful(ExtensionContext context) {
+            System.out.printf("Test successful: %s%n", context.getTestMethod().get());
+        }
+
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            System.out.printf("Test failed: %s%n", context.getTestMethod().get());
+        }
     }
 
 }

@@ -16,8 +16,9 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.LanguageParsingTest;
 import io.dockstore.common.TestUtility;
@@ -30,43 +31,46 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.glassfish.jersey.client.ClientProperties;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * @author gluu
  * @since 02/01/18
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category(LanguageParsingTest.class)
 public class GA4GHV2CwltoolIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,
             ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
     protected static javax.ws.rs.client.Client client;
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     final String basePath = SUPPORT.getConfiguration().getExternalConfig().getBasePath();
 
 
-    @BeforeClass
+    @BeforeAll
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, true);
         SUPPORT.before();
         client = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.after();
     }
@@ -103,7 +107,6 @@ public class GA4GHV2CwltoolIT {
         String testParameterFilePath = ResourceHelpers.resourceFilePath("testWorkflow.json");
         ImmutablePair<String, String> stringStringImmutablePair = Utilities
                 .executeCommand(command + " " + descriptorPath + " " + testParameterFilePath, System.out, System.err);
-        assertTrue("failure message" + stringStringImmutablePair.left,
-                stringStringImmutablePair.getRight().contains("Final process status is success"));
+        assertTrue(stringStringImmutablePair.getRight().contains("Final process status is success"), "failure message" + stringStringImmutablePair.left);
     }
 }

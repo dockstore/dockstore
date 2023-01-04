@@ -24,14 +24,16 @@ import static io.dockstore.webservice.resources.WorkflowResource.A_WORKFLOW_MUST
 import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
 import static io.dockstore.webservice.resources.WorkflowResource.YOU_CANNOT_CHANGE_THE_DESCRIPTOR_TYPE_OF_A_FULL_OR_HOSTED_WORKFLOW;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.collect.Lists;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -46,8 +48,10 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.Workflow.ModeEnum;
 import io.swagger.client.model.Workflow.TopicSelectionEnum;
 import io.swagger.client.model.WorkflowVersion;
+import io.swagger.client.model.WorkflowVersion.DoiStatusEnum;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -56,36 +60,35 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * This test suite tests various workflow related processes.
  * Created by aduncan on 05/04/16.
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category({ ConfidentialTest.class, WorkflowTest.class })
 public class GeneralWorkflowIT extends BaseIT {
 
     private static final String DUMMY_DOI = "10.foo/bar";
 
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     private FileDAO fileDAO;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -96,7 +99,7 @@ public class GeneralWorkflowIT extends BaseIT {
         ManagedSessionContext.bind(session);
     }
 
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -135,44 +138,44 @@ public class GeneralWorkflowIT extends BaseIT {
         // refresh individual that is valid
         Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", BIOWORKFLOW, "");
         workflow = workflowsApi.refresh(workflow.getId(), false);
-        Assert.assertNotNull("Should have a license object even if it's null name", workflow.getLicenseInformation());
-        Assert.assertNotNull("Should have no license name", workflow.getLicenseInformation().getLicenseName());
+        assertNotNull(workflow.getLicenseInformation(), "Should have a license object even if it's null name");
+        assertNotNull(workflow.getLicenseInformation().getLicenseName(), "Should have no license name");
 
         // check that valid is valid and full
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
-        assertEquals("there should be 0 published entries, there are " + count, 0, count);
+        assertEquals(0, count, "there should be 0 published entries, there are " + count);
         final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
-        assertEquals("there should be 2 valid versions, there are " + count2, 2, count2);
+        assertEquals(2, count2, "there should be 2 valid versions, there are " + count2);
         final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", long.class);
-        assertEquals("there should be 1 full workflows, there are " + count3, 1, count3);
+        assertEquals(1, count3, "there should be 1 full workflows, there are " + count3);
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
-        assertTrue("there should be at least 4 versions, there are " + count4, 4 <= count4);
+        assertTrue(4 <= count4, "there should be at least 4 versions, there are " + count4);
 
         // attempt to publish it
         workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
-        assertEquals("there should be 1 published entry, there are " + count5, 1, count5);
+        assertEquals(1, count5, "there should be 1 published entry, there are " + count5);
 
         // unpublish
         workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
 
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
-        assertEquals("there should be 0 published entries, there are " + count6, 0, count6);
+        assertEquals(0, count6, "there should be 0 published entries, there are " + count6);
 
         // Restub
         workflow = workflowsApi.restub(workflow.getId());
 
         // Refresh a single version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
-        assertEquals("Should only have one version", 1, workflow.getWorkflowVersions().size());
-        assertTrue("Should have master version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")));
-        assertEquals("Should no longer be a stub workflow", Workflow.ModeEnum.FULL, workflow.getMode());
+        assertEquals(1, workflow.getWorkflowVersions().size(), "Should only have one version");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")), "Should have master version");
+        assertEquals(ModeEnum.FULL, workflow.getMode(), "Should no longer be a stub workflow");
 
         // Refresh another version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "testCWL", false);
-        assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
-        assertTrue("Should have testCWL version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "testCWL")));
+        assertEquals(2, workflow.getWorkflowVersions().size(), "Should now have two versions");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "testCWL")), "Should have testCWL version");
 
         try {
             workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
@@ -250,14 +253,14 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals(2, workflow.getLabels().size());
 
         final long count = testingPostgres.runSelectStatement("select count(*) from entry_label", long.class);
-        assertEquals("there should be 2 labels, there are " + count, 2, count);
+        assertEquals(2, count, "there should be 2 labels, there are " + count);
 
         // remove labels
         workflow = workflowsApi.updateLabels(workflow.getId(), "test2,test3", "");
         assertEquals(2, workflow.getLabels().size());
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from entry_label", long.class);
-        assertEquals("there should be 2 labels, there are " + count2, 2, count2);
+        assertEquals(2, count2, "there should be 2 labels, there are " + count2);
     }
 
     /**
@@ -311,7 +314,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from workflowversion wv, version_metadata vm where wv.name = 'testCWL' and vm.hidden = 't' and wv.workflowpath = '/Dockstore2.wdl' and wv.id = vm.id",
             long.class);
-        assertEquals("there should be 1 matching workflow version, there is " + count, 1, count);
+        assertEquals(1, count, "there should be 1 matching workflow version, there is " + count);
     }
 
     /**
@@ -330,7 +333,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowsApi.restub(workflow.getId());
 
         final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
-        assertEquals("there should be 0 workflow versions, there are " + count, 0, count);
+        assertEquals(0, count, "there should be 0 workflow versions, there are " + count);
     }
 
     /**
@@ -368,7 +371,7 @@ public class GeneralWorkflowIT extends BaseIT {
             SourceControl.GITHUB, "/Dockstore.wdl", true);
 
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow where descriptortype = 'wdl'", long.class);
-        assertEquals("there should be 1 wdl workflow, there are " + count, 1, count);
+        assertEquals(1, count, "there should be 1 wdl workflow, there are " + count);
 
         workflow = workflowsApi.refresh(workflow.getId(), false);
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.CWL);
@@ -408,7 +411,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where name = 'master' and workflowpath = '/newdescriptor.cwl'",
                 long.class);
-        assertEquals("the workflow version should now have a new descriptor path", 1, count);
+        assertEquals(1, count, "the workflow version should now have a new descriptor path");
 
         // Update workflow version to incorrect path (wrong extension)
         workflowVersion = workflowVersions.stream().filter(version -> Objects.equals(version.getName(), "master")).findFirst();
@@ -455,8 +458,8 @@ public class GeneralWorkflowIT extends BaseIT {
             .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", String.class);
         final String testpath = testingPostgres
             .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", String.class);
-        assertEquals("master workflow path should be the same as default workflow path, it is " + masterpath, "/Dockstore.cwl", masterpath);
-        assertEquals("test workflow path should be the same as default workflow path, it is " + testpath, "/Dockstore.cwl", testpath);
+        assertEquals("/Dockstore.cwl", masterpath, "master workflow path should be the same as default workflow path, it is " + masterpath);
+        assertEquals("/Dockstore.cwl", testpath, "test workflow path should be the same as default workflow path, it is " + testpath);
     }
 
     @Test
@@ -470,7 +473,7 @@ public class GeneralWorkflowIT extends BaseIT {
                         "test-update-workflow", DescriptorLanguage.CWL.toString(),
                         "/test.json");
 
-        Assert.assertEquals("Should default to automatic", TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection(), "Should default to automatic");
         
         //update the forumUrl to hello.com
         final String newTopic = "newTopic";
@@ -482,10 +485,10 @@ public class GeneralWorkflowIT extends BaseIT {
         //check the workflow's forumUrl is hello.com
         final String updatedForumUrl = testingPostgres
                 .runSelectStatement("select forumurl from workflow where workflowname = 'test-update-workflow'", String.class);
-        assertEquals("forumUrl should be updated, it is " + updatedForumUrl, "hello.com", updatedForumUrl);
+        assertEquals("hello.com", updatedForumUrl, "forumUrl should be updated, it is " + updatedForumUrl);
 
-        Assert.assertEquals(newTopic, updatedWorkflow.getTopicManual());
-        Assert.assertEquals(TopicSelectionEnum.MANUAL, updatedWorkflow.getTopicSelection());
+        assertEquals(newTopic, updatedWorkflow.getTopicManual());
+        assertEquals(TopicSelectionEnum.MANUAL, updatedWorkflow.getTopicSelection());
     }
 
     @Test
@@ -498,29 +501,30 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // confirm the default workflow topic settings
         final String topicAutomatic = workflow.getTopicAutomatic();
-        Assert.assertEquals("test repo for CWL and WDL workflows", topicAutomatic);
-        Assert.assertNull(workflow.getTopicManual());
-        Assert.assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection());
+        assertEquals("test repo for CWL and WDL workflows", topicAutomatic);
+        assertNull(workflow.getTopicManual());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection());
 
         // set the automatic topic to a garbage string, change the manual topic, and select it
         final String topicManual = "a user-specified manual topic!";
         final String garbage = "fooooo";
-        Assert.assertEquals(1, testingPostgres.runUpdateStatement(String.format("update workflow set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", workflow.getId())));
+        assertEquals(1,
+            testingPostgres.runUpdateStatement(String.format("update workflow set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", workflow.getId())));
 
         // confirm the new topic settings
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
-        Assert.assertEquals(garbage, workflow.getTopicAutomatic());
-        Assert.assertEquals(topicManual, workflow.getTopicManual());
-        Assert.assertEquals(TopicSelectionEnum.MANUAL, workflow.getTopicSelection());
+        assertEquals(garbage, workflow.getTopicAutomatic());
+        assertEquals(topicManual, workflow.getTopicManual());
+        assertEquals(TopicSelectionEnum.MANUAL, workflow.getTopicSelection());
 
         // refresh the workflow
         Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId(), false);
 
         // make sure the automatic topic was refreshed, and that the manual topic and selection are the same
-        Assert.assertEquals(workflow.getId(), refreshedWorkflow.getId());
-        Assert.assertEquals(topicAutomatic, refreshedWorkflow.getTopicAutomatic());
-        Assert.assertEquals(topicManual, refreshedWorkflow.getTopicManual());
-        Assert.assertEquals(TopicSelectionEnum.MANUAL, refreshedWorkflow.getTopicSelection());
+        assertEquals(workflow.getId(), refreshedWorkflow.getId());
+        assertEquals(topicAutomatic, refreshedWorkflow.getTopicAutomatic());
+        assertEquals(topicManual, refreshedWorkflow.getTopicManual());
+        assertEquals(TopicSelectionEnum.MANUAL, refreshedWorkflow.getTopicSelection());
     }
 
     @Test
@@ -545,7 +549,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         } catch (ApiException e) {
             // should exception
-            assertTrue("missing error message", e.getMessage().contains(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES));
+            assertTrue(e.getMessage().contains(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES), "missing error message");
             return;
         }
         fail("should be unreachable");
@@ -592,7 +596,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowVersions = workflowsApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
         assertEquals(DUMMY_DOI, master.getDoiURL());
-        assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, master.getDoiStatus());
+        assertEquals(DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // refresh should skip over the frozen version
         final Workflow refresh = workflowsApi.refresh(githubWorkflow.getId(), false);
@@ -673,12 +677,12 @@ public class GeneralWorkflowIT extends BaseIT {
         version.setFrozen(true);
         version.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
         version.setDoiURL(DUMMY_DOI);
-        assertFalse("Double check that this version is in fact invalid", version.isValid());
+        assertFalse(version.isValid(), "Double check that this version is in fact invalid");
         List<WorkflowVersion> workflowVersions = workflowsApi
             .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(version));
         version = workflowVersions.stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
         assertEquals(DUMMY_DOI, version.getDoiURL());
-        assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, version.getDoiStatus());
+        assertEquals(DoiStatusEnum.REQUESTED, version.getDoiStatus());
     }
 
     /**
@@ -691,15 +695,15 @@ public class GeneralWorkflowIT extends BaseIT {
         // Manually register workflow
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "cwl",
                 SourceControl.GITHUB, "/Dockstore.cwl", true);
-        assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "master", workflow.getDefaultVersion());
+        assertEquals("master", workflow.getDefaultVersion(), "manualRegisterAndPublish does a refresh, it should automatically set the default version");
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
-        Assert.assertEquals("Should be able to overwrite previous default version", "testBoth", workflow.getDefaultVersion());
+        assertEquals("testBoth", workflow.getDefaultVersion(), "Should be able to overwrite previous default version");
         workflow = workflowsApi.refresh(workflow.getId(), false);
-        Assert.assertEquals("Refresh should not have set it back to the automatic one", "testBoth", workflow.getDefaultVersion());
+        assertEquals("testBoth", workflow.getDefaultVersion(), "Refresh should not have set it back to the automatic one");
         // Mimic version on Dockstore no longer present on GitHub
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET name = 'deletedGitHubBranch', reference ='deletedGitHubBranch' where name='testBoth'");
         workflow = workflowsApi.refresh(workflow.getId(), false);
-        Assert.assertEquals("the old default was deleted during refresh, it should automatically set the default version again", "master", workflow.getDefaultVersion());
+        assertEquals("master", workflow.getDefaultVersion(), "the old default was deleted during refresh, it should automatically set the default version again");
     }
 
     /**
@@ -723,16 +727,16 @@ public class GeneralWorkflowIT extends BaseIT {
         // Assert default version is updated and no author or email is found
         long defaultVersionNumber = testingPostgres.runSelectStatement("select actualdefaultversion from workflow where organization = 'DockstoreTestUser2' and repository = 'hello-dockstore-workflow'", long.class);
         String defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
-        assertEquals("the default version should be for the testWDL branch, but is for the branch " + defaultVersionName, "testWDL", defaultVersionName);
+        assertEquals("testWDL", defaultVersionName, "the default version should be for the testWDL branch, but is for the branch " + defaultVersionName);
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and author is null and email is null",
                 long.class);
-        assertEquals("The given workflow shouldn't have any contact info", 1, count2);
+        assertEquals(1, count2, "The given workflow shouldn't have any contact info");
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals("testWDL", workflow.getDefaultVersion());
-        Assert.assertNull(workflow.getAuthor());
-        Assert.assertNull(workflow.getEmail());
+        assertNull(workflow.getAuthor());
+        assertNull(workflow.getEmail());
         // Update workflow with version with metadata
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
         workflow = workflowsApi.refresh(workflow.getId(), false);
@@ -740,12 +744,12 @@ public class GeneralWorkflowIT extends BaseIT {
         // Assert default version is updated and author and email are set
         defaultVersionNumber = testingPostgres.runSelectStatement("select actualdefaultversion from workflow where organization = 'DockstoreTestUser2' and repository = 'hello-dockstore-workflow'", long.class);
         defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
-        assertEquals("the default version should be for the testBoth branch, but is for the branch " + defaultVersionName, "testBoth", defaultVersionName);
+        assertEquals("testBoth", defaultVersionName, "the default version should be for the testBoth branch, but is for the branch " + defaultVersionName);
 
         final long count3 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and author = 'testAuthor' and email = 'testEmail'",
             long.class);
-        assertEquals("The given workflow should have contact info", 1, count3);
+        assertEquals(1, count3, "The given workflow should have contact info");
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals("testBoth", workflow.getDefaultVersion());
         assertEquals("testAuthor", workflow.getAuthor());
@@ -766,8 +770,8 @@ public class GeneralWorkflowIT extends BaseIT {
         // Tests that a frozen version without a saved DAG could generate a DAG does not try to save it
         testingPostgres.runUpdateStatement("update workflowversion set frozen='t'");
         String workflowDag = workflowsApi.getWorkflowDag(workflow.getId(), defaultVersionNumber);
-        Assert.assertTrue(workflowDag.contains("nodes"));
-        Assert.assertTrue(workflowDag.contains("edges"));
+        assertTrue(workflowDag.contains("nodes"));
+        assertTrue(workflowDag.contains("edges"));
     }
 
     /**
@@ -784,9 +788,9 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // check that workflow is valid and full
         final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
-        assertEquals("there should be 2 valid versions, there are " + count2, 2, count2);
+        assertEquals(2, count2, "there should be 2 valid versions, there are " + count2);
         final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", long.class);
-        assertEquals("there should be 1 full workflows, there are " + count3, 1, count3);
+        assertEquals(1, count3, "there should be 1 full workflows, there are " + count3);
 
         // Change path for each version so that it is invalid
         workflow.setWorkflowPath("thisisnotarealpath.cwl");
@@ -797,7 +801,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // check that invalid
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
-        assertTrue("there should be at least 4 invalid versions, there are " + count4, 4 <= count4);
+        assertTrue(4 <= count4, "there should be at least 4 invalid versions, there are " + count4);
 
         // Restub
         workflow = workflowsApi.restub(workflow.getId());
@@ -821,7 +825,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Check that versions are invalid
         final long count5 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
-        assertTrue("there should be at least 4 invalid versions, there are " + count5, 4 <= count5);
+        assertTrue(4 <= count5, "there should be at least 4 invalid versions, there are " + count5);
 
         // should now not be able to publish
         try {
@@ -845,7 +849,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Check that no versions have a true dirty bit
         final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
-        assertEquals("there should be no versions with dirty bit, there are " + count, 0, count);
+        assertEquals(0, count, "there should be no versions with dirty bit, there are " + count);
 
         // Update workflow version to new path
         Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream()
@@ -863,7 +867,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // There should be on dirty bit
         final long count1 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
-        assertEquals("there should be 1 versions with dirty bit, there are " + count1, 1, count1);
+        assertEquals(1, count1, "there should be 1 versions with dirty bit, there are " + count1);
 
         // Update default cwl
         workflow.setWorkflowPath("/Dockstoreclean.cwl");
@@ -873,7 +877,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // There should be 3 versions with new cwl
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'", long.class);
-        assertTrue("there should be at least 3 versions with workflow path /Dockstoreclean.cwl, there are " + count2, 3 <= count2);
+        assertTrue(3 <= count2, "there should be at least 3 versions with workflow path /Dockstoreclean.cwl, there are " + count2);
     }
 
  
@@ -891,22 +895,21 @@ public class GeneralWorkflowIT extends BaseIT {
 
         final long nullLastModifiedWorkflowVersions = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
-        assertEquals("All GitLab workflow versions should have last modified populated after refreshing", 0,
-            nullLastModifiedWorkflowVersions);
+        assertEquals(0, nullLastModifiedWorkflowVersions, "All GitLab workflow versions should have last modified populated after refreshing");
 
         // Check a few things
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
-        assertEquals("there should be 1 workflow, there are " + count, 1, count);
+        assertEquals(1, count, "there should be 1 workflow, there are " + count);
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
-        assertEquals("there should be 2 valid version, there are " + count2, 2, count2);
+        assertEquals(2, count2, "there should be 2 valid version, there are " + count2);
 
         final long count3 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
-        assertEquals("there should be 1 workflow, there are " + count3, 1, count3);
+        assertEquals(1, count3, "there should be 1 workflow, there are " + count3);
 
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
             assertNotNull(workflowVersion.getCommitID());
@@ -918,7 +921,7 @@ public class GeneralWorkflowIT extends BaseIT {
             "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
             long.class);
-        assertEquals("there should be 1 published workflow, there are " + count4, 1, count4);
+        assertEquals(1, count4, "there should be 1 published workflow, there are " + count4);
 
         // unpublish
         workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
@@ -926,14 +929,14 @@ public class GeneralWorkflowIT extends BaseIT {
             "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
             long.class);
-        assertEquals("there should be 0 published workflows, there are " + count5, 0, count5);
+        assertEquals(0, count5, "there should be 0 published workflows, there are " + count5);
 
         // change default branch
         final long count6 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.toString()
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and author is null and email is null and description is null",
             long.class);
-        assertEquals("The given workflow shouldn't have any contact info", 1, count6);
+        assertEquals(1, count6, "The given workflow shouldn't have any contact info");
 
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "test");
         workflow = workflowsApi.refresh(workflow.getId(), false);
@@ -941,14 +944,14 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count7 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where actualdefaultversion = 952 and author is null and email is null and description is null",
             long.class);
-        assertEquals("The given workflow should now have contact info and description", 0, count7);
+        assertEquals(0, count7, "The given workflow should now have contact info and description");
 
         // restub
         workflow = workflowsApi.restub(workflow.getId());
         final long count8 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB.toString()
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
-        assertEquals("The workflow should now be a stub", 1, count8);
+        assertEquals(1, count8, "The workflow should now be a stub");
 
         // Convert to WDL workflow
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
@@ -956,21 +959,21 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Should now be a WDL workflow
         final long count9 = testingPostgres.runSelectStatement("select count(*) from workflow where descriptortype='wdl'", long.class);
-        assertEquals("there should be 1 wdl workflow" + count9, 1, count9);
+        assertEquals(1, count9, "there should be 1 wdl workflow" + count9);
 
         // Restub
         workflow = workflowsApi.restub(workflow.getId());
 
         // Refresh a single version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
-        assertEquals("Should only have one version", 1, workflow.getWorkflowVersions().size());
-        assertTrue("Should have master version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")));
-        assertEquals("Should no longer be a stub workflow", Workflow.ModeEnum.FULL, workflow.getMode());
+        assertEquals(1, workflow.getWorkflowVersions().size(), "Should only have one version");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")), "Should have master version");
+        assertEquals(ModeEnum.FULL, workflow.getMode(), "Should no longer be a stub workflow");
 
         // Refresh another version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "test", false);
-        assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
-        assertTrue("Should have test version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "test")));
+        assertEquals(2, workflow.getWorkflowVersions().size(), "Should now have two versions");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "test")), "Should have test version");
 
         try {
             workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
@@ -995,11 +998,11 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Check for one valid version
         final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
-        assertEquals("there should be 1 valid version, there are " + count, 1, count);
+        assertEquals(1, count, "there should be 1 valid version, there are " + count);
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
-        assertEquals("All GitLab workflow versions should have last modified populated when manual published", 0, count2);
+        assertEquals(0, count2, "All GitLab workflow versions should have last modified populated when manual published");
 
         // grab wdl file
         Optional<WorkflowVersion> version = workflow.getWorkflowVersions().stream()
@@ -1007,9 +1010,7 @@ public class GeneralWorkflowIT extends BaseIT {
         if (version.isEmpty()) {
             fail("master version should exist");
         }
-        assertTrue(
-            fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
-                .findFirst().isPresent());
+        assertTrue(fileDAO.findSourceFilesByVersion(version.get().getId()).stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl")));
     }
 
     /**
@@ -1026,13 +1027,13 @@ public class GeneralWorkflowIT extends BaseIT {
             "wdl", SourceControl.GITLAB, "/checker.wdl", true);
 
         final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
-        assertTrue("there should be at least 5 versions, there are " + count, count >= 5);
+        assertTrue(count >= 5, "there should be at least 5 versions, there are " + count);
         final long branchCount = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where referencetype = 'BRANCH'", long.class);
-        assertTrue("there should be at least 2 branches, there are " + count, branchCount >= 2);
+        assertTrue(branchCount >= 2, "there should be at least 2 branches, there are " + count);
         final long tagCount = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where referencetype = 'TAG'", long.class);
-        assertTrue("there should be at least 3 tags, there are " + count, tagCount >= 3);
+        assertTrue(tagCount >= 3, "there should be at least 3 tags, there are " + count);
     }
 
     /**
@@ -1048,7 +1049,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Check for WDL files
         final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where path='helper.wdl'", long.class);
-        assertEquals("there should be 1 secondary file named helper.wdl, there are " + count, 1, count);
+        assertEquals(1, count, "there should be 1 secondary file named helper.wdl, there are " + count);
 
     }
 
@@ -1066,7 +1067,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // There should be no sourcefiles
         final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        assertEquals("there should be no source files that are test parameter files, there are " + count, 0, count);
+        assertEquals(0, count, "there should be no source files that are test parameter files, there are " + count);
 
         // Update version master with test parameters
         List<String> toAdd = new ArrayList<>();
@@ -1080,12 +1081,12 @@ public class GeneralWorkflowIT extends BaseIT {
             workflowsApi.deleteTestParameterFiles(workflow.getId(), toDelete, "master");
             fail("Should've have thrown an error when deleting non-existent file");
         } catch (ApiException e) {
-            assertEquals("Should have returned a 404 when deleting non-existent file", HttpStatus.NOT_FOUND_404, e.getCode());
+            assertEquals(HttpStatus.NOT_FOUND_404, e.getCode(), "Should have returned a 404 when deleting non-existent file");
         }
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        assertEquals("there should be two sourcefiles that are test parameter files, there are " + count2, 2, count2);
+        assertEquals(2, count2, "there should be two sourcefiles that are test parameter files, there are " + count2);
 
         // Update version with test parameters
         toAdd.clear();
@@ -1096,7 +1097,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowsApi.deleteTestParameterFiles(workflow.getId(), toDelete, "master");
         workflow = workflowsApi.refresh(workflow.getId(), false);
         final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        assertEquals("there should be one sourcefile that is a test parameter file, there are " + count3, 1, count3);
+        assertEquals(1, count3, "there should be one sourcefile that is a test parameter file, there are " + count3);
 
         // Update other version with test parameters
         toAdd.clear();
@@ -1104,7 +1105,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowsApi.addTestParameterFiles(workflow.getId(), toAdd, "", "wdltest");
         workflow = workflowsApi.refresh(workflow.getId(), false);
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
-        assertEquals("there should be two sourcefiles that are cwl test parameter files, there are " + count4, 2, count4);
+        assertEquals(2, count4, "there should be two sourcefiles that are cwl test parameter files, there are " + count4);
 
         // Restub
         workflow = workflowsApi.restub(workflow.getId());
@@ -1117,7 +1118,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Should be no sourcefiles
         final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        assertEquals("there should be no source files that are test parameter files, there are " + count5, 0, count5);
+        assertEquals(0, count5, "there should be no source files that are test parameter files, there are " + count5);
 
         // Update version wdltest with test parameters
         toAdd.clear();
@@ -1125,7 +1126,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowsApi.addTestParameterFiles(workflow.getId(), toAdd, "", "wdltest");
         workflow = workflowsApi.refresh(workflow.getId(), false);
         final long count6 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", long.class);
-        assertEquals("there should be one sourcefile that is a wdl test parameter file, there are " + count6, 1, count6);
+        assertEquals(1, count6, "there should be one sourcefile that is a wdl test parameter file, there are " + count6);
     }
 
     /**
@@ -1147,7 +1148,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // TODO: bizarrely, the new GitHub Java API library doesn't seem to handle bio
         // final long count = testingPostgres.runSelectStatement("select count(*) from enduser where location='Toronto' and bio='I am a test user'", long.class);
         final long count = testingPostgres.runSelectStatement("select count(*) from user_profile where location='Toronto'", long.class);
-        assertEquals("One user should have this info now, there are  " + count, 1, count);
+        assertEquals(1, count, "One user should have this info now, there are  " + count);
     }
 
     @Test

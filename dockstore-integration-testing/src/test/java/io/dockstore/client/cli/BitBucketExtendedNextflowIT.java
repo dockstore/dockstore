@@ -15,6 +15,12 @@
  */
 package io.dockstore.client.cli;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
@@ -29,14 +35,18 @@ import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category(BitBucketTest.class)
 public class BitBucketExtendedNextflowIT extends BaseIT {
 
@@ -47,15 +57,14 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW =
         SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/kallisto-nf";
 
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     private FileDAO fileDAO;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -67,7 +76,7 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         ManagedSessionContext.bind(session);
     }
 
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres, true);
@@ -108,7 +117,7 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         testWorkflowVersionMetadata(refreshedBitbucketWorkflow);
         testWorkflowVersionMetadata(byPathWorkflow);
         List<io.dockstore.webservice.core.SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get().getId());
-        Assert.assertEquals(4, sourceFileList.size());
+        assertEquals(4, sourceFileList.size());
     }
 
     /**
@@ -121,17 +130,17 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         final String descriptorDescription = "Fast automated prediction of protein antimicrobial regions";
         final String versionWithReadmeDescription = "v1.0";
 
-        Assert.assertEquals(descriptorDescription, workflow.getDescription());
-        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.getName().equals(versionWithReadmeDescription)));
+        assertEquals(descriptorDescription, workflow.getDescription());
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.getName().equals(versionWithReadmeDescription)));
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
             if (workflowVersion.getName().equals(versionWithReadmeDescription)) {
-                Assert.assertTrue(workflowVersion.getDescription().contains(partialReadmeDescription));
-                Assert.assertNull(workflowVersion.getAuthor());
-                Assert.assertNull(workflowVersion.getEmail());
+                assertTrue(workflowVersion.getDescription().contains(partialReadmeDescription));
+                assertNull(workflowVersion.getAuthor());
+                assertNull(workflowVersion.getEmail());
             } else {
-                Assert.assertNotNull(descriptorDescription, workflowVersion.getDescription());
-                Assert.assertEquals("test.user@test.com", workflowVersion.getAuthor());
-                Assert.assertNull(workflowVersion.getEmail());
+                assertNotNull(workflowVersion.getDescription(), descriptorDescription);
+                assertEquals("test.user@test.com", workflowVersion.getAuthor());
+                assertNull(workflowVersion.getEmail());
             }
         });
     }
@@ -158,12 +167,12 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, BIOWORKFLOW, null);
         final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
-        Assert.assertTrue("Should have gotten the description from README", bitbucketWorkflow.getDescription().contains("A Nextflow implementation of Kallisto & Sleuth RNA-Seq Tools"));
+        assertTrue(bitbucketWorkflow.getDescription().contains("A Nextflow implementation of Kallisto & Sleuth RNA-Seq Tools"), "Should have gotten the description from README");
         List<SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v1.0")).findFirst().get().getId());
-        Assert.assertEquals(6, sourceFileList.size());
+        assertEquals(6, sourceFileList.size());
         // two of the files should essentially be blanked
-        Assert.assertEquals("two files have our one-line warning", 2, sourceFileList.stream()
-            .filter(file -> file.getContent().split("\n").length == 1 && file.getContent().contains("Dockstore does not")).count());
+        assertEquals(2, sourceFileList.stream()
+            .filter(file -> file.getContent().split("\n").length == 1 && file.getContent().contains("Dockstore does not")).count(), "two files have our one-line warning");
     }
 
 }

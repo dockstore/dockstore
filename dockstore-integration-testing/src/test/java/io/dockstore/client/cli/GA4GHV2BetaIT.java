@@ -17,8 +17,8 @@ package io.dockstore.client.cli;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
@@ -32,7 +32,7 @@ import java.util.List;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author gluu
@@ -83,10 +83,10 @@ public class GA4GHV2BetaIT extends GA4GHIT {
         Tool responseObject = response.readEntity(Tool.class);
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
         // regression test for #1248
-        assertTrue("registry_url should never be null", responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
-            .allMatch(version -> version.getRegistryUrl() != null));
-        assertTrue("imageName should never be null", responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
-            .allMatch(version -> version.getImageName() != null));
+        assertTrue(responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
+            .allMatch(version -> version.getRegistryUrl() != null), "registry_url should never be null");
+        assertTrue(responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
+            .allMatch(version -> version.getImageName() != null), "imageName should never be null");
         // search by id
         response = checkedResponse(baseURL + "tools?id=quay.io%2Ftest_org%2Ftest6");
         List<Tool> responseList = response.readEntity(new GenericType<>() {

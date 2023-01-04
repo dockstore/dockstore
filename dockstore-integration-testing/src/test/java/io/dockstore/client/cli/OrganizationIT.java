@@ -5,10 +5,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -51,14 +52,17 @@ import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category(ConfidentialTest.class)
 public class OrganizationIT extends BaseIT {
     private static final long NONEXISTENT_ID = Long.MAX_VALUE;
@@ -66,16 +70,11 @@ public class OrganizationIT extends BaseIT {
     private static final StarRequest STAR_REQUEST = getStarRequest(true);
     private static final StarRequest UNSTAR_REQUEST = getStarRequest(false);
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
     private final List<String> goodCollectionNames = Arrays.asList("baa", "baaa", "bAaaa", "BAAAAA", "baa123", "daa-daa", "d-a-a-a-a", "d0-a-9", "daa-1234", "daa5-678", "aaz", "zaa");
     // All numbers, too short, bad pattern, too long, foreign characters
     private final List<String> badNames = Arrays.asList("1234", "", "a", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a b", "我喜欢狗", "-", "---", "-abc", "abc-", "a--b");
@@ -509,8 +508,7 @@ public class OrganizationIT extends BaseIT {
         // Create the organisation
         Organization organisation = stubOrgObject();
         organisation.setEmail("thisisnotanemail");
-        thrown.expect(ApiException.class);
-        organisationsApiUser2.createOrganization(organisation);
+        assertThrows(ApiException.class,  () -> organisationsApiUser2.createOrganization(organisation));
     }
 
     @Test
@@ -522,8 +520,7 @@ public class OrganizationIT extends BaseIT {
         // Create the organisation
         Organization organisation = stubOrgObject();
         organisation.setLink("www.google.com");
-        thrown.expect(ApiException.class);
-        organisationsApiUser2.createOrganization(organisation);
+        assertThrows(ApiException.class,  () -> organisationsApiUser2.createOrganization(organisation));
     }
 
     @Test
@@ -588,8 +585,7 @@ public class OrganizationIT extends BaseIT {
         // Create org with different name but same display name
         organisation.setName("testname3");
         organisation.setDisplayName("test name");
-        thrown.expect(ApiException.class);
-        organisationsApiUser2.createOrganization(organisation);
+        assertThrows(ApiException.class,  () -> organisationsApiUser2.createOrganization(organisation));
     }
 
     /**
@@ -635,8 +631,8 @@ public class OrganizationIT extends BaseIT {
         // Attach collection
         organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
         stubCollection.setName("HCAcollection");
-        thrown.expect(ApiException.class);
-        organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+        Organization finalOrganisation = organisation;
+        assertThrows(ApiException.class,  () -> organisationsApiUser2.createCollection(finalOrganisation.getId(), stubCollection));
     }
 
     /**
@@ -649,36 +645,34 @@ public class OrganizationIT extends BaseIT {
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
-        Organization organisation = stubOrgObject();
-        organisation = organisationsApiUser2.createOrganization(organisation);
+        Organization initialOrganisation = stubOrgObject();
+        final Organization createdOrganization = organisationsApiUser2.createOrganization(initialOrganisation);
 
         // Create a collection
         Collection stubCollection = stubCollectionObject();
 
         // Attach collection
-        Collection collection = organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+        organisationsApiUser2.createCollection(createdOrganization.getId(), stubCollection);
 
         // Create another collection with a different name and display name
         stubCollection.setName("testcollection2");
         stubCollection.setDisplayName("test collection 2");
 
-        Collection collectionTwo = organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+        Collection collectionTwo = organisationsApiUser2.createCollection(createdOrganization.getId(), stubCollection);
 
         // Create another collection with a different name but same display name
         stubCollection.setName("testcollection3");
-        thrown.expect(ApiException.class);
-        try {
-            organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
-            fail("Should not be able to create a collection with the same display name as an already existing collection in the same organization.");
-        } catch (ApiException ex) {
-            assertTrue(ex.getMessage().contains("A collection already exists with the display name"));
-        }
+
+        final ApiException ex = assertThrows(ApiException.class,
+            () -> organisationsApiUser2.createCollection(createdOrganization.getId(), stubCollection), "Should not be able to create a collection with the same display name as an already existing collection in the same organization.");
+
+        assertTrue(ex.getMessage().contains("A collection already exists with the display name"));
 
         // Another organization should be able to use the same name and display name as another org.
-        organisation.setName("org2");
-        organisation.setDisplayName("Org 2");
-        organisation = organisationsApiUser2.createOrganization(organisation);
-        organisationsApiUser2.createCollection(organisation.getId(), collectionTwo);
+        initialOrganisation.setName("org2");
+        initialOrganisation.setDisplayName("Org 2");
+        final Organization createdOrganization2 = organisationsApiUser2.createOrganization(initialOrganisation);
+        organisationsApiUser2.createCollection(createdOrganization2.getId(), collectionTwo);
     }
 
     @Test

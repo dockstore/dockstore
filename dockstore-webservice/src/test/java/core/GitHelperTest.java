@@ -1,12 +1,14 @@
 package core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.webservice.helpers.GitHelper;
 import java.util.Optional;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
@@ -15,6 +17,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * Unit tests for GitHelper class
  * @author aduncan
  */
+@ExtendWith(SystemStubsExtension.class)
 public class GitHelperTest {
 
     @SystemStub

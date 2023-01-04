@@ -16,13 +16,14 @@
 
 package io.dockstore.client.cli;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -46,9 +47,10 @@ import io.swagger.client.model.FileFormat;
 import io.swagger.client.model.FileWrapper;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Tag;
+import io.swagger.client.model.Tag.ReferenceTypeEnum;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolFile;
+import io.swagger.client.model.ToolFile.FileTypeEnum;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.WorkflowVersion;
@@ -71,15 +73,18 @@ import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category({ ConfidentialTest.class, WorkflowTest.class })
 public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     public static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW =
@@ -90,19 +95,15 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/workflow-seq-import";
     private static final String GATK_SV_TAG = "dockstore-test";
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
 
     private FileDAO fileDAO;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -114,7 +115,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         ManagedSessionContext.bind(session);
 
     }
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -135,8 +136,8 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         final Ga4GhApi ga4GhApi = new Ga4GhApi(ownerWebClient);
         final List<ToolFile> files = ga4GhApi
             .toolsIdVersionsVersionIdTypeFilesGet("WDL", "#workflow/" + refresh.getFullWorkflowPath(), GATK_SV_TAG);
-        assertEquals(1, files.stream().filter(f -> f.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR).count());
-        assertEquals(sourceFiles.size() - 1, files.stream().filter(f -> f.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR).count());
+        assertEquals(1, files.stream().filter(f -> f.getFileType() == FileTypeEnum.PRIMARY_DESCRIPTOR).count());
+        assertEquals(sourceFiles.size() - 1, files.stream().filter(f -> f.getFileType() == FileTypeEnum.SECONDARY_DESCRIPTOR).count());
         files.forEach(file -> {
             final String path = file.getPath();
             // TRS paths are relative
@@ -155,9 +156,9 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         File tempZip = File.createTempFile("temp", "zip");
         Path write = Files.write(tempZip.toPath(), arbitraryURL);
         try (ZipFile zipFile = new ZipFile(write.toFile())) {
-            assertTrue("zip file seems to have files", zipFile.size() > 0);
-            assertTrue("zip file seems to have wdl files", zipFile.stream().anyMatch(file -> file.getName().endsWith(".wdl")));
-            assertTrue("zip file seems to have a wdl file with stuff in it", zipFile.stream().filter(file -> file.getName().endsWith(".wdl")).findFirst().get().getSize() > 0);
+            assertTrue(zipFile.size() > 0, "zip file seems to have files");
+            assertTrue(zipFile.stream().anyMatch(file -> file.getName().endsWith(".wdl")), "zip file seems to have wdl files");
+            assertTrue(zipFile.stream().filter(file -> file.getName().endsWith(".wdl")).findFirst().get().getSize() > 0, "zip file seems to have a wdl file with stuff in it");
         }
         tempZip.deleteOnExit();
 
@@ -196,18 +197,18 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
         // Check that there are multiple workflows
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
-        assertTrue("Workflow entries should exist", count > 0);
+        assertTrue(count > 0, "Workflow entries should exist");
 
         // Check that there are only stubs (no workflow version)
         final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
-        assertEquals("No entries in workflowversion", 0, count2);
+        assertEquals(0, count2, "No entries in workflowversion");
         final long count3 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
-        assertEquals("No workflows are in full mode", 0, count3);
+        assertEquals(0, count3, "No workflows are in full mode");
 
         // check that a nextflow workflow made it
         long nfWorkflowCount = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).count();
-        assertTrue("Nextflow workflow not found", nfWorkflowCount > 0);
+        assertTrue(nfWorkflowCount > 0, "Nextflow workflow not found");
         Workflow mtaNf = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
         mtaNf.setWorkflowPath("/nextflow.config");
         mtaNf.setDescriptorType(DescriptorTypeEnum.NFL);
@@ -216,12 +217,12 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         // publish this way? (why is the auto-generated variable private?)
         workflowApi.publish(mtaNf.getId(), CommonTestUtilities.createPublishRequest(true));
         mtaNf = workflowApi.getWorkflow(mtaNf.getId(), null);
-        assertTrue("a workflow lacks a date", mtaNf.getLastModifiedDate() != null && mtaNf.getLastModified() != 0);
-        assertNotNull("Nextflow workflow not found after update", mtaNf);
-        assertTrue("nextflow workflow should have at least two versions", mtaNf.getWorkflowVersions().size() >= 2);
+        assertTrue(mtaNf.getLastModifiedDate() != null && mtaNf.getLastModified() != 0, "a workflow lacks a date");
+        assertNotNull(mtaNf, "Nextflow workflow not found after update");
+        assertTrue(mtaNf.getWorkflowVersions().size() >= 2, "nextflow workflow should have at least two versions");
 
         int numOfSourceFiles = mtaNf.getWorkflowVersions().stream().mapToInt(version -> fileDAO.findSourceFilesByVersion(version.getId()).size()).sum();
-        assertTrue("nextflow workflow should have at least two sourcefiles", numOfSourceFiles >= 2);
+        assertTrue(numOfSourceFiles >= 2, "nextflow workflow should have at least two sourcefiles");
 
         long scriptCount = mtaNf.getWorkflowVersions().stream()
             .mapToLong(version -> fileDAO.findSourceFilesByVersion(version.getId()).stream().filter(file -> file.getType() == DescriptorLanguage.FileType.NEXTFLOW).count())
@@ -230,36 +231,35 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         long configCount = mtaNf.getWorkflowVersions().stream()
             .mapToLong(version -> fileDAO.findSourceFilesByVersion(version.getId()).stream().filter(file -> file.getType() == DescriptorLanguage.FileType.NEXTFLOW_CONFIG).count())
             .sum();
-        assertTrue("nextflow workflow should have at least one config file and one script file", scriptCount >= 1 && configCount >= 1);
+        assertTrue(scriptCount >= 1 && configCount >= 1, "nextflow workflow should have at least one config file and one script file");
 
         // check that we can pull down the nextflow workflow via the ga4gh TRS API
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
         List<Tool> toolV2s = ga4Ghv2Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null);
         String mtaWorkflowID = "#workflow/github.com/DockstoreTestUser2/mta-nf";
         Tool toolV2 = ga4Ghv2Api.toolsIdGet(mtaWorkflowID);
-        assertTrue("could get mta as part of list",
-            toolV2s.size() > 0 && toolV2s.stream().anyMatch(tool -> Objects.equals(tool.getId(), mtaWorkflowID)));
-        assertNotNull("could get mta as a specific tool", toolV2);
+        assertTrue(toolV2s.size() > 0 && toolV2s.stream().anyMatch(tool -> Objects.equals(tool.getId(), mtaWorkflowID)), "could get mta as part of list");
+        assertNotNull(toolV2, "could get mta as a specific tool");
 
         // Check that a workflow from my namespace is present
-        assertTrue("Should have at least one repo from DockstoreTestUser2.",
-            workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser2")));
+        assertTrue(workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser2")),
+            "Should have at least one repo from DockstoreTestUser2.");
 
         // Check that a workflow from an organization I belong to is present
-        assertTrue("Should have repository basic-workflow from organization dockstoretesting.", workflows.stream().anyMatch(
+        assertTrue(workflows.stream().anyMatch(
             (Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("dockstoretesting") && workflow.getRepository()
-                .equalsIgnoreCase("basic-workflow")));
+                .equalsIgnoreCase("basic-workflow")), "Should have repository basic-workflow from organization dockstoretesting.");
 
         // Check that a workflow that I am a collaborator on is present
-        assertTrue("Should have repository dockstore-whalesay-2 from DockstoreTestUser.", workflows.stream().anyMatch(
+        assertTrue(workflows.stream().anyMatch(
             (Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser") && workflow.getRepository()
-                .equalsIgnoreCase("dockstore-whalesay-2")));
+                .equalsIgnoreCase("dockstore-whalesay-2")), "Should have repository dockstore-whalesay-2 from DockstoreTestUser.");
 
         // Check that for a repo from my organization that I forked to DockstoreTestUser2, that it along with the original repo are present
-        assertTrue("Should have two repos with name basic-workflow, one from DockstoreTestUser2 and one from dockstoretesting.",
-            2 <= workflows.stream().filter((Workflow workflow) ->
-                (workflow.getOrganization().equalsIgnoreCase("dockstoretesting") || workflow.getOrganization()
-                    .equalsIgnoreCase("DockstoreTestUser2")) && workflow.getRepository().equalsIgnoreCase("basic-workflow")).count());
+        assertTrue(2 <= workflows.stream().filter((Workflow workflow) ->
+            (workflow.getOrganization().equalsIgnoreCase("dockstoretesting") || workflow.getOrganization()
+                .equalsIgnoreCase("DockstoreTestUser2")) && workflow.getRepository().equalsIgnoreCase("basic-workflow")).count(),
+            "Should have two repos with name basic-workflow, one from DockstoreTestUser2 and one from dockstoretesting.");
 
     }
 
@@ -347,23 +347,20 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         toolApi.publish(registeredTool.getId(), publishRequest);
 
         // look that branches and tags are typed correctly for tools
-        assertTrue("should see at least 6 branches",
-            registeredTool.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.BRANCH)
-                .count() >= 1);
-        assertTrue("should see at least 6 tags",
-            registeredTool.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.TAG).count()
-                >= 2);
+        assertTrue(registeredTool.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == ReferenceTypeEnum.BRANCH)
+            .count() >= 1, "should see at least 6 branches");
+        assertTrue(registeredTool.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == ReferenceTypeEnum.TAG).count()
+            >= 2, "should see at least 6 tags");
 
-        assertTrue("did not pick up description from $include",
-            registeredTool.getDescription().contains("A Docker container for PCAP-core."));
+        assertTrue(registeredTool.getDescription().contains("A Docker container for PCAP-core."), "did not pick up description from $include");
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(registeredTool.getWorkflowVersions().stream().filter(tag -> Objects.equals(tag.getName(), "test.v1")).findFirst().get().getId());
-        assertEquals("did not import mixin and includes properly", 5, sourceFiles.size());
+        assertEquals(5, sourceFiles.size(), "did not import mixin and includes properly");
         sourceFiles = fileDAO.findSourceFilesByVersion(registeredTool.getWorkflowVersions().stream().filter(tag -> Objects.equals(tag.getName(), "symbolic.v1")).findFirst().get().getId());
-        assertEquals("did not import symbolic links to folders properly", 5, sourceFiles.size());
+        assertEquals(5, sourceFiles.size(), "did not import symbolic links to folders properly");
         // check that commit ids look properly recorded
         // check on commit ids for github
         boolean allHaveCommitIds = registeredTool.getWorkflowVersions().stream().noneMatch(version -> version.getCommitID().isEmpty());
-        assertTrue("not all tools seem to have commit ids", allHaveCommitIds);
+        assertTrue(allHaveCommitIds, "not all tools seem to have commit ids");
 
         // check on URLs for workflows via ga4gh calls
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
@@ -430,8 +427,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         assertTrue(fileFormats.stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/format_3003")));
         assertTrue(workflowVersionsForFileFormat.stream().anyMatch(workflowVersion -> workflowVersion.getOutputFileFormats().stream()
             .anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat"))));
-        assertTrue(
-            workflow.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat")));
+        assertTrue(workflow.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat")));
 
         // This checks if a workflow whose default name is null would remain as null after refresh
         assertNull(workflow.getWorkflowName());
@@ -440,10 +436,10 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
         final List<SourceFile> masterImports = workflowApi
             .secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
-        assertEquals("should find 3 imports, found " + masterImports.size(), 3, masterImports.size());
+        assertEquals(3, masterImports.size(), "should find 3 imports, found " + masterImports.size());
         final List<SourceFile> rootImports = workflowApi
             .secondaryDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
-        assertEquals("should find 0 imports, found " + rootImports.size(), 0, rootImports.size());
+        assertEquals(0, rootImports.size(), "should find 0 imports, found " + rootImports.size());
 
         // next, change a path for the root imports version
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
@@ -452,10 +448,10 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         workflowApi.refresh(workflowByPathGithub.getId(), false);
         final List<SourceFile> newMasterImports = workflowApi
             .secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
-        assertEquals("should find 3 imports, found " + newMasterImports.size(), 3, newMasterImports.size());
+        assertEquals(3, newMasterImports.size(), "should find 3 imports, found " + newMasterImports.size());
         final List<SourceFile> newRootImports = workflowApi
             .secondaryDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
-        assertEquals("should find 3 imports, found " + newRootImports.size(), 3, newRootImports.size());
+        assertEquals(3, newRootImports.size(), "should find 3 imports, found " + newRootImports.size());
 
         workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         // check on URLs for workflows via ga4gh calls
@@ -471,14 +467,13 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "../test.json");
         List<ToolFile> toolFiles = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
-        assertTrue("should have at least 5 files", toolFiles.size() >= 5);
-        assertTrue("all files should have relative paths",
-            toolFiles.stream().filter(toolFile -> !toolFile.getPath().startsWith("/")).count() >= 5);
+        assertTrue(toolFiles.size() >= 5, "should have at least 5 files");
+        assertTrue(toolFiles.stream().filter(toolFile -> !toolFile.getPath().startsWith("/")).count() >= 5, "all files should have relative paths");
 
         // check on urls created for test files
         List<FileWrapper> toolTests = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeTestsGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
-        assertTrue("could not find tool tests", toolTests.size() > 0);
+        assertTrue(toolTests.size() > 0, "could not find tool tests");
         for (FileWrapper test : toolTests) {
             content = IOUtils.toString(new URI(test.getUrl()), StandardCharsets.UTF_8);
             assertFalse(content.isEmpty());
@@ -517,7 +512,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
         List<ToolFile> toolFiles = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
-        assertTrue("should have at least 5 files", toolFiles.size() >= 5);
+        assertTrue(toolFiles.size() >= 5, "should have at least 5 files");
 
         // cannot get relative paths anonymously
         toolFiles.forEach(file -> {
@@ -551,7 +546,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
                 fail();
             }
         });
-        assertTrue("did not count expected (5) number of files, got" + count.get(), count.get() >= 5);
+        assertTrue(count.get() >= 5, "did not count expected (5) number of files, got" + count.get());
     }
 
     @Test
@@ -572,25 +567,22 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         // give the workflow a few aliases
         EntriesApi genericApi = new EntriesApi(webClient);
         Entry entry = genericApi.addAliases(workflow.getId(), "awesome workflow, spam, test workflow");
-        assertTrue("entry is missing expected aliases",
-            entry.getAliases().containsKey("awesome workflow") && entry.getAliases().containsKey("spam") && entry.getAliases()
-                .containsKey("test workflow"));
+        assertTrue(entry.getAliases().containsKey("awesome workflow") && entry.getAliases().containsKey("spam") && entry.getAliases()
+            .containsKey("test workflow"), "entry is missing expected aliases");
 
         Workflow workflowById = workflowApi.getWorkflow(entry.getId(), null);
-        assertNotNull("Getting workflow by ID has null alias", workflowById.getAliases());
+        assertNotNull(workflowById.getAliases(), "Getting workflow by ID has null alias");
 
         // check that the aliases work in TRS search
         Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
         // this generated code is mucho silly
         List<Tool> workflows = ga4GhApi.toolsGet(null, null, null, null, null, null, null, null, null, null, 100);
-        assertEquals("expected workflows not found", 2, workflows.size());
+        assertEquals(2, workflows.size(), "expected workflows not found");
         List<Tool> awesomeWorkflow = ga4GhApi.toolsGet(null, "awesome workflow", null, null, null, null, null, null, null, null, 100);
-        assertTrue("workflow was not found or didn't have expected aliases",
-            awesomeWorkflow.size() == 1 && awesomeWorkflow.get(0).getAliases().size() == 3);
+        assertTrue(awesomeWorkflow.size() == 1 && awesomeWorkflow.get(0).getAliases().size() == 3, "workflow was not found or didn't have expected aliases");
         // add a few new aliases
         entry = genericApi.addAliases(workflow.getId(), "foobar, another workflow");
-        assertTrue("entry is missing expected aliases",
-            entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 5);
+        assertTrue(entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 5, "entry is missing expected aliases");
 
         // try to add duplicates; this is not allowed
         boolean throwsError = false;
@@ -607,7 +599,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
         // Get workflow by alias
         Workflow aliasWorkflow = workflowApi.getWorkflowByAlias("foobar");
-        assertNotNull("Should retrieve the workflow by alias", aliasWorkflow);
+        assertNotNull(aliasWorkflow, "Should retrieve the workflow by alias");
     }
 
 

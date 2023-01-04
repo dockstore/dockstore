@@ -17,11 +17,12 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.webservice.resources.DockerRepoResource.UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
@@ -37,6 +38,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.Workflow.ModeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,34 +48,34 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * This test suite tests various workflow related processes.
  * Created by aduncan on 05/04/16.
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 @Category(BitBucketTest.class)
 public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     private FileDAO fileDAO;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -84,7 +86,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         ManagedSessionContext.bind(session);
     }
 
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
@@ -114,12 +116,11 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
         final long nullLastModifiedWorkflowVersions = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
-        assertEquals("All Bitbucket workflow versions should have last modified populated after refreshing", 0,
-            nullLastModifiedWorkflowVersions);
+        assertEquals(0, nullLastModifiedWorkflowVersions, "All Bitbucket workflow versions should have last modified populated after refreshing");
 
         // Check that no versions have a true dirty bit
         final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
-        assertEquals("there should be no versions with dirty bit, there are " + count, 0, count);
+        assertEquals(0, count, "there should be no versions with dirty bit, there are " + count);
 
         // Update workflow version to new path
         Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream()
@@ -137,7 +138,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
         // There should be on dirty bit
         final long count1 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
-        assertEquals("there should be 1 versions with dirty bit, there are " + count1, 1, count1);
+        assertEquals(1, count1, "there should be 1 versions with dirty bit, there are " + count1);
 
         // Update default cwl
         workflow.setWorkflowPath("/Dockstoreclean.cwl");
@@ -147,7 +148,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         // There should be 3 versions with new cwl
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'", long.class);
-        assertEquals("there should be 4 versions with workflow path /Dockstoreclean.cwl, there are " + count2, 4, count2);
+        assertEquals(4, count2, "there should be 4 versions with workflow path /Dockstoreclean.cwl, there are " + count2);
 
     }
 
@@ -189,14 +190,14 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
         // Refresh a single version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
-        assertEquals("Should only have one version", 1, workflow.getWorkflowVersions().size());
-        assertTrue("Should have master version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")));
-        assertEquals("Should no longer be a stub workflow", Workflow.ModeEnum.FULL, workflow.getMode());
+        assertEquals(1, workflow.getWorkflowVersions().size(), "Should only have one version");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")), "Should have master version");
+        assertEquals(ModeEnum.FULL, workflow.getMode(), "Should no longer be a stub workflow");
 
         // Refresh another version
         workflow = workflowsApi.refreshVersion(workflow.getId(), "cwl_import", false);
-        assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
-        assertTrue("Should have cwl_import version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "cwl_import")));
+        assertEquals(2, workflow.getWorkflowVersions().size(), "Should now have two versions");
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "cwl_import")), "Should have cwl_import version");
 
         try {
             workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
@@ -210,7 +211,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
      * This tests manually publishing a Bitbucket workflow, this test is all messed up and somehow depends on GitHub
      */
     @Test
-    @Ignore
+    @Disabled
     public void testManualPublishBitbucket() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -223,11 +224,11 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         final long count = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where valid='t' and (name='wdl_import' OR name='cwl_import')",
                 long.class);
-        assertEquals("There should be a valid 'wdl_import' version and a valid 'cwl_import' version", 2, count);
+        assertEquals(2, count, "There should be a valid 'wdl_import' version and a valid 'cwl_import' version");
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
-        assertEquals("All Bitbucket workflow versions should have last modified populated when manual published", 0, count2);
+        assertEquals(0, count2, "All Bitbucket workflow versions should have last modified populated when manual published");
 
         // Check that commit ID is set
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
@@ -240,9 +241,8 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         if (version.isEmpty()) {
             fail("wdl_import version should exist");
         }
-        assertTrue(
-            fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
-                .findFirst().isPresent());
+        assertTrue(fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
+            .findFirst().isPresent());
     }
 
     @Test
