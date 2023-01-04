@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.helpers.statelisteners;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -198,7 +199,7 @@ class ElasticListenerTest {
         assertEquals(2, tool.getDescriptorType().size());
         entry = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
         descriptorTypeVersions = entry.get("descriptor_type_versions");
-        assertEquals("Should not have descriptor type versions if there's more than one language", 0, descriptorTypeVersions.size());
+        assertEquals(0, descriptorTypeVersions.size(), "Should not have descriptor type versions if there's more than one language");
 
         // appTool has no descriptor type versions
         entry = ElasticListener.dockstoreEntryToElasticSearchObject(appTool);
