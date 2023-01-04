@@ -1,5 +1,5 @@
 
-Lists of 374 third-party dependencies.
+Lists of 377 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -299,6 +299,7 @@ Lists of 374 third-party dependencies.
      (Prior BSD License) MiG Base64 (com.brsanthu:migbase64:2.2 - http://sourceforge.net/projects/migbase64/)
      (Eclipse Distribution License - v 1.0) MIME streaming extension (org.jvnet.mimepull:mimepull:1.9.13 - https://github.com/eclipse-ee4j/metro-mimepull)
      (The MIT License) mockito-core (org.mockito:mockito-core:3.12.4 - https://github.com/mockito/mockito)
+     (The MIT License) mockito-inline (org.mockito:mockito-inline:3.12.4 - https://github.com/mockito/mockito)
      (MIT license) mouse (org.typelevel:mouse_2.13:1.0.10 - https://typelevel.org/mouse)
      (Apache License, Version 2.0) Netty Reactive Streams HTTP support (com.typesafe.netty:netty-reactive-streams-http:2.0.5 - https://github.com/playframework/netty-reactive-streams/netty-reactive-streams-http)
      (Apache License, Version 2.0) Netty Reactive Streams Implementation (com.typesafe.netty:netty-reactive-streams:2.0.5 - https://github.com/playframework/netty-reactive-streams/netty-reactive-streams)
@@ -364,6 +365,8 @@ Lists of 374 third-party dependencies.
      (Apache License 2.0) swagger-jersey2-jaxrs (Jersey 2.x support) (io.swagger:swagger-jersey2-jaxrs:1.6.8 - https://github.com/swagger-api/swagger-core/modules/swagger-jersey2-jaxrs)
      (Apache License 2.0) swagger-models (io.swagger:swagger-models:1.6.8 - https://github.com/swagger-api/swagger-core/modules/swagger-models)
      (Common Public License Version 1.0) System Rules (com.github.stefanbirkner:system-rules:1.19.0 - http://stefanbirkner.github.io/system-rules/)
+     (MIT License) System Stubs Core (uk.org.webcompere:system-stubs-core:2.0.1 - https://github.com/webcompere/system-stubs/system-stubs-core/)
+     (MIT License) System Stubs Jupiter (uk.org.webcompere:system-stubs-jupiter:2.0.1 - https://github.com/webcompere/system-stubs/system-stubs-jupiter/)
      (Apache License 2.0) Throttling Appender (io.dropwizard.logback:logback-throttling-appender:1.1.9 - https://github.com/dropwizard/logback-throttling-appender/)
      (Apache License, Version 2.0) tomcat-jdbc (org.apache.tomcat:tomcat-jdbc:9.0.68 - https://tomcat.apache.org/)
      (Apache License, Version 2.0) tomcat-juli (org.apache.tomcat:tomcat-juli:9.0.68 - https://tomcat.apache.org/)

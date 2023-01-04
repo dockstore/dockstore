@@ -15,15 +15,16 @@
  */
 package io.dockstore.common.yaml;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import io.dockstore.common.yaml.DockstoreYamlHelper.Version;
 import io.dockstore.common.yaml.constraints.HasEntry12;
 import io.dropwizard.testing.FixtureHelpers;
 import java.io.IOException;
@@ -34,11 +35,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.Test;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 public class DockstoreYamlTest {
     private static final String DOCKSTORE10_YAML = FixtureHelpers.fixture("fixtures/dockstore10.yml");
@@ -46,23 +47,23 @@ public class DockstoreYamlTest {
     private static final String DOCKSTORE12_YAML = FixtureHelpers.fixture("fixtures/dockstore12.yml");
     private static final String DOCKSTORE_GALAXY_YAML = FixtureHelpers.fixture("fixtures/dockstoreGalaxy.yml");
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     @Test
     public void testFindVersion() {
         assertTrue(DockstoreYamlHelper.findValidVersion("abc").isEmpty());
         assertTrue(DockstoreYamlHelper.findValidVersion("service: 1.0 garbage").isEmpty());
         assertTrue(DockstoreYamlHelper.findValidVersion("#service: 1.0").isEmpty());
-        assertEquals(DockstoreYamlHelper.Version.ONE_ZERO, DockstoreYamlHelper.findValidVersion("version: 1.0").get());
-        assertEquals(DockstoreYamlHelper.Version.ONE_ZERO, DockstoreYamlHelper.findValidVersion("#Comment\nversion: 1.0").get());
-        assertEquals(DockstoreYamlHelper.Version.ONE_ONE, DockstoreYamlHelper.findValidVersion("#Comment\nversion: 1.1").get());
-        assertEquals(DockstoreYamlHelper.Version.ONE_TWO, DockstoreYamlHelper.findValidVersion("#Comment\nversion: 1.2").get());
-        assertTrue("1.3", DockstoreYamlHelper.findValidVersion("#Comment\nversion: 1.3").isEmpty());
-        assertEquals(DockstoreYamlHelper.Version.ONE_ZERO, DockstoreYamlHelper.findValidVersion(DOCKSTORE10_YAML).get());
+        assertEquals(Version.ONE_ZERO, DockstoreYamlHelper.findValidVersion("version: 1.0").get());
+        assertEquals(Version.ONE_ZERO, DockstoreYamlHelper.findValidVersion("#Comment\nversion: 1.0").get());
+        assertEquals(Version.ONE_ONE, DockstoreYamlHelper.findValidVersion("#Comment\nversion: 1.1").get());
+        assertEquals(Version.ONE_TWO, DockstoreYamlHelper.findValidVersion("#Comment\nversion: 1.2").get());
+        assertTrue(DockstoreYamlHelper.findValidVersion("#Comment\nversion: 1.3").isEmpty(), "1.3");
+        assertEquals(Version.ONE_ZERO, DockstoreYamlHelper.findValidVersion(DOCKSTORE10_YAML).get());
     }
 
     @Test
@@ -132,8 +133,8 @@ public class DockstoreYamlTest {
         final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(unnamedWorkflow);
         final List<YamlWorkflow> workflows = dockstoreYaml12.getWorkflows();
         assertEquals(3, workflows.size());
-        assertEquals("Expecting two workflows with names", 2L, workflows.stream().filter(w -> w.getName() != null).count());
-        assertEquals("Expecting one workflow without a name", 1L, workflows.stream().filter(w -> w.getName() == null).count());
+        assertEquals(2L, workflows.stream().filter(w -> w.getName() != null).count(), "Expecting two workflows with names");
+        assertEquals(1L, workflows.stream().filter(w -> w.getName() == null).count(), "Expecting one workflow without a name");
     }
 
     @Test
@@ -248,13 +249,13 @@ public class DockstoreYamlTest {
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(content);
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            Assert.fail("Should be able to parse correctly");
+            fail("Should be able to parse correctly");
         }
 
         final String workflowsKey = DOCKSTORE_GALAXY_YAML.replaceFirst("workflows", "workflow");
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(workflowsKey);
-            Assert.fail("Shouldn't be able to parse correctly");
+            fail("Shouldn't be able to parse correctly");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             assertTrue(ex.getMessage().contains("must have at least 1 workflow, tool, or service"));
         }
@@ -263,15 +264,15 @@ public class DockstoreYamlTest {
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(nameKey);
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            Assert.fail("'name' is not required and 'Name' should just be ignored.");
+            fail("'name' is not required and 'Name' should just be ignored.");
         }
 
         final String multipleKeys = DOCKSTORE_GALAXY_YAML.replaceFirst("version", "Version").replaceFirst("workflows", "workflow");
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(multipleKeys);
-            Assert.fail("Shouldn't be able to parse correctly");
+            fail("Shouldn't be able to parse correctly");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertTrue("Should only return first error", ex.getMessage().contains("missing valid version"));
+            assertTrue(ex.getMessage().contains("missing valid version"), "Should only return first error");
         }
     }
 
@@ -279,9 +280,9 @@ public class DockstoreYamlTest {
     public void testDuplicateKeys() {
         try {
             DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML + "\nworkflows: []\n", true);
-            Assert.fail("Should have thrown because of duplicate key");
+            fail("Should have thrown because of duplicate key");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertTrue("Error message should contain the name of the duplicate key", ex.getMessage().contains("workflows"));
+            assertTrue(ex.getMessage().contains("workflows"), "Error message should contain the name of the duplicate key");
         }
     }
 
@@ -387,10 +388,10 @@ public class DockstoreYamlTest {
         Class dockstoreYamlClass = DockstoreYaml12.class;
 
         String suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "z");
-        assertEquals("Shouldn't suggest a property if there's too many changes that needs to be done", "", suggestedProperty);
+        assertEquals("", suggestedProperty, "Shouldn't suggest a property if there's too many changes that needs to be done");
 
         suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "workflows");
-        assertEquals("Should return the same property back if it's already a valid property", "workflows", suggestedProperty);
+        assertEquals("workflows", suggestedProperty, "Should return the same property back if it's already a valid property");
 
         suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "affilliation");
         assertEquals("affiliation", suggestedProperty);
@@ -411,10 +412,10 @@ public class DockstoreYamlTest {
     @Test
     public void testGetDockstoreYamlProperties() {
         Set<String> properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml12.class);
-        assertEquals("Should have the correct number of unique properties for a version 1.2 .dockstore.yml", 33, properties.size());
+        assertEquals(33, properties.size(), "Should have the correct number of unique properties for a version 1.2 .dockstore.yml");
 
         properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml11.class);
-        assertEquals("Should have the correct number of unique properties for a version 1.1 .dockstore.yml", 29, properties.size());
+        assertEquals(29, properties.size(), "Should have the correct number of unique properties for a version 1.1 .dockstore.yml");
     }
 
     @Test
