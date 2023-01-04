@@ -18,7 +18,6 @@ package io.dockstore.webservice;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
-import static junit.framework.TestCase.assertNotSame;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -308,13 +307,13 @@ public class ServiceIT extends BaseIT {
         // test retrieval
         final io.swagger.client.model.Workflow returnedWorkflow = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, BIOWORKFLOW, "",  null);
         final io.swagger.client.model.Workflow returnedService = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, SERVICE, "",  null);
-        assertNotSame(returnedWorkflow.getId(), returnedService.getId());
+        Assert.assertNotSame(returnedWorkflow.getId(), returnedService.getId());
 
         // test GA4GH retrieval
         Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
         final Tool tool1 = ga4GhApi.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/" + github + "/" + serviceRepo);
         final Tool tool2 = ga4GhApi.toolsIdGet(ToolsImplCommon.SERVICE_PREFIX + "/" + github + "/" + serviceRepo);
-        assertNotSame(tool1.getId(), tool2.getId());
+        Assert.assertNotSame(tool1.getId(), tool2.getId());
     }
 
     /**

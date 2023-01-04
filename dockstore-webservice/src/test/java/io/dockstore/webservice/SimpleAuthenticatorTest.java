@@ -1,5 +1,8 @@
 package io.dockstore.webservice;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -11,12 +14,11 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import java.util.Optional;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class SimpleAuthenticatorTest {
+class SimpleAuthenticatorTest {
 
     private static final Long USER_ID = 1L;
     private static final String USER_EMAIL = "jdoe@example.com";
@@ -28,7 +30,7 @@ public class SimpleAuthenticatorTest {
     private UserDAO userDAO;
     private SimpleAuthenticator simpleAuthenticator;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         tokenDAO = Mockito.mock(TokenDAO.class);
         userDAO = Mockito.mock(UserDAO.class);
@@ -37,37 +39,37 @@ public class SimpleAuthenticatorTest {
     }
 
     @Test
-    public void authenticateDockstoreToken() {
+    void authenticateDockstoreToken() {
         when(token.getUserId()).thenReturn(USER_ID);
         when(tokenDAO.findByContent(credentials)).thenReturn(token);
         when(userDAO.findById(USER_ID)).thenReturn(user);
         final User authenticatedUser = simpleAuthenticator.authenticate(credentials).get();
-        Assert.assertNull(authenticatedUser.getTemporaryCredential());
+        assertNull(authenticatedUser.getTemporaryCredential());
     }
 
     @Test
-    public void authenticateGoogleTokenExistingUser() {
+    void authenticateGoogleTokenExistingUser() {
         when(tokenDAO.findByContent(credentials)).thenReturn(null);
         doReturn(Optional.of(userinfoplus)).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         when(userinfoplus.getEmail()).thenReturn(USER_EMAIL);
         when(userDAO.findByGoogleEmail(USER_EMAIL)).thenReturn(user);
         final User authenticatedUser = simpleAuthenticator.authenticate(credentials).get();
-        Assert.assertEquals(credentials, authenticatedUser.getTemporaryCredential());
+        assertEquals(credentials, authenticatedUser.getTemporaryCredential());
     }
 
     @Test
-    public void authenticateGoogleTokenNewUser() {
+    void authenticateGoogleTokenNewUser() {
         when(tokenDAO.findByContent(credentials)).thenReturn(null);
         doReturn(Optional.of(userinfoplus)).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         when(userinfoplus.getEmail()).thenReturn(USER_EMAIL);
         when(userDAO.findByUsername(USER_EMAIL)).thenReturn(null);
         final User authenticatedUser = simpleAuthenticator.authenticate(credentials).get();
-        Assert.assertEquals(credentials, authenticatedUser.getTemporaryCredential());
+        assertEquals(credentials, authenticatedUser.getTemporaryCredential());
     }
 
     @Test
-    public void authenticateBadToken() {
+    void authenticateBadToken() {
         doReturn(Optional.empty()).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
-        Assert.assertFalse(simpleAuthenticator.authenticate(credentials).isPresent());
+        assertFalse(simpleAuthenticator.authenticate(credentials).isPresent());
     }
 }

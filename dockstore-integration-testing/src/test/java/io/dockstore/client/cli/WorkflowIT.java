@@ -641,7 +641,7 @@ public class WorkflowIT extends BaseIT {
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, BIOWORKFLOW, null);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
-        assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
+        assertSame("github workflow is not in full mode", Workflow.ModeEnum.FULL, refreshGithub.getMode());
 
         // look that branches and tags are typed correctly for workflows on GitHub
         assertTrue("should see at least 6 branches", refreshGithub.getWorkflowVersions().stream()
@@ -711,7 +711,7 @@ public class WorkflowIT extends BaseIT {
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, BIOWORKFLOW, null);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
-        assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
+        assertSame("github workflow is not in full mode", Workflow.ModeEnum.FULL, refreshGithub.getMode());
         Optional<WorkflowVersion> first = refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("1.0"))
             .findFirst();
         String tableToolContent = workflowApi.getTableToolContent(refreshGithub.getId(), first.get().getId());

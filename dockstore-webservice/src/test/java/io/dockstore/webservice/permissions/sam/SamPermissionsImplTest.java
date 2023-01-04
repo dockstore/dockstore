@@ -180,7 +180,7 @@ public class SamPermissionsImplTest {
     public void testAccessPolicyResponseEntryToUserPermissions() {
         final List<Permission> permissions = samPermissionsImpl
                 .accessPolicyResponseEntryToUserPermissions(Arrays.asList(ownerPolicy, writerPolicy));
-        assertEquals(permissions.size(), 2);
+        assertEquals(2, permissions.size());
 
         assertTrue(permissions.contains(ownerPermission));
         assertTrue(permissions.contains(writerPermission));
@@ -193,7 +193,7 @@ public class SamPermissionsImplTest {
         final List<Permission> permissions = samPermissionsImpl
                 .removeDuplicateEmails(Arrays.asList(ownerPermission, writerPermission, readerPermission));
         assertEquals(
-                permissions.size(), 2);
+            2, permissions.size());
         assertTrue(permissions.contains(ownerPermission));
         assertTrue(permissions.contains(writerPermission));
         assertFalse(permissions.contains(readerPermission));
@@ -204,7 +204,7 @@ public class SamPermissionsImplTest {
         String response = "{\n" + "\"statusCode\": 400,\n" + "\"source\": \"sam\",\n" + "\"causes\": [],\n" + "\"stackTrace\": [],\n"
             + "\"message\": \"jane_doe@yahoo.com not found\"\n" + "}";
         Optional<ErrorReport> errorReport = samPermissionsImpl.readValue(response, ErrorReport.class);
-        assertEquals(errorReport.get().getMessage(), "jane_doe@yahoo.com not found");
+        assertEquals("jane_doe@yahoo.com not found", errorReport.get().getMessage());
 
         assertFalse(samPermissionsImpl.readValue((String)null, ErrorReport.class).isPresent());
     }
@@ -266,7 +266,7 @@ public class SamPermissionsImplTest {
         permission.setEmail(JOHN_SMITH_GMAIL_COM);
         permission.setRole(Role.READER);
         List<Permission> permissions = samPermissionsImpl.setPermission(janeDoeUserMock, workflowInstance, permission);
-        assertEquals(permissions.size(), 1);
+        assertEquals(1, permissions.size());
     }
 
     @Test
@@ -298,7 +298,7 @@ public class SamPermissionsImplTest {
                 setupInitializePermissionsMocks(SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME);
                 final List<Permission> permissions = samPermissionsImpl.setPermission(
                     janeDoeUserMock, workflowInstance, permission);
-                assertEquals(permissions.size(), 1);
+                assertEquals(1, permissions.size());
             } catch (CustomWebApplicationException ex) {
                 fail("setPermissions threw Exception");
             }
@@ -337,7 +337,7 @@ public class SamPermissionsImplTest {
                     Collections.singletonList(readerAccessPolicyResponseEntry), Collections.EMPTY_LIST);
         final List<Permission> permissions = samPermissionsImpl.getPermissionsForWorkflow(
             janeDoeUserMock, workflowInstance);
-        assertEquals(permissions.size(), 1);
+        assertEquals(1, permissions.size());
         try {
             samPermissionsImpl.removePermission(janeDoeUserMock, workflowInstance, JOHN_SMITH_GMAIL_COM, Role.READER);
         } catch (CustomWebApplicationException e) {
@@ -619,8 +619,7 @@ public class SamPermissionsImplTest {
     public void testUserHasNoGoogleToken() {
         // Read operations fail silently
         assertEquals(0, samPermissionsImpl.workflowsSharedWithUser(noGoogleUser).size());
-        assertEquals(false,
-            samPermissionsImpl.canDoAction(noGoogleUser, workflowInstance, Action.READ));
+        assertFalse(samPermissionsImpl.canDoAction(noGoogleUser, workflowInstance, Action.READ));
         assertFalse(samPermissionsImpl.isSharing(noGoogleUser));
         assertEquals(Optional.empty(), samPermissionsImpl.userIdForSharing(noGoogleUser));
         assertEquals(0, samPermissionsImpl.getActionsForWorkflow(noGoogleUser, workflowInstance).size());

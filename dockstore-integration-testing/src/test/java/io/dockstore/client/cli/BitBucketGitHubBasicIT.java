@@ -16,7 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertTrue;
 
 import io.dockstore.common.BitBucketTest;
@@ -84,7 +83,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
         // refresh
         try {
             usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", "quayandbitbucket");
-            fail("Refresh should fail");
+            Assert.fail("Refresh should fail");
         } catch (ApiException e) {
             assertTrue("Should see error message since user has Quay tools but no Quay token.",
                 e.getMessage().contains("Please add a Quay.io token"));
@@ -160,7 +159,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
         DockstoreTool tool = toolsApi.getContainerByToolPath(toolPath, "");
         try {
             toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
-            fail("Should not be able to publish");
+            Assert.fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
@@ -262,7 +261,7 @@ public class BitBucketGitHubBasicIT extends BaseIT {
         try {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, namespace, name, "", gitUrl, "/Dockstore.cwl", "/Dockstore.wdl",
                 "/Dockerfile", DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
-            fail("Should not be able to register");
+            Assert.fail("Should not be able to register");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("already exists"));
         }

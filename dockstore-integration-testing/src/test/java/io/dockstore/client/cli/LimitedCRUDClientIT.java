@@ -20,6 +20,7 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Lists;
@@ -223,8 +224,8 @@ public class LimitedCRUDClientIT {
 
         sourceFiles = generateSourceFiles(WDL);
         hostedTool = api.editHostedTool(hostedTool.getId(), sourceFiles);
-        assertTrue(hostedTool.getDescriptorType().size() == 2);
-        assertTrue(hostedTool.getDescriptorType().get(0) != hostedTool.getDescriptorType().get(1));
+        assertEquals(2, hostedTool.getDescriptorType().size());
+        assertNotSame(hostedTool.getDescriptorType().get(0), hostedTool.getDescriptorType().get(1));
     }
 
     @Test

@@ -16,7 +16,8 @@
 package io.swagger.api.impl;
 
 import static io.dockstore.webservice.DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,19 +50,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author gluu
  * @since 17/01/18
  */
-public class ToolsImplCommonTest {
+class ToolsImplCommonTest {
     private static final String PLACEHOLDER_CONTENT = "potato";
     private static DockstoreWebserviceConfiguration actualConfig = new DockstoreWebserviceConfiguration();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         actualConfig.getExternalConfig().setHostname("localhost");
         actualConfig.getExternalConfig().setPort("8080");
@@ -69,7 +69,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void wdlSourceFileToToolDescriptor() {
+    void wdlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         sourceFile.setPath("/Dockstore.wdl");
@@ -84,7 +84,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void cwlSourceFileToToolDescriptor() {
+    void cwlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         sourceFile.setPath("/Dockstore.cwl");
@@ -106,7 +106,7 @@ public class ToolsImplCommonTest {
      * Tests a tool with/without a toolname
      */
     @Test
-    public void convertDockstoreToolToTool() {
+    void convertDockstoreToolToTool() {
         convertDockstoreToolToTool("potato");
         convertDockstoreToolToTool(null);
     }
@@ -253,7 +253,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void testGalaxyConversion() {
+    void testGalaxyConversion() {
         Workflow workflow = new BioWorkflow();
         workflow.setSourceControl(SourceControl.GITHUB);
         workflow.setRepository("fakeRepository");
@@ -287,7 +287,7 @@ public class ToolsImplCommonTest {
      * Tests a workflow with/without a workflowname
      */
     @Test
-    public void convertDockstoreWorkflowToTool() throws IOException {
+    void convertDockstoreWorkflowToTool() throws IOException {
         convertDockstoreWorkflowToTool("potato", false);
         convertDockstoreWorkflowToTool(null, false);
 
@@ -337,7 +337,7 @@ public class ToolsImplCommonTest {
         // Check that Dockstore version is actually has the right verified source
         String[] expectedVerifiedSource = {"chickenTesterSource", "potatoTesterSource"};
         String[] actualVerifiedSource = actualWorkflowVersion3.getVerifiedSources();
-        Assert.assertArrayEquals(expectedVerifiedSource, actualVerifiedSource);
+        assertArrayEquals(expectedVerifiedSource, actualVerifiedSource);
         workflow.addWorkflowVersion(actualWorkflowVersion1);
         workflow.addWorkflowVersion(actualWorkflowVersion2);
         workflow.addWorkflowVersion(actualWorkflowVersion3);
@@ -507,7 +507,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void sourceFileToToolTests() {
+    void sourceFileToToolTests() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
         sourceFile.setPath("/test.cwl.json");
@@ -522,7 +522,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void processImageDataForToolVersionTest() {
+    void processImageDataForToolVersionTest() {
         io.dockstore.webservice.core.Tool tool = new io.dockstore.webservice.core.Tool();
         Tag tag = new Tag();
         Image image = new Image(new ArrayList<>(), "dummy", "dummy", "a", Registry.QUAY_IO, 1L, "now");
@@ -535,17 +535,17 @@ public class ToolsImplCommonTest {
         io.openapi.model.ToolVersion toolVersion = new io.openapi.model.ToolVersion();
         toolVersion.setImages(new ArrayList<>());
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
-        Assert.assertEquals("There should be the same amount of images as the Tag", 2, toolVersion.getImages().size());
+        assertEquals(2, toolVersion.getImages().size(), "There should be the same amount of images as the Tag");
         List<Long> sortedSizes = toolVersion.getImages().stream().map(ImageData::getSize).sorted().collect(Collectors.toList());
-        Assert.assertEquals(Long.valueOf(1L), sortedSizes.get(0));
-        Assert.assertEquals(Long.valueOf(2L), sortedSizes.get(1));
+        assertEquals(Long.valueOf(1L), sortedSizes.get(0));
+        assertEquals(Long.valueOf(2L), sortedSizes.get(1));
         toolVersion = new io.openapi.model.ToolVersion();
         tag.setImages(new HashSet<>());
         tool = new io.dockstore.webservice.core.Tool();
         tool.addWorkflowVersion(tag);
         toolVersion.setImages(new ArrayList<>());
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
-        Assert.assertEquals("There should be one default image when the Tag has none", 1, toolVersion.getImages().size());
-        Assert.assertEquals(Long.valueOf(0L), toolVersion.getImages().get(0).getSize());
+        assertEquals(1, toolVersion.getImages().size(), "There should be one default image when the Tag has none");
+        assertEquals(Long.valueOf(0L), toolVersion.getImages().get(0).getSize());
     }
 }

@@ -4,7 +4,6 @@ import com.google.common.io.ByteStreams;
 import io.dockstore.common.Utilities;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Assert;
@@ -22,7 +21,7 @@ public class UtilitiesTest {
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Test
-    public void testEnvironmentParam() throws IOException {
+    public void testEnvironmentParam() {
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
         final Map<String, String> map = new HashMap<>();
         map.put("foo", "goo");

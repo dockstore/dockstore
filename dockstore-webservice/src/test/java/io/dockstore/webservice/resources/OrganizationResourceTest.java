@@ -1,5 +1,6 @@
 package io.dockstore.webservice.resources;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
@@ -12,12 +13,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class OrganizationResourceTest {
+class OrganizationResourceTest {
 
     private User normalUser;
     private User adminUser;
@@ -88,7 +88,7 @@ public class OrganizationResourceTest {
         return (mockedOrganizationDAO);
     }
 
-    @Before
+    @BeforeEach
     public void init() {
         idToUser = new HashMap<>();
         idToOrganization = new HashMap<>();
@@ -112,14 +112,14 @@ public class OrganizationResourceTest {
     private void checkExists(Long organizationId, Long userId, boolean shouldExist) {
         boolean exists = OrganizationResource.doesOrganizationExistToUser(
             organizationId, userId, organizationDAO, userDAO);
-        Assert.assertEquals(shouldExist, exists);
+        assertEquals(shouldExist, exists);
     }
 
     /**
      * Test that {@link OrganizationResource#doesOrganizationExistToUser} implements the correct organization visibility policy.
      */
     @Test
-    public void doesOrganizationExistToUserTest() {
+    void doesOrganizationExistToUserTest() {
         final Long bogusUserID = -1L;
         final Long bogusOrganizationID = -1L;
 

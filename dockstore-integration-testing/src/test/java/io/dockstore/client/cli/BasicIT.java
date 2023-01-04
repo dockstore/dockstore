@@ -16,7 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -99,7 +98,7 @@ public class BasicIT extends BaseIT {
         UsersApi usersApi = new UsersApi(client);
         try {
             usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
-            fail("Refresh by organization should fail");
+            Assert.fail("Refresh by organization should fail");
         } catch (ApiException e) {
             assertTrue("Should see error message", e.getMessage().contains("Missing the required parameter"));
         }
@@ -236,7 +235,7 @@ public class BasicIT extends BaseIT {
         // Update tag
         Optional<Tag> optTag = tags.stream().filter(version -> Objects.equals(version.getName(), "masterTest")).findFirst();
         if (optTag.isEmpty()) {
-            fail("Should have masterTest tag");
+            Assert.fail("Should have masterTest tag");
         }
         tag = optTag.get();
         tag.setHidden(true);
@@ -328,7 +327,7 @@ public class BasicIT extends BaseIT {
         // This should throw an error because no user exists with ID -1
         try {
             List<Event> events = eventsApi.getUserEvents(-1L, EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-            fail("No user exists with ID -1");
+            Assert.fail("No user exists with ID -1");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("User not found."));
 
@@ -407,7 +406,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "noautobuild", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
-            fail("Should not be able to publish");
+            Assert.fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish."));
         }
@@ -425,7 +424,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "nobuildsatall", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
-            fail("Should not be able to register");
+            Assert.fail("Should not be able to register");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("has no tags."));
         }
@@ -472,7 +471,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstore2", "testrepo2", "testOrg",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
-            fail("Should not be able to register");
+            Assert.fail("Should not be able to register");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("User does not own"));
         }
@@ -592,7 +591,7 @@ public class BasicIT extends BaseIT {
         // Shouldn't be able to publish
         try {
             toolsApi.publish(toolId, CommonTestUtilities.createPublishRequest(true));
-            fail("Should not be able to publish");
+            Assert.fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish."));
         }
@@ -614,7 +613,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithubalternate", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "", "", "/testDir/Dockerfile",
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
-            fail("Should not be able to publish");
+            Assert.fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
@@ -650,7 +649,7 @@ public class BasicIT extends BaseIT {
         Optional<Tag> optTag = existingTool.getWorkflowVersions().stream().filter(version -> Objects.equals(version.getName(), "master"))
             .findFirst();
         if (optTag.isEmpty()) {
-            fail("There should exist a master tag");
+            Assert.fail("There should exist a master tag");
         }
         Tag tag = optTag.get();
         tag.setCwlPath("/Dockstoredirty.cwl");
@@ -661,7 +660,7 @@ public class BasicIT extends BaseIT {
         // Edit another tag wdl
         optTag = existingTool.getWorkflowVersions().stream().filter(version -> Objects.equals(version.getName(), "latest")).findFirst();
         if (optTag.isEmpty()) {
-            fail("There should exist a master tag");
+            Assert.fail("There should exist a master tag");
         }
         tag = optTag.get();
         tag.setWdlPath("/Dockstoredirty.wdl");
@@ -855,7 +854,7 @@ public class BasicIT extends BaseIT {
         publicTool.setPrivateAccess(true);
         try {
             publicTool = toolsApi.updateContainer(publicTool.getId(), publicTool);
-            fail("Should not be able to update without email");
+            Assert.fail("Should not be able to update without email");
         } catch (ApiException e) {
             assertTrue(
                 e.getMessage().contains("A published, private tool must have either an tool author email or tool maintainer email set up"));
@@ -969,7 +968,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true, true, null, null);
-            fail("Should not be able to manually register due to missing email");
+            Assert.fail("Should not be able to manually register due to missing email");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Tool maintainer email is required for private tools"));
         }
@@ -1012,7 +1011,7 @@ public class BasicIT extends BaseIT {
             manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
                     "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                     DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, false, null, "test.dkr.ecr.us-east-1.amazonaws.com");
-            fail("Should not be able to register a public tool using a private Amazon ECR image.");
+            Assert.fail("Should not be able to register a public tool using a private Amazon ECR image.");
         } catch (ApiException e) {
             assertEquals("The private Amazon ECR tool cannot be set to public.", e.getMessage());
         }
@@ -1022,7 +1021,7 @@ public class BasicIT extends BaseIT {
             manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
                     "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                     DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "test@gmail.com", "public.ecr.aws/ubuntu/ubuntu");
-            fail("Should not be able to register a private tool using a public Amazon ECR image.");
+            Assert.fail("Should not be able to register a private tool using a public Amazon ECR image.");
         } catch (ApiException e) {
             assertEquals("The public Amazon ECR tool cannot be set to private.", e.getMessage());
         }
@@ -1056,7 +1055,7 @@ public class BasicIT extends BaseIT {
         privateTool.setPrivateAccess(false);
         try {
             toolsApi.updateContainer(privateTool.getId(), privateTool);
-            fail("Should not be able to update private Amazon ECR tool to public");
+            Assert.fail("Should not be able to update private Amazon ECR tool to public");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("The private Amazon ECR tool cannot be set to public."));
         }
@@ -1076,7 +1075,7 @@ public class BasicIT extends BaseIT {
         publicTool.setToolMaintainerEmail("testemail@domain.com");
         try {
             toolsApi.updateContainer(publicTool.getId(), publicTool);
-            fail("Should not be able to update public Amazon ECR tool to private");
+            Assert.fail("Should not be able to update public Amazon ECR tool to private");
         } catch (ApiException e) {
             assertEquals("The public Amazon ECR tool cannot be set to private.", e.getMessage());
         }
@@ -1102,7 +1101,7 @@ public class BasicIT extends BaseIT {
         try {
             manualRegisterAndPublish(toolsApi, "abcd1234", "foo", "bar", "git@github.com:DockstoreTestUser/dockstore-whalesay.git",
                     "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile", DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
-            fail("Should not have been able to register a public Amazon ECR tool with the same tool path.");
+            Assert.fail("Should not have been able to register a public Amazon ECR tool with the same tool path.");
         } catch (ApiException e) {
             assertEquals("Tool " + publicTool.getToolPath() + " already exists.", e.getMessage());
         }
@@ -1118,7 +1117,7 @@ public class BasicIT extends BaseIT {
             // Manual publish a public Amazon ECR tool using an image of the following format: public.ecr.aws/abcd1234/foo/bar and no tool name
             manualRegisterAndPublish(toolsApi, "abcd1234", "potato/tomato", null, "git@github.com:DockstoreTestUser/dockstore-whalesay.git",
                     "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile", DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
-            fail("Should not have been able to register a public Amazon ECR tool with the same tool path.");
+            Assert.fail("Should not have been able to register a public Amazon ECR tool with the same tool path.");
         } catch (ApiException e) {
             assertEquals("Tool " + publicTool.getToolPath() + " already exists.", e.getMessage());
         }
@@ -1145,7 +1144,7 @@ public class BasicIT extends BaseIT {
             manualRegisterAndPublish(toolsApi, "abcd1234", "foo", "bar", "git@github.com:DockstoreTestUser/dockstore-whalesay.git",
                     "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile", DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true,
                     true, "test@gmail.com", "test.dkr.ecr.us-east-1.amazonaws.com");
-            fail("Should not have been able to register a private Amazon ECR tool with the same tool path.");
+            Assert.fail("Should not have been able to register a private Amazon ECR tool with the same tool path.");
         } catch (ApiException e) {
             assertEquals("Tool " + privateTool.getToolPath() + " already exists.", e.getMessage());
         }
@@ -1162,7 +1161,7 @@ public class BasicIT extends BaseIT {
             manualRegisterAndPublish(toolsApi, "abcd1234", "potato/tomato", null, "git@github.com:DockstoreTestUser/dockstore-whalesay.git",
                     "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile", DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true,
                     true, "test@gmail.com", "test.dkr.ecr.us-east-1.amazonaws.com");
-            fail("Should not have been able to register a private Amazon ECR tool with the same tool path.");
+            Assert.fail("Should not have been able to register a private Amazon ECR tool with the same tool path.");
         } catch (ApiException e) {
             assertEquals("Tool " + privateTool.getToolPath() + " already exists.", e.getMessage());
         }
@@ -1188,14 +1187,14 @@ public class BasicIT extends BaseIT {
             foundTool = toolsApi.getContainerByToolPath(tool.getToolPath(), "");
             assertEquals(tool.getId(), foundTool.getId());
         } catch (ApiException e) {
-            fail("Should have been able to get the Amazon ECR tool by tool path.");
+            Assert.fail("Should have been able to get the Amazon ECR tool by tool path.");
         }
 
         try {
             foundTool = toolsApi.getPublishedContainerByToolPath(tool.getToolPath(), "");
             assertEquals(tool.getId(), foundTool.getId());
         } catch (ApiException e) {
-            fail("Should have been able to get the published Amazon ECR tool by tool path.");
+            Assert.fail("Should have been able to get the published Amazon ECR tool by tool path.");
         }
 
         // Manual publish a public Amazon ECR tool that has a repo name with slashes
@@ -1207,14 +1206,14 @@ public class BasicIT extends BaseIT {
             foundTool = toolsApi.getContainerByToolPath(tool.getToolPath(), "");
             assertEquals(tool.getId(), foundTool.getId());
         } catch (ApiException e) {
-            fail("Should have been able to get the Amazon ECR tool by tool path.");
+            Assert.fail("Should have been able to get the Amazon ECR tool by tool path.");
         }
 
         try {
             foundTool = toolsApi.getPublishedContainerByToolPath(tool.getToolPath(), "");
             assertEquals(tool.getId(), foundTool.getId());
         } catch (ApiException e) {
-            fail("Should have been able to get the published Amazon ECR tool by tool path.");
+            Assert.fail("Should have been able to get the published Amazon ECR tool by tool path.");
         }
 
         // Manual publish a public Amazon ECR tool that has a repo name with slashes and a tool name
@@ -1226,28 +1225,28 @@ public class BasicIT extends BaseIT {
             foundTool = toolsApi.getContainerByToolPath(tool.getToolPath(), "");
             assertEquals(tool.getId(), foundTool.getId());
         } catch (ApiException e) {
-            fail("Should have been able to get the Amazon ECR tool by tool path.");
+            Assert.fail("Should have been able to get the Amazon ECR tool by tool path.");
         }
 
         try {
             foundTool = toolsApi.getPublishedContainerByToolPath(tool.getToolPath(), "");
             assertEquals(tool.getId(), foundTool.getId());
         } catch (ApiException e) {
-            fail("Should have been able to get the published Amazon ECR tool by tool path.");
+            Assert.fail("Should have been able to get the published Amazon ECR tool by tool path.");
         }
 
         try {
             List<DockstoreTool> foundTools = toolsApi.getContainerByPath(tool.getPath());
             assertEquals("Should have two tools with the path 'public.ecr.aws/abcd1234/foo/bar'.", 2, foundTools.size());
         } catch (ApiException e) {
-            fail("Should have been able to get the Amazon ECR tools by path.");
+            Assert.fail("Should have been able to get the Amazon ECR tools by path.");
         }
 
         try {
             List<DockstoreTool> foundTools = toolsApi.getPublishedContainerByPath(tool.getPath());
             assertEquals("Should have two published tools with the path 'public.ecr.aws/abcd1234/foo/bar'.", 2, foundTools.size());
         } catch (ApiException e) {
-            fail("Should have been able to get the published Amazon ECR tools by path.");
+            Assert.fail("Should have been able to get the published Amazon ECR tools by path.");
         }
     }
 
@@ -1331,7 +1330,7 @@ public class BasicIT extends BaseIT {
         tool.setPrivateAccess(false);
         try {
             toolsApi.updateContainer(tool.getId(), tool);
-            fail("Should not be able to update tool to public");
+            Assert.fail("Should not be able to update tool to public");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("The registry Seven Bridges is private only, cannot set tool to public"));
         }
@@ -1363,7 +1362,7 @@ public class BasicIT extends BaseIT {
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, true, "duncan.andrew.g@gmail.com",
                 "testimages.sbgenomics.com");
-            fail("Should not be able to register");
+            Assert.fail("Should not be able to register");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("The provided registry is not valid"));
         }
@@ -1383,7 +1382,7 @@ public class BasicIT extends BaseIT {
                     "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                     DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, false, "duncan.andrew.g@gmail.com",
                     "images.sbgenomics.com");
-            fail("Should fail since it is a private only registry with a public tool");
+            Assert.fail("Should fail since it is a private only registry with a public tool");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("The registry Seven Bridges is a private only registry"));
         }
@@ -1402,7 +1401,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
-            fail("Should fail due to no custom docker path");
+            Assert.fail("Should fail due to no custom docker path");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("The provided registry is not valid"));
         }

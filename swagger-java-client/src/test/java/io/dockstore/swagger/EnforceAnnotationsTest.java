@@ -1,14 +1,15 @@
 package io.dockstore.swagger;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.swagger.client.model.Workflow;
 import java.lang.annotation.Annotation;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class EnforceAnnotationsTest {
+class EnforceAnnotationsTest {
 
     @Test
-    public void checkAnnotations() {
+    void checkAnnotations() {
         // we had a bizarre issue where the Workflow would lose an annotation that was required for dockstore-cli to work properly
         Workflow workflow = new Workflow();
         Class<? extends Workflow> cls = workflow.getClass();
@@ -27,7 +28,7 @@ public class EnforceAnnotationsTest {
                 hasJsonSubTypes = true;
             }
         }
-        Assert.assertTrue(hasJsonSubTypes);
+        assertTrue(hasJsonSubTypes);
     }
 
 }

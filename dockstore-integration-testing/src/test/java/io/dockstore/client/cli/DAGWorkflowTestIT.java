@@ -17,6 +17,8 @@
 package io.dockstore.client.cli;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
@@ -33,7 +35,6 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -65,13 +66,13 @@ public class DAGWorkflowTestIT extends BaseIT {
         Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, testWorkflowName, descType, "/test.json");
 
         // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string
-        Assert.assertEquals(githubWorkflow.getWorkflowName(), testWorkflowName);
+        assertEquals(testWorkflowName, githubWorkflow.getWorkflowName());
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId(), false);
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
-        Assert.assertEquals(refresh.getWorkflowName(), testWorkflowName);
+        assertEquals(testWorkflowName, refresh.getWorkflowName());
 
         Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals(branch))
             .findFirst();
@@ -111,11 +112,11 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
         int countNode = countNodeInJSON(strings);
 
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have five nodes (including start and end)", countNode, 5);
-        Assert.assertTrue("node data should have untar as tool", strings.get(0).contains("untar"));
-        Assert.assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
-        Assert.assertTrue("edge should connect untar and compile",
+        assertTrue("JSON should not be blank", strings.size() > 0);
+        assertEquals("JSON should have five nodes (including start and end)", 5, countNode);
+        assertTrue("node data should have untar as tool", strings.get(0).contains("untar"));
+        assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
+        assertTrue("edge should connect untar and compile",
             strings.get(0).contains("\"source\":\"dockstore_untar\",\"target\":\"dockstore_compile\""));
 
     }
@@ -130,11 +131,11 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/SnapTools", "/snaptools_create_snap_file.cwl", DescriptorLanguage.CWL.getShortName(), "feature/docker_cwl_req_in_main");
         int countNode = countNodeInJSON(strings);
 
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have eight nodes (including start and end)", 8, countNode);
-        Assert.assertTrue("node data should have snaptools_preprocess_reads as tool", strings.get(0).contains("snaptools_preprocess_reads"));
-        Assert.assertTrue("node data should have snaptools_create_ref_genome_size_file as tool", strings.get(0).contains("snaptools_create_ref_genome_size_file"));
-        Assert.assertTrue("edge should connect snaptools_preprocess_reads and snaptools_create_ref_genome_size_file",
+        assertTrue("JSON should not be blank", strings.size() > 0);
+        assertEquals("JSON should have eight nodes (including start and end)", 8, countNode);
+        assertTrue("node data should have snaptools_preprocess_reads as tool", strings.get(0).contains("snaptools_preprocess_reads"));
+        assertTrue("node data should have snaptools_create_ref_genome_size_file as tool", strings.get(0).contains("snaptools_create_ref_genome_size_file"));
+        assertTrue("edge should connect snaptools_preprocess_reads and snaptools_create_ref_genome_size_file",
                 strings.get(0).contains("\"source\":\"dockstore_snaptools_create_ref_genome_size_file\",\"target\":\"dockstore_snaptools_preprocess_reads\""));
 
     }
@@ -150,16 +151,16 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_wdl", "/hello.wdl", "wdl", "master");
         int countNode = countNodeInJSON(strings);
 
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have four nodes (including start and end)", countNode, 4);
-        Assert.assertTrue("node data should have hello as task", strings.get(0).contains("hello"));
-        Assert.assertTrue("should have first edge",
+        assertTrue("JSON should not be blank", strings.size() > 0);
+        assertEquals("JSON should have four nodes (including start and end)", 4, countNode);
+        assertTrue("node data should have hello as task", strings.get(0).contains("hello"));
+        assertTrue("should have first edge",
             strings.get(0).contains("{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_hello\"}}"));
-        Assert.assertTrue("should have second edge",
+        assertTrue("should have second edge",
             strings.get(0).contains("{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_helper\"}}"));
-        Assert.assertTrue("should have third edge",
+        assertTrue("should have third edge",
             strings.get(0).contains("{\"data\":{\"source\":\"dockstore_helper\",\"target\":\"UniqueEndKey\"}}"));
-        Assert.assertTrue("should have fourth edge",
+        assertTrue("should have fourth edge",
             strings.get(0).contains("{\"data\":{\"source\":\"dockstore_hello\",\"target\":\"UniqueEndKey\"}}"));
 
     }
@@ -175,20 +176,20 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "wdl", "testWDL");
         int countNode = countNodeInJSON(strings);
 
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have five nodes (including start and end)", countNode, 5);
-        Assert.assertTrue("node data should have ps as tool", strings.get(0).contains("ps"));
-        Assert.assertTrue("node data should have cgrep as tool", strings.get(0).contains("cgrep"));
-        Assert.assertTrue("node data should have wc as tool", strings.get(0).contains("wc"));
-        Assert.assertTrue("should have first edge",
+        assertTrue("JSON should not be blank", strings.size() > 0);
+        assertEquals("JSON should have five nodes (including start and end)", 5, countNode);
+        assertTrue("node data should have ps as tool", strings.get(0).contains("ps"));
+        assertTrue("node data should have cgrep as tool", strings.get(0).contains("cgrep"));
+        assertTrue("node data should have wc as tool", strings.get(0).contains("wc"));
+        assertTrue("should have first edge",
             strings.get(0).contains("{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_ps\"}}"));
-        Assert.assertTrue("should have second edge",
+        assertTrue("should have second edge",
             strings.get(0).contains("{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_cgrep\"}}"));
-        Assert.assertTrue("should have third edge",
+        assertTrue("should have third edge",
             strings.get(0).contains("{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_wc\"}}"));
-        Assert.assertTrue("should have fourth edge",
+        assertTrue("should have fourth edge",
             strings.get(0).contains("{\"data\":{\"source\":\"dockstore_wc\",\"target\":\"UniqueEndKey\"}}"));
-        Assert.assertTrue("should have fifth edge",
+        assertTrue("should have fifth edge",
             strings.get(0).contains("{\"data\":{\"source\":\"dockstore_cgrep\",\"target\":\"UniqueEndKey\"}}"));
 
     }
@@ -204,7 +205,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "cwl", "testCWL");
 
         //JSON will have node:[] and edges:[]
-        Assert.assertEquals("JSON should not have any data for nodes and edges", strings.size(), 1);
+        assertEquals("JSON should not have any data for nodes and edges", 1, strings.size());
     }
 
     @Test
@@ -219,7 +220,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_wdl", "/hello.wdl", "wdl", "missing_docker");
 
         //JSON will have no content at all
-        Assert.assertEquals("JSON should be blank", strings.size(), 0);
+        assertEquals("JSON should be blank", 0, strings.size());
     }
 
     @Test
@@ -233,11 +234,11 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "update-to-valid-cwl");
         int countNode = countNodeInJSON(strings);
 
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have four nodes (including start and end)", countNode, 4);
-        Assert.assertTrue("node data should have untar as tool", strings.get(0).contains("untar"));
-        Assert.assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
-        Assert.assertTrue("edge should connect untar and compile",
+        assertTrue("JSON should not be blank", strings.size() > 0);
+        assertEquals("JSON should have four nodes (including start and end)", 4, countNode);
+        assertTrue("node data should have untar as tool", strings.get(0).contains("untar"));
+        assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
+        assertTrue("edge should connect untar and compile",
             strings.get(0).contains("\"source\":\"dockstore_untar\",\"target\":\"dockstore_compile\""));
     }
 
@@ -252,10 +253,10 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/OxoG-Dockstore-Tools", "/preprocess_vcf.cwl", "cwl", "develop");
         int countNode = countNodeInJSON(strings);
 
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have 19 nodes", countNode, 19);
-        Assert.assertTrue("node data should have pass_filter as tool", strings.get(0).contains("pass_filter"));
-        Assert.assertTrue("node data should have merge_vcfs as tool", strings.get(0).contains("merge_vcfs"));
+        assertTrue("JSON should not be blank", strings.size() > 0);
+        assertEquals("JSON should have 19 nodes", 19, countNode);
+        assertTrue("node data should have pass_filter as tool", strings.get(0).contains("pass_filter"));
+        assertTrue("node data should have merge_vcfs as tool", strings.get(0).contains("merge_vcfs"));
     }
 
     @Test
@@ -270,15 +271,15 @@ public class DAGWorkflowTestIT extends BaseIT {
             "hints_ExpressionTool");
         int countNode = countNodeInJSON(strings);
 
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have 19 nodes", countNode, 19);
-        Assert.assertTrue("should have end with gather_sanger_indels and merge_vcfs",
+        assertTrue("JSON should not be blank", strings.size() > 0);
+        assertEquals("JSON should have 19 nodes", 19, countNode);
+        assertTrue("should have end with gather_sanger_indels and merge_vcfs",
             strings.get(0).contains("\"source\":\"dockstore_gather_sanger_indels\",\"target\":\"dockstore_merge_vcfs\""));
-        Assert.assertTrue("should have end with filter and normalize",
+        assertTrue("should have end with filter and normalize",
             strings.get(0).contains("\"source\":\"dockstore_filter\",\"target\":\"dockstore_normalize\""));
-        Assert.assertTrue("should have docker requirement for vcf_merge", strings.get(0).contains(
+        assertTrue("should have docker requirement for vcf_merge", strings.get(0).contains(
             "\"name\":\"merge_vcfs\",\"run\":\"vcf_merge.cwl\",\"id\":\"dockstore_merge_vcfs\",\"type\":\"tool\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\",\"docker\":\"pancancer/pcawg-oxog-tools\""));
-        Assert.assertTrue("should have docker requirement for clean", strings.get(0).contains(
+        assertTrue("should have docker requirement for clean", strings.get(0).contains(
             "\"name\":\"clean\",\"run\":\"clean_vcf.cwl\",\"id\":\"dockstore_clean\",\"type\":\"tool\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\",\"docker\":\"pancancer/pcawg-oxog-tools:1.0.0\""));
     }
 
@@ -298,8 +299,8 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "cwl", "test");
         int countNode = countNodeInJSON(strings);
 
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have 110 nodes", countNode, 110);
+        assertTrue("JSON should not be blank", strings.size() > 0);
+        assertEquals("JSON should have 110 nodes", 110, countNode);
     }
 
     /**
@@ -318,8 +319,8 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("DockstoreTestUser2/cwl-gene-prioritization", "/gp_workflow.cwl", "cwl", "test");
         int countNode = countNodeInJSON(strings);
 
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have 5 nodes", countNode, 5);
+        assertTrue("JSON should not be blank", strings.size() > 0);
+        assertEquals("JSON should have 5 nodes", 5, countNode);
     }
 
     /**
@@ -350,14 +351,14 @@ public class DAGWorkflowTestIT extends BaseIT {
     @Test
     public void testReallyComplexImportedWdlWorkflow() throws ApiException {
         final List<String> strings = getJSON("dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl", "wdl", "1.0");
-        Assert.assertEquals(1, strings.size());
+        assertEquals(1, strings.size());
         final Gson gson = new Gson();
         final ElementsDefinition dag = gson.fromJson(strings.get(0), ElementsDefinition.class);
-        Assert.assertEquals("Dag should have 229 nodes", 229, dag.nodes.size());
+        assertEquals("Dag should have 229 nodes", 229, dag.nodes.size());
 
         // Locally it always comes back as 390. On Travis, it sometimes comes back with 391. Have not been able narrow down
         // the issue, so for now do an less than ideal test for a range.
-        Assert.assertTrue("Dag should have between 385 and 395 edges", dag.edges.size() >= 385 && dag.edges.size() <= 395);
+        assertTrue("Dag should have between 385 and 395 edges", dag.edges.size() >= 385 && dag.edges.size() <= 395);
     }
 
 }

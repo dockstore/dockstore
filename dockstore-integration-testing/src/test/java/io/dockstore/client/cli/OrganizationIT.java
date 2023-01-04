@@ -219,7 +219,7 @@ public class OrganizationIT extends BaseIT {
 
         // Create the organization
         Organization registeredOrganization = createOrg(organizationsApiUser2);
-        assertNotEquals(registeredOrganization.getStatus(), StatusEnum.APPROVED);
+        assertNotEquals(StatusEnum.APPROVED, registeredOrganization.getStatus());
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
@@ -227,14 +227,14 @@ public class OrganizationIT extends BaseIT {
 
         // Should not appear in approved list
         List<Organization> organizationList = organizationsApiUser2.getApprovedOrganizations();
-        assertEquals("Should have no approved Organizations.", organizationList.size(), 0);
+        assertEquals("Should have no approved Organizations.", 0, organizationList.size());
 
         // User should be able to get by id
         Organization organization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
         assertNotNull("organization should be returned.", organization);
 
         // Should be in PENDING state
-        assertEquals(organization.getStatus(), StatusEnum.PENDING);
+        assertEquals(StatusEnum.PENDING, organization.getStatus());
 
         // Admin should be able to see by id
         organization = organizationsApiAdmin.getOrganizationById(registeredOrganization.getId());
@@ -325,11 +325,11 @@ public class OrganizationIT extends BaseIT {
 
         // Should be in APPROVED state
         registeredOrganization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
-        assertEquals(registeredOrganization.getStatus(), StatusEnum.APPROVED);
+        assertEquals(StatusEnum.APPROVED, registeredOrganization.getStatus());
 
         // Should now appear in approved list
         organizationList = organizationsApiUser2.getApprovedOrganizations();
-        assertEquals("Should have one approved Organizations.", organizationList.size(), 1);
+        assertEquals("Should have one approved Organizations.", 1, organizationList.size());
         organizationList.forEach(approvedOrganization -> assertTrue(approvedOrganization.getAliases().isEmpty()));
 
         // Should not be able to request re-review
@@ -714,7 +714,7 @@ public class OrganizationIT extends BaseIT {
 
         // Create the Organization
         Organization registeredOrganization = createOrg(organizationsApiUser2);
-        assertEquals(registeredOrganization.getStatus(), StatusEnum.PENDING);
+        assertEquals(StatusEnum.PENDING, registeredOrganization.getStatus());
 
         // Should appear in the pending
         List<Organization> organizationList = organizationsApiAdmin.getAllOrganizations("pending");
@@ -842,7 +842,7 @@ public class OrganizationIT extends BaseIT {
 
         // Create an Organization
         Organization organization = createOrg(organizationsApiUser2);
-        assertNotEquals(organization.getStatus(), StatusEnum.APPROVED);
+        assertNotEquals(StatusEnum.APPROVED, organization.getStatus());
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
@@ -1160,7 +1160,7 @@ public class OrganizationIT extends BaseIT {
 
         // Create an Organization
         Organization organization = createOrg(organizationsApiUser2);
-        assertNotEquals(organization.getStatus(), StatusEnum.APPROVED);
+        assertNotEquals(StatusEnum.APPROVED, organization.getStatus());
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
@@ -1984,7 +1984,7 @@ public class OrganizationIT extends BaseIT {
 
         // Should now appear in approved list
         List<Organization> organizationList = organizationsApi.getApprovedOrganizations();
-        assertEquals("Should have one approved Organization.", organizationList.size(), 1);
+        assertEquals("Should have one approved Organization.", 1, organizationList.size());
         // organization alias should be in return from API call
         organizationList.forEach(approvedOrganization -> Assert.assertNotNull(approvedOrganization.getAliases()));
     }

@@ -1630,7 +1630,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         try {
             anonContainersApi.getToolZip(100000000L, 1000000L);
         } catch (ApiException ex) {
-            assertEquals(ex.getCode(), HttpStatus.SC_NOT_FOUND);
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
             success = true;
         }
         assertTrue("should have got 404", success);

@@ -352,7 +352,7 @@ public class CRUDClientIT extends BaseIT {
             api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), frozenVersion.getName());
             Assert.fail("Should not be able to delete a frozen version");
         } catch (ApiException ex) {
-            assertEquals(ex.getMessage(), "Cannot delete a snapshotted version.");
+            assertEquals("Cannot delete a snapshotted version.", ex.getMessage());
         }
     }
 
@@ -385,7 +385,7 @@ public class CRUDClientIT extends BaseIT {
         file.setAbsolutePath("/Dockstore.wdl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
         // Workflow has multiple authors, but only one author has an email. The author returned may be one of the authors without an email.
-        assertTrue(!dockstoreWorkflow.getAuthor().isEmpty());
+        assertFalse(dockstoreWorkflow.getAuthor().isEmpty());
     }
 
     @Test
