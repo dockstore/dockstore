@@ -9,10 +9,10 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 
-: "$CIRCLE_CI_KEY_2"
-: "$CIRCLE_CI_IV_2"
+: "$CIRCLE_CI_WS_KEY"
+: "$CIRCLE_CI_WS_IV"
 
-openssl aes-256-cbc -md sha256 -d -in circle_ci_test_data.zip.enc -k "$CIRCLE_CI_KEY_2" -iv "$CIRCLE_CI_IV_2" -out secrets.tar
+openssl aes-256-cbc -md sha256 -d -in circle_ci_test_data.zip.enc -k "$CIRCLE_CI_WS_KEY" -iv "$CIRCLE_CI_WS_IV" -out secrets.tar
 tar xvf secrets.tar
 sudo mkdir -p /usr/local/ci
 sudo cp dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /usr/local/ci/dstesting_pcks8.pem
