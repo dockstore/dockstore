@@ -1019,7 +1019,7 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     @Tag(SlowTest.NAME)
-    public void testGitLabTagAndBranchTracking() {
+    void testGitLabTagAndBranchTracking() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 

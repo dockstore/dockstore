@@ -190,7 +190,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     @SuppressWarnings("checkstyle:MethodLength")
-    public void testCreateNewOrganization() {
+    void testCreateNewOrganization() {
         // Set the user that's creating the organization to not be an admin
         testingPostgres.runUpdateStatement("update enduser set isadmin ='f' where username = 'DockstoreTestUser2'");
         // Setup postgres
@@ -470,8 +470,8 @@ public class OrganizationIT extends BaseIT {
         }
     }
 
-    @Test()
-    public void testDuplicateOrgByCase() {
+    @Test
+    void testDuplicateOrgByCase() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
@@ -484,8 +484,8 @@ public class OrganizationIT extends BaseIT {
     }
 
     // for DOCK-1948
-    @Test()
-    public void testGetMissingCollectionByName() {
+    @Test
+    void testGetMissingCollectionByName() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
@@ -1639,7 +1639,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     @SuppressWarnings("checkstyle:MethodLength")
-    public void testBasicCollections() throws IOException {
+    void testBasicCollections() throws IOException {
         // Setup postgres
 
         // Setup user who creates Organization and collection

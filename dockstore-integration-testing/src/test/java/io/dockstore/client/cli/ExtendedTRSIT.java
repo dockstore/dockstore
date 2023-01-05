@@ -80,7 +80,7 @@ public class ExtendedTRSIT extends BaseIT {
     }
 
     @Test
-    public void testVerificationOnSourceFileLevelForWorkflowsAsOwner() throws ApiException {
+    void testVerificationOnSourceFileLevelForWorkflowsAsOwner() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         // need to turn off admin of USER_2_USERNAME
         testingPostgres.runUpdateStatement("update enduser set isadmin = 'f' where username = '" + USER_2_USERNAME + "'");
@@ -88,12 +88,12 @@ public class ExtendedTRSIT extends BaseIT {
     }
 
     @Test
-    public void testVerificationOnSourceFileLevelForWorkflowsAsAnon() throws ApiException {
+    void testVerificationOnSourceFileLevelForWorkflowsAsAnon() throws ApiException {
         assertThrows(ApiException.class, () -> testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getAnonymousWebClient()));
     }
 
     @Test
-    public void testVerificationOnSourceFileLevelForWorkflowsAsWrongUser() throws ApiException {
+    void testVerificationOnSourceFileLevelForWorkflowsAsWrongUser() throws ApiException {
         assertThrows(ApiException.class, () -> {
             // this seemed already weird with the first line dying?
             testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(USER_1_USERNAME, testingPostgres));
@@ -102,13 +102,13 @@ public class ExtendedTRSIT extends BaseIT {
     }
 
     @Test
-    public void testVerificationOnSourceFileLevelForWorkflowsAsAdmin() throws ApiException {
+    void testVerificationOnSourceFileLevelForWorkflowsAsAdmin() throws ApiException {
         // can verify anyone's workflow as an admin
         testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(ADMIN_USERNAME, testingPostgres));
     }
 
     @Test
-    public void testVerificationOnSourceFileLevelForWorkflowsAsCurator() throws ApiException {
+    void testVerificationOnSourceFileLevelForWorkflowsAsCurator() throws ApiException {
         // or as a curator
         testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(curatorUsername, testingPostgres));
     }
@@ -189,7 +189,7 @@ public class ExtendedTRSIT extends BaseIT {
      * Also tests that the tag verification endpoint can fix a potential sync issue
      */
     @Test
-    public void testVerificationOnSourceFileLevelForTools() {
+    void testVerificationOnSourceFileLevelForTools() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi containertagsApi = new ContainertagsApi(webClient);

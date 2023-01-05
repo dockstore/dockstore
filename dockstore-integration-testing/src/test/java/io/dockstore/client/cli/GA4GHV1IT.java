@@ -49,7 +49,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testMetadata() throws Exception {
+    void testMetadata() throws Exception {
         Response response = checkedResponse(baseURL + "metadata");
         MetadataV1 metadata = response.readEntity(MetadataV1.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(metadata)).contains("api-version");
@@ -60,7 +60,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testTools() throws Exception {
+    void testTools() throws Exception {
         // The other test which uses a different DB manages to cache the endpoint with different tools
         // Restart application to clear cache
         SUPPORT.after();
@@ -73,7 +73,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsId() throws Exception {
+    void testToolsId() throws Exception {
         toolsIdTool();
         toolsIdWorkflow();
     }
@@ -102,7 +102,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersions() throws Exception {
+    void testToolsIdVersions() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions");
         List<ToolVersionV1> responseObject = response.readEntity(new GenericType<List<ToolVersionV1>>() {
         });
@@ -111,7 +111,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolClasses() throws Exception {
+    void testToolClasses() throws Exception {
         Response response = checkedResponse(baseURL + "tool-classes");
         List<ToolClass> responseObject = response.readEntity(new GenericType<List<ToolClass>>() {
         });
@@ -123,14 +123,14 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersionsVersionId() throws Exception {
+    void testToolsIdVersionsVersionId() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
         ToolVersionV1 responseObject = response.readEntity(ToolVersionV1.class);
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     @Override
-    public void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception {
+    void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
@@ -164,7 +164,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testRelativePathEndpointToolTestParameterFileJSON() {
+    void testRelativePathEndpointToolTestParameterFileJSON() {
         Response response = checkedResponse(
             baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         ToolTestsV1 responseObject = response.readEntity(ToolTestsV1.class);
@@ -179,7 +179,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
+    void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
@@ -204,7 +204,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersionsVersionIdTypeTests() throws Exception {
+    void testToolsIdVersionsVersionIdTypeTests() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/tests");
         List<ToolTestsV1> responseObject = response.readEntity(new GenericType<List<ToolTestsV1>>() {
         });
@@ -220,7 +220,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersionsVersionIdTypeDockerfile() {
+    void testToolsIdVersionsVersionIdTypeDockerfile() {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/dockerfile");
         // note: v1 really does expect only one item
         ToolDockerfile responseObject = response.readEntity(ToolDockerfile.class);

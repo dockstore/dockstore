@@ -54,75 +54,75 @@ public class CWLHandlerPreprocessorTest {
     }
 
     @Test
-    public void testNoSubsitutions() {
+    void testNoSubsitutions() {
         final String arrayOfMaps = "-\n  a: b\n-\n  d: e";
         Assertions.assertEquals(parse(arrayOfMaps), preprocess(arrayOfMaps, set()));
     }
 
     @Test
-    public void testImport() {
+    void testImport() {
         final String imported = "test: value";
         Assertions.assertEquals(parse(imported), preprocess("$import: b", set(file("/b", imported))));
     }
 
     @Test
-    public void testInclude() {
+    void testInclude() {
         final String included = "abcde";
         Assertions.assertEquals(included, preprocess("$import: b", set(file("/b", included))));
     }
 
     @Test
-    public void testMixin() {
+    void testMixin() {
         Assertions.assertEquals(parse(V1_0 + WORKFLOW + metadataHint("a") + "a: z\nb: y"), preprocess(V1_0 + WORKFLOW + "a: z\n$mixin: b", set(file("/b", "a: x\nb: y"))));
         Assertions.assertEquals(parse(V1_1 + WORKFLOW + metadataHint("a") + "$mixin: v"), preprocess(V1_1 + WORKFLOW + "$mixin: v", set()));
     }
 
     @Test
-    public void testRun() {
+    void testRun() {
         final String runContent = "something: torun";
         Assertions.assertEquals(parse("run:\n  " + runContent), preprocess("run: b", set(file("/b", runContent))));
         Assertions.assertEquals(parse("run:\n  " + runContent), preprocess("run:\n  $import: b", set(file("/b", runContent))));
     }
 
     @Test
-    public void testMissingFile() {
+    void testMissingFile() {
         Assertions.assertEquals(Collections.emptyMap(), preprocess("$import: b", set()));
         Assertions.assertEquals("", preprocess("$include: b", set()));
         Assertions.assertEquals(parse(V1_0 + WORKFLOW + metadataHint("a") + "a: x"), preprocess(V1_0 + WORKFLOW + "a: x\n$mixin: b", set()));
     }
 
     @Test
-    public void testMultilevelImports() {
+    void testMultilevelImports() {
         final String imported = "levels: two";
         Assertions.assertEquals(parse(imported), preprocess("$import: b", set(file("/b", "$import: c"), file("/c", imported))));
     }
 
     @Test
-    public void testRelativeImport() {
+    void testRelativeImport() {
         final String imported = "some: content";
         Assertions.assertEquals(parse(imported), preprocess("$import: subsub/b", set(file("/sub/subsub/b", imported)), "/sub/a"));
     }
 
     @Test
-    public void testAbsoluteImport() {
+    void testAbsoluteImport() {
         final String imported = "some: content";
         Assertions.assertEquals(parse(imported), preprocess("$import: /b", set(file("/b", imported)), "/sub/a"));
     }
 
     @Test
-    public void testHttpUrlImport() {
+    void testHttpUrlImport() {
         Assertions.assertEquals(Collections.emptyMap(), preprocess("$import: http://www.foo.com/bar", set()));
         Assertions.assertEquals(Collections.emptyMap(), preprocess("$import: https://www.foo.com/bar", set()));
     }
 
     @Test
-    public void testFileUrlImport() {
+    void testFileUrlImport() {
         final String imported = "some: thing";
         Assertions.assertEquals(parse(imported), preprocess("$import: file://b", set(file("/b", imported))));
     }
 
     @Test
-    public void testRunOfNonexistentFile() {
+    void testRunOfNonexistentFile() {
         final String runImport = "run:\n  $import: filename";
         final String runReduced = "run: filename";
         Assertions.assertEquals(parse(runReduced), preprocess(runImport, set()));
@@ -130,7 +130,7 @@ public class CWLHandlerPreprocessorTest {
     }
 
     @Test
-    public void testMaxDepth() {
+    void testMaxDepth() {
         // preprocess a file that recursively imports itself
         assertThrows(CustomWebApplicationException.class, () -> preprocess("$import: a", set(file("/a", "$import: a"))));
     }
@@ -144,13 +144,13 @@ public class CWLHandlerPreprocessorTest {
     }
 
     @Test
-    public void testMaxCharCount() {
+    void testMaxCharCount() {
         // preprocess a moderate number of very large includes, which add up to >1GB
         assertThrows(CustomWebApplicationException.class, () ->  preprocessManyIncludes(100, 16 * 1024 * 1024));
     }
 
     @Test
-    public void testMaxFileCount() {
+    void testMaxFileCount() {
         // preprocess a very large number of zero-length includes
         assertThrows(CustomWebApplicationException.class, () ->   preprocessManyIncludes(100000, 0));
     }

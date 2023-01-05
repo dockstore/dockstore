@@ -39,7 +39,7 @@ public class OpenAPIWebhookIT extends BaseIT {
 
     @Test
     @Disabled("https://ucsc-cgl.atlassian.net/browse/DOCK-1890")
-    public void testAppToolCollections() throws Exception {
+    void testAppToolCollections() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);

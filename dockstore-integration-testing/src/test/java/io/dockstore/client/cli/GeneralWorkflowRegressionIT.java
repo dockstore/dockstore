@@ -105,7 +105,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_9_0)
-    public void testRefreshAndPublishOld() {
+    void testRefreshAndPublishOld() {
 
         // refresh all
         runOldDockstoreClient(dockstore,
@@ -153,7 +153,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testManualPublishAndGrabWDLOld() {
+    void testManualPublishAndGrabWDLOld() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
                 "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github", "--workflow-name",
@@ -199,7 +199,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testUpdateWorkflowVersionOld() {
+    void testUpdateWorkflowVersionOld() {
         // Set up DB
 
         // Update workflow
@@ -222,7 +222,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_9_0)
-    public void testRestubOld() {
+    void testRestubOld() {
         // Set up DB
 
         // Refresh and then restub
@@ -244,7 +244,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testRefreshAndConvertWithImportsWDLOld() {
+    void testRefreshAndConvertWithImportsWDLOld() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         runOldDockstoreClient(dockstore,
@@ -270,7 +270,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled("1.4.5 seems to have some legitimate issue with this WDL")
-    public void testLocalLaunchWDLOld() {
+    void testLocalLaunchWDLOld() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry",
                 ResourceHelpers.resourceFilePath("wdl.wdl"), "--json", ResourceHelpers.resourceFilePath("wdl.json"), "--script" });
@@ -325,7 +325,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testGithubDirtyBitOld() {
+    void testGithubDirtyBitOld() {
         // Setup DB
 
         // refresh all
@@ -369,7 +369,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testBitbucketDirtyBitOld() {
+    void testBitbucketDirtyBitOld() {
         // Setup DB
 
         // refresh all
@@ -414,7 +414,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
     @Test
     @Tag(SlowTest.NAME)
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testGitlab() {
+    void testGitlab() {
         // Setup DB
 
         // Refresh workflow
@@ -512,7 +512,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testManualPublishGitlabOld() {
+    void testManualPublishGitlabOld() {
         // Setup DB
 
         // manual publish
@@ -537,7 +537,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testWDLWithImportsOld() {
+    void testWDLWithImportsOld() {
         // Setup DB
 
         // Refresh all
@@ -561,7 +561,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testTestParameterFileOld() {
+    void testTestParameterFileOld() {
         // Setup DB
 
         // Refresh all
@@ -631,7 +631,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testVerifyOld() {
+    void testVerifyOld() {
         // Setup DB
 
         // Versions should be unverified
@@ -698,7 +698,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_9_0)
-    public void testRefreshingUserMetadataOld() {
+    void testRefreshingUserMetadataOld() {
         // Setup database
 
         // Refresh all workflows

@@ -134,7 +134,7 @@ public class ServiceIT extends BaseIT {
 
     @Test
     @Disabled("https://github.com/dockstore/dockstore/pull/4720")
-    public void testTRSOutputOfService() {
+    void testTRSOutputOfService() {
         new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
         Ga4GhApi client = new Ga4GhApi(webClient);

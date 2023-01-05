@@ -213,7 +213,7 @@ public class SwaggerClientIT extends BaseIT {
 
     @Test
     @Disabled("this old test doesn't seem to set the github user token properly")
-    public void testSuccessfulManualImageRegistration() throws ApiException {
+    void testSuccessfulManualImageRegistration() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
@@ -400,8 +400,9 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     // Can't test publish repos that don't exist
+    @Test
     @Disabled
-    public void testContainerRegistration() throws ApiException {
+    void testContainerRegistration() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);

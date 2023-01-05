@@ -22,7 +22,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT.TestStatus;
@@ -133,7 +132,7 @@ public class LimitedCRUDClientIT {
 
         hostedTool.getUsers().forEach(user -> user.setUserProfiles(null));
 
-        assertTrue(hostedTool.getId() != 0, "tool was not created with a valid id");
+        assertEquals(hostedTool.getId() != 0, true, "tool was not created with a valid id");
         // can get it back with regular api
         ContainersApi oldApi = new ContainersApi(webClient);
         DockstoreTool container = oldApi.getContainer(hostedTool.getId(), null);

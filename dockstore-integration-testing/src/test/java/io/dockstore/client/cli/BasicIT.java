@@ -623,7 +623,8 @@ public class BasicIT extends BaseIT {
         testBrokenPath();
     }
 
-    public void testBrokenPath() {
+    @Test
+    void testBrokenPath() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         try {
@@ -982,7 +983,7 @@ public class BasicIT extends BaseIT {
      */
     @Test
     @org.junit.jupiter.api.Tag(SlowTest.NAME)
-    public void testManualPublishGitlabDocker() {
+    void testManualPublishGitlabDocker() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 

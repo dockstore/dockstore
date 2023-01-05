@@ -149,7 +149,7 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testVersionTagWDLCWLAndDockerfilePathsAlterationOldClient() {
+    void testVersionTagWDLCWLAndDockerfilePathsAlterationOldClient() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--cwl-path", "/testDir/Dockstore.cwl", "--wdl-path",
@@ -205,7 +205,7 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testVersionTagHideOld() {
+    void testVersionTagHideOld() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "true", "--script" });
@@ -226,7 +226,7 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testVersionTagWDLOldClient() {
+    void testVersionTagWDLOldClient() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/randomDir/Dockstore.wdl", "--script" });
@@ -353,7 +353,7 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
-    public void testGetWdlAndCwlOld() {
+    void testGetWdlAndCwlOld() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });

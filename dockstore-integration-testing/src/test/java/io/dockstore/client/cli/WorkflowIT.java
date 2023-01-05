@@ -695,7 +695,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testNextflowWorkflowMissingMainScript() {
+    void testNextflowWorkflowMissingMainScript() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
@@ -973,8 +973,9 @@ public class WorkflowIT extends BaseIT {
      * <p>
      * Requires you to have the correct discourse information set in the dockstoreTest.yml
      */
+    @Test
     @Disabled
-    public void publishWorkflowAndTestDiscourseTopicCreation() {
+    void publishWorkflowAndTestDiscourseTopicCreation() {
         final ApiClient curatorApiClient = getWebClient(curatorUsername, testingPostgres);
         EntriesApi curatorEntriesApi = new EntriesApi(curatorApiClient);
         final ApiClient userApiClient = getWebClient(USER_2_USERNAME, testingPostgres);

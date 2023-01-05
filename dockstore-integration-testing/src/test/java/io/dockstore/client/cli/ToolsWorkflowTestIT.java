@@ -185,7 +185,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
 
     @Test
     @Disabled("This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid")
-    public void testWorkflowToolWDLMissingTask() throws ApiException {
+    void testWorkflowToolWDLMissingTask() throws ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: missing_docker

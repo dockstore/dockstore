@@ -130,7 +130,7 @@ public class CRUDClientIT extends BaseIT {
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public void testToolEditing() throws IOException {
+    void testToolEditing() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         DockstoreTool hostedTool = api
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
@@ -216,7 +216,7 @@ public class CRUDClientIT extends BaseIT {
             // Setting it to null afterwards to compare with the getWorkflow endpoint since that one doesn't return user profiles
             user.setUserProfiles(null);
         });
-        assertTrue(hostedTool.getId() != 0, "workflow was not created with a valid if");
+        assertEquals(hostedTool.getId() != 0, true, "workflow was not created with a valid if");
         // can get it back with regular api
         WorkflowsApi oldApi = new WorkflowsApi(webClient);
         Workflow container = oldApi.getWorkflow(hostedTool.getId(), null);

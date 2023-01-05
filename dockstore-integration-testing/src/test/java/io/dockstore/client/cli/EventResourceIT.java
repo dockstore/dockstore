@@ -58,8 +58,8 @@ public class EventResourceIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
     }
 
-    @Test()
-    public void eventResourcePaginationTest() {
+    @Test
+    void eventResourcePaginationTest() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);

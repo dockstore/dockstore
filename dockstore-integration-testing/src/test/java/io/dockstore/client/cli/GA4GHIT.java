@@ -89,43 +89,43 @@ public abstract class GA4GHIT {
      * This tests the /metadata endpoint
      */
     @Test
-    public abstract void testMetadata() throws Exception;
+    abstract void testMetadata() throws Exception;
 
     /**
      * This tests the /tools endpoint
      */
     @Test
-    public abstract void testTools() throws Exception;
+    abstract void testTools() throws Exception;
 
     /**
      * This tests the /tools/{id} endpoint
      */
     @Test
-    public abstract void testToolsId() throws Exception;
+    abstract void testToolsId() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions endpoint
      */
     @Test
-    public abstract void testToolsIdVersions() throws Exception;
+    abstract void testToolsIdVersions() throws Exception;
 
     /**
      * This tests the /tool-classes or /testToolClasses endpoint
      */
     @Test
-    public abstract void testToolClasses() throws Exception;
+    abstract void testToolClasses() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version_id} endpoint
      */
     @Test
-    public abstract void testToolsIdVersionsVersionId() throws Exception;
+    abstract void testToolsIdVersionsVersionId() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version-id}/{type}/descriptor endpoint
      */
     @Test
-    public abstract void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception;
+    abstract void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} endpoint
@@ -181,7 +181,7 @@ public abstract class GA4GHIT {
      * Tool with non-existent wdl test parameter file
      */
     @Test
-    public abstract void testRelativePathEndpointToolTestParameterFileJSON();
+    abstract void testRelativePathEndpointToolTestParameterFileJSON();
 
     /**
      * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
@@ -234,13 +234,13 @@ public abstract class GA4GHIT {
      * Workflow with non-nested cwl test parameter file
      */
     @Test
-    public abstract void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception;
+    abstract void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version_id}/{type}/tests endpoint
      */
     @Test
-    public abstract void testToolsIdVersionsVersionIdTypeTests() throws Exception;
+    abstract void testToolsIdVersionsVersionIdTypeTests() throws Exception;
 
     /**
      * checks that a descriptor or equivalent has the right fields
@@ -252,7 +252,7 @@ public abstract class GA4GHIT {
     protected abstract void assertTool(String tool, boolean isTool);
 
     @Test
-    public abstract void testToolsIdVersionsVersionIdTypeDockerfile() throws Exception;
+    abstract void testToolsIdVersionsVersionIdTypeDockerfile() throws Exception;
 
     protected abstract void assertVersion(String toolVersion);
 

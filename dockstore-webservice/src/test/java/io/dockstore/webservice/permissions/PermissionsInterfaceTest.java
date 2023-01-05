@@ -95,13 +95,13 @@ public class PermissionsInterfaceTest {
     }
 
     @Test
-    public void mergePermissions() {
+    void mergePermissions() {
         assertEquals(2, PermissionsInterface.mergePermissions(Collections.singletonList(janeDoeOwnerPermission), Arrays.asList(
                 janeDoeOwnerPermission, janeDoeWriterPermission)).size());
     }
 
     @Test
-    public void getOriginalOwnersForWorkflow() {
+    void getOriginalOwnersForWorkflow() {
         final Set<User> users = new HashSet<>(Collections.singletonList(userJohn));
         mockedWorkflow = Mockito.mock(Workflow.class);
         when(mockedWorkflow.getUsers()).thenReturn(users);
@@ -110,14 +110,14 @@ public class PermissionsInterfaceTest {
     }
 
     @Test
-    public void unauthorizedGetPermissionsForWorkflow() {
+    void unauthorizedGetPermissionsForWorkflow() {
         final Set<User> users = new HashSet<>(Collections.singletonList(userJohn));
         when(mockedWorkflow.getUsers()).thenReturn(users);
         assertThrows(CustomWebApplicationException.class, () -> permissionsInterface.getPermissionsForWorkflow(userJane, mockedWorkflow));
     }
 
     @Test
-    public void checkUserNotOriginalOwner() {
+    void checkUserNotOriginalOwner() {
         final Set<User> users = new HashSet<>(Collections.singletonList(userJohn));
         when(mockedWorkflow.getUsers()).thenReturn(users);
         assertThrows(CustomWebApplicationException.class, () -> {
