@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -159,6 +160,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
                 }
 
+                setCwlVersionsFromSourceFiles(sourceFiles, version);
+
                 LOG.info("Repository has Dockstore.cwl");
             } catch (YAMLException | JsonParseException | NullPointerException | ClassCastException ex) {
                 String message;
@@ -175,8 +178,45 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 validationMessageObject.put(filePath, "CWL file is malformed or missing, cannot extract metadata: " + message);
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_CWL, false, validationMessageObject));
             }
+
         }
         return version;
+    }
+
+    private void setCwlVersionsFromSourceFiles(Set<SourceFile> sourceFiles, Version version) {
+        Set<String> allVersions = new HashSet<>();
+        for (SourceFile file: sourceFiles) {
+            if (file.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
+                Set<String> fileVersions = getCwlVersionsFromSourceFile(file);
+                file.setTypeVersion(newestVersion(fileVersions));
+                allVersions.addAll(fileVersions);
+            }
+        }
+        version.setDescriptorTypeVersions(sortVersionsDescending(allVersions));
+    }
+
+    private Set<String> getCwlVersionsFromSourceFile(SourceFile file) {
+        Set<String> versions = new HashSet<>();
+        getCwlVersionsFromMap(versions, parseAsMap(file.getContent()));
+        return versions;
+    }
+
+    private void getCwlVersionsFromMap(Set<String> versions, Map<String, Object> map) {
+        map.forEach((k, v) -> {
+            if (Objects.equals(k, "cwlVersion") && v instanceof String) { // TODO make sure it's an entry
+                versions.add(v.toString());
+            } else if (v instanceof Map) {
+                getCwlVersionsFromMap(versions, (Map<String, Object>)v);
+            }
+        });
+    }
+
+    private String newestVersion(Set<String> versions) {
+        return sortVersionsDescending(versions).stream().findFirst().orElse(null);
+    }
+
+    private List<String> sortVersionsDescending(Set<String> versions) {
+        return versions.stream().sorted(Comparator.comparing(s -> s + "\uffff").reversed()).collect(Collectors.toList());
     }
 
     /**
