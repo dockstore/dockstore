@@ -203,7 +203,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     private void getCwlVersionsFromMap(Set<String> versions, Map<String, Object> map) {
         map.forEach((k, v) -> {
-            if (Objects.equals(k, "cwlVersion") && v instanceof String) { // TODO make sure it's an entry
+            if (Objects.equals(k, "cwlVersion") && v instanceof String) {
                 versions.add(v.toString());
             } else if (v instanceof Map) {
                 getCwlVersionsFromMap(versions, (Map<String, Object>)v);
@@ -216,7 +216,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     private List<String> sortVersionsDescending(Set<String> versions) {
-        return versions.stream().sorted(Comparator.comparing(s -> s + "\uffff").reversed()).collect(Collectors.toList());
+        return versions.stream().sorted(Comparator.comparing((String s) -> s.replace("sbg:", "") + "\uffff").reversed()).collect(Collectors.toList());
     }
 
     /**

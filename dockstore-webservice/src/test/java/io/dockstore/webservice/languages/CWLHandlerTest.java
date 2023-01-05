@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -24,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -431,6 +433,7 @@ public class CWLHandlerTest {
         when(sourceFile.getPath()).thenReturn(sourceFilePath);
         when(sourceFile.getAbsolutePath()).thenReturn(sourceFilePath);
         when(sourceFile.getContent()).thenReturn(content);
+        when(sourceFile.getType()).thenReturn(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         return sourceFile;
     }
 
@@ -450,5 +453,44 @@ public class CWLHandlerTest {
 
         String dagContent = cwlHandler.getContent(primaryFile.getAbsolutePath(), primaryFile.getContent(), Set.of(), LanguageHandlerInterface.Type.DAG, toolDAO).get();
         Assert.assertTrue("step id should be part of dag content", dagContent.contains("step_name"));
+    }
+
+    private SourceFile mockSetTypeVersion(SourceFile sourceFile, Consumer<String> versionConsumer) {
+        Mockito.doAnswer(invocation -> {
+            versionConsumer.accept((String)invocation.getArgument(0));
+            return null;
+        }).when(sourceFile).setTypeVersion(Mockito.anyString());
+        return sourceFile;
+    }
+
+    private Version mockSetDescriptorTypeVersions(Version version, Consumer<List<String>> versionsConsumer) {
+        Mockito.doAnswer(invocation -> {
+            versionsConsumer.accept((List<String>)invocation.getArgument(0));
+            return null;
+        }).when(version).setDescriptorTypeVersions(Mockito.any());
+        return version;
+    }
+
+    private static String primaryFileVersion;
+    private static List<String> versionVersions;
+
+    /**
+     * Test that the language versions are set properly.
+     */
+    @Test
+    public void testLanguageVersionExtraction() throws IOException {
+        CWLHandler cwlHandler = new CWLHandler();
+
+        final String resourceRoot = "workflow-id-slashes";
+        final SourceFile primaryFile = mockSetTypeVersion(mockSourceFile(resourceRoot, "/main.cwl"), v -> primaryFileVersion = v);
+
+        primaryFileVersion = "bogus";
+        versionVersions = List.of("bogus");
+
+        final Version version = mockSetDescriptorTypeVersions(Mockito.mock(Version.class), v -> versionVersions = v);
+        cwlHandler.parseWorkflowContent(primaryFile.getPath(), primaryFile.getContent(), Set.of(primaryFile), version);
+
+        Assert.assertEquals("v1.0", primaryFileVersion);
+        Assert.assertEquals(List.of("v1.0"), versionVersions);
     }
 }
