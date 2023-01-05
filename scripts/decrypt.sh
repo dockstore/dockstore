@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # This script decrypts our test database
 # Bash3 Boilerplate. Copyright (c) 2014, kvz.io
-# You will need the environment variables CIRCLE_CI_KEY_2 and CIRCLE_CI_IV_2
+# You will need the environment variables CIRCLE_CI_WS_KEY and CIRCLE_CI_WS_IV
 # This is tested with openssl 1.1.1 when running locally. Your mileage may vary with other versions
 
 set -o errexit
