@@ -55,6 +55,7 @@ import io.swagger.client.model.ParsedInformation;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
+import io.swagger.client.model.Validation;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.Workflow.ModeEnum;
@@ -691,6 +692,29 @@ public class WorkflowIT extends BaseIT {
 
         assertEquals(3, fileDAO.findSourceFilesByVersion(refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("master")).findFirst().get().getId())
                 .stream().filter(file -> file.getPath().startsWith("conf/")).count(), "workflow does not include expected config included files");
+    }
+
+    @Test
+    public void testNextflowWorkflowMissingMainScript() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        UsersApi usersApi = new UsersApi(webClient);
+
+        Workflow workflowByPathGithub = manualRegisterAndPublish(workflowApi, "dockstore-testing/nextflow-broken", "", "nfl", SourceControl.GITHUB,
+            "/nextflow.config", false);
+
+        // need to set paths properly
+        workflowByPathGithub.setWorkflowPath("/nextflow.config");
+        workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
+        workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
+
+        workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/nextflow-broken", BIOWORKFLOW, null);
+        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
+
+        WorkflowVersion workflowVersion = refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("no-main-script")).findFirst().get();
+        List<Validation> validations = workflowVersion.getValidations();
+
+        assertEquals("should have a descriptive invalid validation", 1, validations.stream().filter(v -> !v.isValid() && v.getMessage() != null && v.getMessage().contains("not find main script")).count());
     }
 
     @Test
