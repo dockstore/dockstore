@@ -51,7 +51,7 @@ public class VerifiedInformationMigrationIT {
     }
 
     @Test
-    public void toolVerifiedInformationMigrationTest() {
+    void toolVerifiedInformationMigrationTest() {
         Application<DockstoreWebserviceConfiguration> application = SUPPORT.getApplication();
         try {
             application.run("db", "drop-all", "--confirm-delete-everything", CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);

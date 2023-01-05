@@ -26,7 +26,7 @@ public class UtilitiesTest {
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     @Test
-    public void testEnvironmentParam() {
+    void testEnvironmentParam() {
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
         final Map<String, String> map = new HashMap<>();
         map.put("foo", "goo");

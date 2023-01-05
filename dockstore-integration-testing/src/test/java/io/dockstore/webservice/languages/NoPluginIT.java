@@ -98,7 +98,7 @@ public class NoPluginIT {
     }
 
     @Test
-    public void testNoLanguagePlugins() {
+    void testNoLanguagePlugins() {
         MetadataApi metadataApi = new MetadataApi(getWebClient(false, "n/a", testingPostgres));
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         // by default, Dockstore should handle CWL, WDL, NEXTFLOW but no plugin languages

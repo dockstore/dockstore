@@ -27,7 +27,7 @@ public class GitHelperTest {
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     @Test
-    public void testGitReferenceParsing() {
+    void testGitReferenceParsing() {
         Optional<String> reference = GitHelper.parseGitHubReference("refs/heads/foobar");
         assertEquals("foobar", reference.get());
 

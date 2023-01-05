@@ -82,7 +82,7 @@ public class PublicStateManagerIT {
     }
 
     @Test
-    public void dockstoreEntryToElasticSearchObject() throws IOException {
+    void dockstoreEntryToElasticSearchObject() throws IOException {
         Tool tool = getFakeTool(false);
         JsonNode jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
         boolean verified = jsonNode.get("verified").booleanValue();
@@ -132,7 +132,7 @@ public class PublicStateManagerIT {
     }
 
     @Test
-    public void addAnEntry() throws Exception {
+    void addAnEntry() throws Exception {
         Tool tool = getFakeTool(false);
         manager.handleIndexUpdate(tool, StateManagerMode.UPDATE);
 
@@ -145,13 +145,13 @@ public class PublicStateManagerIT {
     }
 
     @Test
-    public void addAService() throws Exception {
+    void addAService() throws Exception {
         manager.handleIndexUpdate(new Service(), StateManagerMode.UPDATE);
         assertFalse(systemOut.getText().contains("Performing index update"));
     }
 
     @Test
-    public void filterCheckerWorkflows() {
+    void filterCheckerWorkflows() {
         Workflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setIsChecker(true);
         Workflow workflow = new BioWorkflow();

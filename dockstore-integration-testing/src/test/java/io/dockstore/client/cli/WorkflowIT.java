@@ -192,7 +192,7 @@ public class WorkflowIT extends BaseIT {
     // WDL workflow with HTTP imports
     // WDL workflow with HTTP imports and local imports and nested
     @Test
-    public void testWDLLanguageParsingInformation() {
+    void testWDLLanguageParsingInformation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow wdl = workflowApi
@@ -231,7 +231,7 @@ public class WorkflowIT extends BaseIT {
     // CWL workflow with HTTP imports
     // CWL workflow with HTTP imports and local imports and nested
     @Test
-    public void testCWLLanguageParsingInformation() {
+    void testCWLLanguageParsingInformation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow cwlWorkflow = workflowApi
@@ -264,7 +264,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testStubRefresh() throws ApiException {
+    void testStubRefresh() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
@@ -289,7 +289,7 @@ public class WorkflowIT extends BaseIT {
 
 
     @Test
-    public void testTableToolAndDagContent() {
+    void testTableToolAndDagContent() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -372,7 +372,7 @@ public class WorkflowIT extends BaseIT {
      * Tests for https://github.com/dockstore/dockstore/issues/3928
      */
     @Test
-    public void testNextflowTableToolAndDagContent() {
+    void testNextflowTableToolAndDagContent() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -410,7 +410,7 @@ public class WorkflowIT extends BaseIT {
      * This tests that you are able to download zip files for versions of a workflow
      */
     @Test
-    public void downloadZipFile() throws IOException {
+    void downloadZipFile() throws IOException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -458,7 +458,7 @@ public class WorkflowIT extends BaseIT {
      * This tests a not found zip file
      */
     @Test
-    public void sillyWorkflowZipFile() throws IOException {
+    void sillyWorkflowZipFile() throws IOException {
         final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
         WorkflowsApi anonWorkflowApi = new WorkflowsApi(anonWebClient);
         boolean success = false;
@@ -475,7 +475,7 @@ public class WorkflowIT extends BaseIT {
      * This tests that zip file can be downloaded or not based on published state and auth.
      */
     @Test
-    public void downloadZipFileTestAuth() {
+    void downloadZipFileTestAuth() {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
 
@@ -533,7 +533,7 @@ public class WorkflowIT extends BaseIT {
      * of imports
      */
     @Test
-    public void downloadZipComplex() throws IOException {
+    void downloadZipComplex() throws IOException {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
         Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
@@ -574,7 +574,7 @@ public class WorkflowIT extends BaseIT {
 
 
     @Test
-    public void testCheckerWorkflowDownloadBasedOnCredentials() throws IOException {
+    void testCheckerWorkflowDownloadBasedOnCredentials() throws IOException {
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -626,7 +626,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testNextflowRefresh() throws ApiException {
+    void testNextflowRefresh() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -673,7 +673,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testNextflowWorkflowWithConfigIncludes() {
+    void testNextflowWorkflowWithConfigIncludes() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
@@ -694,7 +694,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testNextflowWorkflowWithImages() {
+    void testNextflowWorkflowWithImages() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -730,7 +730,7 @@ public class WorkflowIT extends BaseIT {
      * Tests that snapshotting a workflow version fails if any of the images have no tag, use the 'latest' tag, or are specified using a parameter.
      */
     @Test
-    public void testSnapshotImageFailures() {
+    void testSnapshotImageFailures() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", false);
@@ -768,7 +768,7 @@ public class WorkflowIT extends BaseIT {
      * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
-    public void testNestedWdlWorkflow() throws ApiException {
+    void testNestedWdlWorkflow() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -816,7 +816,7 @@ public class WorkflowIT extends BaseIT {
      * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
-    public void testManualRegisterErrors() throws ApiException {
+    void testManualRegisterErrors() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -858,7 +858,7 @@ public class WorkflowIT extends BaseIT {
      * Tests that the workflow name is validated when manually registering a workflow
      */
     @Test
-    public void testManualWorkflowNameValidation() {
+    void testManualWorkflowNameValidation() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
 
@@ -871,7 +871,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testSecondaryFileOperations() throws ApiException {
+    void testSecondaryFileOperations() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -904,7 +904,7 @@ public class WorkflowIT extends BaseIT {
      * This tests that the absolute path is properly set for CWL workflow sourcefiles for the primary descriptor and any imported files
      */
     @Test
-    public void testAbsolutePathForImportedFilesCWL() {
+    void testAbsolutePathForImportedFilesCWL() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", "cwl",
@@ -985,7 +985,7 @@ public class WorkflowIT extends BaseIT {
 
     
     @Test
-    public void testWorkflowVersionAliasOperations() throws ApiException {
+    void testWorkflowVersionAliasOperations() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv",
@@ -1033,7 +1033,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowVersionAliasesAreReturned() throws ApiException {
+    void testWorkflowVersionAliasesAreReturned() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv",
@@ -1131,7 +1131,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testGettingSourceFilesForWorkflowVersion() {
+    void testGettingSourceFilesForWorkflowVersion() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -1195,7 +1195,7 @@ public class WorkflowIT extends BaseIT {
      * Tests that the language version in WDL descriptor files is correct.
      */
     @Test
-    public void testWDLWorkflowLanguageVersion() {
+    void testWDLWorkflowLanguageVersion() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
 

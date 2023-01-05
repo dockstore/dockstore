@@ -55,13 +55,10 @@ import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
@@ -73,7 +70,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
  */
 @ExtendWith(TestStatus.class)
 @ExtendWith(SystemStubsExtension.class)
-@Category(ConfidentialTest.class)
 @org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
 public class BaseIT {
 
@@ -276,7 +272,6 @@ public class BaseIT {
 
     final String curatorUsername = "curator@curator.com";
 
-    @BeforeClass
     @BeforeAll
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
@@ -298,7 +293,6 @@ public class BaseIT {
         }
     }
 
-    @AfterClass
     @AfterAll
     public static void afterClass() {
         SUPPORT.getEnvironment().healthChecks().shutdown();
@@ -352,12 +346,12 @@ public class BaseIT {
         return client;
     }
 
-    @After
+    @AfterEach
     public void after() throws InterruptedException {
         assertNoMetricsLeaks(SUPPORT);
     }
 
-    @Before
+    @BeforeEach
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }

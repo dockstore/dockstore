@@ -52,7 +52,7 @@ public class WDLHandlerTest {
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     @Test
-    public void getWorkflowContent() throws IOException {
+    void getWorkflowContent() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Version workflow = new WorkflowVersion();
 
@@ -72,7 +72,7 @@ public class WDLHandlerTest {
     }
 
     @Test
-    public void getWorkflowContentOfTool() throws IOException {
+    void getWorkflowContentOfTool() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Tool tool = new Tool();
         tool.setAuthor("Jane Doe");
@@ -94,7 +94,7 @@ public class WDLHandlerTest {
     }
 
     @Test
-    public void testRecursiveImports() throws IOException {
+    void testRecursiveImports() throws IOException {
         final File recursiveWdl = new File(ResourceHelpers.resourceFilePath("recursive.wdl"));
 
         final WDLHandler wdlHandler = new WDLHandler();
@@ -113,7 +113,7 @@ public class WDLHandlerTest {
 
 
     @Test
-    public void testRepeatedFilename() throws IOException {
+    void testRepeatedFilename() throws IOException {
         final String content = getGatkSvMainDescriptorContent();
         final WDLHandler wdlHandler = new WDLHandler();
         Version emptyVersion = new WorkflowVersion();
@@ -129,7 +129,7 @@ public class WDLHandlerTest {
     }
 
     @Test
-    public void testGetToolsForComplexWorkflow() throws IOException {
+    void testGetToolsForComplexWorkflow() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         Version emptyVersion = new WorkflowVersion();
         final String content = getGatkSvMainDescriptorContent();
@@ -154,7 +154,7 @@ public class WDLHandlerTest {
     }
 
     @Test
-    public void testGetContentWithSyntaxErrors() throws IOException {
+    void testGetContentWithSyntaxErrors() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final File wdlFile = new File(ResourceHelpers.resourceFilePath("brokenWDL.wdl"));
         final Set<SourceFile> emptySet = Collections.emptySet();

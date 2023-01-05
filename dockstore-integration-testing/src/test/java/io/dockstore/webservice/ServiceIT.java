@@ -113,7 +113,7 @@ public class ServiceIT extends BaseIT {
     }
 
     @Test
-    public void checkWorkflowAndServiceHierarchy() {
+    void checkWorkflowAndServiceHierarchy() {
         CreateContent createContent = new CreateContent().invoke(false);
         long workflowID = createContent.getWorkflowID();
         long serviceID = createContent.getServiceID();
@@ -148,7 +148,7 @@ public class ServiceIT extends BaseIT {
     }
 
     @Test
-    public void testProprietaryAPI() {
+    void testProprietaryAPI() {
         final CreateContent invoke = new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -187,7 +187,7 @@ public class ServiceIT extends BaseIT {
     }
 
     @Test
-    public void testGeneralDefaultPathMechanism() {
+    void testGeneralDefaultPathMechanism() {
         final CreateContent invoke = new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -200,7 +200,7 @@ public class ServiceIT extends BaseIT {
      * A service is created and a version is added for a release 1.0
      */
     @Test
-    public void testGitHubAppEndpoints() throws Exception {
+    void testGitHubAppEndpoints() throws Exception {
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
@@ -249,7 +249,7 @@ public class ServiceIT extends BaseIT {
      * Ensures that you cannot create a service if the given user is not on Dockstore
      */
     @Test
-    public void createServiceNoUser() throws Exception {
+    void createServiceNoUser() throws Exception {
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
@@ -278,7 +278,7 @@ public class ServiceIT extends BaseIT {
      * @throws Exception
      */
     @Test
-    public void testServiceWithSamePathAsWorkflow() throws Exception {
+    void testServiceWithSamePathAsWorkflow() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -317,7 +317,7 @@ public class ServiceIT extends BaseIT {
      * This tests that you can't add a version that doesn't exist
      */
     @Test
-    public void updateServiceIncorrectTag() throws Exception {
+    void updateServiceIncorrectTag() throws Exception {
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
@@ -339,7 +339,7 @@ public class ServiceIT extends BaseIT {
      * This tests that you can't add a version with an invalid dockstore.yml or no dockstore.yml
      */
     @Test
-    public void updateServiceNoOrInvalidYml() throws Exception {
+    void updateServiceNoOrInvalidYml() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -368,7 +368,7 @@ public class ServiceIT extends BaseIT {
      * Tests that refresh will only grab the releases
      */
     @Test
-    public void updateServiceSync() throws Exception {
+    void updateServiceSync() throws Exception {
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
@@ -396,7 +396,7 @@ public class ServiceIT extends BaseIT {
      * This tests that you cannot create a service from an in invalid GitHub repository
      */
     @Test
-    public void createServiceNoGitHubRepo() throws Exception {
+    void createServiceNoGitHubRepo() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);

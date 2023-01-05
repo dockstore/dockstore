@@ -49,7 +49,7 @@ public class CloudInstanceIT extends BaseIT {
     }
 
     @Test
-    public void cloudInstanceResourceTest() {
+    void cloudInstanceResourceTest() {
         ApiClient adminApiClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient memberApiClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();

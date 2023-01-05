@@ -64,7 +64,7 @@ public class CWLHandlerTest {
      * @throws Exception
      */
     @Test
-    public void getInputFileFormats() throws Exception {
+    void getInputFileFormats() throws Exception {
         CWLHandler cwlHandler = new CWLHandler();
         String filePath = ResourceHelpers.resourceFilePath("metadata_example4.cwl");
         Set<FileFormat> inputs = cwlHandler.getFileFormats(FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), "inputs");
@@ -74,7 +74,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void getInputFileFormatsSpecifiedAsArray() throws Exception {
+    void getInputFileFormatsSpecifiedAsArray() throws Exception {
         CWLHandler cwlHandler = new CWLHandler();
         String filePath = ResourceHelpers.resourceFilePath("metadata_example5.cwl");
         Set<FileFormat> inputs = cwlHandler.getFileFormats(FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), "inputs");
@@ -84,7 +84,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testDeterminingImageRegistry() {
+    void testDeterminingImageRegistry() {
         CWLHandler cwlHandler = new CWLHandler();
         assertEquals(Registry.DOCKER_HUB, cwlHandler.determineImageRegistry("python:2.7").get(), "Should be Docker Hub");
         assertEquals(Registry.DOCKER_HUB, cwlHandler.determineImageRegistry("debian:jessie").get(), "Should be Docker Hub");
@@ -98,7 +98,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testDeterminingImageSpecifier() {
+    void testDeterminingImageSpecifier() {
         assertEquals(DockerSpecifier.NO_TAG, LanguageHandlerInterface.determineImageSpecifier("quay.io/ucsc_cgl/verifybamid", DockerImageReference.LITERAL));
         assertEquals(DockerSpecifier.LATEST, LanguageHandlerInterface.determineImageSpecifier("quay.io/ucsc_cgl/verifybamid:latest", DockerImageReference.LITERAL));
         assertEquals(DockerSpecifier.TAG, LanguageHandlerInterface.determineImageSpecifier("quay.io/ucsc_cgl/verifybamid:1.30.0", DockerImageReference.LITERAL));
@@ -110,7 +110,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testURLHandler() {
+    void testURLHandler() {
         ParsedInformation parsedInformation = new ParsedInformation();
         CWLHandler.setImportsBasedOnMapValue(parsedInformation, "https://potato.com");
         assertTrue(parsedInformation.isHasHTTPImports());
@@ -134,7 +134,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testURLFromEntry() {
+    void testURLFromEntry() {
         final LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
 
@@ -209,7 +209,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testGetImageNameWithoutSpecifier() {
+    void testGetImageNameWithoutSpecifier() {
         final LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
 
         assertEquals("foo/bar", handler.getImageNameWithoutSpecifier("foo/bar", DockerSpecifier.NO_TAG));
@@ -221,7 +221,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testGetRepositoryName() {
+    void testGetRepositoryName() {
         final LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
 
         assertEquals("foo/bar", handler.getRepositoryName(Registry.QUAY_IO, "quay.io/foo/bar:1", DockerSpecifier.TAG));
@@ -246,7 +246,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testGetSpecifierName() {
+    void testGetSpecifierName() {
         final LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
 
         assertEquals("", handler.getSpecifierName("foo/bar", DockerSpecifier.NO_TAG));
@@ -257,7 +257,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testGetContentJson() throws IOException {
+    void testGetContentJson() throws IOException {
         CWLHandler cwlHandler = new CWLHandler();
 
         // create and mock parameters for getContent()
@@ -271,7 +271,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testGetContentWithMalformedDescriptors() throws IOException {
+    void testGetContentWithMalformedDescriptors() throws IOException {
         CWLHandler cwlHandler = new CWLHandler();
 
         // create and mock parameters for getContent()
@@ -326,7 +326,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testPackedCwl() throws IOException {
+    void testPackedCwl() throws IOException {
         CWLHandler cwlHandler = new CWLHandler();
         final Set<SourceFile> emptySet = Collections.emptySet();
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
@@ -358,7 +358,7 @@ public class CWLHandlerTest {
      * both are present at a node, requirements take precedence over hints.
      */
     @Test
-    public void testCWLRequirementsAndHints() throws IOException {
+    void testCWLRequirementsAndHints() throws IOException {
         CWLHandler cwlHandler = new CWLHandler();
 
         // create and mock parameters for getContent()
@@ -402,7 +402,7 @@ public class CWLHandlerTest {
      * Test a workflow with an ID that contains slashes.
      */
     @Test
-    public void testWorkflowWithIdThatContainsSlashes() throws IOException {
+    void testWorkflowWithIdThatContainsSlashes() throws IOException {
         CWLHandler cwlHandler = new CWLHandler();
 
         final String resourceRoot = "workflow-id-slashes";

@@ -64,7 +64,7 @@ public class EntryResourceIT extends BaseIT {
      * Also tests handling of synchronization issues (put code on Dockstore not on ORCID, put code and DOI URL on ORCID, but not on Dockstore)
      */
     @Test
-    public void testOrcidExport() {
+    void testOrcidExport() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(client);
         UsersApi usersApi = new UsersApi(client);
@@ -165,7 +165,7 @@ public class EntryResourceIT extends BaseIT {
     }
 
     @Test
-    public void testMultipleUsersOrcidExport() {
+    void testMultipleUsersOrcidExport() {
         ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(userClient);
         UsersApi usersApi = new UsersApi(userClient);
@@ -236,7 +236,7 @@ public class EntryResourceIT extends BaseIT {
     }
 
     @Test
-    public void testDescriptionMetrics() {
+    void testDescriptionMetrics() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(client);
         UsersApi usersApi = new UsersApi(client);
@@ -294,7 +294,7 @@ public class EntryResourceIT extends BaseIT {
     }
 
     @Test
-    public void testUpdateEntryToGetTopics() {
+    void testUpdateEntryToGetTopics() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(client);
         ContainersApi containersApi = new ContainersApi(client);

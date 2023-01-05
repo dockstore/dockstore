@@ -132,7 +132,7 @@ public abstract class GA4GHIT {
      */
 
     @Test
-    public void testToolsIdVersionsVersionIdTypeDescriptorRelativePath() throws Exception {
+    void testToolsIdVersionsVersionIdTypeDescriptorRelativePath() throws Exception {
         toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal();
         toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash();
         toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot();
@@ -152,7 +152,7 @@ public abstract class GA4GHIT {
      * Tool with non-existent wdl test parameter file
      */
     @Test
-    public void relativePathEndpointToolTestParameterFilePLAIN() {
+    void relativePathEndpointToolTestParameterFilePLAIN() {
         Response response = checkedResponse(
             baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
@@ -188,7 +188,7 @@ public abstract class GA4GHIT {
      * Tool with a dockerfile
      */
     @Test
-    public void relativePathEndpointToolContainerfile() {
+    void relativePathEndpointToolContainerfile() {
         Response response = checkedResponse(
             baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2FDockerfile");
         String responseObject = response.readEntity(String.class);
@@ -203,7 +203,7 @@ public abstract class GA4GHIT {
      * Workflow with non-nested cwl test parameter file
      */
     @Test
-    public void relativePathEndpointWorkflowTestParameterFilePLAIN() throws Exception {
+    void relativePathEndpointWorkflowTestParameterFilePLAIN() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
@@ -280,7 +280,7 @@ public abstract class GA4GHIT {
      * GA4GH swagger.yaml
      */
     @Test
-    public void testInvalidToolId() {
+    void testInvalidToolId() {
         String nginxRewrittenPath = TestUtility.mimicNginxRewrite(baseURL + "tools/potato", basePath);
         Response response = client.target(nginxRewrittenPath).request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);

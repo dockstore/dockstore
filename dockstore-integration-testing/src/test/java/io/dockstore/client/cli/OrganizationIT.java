@@ -500,7 +500,7 @@ public class OrganizationIT extends BaseIT {
 
 
     @Test
-    public void createOrgInvalidEmail() {
+    void createOrgInvalidEmail() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
@@ -512,7 +512,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void createOrgInvalidLink() {
+    void createOrgInvalidLink() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
@@ -524,7 +524,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testUpdateOrgNoName() {
+    void testUpdateOrgNoName() {
         // create admin user
         final io.dockstore.openapi.client.ApiClient webClientOpenApiUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOpenApiUser);
@@ -552,7 +552,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testUpdateOrganizationDescriptionOpenapi() {
+    void testUpdateOrganizationDescriptionOpenapi() {
         final io.dockstore.openapi.client.ApiClient webClientOpenApiUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOpenApiUser);
 
@@ -568,7 +568,7 @@ public class OrganizationIT extends BaseIT {
      * This tests that you cannot add an organization with a duplicate display name
      */
     @Test
-    public void testDuplicateOrgDisplayName() {
+    void testDuplicateOrgDisplayName() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
@@ -592,7 +592,7 @@ public class OrganizationIT extends BaseIT {
      * This tests that just changing the case of your name should be fine
      */
     @Test
-    public void testRenameOrgByCase() {
+    void testRenameOrgByCase() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
@@ -615,7 +615,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testCollectionAlternateCase() {
+    void testCollectionAlternateCase() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
@@ -639,7 +639,7 @@ public class OrganizationIT extends BaseIT {
      * This tests that you cannot add a collection with a duplicate display name
      */
     @Test
-    public void testDuplicateCollectionDisplayName() {
+    void testDuplicateCollectionDisplayName() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
@@ -676,7 +676,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testGetViaAlternateCase() {
+    void testGetViaAlternateCase() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
@@ -693,7 +693,7 @@ public class OrganizationIT extends BaseIT {
      * This tests that an Organization can be rejected
      */
     @Test
-    public void testCreateOrganizationAndRejectIt() {
+    void testCreateOrganizationAndRejectIt() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
@@ -754,7 +754,7 @@ public class OrganizationIT extends BaseIT {
      * Also will test renaming of Organizations.
      */
     @Test
-    public void testCreateDuplicateOrganization() {
+    void testCreateDuplicateOrganization() {
         // Setup postgres
 
         // Setup API client
@@ -822,7 +822,7 @@ public class OrganizationIT extends BaseIT {
      * Then the user can be removed by the maintainer.
      */
     @Test
-    public void testRequestUserJoinOrgAndApprove() {
+    void testRequestUserJoinOrgAndApprove() {
         // Setup postgres
 
         // Setup user two
@@ -929,7 +929,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testMembersArePowerless() {
+    void testMembersArePowerless() {
         final io.dockstore.openapi.client.ApiClient webClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.OrganizationsApi organizationsApiUser2 = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser2);
         io.dockstore.openapi.client.api.UsersApi usersApiUser2 = new io.dockstore.openapi.client.api.UsersApi(webClientUser2);
@@ -959,7 +959,7 @@ public class OrganizationIT extends BaseIT {
      * Test that invited users who have not accepted their invitations are powerless. Tests all roles: Member, Maintainer, Admin
      */
     @Test
-    public void testPendingAndRejectedUsersArePowerless() {
+    void testPendingAndRejectedUsersArePowerless() {
         final io.dockstore.openapi.client.ApiClient webClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.OrganizationsApi organizationsApiUser2 = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser2);
         io.dockstore.openapi.client.api.UsersApi usersApiUser2 = new io.dockstore.openapi.client.api.UsersApi(webClientUser2);
@@ -1100,7 +1100,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testMaintainersCantAddOrUpdateUsers() {
+    void testMaintainersCantAddOrUpdateUsers() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
 
@@ -1141,7 +1141,7 @@ public class OrganizationIT extends BaseIT {
      * Test that the organization admin can re-invite the user.
      */
     @Test
-    public void testRequestUserJoinOrgAndDisapprove() {
+    void testRequestUserJoinOrgAndDisapprove() {
         // Setup postgres
 
         // Setup user one
@@ -1226,7 +1226,7 @@ public class OrganizationIT extends BaseIT {
      * Tests that organization admins can view all members, including pending and rejected members. Non-admin members and non-members can only see accepted members
      */
     @Test
-    public void testGetOrganizationMembers() {
+    void testGetOrganizationMembers() {
         // Set up 3 logged-in users and one logged-out user
         final io.dockstore.openapi.client.ApiClient orgAdminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.OrganizationsApi orgAdminOrganizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(orgAdminWebClient);
@@ -1326,7 +1326,7 @@ public class OrganizationIT extends BaseIT {
      * Also tests some other cases where the name should fail
      */
     @Test
-    public void testCreateOrganizationWithInvalidNames() {
+    void testCreateOrganizationWithInvalidNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         badNames.forEach(name -> createOrgWithBadName(name, organizationsApi));
@@ -1336,7 +1336,7 @@ public class OrganizationIT extends BaseIT {
      * Tests that you can create organizations using some unique characters for the display name
      */
     @Test
-    public void testCreatedOrganizationWithValidDisplayNames() {
+    void testCreatedOrganizationWithValidDisplayNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         goodDisplayNames.forEach(displayName -> createOrganizationWithValidDisplayName(displayName, organizationsApi,
@@ -1347,7 +1347,7 @@ public class OrganizationIT extends BaseIT {
      * Tests that you cannot create organizations with some display names
      */
     @Test
-    public void testCreateOrganizationsWithBadDisplayNames() {
+    void testCreateOrganizationsWithBadDisplayNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         badDisplayNames.forEach(displayName -> createOrganizationWithInvalidDisplayName(displayName, organizationsApi,
@@ -1380,7 +1380,7 @@ public class OrganizationIT extends BaseIT {
      * Test that Organization avatarUrl column constraints work as intended.
      */
     @Test
-    public void testAvatarUrlConstraints() {
+    void testAvatarUrlConstraints() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         badAvatarUrls.forEach(url -> createOrgWithBadAvatarUrl(url, organizationsApi));
@@ -1451,7 +1451,7 @@ public class OrganizationIT extends BaseIT {
      * Tests whether collectionLength is returning the right info
      */
     @Test
-    public void testCollectionsLength() {
+    void testCollectionsLength() {
         // Setup user who creates Organization and collection
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
@@ -1487,7 +1487,7 @@ public class OrganizationIT extends BaseIT {
      * This tests that you can create collections with unique characters in their display name
      */
     @Test
-    public void testCreateCollectionWithValidDisplayNames() {
+    void testCreateCollectionWithValidDisplayNames() {
         // Setup user who creates Organization and collection
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
@@ -1506,7 +1506,7 @@ public class OrganizationIT extends BaseIT {
      * This tests that you cannot create collections with invalid display names
      */
     @Test
-    public void testCreateCollectionWithInvalidDisplayNames() {
+    void testCreateCollectionWithInvalidDisplayNames() {
         // Setup user who creates Organization and collection
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
@@ -1599,7 +1599,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testDeletingPendingOrgWithCollection() {
+    void testDeletingPendingOrgWithCollection() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient webClientOpenApiUser = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
@@ -1919,7 +1919,7 @@ public class OrganizationIT extends BaseIT {
      * This tests that aliases can be set on collections and workflows
      */
     @Test
-    public void testAliasesAreInReturnedOrganizationOrCollection() {
+    void testAliasesAreInReturnedOrganizationOrCollection() {
         // Setup postgres
 
         // Setup admin
@@ -1982,7 +1982,7 @@ public class OrganizationIT extends BaseIT {
      * This tests that aliases can be set on collections and workflows
      */
     @Test
-    public void testAliasOperations() {
+    void testAliasOperations() {
         // Setup postgres
 
         // Setup user who creates Organization and collection
@@ -2041,7 +2041,7 @@ public class OrganizationIT extends BaseIT {
      * This tests that aliases can be set on collections and workflows
      */
     @Test
-    public void testDuplicateAliasOperations() {
+    void testDuplicateAliasOperations() {
         // Setup postgres
 
         // Setup user who creates Organization and collection
@@ -2097,7 +2097,7 @@ public class OrganizationIT extends BaseIT {
      * Test that we are getting the correct descriptor type for workflows
      */
     @Test
-    public void testGetWorkflowDescriptor() {
+    void testGetWorkflowDescriptor() {
         // Setup user who creates Organization and collection
         final ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
@@ -2173,7 +2173,7 @@ public class OrganizationIT extends BaseIT {
      * Tests that we are getting the number of workflows correctly
      */
     @Test
-    public void testWorkflowsLength() {
+    void testWorkflowsLength() {
         // Setup user who creates Organization and collection
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
@@ -2224,7 +2224,7 @@ public class OrganizationIT extends BaseIT {
      * Tests that we are getting the number of tools correctly
      */
     @Test
-    public void testToolsLength() {
+    void testToolsLength() {
         // Setup user who creates Organization and collection
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
@@ -2267,7 +2267,7 @@ public class OrganizationIT extends BaseIT {
      * Also tests when name is a duplicate.
      */
     @Test
-    public void testUpdatingCollectionMetadata() {
+    void testUpdatingCollectionMetadata() {
         // Setup postgres
 
         // Setup user who creates Organization and collection
@@ -2333,7 +2333,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testDeleteCollection() {
+    void testDeleteCollection() {
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
 
@@ -2409,7 +2409,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testStarringOrganization() {
+    void testStarringOrganization() {
         // Setup user
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
 
@@ -2473,7 +2473,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testRemoveRejectedOrPendingOrganization() {
+    void testRemoveRejectedOrPendingOrganization() {
         // Setup admin and one user
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -2566,7 +2566,7 @@ public class OrganizationIT extends BaseIT {
      * This test should be removed when the organization_user accepted DB column and trigger are removed.
      */
     @Test
-    public void testSyncOrganizationUserStatusAndAcceptedColumns() {
+    void testSyncOrganizationUserStatusAndAcceptedColumns() {
         final io.dockstore.openapi.client.ApiClient webClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.OrganizationsApi organizationsApiUser2 = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser2);
         io.dockstore.openapi.client.api.UsersApi usersApiUser2 = new io.dockstore.openapi.client.api.UsersApi(webClientUser2);
@@ -2654,7 +2654,7 @@ public class OrganizationIT extends BaseIT {
      * Test an admin user accessing a nonexistent organization.
      */
     @Test
-    public void testAdminViewNonexistentOrganization() {
+    void testAdminViewNonexistentOrganization() {
 
         // Setup admin
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -2673,7 +2673,7 @@ public class OrganizationIT extends BaseIT {
      * Test creation of a categorizer Organization as an admin.
      */
     @Test
-    public void testCreateCategorizerOrgAsAdmin() {
+    void testCreateCategorizerOrgAsAdmin() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
 
@@ -2701,7 +2701,7 @@ public class OrganizationIT extends BaseIT {
      * Test creation of a categorizer Organization as a non-admin.
      */
     @Test
-    public void testCreateCategorizerOrgAsNonadmin() {
+    void testCreateCategorizerOrgAsNonadmin() {
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
 
@@ -2722,7 +2722,7 @@ public class OrganizationIT extends BaseIT {
      * because they're unauthorized or silently ignored.
      */
     @Test
-    public void testUpdateOrgStatus() {
+    void testUpdateOrgStatus() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
 
@@ -2765,7 +2765,7 @@ public class OrganizationIT extends BaseIT {
      * Test that categories are empty initially.
      */
     @Test
-    public void testCategoriesStartEmpty() {
+    void testCategoriesStartEmpty() {
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
 
@@ -2776,7 +2776,7 @@ public class OrganizationIT extends BaseIT {
      * Test for a hidden "dockstore" categorizer organization (only visible to a member or admin).
      */
     @Test
-    public void testHiddenDockstoreCategorizerOrg() {
+    void testHiddenDockstoreCategorizerOrg() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
 
@@ -2831,7 +2831,7 @@ public class OrganizationIT extends BaseIT {
      * Test addition of categories and addition/removal of category entries.
      */
     @Test
-    public void testAddCategoriesAndAddRemoveEntry() {
+    void testAddCategoriesAndAddRemoveEntry() {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
 
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
@@ -2883,7 +2883,7 @@ public class OrganizationIT extends BaseIT {
      * even when Categories with the same name would belong to different orgs.
      */
     @Test
-    public void testMultipleCategorizerOrgsAndUniqueNames() {
+    void testMultipleCategorizerOrgsAndUniqueNames() {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
 
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -2953,7 +2953,7 @@ public class OrganizationIT extends BaseIT {
      * Test retrieving Categories by valid and invalid names and IDs.
      */
     @Test
-    public void testGetCategoryByNameAndId() {
+    void testGetCategoryByNameAndId() {
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
 
@@ -2982,7 +2982,7 @@ public class OrganizationIT extends BaseIT {
      * Test that a new Category contains the correct information.
      */
     @Test
-    public void testNewCategoryFieldsAreCorrect() {
+    void testNewCategoryFieldsAreCorrect() {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
 
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -3002,7 +3002,7 @@ public class OrganizationIT extends BaseIT {
      * Test that category info populates Category entry fields correctly.
      */
     @Test
-    public void testCategoryEntryFields() {
+    void testCategoryEntryFields() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
 
@@ -3035,7 +3035,7 @@ public class OrganizationIT extends BaseIT {
      * of the same entry are added to a category.
      */
     @Test
-    public void testCategoryWithMultipleVersionsOfEntry() {
+    void testCategoryWithMultipleVersionsOfEntry() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
@@ -3059,7 +3059,7 @@ public class OrganizationIT extends BaseIT {
      * Tests that a normal collection does not interfere with Categories.
      */
     @Test
-    public void testCategoryCollectionCrossover() {
+    void testCategoryCollectionCrossover() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
@@ -3094,7 +3094,7 @@ public class OrganizationIT extends BaseIT {
      * Test Category deletion.
      */
     @Test
-    public void testCategoryDeletion() {
+    void testCategoryDeletion() {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
 
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);

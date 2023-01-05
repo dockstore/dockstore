@@ -91,7 +91,7 @@ public class SearchResourceIT extends BaseIT {
     }
 
     @Test
-    public void testSearchOperations() throws ApiException {
+    void testSearchOperations() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         EntriesApi entriesApi = new EntriesApi(webClient);
@@ -126,7 +126,7 @@ public class SearchResourceIT extends BaseIT {
      * index is not made, or the index is made but there are no results.
      */
     @Test
-    public void testElasticSearchHealthCheck() {
+    void testElasticSearchHealthCheck() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         MetadataApi metadataApi = new MetadataApi(webClient);

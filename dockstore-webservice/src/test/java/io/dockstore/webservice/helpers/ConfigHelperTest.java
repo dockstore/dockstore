@@ -25,7 +25,7 @@ public class ConfigHelperTest {
      * checks that config is set to "git property not found".
      */
     @Test
-    public void readGitProperties() {
+    void readGitProperties() {
         String gitPropertiesFile = "fixtures/git.properties";
         final ConfigHelper.GitInfo gitInfo = ConfigHelper.readGitProperties(gitPropertiesFile);
         assertEquals("test-id-short", gitInfo.commitId);

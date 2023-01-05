@@ -96,7 +96,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
      * This tests that smart refresh correctly refreshes the right versions based on some scenarios for BitBucket
      */
     @Test
-    public void testSmartRefreshBitbucket() {
+    void testSmartRefreshBitbucket() {
         commonSmartRefreshTest(SourceControl.BITBUCKET, "dockstore_testuser2/dockstore-workflow", "cwl_import");
     }
 
@@ -105,7 +105,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
      * This tests the dirty bit attribute for workflow versions with bitbucket
      */
     @Test
-    public void testBitbucketDirtyBit() {
+    void testBitbucketDirtyBit() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -155,7 +155,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
      * Tests that refreshing with valid imports will work (for WDL)
      */
     @Test
-    public void testRefreshWithImportsWDL() {
+    void testRefreshWithImportsWDL() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -245,7 +245,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void testGrabChecksumFromGitHubContainerRegistry() {
+    void testGrabChecksumFromGitHubContainerRegistry() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = registerManualGitHubContainerRegistryToolAndAddTag();
@@ -265,7 +265,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
 
     @Test
-    public void testGrabChecksumFromAmazonECR() {
+    void testGrabChecksumFromAmazonECR() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = registerManualAmazonECRToolAndAddTag();
@@ -285,7 +285,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
 
     @Test
-    public void testGrabChecksumFromDockerHub() {
+    void testGrabChecksumFromDockerHub() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -309,7 +309,7 @@ public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void testCannotRegisterGarbageSourceControlFromDockerHub() {
+    void testCannotRegisterGarbageSourceControlFromDockerHub() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = createManualDockerHubTool(false);

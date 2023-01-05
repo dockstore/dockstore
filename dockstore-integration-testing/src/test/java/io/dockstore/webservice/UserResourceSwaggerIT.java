@@ -86,7 +86,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    public void testAddUserToOrgs() {
+    void testAddUserToOrgs() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
@@ -118,21 +118,21 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    public void testChangingNameFail() throws ApiException {
+    void testChangingNameFail() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         assertThrows(ApiException.class, () -> userApi.changeUsername("1direction"));
     }
 
     @Test
-    public void testChangingNameFail2() throws ApiException {
+    void testChangingNameFail2() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         assertThrows(ApiException.class, () -> userApi.changeUsername("foo@gmail.com"));
     }
 
     @Test
-    public void testUserProfileLoading() throws ApiException {
+    void testUserProfileLoading() throws ApiException {
         // Get the user
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
@@ -147,7 +147,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    public void testChangingNameSuccess() throws ApiException {
+    void testChangingNameSuccess() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         userApi.changeUsername("foo");
@@ -160,7 +160,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    public void testUserTermination() throws ApiException {
+    void testUserTermination() throws ApiException {
         ApiClient userWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.ApiClient openApiAdminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
 
@@ -213,7 +213,7 @@ public class UserResourceSwaggerIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testChangeUsernameAfterOrgCreation() throws ApiException {
+    void testChangeUsernameAfterOrgCreation() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
 
@@ -228,7 +228,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    public void testSelfDestruct() throws ApiException {
+    void testSelfDestruct() throws ApiException {
         ApiClient client = getAnonymousWebClient();
         UsersApi userApi = new UsersApi(client);
 
@@ -320,7 +320,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    public void testAdminLevelSelfDestruct() {
+    void testAdminLevelSelfDestruct() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
@@ -346,7 +346,7 @@ public class UserResourceSwaggerIT extends BaseIT {
 
 
     @Test
-    public void testDeletedUsernameReuse() {
+    void testDeletedUsernameReuse() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
@@ -384,7 +384,7 @@ public class UserResourceSwaggerIT extends BaseIT {
 
 
     @Test
-    public void testGetUserEntries() {
+    void testGetUserEntries() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -407,7 +407,7 @@ public class UserResourceSwaggerIT extends BaseIT {
      * Tests the endpoints used for logged in homepage to retrieve recent entries and organizations
      */
     @Test
-    public void testLoggedInHomepageEndpoints() {
+    void testLoggedInHomepageEndpoints() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -471,7 +471,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    public void testUpdateUserMetadataFromGithub() {
+    void testUpdateUserMetadataFromGithub() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         Profile userProfile = usersApi.getUser().getUserProfiles().get("github.com");
