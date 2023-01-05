@@ -20,4 +20,10 @@ package io.dockstore.common;
  */
 
 public interface BitBucketTest {
+    String NAME = "io.dockstore.common.BitBucketTest";
+
+    default String getName() {
+        // silly method to satisfy CheckStyle
+        return NAME;
+    }
 }

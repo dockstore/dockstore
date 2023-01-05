@@ -48,7 +48,6 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -65,7 +64,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category(BitBucketTest.class)
+@org.junit.jupiter.api.Tag(BitBucketTest.NAME)
 public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
     @SystemStub

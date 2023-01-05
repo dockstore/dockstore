@@ -33,9 +33,9 @@ import java.io.IOException;
 import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -58,7 +58,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category({ RegressionTest.class })
+@Tag(RegressionTest.NAME)
 public class ClientRegressionIT extends BaseIT {
     @TempDir
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();

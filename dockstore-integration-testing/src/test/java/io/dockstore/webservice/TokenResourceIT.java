@@ -70,6 +70,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -86,6 +87,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Category(NonConfidentialTest.class)
+@Tag(NonConfidentialTest.NAME)
 public class TokenResourceIT {
     // This is not from Hoverfly, it's actually in the starting database
     public static final String GITHUB_ACCOUNT_USERNAME = "potato";

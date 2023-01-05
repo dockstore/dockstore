@@ -16,6 +16,9 @@
 
 package io.dockstore.client.cli;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
@@ -46,12 +49,11 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,8 +68,9 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  *
  * @author gluu
  */
-@Category({ BenchmarkTest.class, ToolTest.class })
-@Ignore("more like benchmarking than a test per say")
+@Tag(BenchmarkTest.NAME)
+@Tag(ToolTest.NAME)
+@Disabled("more like benchmarking than a test per say")
 @ExtendWith(SystemStubsExtension.class)
 public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
@@ -93,7 +96,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     private javax.ws.rs.client.Client client;
 
     /** do nothing, do not load sample data */
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() {
     }
@@ -112,7 +115,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         return builder.toString();
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -127,7 +130,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         indexTimes = new ArrayList<>();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         client.close();
     }
@@ -173,7 +176,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         List<Tool> tools = response.readEntity(new GenericType<List<Tool>>() {
         });
         int actualToolCount = tools.size();
-        Assert.assertEquals("Supposed to have " + TOOL_COUNT + " tools.  Instead got " + actualToolCount + " tools.", TOOL_COUNT, actualToolCount);
+        assertEquals(TOOL_COUNT, actualToolCount, "Supposed to have " + TOOL_COUNT + " tools.  Instead got " + actualToolCount + " tools.");
         LOGGER.error("Amount of tools created: " + String.valueOf(actualToolCount));
         for (Long indexTime : indexTimes) {
             LOGGER.error(String.valueOf(indexTime));
@@ -196,7 +199,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
             .queryParam("labels", randomlyGeneratedQueryLabels()).request()
             .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken").put(Entity.entity("asdf", MediaType.APPLICATION_JSON_TYPE));
         Tool registeredTool = registerPutLabelResponse.readEntity(Tool.class);
-        Assert.assertEquals(id, registeredTool.getId());
+        assertEquals(id, registeredTool.getId());
     }
 
     // Directly injecting into database to avoid authentication issues
@@ -207,7 +210,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
             .post(Entity.entity(tool, MediaType.APPLICATION_JSON_TYPE));
 
         Tool registeredTool = registerManualResponse.readEntity(Tool.class);
-        Assert.assertEquals(registeredTool.getName(), tool.getName());
+        assertEquals(registeredTool.getName(), tool.getName());
         refreshAndBuildIndex(registeredTool.getId());
     }
 
@@ -217,18 +220,18 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         for (int i = 0; i < RAND.nextInt(MAX_LABELS_PER_TOOL); i++) {
             setLabels.add(randomLabel());
         }
-        String[] arrayLabels = setLabels.toArray(new String[setLabels.size()]);
+        String[] arrayLabels = setLabels.toArray(new String[0]);
         labels = String.join(", ", arrayLabels);
         return labels;
     }
 
     private ArrayList<String> randomlyGenerateFixedAuthors() {
-        Set<String> set = new HashSet();
+        Set<String> set = new HashSet<>();
         while (set.size() != MAX_AUTHORS) {
             set.add(randomIdentifier());
         }
         ArrayList<String> authors = new ArrayList<>(set);
-        Assert.assertEquals(MAX_AUTHORS, authors.size());
+        assertEquals(MAX_AUTHORS, authors.size());
         return authors;
     }
 
@@ -272,7 +275,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         Registry[] registries = { Registry.AMAZON_ECR, Registry.DOCKER_HUB, Registry.GITLAB };
         int length = registries.length;
         int random = RAND.nextInt(length);
-        Assert.assertTrue(random >= 0 && random < length);
+        assertTrue(random >= 0 && random < length);
         if (random == 0) {
             return "test.dkr.ecr.test.amazonaws.com";
         } else {

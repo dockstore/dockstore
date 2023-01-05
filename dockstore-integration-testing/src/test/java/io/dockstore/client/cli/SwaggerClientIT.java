@@ -83,7 +83,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -104,7 +103,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @SuppressWarnings("checkstyle:MagicNumber")
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category(ConfidentialTest.class)
+@org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
 public class SwaggerClientIT extends BaseIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(

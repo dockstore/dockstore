@@ -29,8 +29,8 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
@@ -47,7 +47,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category(BitBucketTest.class)
+@Tag(BitBucketTest.NAME)
 public class BitBucketGitHubBasicIT extends BaseIT {
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());

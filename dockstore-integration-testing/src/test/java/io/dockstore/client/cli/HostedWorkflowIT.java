@@ -47,9 +47,9 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.hibernate.Session;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
@@ -60,7 +60,8 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category({ ConfidentialTest.class, WorkflowTest.class })
+@Tag(ConfidentialTest.NAME)
+@Tag(WorkflowTest.NAME)
 public class HostedWorkflowIT extends BaseIT {
     public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
 

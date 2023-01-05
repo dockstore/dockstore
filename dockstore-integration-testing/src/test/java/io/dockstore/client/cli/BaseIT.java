@@ -74,6 +74,7 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 @ExtendWith(TestStatus.class)
 @ExtendWith(SystemStubsExtension.class)
 @Category(ConfidentialTest.class)
+@org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
 public class BaseIT {
 
     // This is obviously an admin

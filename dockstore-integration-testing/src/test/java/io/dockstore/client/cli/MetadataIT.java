@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Assert;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
@@ -24,7 +23,6 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category(OpenApiIT.class)
 public class MetadataIT extends BaseIT {
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());

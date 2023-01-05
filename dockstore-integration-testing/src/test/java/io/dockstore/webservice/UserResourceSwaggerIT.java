@@ -16,12 +16,13 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
@@ -48,10 +49,9 @@ import io.swagger.client.model.Workflow;
 import java.util.List;
 import java.util.Objects;
 import org.apache.http.HttpStatus;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -68,7 +68,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category(ConfidentialTest.class)
+@Tag(ConfidentialTest.NAME)
 @Deprecated(since = "1.14")
 public class UserResourceSwaggerIT extends BaseIT {
     private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
@@ -79,7 +79,7 @@ public class UserResourceSwaggerIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -106,27 +106,29 @@ public class UserResourceSwaggerIT extends BaseIT {
         long numberOfWorkflows = workflows.size();
         testingPostgres.runUpdateStatement("delete from user_entry where entryid = " + id);
         long newNumberOfWorkflows = userApi.userWorkflows((long)1).size();
-        assertEquals("Should have one less workflow", numberOfWorkflows - 1, newNumberOfWorkflows);
+        assertEquals(numberOfWorkflows - 1, newNumberOfWorkflows, "Should have one less workflow");
 
         // Add user back to workflow
         workflows = userApi.addUserToDockstoreWorkflows((long)1, "");
         newNumberOfWorkflows = workflows.size();
-        assertEquals("Should have the original number of workflows", numberOfWorkflows, newNumberOfWorkflows);
-        assertTrue("Should have the workflow DockstoreTestUser/dockstore-whalesay-2", workflows.stream().anyMatch(workflow -> Objects.equals("dockstore-whalesay-2", workflow.getRepository()) && Objects.equals("DockstoreTestUser", workflow.getOrganization())));
+        assertEquals(numberOfWorkflows, newNumberOfWorkflows, "Should have the original number of workflows");
+        assertTrue(
+            workflows.stream().anyMatch(workflow -> Objects.equals("dockstore-whalesay-2", workflow.getRepository()) && Objects.equals("DockstoreTestUser", workflow.getOrganization())),
+            "Should have the workflow DockstoreTestUser/dockstore-whalesay-2");
     }
 
-    @Test(expected = ApiException.class)
+    @Test
     public void testChangingNameFail() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
-        userApi.changeUsername("1direction"); // do not lengthen test, failure expected
+        assertThrows(ApiException.class, () -> userApi.changeUsername("1direction"));
     }
 
-    @Test(expected = ApiException.class)
+    @Test
     public void testChangingNameFail2() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
-        userApi.changeUsername("foo@gmail.com"); // do not lengthen test, failure expected
+        assertThrows(ApiException.class, () -> userApi.changeUsername("foo@gmail.com"));
     }
 
     @Test
@@ -137,11 +139,11 @@ public class UserResourceSwaggerIT extends BaseIT {
 
         // Profiles are lazy loaded, and should not be present by default
         User user = userApi.listUser(USER_2_USERNAME, null);
-        assertNull("User profiles should be null by default", user.getUserProfiles());
+        assertNull(user.getUserProfiles(), "User profiles should be null by default");
 
         // Load profiles by specifying userProfiles as a query parameter in the API call
         user = userApi.listUser(USER_2_USERNAME, "userProfiles");
-        assertNotNull("User profiles should be initialized", user.getUserProfiles());
+        assertNotNull(user.getUserProfiles(), "User profiles should be initialized");
     }
 
     @Test
@@ -154,8 +156,7 @@ public class UserResourceSwaggerIT extends BaseIT {
         // Add hosted workflow, should use new username
         HostedApi userHostedApi = new HostedApi(client);
         Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
-        assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo",
-            hostedWorkflow.getOrganization());
+        assertEquals("foo", hostedWorkflow.getOrganization(), "Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization());
     }
 
     @Test
@@ -423,7 +424,7 @@ public class UserResourceSwaggerIT extends BaseIT {
         Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Develop branch doesn't have a descriptor with the default Dockstore.cwl, it should pull from README instead
-        Assert.assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));
+        assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));
 
         // Entry should now be at the top
         entries = userApi.getUserEntries(10, null, null);

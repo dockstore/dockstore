@@ -58,7 +58,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.eclipse.jetty.http.HttpStatus;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -76,7 +75,8 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category({ ConfidentialTest.class, ToolTest.class })
+@org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
+@org.junit.jupiter.api.Tag(ToolTest.NAME)
 public class BasicIT extends BaseIT {
 
     @SystemStub
@@ -981,7 +981,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can manually publish a gitlab registry image
      */
     @Test
-    @Category(SlowTest.class)
+    @org.junit.jupiter.api.Tag(SlowTest.NAME)
     public void testManualPublishGitlabDocker() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);

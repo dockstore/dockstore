@@ -37,8 +37,8 @@ import io.swagger.client.model.Repository;
 import io.swagger.client.model.Workflow;
 import java.util.List;
 import java.util.Objects;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
@@ -49,7 +49,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category(BitBucketTest.class)
+@Tag(BitBucketTest.NAME)
 public class BitBucketUserResourceIT extends BaseIT {
 
 

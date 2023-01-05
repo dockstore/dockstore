@@ -1,13 +1,13 @@
 package io.dockstore.client.cli;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
@@ -50,10 +50,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -63,7 +62,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category(ConfidentialTest.class)
+@Tag(ConfidentialTest.NAME)
 public class OrganizationIT extends BaseIT {
     private static final long NONEXISTENT_ID = Long.MAX_VALUE;
 
@@ -95,7 +94,7 @@ public class OrganizationIT extends BaseIT {
     }
 
 
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -222,22 +221,22 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
-        assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
+        assertEquals(1, count, "There should be 1 event of type CREATE_ORG, there are " + count);
 
         // Should not appear in approved list
         List<Organization> organizationList = organizationsApiUser2.getApprovedOrganizations();
-        assertEquals("Should have no approved Organizations.", 0, organizationList.size());
+        assertEquals(0, organizationList.size(), "Should have no approved Organizations.");
 
         // User should be able to get by id
         Organization organization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Should be in PENDING state
         assertEquals(StatusEnum.PENDING, organization.getStatus());
 
         // Admin should be able to see by id
         organization = organizationsApiAdmin.getOrganizationById(registeredOrganization.getId());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Other user should not be able to see by id
         try {
@@ -245,19 +244,19 @@ public class OrganizationIT extends BaseIT {
         } catch (ApiException ex) {
             organization = null;
         }
-        assertNull("organization should NOT be returned.", organization);
+        assertNull(organization, "organization should NOT be returned.");
 
         // Curator should be able to see by id
         organization = organizationsApiCurator.getOrganizationById(registeredOrganization.getId());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // User should be able to get by name
         organization = organizationsApiUser2.getOrganizationByName(registeredOrganization.getName());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Admin should be able to see by name
         organization = organizationsApiAdmin.getOrganizationByName(registeredOrganization.getName());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Other user should not be able to see by name
         boolean failedUser1GetByName = false;
@@ -266,7 +265,7 @@ public class OrganizationIT extends BaseIT {
         } catch (ApiException ex) {
             failedUser1GetByName = true;
         }
-        assertTrue("organization should NOT be returned.", failedUser1GetByName);
+        assertTrue(failedUser1GetByName, "organization should NOT be returned.");
 
         // Unauth user should not be able to see by name
         boolean failedUnauthGetByName = false;
@@ -275,11 +274,11 @@ public class OrganizationIT extends BaseIT {
         } catch (ApiException ex) {
             failedUnauthGetByName = true;
         }
-        assertTrue("organization should NOT be returned.", failedUnauthGetByName);
+        assertTrue(failedUnauthGetByName, "organization should NOT be returned.");
 
         // Curator should be able to see by name
         organization = organizationsApiCurator.getOrganizationByName(registeredOrganization.getName());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Update the organization
         String email = "another@email.com";
@@ -289,11 +288,11 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one MODIFY_ORG event
         final long count2 = testingPostgres.runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
-        assertEquals("There should be 1 event of type MODIFY_ORG, there are " + count2, 1, count2);
+        assertEquals(1, count2, "There should be 1 event of type MODIFY_ORG, there are " + count2);
 
         // organization should have new information
         organization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
-        assertEquals("organization should be returned and have an updated email.", email, organization.getEmail());
+        assertEquals(email, organization.getEmail(), "organization should be returned and have an updated email.");
 
         // Should not be able to request re-review
         boolean canRequestReview = true;
@@ -302,7 +301,7 @@ public class OrganizationIT extends BaseIT {
         } catch (ApiException ex) {
             canRequestReview = false;
         } finally {
-            assertFalse("Can request re-review, but should not be able to", canRequestReview);
+            assertFalse(canRequestReview, "Can request re-review, but should not be able to");
         }
 
         // Admin approve it
@@ -310,7 +309,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one APPROVE_ORG event
         final long count3 = testingPostgres.runSelectStatement("select count(*) from event where type = 'APPROVE_ORG'", long.class);
-        assertEquals("There should be 1 event of type APPROVE_ORG, there are " + count3, 1, count3);
+        assertEquals(1, count3, "There should be 1 event of type APPROVE_ORG, there are " + count3);
 
         try {
             organization.setName("NameSquatting");
@@ -328,7 +327,7 @@ public class OrganizationIT extends BaseIT {
 
         // Should now appear in approved list
         organizationList = organizationsApiUser2.getApprovedOrganizations();
-        assertEquals("Should have one approved Organizations.", 1, organizationList.size());
+        assertEquals(1, organizationList.size(), "Should have one approved Organizations.");
         organizationList.forEach(approvedOrganization -> assertTrue(approvedOrganization.getAliases().isEmpty()));
 
         // Should not be able to request re-review
@@ -338,32 +337,32 @@ public class OrganizationIT extends BaseIT {
         } catch (ApiException ex) {
             canRequestReview = false;
         } finally {
-            assertFalse("Can request re-review, but should not be able to", canRequestReview);
+            assertFalse(canRequestReview, "Can request re-review, but should not be able to");
         }
 
         // User should be able to get by id
         organization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Other user should also be able to get by id
         organization = organizationsApiUser1.getOrganizationById(registeredOrganization.getId());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Admin should also be able to get by id
         organization = organizationsApiAdmin.getOrganizationById(registeredOrganization.getId());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Curator should be able to see by id
         organization = organizationsApiCurator.getOrganizationById(registeredOrganization.getId());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Unauth user should be able to get by id
         organization = organizationsApiUnauth.getOrganizationById(registeredOrganization.getId());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Unauth user should be able to get by name
         organization = organizationsApiUnauth.getOrganizationByName(registeredOrganization.getName());
-        assertNotNull("organization should be returned.", organization);
+        assertNotNull(organization, "organization should be returned.");
 
         // Update the organization
         newOrganization = organizationsApiUser2.getOrganizationById(organization.getId());
@@ -373,27 +372,27 @@ public class OrganizationIT extends BaseIT {
 
         // There should be two MODIFY_ORG events
         final long count4 = testingPostgres.runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
-        assertEquals("There should be 2 events of type MODIFY_ORG, there are " + count4, 2, count4);
+        assertEquals(2, count4, "There should be 2 events of type MODIFY_ORG, there are " + count4);
 
         // organization should have new information
         organization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
-        assertEquals("organization should be returned and have an updated link.", link, organization.getLink());
+        assertEquals(link, organization.getLink(), "organization should be returned and have an updated link.");
 
         List<Event> events = organizationsApiUser2.getOrganizationEvents(registeredOrganization.getId(), 0, 5);
-        assertEquals("There should be 4 events, there are " + events.size(), 4, events.size());
+        assertEquals(4, events.size(), "There should be 4 events, there are " + events.size());
 
         // Events pagination tests
         List<Event> firstTwoEvents = organizationsApiUser2.getOrganizationEvents(registeredOrganization.getId(), 0, 2);
-        assertEquals("There should only be 2 events, there are " + firstTwoEvents.size(), 2, firstTwoEvents.size());
+        assertEquals(2, firstTwoEvents.size(), "There should only be 2 events, there are " + firstTwoEvents.size());
         assertEquals(firstTwoEvents.get(0), events.get(0));
         assertEquals(firstTwoEvents.get(1), events.get(1));
 
         List<Event> secondEvent = organizationsApiUser2.getOrganizationEvents(registeredOrganization.getId(), 1, 1);
-        assertEquals("There should only be 1 event, there are " + secondEvent.size(), 1, secondEvent.size());
+        assertEquals(1, secondEvent.size(), "There should only be 1 event, there are " + secondEvent.size());
         assertEquals(secondEvent.get(0), events.get(1));
 
         List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(registeredOrganization.getId());
-        assertEquals("There should be 1 user, there are " + users.size(), 1, users.size());
+        assertEquals(1, users.size(), "There should be 1 user, there are " + users.size());
 
         // Update the organization
         String logo = "https://res.cloudinary.com/hellofresh/image/upload/f_auto,fl_lossy,q_auto,w_640/v1/hellofresh_s3/image/554a3abff8b25e1d268b456d.png";
@@ -402,11 +401,11 @@ public class OrganizationIT extends BaseIT {
 
         // There should be three MODIFY_ORG events
         final long count5 = testingPostgres.runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
-        assertEquals("There should be 2 events of type MODIFY_ORG, there are " + count5, 3, count5);
+        assertEquals(3, count5, "There should be 2 events of type MODIFY_ORG, there are " + count5);
 
         // organization should have new information
         organization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
-        assertEquals("organization should be returned and have an updated logo image.", logo, organization.getAvatarUrl());
+        assertEquals(logo, organization.getAvatarUrl(), "organization should be returned and have an updated logo image.");
 
         // Update organization test
         organization = organizationsApiUser2.updateOrganizationDescription(organization.getId(), "potato");
@@ -419,8 +418,8 @@ public class OrganizationIT extends BaseIT {
         organization.setName("NameSquatting");
         organization.setDisplayName("DisplayNameSquatting");
         Organization curatorUpdatedOrganization = organizationsApiCurator.updateOrganization(organization, organization.getId());
-        assertEquals("A curator can still update an approved organization name", "NameSquatting", curatorUpdatedOrganization.getName());
-        assertEquals("A curator can still update an approved organization display name", "DisplayNameSquatting", curatorUpdatedOrganization.getDisplayName());
+        assertEquals("NameSquatting", curatorUpdatedOrganization.getName(), "A curator can still update an approved organization name");
+        assertEquals("DisplayNameSquatting", curatorUpdatedOrganization.getDisplayName(), "A curator can still update an approved organization display name");
 
         testEmptyLink(organizationsApiCurator, organization);
     }
@@ -443,34 +442,35 @@ public class OrganizationIT extends BaseIT {
         EventsApi eventsApi = new EventsApi(openAPIWebClientUser2);
         List<io.dockstore.openapi.client.model.Event> events = eventsApi
                 .getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), null, null);
-        assertEquals("Should have the correct amount of events", 0, events.size());
+        assertEquals(0, events.size(), "Should have the correct amount of events");
 
         organizationsApiUser2.starOrganization(organization.getId(), STAR_REQUEST);
 
         events = eventsApi
                 .getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), null, null);
-        assertEquals("Should have the correct amount of events (STARRED_ORGANIZATION)", 6, events.size());
+        assertEquals(6, events.size(), "Should have the correct amount of events (STARRED_ORGANIZATION)");
         events = eventsApi
                 .getEvents(EventSearchType.ALL_STARRED.toString(), null, null);
-        assertEquals("Should have the correct amount of events (ALL_STARRED)", 6, events.size());
+        assertEquals(6, events.size(), "Should have the correct amount of events (ALL_STARRED)");
         events = eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), 5, null);
-        assertEquals("Should have the correct amount of events", 5, events.size());
-        Assert.assertFalse("The create org event is the oldest, it should not be returned", events.stream().anyMatch(event -> event.getType().equals(io.dockstore.openapi.client.model.Event.TypeEnum.CREATE_ORG)));
+        assertEquals(5, events.size(), "Should have the correct amount of events");
+        assertFalse(events.stream().anyMatch(event -> event.getType().equals(io.dockstore.openapi.client.model.Event.TypeEnum.CREATE_ORG)),
+            "The create org event is the oldest, it should not be returned");
         try {
             eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), EventDAO.MAX_LIMIT + 1, 0);
-            Assert.fail("Should've failed because it's over the limit");
+            fail("Should've failed because it's over the limit");
         } catch (io.dockstore.openapi.client.ApiException e) {
             assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
         }
         try {
             eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), 0, 0);
-            Assert.fail("Should've failed because it's under the limit");
+            fail("Should've failed because it's under the limit");
         } catch (io.dockstore.openapi.client.ApiException e) {
             assertEquals("{\"errors\":[\"query param limit must be greater than or equal to 1\"]}", e.getMessage());
         }
     }
 
-    @Test(expected = ApiException.class)
+    @Test()
     public void testDuplicateOrgByCase() {
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -480,7 +480,7 @@ public class OrganizationIT extends BaseIT {
         Organization organisation = stubOrgObject();
         organisationsApiUser2.createOrganization(organisation);
         organisation.setName(organisation.getName().toUpperCase());
-        organisationsApiUser2.createOrganization(organisation);
+        assertThrows(ApiException.class, () -> organisationsApiUser2.createOrganization(organisation));
     }
 
     // for DOCK-1948
@@ -712,40 +712,40 @@ public class OrganizationIT extends BaseIT {
 
         // Should appear in the pending
         List<Organization> organizationList = organizationsApiAdmin.getAllOrganizations("pending");
-        assertEquals("Should have one pending Organization, there are " + organizationList.size(), 1, organizationList.size());
-        organizationList.forEach(organization -> Assert.assertNull(organization.getAliases()));
+        assertEquals(1, organizationList.size(), "Should have one pending Organization, there are " + organizationList.size());
+        organizationList.forEach(organization -> assertNull(organization.getAliases()));
 
         // Should not appear in rejected
         organizationList = organizationsApiAdmin.getAllOrganizations("rejected");
-        assertEquals("Should have no rejected Organizations, there are " + organizationList.size(), 0, organizationList.size());
+        assertEquals(0, organizationList.size(), "Should have no rejected Organizations, there are " + organizationList.size());
 
         // Should not appear in approved
         organizationList = organizationsApiAdmin.getAllOrganizations("approved");
-        assertEquals("Should have no approved Organizations, there are " + organizationList.size(), 0, organizationList.size());
+        assertEquals(0, organizationList.size(), "Should have no approved Organizations, there are " + organizationList.size());
 
         // Curator reject org
         organizationsApiCurator.rejectOrganization(registeredOrganization.getId());
 
         // Should not appear in pending
         organizationList = organizationsApiAdmin.getAllOrganizations("pending");
-        assertEquals("Should have no pending Organizations, there are " + organizationList.size(), 0, organizationList.size());
+        assertEquals(0, organizationList.size(), "Should have no pending Organizations, there are " + organizationList.size());
 
         // Should appear in rejected
         organizationList = organizationsApiAdmin.getAllOrganizations("rejected");
-        assertEquals("Should have one rejected Organization, there are " + organizationList.size(), 1, organizationList.size());
-        organizationList.forEach(organization -> Assert.assertNull(organization.getAliases()));
+        assertEquals(1, organizationList.size(), "Should have one rejected Organization, there are " + organizationList.size());
+        organizationList.forEach(organization -> assertNull(organization.getAliases()));
 
         // Should not appear in approved
         organizationList = organizationsApiAdmin.getAllOrganizations("approved");
-        assertEquals("Should have no approved Organizations, there are " + organizationList.size(), 0, organizationList.size());
+        assertEquals(0, organizationList.size(), "Should have no approved Organizations, there are " + organizationList.size());
 
         // Should be able to request a re-review
         organizationsApiUser2.requestOrganizationReview(registeredOrganization.getId());
 
         // Should appear in pending
         organizationList = organizationsApiAdmin.getAllOrganizations("pending");
-        assertEquals("Should have one pending Organization, there are " + organizationList.size(), 1, organizationList.size());
-        organizationList.forEach(organization -> Assert.assertNull(organization.getAliases()));
+        assertEquals(1, organizationList.size(), "Should have one pending Organization, there are " + organizationList.size());
+        organizationList.forEach(organization -> assertNull(organization.getAliases()));
 
     }
 
@@ -764,7 +764,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
-        assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
+        assertEquals(1, count, "There should be 1 event of type CREATE_ORG, there are " + count);
 
         boolean throwsError = false;
         try {
@@ -787,7 +787,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_ORG event
         final long count2 = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
-        assertEquals("There should be 2 events of type CREATE_ORG, there are " + count2, 2, count2);
+        assertEquals(2, count2, "There should be 2 events of type CREATE_ORG, there are " + count2);
 
         // Try renaming Organization to testname, should fail
         organization.setName("testname");
@@ -808,9 +808,9 @@ public class OrganizationIT extends BaseIT {
 
         // There should be two MODIFY_ORG events
         final long count3 = testingPostgres.runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
-        assertEquals("There should be 1 event of type MODIFY_ORG, there are " + count3, 1, count3);
+        assertEquals(1, count3, "There should be 1 event of type MODIFY_ORG, there are " + count3);
 
-        assertEquals("The Organization should have an updated name", "testname2", organization.getName());
+        assertEquals("testname2", organization.getName(), "The Organization should have an updated name");
     }
 
     /**
@@ -840,66 +840,66 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
-        assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
+        assertEquals(1, count, "There should be 1 event of type CREATE_ORG, there are " + count);
 
         long orgId = organization.getId();
         long userId = 2;
 
         // Other user should be in no orgs
         List<io.swagger.client.model.OrganizationUser> memberships = usersOtherUser.getUserMemberships();
-        assertEquals("Should have no memberships, has " + memberships.size(), 0, memberships.size());
+        assertEquals(0, memberships.size(), "Should have no memberships, has " + memberships.size());
 
         // Request that other user joins
         organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId, "");
 
         // There should be one ADD_USER_TO_ORG event
         final long count2 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
-        assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count2, 1, count2);
+        assertEquals(1, count2, "There should be 1 event of type ADD_USER_TO_ORG, there are " + count2);
 
         // There should exist a role that is pending
         final long count3 = testingPostgres.runSelectStatement(
             "select count(*) from organization_user where status = 'PENDING' and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
-        assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
+        assertEquals(1, count3, "There should be 1 unaccepted role for user 2 and org 1, there are " + count3);
 
         // Should exist in the users membership list
         memberships = usersOtherUser.getUserMemberships();
-        assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
+        assertEquals(1, memberships.size(), "Should have one membership, has " + memberships.size());
 
         // Should appear in the organization's members list even if they haven't approved the request yet
         List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(orgId);
-        assertEquals("There should be 2 user, there are " + users.size(), 2, users.size());
+        assertEquals(2, users.size(), "There should be 2 user, there are " + users.size());
 
         // Approve request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
 
         // Should still exist in the users membership list
         memberships = usersOtherUser.getUserMemberships();
-        assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
+        assertEquals(1, memberships.size(), "Should have one membership, has " + memberships.size());
 
         // There should be one APPROVE_ORG_INVITE event
         final long count4 = testingPostgres.runSelectStatement("select count(*) from event where type = 'APPROVE_ORG_INVITE'", long.class);
-        assertEquals("There should be 1 event of type APPROVE_ORG_INVITE, there are " + count4, 1, count4);
+        assertEquals(1, count4, "There should be 1 event of type APPROVE_ORG_INVITE, there are " + count4);
 
         // There should exist a role that is accepted
         final long count5 = testingPostgres.runSelectStatement(
             "select count(*) from organization_user where status = 'ACCEPTED' and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
-        assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
+        assertEquals(1, count5, "There should be 1 accepted role for user 2 and org 1, there are " + count5);
 
         users = organizationsApiUser2.getOrganizationMembers(organization.getId());
-        assertEquals("There should be 2 users, there are " + users.size(), 2, users.size());
+        assertEquals(2, users.size(), "There should be 2 users, there are " + users.size());
 
         // Should be able to update email of Organization
         String email = "another@email.com";
         Organization newOrganization = organizationsApiOtherUser.getOrganizationById(orgId);
         newOrganization.setEmail(email);
         organization = organizationsApiOtherUser.updateOrganization(newOrganization, orgId);
-        assertEquals("Organization should be returned and have an updated email.", email, organization.getEmail());
+        assertEquals(email, organization.getEmail(), "Organization should be returned and have an updated email.");
 
         // There should be one MODIFY_ORG event
         final long count6 = testingPostgres.runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
-        assertEquals("There should be 1 event of type MODIFY_ORG, there are " + count6, 1, count6);
+        assertEquals(1, count6, "There should be 1 event of type MODIFY_ORG, there are " + count6);
 
         // Admin should be able to change the members role to maintainer
         organizationsApiUser2.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId);
@@ -907,7 +907,7 @@ public class OrganizationIT extends BaseIT {
         // There should be one MODIFY_USER_ROLE_ORG event
         final long count7 = testingPostgres
             .runSelectStatement("select count(*) from event where type = 'MODIFY_USER_ROLE_ORG'", long.class);
-        assertEquals("There should be 1 event of type MODIFY_USER_ROLE_ORG, there are " + count7, 1, count7);
+        assertEquals(1, count7, "There should be 1 event of type MODIFY_USER_ROLE_ORG, there are " + count7);
 
         // Remove the user
         organizationsApiUser2.deleteUserRole(userId, orgId);
@@ -915,7 +915,7 @@ public class OrganizationIT extends BaseIT {
         // There should be one REMOVE_USER_FROM_ORG event
         final long count8 = testingPostgres
             .runSelectStatement("select count(*) from event where type = 'REMOVE_USER_FROM_ORG'", long.class);
-        assertEquals("There should be 1 event of type REMOVE_USER_FROM_ORG, there are " + count8, 1, count8);
+        assertEquals(1, count8, "There should be 1 event of type REMOVE_USER_FROM_ORG, there are " + count8);
 
         // Should once again not be able to update the email
         email = "hello@email.com";
@@ -925,7 +925,7 @@ public class OrganizationIT extends BaseIT {
         } catch (ApiException ex) {
             organization = null;
         }
-        assertNull("Other user should not be able to update the Organization.", organization);
+        assertNull(organization, "Other user should not be able to update the Organization.");
     }
 
     @Test
@@ -1031,25 +1031,25 @@ public class OrganizationIT extends BaseIT {
         // Should not be able to invite another user
         try {
             organizationsApi.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), orgUserToInviteId, orgId, "");
-            Assert.fail("Should not be able to add a user to organization");
+            fail("Should not be able to add a user to organization");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
         // Should not be able to update another user's role
         try {
             organizationsApi.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), existingOrgUserId, orgId);
-            Assert.fail("Should not be able to update another user's role");
+            fail("Should not be able to update another user's role");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
         // Should not be able to remove a member from the organization
         try {
             organizationsApi.deleteUserRole(existingOrgUserId, orgId);
-            Assert.fail("Should not be able to remove a member from the organization");
+            fail("Should not be able to remove a member from the organization");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
         assertPowerlessMaintainerActions(organization, collection, organizationsApi);
@@ -1069,33 +1069,33 @@ public class OrganizationIT extends BaseIT {
         organization.setEmail(email);
         try {
             organizationsApi.updateOrganization(organization, orgId);
-            Assert.fail("Should not be able to update organization information");
+            fail("Should not be able to update organization information");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
         // Should not be able to create a collection
         try {
             organizationsApi.createCollection(openApiStubCollectionObject(), orgId);
-            Assert.fail("Should not be able to create a collection");
+            fail("Should not be able to create a collection");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
         // Should not be able to update an existing collection
         collection.setDescription("description");
         try {
             organizationsApi.updateCollection(collection, orgId, collection.getId());
-            Assert.fail("Should not be able to update a collection");
+            fail("Should not be able to update a collection");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
         try {
             organizationsApi.updateCollectionDescription("descriptin", orgId, collection.getId());
-            Assert.fail("Should not be able to update a collection description");
+            fail("Should not be able to update a collection description");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
     }
 
@@ -1121,17 +1121,17 @@ public class OrganizationIT extends BaseIT {
         long thirdUser = 3;
         try {
             organizationsApiOtherUser.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), thirdUser, orgId, "");
-            Assert.fail("Member should not be able to add a user to organization");
+            fail("Member should not be able to add a user to organization");
         } catch (ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
 
         // Should not be able to update another user's role
         try {
             organizationsApiOtherUser.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId);
-            Assert.fail(" Should not be able to update another user's role");
+            fail(" Should not be able to update another user's role");
         } catch (ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
     }
 
@@ -1158,7 +1158,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
-        assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
+        assertEquals(1, count, "There should be 1 event of type CREATE_ORG, there are " + count);
 
         long orgId = organization.getId();
         long userId = 2;
@@ -1168,32 +1168,32 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one ADD_USER_TO_ORG event
         final long count2 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
-        assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count2, 1, count2);
+        assertEquals(1, count2, "There should be 1 event of type ADD_USER_TO_ORG, there are " + count2);
 
         // There should exist a role that is pending
         final long count3 = testingPostgres.runSelectStatement(
             "select count(*) from organization_user where status = 'PENDING' and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
-        assertEquals("There should be 1 pending role for user 2 and org 1, there are " + count3, 1, count3);
+        assertEquals(1, count3, "There should be 1 pending role for user 2 and org 1, there are " + count3);
 
         // Disapprove request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, false);
 
         // There should be one REJECT_ORG_INVITE event
         final long count4 = testingPostgres.runSelectStatement("select count(*) from event where type = 'REJECT_ORG_INVITE'", long.class);
-        assertEquals("There should be 1 event of type REJECT_ORG_INVITE, there are " + count4, 1, count4);
+        assertEquals(1, count4, "There should be 1 event of type REJECT_ORG_INVITE, there are " + count4);
 
         // Should have a role that is rejected
         final long count5 = testingPostgres
             .runSelectStatement("select count(*) from organization_user where status = 'REJECTED' and organizationId = " + orgId + " and userId = '" + 2 + "'",
                 long.class);
-        assertEquals("There should be one role with the status 'REJECTED' for user 2 and org 1, there are " + count5, 1, count5);
+        assertEquals(1, count5, "There should be one role with the status 'REJECTED' for user 2 and org 1, there are " + count5);
 
         // Test that events are sorted by DESC dbCreateDate
         List<Event> events = organizationsApiUser2.getOrganizationEvents(orgId, 0, 5);
-        assertEquals("Should have 3 events returned, there are " + events.size(), 3, events.size());
-        assertEquals("First event should be most recent, which is REJECT_ORG_INVITE, but is actually " + events.get(0).getType().getValue(),
-            "REJECT_ORG_INVITE", events.get(0).getType().getValue());
+        assertEquals(3, events.size(), "Should have 3 events returned, there are " + events.size());
+        assertEquals("REJECT_ORG_INVITE", events.get(0).getType().getValue(),
+            "First event should be most recent, which is REJECT_ORG_INVITE, but is actually " + events.get(0).getType().getValue());
 
         // Test that the admin can't update the role for a user who has rejected the invitation
         assertThrows(ApiException.class, () -> organizationsApiUser2.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId));
@@ -1202,12 +1202,12 @@ public class OrganizationIT extends BaseIT {
         organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), userId, orgId, "");
         // There should be two ADD_USER_TO_ORG event
         final long count6 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
-        assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count6, 2, count6);
+        assertEquals(2, count6, "There should be 1 event of type ADD_USER_TO_ORG, there are " + count6);
         // There should exist a role that is pending
         final long count7 = testingPostgres.runSelectStatement(
                 "select count(*) from organization_user where status = 'PENDING' and organizationId = " + orgId + " and userId = '" + 2 + "'",
                 long.class);
-        assertEquals("There should be 1 pending role for user 2 and org 1, there are " + count7, 1, count7);
+        assertEquals(1, count7, "There should be 1 pending role for user 2 and org 1, there are " + count7);
 
         // Request a user that doesn't exist
         boolean throwsError = false;
@@ -1261,10 +1261,9 @@ public class OrganizationIT extends BaseIT {
         orgAdminOrganizationsApi.approveOrganization(orgId);
 
         // Anonymous user should be able to get members for the approved organization
-        assertEquals("Anonymous user should be able to see 1 user", 1, anonymousOrganizationsApi.getOrganizationMembers(orgId).size());
-        assertTrue("Anonymous user should only be able to see accepted members",
-                anonymousOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
-                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+        assertEquals(1, anonymousOrganizationsApi.getOrganizationMembers(orgId).size(), "Anonymous user should be able to see 1 user");
+        assertTrue(anonymousOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED), "Anonymous user should only be able to see accepted members");
 
         // Invite organization users, one with a member role and one with a maintainer role
         orgAdminOrganizationsApi.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), orgMemberUserId, orgId, "");
@@ -1273,52 +1272,51 @@ public class OrganizationIT extends BaseIT {
         assertMembershipStatusAndRole(orgMaintainerUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MAINTAINER);
 
         // Organization admin should be able to see pending members
-        assertEquals("Organization admin should see all users", 3, orgAdminOrganizationsApi.getOrganizationMembers(orgId).size());
-        assertTrue("Organization admin should be able to see pending member",
-                orgAdminOrganizationsApi.getOrganizationMembers(orgId).stream().anyMatch(
-                        orgUser -> orgUser.getStatus() == io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING));
+        assertEquals(3, orgAdminOrganizationsApi.getOrganizationMembers(orgId).size(), "Organization admin should see all users");
+        assertTrue(orgAdminOrganizationsApi.getOrganizationMembers(orgId).stream().anyMatch(
+                orgUser -> orgUser.getStatus() == io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING), "Organization admin should be able to see pending member");
 
         // Check that the organization members with pending non-admin invitations can only see accepted organization users
-        assertEquals("Organization user with pending member role should see 1 user", 1, orgMemberOrganizationsApi.getOrganizationMembers(orgId).size());
-        assertTrue("Organization user with pending member role should only see accepted members",
-                orgMemberOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
-                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
-        assertEquals("Organization user with pending maintainer role should see 1 user", 1, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size());
-        assertTrue("Organization user with pending maintainer role should only see accepted members",
-                orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
-                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+        assertEquals(1, orgMemberOrganizationsApi.getOrganizationMembers(orgId).size(), "Organization user with pending member role should see 1 user");
+        assertTrue(orgMemberOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED),
+            "Organization user with pending member role should only see accepted members");
+        assertEquals(1, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size(), "Organization user with pending maintainer role should see 1 user");
+        assertTrue(orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED),
+            "Organization user with pending maintainer role should only see accepted members");
 
         // Organization user with member role accepts the invite
         orgMemberOrganizationsApi.acceptOrRejectInvitation(orgId, true);
         assertMembershipStatusAndRole(orgMemberUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MEMBER);
-        assertEquals("Organization user with member role should see 2 users", 2, orgMemberOrganizationsApi.getOrganizationMembers(orgId).size());
-        assertTrue("Organization user with member role should only see accepted members",
-                orgMemberOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
-                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+        assertEquals(2, orgMemberOrganizationsApi.getOrganizationMembers(orgId).size(), "Organization user with member role should see 2 users");
+        assertTrue(orgMemberOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED),
+            "Organization user with member role should only see accepted members");
 
         // Organization user with maintainer role rejects the invite
         orgMaintainerOrganizationsApi.acceptOrRejectInvitation(orgId, false);
         assertMembershipStatusAndRole(orgMaintainerUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.REJECTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MAINTAINER);
-        assertEquals("Organization user with rejected maintainer role should see 2 user", 2, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size());
-        assertTrue("Organization user with rejected maintainer role should only see accepted members",
-                orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
-                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+        assertEquals(2, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size(), "Organization user with rejected maintainer role should see 2 user");
+        assertTrue(orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED),
+            "Organization user with rejected maintainer role should only see accepted members");
 
         // Re-invite rejected maintainer role and change the role to an admin to get a pending admin invitation
         orgAdminOrganizationsApi.addUserToOrg(OrganizationUser.Role.ADMIN.toString(), orgMaintainerUserId, orgId, "");
         assertMembershipStatusAndRole(orgMaintainerUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.ADMIN);
-        assertEquals("Organization user with pending admin role should see 2 user", 2, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size());
-        assertTrue("Organization user with pending admin role should only see accepted members",
-                orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
-                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+        assertEquals(2, orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).size(), "Organization user with pending admin role should see 2 user");
+        assertTrue(orgMaintainerOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED),
+            "Organization user with pending admin role should only see accepted members");
 
         // Edit the organization user with member role to maintainer role. They should still only be able to see accepted members
         orgAdminOrganizationsApi.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), orgMemberUserId, orgId);
         assertMembershipStatusAndRole(orgMemberUsersApi, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, io.dockstore.openapi.client.model.OrganizationUser.RoleEnum.MAINTAINER);
-        assertEquals("Organization user with maintainer role should see 2 users", 2, orgMemberOrganizationsApi.getOrganizationMembers(orgId).size());
-        assertTrue("Organization user with maintainer role should only see accepted members",
-                orgMemberOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
-                        orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED));
+        assertEquals(2, orgMemberOrganizationsApi.getOrganizationMembers(orgId).size(), "Organization user with maintainer role should see 2 users");
+        assertTrue(orgMemberOrganizationsApi.getOrganizationMembers(orgId).stream().noneMatch(
+                orgUser -> orgUser.getStatus() != io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED),
+            "Organization user with maintainer role should only see accepted members");
     }
 
     /**
@@ -1422,7 +1420,7 @@ public class OrganizationIT extends BaseIT {
         organization.setDisplayName(displayName);
 
         organization = organizationsApi.createOrganization(organization);
-        assertNotNull("Should create the organization", organizationsApi.getOrganizationById(organization.getId()));
+        assertNotNull(organizationsApi.getOrganizationById(organization.getId()), "Should create the organization");
     }
 
     /**
@@ -1538,7 +1536,7 @@ public class OrganizationIT extends BaseIT {
         collection.setName(name);
 
         collection = organizationsApi.createCollection(organizationId, collection);
-        assertNotNull("Should create the collection", organizationsApi.getCollectionById(organizationId, collection.getId()));
+        assertNotNull(organizationsApi.getCollectionById(organizationId, collection.getId()), "Should create the collection");
     }
 
     /**
@@ -1675,14 +1673,14 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_COLLECTION event
         final long count = testingPostgres.runSelectStatement("select count(*) from event where type = 'CREATE_COLLECTION'", long.class);
-        assertEquals("There should be 1 event of type CREATE_COLLECTION, there are " + count, 1, count);
+        assertEquals(1, count, "There should be 1 event of type CREATE_COLLECTION, there are " + count);
 
         // The creating user should be able to see the collection even though the Organization is not approved
         collection = organizationsApi.getCollectionById(organization.getId(), collectionId);
-        assertNotNull("Should be able to see the collection.", collection);
+        assertNotNull(collection, "Should be able to see the collection.");
 
         collection = organizationsApi.getCollectionByName(organization.getName(), collection.getName());
-        assertNotNull("Should be able to see the collection.", collection);
+        assertNotNull(collection, "Should be able to see the collection.");
 
         // Other user should not be able to see
         try {
@@ -1690,11 +1688,11 @@ public class OrganizationIT extends BaseIT {
         } catch (ApiException ex) {
             collection = null;
         }
-        assertNull("Should not be able to see the collection.", collection);
+        assertNull(collection, "Should not be able to see the collection.");
 
         // Admin should be able to see the collection
         collection = organizationsApiAdmin.getCollectionById(organization.getId(), collectionId);
-        assertNotNull("Should be able to see the collection.", collection);
+        assertNotNull(collection, "Should be able to see the collection.");
 
         // Other user should not be able to see by name
         try {
@@ -1702,25 +1700,25 @@ public class OrganizationIT extends BaseIT {
         } catch (ApiException ex) {
             collection = null;
         }
-        assertNull("Should not be able to see the collection.", collection);
+        assertNull(collection, "Should not be able to see the collection.");
 
         // Approve the Organization
         organization = organizationsApiAdmin.approveOrganization(organization.getId());
 
         // The creating user should be able to see
         collection = organizationsApi.getCollectionById(organization.getId(), collectionId);
-        assertNotNull("Should be able to see the collection.", collection);
+        assertNotNull(collection, "Should be able to see the collection.");
 
         // Other user should be able to see
         collection = organizationsApiOtherUser.getCollectionById(organization.getId(), collectionId);
-        assertNotNull("Should be able to see the collection.", collection);
+        assertNotNull(collection, "Should be able to see the collection.");
 
         collection = organizationsApiOtherUser.getCollectionByName(organization.getName(), collection.getName());
-        assertNotNull("Should be able to see the collection.", collection);
+        assertNotNull(collection, "Should be able to see the collection.");
 
         // Admin should be able to see the collection
         collection = organizationsApiAdmin.getCollectionById(organization.getId(), collectionId);
-        assertNotNull("Should be able to see the collection.", collection);
+        assertNotNull(collection, "Should be able to see the collection.");
 
         // Publish a tool
         long entryId = 2;
@@ -1751,15 +1749,14 @@ public class OrganizationIT extends BaseIT {
         // Unable to retrieve the collection and organization of an entry that does not exist
         try {
             entriesApi.entryCollections(9001L);
-            Assert.fail("Should have gotten an exception because the entry does not exist");
+            fail("Should have gotten an exception because the entry does not exist");
         } catch (Exception e) {
             assertTrue(true);
         }
 
         // The collection should have an entry
         collection = organizationsApiAdmin.getCollectionById(organization.getId(), collectionId);
-        assertEquals("There should be one entry with the collection, there are " + collection.getEntries().size(), 1,
-            collection.getEntries().size());
+        assertEquals(1, collection.getEntries().size(), "There should be one entry with the collection, there are " + collection.getEntries().size());
 
         // Publish another tool
         entryId = 1;
@@ -1774,7 +1771,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be two ADD_TO_COLLECTION events
         final long count3 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_TO_COLLECTION'", long.class);
-        assertEquals("There should be 2 events of type ADD_TO_COLLECTION, there are " + count3, 2, count3);
+        assertEquals(2, count3, "There should be 2 events of type ADD_TO_COLLECTION, there are " + count3);
 
         // Unpublish tool
         PublishRequest unpublishRequest = CommonTestUtilities.createPublishRequest(false);
@@ -1782,14 +1779,14 @@ public class OrganizationIT extends BaseIT {
 
         // Collection should have one tool returned
         long entryCount = organizationsApi.getCollectionById(organization.getId(), collectionId).getEntries().size();
-        assertEquals("There should be one entry with the collection, there are " + entryCount, 1, entryCount);
+        assertEquals(1, entryCount, "There should be one entry with the collection, there are " + entryCount);
 
         // Publish tool
         containersApi.publish(entryId, publishRequest);
 
         // Collection should have two tools returned
         entryCount = organizationsApi.getCollectionById(organization.getId(), collectionId).getEntries().size();
-        assertEquals("There should be two entries with the collection, there are " + entryCount, 2, entryCount);
+        assertEquals(2, entryCount, "There should be two entries with the collection, there are " + entryCount);
 
         // Remove a tool from the collection
         organizationsApi.deleteEntryFromCollection(organization.getId(), collectionId, entryId, null);
@@ -1797,7 +1794,7 @@ public class OrganizationIT extends BaseIT {
         // There should be one REMOVE_FROM_COLLECTION events
         final long count4 = testingPostgres
             .runSelectStatement("select count(*) from event where type = 'REMOVE_FROM_COLLECTION'", long.class);
-        assertEquals("There should be 1 event of type REMOVE_FROM_COLLECTION, there are " + count4, 1, count4);
+        assertEquals(1, count4, "There should be 1 event of type REMOVE_FROM_COLLECTION, there are " + count4);
 
         // There should now be one entry for collection with ID 1
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
@@ -1805,19 +1802,15 @@ public class OrganizationIT extends BaseIT {
 
         // Try getting all collections
         List<Collection> collections = organizationsApi.getCollectionsFromOrganization(organization.getId(), "");
-        assertEquals("There should be 1 collection associated with the Organization, there are " + collections.size(), 1,
-            collections.size());
-        assertEquals("There should be no entries because entries is not specified to be included " + collections.get(0).getEntries().size(), 0,
-                collections.get(0).getEntries().size());
+        assertEquals(1, collections.size(), "There should be 1 collection associated with the Organization, there are " + collections.size());
+        assertEquals(0, collections.get(0).getEntries().size(), "There should be no entries because entries is not specified to be included " + collections.get(0).getEntries().size());
 
         collections = organizationsApi.getCollectionsFromOrganization(organization.getId(), "entries");
-        assertEquals("There should be 1 entry associated with the collection, there are " + collections.get(0).getEntries().size(), 1,
-            collections.get(0).getEntries().size());
+        assertEquals(1, collections.get(0).getEntries().size(), "There should be 1 entry associated with the collection, there are " + collections.get(0).getEntries().size());
 
         // Unauth user should be able to see entries
         Collection unauthCollection = organizationsApiUnauth.getCollectionById(organization.getId(), collections.get(0).getId());
-        assertEquals("Should have one entry returned with the collection, there are " + unauthCollection.getEntries().size(), 1,
-            unauthCollection.getEntries().size());
+        assertEquals(1, unauthCollection.getEntries().size(), "Should have one entry returned with the collection, there are " + unauthCollection.getEntries().size());
 
         // Test description
         Collection collectionWithDesc = organizationsApi.updateCollectionDescription(organization.getId(), collectionId, "potato");
@@ -1853,22 +1846,24 @@ public class OrganizationIT extends BaseIT {
         // entry id 2, no version
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
         assertEquals(3, collectionById.getEntries().size());
-        assertTrue("Collection has the version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> versionName
-                .equals(entry.getVersionName()) && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
-        assertTrue("Collection still has the non-version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null  && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
+        assertTrue(collectionById.getEntries().stream().anyMatch(entry -> versionName
+                .equals(entry.getVersionName()) && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")), "Collection has the version-specific entry");
+        assertTrue(collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null  && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")),
+            "Collection still has the non-version-specific entry");
 
         // When there's a matching entryId that has a version, but versionName parameter is something else, there should not be NPE
         try {
             organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, "doesNotExistVersionName");
-            Assert.fail("Can't delete a version that doesn't exist");
+            fail("Can't delete a version that doesn't exist");
         } catch (ApiException e) {
-            Assert.assertEquals("Version not found", e.getMessage());
-            Assert.assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
+            assertEquals("Version not found", e.getMessage());
+            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
         }
         organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, versionName);
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
-        assertEquals("Two entry remains in collection", 2, collectionById.getEntries().size());
-        assertTrue("Collection has the non-version-specific entry even after deleting the version-specific one", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
+        assertEquals(2, collectionById.getEntries().size(), "Two entry remains in collection");
+        assertTrue(collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")),
+            "Collection has the non-version-specific entry even after deleting the version-specific one");
 
         // When there's a matching entryId that has a version, but versionName parameter is null, there should not be NPE
         organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, null);
@@ -1955,32 +1950,32 @@ public class OrganizationIT extends BaseIT {
         assertEquals(2, organizationWithAlias.getAliases().size());
 
         Organization organizationById = organizationsApi.getOrganizationById(organization.getId());
-        Assert.assertNotNull("Getting organization by ID has null alias", organizationById.getAliases());
+        assertNotNull(organizationById.getAliases(), "Getting organization by ID has null alias");
         Collection collectionById = organizationsApi.getCollectionById(organization.getId(), collectionId);
-        Assert.assertNotNull("Getting collection by ID has null alias", collectionById.getAliases());
+        assertNotNull(collectionById.getAliases(), "Getting collection by ID has null alias");
 
         // note that namespaces for organizations and collections are separate (therefore a collection can have the same alias as an organization)
         final Collection collectionByAlias = organizationsApi.getCollectionByAlias("spam");
         assertNotNull(collectionByAlias);
-        Assert.assertNotNull("Getting collection by alias has null alias", collectionByAlias.getAliases());
+        assertNotNull(collectionByAlias.getAliases(), "Getting collection by alias has null alias");
         final Organization organizationByAlias = organizationsApi.getOrganizationByAlias("spam");
         assertNotNull(organizationByAlias);
-        Assert.assertNotNull("Getting organization by alias has null alias", organizationByAlias.getAliases());
+        assertNotNull(organizationByAlias.getAliases(), "Getting organization by alias has null alias");
 
         final Collection collectionByName = organizationsApi.getCollectionByName(organizationByAlias.getName(),
                 collectionByAlias.getName());
         assertNotNull(collectionByName);
-        Assert.assertNotNull("Getting collection by name has null alias", collectionByName.getAliases());
+        assertNotNull(collectionByName.getAliases(), "Getting collection by name has null alias");
         final Organization organizationByName = organizationsApi.getOrganizationByName(organizationByAlias.getName());
         assertNotNull(organizationByName);
-        Assert.assertNotNull("Getting organization by name has null alias", organizationByName.getAliases());
+        assertNotNull(organizationByName.getAliases(), "Getting organization by name has null alias");
 
 
         // Should now appear in approved list
         List<Organization> organizationList = organizationsApi.getApprovedOrganizations();
-        assertEquals("Should have one approved Organization.", 1, organizationList.size());
+        assertEquals(1, organizationList.size(), "Should have one approved Organization.");
         // organization alias should be in return from API call
-        organizationList.forEach(approvedOrganization -> Assert.assertNotNull(approvedOrganization.getAliases()));
+        organizationList.forEach(approvedOrganization -> assertNotNull(approvedOrganization.getAliases()));
     }
 
     /**
@@ -2015,9 +2010,9 @@ public class OrganizationIT extends BaseIT {
         assertEquals(2, organizationWithAlias.getAliases().size());
 
         Organization organizationById = organizationsApi.getOrganizationById(organization.getId());
-        Assert.assertNotNull("Getting organization by ID has null alias", organizationById.getAliases());
+        assertNotNull(organizationById.getAliases(), "Getting organization by ID has null alias");
         Collection collectionById = organizationsApi.getCollectionById(organization.getId(), collectionId);
-        Assert.assertNotNull("Getting collection by ID has null alias", collectionById.getAliases());
+        assertNotNull(collectionById.getAliases(), "Getting collection by ID has null alias");
 
         // note that namespaces for organizations and collections are separate (therefore a collection can have the same alias as an organization)
         final Collection spam1 = organizationsApi.getCollectionByAlias("spam");
@@ -2150,7 +2145,7 @@ public class OrganizationIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", BIOWORKFLOW, null);
         Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
         workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
-        Assert.assertEquals(2, workflow.getWorkflowVersions().size());
+        assertEquals(2, workflow.getWorkflowVersions().size());
 
         ExtendedGa4GhApi ga4ghApi = new ExtendedGa4GhApi(webClient);
         ga4ghApi.toolsIdVersionsVersionIdTypeTestsPost("CWL", "#workflow/github.com/DockstoreTestUser2/gdc-dnaseq-cwl", "test", "/workflows/dnaseq/transform.cwl.json", "platform", "platform version",
@@ -2300,7 +2295,7 @@ public class OrganizationIT extends BaseIT {
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from collection where description = '" + desc + "'", long.class);
-        assertEquals("There should be 1 collection with the updated description, there are " + count, 1, count);
+        assertEquals(1, count, "There should be 1 collection with the updated description, there are " + count);
 
         // Update collection name to existing one
         collection.setName("anothername");
@@ -2437,7 +2432,7 @@ public class OrganizationIT extends BaseIT {
         // Should only be able to star approved organizations
         try {
             organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
-            Assert.fail();
+            fail();
         } catch (ApiException ex) {
             assertEquals("Organization not found", ex.getMessage());
         }
@@ -2452,7 +2447,7 @@ public class OrganizationIT extends BaseIT {
         // Should not be able to star twice
         try {
             organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
-            Assert.fail();
+            fail();
         } catch (ApiException ex) {
             assertTrue(ex.getMessage().contains("You cannot star the organization"));
         }
@@ -2462,7 +2457,7 @@ public class OrganizationIT extends BaseIT {
         // Should not be able to unstar twice
         try {
             organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);
-            Assert.fail();
+            fail();
         } catch (ApiException ex) {
             assertTrue(ex.getMessage().contains("You cannot unstar the organization"));
         }
@@ -2829,7 +2824,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     private Set<String> extractNames(java.util.Collection<io.dockstore.openapi.client.model.Category> categories) {
-        return categories.stream().map(c -> c.getName()).collect(Collectors.toSet());
+        return categories.stream().map(io.dockstore.openapi.client.model.Category::getName).collect(Collectors.toSet());
     }
 
     /**

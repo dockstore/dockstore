@@ -39,10 +39,10 @@ import java.io.IOException;
 import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -64,7 +64,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category({ RegressionTest.class })
+@Tag(RegressionTest.NAME)
 public class GeneralWorkflowRegressionIT extends BaseIT {
     public static final String KNOWN_BREAKAGE_MOVING_TO_1_6_0 = "Known breakage moving to 1.6.0";
     public static final String KNOWN_BREAKAGE_MOVING_TO_1_9_0 = "Known breakage moving to 1.9.0";
@@ -412,7 +412,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This is a high level test to ensure that gitlab basics are working for gitlab as a workflow repo
      */
     @Test
-    @Category(SlowTest.class)
+    @Tag(SlowTest.NAME)
     @Disabled(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
     public void testGitlab() {
         // Setup DB

@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -60,7 +59,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category(ConfidentialTest.class)
+@org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
 public class ExtendedTRSIT extends BaseIT {
 
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW =

@@ -8,8 +8,8 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
@@ -23,7 +23,8 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-@Category(ConfidentialTest.class)
+@Tag(ConfidentialTest.NAME)
+
 public class OpenAPIWebhookIT extends BaseIT {
 
     @SystemStub

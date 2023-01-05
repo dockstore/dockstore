@@ -23,4 +23,10 @@ package io.dockstore.common;
  * @since 1.4.0
  */
 public interface RegressionTest {
+    String NAME = "io.dockstore.common.RegressionTest";
+
+    default String getName() {
+        // silly method to satisfy CheckStyle
+        return NAME;
+    }
 }

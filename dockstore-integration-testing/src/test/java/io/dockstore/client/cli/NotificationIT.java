@@ -1,9 +1,10 @@
 package io.dockstore.client.cli;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.common.ConfidentialTest;
 import io.swagger.client.ApiClient;
@@ -12,12 +13,11 @@ import io.swagger.client.api.CurationApi;
 import io.swagger.client.model.Notification;
 import java.io.IOException;
 import java.util.List;
-import javax.ws.rs.core.Response;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import javax.ws.rs.core.Response.Status;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(ConfidentialTest.class)
+@Tag(ConfidentialTest.NAME)
 public class NotificationIT extends BaseIT {
 
     // set up test apis as it would be for an admin and a regular user
@@ -78,7 +78,7 @@ public class NotificationIT extends BaseIT {
         // try to create notification as an admin
         Notification result = curationApiAdmin.createNotification(notification);
         assertNotNull(result);  // createNotification should return a non-null notification
-        Assert.assertTrue(result.getId() > 0);  // if auto-increment is working, it should not overwrite row 0 of the database
+        assertTrue(result.getId() > 0);  // if auto-increment is working, it should not overwrite row 0 of the database
 
         // try to create notification as a regular user
         boolean userCanCreate = true;
@@ -86,7 +86,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.createNotification(notification);  // try to create as non-admin
         } catch (ApiException e) {
             userCanCreate = false;
-            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), e.getCode());  // this should return a 401 error
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanCreate);  // only admin/curators should be able to create notifications
     }
@@ -104,7 +104,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.deleteNotification(id);
         } catch (ApiException e) {
             userCanDelete = false;
-            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), e.getCode());  // this should return a 401 error
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanDelete);
 
@@ -130,7 +130,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.updateNotification(id, update);
         } catch (ApiException e) {
             userCanUpdate = false;
-            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), e.getCode());  // this should return a 401 error
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanUpdate);
 
@@ -159,7 +159,7 @@ public class NotificationIT extends BaseIT {
             curationApiAdmin.createNotification(notification);
             fail("create should fail since message is too long");
         } catch (ApiException e) {
-            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getCode()); // this should return a 400 code right now
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), e.getCode()); // this should return a 400 code right now
         }
 
         // make another notification that will be updated
@@ -172,7 +172,7 @@ public class NotificationIT extends BaseIT {
             curationApiAdmin.updateNotification(id, notification);
             fail("update should fail since update notification is too long");
         } catch (ApiException e) {
-            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getCode());  // this should return a 400 error
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), e.getCode());  // this should return a 400 error
         }
 
         // confirm that the database entry was not updated

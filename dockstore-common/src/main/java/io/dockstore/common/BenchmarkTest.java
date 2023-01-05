@@ -19,5 +19,10 @@ package io.dockstore.common;
  * @author gluu
  * @since 08/08/17
  */
-public class BenchmarkTest {
+public final class BenchmarkTest {
+    private BenchmarkTest() {
+        // hide utility constructor
+    }
+
+    public static final String NAME = "io.dockstore.common.BenchmarkTest";
 }

@@ -44,6 +44,7 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
 import org.junit.rules.ExpectedException;
 
 /**
@@ -59,6 +60,7 @@ import org.junit.rules.ExpectedException;
  * That said, we probably should have non-mocked tests as well.
  */
 @Category(NonConfidentialTest.class)
+@Tag(NonConfidentialTest.NAME)
 public class UserResourceServicesIT {
     @ClassRule
     public static final HoverflyRule HOVERFLY_RULE = HoverflyRule.inSimulationMode(SERVICES_SIMULATION_SOURCE);
