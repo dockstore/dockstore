@@ -455,15 +455,15 @@ public class CWLHandlerTest {
         Assert.assertTrue("step id should be part of dag content", dagContent.contains("step_name"));
     }
 
-    private SourceFile mockSetTypeVersion(SourceFile sourceFile, Consumer<String> versionConsumer) {
+    private SourceFile mockMethodSetTypeVersion(SourceFile sourceFile, Consumer<String> versionConsumer) {
         Mockito.doAnswer(invocation -> {
             versionConsumer.accept((String)invocation.getArgument(0));
             return null;
-        }).when(sourceFile).setTypeVersion(Mockito.anyString());
+        }).when(sourceFile).setTypeVersion(Mockito.any());
         return sourceFile;
     }
 
-    private Version mockSetDescriptorTypeVersions(Version version, Consumer<List<String>> versionsConsumer) {
+    private Version mockMethodSetDescriptorTypeVersions(Version version, Consumer<List<String>> versionsConsumer) {
         Mockito.doAnswer(invocation -> {
             versionsConsumer.accept((List<String>)invocation.getArgument(0));
             return null;
@@ -471,26 +471,34 @@ public class CWLHandlerTest {
         return version;
     }
 
-    private static String primaryFileVersion;
+    private static String twoVersion;
+    private static String oneVersion;
+    private static String noVersion;
     private static List<String> versionVersions;
 
     /**
-     * Test that the language versions are set properly.
+     * Test that language versions are extracted from SourceFiles and set properly.
      */
     @Test
     public void testLanguageVersionExtraction() throws IOException {
         CWLHandler cwlHandler = new CWLHandler();
 
-        final String resourceRoot = "workflow-id-slashes";
-        final SourceFile primaryFile = mockSetTypeVersion(mockSourceFile(resourceRoot, "/main.cwl"), v -> primaryFileVersion = v);
+        final String resourceRoot = "multi-version-cwl";
+        final SourceFile twoFile = mockMethodSetTypeVersion(mockSourceFile(resourceRoot, "/two-version.cwl"), v -> twoVersion = v);
+        final SourceFile oneFile = mockMethodSetTypeVersion(mockSourceFile(resourceRoot, "/one-version.cwl"), v -> oneVersion = v);
+        final SourceFile noFile = mockMethodSetTypeVersion(mockSourceFile(resourceRoot, "/no-version.cwl"), v -> noVersion = v);
 
-        primaryFileVersion = "bogus";
+        twoVersion = "bogus";
+        oneVersion = "bogus";
+        noVersion = "bogus";
         versionVersions = List.of("bogus");
 
-        final Version version = mockSetDescriptorTypeVersions(Mockito.mock(Version.class), v -> versionVersions = v);
-        cwlHandler.parseWorkflowContent(primaryFile.getPath(), primaryFile.getContent(), Set.of(primaryFile), version);
+        final Version version = mockMethodSetDescriptorTypeVersions(Mockito.mock(Version.class), v -> versionVersions = v);
+        cwlHandler.parseWorkflowContent(twoFile.getPath(), twoFile.getContent(), Set.of(twoFile, oneFile, noFile), version);
 
-        Assert.assertEquals("v1.0", primaryFileVersion);
-        Assert.assertEquals(List.of("v1.0"), versionVersions);
+        Assert.assertEquals("v1.0.dev4", twoVersion);
+        Assert.assertEquals("v1.0", oneVersion);
+        Assert.assertEquals(null, noVersion);
+        Assert.assertEquals(List.of("v1.0", "v1.0.dev4", "sbg:draft-2"), versionVersions);
     }
 }
