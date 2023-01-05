@@ -714,7 +714,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowVersion workflowVersion = refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("no-main-script")).findFirst().get();
         List<Validation> validations = workflowVersion.getValidations();
 
-        assertEquals("should have a descriptive invalid validation", 1, validations.stream().filter(v -> !v.isValid() && v.getMessage() != null && v.getMessage().contains("not find main script")).count());
+        assertEquals(1, validations.stream().filter(v -> !v.isValid() && v.getMessage() != null && v.getMessage().contains("not find main script")).count(), "should have a descriptive invalid validation");
     }
 
     @Test
