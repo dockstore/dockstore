@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class PermissionsInterfaceTest {
+class PermissionsInterfaceTest {
 
     private static final String JOHN_DOE_EXAMPLE_COM = "john.doe@example.com";
     private static final String JANE_DOE_EXAMPLE_COM = "jane.doe@example.com";

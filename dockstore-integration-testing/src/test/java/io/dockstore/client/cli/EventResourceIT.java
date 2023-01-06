@@ -45,7 +45,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(TestStatus.class)
 @org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
 @org.junit.jupiter.api.Tag(ToolTest.NAME)
-public class EventResourceIT extends BaseIT {
+class EventResourceIT extends BaseIT {
 
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());

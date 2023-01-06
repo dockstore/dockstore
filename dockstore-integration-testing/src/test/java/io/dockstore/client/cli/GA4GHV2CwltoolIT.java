@@ -49,7 +49,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(LanguageParsingTest.NAME)
-public class GA4GHV2CwltoolIT {
+class GA4GHV2CwltoolIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,
             ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));

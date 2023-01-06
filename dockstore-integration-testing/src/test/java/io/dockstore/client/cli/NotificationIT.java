@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag(ConfidentialTest.NAME)
-public class NotificationIT extends BaseIT {
+class NotificationIT extends BaseIT {
 
     // set up test apis as it would be for an admin and a regular user
     private final ApiClient webClientAdmin = getAdminWebClient();

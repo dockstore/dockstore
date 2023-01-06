@@ -95,7 +95,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
-public class WebhookIT extends BaseIT {
+class WebhookIT extends BaseIT {
     private static final int LAMBDA_ERROR = 418;
     private static final String DOCKSTORE_WHALESAY_WDL = "dockstore-whalesay-wdl";
 

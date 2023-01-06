@@ -48,7 +48,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(BitBucketTest.NAME)
-public class BitBucketGitHubBasicIT extends BaseIT {
+class BitBucketGitHubBasicIT extends BaseIT {
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());
     @SystemStub

@@ -56,7 +56,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @Tag(NonConfidentialTest.NAME)
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-public class NoPluginIT {
+class NoPluginIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;
 
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;

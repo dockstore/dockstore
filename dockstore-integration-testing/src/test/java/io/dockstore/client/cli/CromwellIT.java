@@ -44,7 +44,7 @@ import wdl.draft3.parser.WdlParser;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-public class CromwellIT {
+class CromwellIT {
 
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());

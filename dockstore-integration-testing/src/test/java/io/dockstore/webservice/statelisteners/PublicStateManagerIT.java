@@ -55,7 +55,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
-public class PublicStateManagerIT {
+class PublicStateManagerIT {
     private static PublicStateManager manager;
     private static ElasticSearchHelper esHelper;
 

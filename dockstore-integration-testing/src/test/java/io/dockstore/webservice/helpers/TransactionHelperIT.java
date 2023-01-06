@@ -44,7 +44,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
-public class TransactionHelperIT extends BaseIT {
+class TransactionHelperIT extends BaseIT {
 
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());

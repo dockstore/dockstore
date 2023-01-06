@@ -11,7 +11,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
-public class ConfigHelperTest {
+class ConfigHelperTest {
 
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());

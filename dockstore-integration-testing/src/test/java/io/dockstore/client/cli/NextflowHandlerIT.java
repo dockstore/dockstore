@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 /**
  *  TODO: Check paths, it looks like it's relative to the file that imported it but this means it won't be unique
  */
-public class NextflowHandlerIT extends BaseIT {
+class NextflowHandlerIT extends BaseIT {
     protected static SourceCodeRepoInterface sourceCodeRepoInterface;
 
 

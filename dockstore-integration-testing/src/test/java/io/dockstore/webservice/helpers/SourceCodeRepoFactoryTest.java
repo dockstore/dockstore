@@ -39,7 +39,7 @@ import org.junit.jupiter.api.Test;
  * @author dyuen
  */
 @Tag(NonConfidentialTest.NAME)
-public class SourceCodeRepoFactoryTest {
+class SourceCodeRepoFactoryTest {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);

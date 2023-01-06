@@ -19,7 +19,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 /**
  * Tests CWLHandler.Preprocessor
  */
-public class CWLHandlerPreprocessorTest {
+class CWLHandlerPreprocessorTest {
 
     private static final String V1_0 = "cwlVersion: v1.0\n";
     private static final String V1_1 = "cwlVersion: v1.1\n";

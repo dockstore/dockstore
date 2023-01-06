@@ -48,7 +48,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-public class SearchResourceIT extends BaseIT {
+class SearchResourceIT extends BaseIT {
 
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());

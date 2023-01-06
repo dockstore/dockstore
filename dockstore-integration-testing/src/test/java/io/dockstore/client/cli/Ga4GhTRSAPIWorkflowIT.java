@@ -87,7 +87,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Tag(WorkflowTest.NAME)
-public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
+class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     public static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL =

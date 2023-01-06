@@ -63,7 +63,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
-public class UserResourceOpenApiIT extends BaseIT {
+class UserResourceOpenApiIT extends BaseIT {
     private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
     private static final String INSTALLATION_ID = "1179416";
 

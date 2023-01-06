@@ -18,7 +18,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author aduncan
  */
 @ExtendWith(SystemStubsExtension.class)
-public class GitHelperTest {
+class GitHelperTest {
 
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());

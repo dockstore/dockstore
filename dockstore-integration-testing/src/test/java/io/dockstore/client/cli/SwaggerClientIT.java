@@ -104,7 +104,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
-public class SwaggerClientIT extends BaseIT {
+class SwaggerClientIT extends BaseIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
@@ -399,9 +399,8 @@ public class SwaggerClientIT extends BaseIT {
         assertTrue(strings.get(1).contains("moretestparameterstuff"));
     }
 
-    // Can't test publish repos that don't exist
     @Test
-    @Disabled
+    @Disabled("Can't test publish repos that don't exist")
     void testContainerRegistration() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);

@@ -61,7 +61,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(RegressionTest.NAME)
-public class GeneralRegressionIT extends BaseIT {
+class GeneralRegressionIT extends BaseIT {
     @TempDir
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     static URL url;

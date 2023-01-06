@@ -63,7 +63,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-public class SamPermissionsImplTest {
+class SamPermissionsImplTest {
 
     private static final String FOO_WORKFLOW_NAME = "foo";
     private static final String GOO_WORKFLOW_NAME = "goo";

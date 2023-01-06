@@ -70,7 +70,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Deprecated(since = "1.14")
-public class UserResourceSwaggerIT extends BaseIT {
+class UserResourceSwaggerIT extends BaseIT {
     private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
     private static final String INSTALLATION_ID = "1179416";
 

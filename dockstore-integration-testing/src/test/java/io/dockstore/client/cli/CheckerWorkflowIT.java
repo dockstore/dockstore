@@ -60,7 +60,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(TestStatus.class)
 @org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
 @org.junit.jupiter.api.Tag(WorkflowTest.NAME)
-public class CheckerWorkflowIT extends BaseIT {
+class CheckerWorkflowIT extends BaseIT {
 
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());

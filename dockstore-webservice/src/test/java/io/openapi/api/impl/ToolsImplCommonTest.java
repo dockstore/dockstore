@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
  * @author wshands
  * @since 07/06/22
  */
-public class ToolsImplCommonTest {
+class ToolsImplCommonTest {
     private static final String PLACEHOLDER_CONTENT = "potato";
     private static DockstoreWebserviceConfiguration actualConfig = new DockstoreWebserviceConfiguration();
 

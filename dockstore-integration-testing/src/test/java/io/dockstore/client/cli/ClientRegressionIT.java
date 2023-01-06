@@ -59,7 +59,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(RegressionTest.NAME)
-public class ClientRegressionIT extends BaseIT {
+class ClientRegressionIT extends BaseIT {
     @TempDir
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     private static File dockstore;

@@ -65,7 +65,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @org.junit.jupiter.api.Tag(BitBucketTest.NAME)
-public class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
+class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());

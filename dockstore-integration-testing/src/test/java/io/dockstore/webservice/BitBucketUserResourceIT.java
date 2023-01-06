@@ -50,7 +50,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(BitBucketTest.NAME)
-public class BitBucketUserResourceIT extends BaseIT {
+class BitBucketUserResourceIT extends BaseIT {
 
 
     @SystemStub

@@ -78,7 +78,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Tag(WorkflowTest.NAME)
-public class GeneralWorkflowIT extends BaseIT {
+class GeneralWorkflowIT extends BaseIT {
 
     private static final String DUMMY_DOI = "10.foo/bar";
 

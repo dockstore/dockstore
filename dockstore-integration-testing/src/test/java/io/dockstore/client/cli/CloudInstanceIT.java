@@ -29,7 +29,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
-public class CloudInstanceIT extends BaseIT {
+class CloudInstanceIT extends BaseIT {
     public static final CloudInstance.PartnerEnum MODIFIED_MEMBER_PARTNER_1 = CloudInstance.PartnerEnum.DNA_STACK;
     public static final CloudInstance.PartnerEnum MEMBER_PARTNER_2 = CloudInstance.PartnerEnum.DNA_NEXUS;
     public static final CloudInstance.PartnerEnum MODIFIED_ADMIN_PARTNER_1 = CloudInstance.PartnerEnum.CGC;

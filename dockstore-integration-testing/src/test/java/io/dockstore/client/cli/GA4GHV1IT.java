@@ -40,7 +40,7 @@ import org.junit.jupiter.api.Test;
  * @author gluu
  * @since 19/04/17
  */
-public class GA4GHV1IT extends GA4GHIT {
+class GA4GHV1IT extends GA4GHIT {
     private static final String API_VERSION = "api/ga4gh/v1/";
 
     public String getApiVersion() {

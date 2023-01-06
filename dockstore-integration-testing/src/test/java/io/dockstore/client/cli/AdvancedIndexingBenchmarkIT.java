@@ -72,7 +72,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @Tag(ToolTest.NAME)
 @Disabled("more like benchmarking than a test per say")
 @ExtendWith(SystemStubsExtension.class)
-public class AdvancedIndexingBenchmarkIT extends BaseIT {
+class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     private static final int TOOL_COUNT = 10;
     private static final int MAX_LABELS_PER_TOOL = 5;

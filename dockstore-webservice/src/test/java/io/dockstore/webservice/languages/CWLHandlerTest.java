@@ -47,7 +47,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @since 1.5.0
  */
 @ExtendWith(SystemStubsExtension.class)
-public class CWLHandlerTest {
+class CWLHandlerTest {
 
     private Set<String> toValues(Set<FileFormat> formats) {
         return formats.stream().map(FileFormat::getValue).collect(Collectors.toSet());

@@ -65,7 +65,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(RegressionTest.NAME)
-public class GeneralWorkflowRegressionIT extends BaseIT {
+class GeneralWorkflowRegressionIT extends BaseIT {
     public static final String KNOWN_BREAKAGE_MOVING_TO_1_6_0 = "Known breakage moving to 1.6.0";
     public static final String KNOWN_BREAKAGE_MOVING_TO_1_9_0 = "Known breakage moving to 1.9.0";
 

@@ -48,7 +48,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
 @Tag(BitBucketTest.NAME)
-public class BitBucketExtendedNextflowIT extends BaseIT {
+class BitBucketExtendedNextflowIT extends BaseIT {
 
     // bitbucket workflow
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW =
