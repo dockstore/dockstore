@@ -471,7 +471,7 @@ public class CWLHandlerTest {
         return version;
     }
 
-    private static String twoVersion;
+    private static String manyVersion;
     private static String oneVersion;
     private static String noVersion;
     private static List<String> versionVersions;
@@ -484,21 +484,27 @@ public class CWLHandlerTest {
         CWLHandler cwlHandler = new CWLHandler();
 
         final String resourceRoot = "multi-version-cwl";
-        final SourceFile twoFile = mockMethodSetTypeVersion(mockSourceFile(resourceRoot, "/two-version.cwl"), v -> twoVersion = v);
+        final SourceFile manyFile = mockMethodSetTypeVersion(mockSourceFile(resourceRoot, "/many-version.cwl"), v -> manyVersion = v);
         final SourceFile oneFile = mockMethodSetTypeVersion(mockSourceFile(resourceRoot, "/one-version.cwl"), v -> oneVersion = v);
         final SourceFile noFile = mockMethodSetTypeVersion(mockSourceFile(resourceRoot, "/no-version.cwl"), v -> noVersion = v);
 
-        twoVersion = "bogus";
+        // Test multiple files containing many versions.
+        manyVersion = "bogus";
         oneVersion = "bogus";
         noVersion = "bogus";
         versionVersions = List.of("bogus");
-
         final Version version = mockMethodSetDescriptorTypeVersions(Mockito.mock(Version.class), v -> versionVersions = v);
-        cwlHandler.parseWorkflowContent(twoFile.getPath(), twoFile.getContent(), Set.of(twoFile, oneFile, noFile), version);
-
-        Assert.assertEquals("v1.0.dev4", twoVersion);
-        Assert.assertEquals("v1.0", oneVersion);
+        cwlHandler.parseWorkflowContent(manyFile.getPath(), manyFile.getContent(), Set.of(manyFile, oneFile, noFile), version);
+        Assert.assertEquals("v1.0", manyVersion);
+        Assert.assertEquals("v1.1", oneVersion);
         Assert.assertEquals(null, noVersion);
-        Assert.assertEquals(List.of("v1.0", "v1.0.dev4", "sbg:draft-2"), versionVersions);
+        Assert.assertEquals(List.of("v1.1", "v1.0", "v1.0.dev4", "draft-3.dev5", "sbg:draft-2"), versionVersions);
+
+        // Test one file containing no versions.
+        noVersion = "bogus";
+        versionVersions = List.of("bogus");
+        cwlHandler.parseWorkflowContent(noFile.getPath(), noFile.getContent(), Set.of(noFile), version);
+        Assert.assertEquals(null, noVersion);
+        Assert.assertEquals(List.of(), versionVersions);
     }
 }
