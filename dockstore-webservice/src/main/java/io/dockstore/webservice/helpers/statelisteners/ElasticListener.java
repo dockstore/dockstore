@@ -312,11 +312,12 @@ public class ElasticListener implements StateListenerInterface {
      * @throws IOException  Mapper problems
      */
     public static JsonNode dockstoreEntryToElasticSearchObject(final Entry entry) throws IOException {
+        // TODO: avoid loading all versions to calculate verified and descriptor type versions
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
-        Entry detachedEntry = removeIrrelevantProperties(entry);
         List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
+        Entry detachedEntry = removeIrrelevantProperties(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
         ((ObjectNode)jsonNode).put("stars_count", (long) entry.getStarredUsers().size());
@@ -486,9 +487,9 @@ public class ElasticListener implements StateListenerInterface {
 
     private static List<String> getDistinctDescriptorTypeVersions(Entry entry, Set<? extends Version> workflowVersions) {
         String language;
-        if (entry instanceof Tool && ((Tool)entry).getDescriptorType().size() == 1) {
+        if (entry instanceof Tool tool && tool.getDescriptorType().size() == 1) {
             // Only set descriptor type versions if there's one descriptor type otherwise we can't tell which version belongs to which type without looking at the source files
-            language = ((Tool)entry).getDescriptorType().get(0);
+            language = tool.getDescriptorType().get(0);
         } else if (entry instanceof BioWorkflow || entry instanceof AppTool) {
             language = ((Workflow)entry).getDescriptorType().toString();
         } else {
@@ -496,13 +497,12 @@ public class ElasticListener implements StateListenerInterface {
         }
 
         // Get a list of unique descriptor type versions with the descriptor type prepended. Ex: 'WDL 1.0'
-        List<String> descriptorTypeVersions = workflowVersions.stream()
+        return workflowVersions.stream()
                 .map(workflowVersion -> (List<String>)workflowVersion.getDescriptorTypeVersions())
                 .flatMap(List::stream)
                 .distinct()
                 .map(descriptorTypeVersion -> String.join(" ", language, descriptorTypeVersion))
-                .collect(Collectors.toList());
-        return descriptorTypeVersions;
+                .toList();
     }
 
     /**
