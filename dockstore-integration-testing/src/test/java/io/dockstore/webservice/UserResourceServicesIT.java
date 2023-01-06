@@ -16,11 +16,11 @@
 
 package io.dockstore.webservice;
 
-import static io.dockstore.common.Hoverfly.SERVICES_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.SUFFIX1;
 import static io.dockstore.common.Hoverfly.SUFFIX2;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.TestingPostgres;
@@ -29,23 +29,24 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.specto.hoverfly.junit.rule.HoverflyRule;
+import io.specto.hoverfly.junit.core.HoverflyMode;
+import io.specto.hoverfly.junit5.HoverflyExtension;
+import io.specto.hoverfly.junit5.api.HoverflyCore;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Tests services endpoints from UserResource
@@ -58,12 +59,16 @@ import org.junit.rules.ExpectedException;
  * installation id, installing it for one org, installing it for a repo but not an org.
  * <p>
  * That said, we probably should have non-mocked tests as well.
+ *
+ * TODO: this class has no tests but was like this before 1.14.0, not sure what is going on here
  */
-@Category(NonConfidentialTest.class)
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
+@ExtendWith(HoverflyExtension.class)
+@HoverflyCore(mode = HoverflyMode.SIMULATE)
 @Tag(NonConfidentialTest.NAME)
 public class UserResourceServicesIT {
-    @ClassRule
-    public static final HoverflyRule HOVERFLY_RULE = HoverflyRule.inSimulationMode(SERVICES_SIMULATION_SOURCE);
+
     private static final long GITHUB_USER1_ID = 1L;
     private static final long GITHUB_USER2_ID = 2L;
     // These are not from Hoverfly, it's actually in the starting database
@@ -76,34 +81,31 @@ public class UserResourceServicesIT {
         DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH, ConfigOverride.config("gitHubAppId", GITHUB_APP_ID),
         ConfigOverride.config("gitHubAppPrivateKeyFile", "./src/test/resources/integrationtest.pem"));
     private static TestingPostgres testingPostgres;
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
-    @BeforeClass
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+
+    @BeforeAll
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, DROPWIZARD_CONFIGURATION_FILE_PATH);
         SUPPORT.before();
         testingPostgres = new TestingPostgres(SUPPORT);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();
     }
 
-    @After
+    @AfterEach
     public void after() throws InterruptedException {
         BaseIT.assertNoMetricsLeaks(SUPPORT);
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false, DROPWIZARD_CONFIGURATION_FILE_PATH);
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
