@@ -183,6 +183,20 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return version;
     }
 
+    /**
+     * Examine the specified set of SourceFiles for CWL language versions,
+     * set the language version of each SourceFile, and set the list of
+     * language versions of the specified Version.
+     *
+     * In CWL, each SourceFile can contain multiple tools or subworkflows,
+     * each with its own version.  If a SourceFile specifies multiple CWL
+     * versions, the language version is set to the "latest" version per
+     * the list at the bottom of:
+     * https://www.commonwl.org/v1.2/CommandLineTool.html#CWLVersion
+     *
+     * The list of language versions for a given Version is sorted
+     * in descending order, from "latest" to "earliest".
+     */
     private void setCwlVersionsFromSourceFiles(Set<SourceFile> sourceFiles, Version version) {
         Set<String> allVersions = new HashSet<>();
         for (SourceFile file: sourceFiles) {
@@ -195,12 +209,21 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         version.setDescriptorTypeVersions(sortVersionsDescending(allVersions));
     }
 
+    /**
+     * Extract the set of CWL language versions that appear in the
+     * specified SourceFile.
+     */
     private Set<String> getCwlVersionsFromSourceFile(SourceFile file) {
         Set<String> versions = new HashSet<>();
         getCwlVersionsFromMap(versions, parseAsMap(file.getContent()));
         return versions;
     }
 
+    /**
+     * Recursively examine the parsed YAML Map/List representation of
+     * a CWL file, interpreting the string value of any Map entry with
+     * the key "cwlVersion" as a language version.
+     */
     private void getCwlVersionsFromMap(Set<String> versions, Map<String, Object> map) {
         map.forEach((k, v) -> {
             if (Objects.equals(k, "cwlVersion") && v instanceof String) {
@@ -215,6 +238,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return sortVersionsDescending(versions).stream().findFirst().orElse(null);
     }
 
+    /**
+     * Sort the specified set of versions in descending order, from
+     * "latest" to "earliest", per the list at the bottom of:
+     * https://www.commonwl.org/v1.2/CommandLineTool.html#CWLVersion
+     *
+     * Since the pattern of CWL versions is to suffix the version number
+     * for development releases, and then use the unsuffixed version number
+     * for the "production" release, we generate sort keys by appending the
+     * maximum value Unicode character to each version.  We also strip off
+     * any "sbg:" prefix, because files with CWL versions like "sbg:draft-2"
+     * are known to exist.
+     */
     private List<String> sortVersionsDescending(Set<String> versions) {
         return versions.stream().sorted(Comparator.comparing((String s) -> s.replace("sbg:", "") + "\uffff").reversed()).collect(Collectors.toList());
     }
