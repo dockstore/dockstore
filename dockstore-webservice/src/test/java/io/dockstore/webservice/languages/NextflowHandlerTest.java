@@ -8,6 +8,7 @@ import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.DockerParameter;
 import io.dropwizard.testing.FixtureHelpers;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import org.junit.jupiter.api.Test;
 
@@ -50,5 +51,16 @@ class NextflowHandlerTest {
                 assertEquals(DockerImageReference.LITERAL, entry.getValue().imageReference());
             }
         });
+    }
+
+    @Test
+    void testDslVersion() {
+        final NextflowHandler nextflowHandler = new NextflowHandler();
+        final String dsl1Content = FixtureHelpers.fixture("fixtures/dsl1.nf");
+        final String dsl2Content = FixtureHelpers.fixture("fixtures/dsl2.nf");
+        final String implicitDslContent = FixtureHelpers.fixture("fixtures/implicitDsl.nf");
+        assertEquals("1", nextflowHandler.getDslVersion(dsl1Content).get());
+        assertEquals("2", nextflowHandler.getDslVersion(dsl2Content).get());
+        assertEquals(Optional.empty(), nextflowHandler.getDslVersion(implicitDslContent));
     }
 }

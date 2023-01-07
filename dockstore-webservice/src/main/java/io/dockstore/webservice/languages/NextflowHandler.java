@@ -18,6 +18,7 @@ package io.dockstore.webservice.languages;
 import com.google.common.base.CharMatcher;
 import groovyjarjarantlr.RecognitionException;
 import groovyjarjarantlr.TokenStreamException;
+import groovyjarjarantlr.collections.AST;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.DockerParameter;
@@ -92,7 +93,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             final Optional<SourceFile> potentialScript = findSourceFileByPath(sourceFiles, mainScriptPath);
             if (potentialScript.isPresent()) {
                 String helpMessage = getHelpMessage(potentialScript.get().getContent());
-                // abitrarily follow description, markdown looks funny without the line breaks
+                // arbitrarily follow description, markdown looks funny without the line breaks
                 if (!StringUtils.isEmpty(helpMessage)) {
                     helpMessage = "\n\n" + helpMessage;
                 }
@@ -519,7 +520,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      *
      * @param mainDescriptor content
      * @param keyword        keyword to lookup
-     * @return nodes with the suspectec content
+     * @return nodes with the suspect content
      * @throws RecognitionException
      * @throws TokenStreamException
      * @throws IOException
@@ -621,6 +622,45 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             LOG.warn("could not parse", e);
         }
         return map;
+    }
+
+    /**
+     * Looks for a line like <code>nextflow.enable.dsl=2</code>, and returns the value, 2 in this
+     * case.
+     * @param fileContent
+     * @return
+     */
+    protected Optional<String> getDslVersion(String fileContent) {
+        try {
+            List<GroovySourceAST> assignmentsAst = getGroovySourceASTList(fileContent, "=");
+            final Optional<String> dslVersion = assignmentsAst.stream()
+                .filter(equalsAst -> {
+                    final AST firstDotAst = equalsAst.getFirstChild();
+                    if (isNodeText(firstDotAst, ".")) {
+                        final AST secondDotAst = firstDotAst.getFirstChild();
+                        if (isNodeText(secondDotAst, ".")) {
+                            final AST nextflowAst = secondDotAst.getFirstChild();
+                            if (isNodeText(nextflowAst, "nextflow")) {
+                                final AST enableAst = nextflowAst.getNextSibling();
+                                if (isNodeText(enableAst, "enable")) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    return false;
+                })
+                .map(ast -> ast.getFirstChild().getNextSibling().getText())
+                .findFirst();
+            return dslVersion;
+        } catch (IOException | TokenStreamException | RecognitionException e) {
+            LOG.warn("could not parse", e);
+        }
+        return Optional.empty();
+    }
+
+    private boolean isNodeText(AST node, String text) {
+        return node != null && text.equals(node.getText());
     }
 
     @Override
