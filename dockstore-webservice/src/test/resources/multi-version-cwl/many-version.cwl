@@ -34,7 +34,7 @@ steps:
 
   step3:
     run:
-      cwlVersion: "draft-3.dev5"
+      cwlVersion: "v1.2"
       class: CommandLineTool
       inputs: []
       outputs: []
