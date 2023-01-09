@@ -147,7 +147,7 @@ public class TokenResourceIT {
      * For a non-existing user, checks that two tokens (Dockstore and Google) were created
      */
     @Test
-    public void getGoogleTokenNewUser(Hoverfly hoverfly) {
+    void getGoogleTokenNewUser(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.TokenAuth token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
@@ -201,7 +201,7 @@ public class TokenResourceIT {
      * We should generate something sane then let the user change their name.
      */
     @Test
-    public void testNinjaedGitHubUser(Hoverfly hoverfly) {
+    void testNinjaedGitHubUser(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         tokensApi1.addToken(getSatellizer(SUFFIX1, true));
@@ -236,7 +236,7 @@ public class TokenResourceIT {
         assertEquals("better.name", usersApi2.changeUsername("better.name").getUsername());
     }
     @Test
-    public void testNullGithubUser(Hoverfly hoverfly) {
+    void testNullGithubUser(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         try {
@@ -248,7 +248,7 @@ public class TokenResourceIT {
     }
 
     @Test
-    public void testAddGithubUserWithInvalidJson(Hoverfly hoverfly) {
+    void testAddGithubUserWithInvalidJson(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         try {
@@ -267,7 +267,7 @@ public class TokenResourceIT {
      * Account 3: GitHub-created Dockstore account that is called GITHUB_ACCOUNT_USERNAME and has GITHUB_ACCOUNT_USERNAME GitHub account linked
      */
     @Test
-    public void loginRegisterTestWithMultipleAccounts(Hoverfly hoverfly) {
+    void loginRegisterTestWithMultipleAccounts(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
@@ -294,7 +294,7 @@ public class TokenResourceIT {
     }
 
     @Test
-    public void adminsAndCuratorsMayNotLoginWithGoogle(Hoverfly hoverfly) {
+    void adminsAndCuratorsMayNotLoginWithGoogle(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
@@ -324,7 +324,7 @@ public class TokenResourceIT {
     }
 
     @Test
-    public void recreateAccountsAfterSelfDestruct(Hoverfly hoverfly) {
+    void recreateAccountsAfterSelfDestruct(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
@@ -444,7 +444,7 @@ public class TokenResourceIT {
      */
     @Test
     @Disabled("this is probably different now, todo")
-    public void getGoogleTokenCase135(Hoverfly hoverfly) {
+    void getGoogleTokenCase135(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.TokenAuth case5Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
@@ -484,7 +484,7 @@ public class TokenResourceIT {
      */
     @Test
     @Disabled("this is probably different now, todo")
-    public void getGoogleTokenCase24(Hoverfly hoverfly) {
+    void getGoogleTokenCase24(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi unauthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.TokenAuth token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
@@ -531,7 +531,7 @@ public class TokenResourceIT {
      */
     @Test
     @Disabled("this is probably different now, todo")
-    public void getGoogleTokenCase6(Hoverfly hoverfly) {
+    void getGoogleTokenCase6(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
         tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
@@ -558,7 +558,7 @@ public class TokenResourceIT {
      * For an existing user without a Google token, checks that a token (Google) was created exactly once.
      */
     @Test
-    public void getGoogleTokenExistingUserNoGoogleToken(Hoverfly hoverfly) {
+    void getGoogleTokenExistingUserNoGoogleToken(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         // check that the user has the correct one token
         List<Token> byUserId = tokenDAO.findByUserId(getFakeUser().getId());
@@ -587,7 +587,7 @@ public class TokenResourceIT {
      * For an existing user with a Google token, checks that no tokens were created
      */
     @Test
-    public void getGoogleTokenExistingUserWithGoogleToken(Hoverfly hoverfly) {
+    void getGoogleTokenExistingUserWithGoogleToken(Hoverfly hoverfly) {
         hoverfly.simulate(SIMULATION_SOURCE);
         // check that the user has the correct one token
         long id = getFakeUser().getId();

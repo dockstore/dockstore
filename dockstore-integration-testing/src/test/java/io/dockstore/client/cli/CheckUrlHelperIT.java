@@ -42,12 +42,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(HoverflyExtension.class)
 @HoverflyCore(mode = HoverflyMode.SIMULATE, config = @HoverflyConfig(destination = CheckUrlHelperIT.FAKE_CHECK_URL_LAMBDA_BASE_URL))
-public class CheckUrlHelperIT {
+class CheckUrlHelperIT {
 
     public static final String FAKE_CHECK_URL_LAMBDA_BASE_URL = "http://fakecheckurllambdabaseurl:3000";
 
     @Test
-    public void checkUrlsFromLambdaGood(Hoverfly hoverfly) throws IOException {
+    void checkUrlsFromLambdaGood(Hoverfly hoverfly) throws IOException {
         hoverfly.simulate(CHECK_URL_SOURCE);
         Map<String, String> state = new HashMap<>();
         state.put("status", "good");
@@ -61,7 +61,7 @@ public class CheckUrlHelperIT {
     }
 
     @Test
-    public void checkUrlsFromLambdaBad(Hoverfly hoverfly) throws IOException {
+    void checkUrlsFromLambdaBad(Hoverfly hoverfly) throws IOException {
         hoverfly.simulate(CHECK_URL_SOURCE);
         Map<String, String> state = new HashMap<>();
         state.put("status", "bad");
@@ -75,7 +75,7 @@ public class CheckUrlHelperIT {
     }
 
     @Test
-    public void checkUrlsFromLambdaSomeBad(Hoverfly hoverfly) throws IOException {
+    void checkUrlsFromLambdaSomeBad(Hoverfly hoverfly) throws IOException {
         hoverfly.simulate(CHECK_URL_SOURCE);
         Map<String, String> state = new HashMap<>();
         state.put("status", "someGoodSomeBad");
@@ -89,7 +89,7 @@ public class CheckUrlHelperIT {
     }
 
     @Test
-    public void checkUrlsFromLambdaTerriblyWrong(Hoverfly hoverfly) throws IOException {
+    void checkUrlsFromLambdaTerriblyWrong(Hoverfly hoverfly) throws IOException {
         hoverfly.simulate(CHECK_URL_SOURCE);
         Map<String, String> state = new HashMap<>();
         state.put("status", "terriblyWrong");

@@ -40,7 +40,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Tag(NonConfidentialTest.NAME)
 @ExtendWith(HoverflyExtension.class)
 @HoverflyCore(mode = HoverflyMode.SIMULATE)
-public class ORCIDHelperTest {
+class ORCIDHelperTest {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
@@ -60,7 +60,7 @@ public class ORCIDHelperTest {
     }
 
     @Test
-    public void exportEntry(Hoverfly hoverfly) throws JAXBException, IOException, DatatypeConfigurationException, URISyntaxException, InterruptedException {
+    void exportEntry(Hoverfly hoverfly) throws JAXBException, IOException, DatatypeConfigurationException, URISyntaxException, InterruptedException {
         // This simulation assumes that the work that's trying to be created does not exist on orcid yet
         hoverfly.simulate(ORCID_SIMULATION_SOURCE);
         Workflow entry = new BioWorkflow();
@@ -98,7 +98,7 @@ public class ORCIDHelperTest {
     }
 
     @Test
-    public void testOrcidAuthor(Hoverfly hoverfly) throws URISyntaxException, IOException, InterruptedException {
+    void testOrcidAuthor(Hoverfly hoverfly) throws URISyntaxException, IOException, InterruptedException {
         // This simulation assumes that the work that's trying to be created does not exist on orcid yet
         hoverfly.simulate(ORCID_SIMULATION_SOURCE);
         Optional<String> accessToken = ORCIDHelper.getOrcidAccessToken();
