@@ -95,7 +95,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     /**
      * A regular expression that matches all CWL version strings that we want to register as language versions.
      */
-    private static final String LANGUAGE_VERSION_REGEX = "v[1-9].[0-9][0-9]?";
+    private static final String LANGUAGE_VERSION_REGEX = "v1.[0-9]";
     private static final Pattern LANGUAGE_VERSION_PATTERN = Pattern.compile(LANGUAGE_VERSION_REGEX);
 
     @Override
@@ -256,7 +256,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     /**
      * Create a sort key for the specified version string.
-     * The version string is expected to be in the form 'vR', where R represents a semantic release number.
+     * The version string is expected to be in the form 'vD.D', where D is a decimal number.
      * If it is not, a value representing release '0.0.0' is returned, allowing the sort to proceed.
      */
     private com.github.zafarkhaja.semver.Version convertVersionToSortKey(String version) {
@@ -265,7 +265,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             LOG.error("Version '{}' does not begin with 'v'", version);
             return errorValue;
         }
-        final String release = version.substring(1);
+        final String release = version.substring(1) + ".0";
         try {
             return com.github.zafarkhaja.semver.Version.valueOf(release);
         } catch (IllegalArgumentException | UnexpectedCharacterException | LexerException | UnexpectedTokenException ex) {
