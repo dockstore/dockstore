@@ -16,7 +16,10 @@
 package io.dockstore.webservice.languages;
 
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.NonConfidentialTest;
@@ -31,20 +34,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * This test does not require confidential data.
@@ -53,8 +53,10 @@ import org.junit.runner.Description;
  * @author dyuen
  * @since 1.9.0
  */
-@Category(NonConfidentialTest.class)
-public class NoPluginIT {
+@Tag(NonConfidentialTest.NAME)
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
+class NoPluginIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;
 
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
@@ -71,53 +73,39 @@ public class NoPluginIT {
     }
 
     private static TestingPostgres testingPostgres;
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
 
-    @BeforeClass
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+
+    @BeforeAll
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, DROPWIZARD_CONFIGURATION_FILE_PATH);
         SUPPORT.before();
         testingPostgres = new TestingPostgres(SUPPORT);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false, DROPWIZARD_CONFIGURATION_FILE_PATH);
     }
 
     @Test
-    public void testNoLanguagePlugins() {
+    void testNoLanguagePlugins() {
         MetadataApi metadataApi = new MetadataApi(getWebClient(false, "n/a", testingPostgres));
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         // by default, Dockstore should handle CWL, WDL, NEXTFLOW but no plugin languages
-        Assert.assertTrue(
-            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
-        Assert.assertTrue(
-            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.WDL.getFriendlyName())));
-        Assert.assertTrue(
-            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.NEXTFLOW.getFriendlyName())));
-        Assert.assertFalse(
-            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.GXFORMAT2.getFriendlyName())));
-        Assert.assertFalse(
-            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.SWL.getFriendlyName())));
+        assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
+        assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.WDL.getFriendlyName())));
+        assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.NEXTFLOW.getFriendlyName())));
+        assertFalse(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.GXFORMAT2.getFriendlyName())));
+        assertFalse(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.SWL.getFriendlyName())));
     }
 }

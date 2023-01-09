@@ -20,4 +20,10 @@ package io.dockstore.common;
  * Also isolating the tests that require Python for now.
  */
 public interface LanguageParsingTest {
+    String NAME = "io.dockstore.common.LanguageParsingTest";
+
+    default String getName() {
+        // silly method to satisfy CheckStyle
+        return NAME;
+    }
 }

@@ -928,7 +928,7 @@ public abstract class AbstractImageRegistry {
             } else {
                 // If test json, must grab all
                 List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == f)
-                    .collect(Collectors.toList());
+                    .toList();
                 cwlTestJson.forEach(file -> sourceCodeRepo.readFile(repositoryId, tag, files, f, file.getPath()));
             }
         }

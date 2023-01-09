@@ -21,13 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.webservice.core.BioWorkflow;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
  * @author dyuen
  */
-@Category(BitBucketTest.class)
+@Tag(BitBucketTest.NAME)
 class BitBucketSourceCodeRepoFactoryTest {
 
     /**

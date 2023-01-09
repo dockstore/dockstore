@@ -19,4 +19,10 @@ package io.dockstore.common;
  * Setting aside tests that require our confidential data bundles
  */
 public interface ConfidentialTest {
+    String NAME = "io.dockstore.common.ConfidentialTest";
+
+    default String getName() {
+        // silly method to satisfy CheckStyle
+        return NAME;
+    }
 }

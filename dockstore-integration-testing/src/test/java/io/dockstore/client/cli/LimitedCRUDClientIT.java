@@ -18,12 +18,13 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 
 import com.google.common.collect.Lists;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -51,27 +52,27 @@ import java.util.List;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Tests CRUD style operations for tools and workflows hosted directly on Dockstore
  *
  * @author dyuen, agduncan
  */
-@Category(ConfidentialTest.class)
-public class LimitedCRUDClientIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
+@Tag(ConfidentialTest.NAME)
+class LimitedCRUDClientIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
     /**
@@ -84,37 +85,27 @@ public class LimitedCRUDClientIT {
      */
     public static final int SYSTEM_LIMIT = 10;
     private static TestingPostgres testingPostgres;
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     //TODO: duplicates BaseIT but with a different config file, attempt to simplify after release
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
 
-    @BeforeClass
+    @BeforeAll
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
         testingPostgres = new TestingPostgres(SUPPORT);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();
     }
 
-    @Before
+    @BeforeEach
     public void resetDBAndAdminUserLimitsBetweenTests() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
 
@@ -127,21 +118,21 @@ public class LimitedCRUDClientIT {
     }
 
     @Test
-    public void testToolCreation() {
+    void testToolCreation() {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
-        assertNotNull("tool was not created properly", hostedTool);
+        assertNotNull(hostedTool, "tool was not created properly");
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
-        assertEquals("One user should belong to this tool, yourself", 1, hostedTool.getUsers().size());
+        assertEquals(1, hostedTool.getUsers().size(), "One user should belong to this tool, yourself");
         hostedTool.getUsers().forEach(user -> {
-            assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles());
+            assertNotNull(user.getUserProfiles(), "createHostedTool() endpoint should have user profiles");
         });
 
         hostedTool.getUsers().forEach(user -> user.setUserProfiles(null));
 
-        assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
+        assertEquals(hostedTool.getId() != 0, true, "tool was not created with a valid id");
         // can get it back with regular api
         ContainersApi oldApi = new ContainersApi(webClient);
         DockstoreTool container = oldApi.getContainer(hostedTool.getId(), null);
@@ -157,12 +148,11 @@ public class LimitedCRUDClientIT {
                 null);
         }
 
-        thrown.expect(ApiException.class);
-        api.createHostedTool("awesomeTool" + 10, Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+        assertThrows(ApiException.class, () -> api.createHostedTool("awesomeTool" + 10, Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null));
     }
 
     @Test
-    public void testOverrideEntryLimit() {
+    void testOverrideEntryLimit() {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
 
@@ -174,9 +164,9 @@ public class LimitedCRUDClientIT {
         usersApi.setUserLimits(user.getId(), limits);
         DockstoreTool hostedTool = api
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
-        assertNotNull("tool was not created properly", hostedTool);
+        assertNotNull(hostedTool, "tool was not created properly");
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
-        assertEquals("One user should belong to this tool, yourself", 1, hostedTool.getUsers().size());
+        assertEquals(1, hostedTool.getUsers().size(), "One user should belong to this tool, yourself");
 
         // test repeated workflow creation up to limit
         for (int i = 1; i <= NEW_LIMITS - 1; i++) {
@@ -184,13 +174,12 @@ public class LimitedCRUDClientIT {
                 null);
         }
 
-        thrown.expect(ApiException.class);
-        api.createHostedTool("awesomeTool" + NEW_LIMITS, Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(),
-            "coolNamespace", null);
+        assertThrows(ApiException.class, () -> api.createHostedTool("awesomeTool" + NEW_LIMITS, Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(),
+            "coolNamespace", null));
     }
 
     @Test
-    public void testToolVersionCreation() throws IOException {
+    void testToolVersionCreation() throws IOException {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
@@ -206,12 +195,11 @@ public class LimitedCRUDClientIT {
             api.editHostedTool(hostedTool.getId(), sourceFiles);
         }
 
-        thrown.expect(ApiException.class);
-        api.editHostedTool(hostedTool.getId(), sourceFiles);
+        assertThrows(ApiException.class, () ->  api.editHostedTool(hostedTool.getId(), sourceFiles));
     }
 
     @Test
-    public void testGettingDescriptorType() throws IOException {
+    void testGettingDescriptorType() throws IOException {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
@@ -229,7 +217,7 @@ public class LimitedCRUDClientIT {
     }
 
     @Test
-    public void testOverrideVersionLimit() throws IOException {
+    void testOverrideVersionLimit() throws IOException {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
 
         // Change limits for current user
@@ -257,12 +245,11 @@ public class LimitedCRUDClientIT {
             api.editHostedTool(hostedTool.getId(), sourceFiles);
         }
 
-        thrown.expect(ApiException.class);
-        api.editHostedTool(hostedTool.getId(), sourceFiles);
+        assertThrows(ApiException.class, () -> api.editHostedTool(hostedTool.getId(), sourceFiles));
     }
 
     @Test
-    public void testUploadZipHonorsVersionLimit() {
+    void testUploadZipHonorsVersionLimit() {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
         final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
@@ -271,9 +258,7 @@ public class LimitedCRUDClientIT {
         for (int i = 0; i < SYSTEM_LIMIT; i++) {
             hostedApi.addZip(hostedWorkflow.getId(), smartSeqFile);
         }
-        thrown.expect(ApiException.class);
-        hostedApi.addZip(hostedWorkflow.getId(), smartSeqFile);
-
+        assertThrows(ApiException.class, () -> hostedApi.addZip(hostedWorkflow.getId(), smartSeqFile));
     }
 
     private List<SourceFile> generateSourceFiles(DescriptorLanguage descriptorLanguage) throws IOException {

@@ -16,6 +16,9 @@
 
 package io.dockstore.client.cli;
 
+import static org.junit.Assert.assertThrows;
+
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
@@ -37,13 +40,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Extra confidential integration tests, focuses on proposed GA4GH extensions
@@ -51,8 +56,10 @@ import org.junit.rules.ExpectedException;
  *
  * @author dyuen
  */
-@Category(ConfidentialTest.class)
-public class ExtendedTRSIT extends BaseIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
+@org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
+class ExtendedTRSIT extends BaseIT {
 
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
@@ -61,45 +68,47 @@ public class ExtendedTRSIT extends BaseIT {
     private static final String TRS_ID = "quay.io/dockstoretestuser2/dockstore-cgpmap";
     private static final String VERSION_NAME = "symbolic.v1";
 
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
 
-    @Test(expected = ApiException.class)
-    public void testVerificationOnSourceFileLevelForWorkflowsAsOwner() throws ApiException {
+    @Test
+    void testVerificationOnSourceFileLevelForWorkflowsAsOwner() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         // need to turn off admin of USER_2_USERNAME
         testingPostgres.runUpdateStatement("update enduser set isadmin = 'f' where username = '" + USER_2_USERNAME + "'");
-        testVerificationWithGivenClient(webClient, webClient);
-    }
-
-    @Test(expected = ApiException.class)
-    public void testVerificationOnSourceFileLevelForWorkflowsAsAnon() throws ApiException {
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getAnonymousWebClient());
-    }
-
-    @Test(expected = ApiException.class)
-    public void testVerificationOnSourceFileLevelForWorkflowsAsWrongUser() throws ApiException {
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(USER_1_USERNAME, testingPostgres));
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(OTHER_USERNAME, testingPostgres));
+        assertThrows(ApiException.class, () -> testVerificationWithGivenClient(webClient, webClient));
     }
 
     @Test
-    public void testVerificationOnSourceFileLevelForWorkflowsAsAdmin() throws ApiException {
+    void testVerificationOnSourceFileLevelForWorkflowsAsAnon() throws ApiException {
+        assertThrows(ApiException.class, () -> testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getAnonymousWebClient()));
+    }
+
+    @Test
+    void testVerificationOnSourceFileLevelForWorkflowsAsWrongUser() throws ApiException {
+        assertThrows(ApiException.class, () -> {
+            // this seemed already weird with the first line dying?
+            testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(USER_1_USERNAME, testingPostgres));
+            testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(OTHER_USERNAME, testingPostgres));
+        });
+    }
+
+    @Test
+    void testVerificationOnSourceFileLevelForWorkflowsAsAdmin() throws ApiException {
         // can verify anyone's workflow as an admin
         testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(ADMIN_USERNAME, testingPostgres));
     }
 
     @Test
-    public void testVerificationOnSourceFileLevelForWorkflowsAsCurator() throws ApiException {
+    void testVerificationOnSourceFileLevelForWorkflowsAsCurator() throws ApiException {
         // or as a curator
         testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(curatorUsername, testingPostgres));
     }
@@ -129,29 +138,24 @@ public class ExtendedTRSIT extends BaseIT {
             Map<String, Object> stringObjectMap = extendedGa4GhApi
                 .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, AWESOME_PLATFORM, "2.0.0",
                     "metadata", true);
-            Assert.assertEquals(1, stringObjectMap.size());
+            Assertions.assertEquals(1, stringObjectMap.size());
             stringObjectMap = extendedGa4GhApi
                 .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0",
                     "metadata", true);
-            Assert.assertEquals(2, stringObjectMap.size());
+            Assertions.assertEquals(2, stringObjectMap.size());
 
             // assert some things about map structure
-            Assert.assertTrue("verification information seems off",
-                stringObjectMap.containsKey(AWESOME_PLATFORM) && stringObjectMap.containsKey(CRUMMY_PLATFORM) && stringObjectMap
-                    .get(AWESOME_PLATFORM) instanceof Map && stringObjectMap.get(CRUMMY_PLATFORM) instanceof Map
-                    && ((Map)stringObjectMap.get(AWESOME_PLATFORM)).size() == 3 && ((Map)stringObjectMap.get(AWESOME_PLATFORM))
-                    .get("metadata").equals("metadata"));
-            Assert
-                .assertEquals("AWESOME_PLATFORM has the wrong version", "2.0.0",
-                    ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"));
-            Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", "1.0.0",
-                ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"));
+            Assertions.assertTrue(stringObjectMap.containsKey(AWESOME_PLATFORM) && stringObjectMap.containsKey(CRUMMY_PLATFORM) && stringObjectMap
+                .get(AWESOME_PLATFORM) instanceof Map && stringObjectMap.get(CRUMMY_PLATFORM) instanceof Map
+                && ((Map)stringObjectMap.get(AWESOME_PLATFORM)).size() == 3 && ((Map)stringObjectMap.get(AWESOME_PLATFORM))
+                .get("metadata").equals("metadata"), "verification information seems off");
+            Assertions.assertEquals("2.0.0", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"), "AWESOME_PLATFORM has the wrong version");
+            Assertions.assertEquals("1.0.0", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"), "CRUMMY_PLATFORM has the wrong version");
 
             // verification on a sourcefile level should flow up to to version and entry level
             Ga4GhApi api = new Ga4GhApi(verifyingUser);
             Tool tool = api.toolsIdGet(id);
-            Assert.assertTrue("verification states do not seem to flow up",
-                tool.isVerified() && tool.getVersions().stream().anyMatch(ToolVersion::isVerified));
+            Assertions.assertTrue(tool.isVerified() && tool.getVersions().stream().anyMatch(ToolVersion::isVerified), "verification states do not seem to flow up");
         }
         {
             ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(registeringUser);
@@ -162,12 +166,9 @@ public class ExtendedTRSIT extends BaseIT {
             Map<String, Object> stringObjectMap = extendedGa4GhApi
                 .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0",
                     "new metadata", true);
-            Assert.assertEquals(2, stringObjectMap.size());
-            Assert
-                .assertEquals("AWESOME_PLATFORM has the wrong version", "2.0.0",
-                    ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"));
-            Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", "1.0.0",
-                ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"));
+            Assertions.assertEquals(2, stringObjectMap.size());
+            Assertions.assertEquals("2.0.0", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"), "AWESOME_PLATFORM has the wrong version");
+            Assertions.assertEquals("1.0.0", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"), "CRUMMY_PLATFORM has the wrong version");
         }
 
         {
@@ -179,7 +180,7 @@ public class ExtendedTRSIT extends BaseIT {
             Map<String, Object> stringObjectMap = extendedGa4GhApi
                 .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0",
                     "metadata", null);
-            Assert.assertEquals(0, stringObjectMap.size());
+            Assertions.assertEquals(0, stringObjectMap.size());
         }
     }
 
@@ -188,7 +189,7 @@ public class ExtendedTRSIT extends BaseIT {
      * Also tests that the tag verification endpoint can fix a potential sync issue
      */
     @Test
-    public void testVerificationOnSourceFileLevelForTools() {
+    void testVerificationOnSourceFileLevelForTools() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi containertagsApi = new ContainertagsApi(webClient);
@@ -215,7 +216,7 @@ public class ExtendedTRSIT extends BaseIT {
         Map<String, Object> stringObjectMap = extendedGa4GhApi
             .toolsIdVersionsVersionIdTypeTestsPost("CWL", "quay.io/dockstoretestuser2/dockstore-cgpmap", "symbolic.v1",
                 "/examples/cgpmap/bamOut/bam_input.json", AWESOME_PLATFORM, "2.0.0", "metadata", true);
-        Assert.assertEquals(1, stringObjectMap.size());
+        Assertions.assertEquals(1, stringObjectMap.size());
 
         // see if refresh destroys verification metadata
         registeredTool = toolApi.refresh(registeredTool.getId());
@@ -224,11 +225,9 @@ public class ExtendedTRSIT extends BaseIT {
         stringObjectMap = extendedGa4GhApi
             .toolsIdVersionsVersionIdTypeTestsPost("CWL", TRS_ID, VERSION_NAME, "/examples/cgpmap/bamOut/bam_input.json", "crummy platform",
                 "1.0.0", "metadata", true);
-        Assert.assertEquals(2, stringObjectMap.size());
-        Assert.assertEquals("AWESOME_PLATFORM has the wrong version", "2.0.0",
-            ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"));
-        Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", "1.0.0",
-            ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"));
+        Assertions.assertEquals(2, stringObjectMap.size());
+        Assertions.assertEquals("2.0.0", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"), "AWESOME_PLATFORM has the wrong version");
+        Assertions.assertEquals("1.0.0", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"), "CRUMMY_PLATFORM has the wrong version");
     }
 
     private Tag getSpecificVersion(DockstoreTool dockstoreTool) {
@@ -243,11 +242,11 @@ public class ExtendedTRSIT extends BaseIT {
         Tag tag = getSpecificVersion(dockstoreTool);
         ToolVersion toolVersion = ga4GhApi.toolsIdVersionsVersionIdGet(TRS_ID, VERSION_NAME);
         // Check that it's no longer out of sync in dockstore
-        Assert.assertTrue(tag.isVerified());
-        Assert.assertEquals(Collections.singletonList("metadata"), tag.getVerifiedSources());
+        Assertions.assertTrue(tag.isVerified());
+        Assertions.assertEquals(Collections.singletonList("metadata"), tag.getVerifiedSources());
         // Check that it's no longer out of sync in TRS
-        Assert.assertTrue(toolVersion.isVerified());
-        Assert.assertEquals("[\"metadata\"]", toolVersion.getVerifiedSource());
+        Assertions.assertTrue(toolVersion.isVerified());
+        Assertions.assertEquals("[\"metadata\"]", toolVersion.getVerifiedSource());
     }
 
     private void assertOutOfSync(Long toolId, ContainersApi containersApi, Ga4GhApi ga4GhApi) {
@@ -256,10 +255,10 @@ public class ExtendedTRSIT extends BaseIT {
         Tag tag = getSpecificVersion(dockstoreTool);
         ToolVersion toolVersion = ga4GhApi.toolsIdVersionsVersionIdGet(TRS_ID, VERSION_NAME);
         // Check that it's out of sync in dockstore
-        Assert.assertFalse(tag.isVerified());
-        Assert.assertEquals(new ArrayList<String>(), tag.getVerifiedSources());
+        Assertions.assertFalse(tag.isVerified());
+        Assertions.assertEquals(new ArrayList<String>(), tag.getVerifiedSources());
         // Check that it's out of sync in TRS
-        Assert.assertFalse(toolVersion.isVerified());
-        Assert.assertEquals("[]", toolVersion.getVerifiedSource());
+        Assertions.assertFalse(toolVersion.isVerified());
+        Assertions.assertEquals("[]", toolVersion.getVerifiedSource());
     }
 }

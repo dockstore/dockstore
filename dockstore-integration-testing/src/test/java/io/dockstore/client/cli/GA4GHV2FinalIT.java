@@ -18,8 +18,8 @@ package io.dockstore.client.cli;
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static io.openapi.api.impl.ServiceInfoApiServiceImpl.getService;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
@@ -35,14 +35,13 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author dyuen
  * @since 1.9
  */
-public class GA4GHV2FinalIT extends GA4GHIT {
+class GA4GHV2FinalIT extends GA4GHIT {
     private static final String API_VERSION = "ga4gh/trs/v2/";
 
     public String getApiVersion() {
@@ -57,13 +56,13 @@ public class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     @Override
-    public void testMetadata() throws Exception {
+    void testMetadata() throws Exception {
         // do nothing, this will become service-info when we implement v2.0.1/v2.1
     }
 
     @Test
     @Override
-    public void testTools() throws Exception {
+    void testTools() throws Exception {
         Response response = checkedResponse(baseURL + "tools");
         List<Tool> responseObject = response.readEntity(new GenericType<>() {
         });
@@ -72,39 +71,39 @@ public class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsId() throws Exception {
+    void testToolsId() throws Exception {
         toolsIdTool();
         toolsIdWorkflow();
     }
 
     @Test
-    public void testOnlyPublishedWorkflowsAreReturned() throws Exception {
+    void testOnlyPublishedWorkflowsAreReturned() throws Exception {
         long count = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = 't'", long.class);
         count = count + testingPostgres.runSelectStatement("select count(*) from tool where ispublished = 't'", long.class);
         Response response = checkedResponse(baseURL + "tools");
         List<Tool> responseObject = response.readEntity(new GenericType<>() {
         });
 
-        Assert.assertEquals(count, responseObject.size());
+        assertEquals(count, responseObject.size());
     }
 
     /**
      * TODO: Test organization
      */
     @Test
-    public void serviceInfoTest() {
+    void serviceInfoTest() {
         Response response = checkedResponse(baseURL + "service-info");
         TRSService responseObject = response.readEntity(TRSService.class);
         Service service = getService();
-        Assert.assertEquals(service.getDocumentationUrl(), responseObject.getDocumentationUrl());
-        Assert.assertEquals(service.getContactUrl(), responseObject.getContactUrl());
-        Assert.assertEquals(service.getDescription(), responseObject.getDescription());
-        Assert.assertEquals(service.getEnvironment(), responseObject.getEnvironment());
-        Assert.assertEquals(service.getName(), responseObject.getName());
-        Assert.assertEquals(service.getType().getArtifact(), responseObject.getType().getArtifact());
-        Assert.assertEquals(service.getType().getGroup(), responseObject.getType().getGroup());
-        Assert.assertEquals(service.getType().getVersion(), responseObject.getType().getVersion());
-        Assert.assertEquals(service.getVersion(), responseObject.getVersion());
+        assertEquals(service.getDocumentationUrl(), responseObject.getDocumentationUrl());
+        assertEquals(service.getContactUrl(), responseObject.getContactUrl());
+        assertEquals(service.getDescription(), responseObject.getDescription());
+        assertEquals(service.getEnvironment(), responseObject.getEnvironment());
+        assertEquals(service.getName(), responseObject.getName());
+        assertEquals(service.getType().getArtifact(), responseObject.getType().getArtifact());
+        assertEquals(service.getType().getGroup(), responseObject.getType().getGroup());
+        assertEquals(service.getType().getVersion(), responseObject.getType().getVersion());
+        assertEquals(service.getVersion(), responseObject.getVersion());
     }
 
     private void toolsIdTool() throws Exception {
@@ -112,10 +111,10 @@ public class GA4GHV2FinalIT extends GA4GHIT {
         Tool responseObject = response.readEntity(Tool.class);
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
         // regression test for #1248
-        assertTrue("registry_url should never be null", responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
-            .allMatch(version -> version.getImages().get(0).getRegistryHost() != null));
-        assertTrue("imageName should never be null", responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
-            .allMatch(version -> version.getImages().get(0).getImageName() != null));
+        assertTrue(responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
+            .allMatch(version -> version.getImages().get(0).getRegistryHost() != null), "registry_url should never be null");
+        assertTrue(responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
+            .allMatch(version -> version.getImages().get(0).getImageName() != null), "imageName should never be null");
         // search by id
         response = checkedResponse(baseURL + "tools?id=quay.io%2Ftest_org%2Ftest6");
         List<Tool> responseList = response.readEntity(new GenericType<>() {
@@ -136,7 +135,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersions() throws Exception {
+    void testToolsIdVersions() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions");
         List<ToolVersion> responseObject = response.readEntity(new GenericType<>() {
         });
@@ -145,7 +144,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolClasses() throws Exception {
+    void testToolClasses() throws Exception {
         Response response = checkedResponse(baseURL + "toolClasses");
         List<ToolClass> responseObject = response.readEntity(new GenericType<>() {
         });
@@ -157,14 +156,14 @@ public class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersionsVersionId() throws Exception {
+    void testToolsIdVersionsVersionId() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
         ToolVersion responseObject = response.readEntity(ToolVersion.class);
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     @Test
-    public void testToolsIdVersionsVersionIdFakeVersion() throws Exception {
+    void testToolsIdVersionsVersionIdFakeVersion() throws Exception {
         checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/master%25%27%20AND%20%28SELECT%209506%20FROM%20%28SELECT%28SLEEP%285%29%29%29yafC%29%23", HttpStatus.SC_BAD_REQUEST);
         checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2Fkaushik-work%2Felixir-gwas/versions/master%25%27%20AND%20%28SELECT%209506%20FROM%20%28SELECT%28SLEEP%285%29%29%29yafC%29%23/plain_cwl/descriptor", HttpStatus.SC_BAD_REQUEST);
     }
@@ -204,7 +203,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     @Override
-    public void testRelativePathEndpointToolTestParameterFileJSON() {
+    void testRelativePathEndpointToolTestParameterFileJSON() {
         Response response = checkedResponse(
             baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
@@ -219,7 +218,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     @Override
-    public void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
+    void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
@@ -244,7 +243,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersionsVersionIdTypeTests() throws Exception {
+    void testToolsIdVersionsVersionIdTypeTests() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/tests");
         List<FileWrapper> responseObject = response.readEntity(new GenericType<>() {
         });
@@ -254,7 +253,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersionsVersionIdTypeDockerfile() {
+    void testToolsIdVersionsVersionIdTypeDockerfile() {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/containerfile");
         // note to tester, this seems to intentionally be a list in v2 as opposed to v1
         List<FileWrapper> responseObject = response.readEntity(new GenericType<>() {
@@ -268,13 +267,13 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * This tests the /tools/{id}/versions/{version_id}/{type}/files endpoint
      */
     @Test
-    public void toolsIdVersionsVersionIdTypeFile() throws Exception {
+    void toolsIdVersionsVersionIdTypeFile() throws Exception {
         toolsIdVersionsVersionIdTypeFileCWL();
         toolsIdVersionsVersionIdTypeFileWDL();
     }
 
     @Test
-    public void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
+    void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor//Dockstore.cwl");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
@@ -287,7 +286,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * Tool with non-encoded non-nested cwl test parameter file
      */
     @Test
-    public void relativePathEndpointToolTestParameterFileNoEncode() {
+    void relativePathEndpointToolTestParameterFileNoEncode() {
         Response response = checkedResponse(
             baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor//nested/test.cwl.json");
         String responseObject = response.readEntity(String.class);
@@ -307,7 +306,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * Workflow with non-encoded non-nested cwl test parameter file
      */
     @Test
-    public void relativePathEndpointWorkflowTestParameterFileNoEncode() throws Exception {
+    void relativePathEndpointWorkflowTestParameterFileNoEncode() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
@@ -374,7 +373,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * can be retrieved separately.  In the test database, the author happens to uniquely identify the workflows.
      */
     @Test
-    public void toolsIdGet4Workflows() throws Exception {
+    void toolsIdGet4Workflows() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupSamePathsTest(SUPPORT);
 
@@ -401,12 +400,12 @@ public class GA4GHV2FinalIT extends GA4GHIT {
     }
 
     @Test
-    public void testGetHeaderLinksContainFilters() throws Exception {
+    void testGetHeaderLinksContainFilters() throws Exception {
         Response response = checkedResponse(baseURL + "tools?toolClass=Tool&limit=1");
         MultivaluedMap<String, Object> headers = response.getHeaders();
-        Assert.assertTrue(headers.get("self_link").toString().contains("toolClass=Tool"));
-        Assert.assertTrue(headers.get("last_page").toString().contains("toolClass=Tool"));
-        Assert.assertTrue(headers.get("next_page").toString().contains("toolClass=Tool"));
+        assertTrue(headers.get("self_link").toString().contains("toolClass=Tool"));
+        assertTrue(headers.get("last_page").toString().contains("toolClass=Tool"));
+        assertTrue(headers.get("next_page").toString().contains("toolClass=Tool"));
     }
 
 }

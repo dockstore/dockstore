@@ -37,11 +37,13 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 @Category(ConfidentialTest.class)
+@Tag(ConfidentialTest.NAME)
 public class CheckUrlHelperFullIT {
 
     public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
