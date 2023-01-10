@@ -459,16 +459,16 @@ class CWLHandlerTest {
         versionVersions = List.of("bogus");
         final Version version = mockMethodSetDescriptorTypeVersions(Mockito.mock(Version.class), v -> versionVersions = v);
         cwlHandler.parseWorkflowContent(manyFile.getPath(), manyFile.getContent(), Set.of(manyFile, oneFile, noFile), version);
-        Assert.assertEquals("v1.2", manyVersion);
-        Assert.assertEquals("v1.1", oneVersion);
-        Assert.assertEquals(null, noVersion);
-        Assert.assertEquals(List.of("v1.2", "v1.1", "v1.0"), versionVersions);
+        assertEquals("v1.2", manyVersion);
+        assertEquals("v1.1", oneVersion);
+        assertEquals(null, noVersion);
+        assertEquals(List.of("v1.2", "v1.1", "v1.0"), versionVersions);
 
         // Test one file containing no versions.
         noVersion = "bogus";
         versionVersions = List.of("bogus");
         cwlHandler.parseWorkflowContent(noFile.getPath(), noFile.getContent(), Set.of(noFile), version);
-        Assert.assertEquals(null, noVersion);
-        Assert.assertEquals(List.of(), versionVersions);
+        assertEquals(null, noVersion);
+        assertEquals(List.of(), versionVersions);
     }
 }
