@@ -17,85 +17,89 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.common.Hoverfly.CHECK_URL_SOURCE;
-import static io.specto.hoverfly.junit.core.HoverflyConfig.localConfigs;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.AbstractWorkflowResource;
 import io.dropwizard.testing.ResourceHelpers;
-import io.specto.hoverfly.junit.rule.HoverflyRule;
+import io.specto.hoverfly.junit.core.Hoverfly;
+import io.specto.hoverfly.junit.core.HoverflyMode;
+import io.specto.hoverfly.junit5.HoverflyExtension;
+import io.specto.hoverfly.junit5.api.HoverflyConfig;
+import io.specto.hoverfly.junit5.api.HoverflyCore;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-public class CheckUrlHelperIT {
+@ExtendWith(HoverflyExtension.class)
+@HoverflyCore(mode = HoverflyMode.SIMULATE, config = @HoverflyConfig(destination = CheckUrlHelperIT.FAKE_CHECK_URL_LAMBDA_BASE_URL))
+class CheckUrlHelperIT {
 
-    public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
-
-    @ClassRule
-    public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(CHECK_URL_SOURCE, localConfigs().destination(fakeCheckUrlLambdaBaseURL));
+    public static final String FAKE_CHECK_URL_LAMBDA_BASE_URL = "http://fakecheckurllambdabaseurl:3000";
 
     @Test
-    public void checkUrlsFromLambdaGood() throws IOException {
+    void checkUrlsFromLambdaGood(Hoverfly hoverfly) throws IOException {
+        hoverfly.simulate(CHECK_URL_SOURCE);
         Map<String, String> state = new HashMap<>();
         state.put("status", "good");
-        hoverflyRule.setState(state);
+        hoverfly.setState(state);
         File file = new File(ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"));
-        String s = Files.asCharSource(file, Charsets.UTF_8).read();
+        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
-        Assert.assertNull("Double-check that it's not originally true/false",
-            workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, fakeCheckUrlLambdaBaseURL + "/lambda");
-        Assert.assertTrue(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda");
+        assertTrue(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
     @Test
-    public void checkUrlsFromLambdaBad() throws IOException {
+    void checkUrlsFromLambdaBad(Hoverfly hoverfly) throws IOException {
+        hoverfly.simulate(CHECK_URL_SOURCE);
         Map<String, String> state = new HashMap<>();
         state.put("status", "bad");
-        hoverflyRule.setState(state);
+        hoverfly.setState(state);
         File file = new File(ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"));
-        String s = Files.asCharSource(file, Charsets.UTF_8).read();
+        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
-        Assert.assertNull("Double-check that it's not originally true/false",
-            workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, fakeCheckUrlLambdaBaseURL + "/lambda");
-        Assert.assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda");
+        assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
     @Test
-    public void checkUrlsFromLambdaSomeBad() throws IOException {
+    void checkUrlsFromLambdaSomeBad(Hoverfly hoverfly) throws IOException {
+        hoverfly.simulate(CHECK_URL_SOURCE);
         Map<String, String> state = new HashMap<>();
         state.put("status", "someGoodSomeBad");
-        hoverflyRule.setState(state);
+        hoverfly.setState(state);
         File file = new File(ResourceHelpers.resourceFilePath("someGoodSomeBad.json"));
-        String s = Files.asCharSource(file, Charsets.UTF_8).read();
+        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
-        Assert.assertNull("Double-check that it's not originally true/false",
-            workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, fakeCheckUrlLambdaBaseURL + "/lambda");
-        Assert.assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda");
+        assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
     @Test
-    public void checkUrlsFromLambdaTerriblyWrong() throws IOException {
+    void checkUrlsFromLambdaTerriblyWrong(Hoverfly hoverfly) throws IOException {
+        hoverfly.simulate(CHECK_URL_SOURCE);
         Map<String, String> state = new HashMap<>();
         state.put("status", "terriblyWrong");
-        hoverflyRule.setState(state);
+        hoverfly.setState(state);
         File file = new File(ResourceHelpers.resourceFilePath("someGoodSomeBad.json"));
-        String s = Files.asCharSource(file, Charsets.UTF_8).read();
+        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
-        Assert.assertNull("Double-check that it's not originally true/false",
-            workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, fakeCheckUrlLambdaBaseURL + "/lambda");
-        Assert.assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda");
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
     private WorkflowVersion setupWorkflowVersion(String fileContents) {

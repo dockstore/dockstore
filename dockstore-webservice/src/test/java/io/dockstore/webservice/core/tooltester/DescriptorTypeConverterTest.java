@@ -1,7 +1,7 @@
 package io.dockstore.webservice.core.tooltester;
 
-import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -17,8 +17,8 @@ class DescriptorTypeConverterTest {
         List<String> descriptorTypeVersions = List.of("1.0", "1.1");
         assertEquals("1.0\t1.1", descriptorTypeConverter.convertToDatabaseColumn(descriptorTypeVersions));
 
-        assertThrows("Version string containing delimiter should throw exception", CustomWebApplicationException.class,
-                () -> descriptorTypeConverter.convertToDatabaseColumn(List.of("\t1.0")));
+        assertThrows(CustomWebApplicationException.class,
+            () -> descriptorTypeConverter.convertToDatabaseColumn(List.of("\t1.0")), "Version string containing delimiter should throw exception");
     }
 
     @Test

@@ -539,6 +539,9 @@
                                         <exclude>com.amazonaws:*</exclude>
                                         <!-- we should be using jpa 2.2 -->
                                         <exclude>org.hibernate.javax.persistence:hibernate-jpa-2.1-api</exclude>
+                                        <!-- we're on junit 5 now -->
+                                        <exclude>junit:junit</exclude>
+                                        <exclude>org.junit.vintage:junit-vintage-engine</exclude>
                                     </excludes>
                                     <includes>
                                         <!-- exempt encryption library which hasn't moved to new namespace -->

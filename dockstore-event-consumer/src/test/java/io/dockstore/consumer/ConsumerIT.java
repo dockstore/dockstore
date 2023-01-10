@@ -15,9 +15,9 @@
  */
 package io.dockstore.consumer;
 
-import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 
-@Ignore("localstack install on travis messed up, possibly due to https://github.com/localstack/localstack/issues/721")
+@Disabled("localstack install on travis messed up, possibly due to https://github.com/localstack/localstack/issues/721")
 public class ConsumerIT {
 
     //FIXME: will need tests, doesn't really matter if we use openstack or not
