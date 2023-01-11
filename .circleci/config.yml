@@ -351,10 +351,14 @@ jobs:
           paths:
             - ~/.m2
           key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+      - run:
+          name: Move web cache
+          command: |
+            cp -R /tmp/dockstore-web-cache dockstore-web-cache
       - persist_to_workspace:
           root: .
           paths:
-            - /tmp/dockstore-web-cache
+            - dockstore-web-cache
       - run:
           name: Save test results
           command: |
@@ -380,17 +384,15 @@ jobs:
             cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
             cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
       - run:
-          name: Make cache miss report directory
-          command: mkdir /tmp/artifacts/misses
-      - run:
           name: Move cache miss log
           command: |
+            mkdir misses
             touch /tmp/dockstore-web-cache.misses.log
-            cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts/misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
+            cp /tmp/dockstore-web-cache.misses.log misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
       - persist_to_workspace:
           root: .
           paths:
-            - /tmp/artifacts/misses
+            - misses
 
   sonar-cloud:
     docker: # run the steps with Docker
@@ -406,6 +408,10 @@ jobs:
           - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
           # Find the most recent cache used from any branch
           - dockstore-java-
+    - run:
+        name: Move web cache
+        command: |
+          cp -R dockstore-web-cache /tmp/dockstore-web-cache
     - save_cache: # save aggregated cache from workspace for all jobs
       paths:
         - /tmp/dockstore-web-cache
@@ -417,7 +423,7 @@ jobs:
         name: SonarCloud scan - coverage
         command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
     - store_artifacts:
-        path: /tmp/artifacts/misses
+        path: misses
 
 commands:
   install-postgres:
@@ -556,10 +562,14 @@ commands:
 
   save_test_results:
     steps:
+      - run:
+          name: Move web cache
+          command: |
+            cp -R /tmp/dockstore-web-cache dockstore-web-cache
       - persist_to_workspace:
           root: .
           paths:
-            - /tmp/dockstore-web-cache
+            - dockstore-web-cache
       - run:
           name: Save test results
           command: |
@@ -571,17 +581,15 @@ commands:
       - store_artifacts:
           path: /tmp/dockstore-web-cache.misses.log
       - run:
-          name: Make cache miss report directory
-          command: mkdir /tmp/artifacts/misses
-      - run:
           name: Move cache miss log
           command: |
+            mkdir misses
             touch /tmp/dockstore-web-cache.misses.log
-            cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts/misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
+            cp /tmp/dockstore-web-cache.misses.log misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
       - persist_to_workspace:
           root: .
           paths:
-            - /tmp/artifacts/misses
+            - misses
   persist_coverage:
     steps:
       - run:
