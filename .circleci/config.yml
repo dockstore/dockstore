@@ -264,17 +264,12 @@ jobs:
       - install-postgres
       - install-git-secrets
       - setup_postgres
-      - install-pip
       - run: # Useful for verifying versions
           name: Java/Maven/Python versions
           command: |
             java -version
             ./mvnw -v
             python3 -V
-      - run:
-          name: Install localstack
-          command: |
-            scripts/install-and-start-localstack.sh
       - run:
           name: run the actual tests
           command: |            
