@@ -413,9 +413,9 @@ jobs:
         command: |
           cp -R dockstore-web-cache /tmp/dockstore-web-cache
     - save_cache: # save aggregated cache from workspace for all jobs
-      paths:
-        - /tmp/dockstore-web-cache
-      key: dockstore-java-web-cache-{{ .Branch }}-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+        paths:
+          - /tmp/dockstore-web-cache
+        key: dockstore-java-web-cache-{{ .Branch }}-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
     - run:
         name: build
         command: ./mvnw clean install -DskipTests
