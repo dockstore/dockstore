@@ -52,6 +52,7 @@ public class NotebookDAO extends EntryDAO<Notebook> {
         q.where(predicate);
         return entryRoot;
     }
+
     public List<NotebookPath> findAllPublishedPaths() {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPaths"));
     }

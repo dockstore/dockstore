@@ -16,47 +16,29 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
-import io.dockstore.client.cli.BasicIT;
-import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.Notebook;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.jdbi.NotebookDAO;
-import io.dropwizard.client.JerseyClientBuilder;
-import io.swagger.api.impl.ToolsImplCommon;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.Ga4GhApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.Tool;
+import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
 import java.util.List;
-import java.util.Map;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import org.apache.http.HttpStatus;
-import org.glassfish.jersey.client.ClientProperties;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -77,6 +59,8 @@ class NotebookIT extends BaseIT {
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     private NotebookDAO notebookDAO;
+    private WorkflowDAO workflowDAO;
+    private UserDAO userDAO;
     private Session session;
 
     @BeforeEach
@@ -86,6 +70,7 @@ class NotebookIT extends BaseIT {
 
         this.notebookDAO = new NotebookDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
+        this.userDAO = new UserDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
@@ -97,17 +82,63 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
-    void testNotebookDAO() {
+    void testDAOs() {
         CreateContent createContent = new CreateContent().invoke(false);
         long notebookID = createContent.getNotebookID();
 
         // might not be right if our test database is larger than PAGINATION_LIMIT
         final List<Workflow> allPublished = workflowDAO.findAllPublished(0, Integer.valueOf(PAGINATION_LIMIT), null, null, null);
-        assertTrue(allPublished.stream().anyMatch(workflow -> workflow.getId() == notebookId && workflow instanceof Notebook));
+        assertTrue(allPublished.stream().anyMatch(workflow -> workflow.getId() == notebookID && workflow instanceof Notebook));
 
-        final Notebook byId = notebookDAO.findById(notebookID);
+        final Notebook byID = notebookDAO.findById(notebookID);
+        assertNotNull(byID);
+        assertEquals(byID.getId(), notebookID);
 
-        assertTrue(byId != null);
+        assertEquals(1, notebookDAO.findAllPublishedPaths().size());
+        assertEquals(1, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+
         session.close();
+    }
+
+    private class CreateContent {
+        private long notebookID;
+
+        long getNotebookID() {
+            return notebookID;
+        }
+
+        CreateContent invoke() {
+            return invoke(true);
+        }
+
+        CreateContent invoke(boolean cleanup) {
+            final Transaction transaction = session.beginTransaction();
+
+            Notebook testNotebook = new Notebook();
+            testNotebook.setDescription("test notebook");
+            testNotebook.setIsPublished(true);
+            testNotebook.setSourceControl(SourceControl.GITHUB);
+            testNotebook.setDescriptorType(DescriptorLanguage.SERVICE);
+            testNotebook.setMode(WorkflowMode.DOCKSTORE_YML);
+            testNotebook.setOrganization("hydra");
+            testNotebook.setRepository("hydra_repo");
+            testNotebook.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
+
+            // add all users to all things for now
+            for (User user : userDAO.findAll()) {
+                testNotebook.addUser(user);
+            }
+
+            notebookID = notebookDAO.create(testNotebook);
+
+            assertTrue(notebookID != 0);
+
+            session.flush();
+            transaction.commit();
+            if (cleanup) {
+                session.close();
+            }
+            return this;
+        }
     }
 }
