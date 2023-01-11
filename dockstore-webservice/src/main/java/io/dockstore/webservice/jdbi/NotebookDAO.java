@@ -16,12 +16,13 @@
 
 package io.dockstore.webservice.jdbi;
 
-// import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
+import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
+
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.database.NotebookPath;
-// import io.dockstore.webservice.core.database.RSSNotebookPath;
+import io.dockstore.webservice.core.database.RSSNotebookPath;
 import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -55,13 +56,8 @@ public class NotebookDAO extends EntryDAO<Notebook> {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPaths"));
     }
 
-    /*
-    TODO
     public List<RSSNotebookPath> findAllPublishedPathsOrderByDbupdatedate() {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(
                 RSS_ENTRY_LIMIT));
     }
-    */
-
-
 }
