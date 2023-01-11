@@ -103,10 +103,26 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             } else {
                 createValidationForMissingMainScript(version, filepath, mainScriptPath);
             }
+            updateDescriptorTypeVersion(sourceFiles, version, configuration, potentialScript);
         } catch (NextflowUtilities.NextflowParsingException e) {
             createValidationForGeneralFailure(version, filepath);
         }
         return version;
+    }
+
+    /**
+     *  Sets source files' type version, and updates the workflow version descriptor type version
+     *  based on the source files's descriptor type version.
+     * @param sourceFiles
+     * @param version
+     * @param configuration
+     * @param mainScript
+     */
+    private void updateDescriptorTypeVersion(final Set<SourceFile> sourceFiles, final Version version,
+            final Configuration configuration, final Optional<SourceFile> mainScript) {
+        final String dslVersion = this.calculateDslVersion(configuration, mainScript).orElse(null);
+        sourceFiles.forEach(sourceFile -> sourceFile.setTypeVersion(dslVersion));
+        version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
     }
 
     @Override
@@ -638,7 +654,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                     final AST firstDotAst = equalsAst.getFirstChild();
                     if (isNodeText(firstDotAst, ".")) {
                         final AST secondDotAst = firstDotAst.getFirstChild();
-                        if (isNodeText(secondDotAst, ".")) {
+                        if (isNodeText(secondDotAst, ".") && isNodeText(secondDotAst.getNextSibling(), "dsl")) {
                             final AST nextflowAst = secondDotAst.getFirstChild();
                             if (isNodeText(nextflowAst, "nextflow")) {
                                 final AST enableAst = nextflowAst.getNextSibling();
@@ -658,6 +674,31 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         }
         return Optional.empty();
     }
+
+    /**
+     * Calculates the DSL version for a workflow. Given a <code>configuration</code>, that is the
+     * model of nextflow.config file, and a <code>mainScript</code>, which is the main script referenced
+     * by nextflow.config, then:
+     *
+     * <ol>
+     *     <li>If the DSL is specified in the main script, that is the version</li>
+     *     <li>If the DSL is not specified in the main script, but specified in nextflow.config, that is the version</li>
+     *     <li>If it's in neither, we can't calculate the version -- it's based on on the engine version
+     *     or a environment setting</li>
+     * </ol>
+     * @param configuration
+     * @param mainScript
+     * @return
+     */
+    private Optional<String> calculateDslVersion(final Configuration configuration, final Optional<SourceFile> mainScript) {
+        final Optional<String> dslInScript = mainScript.flatMap(sf -> getDslVersion(sf.getContent()));
+        if (dslInScript.isEmpty()) {
+            final String configDsl = configuration.getString("nextflow.enable.dsl", null);
+            return Optional.ofNullable(configDsl);
+        }
+        return dslInScript;
+    }
+
 
     private boolean isNodeText(AST node, String text) {
         return node != null && text.equals(node.getText());

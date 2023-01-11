@@ -6,9 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.DockerParameter;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dropwizard.testing.FixtureHelpers;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import org.junit.jupiter.api.Test;
 
@@ -62,5 +66,23 @@ class NextflowHandlerTest {
         assertEquals("1", nextflowHandler.getDslVersion(dsl1Content).get());
         assertEquals("2", nextflowHandler.getDslVersion(dsl2Content).get());
         assertEquals(Optional.empty(), nextflowHandler.getDslVersion(implicitDslContent));
+    }
+
+    @Test
+    void testParseWorkflowContent() {
+        final NextflowHandler nextflowHandler = new NextflowHandler();
+        final String config = FixtureHelpers.fixture("fixtures/nextflow.config");
+        final WorkflowVersion version = new WorkflowVersion();
+        final String mainContent = FixtureHelpers.fixture("fixtures/main.nf");
+        final SourceFile sourceFile = new SourceFile();
+        sourceFile.setContent(mainContent);
+        sourceFile.setPath("main.nf");
+        final Set<SourceFile> sourceFiles = Set.of(sourceFile);
+        nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
+        assertEquals(List.of("2"), version.getDescriptorTypeVersions());
+
+        sourceFile.setContent(mainContent.replace("nextflow.enable.dsl = 2", "nextflow.enable.dsl = 1"));
+        nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
+        assertEquals(List.of("1"), version.getDescriptorTypeVersions());
     }
 }
