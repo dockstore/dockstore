@@ -1,6 +1,7 @@
 package io.dockstore.models;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +13,6 @@ import io.swagger.quay.client.model.InlineResponse2001;
 import io.swagger.quay.client.model.PullRobot;
 import io.swagger.quay.client.model.QuayBuild;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class QuayModelTest {
@@ -60,8 +60,8 @@ class QuayModelTest {
     }
 
     private void pullRobotAssertions(PullRobot pullRobot) {
-        Assertions.assertEquals("user", pullRobot.getKind());
-        Assertions.assertEquals("ucsc_cgl+robot", pullRobot.getName());
-        Assertions.assertEquals(true, pullRobot.isIsRobot());
+        assertEquals("user", pullRobot.getKind());
+        assertEquals("ucsc_cgl+robot", pullRobot.getName());
+        assertEquals(true, pullRobot.isIsRobot());
     }
 }

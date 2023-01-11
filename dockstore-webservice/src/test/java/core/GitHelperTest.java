@@ -1,28 +1,33 @@
 package core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.webservice.helpers.GitHelper;
 import java.util.Optional;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Unit tests for GitHelper class
  * @author aduncan
  */
-public class GitHelperTest {
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+@ExtendWith(SystemStubsExtension.class)
+class GitHelperTest {
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     @Test
-    public void testGitReferenceParsing() {
+    void testGitReferenceParsing() {
         Optional<String> reference = GitHelper.parseGitHubReference("refs/heads/foobar");
         assertEquals("foobar", reference.get());
 

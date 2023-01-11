@@ -4,6 +4,9 @@ import static io.dockstore.common.Hoverfly.NOT_FOUND_ORCID_USER;
 import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.ORCID_USER_3;
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
@@ -16,7 +19,10 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.specto.hoverfly.junit.rule.HoverflyRule;
+import io.specto.hoverfly.junit.core.Hoverfly;
+import io.specto.hoverfly.junit.core.HoverflyMode;
+import io.specto.hoverfly.junit5.HoverflyExtension;
+import io.specto.hoverfly.junit5.api.HoverflyCore;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
@@ -25,41 +31,38 @@ import java.util.Optional;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.http.HttpStatus;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@Category(NonConfidentialTest.class)
-public class ORCIDHelperTest {
-
-    /**
-     * This simulation assumes that the work that's trying to be created does not exist on orcid yet
-     */
-    @ClassRule
-    public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(ORCID_SIMULATION_SOURCE);
+@Tag(NonConfidentialTest.NAME)
+@ExtendWith(HoverflyExtension.class)
+@HoverflyCore(mode = HoverflyMode.SIMULATE)
+class ORCIDHelperTest {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
 
     protected static TestingPostgres testingPostgres;
 
-    @BeforeClass
+    @BeforeAll
     public static void dumpDBAndCreateSchema() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, CommonTestUtilities.PUBLIC_CONFIG_PATH);
         SUPPORT.before();
         testingPostgres = new TestingPostgres(SUPPORT);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.after();
     }
 
     @Test
-    public void exportEntry() throws JAXBException, IOException, DatatypeConfigurationException, URISyntaxException, InterruptedException {
+    void exportEntry(Hoverfly hoverfly) throws JAXBException, IOException, DatatypeConfigurationException, URISyntaxException, InterruptedException {
+        // This simulation assumes that the work that's trying to be created does not exist on orcid yet
+        hoverfly.simulate(ORCID_SIMULATION_SOURCE);
         Workflow entry = new BioWorkflow();
         entry.setSourceControl(SourceControl.GITHUB);
         entry.setOrganization("dockstore");
@@ -76,43 +79,46 @@ public class ORCIDHelperTest {
         Optional<Version> optionalVersion = Optional.of(version);
         String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
         HttpResponse<String> response = ORCIDHelper.postWorkString(id, orcidWorkString, token);
-        Assert.assertEquals(HttpStatus.SC_CREATED, response.statusCode());
-        Assert.assertEquals("", response.body());
+        assertEquals(HttpStatus.SC_CREATED, response.statusCode());
+        assertEquals("", response.body());
         String putCode = getPutCodeFromLocation(response);
         response = ORCIDHelper.postWorkString(id, orcidWorkString, token);
-        Assert.assertEquals(HttpStatus.SC_CONFLICT, response.statusCode());
-        Assert.assertTrue(response.body().contains("409 Conflict: You have already added this activity (matched by external identifiers), please see element with put-code " + putCode + ". If you are trying to edit the item, please use PUT instead of POST."));
+        assertEquals(HttpStatus.SC_CONFLICT, response.statusCode());
+        assertTrue(
+            response.body().contains("409 Conflict: You have already added this activity (matched by external identifiers), please see element with put-code " + putCode + ". If you are trying to edit the item, please use PUT instead of POST."));
         orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
         response = ORCIDHelper.postWorkString(id, orcidWorkString, token);
-        Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.statusCode());
-        Assert.assertTrue(response.body().contains("400 Bad Request: Put-code is included when not expected. When posting new activities, the put code should be omitted."));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.statusCode());
+        assertTrue(response.body().contains("400 Bad Request: Put-code is included when not expected. When posting new activities, the put code should be omitted."));
         response = ORCIDHelper.putWorkString(id, orcidWorkString, token, putCode);
-        Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
-        Assert.assertTrue(response.body().contains("work:work put-code=\"" + putCode + "\" "));
+        assertEquals(HttpStatus.SC_OK, response.statusCode());
+        assertTrue(response.body().contains("work:work put-code=\"" + putCode + "\" "));
         response = ORCIDHelper.getAllWorks(id, token);
-        Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
+        assertEquals(HttpStatus.SC_OK, response.statusCode());
     }
 
     @Test
-    public void testOrcidAuthor() throws URISyntaxException, IOException, InterruptedException {
+    void testOrcidAuthor(Hoverfly hoverfly) throws URISyntaxException, IOException, InterruptedException {
+        // This simulation assumes that the work that's trying to be created does not exist on orcid yet
+        hoverfly.simulate(ORCID_SIMULATION_SOURCE);
         Optional<String> accessToken = ORCIDHelper.getOrcidAccessToken();
-        Assert.assertTrue(accessToken.isPresent());
+        assertTrue(accessToken.isPresent());
 
         HttpResponse<String> response = ORCIDHelper.getRecordDetails(ORCID_USER_3, accessToken.get());
-        Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
+        assertEquals(HttpStatus.SC_OK, response.statusCode());
 
         Optional<OrcidAuthorInformation> orcidAuthorInformation = ORCIDHelper.getOrcidAuthorInformation(ORCID_USER_3, accessToken.get());
-        Assert.assertTrue("Should be able to get Orcid Author information", orcidAuthorInformation.isPresent());
-        Assert.assertNotNull(orcidAuthorInformation.get().getOrcid());
-        Assert.assertNotNull(orcidAuthorInformation.get().getName());
-        Assert.assertNotNull(orcidAuthorInformation.get().getEmail());
-        Assert.assertNotNull(orcidAuthorInformation.get().getAffiliation());
-        Assert.assertNotNull(orcidAuthorInformation.get().getRole());
+        assertTrue(orcidAuthorInformation.isPresent(), "Should be able to get Orcid Author information");
+        assertNotNull(orcidAuthorInformation.get().getOrcid());
+        assertNotNull(orcidAuthorInformation.get().getName());
+        assertNotNull(orcidAuthorInformation.get().getEmail());
+        assertNotNull(orcidAuthorInformation.get().getAffiliation());
+        assertNotNull(orcidAuthorInformation.get().getRole());
 
         response = ORCIDHelper.getRecordDetails(NOT_FOUND_ORCID_USER, accessToken.get());
-        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, response.statusCode());
+        assertEquals(HttpStatus.SC_NOT_FOUND, response.statusCode());
 
         orcidAuthorInformation = ORCIDHelper.getOrcidAuthorInformation(NOT_FOUND_ORCID_USER, accessToken.get());
-        Assert.assertTrue("An ORCID author that doesn't exist should not have ORCID info", orcidAuthorInformation.isEmpty());
+        assertTrue(orcidAuthorInformation.isEmpty(), "An ORCID author that doesn't exist should not have ORCID info");
     }
 }

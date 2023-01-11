@@ -1,38 +1,35 @@
 package io.dockstore.webservice;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.client.cli.BasicIT;
 import io.dockstore.client.cli.OrganizationIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Like WebhookIT but with only openapi classes to avoid having to give fully defined classes everywhere
  */
-@Category(ConfidentialTest.class)
-public class OpenAPIWebhookIT extends BaseIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
+@Tag(ConfidentialTest.NAME)
+class OpenAPIWebhookIT extends BaseIT {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     private final String installationId = "1179416";
     private final String taggedToolRepo = "dockstore-testing/tagged-apptool";
@@ -40,8 +37,8 @@ public class OpenAPIWebhookIT extends BaseIT {
 
 
     @Test
-    @Ignore("https://ucsc-cgl.atlassian.net/browse/DOCK-1890")
-    public void testAppToolCollections() throws Exception {
+    @Disabled("https://ucsc-cgl.atlassian.net/browse/DOCK-1890")
+    void testAppToolCollections() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);

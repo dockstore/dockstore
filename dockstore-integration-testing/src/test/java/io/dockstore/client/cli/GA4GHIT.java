@@ -17,12 +17,15 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.TestingPostgres;
@@ -37,48 +40,37 @@ import java.util.Set;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * @author gluu
  * @since 03/01/18
  */
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
 public abstract class GA4GHIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,
         ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
     protected static javax.ws.rs.client.Client client;
     protected static TestingPostgres testingPostgres;
-    @Rule
-    public final TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     final String basePath = SUPPORT.getConfiguration().getExternalConfig().getBasePath();
     final String baseURL = String.format("http://localhost:%d" + basePath + getApiVersion(), SUPPORT.getLocalPort());
 
-    @BeforeClass
+    @BeforeAll
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, true);
         SUPPORT.before();
@@ -86,7 +78,7 @@ public abstract class GA4GHIT {
         testingPostgres = new TestingPostgres(SUPPORT);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.after();
     }
@@ -97,50 +89,50 @@ public abstract class GA4GHIT {
      * This tests the /metadata endpoint
      */
     @Test
-    public abstract void testMetadata() throws Exception;
+    abstract void testMetadata() throws Exception;
 
     /**
      * This tests the /tools endpoint
      */
     @Test
-    public abstract void testTools() throws Exception;
+    abstract void testTools() throws Exception;
 
     /**
      * This tests the /tools/{id} endpoint
      */
     @Test
-    public abstract void testToolsId() throws Exception;
+    abstract void testToolsId() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions endpoint
      */
     @Test
-    public abstract void testToolsIdVersions() throws Exception;
+    abstract void testToolsIdVersions() throws Exception;
 
     /**
      * This tests the /tool-classes or /testToolClasses endpoint
      */
     @Test
-    public abstract void testToolClasses() throws Exception;
+    abstract void testToolClasses() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version_id} endpoint
      */
     @Test
-    public abstract void testToolsIdVersionsVersionId() throws Exception;
+    abstract void testToolsIdVersionsVersionId() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version-id}/{type}/descriptor endpoint
      */
     @Test
-    public abstract void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception;
+    abstract void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} endpoint
      */
 
     @Test
-    public void testToolsIdVersionsVersionIdTypeDescriptorRelativePath() throws Exception {
+    void testToolsIdVersionsVersionIdTypeDescriptorRelativePath() throws Exception {
         toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal();
         toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash();
         toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot();
@@ -160,7 +152,7 @@ public abstract class GA4GHIT {
      * Tool with non-existent wdl test parameter file
      */
     @Test
-    public void relativePathEndpointToolTestParameterFilePLAIN() {
+    void relativePathEndpointToolTestParameterFilePLAIN() {
         Response response = checkedResponse(
             baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
@@ -189,14 +181,14 @@ public abstract class GA4GHIT {
      * Tool with non-existent wdl test parameter file
      */
     @Test
-    public abstract void testRelativePathEndpointToolTestParameterFileJSON();
+    abstract void testRelativePathEndpointToolTestParameterFileJSON();
 
     /**
      * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
      * Tool with a dockerfile
      */
     @Test
-    public void relativePathEndpointToolContainerfile() {
+    void relativePathEndpointToolContainerfile() {
         Response response = checkedResponse(
             baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2FDockerfile");
         String responseObject = response.readEntity(String.class);
@@ -211,7 +203,7 @@ public abstract class GA4GHIT {
      * Workflow with non-nested cwl test parameter file
      */
     @Test
-    public void relativePathEndpointWorkflowTestParameterFilePLAIN() throws Exception {
+    void relativePathEndpointWorkflowTestParameterFilePLAIN() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
@@ -242,13 +234,13 @@ public abstract class GA4GHIT {
      * Workflow with non-nested cwl test parameter file
      */
     @Test
-    public abstract void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception;
+    abstract void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version_id}/{type}/tests endpoint
      */
     @Test
-    public abstract void testToolsIdVersionsVersionIdTypeTests() throws Exception;
+    abstract void testToolsIdVersionsVersionIdTypeTests() throws Exception;
 
     /**
      * checks that a descriptor or equivalent has the right fields
@@ -260,7 +252,7 @@ public abstract class GA4GHIT {
     protected abstract void assertTool(String tool, boolean isTool);
 
     @Test
-    public abstract void testToolsIdVersionsVersionIdTypeDockerfile() throws Exception;
+    abstract void testToolsIdVersionsVersionIdTypeDockerfile() throws Exception;
 
     protected abstract void assertVersion(String toolVersion);
 
@@ -288,12 +280,12 @@ public abstract class GA4GHIT {
      * GA4GH swagger.yaml
      */
     @Test
-    public void testInvalidToolId() {
+    void testInvalidToolId() {
         String nginxRewrittenPath = TestUtility.mimicNginxRewrite(baseURL + "tools/potato", basePath);
         Response response = client.target(nginxRewrittenPath).request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
         Error error = response.readEntity(Error.class);
-        Assert.assertTrue(error.getMessage().contains("Tool ID should"));
+        assertTrue(error.getMessage().contains("Tool ID should"));
         assertThat(error.getCode()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
     }
 
@@ -319,7 +311,7 @@ public abstract class GA4GHIT {
                 jsonArray.forEach(this::parseJSONElementForURLs);
             } else {
                 if (!jsonElement.isJsonPrimitive()) {
-                    Assert.fail("Unknown type: " + jsonElement);
+                    fail("Unknown type: " + jsonElement);
                 }
             }
         }
@@ -337,6 +329,6 @@ public abstract class GA4GHIT {
             return;
         }
         Response response = client.target(url).request().get();
-        assertEquals("Not ok response: " + url, HttpStatus.SC_OK, response.getStatus());
+        assertEquals(HttpStatus.SC_OK, response.getStatus(), "Not ok response: " + url);
     }
 }

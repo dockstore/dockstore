@@ -17,14 +17,15 @@ package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
 import static io.dockstore.webservice.resources.UserResource.USER_PROFILES;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -44,38 +45,34 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Tests operations from the UserResource
  *
  * @author dyuen
  */
-@Category(ConfidentialTest.class)
-public class UserResourceOpenApiIT extends BaseIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
+@Tag(ConfidentialTest.NAME)
+class UserResourceOpenApiIT extends BaseIT {
     private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
     private static final String INSTALLATION_ID = "1179416";
 
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -83,13 +80,13 @@ public class UserResourceOpenApiIT extends BaseIT {
 
 
     @Test
-    public void longAvatarUrlTest() {
+    void longAvatarUrlTest() {
         String generatedString = RandomStringUtils.randomAlphanumeric(9001);
         testingPostgres.runUpdateStatement(String.format("update enduser set avatarurl='%s'", generatedString));
     }
 
     @Test
-    public void testGettingUserEmails() {
+    void testGettingUserEmails() {
         ApiClient client = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -101,7 +98,7 @@ public class UserResourceOpenApiIT extends BaseIT {
 
         testingPostgres.runUpdateStatement("UPDATE user_profile set email = 'fakeEmail@example.com'");
         userInfo = adminUserApi.getAllUserEmails();
-        userInfo.stream().forEach(info -> {
+        userInfo.forEach(info -> {
             assertNotNull(info.getDockstoreUsername());
             assertEquals("fakeEmail@example.com", info.getThirdPartyEmail());
             assertNotNull(info.getThirdPartyUsername());
@@ -118,7 +115,7 @@ public class UserResourceOpenApiIT extends BaseIT {
     }
 
     @Test
-    public void testSetUserPrivilege() {
+    void testSetUserPrivilege() {
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
 
@@ -187,7 +184,7 @@ public class UserResourceOpenApiIT extends BaseIT {
      * and one user who has a missing or outdated GitHub token
      */
     @Test
-    public void testUpdateUserMetadataWithTokens() {
+    void testUpdateUserMetadataWithTokens() {
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi adminApi = new UsersApi(adminWebClient);
@@ -231,7 +228,7 @@ public class UserResourceOpenApiIT extends BaseIT {
      * Tests the endpoint while all users have no valid GitHub token and the caller also does not have a valid token
      */
     @Test
-    public void testUpdateUserMetadataWithoutTokens() {
+    void testUpdateUserMetadataWithoutTokens() {
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi adminApi = new UsersApi(adminWebClient);
@@ -262,7 +259,7 @@ public class UserResourceOpenApiIT extends BaseIT {
     }
 
     @Test
-    public void testGetStarredWorkflowsAndServices() throws Exception {
+    void testGetStarredWorkflowsAndServices() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -298,7 +295,7 @@ public class UserResourceOpenApiIT extends BaseIT {
      * tests that a normal user can grab the user profile for a different user to support user pages
      */
     @Test
-    public void testUserProfiles() {
+    void testUserProfiles() {
         ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         UsersApi adminApi = new UsersApi(adminWebClient);
         // The API call updateUserMetadata() should not throw an error and exit if any users' tokens are out of date or absent

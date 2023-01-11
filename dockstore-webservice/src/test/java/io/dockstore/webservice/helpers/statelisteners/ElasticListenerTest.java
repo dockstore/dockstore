@@ -17,9 +17,13 @@
 
 package io.dockstore.webservice.helpers.statelisteners;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -27,7 +31,10 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,36 +61,53 @@ class ElasticListenerTest {
     public void setup() throws IllegalAccessException {
 
         bioWorkflow = new BioWorkflow();
+        initEntry(bioWorkflow);
         firstWorkflowVersion = new WorkflowVersion();
         secondWorkflowVersion = new WorkflowVersion();
-        initVersion(firstWorkflowVersion, FIRST_VERSION_NAME, FIRST_VERSION_ID);
+        initVersion(firstWorkflowVersion, FIRST_VERSION_NAME, FIRST_VERSION_ID, List.of("1.0"));
         initVersion(secondWorkflowVersion, SECOND_VERSION_NAME,
-            SECOND_VERSION_ID);
+            SECOND_VERSION_ID, List.of("1.1"));
         bioWorkflow.getWorkflowVersions().addAll(List.of(firstWorkflowVersion,
             secondWorkflowVersion));
 
         tool = new Tool();
+        initEntry(tool);
         firstTag = new Tag();
         secondTag = new Tag();
-        initVersion(firstTag, FIRST_VERSION_NAME, FIRST_VERSION_ID);
-        initVersion(secondTag, SECOND_VERSION_NAME, SECOND_VERSION_ID);
+        initVersion(firstTag, FIRST_VERSION_NAME, FIRST_VERSION_ID, List.of("1.0"));
+        initVersion(secondTag, SECOND_VERSION_NAME, SECOND_VERSION_ID, List.of("1.0"));
         tool.getWorkflowVersions().addAll(List.of(firstTag, secondTag));
 
         appTool = new AppTool();
+        initEntry(appTool);
         firstAppToolVersion = new WorkflowVersion();
         secondAppToolVersion = new WorkflowVersion();
-        initVersion(firstAppToolVersion, FIRST_VERSION_NAME, FIRST_VERSION_ID);
-        initVersion(secondAppToolVersion, SECOND_VERSION_NAME, SECOND_VERSION_ID);
+        initVersion(firstAppToolVersion, FIRST_VERSION_NAME, FIRST_VERSION_ID, List.of());
+        initVersion(secondAppToolVersion, SECOND_VERSION_NAME, SECOND_VERSION_ID, List.of());
         appTool.getWorkflowVersions().addAll(List.of(firstAppToolVersion, secondAppToolVersion));
     }
 
-    private void initVersion(final Version version, final String name, final long id)
+    private void initEntry(Entry entry) {
+        if (entry instanceof Tool) {
+            Tool toolEntry = (Tool)entry;
+            toolEntry.setDescriptorType(List.of(DescriptorLanguage.WDL.toString()));
+        } else if (entry instanceof Workflow) {
+            Workflow workflowOrAppTool = (Workflow)entry;
+            workflowOrAppTool.setDescriptorType(DescriptorLanguage.WDL);
+            workflowOrAppTool.setSourceControl(SourceControl.GITHUB);
+            workflowOrAppTool.setOrganization("potato");
+            workflowOrAppTool.setRepository("foobar");
+        }
+    }
+
+    private void initVersion(final Version version, final String name, final long id, List<String> descriptorTypeVersions)
         throws IllegalAccessException {
         version.setName(name);
         final SourceFile sourceFile = new SourceFile();
         sourceFile.setPath("/Dockstore.wdl");
         sourceFile.setContent("Doesn't matter");
         version.getSourceFiles().add(sourceFile);
+        version.setDescriptorTypeVersions(descriptorTypeVersions);
         // Id is normally set via Hibernate generator; have to use reflection to set it, alas
         FieldUtils.writeField(version, "id", id, true);
     }
@@ -154,4 +178,40 @@ class ElasticListenerTest {
         });
     }
 
+    @Test
+    public void testDescriptorTypeVersionsSet() throws IOException {
+        // bioWorkflow has two descriptor type versions
+        JsonNode entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
+        JsonNode descriptorTypeVersions = entry.get("descriptor_type_versions");
+        assertEquals(2, descriptorTypeVersions.size());
+        List<String> esObjectDescriptorTypeVersions = getDescriptorTypeVersionsFromJsonNode(descriptorTypeVersions);
+        assertTrue(esObjectDescriptorTypeVersions.contains("WDL 1.0") && esObjectDescriptorTypeVersions.contains("WDL 1.1"));
+
+        // tool has one descriptor type version
+        entry = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
+        descriptorTypeVersions = entry.get("descriptor_type_versions");
+        assertEquals(1, descriptorTypeVersions.size());
+        esObjectDescriptorTypeVersions = getDescriptorTypeVersionsFromJsonNode(descriptorTypeVersions);
+        assertTrue(esObjectDescriptorTypeVersions.contains("WDL 1.0"));
+
+        // tool has CWL and WDL
+        tool.setDescriptorType(List.of(DescriptorLanguage.WDL.toString(), DescriptorLanguage.CWL.toString()));
+        assertEquals(2, tool.getDescriptorType().size());
+        entry = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
+        descriptorTypeVersions = entry.get("descriptor_type_versions");
+        assertEquals(0, descriptorTypeVersions.size(), "Should not have descriptor type versions if there's more than one language");
+
+        // appTool has no descriptor type versions
+        entry = ElasticListener.dockstoreEntryToElasticSearchObject(appTool);
+        descriptorTypeVersions = entry.get("descriptor_type_versions");
+        assertEquals(0, descriptorTypeVersions.size());
+    }
+
+    private List<String> getDescriptorTypeVersionsFromJsonNode(JsonNode descriptorTypeVersionsJsonNode) {
+        List<String> descriptorTypeVersions = new ArrayList<>();
+        for (JsonNode version : descriptorTypeVersionsJsonNode) {
+            descriptorTypeVersions.add(version.textValue());
+        }
+        return descriptorTypeVersions;
+    }
 }

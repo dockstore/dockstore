@@ -22,22 +22,24 @@ import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_N
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
 import static io.dockstore.webservice.resources.DockerRepoResource.UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO;
 import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
@@ -64,7 +66,9 @@ import io.swagger.client.model.DockstoreTool.TopicSelectionEnum;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.SourceFile.TypeEnum;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.Tag.DoiStatusEnum;
 import io.swagger.client.model.Workflow;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -80,25 +84,29 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.RateLimitHandler;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Extra confidential integration tests, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
  *
  * @author aduncan
  */
-@Category({ ConfidentialTest.class, ToolTest.class })
-public class GeneralIT extends GeneralWorkflowBaseIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
+@org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
+@org.junit.jupiter.api.Tag(ToolTest.NAME)
+class GeneralIT extends GeneralWorkflowBaseIT {
     public static final String DOCKSTORE_TOOL_IMPORTS = "dockstore-tool-imports";
 
     private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";
@@ -107,19 +115,15 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
     private static final String DUMMY_DOI = "10.foo/bar";
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     private FileDAO fileDAO;
     private Session session;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -129,14 +133,14 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         ManagedSessionContext.bind(session);
     }
 
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false, testingPostgres);
     }
 
     @Test
-    public void testGitHubLicense() throws IOException {
+    void testGitHubLicense() throws IOException {
         String githubToken = testingPostgres
                 .runSelectStatement("select content from token where username='DockstoreTestUser2' and tokensource='github.com'",
                         String.class);
@@ -186,17 +190,17 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Checks that all automatic containers have been found by dockstore and are not registered/published
      */
     @Test
-    public void testListAvailableContainers() {
+    void testListAvailableContainers() {
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='f'", long.class);
-        assertEquals("unpublished entries should match", 6, count);
+        assertEquals(6, count, "unpublished entries should match");
     }
 
     /**
      * Checks that you can't add/remove labels unless they all are of proper format
      */
     @Test
-    public void testLabelIncorrectInput() {
+    void testLabelIncorrectInput() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
@@ -211,7 +215,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Tests adding/editing/deleting container related labels (for search)
      */
     @Test
-    public void testAddEditRemoveLabel() {
+    void testAddEditRemoveLabel() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
@@ -223,12 +227,12 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         toolApi.updateLabels(tool.getId(), "alternate,dockerhub", "");
 
         final long count = testingPostgres.runSelectStatement("select count(*) from entry_label where entryid = '2'", long.class);
-        assertEquals("there should be 2 labels for the given container, there are " + count, 2, count);
+        assertEquals(2, count, "there should be 2 labels for the given container, there are " + count);
 
         final long count2 = testingPostgres.runSelectStatement(
             "select count(*) from label where value = 'quay' or value = 'github' or value = 'dockerhub' or value = 'alternate'",
             long.class);
-        assertEquals("there should be 4 labels in the database (No Duplicates), there are " + count2, 4, count2);
+        assertEquals(4, count2, "there should be 4 labels in the database (No Duplicates), there are " + count2);
 
     }
 
@@ -236,7 +240,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Tests altering the cwl and dockerfile paths to invalid locations (quick registered)
      */
     @Test
-    public void testVersionTagWDLCWLAndDockerfilePathsAlteration() {
+    void testVersionTagWDLCWLAndDockerfilePathsAlteration() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -259,7 +263,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
             "select count(*) from tag, tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tag.parentid and valid = 'f'",
             long.class);
-        assertEquals("there should now be an invalid tag, found " + count, 1, count);
+        assertEquals(1, count, "there should now be an invalid tag, found " + count);
 
         tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
         tags = new ArrayList<>();
@@ -275,14 +279,14 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
             "select count(*) from tag, tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tag.parentid and valid = 'f'",
             long.class);
-        assertEquals("the invalid tag should now be valid, found " + count2, 0, count2);
+        assertEquals(0, count2, "the invalid tag should now be valid, found " + count2);
     }
 
     /**
      * Test trying to remove a tag for auto build
      */
     @Test
-    public void testVersionTagRemoveAutoContainer() {
+    void testVersionTagRemoveAutoContainer() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -303,7 +307,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Test trying to add a tag for auto build
      */
     @Test
-    public void testVersionTagAddAutoContainer() {
+    void testVersionTagAddAutoContainer() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -355,7 +359,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Tests adding tags to a manually registered container
      */
     @Test
-    public void testAddVersionTagManualContainer() {
+    void testAddVersionTagManualContainer() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -371,13 +375,11 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         final long count = testingPostgres.runSelectStatement(
             " select count(*) from  tag, tool where tag.parentid = tool.id and giturl ='git@github.com:dockstoretestuser2/quayandgithubalternate.git' and toolname = 'alternate'",
             long.class);
-        assertEquals(
-            "there should be 3 tags, 2  that are autogenerated (master and latest) and the newly added masterTest tag, found " + count, 3,
-            count);
+        assertEquals(3, count, "there should be 3 tags, 2  that are autogenerated (master and latest) and the newly added masterTest tag, found " + count);
     }
 
     @Test
-    public void testSourceFileChecksums() {
+    void testSourceFileChecksums() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -423,7 +425,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Tests that the language version in WDL tools are set correctly.
      */
     @Test
-    public void testWDLToolLanguageVersion() {
+    void testWDLToolLanguageVersion() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(client);
 
@@ -439,20 +441,20 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
             sourceFiles.forEach(sourceFile -> {
                 if ("/Dockstore.wdl".equals(sourceFile.getAbsolutePath())) {
-                    assertEquals(DescriptorLanguage.FileType.DOCKSTORE_WDL, sourceFile.getType());
-                    assertEquals("Language version of WDL descriptor with no 'version' field should be default version", WDLHandler.DEFAULT_WDL_VERSION, sourceFile.getTypeVersion());
+                    assertEquals(FileType.DOCKSTORE_WDL, sourceFile.getType());
+                    assertEquals(WDLHandler.DEFAULT_WDL_VERSION, sourceFile.getTypeVersion(), "Language version of WDL descriptor with no 'version' field should be default version");
                 } else {
-                    assertEquals(DescriptorLanguage.FileType.DOCKERFILE, sourceFile.getType());
-                    assertNull("Docker files should not have a version", sourceFile.getTypeVersion());
+                    assertEquals(FileType.DOCKERFILE, sourceFile.getType());
+                    assertNull(sourceFile.getTypeVersion(), "Docker files should not have a version");
                 }
             });
-            assertEquals("Should only have one language version", 1, tag.getDescriptorTypeVersions().size());
+            assertEquals(1, tag.getDescriptorTypeVersions().size(), "Should only have one language version");
             assertTrue(tag.getDescriptorTypeVersions().contains(WDLHandler.DEFAULT_WDL_VERSION));
         });
     }
 
     @Test
-    public void testGettingVerifiedVersions() {
+    void testGettingVerifiedVersions() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -501,7 +503,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void testEditingHostedWorkflowTopics() {
+    void testEditingHostedWorkflowTopics() {
         final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(openApiWebClient);
         final io.dockstore.openapi.client.model.Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "foo", DescriptorLanguage.WDL.toString(), null, null);
@@ -517,7 +519,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void testEditingHostedToolTopics() {
+    void testEditingHostedToolTopics() {
         final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(openApiWebClient);
         final io.dockstore.openapi.client.model.DockstoreTool hostedTool = hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "foo", DescriptorLanguage.WDL.toString(), null, null);
@@ -533,7 +535,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void testGettingVersionsFileTypes() {
+    void testGettingVersionsFileTypes() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -553,7 +555,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         io.dockstore.openapi.client.model.WorkflowVersion workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId()).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
         List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(1, fileTypes.size());
-        assertEquals(SourceFile.TypeEnum.DOCKSTORE_WDL.toString(), fileTypes.get(0));
+        assertEquals(TypeEnum.DOCKSTORE_WDL.toString(), fileTypes.get(0));
 
         SourceFile testFile = new SourceFile();
         testFile.setType(SourceFile.TypeEnum.WDL_TEST_JSON);
@@ -612,7 +614,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
     // Tests 1.10.0 migration where id=adddescriptortypecolumn
     @Test
-    public void testMigrationForDescriptorType() {
+    void testMigrationForDescriptorType() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
@@ -631,7 +633,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void testRefreshingGetsDescriptorType() {
+    void testRefreshingGetsDescriptorType() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.ContainersApi openToolApi = new io.dockstore.openapi.client.api.ContainersApi(client);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -665,7 +667,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void testHiddenAndDefaultTags() {
+    void testHiddenAndDefaultTags() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -740,7 +742,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Tests hiding and unhiding different versions of a container (quick registered)
      */
     @Test
-    public void testVersionTagHide() {
+    void testVersionTagHide() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -759,7 +761,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tag t, version_metadata vm where t.id = " + updatedTag.getId() + " and vm.hidden = 't' and t.id = vm.id", long.class);
-        assertEquals("there should be 1 hidden tag", 1, count);
+        assertEquals(1, count, "there should be 1 hidden tag");
 
         tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
         if (tag.isEmpty()) {
@@ -774,14 +776,14 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tag t, version_metadata vm where t.id = " + updatedTag.getId() + " and vm.hidden = 't' and t.id = vm.id", long.class);
-        assertEquals("there should be 0 hidden tag", 0, count2);
+        assertEquals(0, count2, "there should be 0 hidden tag");
     }
 
     /**
      * Test update tag with only WDL to invalid then valid
      */
     @Test
-    public void testVersionTagWDL() {
+    void testVersionTagWDL() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -805,7 +807,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tag.parentid and valid = 'f'",
             long.class);
 
-        assertEquals("there should now be 1 invalid tag, found " + count, 1, count);
+        assertEquals(1, count, "there should now be 1 invalid tag, found " + count);
         tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
         if (tag.isEmpty()) {
             fail("Tag master should exist");
@@ -822,7 +824,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
             "select count(*) from tag, tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tag.parentid and valid = 'f'",
             long.class);
-        assertEquals("the tag should now be valid", 0, count2);
+        assertEquals(0, count2, "the tag should now be valid");
 
     }
 
@@ -850,7 +852,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void testToolDelete() {
+    void testToolDelete() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
@@ -869,7 +871,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Will test deleting a tag from a manually registered container
      */
     @Test
-    public void testVersionTagDelete() {
+    void testVersionTagDelete() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -894,14 +896,14 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         toolTagsApi.deleteTags(tool.getId(), optionalTag.get().getId());
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
-        assertEquals("there should be no tags with the name masterTest", 0, count);
+        assertEquals(0, count, "there should be no tags with the name masterTest");
     }
 
     /**
      * Check that cannot retrieve an incorrect individual container
      */
     @Test
-    public void testGetIncorrectContainer() {
+    void testGetIncorrectContainer() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         try {
@@ -915,7 +917,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Check that a user can't retrieve another users container
      */
     @Test
-    public void testGetOtherUsersContainer() {
+    void testGetOtherUsersContainer() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         try {
@@ -929,7 +931,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Tests that a user can only add Quay containers that they own directly or through an organization
      */
     @Test
-    public void testUserPrivilege() {
+    void testUserPrivilege() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
@@ -943,7 +945,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         // Repo user has access to
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithub' and toolname = 'testTool'", long.class);
-        assertEquals("the container should exist", 1, count);
+        assertEquals(1, count, "the container should exist");
 
         // Repo user is part of org
         DockstoreTool tool2 = createManualTool();
@@ -956,7 +958,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstore2' and name = 'testrepo2' and toolname = 'testOrg'", long.class);
-        assertEquals("the container should exist", 1, count2);
+        assertEquals(1, count2, "the container should exist");
 
         // Repo user doesn't own
         // TODO: The actual error is that the tool has no tags, not that the user does not have access
@@ -978,7 +980,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolPathCWL() throws ApiException {
+    void testUpdateToolPathCWL() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -992,7 +994,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
         //check if the tag's dockerfile path have the same cwl path or not in the database
         final String path = getPathfromDB("cwlpath");
-        assertEquals("the cwl path should be changed to /test1.cwl", "/test1.cwl", path);
+        assertEquals("/test1.cwl", path, "the cwl path should be changed to /test1.cwl");
     }
 
     /**
@@ -1001,11 +1003,11 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * @throws ApiException should not see error from the webservice
      */
     @Test
-    public void testImageIDUpdateDuringRefresh() throws ApiException {
+    void testImageIDUpdateDuringRefresh() throws ApiException {
         ContainersApi containersApi = setupWebService();
         DockstoreTool toolTest = containersApi.getContainerByToolPath(QUAY_TOOL_PATH, null);
 
-        assertTrue("should see one (or more) tags: " + toolTest.getWorkflowVersions().size(), toolTest.getWorkflowVersions().size() >= 1);
+        assertTrue(toolTest.getWorkflowVersions().size() >= 1, "should see one (or more) tags: " + toolTest.getWorkflowVersions().size());
 
         UsersApi usersApi = new UsersApi(containersApi.getApiClient());
         final Long userid = usersApi.getUser().getId();
@@ -1044,7 +1046,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Tests that image and checksum information can be grabbed from Quay and update db correctly.
      */
     @Test
-    public void testGrabbingImagesFromQuay() {
+    void testGrabbingImagesFromQuay() {
         ContainersApi containersApi = setupWebService();
         DockstoreTool tool = containersApi.getContainerByToolPath(QUAY_TOOL_PATH, null);
 
@@ -1068,8 +1070,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
         final long count = testingPostgres.runSelectStatement("select count(*) from image", long.class);
         testingPostgres.runUpdateStatement("update image set image_id = 'dummyid'");
-        assertEquals("dummyid",
-            containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
+        assertEquals("dummyid", containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
         usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
         final long count2 = testingPostgres.runSelectStatement("select count(*) from image", long.class);
         assertEquals(imageID, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
@@ -1079,7 +1080,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
 
     @Test
-    public void testAnnotatedGitHubTag() {
+    void testAnnotatedGitHubTag() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -1118,7 +1119,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void ga4ghImageType() {
+    void ga4ghImageType() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -1142,11 +1143,11 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         } catch (JsonProcessingException ex) {
             failed = true;
         }
-        assertFalse("Parsing should not have failed", failed);
+        assertFalse(failed, "Parsing should not have failed");
     }
 
     @Test
-    public void testGrabChecksumFromGitLab() {
+    void testGrabChecksumFromGitLab() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
@@ -1175,7 +1176,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * then the author metadata is properly grabbed.
      */
     @Test
-    public void testParseMetadataFromToolWithTagNameAndReferenceMismatch() {
+    void testParseMetadataFromToolWithTagNameAndReferenceMismatch() {
         // Setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -1186,7 +1187,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         toolsApi.refresh(toolTest.getId());
 
         DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId(), null);
-        assertNotNull("Author should be set, even if tag name and tag reference are mismatched.", refreshedTool.getAuthor());
+        assertNotNull(refreshedTool.getAuthor(), "Author should be set, even if tag name and tag reference are mismatched.");
     }
 
     /**
@@ -1195,7 +1196,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolPathWDL() throws ApiException {
+    void testUpdateToolPathWDL() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -1210,11 +1211,11 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
         //check if the tag's wdl path have the same wdl path or not in the database
         final String path = getPathfromDB("wdlpath");
-        assertEquals("the cwl path should be changed to /test1.wdl", "/test1.wdl", path);
+        assertEquals("/test1.wdl", path, "the cwl path should be changed to /test1.wdl");
     }
 
     @Test
-    public void testToolFreezingWithNoFiles() {
+    void testToolFreezingWithNoFiles() {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
         ContainertagsApi tagsApi = new ContainertagsApi(toolsApi.getApiClient());
@@ -1240,14 +1241,14 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
             tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
         } catch (ApiException e) {
             // should exception
-            assertTrue("missing error message", e.getMessage().contains(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES));
+            assertTrue(e.getMessage().contains(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES), "missing error message");
             return;
         }
         fail("should be unreachable");
     }
 
     @Test
-    public void testToolFreezing() throws ApiException {
+    void testToolFreezing() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
         ContainertagsApi tagsApi = new ContainertagsApi(toolsApi.getApiClient());
@@ -1278,7 +1279,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
         master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
         assertEquals(DUMMY_DOI, master.getDoiURL());
-        assertEquals(Tag.DoiStatusEnum.REQUESTED, master.getDoiStatus());
+        assertEquals(DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // try modifying sourcefiles
         // cannot modify sourcefiles for a frozen version
@@ -1340,7 +1341,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolPathDockerfile() throws ApiException {
+    void testUpdateToolPathDockerfile() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -1354,7 +1355,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
         //check if the tag's dockerfile path have the same dockerfile path or not in the database
         final String path = getPathfromDB("dockerfilepath");
-        assertEquals("the cwl path should be changed to /test1/Dockerfile", "/test1/Dockerfile", path);
+        assertEquals("/test1/Dockerfile", path, "the cwl path should be changed to /test1/Dockerfile");
     }
 
     /**
@@ -1363,7 +1364,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolForumUrlAndTopic() throws ApiException {
+    void testUpdateToolForumUrlAndTopic() throws ApiException {
         final String forumUrl = "hello.com";
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
@@ -1371,7 +1372,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         toolsApi.refresh(toolTest.getId());
 
-        assertEquals("Should default to automatic", TopicSelectionEnum.AUTOMATIC, toolTest.getTopicSelection());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, toolTest.getTopicSelection(), "Should default to automatic");
 
         //change the forumurl
         toolTest.setForumUrl(forumUrl);
@@ -1382,7 +1383,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
         //check the tool's forumurl is updated in the database
         final String updatedForumUrl = testingPostgres.runSelectStatement("select forumurl from tool where id = " + toolTest.getId(), String.class);
-        assertEquals("the forumurl should be hello.com", forumUrl, updatedForumUrl);
+        assertEquals(forumUrl, updatedForumUrl, "the forumurl should be hello.com");
 
         // check the tool's topicManual and topicSelection
         assertEquals(newTopic, dockstoreTool.getTopicManual());
@@ -1390,7 +1391,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void testTopicAfterRegisterAndRefresh() throws ApiException {
+    void testTopicAfterRegisterAndRefresh() throws ApiException {
         ContainersApi toolsApi = setupWebService();
 
         DockstoreTool tool = toolsApi.registerManual(createManualTool());
@@ -1404,7 +1405,8 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         // set the automatic topic to a garbage string, change the manual topic, and select it
         final String topicManual = "a user-specified manual topic!";
         final String garbage = "fooooo";
-        assertEquals(1, testingPostgres.runUpdateStatement(String.format("update tool set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", tool.getId())));
+        assertEquals(1,
+            testingPostgres.runUpdateStatement(String.format("update tool set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", tool.getId())));
 
         // confirm the new topic settings
         tool = toolsApi.getContainer(tool.getId(), null);
@@ -1462,22 +1464,22 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Tests that manually adding a tool that should become auto is properly converted
      */
     @Test
-    public void testManualToAuto() {
+    void testManualToAuto() {
         String gitUrl = "git@github.com:DockstoreTestUser2/md5sum-checker.git";
         ContainersApi toolsApi = setupWebService();
         DockstoreTool tool = getQuayContainer(gitUrl);
         DockstoreTool toolTest = toolsApi.registerManual(tool);
-        assertEquals("Should be able to get license after manual register", "Apache License 2.0", toolTest.getLicenseInformation().getLicenseName());
+        assertEquals("Apache License 2.0", toolTest.getLicenseInformation().getLicenseName(), "Should be able to get license after manual register");
 
         // Clear license name to mimic old entry that does not have a license associated with it
         testingPostgres.runUpdateStatement("update tool set licensename=null");
         DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
-        assertEquals("Should be able to get license after refresh", "Apache License 2.0", refresh.getLicenseInformation().getLicenseName());
+        assertEquals("Apache License 2.0", refresh.getLicenseInformation().getLicenseName(), "Should be able to get license after refresh");
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS + "' and giturl = '"
                 + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", long.class);
-        assertEquals("The tool should be auto, there are " + count, 1, count);
+        assertEquals(1, count, "The tool should be auto, there are " + count);
     }
 
     /**
@@ -1485,7 +1487,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * The tool should specify a git URL that does not match any in any Quay builds
      */
     @Test
-    public void testManualToolStayManual() {
+    void testManualToolStayManual() {
         String gitUrl = "git@github.com:DockstoreTestUser2/dockstore-whalesay-imports.git";
         ContainersApi toolsApi = setupWebService();
         DockstoreTool tool = getQuayContainer(gitUrl);
@@ -1495,11 +1497,11 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl
                 + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", long.class);
-        assertEquals("The tool should be manual, there are " + count, 1, count);
+        assertEquals(1, count, "The tool should be manual, there are " + count);
     }
 
     @Test
-    public void testCannotRegisterGarbageSourceControlFromDockerHub() {
+    void testCannotRegisterGarbageSourceControlFromDockerHub() {
         String gitUrl = "git@github.com:DockstoreTestUser2/bewareoftheleopard.git";
         ContainersApi toolsApi = setupWebService();
         DockstoreTool tool = getQuayContainer(gitUrl);
@@ -1517,7 +1519,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Tests that the tool name is validated when manually registering a tool
      */
     @Test
-    public void testManualToolNameValidation() {
+    void testManualToolNameValidation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         DockstoreTool tool = createManualTool();
@@ -1535,14 +1537,14 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * Tests that you can properly check if a user with some username exists
      */
     @Test
-    public void testCheckUser() {
+    void testCheckUser() {
         // Authorized user should pass
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         boolean userOneExists = userApi.checkUserExists("DockstoreTestUser2");
-        assertTrue("User DockstoreTestUser2 should exist", userOneExists);
+        assertTrue(userOneExists, "User DockstoreTestUser2 should exist");
         boolean userTwoExists = userApi.checkUserExists(BaseIT.OTHER_USERNAME);
-        assertTrue("User OtherUser should exist", userTwoExists);
+        assertTrue(userTwoExists, "User OtherUser should exist");
         boolean fakeUserExists = userApi.checkUserExists("NotARealUser");
         assertFalse(fakeUserExists);
 
@@ -1555,14 +1557,14 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         } catch (ApiException ex) {
             failed = true;
         }
-        assertTrue("Should throw an expection when not authorized.", failed);
+        assertTrue(failed, "Should throw an expection when not authorized.");
     }
 
     /**
      * This tests that you can retrieve tools by alias (using optional auth)
      */
     @Test
-    public void testToolAlias() {
+    void testToolAlias() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         EntriesApi entryApi = new EntriesApi(webClient);
@@ -1579,11 +1581,11 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
         // Add alias
         Entry entry = entryApi.addAliases(refresh.getId(), "foobar");
-        assertTrue("Should have alias foobar", entry.getAliases().containsKey("foobar"));
+        assertTrue(entry.getAliases().containsKey("foobar"), "Should have alias foobar");
 
         // Get unpublished tool by alias as owner
         DockstoreTool aliasTool = containersApi.getToolByAlias("foobar");
-        assertNotNull("Should retrieve the tool by alias", aliasTool);
+        assertNotNull(aliasTool, "Should retrieve the tool by alias");
 
         // Cannot get tool by alias as other user
         try {
@@ -1607,15 +1609,15 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
 
         // Get published tool by alias as owner
         DockstoreTool publishedAliasTool = containersApi.getToolByAlias("foobar");
-        assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+        assertNotNull(publishedAliasTool, "Should retrieve the tool by alias");
 
         // Cannot get tool by alias as other user
         publishedAliasTool = otherUserContainersApi.getToolByAlias("foobar");
-        assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+        assertNotNull(publishedAliasTool, "Should retrieve the tool by alias");
 
         // Cannot get tool by alias as anon user
         publishedAliasTool = anonContainersApi.getToolByAlias("foobar");
-        assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+        assertNotNull(publishedAliasTool, "Should retrieve the tool by alias");
 
     }
 
@@ -1623,7 +1625,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
      * This tests a not found zip file
      */
     @Test
-    public void sillyContainerZipFile() throws IOException {
+    void sillyContainerZipFile() throws IOException {
         final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
         boolean success = false;
@@ -1633,14 +1635,14 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
             assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
             success = true;
         }
-        assertTrue("should have got 404", success);
+        assertTrue(success, "should have got 404");
     }
 
     /**
      * This tests that zip file can be downloaded or not based on published state and auth.
      */
     @Test
-    public void downloadZipFileTestAuth() throws IOException {
+    void downloadZipFileTestAuth() throws IOException {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
 
@@ -1667,7 +1669,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         } catch (ApiException ex) {
             success = false;
         } finally {
-            assertFalse("User does not have access to tool.", success);
+            assertFalse(success, "User does not have access to tool.");
         }
         // Other user: Should fail
         success = true;
@@ -1676,7 +1678,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
         } catch (ApiException ex) {
             success = false;
         } finally {
-            assertFalse("User does not have access to tool.", success);
+            assertFalse(success, "User does not have access to tool.");
         }
 
         // Publish
@@ -1693,7 +1695,7 @@ public class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
     @Test
-    public void testUsernameRequiredFilter() {
+    void testUsernameRequiredFilter() {
         String gitUrl = "git@github.com:DockstoreTestUser2/dockstore-whalesay-imports.git";
         io.dockstore.openapi.client.ApiClient openApiClient = BaseIT.getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.HostedApi openApiHosted = new io.dockstore.openapi.client.api.HostedApi(openApiClient);

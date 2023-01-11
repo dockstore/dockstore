@@ -295,6 +295,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         referenceType = version.getReferenceType();
         frozen = version.isFrozen();
         commitID = version.getCommitID();
+        descriptorTypeVersions = version.getDescriptorTypeVersions();
         this.setVersionMetadata(version.getVersionMetadata());
     }
 

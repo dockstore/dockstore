@@ -15,6 +15,9 @@
 package io.dockstore.webservice.statelisteners;
 
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,25 +44,28 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
-public class PublicStateManagerIT {
+@ExtendWith(SystemStubsExtension.class)
+class PublicStateManagerIT {
     private static PublicStateManager manager;
     private static ElasticSearchHelper esHelper;
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    private final SystemOut systemOut = new SystemOut(new NoopStream());
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    private final SystemErr systemErr = new SystemErr(new NoopStream());
 
-    @BeforeClass
+    @BeforeAll
     public static void setupManager() {
         DockstoreWebserviceConfiguration config = new DockstoreWebserviceConfiguration();
         config.getEsConfiguration().setHostname("localhost");
@@ -70,25 +76,25 @@ public class PublicStateManagerIT {
         esHelper = new ElasticSearchHelper(config.getEsConfiguration());
     }
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         CommonTestUtilities.restartElasticsearch();
     }
 
     @Test
-    public void dockstoreEntryToElasticSearchObject() throws IOException {
+    void dockstoreEntryToElasticSearchObject() throws IOException {
         Tool tool = getFakeTool(false);
         JsonNode jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
         boolean verified = jsonNode.get("verified").booleanValue();
-        Assert.assertFalse(verified);
+        assertFalse(verified);
         tool = getFakeTool(true);
         final ObjectMapper mapper = Jackson.newObjectMapper();
         String beforeString = mapper.writeValueAsString(tool);
         jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
         String afterString = mapper.writeValueAsString(tool);
-        Assert.assertEquals("The original tool should not have changed.", beforeString, afterString);
+        assertEquals(beforeString, afterString, "The original tool should not have changed.");
         verified = jsonNode.get("verified").booleanValue();
-        Assert.assertTrue(verified);
+        assertTrue(verified);
     }
 
     private Tool getFakeTool(boolean verified) throws IOException {
@@ -126,7 +132,7 @@ public class PublicStateManagerIT {
     }
 
     @Test
-    public void addAnEntry() throws Exception {
+    void addAnEntry() throws Exception {
         Tool tool = getFakeTool(false);
         manager.handleIndexUpdate(tool, StateManagerMode.UPDATE);
 
@@ -135,25 +141,25 @@ public class PublicStateManagerIT {
         esHelper.stop();
 
         //TODO: should extend this by checking that elastic search holds the content we expect
-        Assert.assertFalse(systemOutRule.getLog().contains("Connection refused"));
+        assertFalse(systemOut.getText().contains("Connection refused"));
     }
 
     @Test
-    public void addAService() {
+    void addAService() throws Exception {
         manager.handleIndexUpdate(new Service(), StateManagerMode.UPDATE);
-        Assert.assertFalse(systemOutRule.getLog().contains("Performing index update"));
+        assertFalse(systemOut.getText().contains("Performing index update"));
     }
 
     @Test
-    public void filterCheckerWorkflows() {
+    void filterCheckerWorkflows() {
         Workflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setIsChecker(true);
         Workflow workflow = new BioWorkflow();
         workflow.setIsChecker(false);
         Tool tool = new Tool();
         List<Entry> entries = ElasticListener.filterCheckerWorkflows(Arrays.asList(workflow, tool, checkerWorkflow));
-        Assert.assertEquals("There should've been 2 entries without the checker workflow", 2, entries.size());
-        entries.forEach(entry -> Assert.assertFalse("There should be no checker workflows", entry instanceof Workflow && ((Workflow)entry).isIsChecker()));
+        assertEquals(2, entries.size(), "There should've been 2 entries without the checker workflow");
+        entries.forEach(entry -> assertFalse(entry instanceof Workflow && ((Workflow)entry).isIsChecker(), "There should be no checker workflows"));
     }
 
 }

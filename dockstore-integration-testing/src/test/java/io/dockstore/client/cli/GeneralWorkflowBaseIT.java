@@ -11,7 +11,7 @@ import io.swagger.client.model.Image;
 import io.swagger.client.model.Tag;
 import java.util.List;
 
-public class GeneralWorkflowBaseIT extends BaseIT {
+class GeneralWorkflowBaseIT extends BaseIT {
 
 
     /**

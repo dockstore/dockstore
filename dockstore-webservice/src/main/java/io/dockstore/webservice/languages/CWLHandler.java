@@ -15,6 +15,9 @@
  */
 package io.dockstore.webservice.languages;
 
+import com.github.zafarkhaja.semver.UnexpectedCharacterException;
+import com.github.zafarkhaja.semver.expr.LexerException;
+import com.github.zafarkhaja.semver.expr.UnexpectedTokenException;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -45,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -53,6 +57,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -86,6 +91,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static final String WORKFLOW = "Workflow";
     private static final String EXPRESSION_TOOL = "ExpressionTool";
     private static final String OPERATION = "Operation";
+
+    /**
+     * A regular expression that matches all CWL version strings that we want to register as language versions.
+     */
+    private static final String LANGUAGE_VERSION_REGEX = "v1.[0-9]";
+    private static final Pattern LANGUAGE_VERSION_PATTERN = Pattern.compile(LANGUAGE_VERSION_REGEX);
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
@@ -159,6 +170,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
                 }
 
+                setCwlVersionsFromSourceFiles(sourceFiles, version);
+
                 LOG.info("Repository has Dockstore.cwl");
             } catch (YAMLException | JsonParseException | NullPointerException | ClassCastException ex) {
                 String message;
@@ -175,8 +188,90 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 validationMessageObject.put(filePath, "CWL file is malformed or missing, cannot extract metadata: " + message);
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_CWL, false, validationMessageObject));
             }
+
         }
         return version;
+    }
+
+    /**
+     * Examine the specified set of SourceFiles for CWL language versions,
+     * set the language version of each SourceFile, and set the list of
+     * language versions of the specified Version.
+     *
+     * In CWL, each SourceFile can contain multiple tools or subworkflows,
+     * each with its own version.  If a SourceFile specifies multiple CWL
+     * versions, the language version is set to the "latest" version.
+     * The list of language versions for a given Version is sorted
+     * in descending release date order, from "latest" to "earliest".
+     */
+    private void setCwlVersionsFromSourceFiles(Set<SourceFile> sourceFiles, Version version) {
+        Set<String> allVersions = new HashSet<>();
+        for (SourceFile file: sourceFiles) {
+            if (file.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
+                Set<String> fileVersions = getCwlVersionsFromSourceFile(file);
+                file.setTypeVersion(newestVersion(fileVersions));
+                allVersions.addAll(fileVersions);
+            }
+        }
+        version.setDescriptorTypeVersions(sortVersionsDescending(allVersions));
+    }
+
+    /**
+     * Extract the set of CWL language versions that appear in the
+     * specified SourceFile.
+     */
+    private Set<String> getCwlVersionsFromSourceFile(SourceFile file) {
+        Set<String> versions = new HashSet<>();
+        getCwlVersionsFromMap(versions, parseAsMap(file.getContent()));
+        return versions;
+    }
+
+    /**
+     * Recursively examine the parsed YAML Map/List representation of
+     * a CWL file, interpreting the string value of any Map entry with
+     * the key "cwlVersion" as a language version if it matches the
+     * pattern LANGUAGE_VERSION_PATTERN and ignoring it otherwise.
+     */
+    private void getCwlVersionsFromMap(Set<String> versions, Map<String, Object> map) {
+        map.forEach((k, v) -> {
+            if (Objects.equals(k, "cwlVersion") && v instanceof String version && LANGUAGE_VERSION_PATTERN.matcher(version).matches()) {
+                versions.add(version);
+            } else if (v instanceof Map) {
+                getCwlVersionsFromMap(versions, (Map<String, Object>)v);
+            }
+        });
+    }
+
+    private String newestVersion(Set<String> versions) {
+        return sortVersionsDescending(versions).stream().findFirst().orElse(null);
+    }
+
+    /**
+     * Sort the specified set of versions in descending release date order, from
+     * "latest" to "earliest".
+     */
+    private List<String> sortVersionsDescending(Set<String> versions) {
+        return versions.stream().sorted(Comparator.comparing(this::convertVersionToSortKey).reversed()).collect(Collectors.toList());
+    }
+
+    /**
+     * Create a sort key for the specified version string.
+     * The version string is expected to be in the form 'vD.D', where D is a decimal number.
+     * If it is not, a value representing release '0.0.0' is returned, allowing the sort to proceed.
+     */
+    private com.github.zafarkhaja.semver.Version convertVersionToSortKey(String version) {
+        final com.github.zafarkhaja.semver.Version errorValue = com.github.zafarkhaja.semver.Version.valueOf("0.0.0");
+        if (!version.startsWith("v")) {
+            LOG.error("Version '{}' does not begin with 'v'", version);
+            return errorValue;
+        }
+        final String release = version.substring(1) + ".0";
+        try {
+            return com.github.zafarkhaja.semver.Version.valueOf(release);
+        } catch (IllegalArgumentException | UnexpectedCharacterException | LexerException | UnexpectedTokenException ex) {
+            LOG.error("Exception parsing release number of version '{}'", version, ex);
+            return errorValue;
+        }
     }
 
     /**

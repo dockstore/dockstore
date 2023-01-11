@@ -2,6 +2,8 @@ package io.dockstore.webservice.languages;
 
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
@@ -28,25 +30,29 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
-public class WDLHandlerTest {
+@ExtendWith(SystemStubsExtension.class)
+class WDLHandlerTest {
 
     public static final String MAIN_WDL = "/GATKSVPipelineClinical.wdl";
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     @Test
-    public void getWorkflowContent() throws IOException {
+    void getWorkflowContent() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Version workflow = new WorkflowVersion();
 
@@ -54,50 +60,50 @@ public class WDLHandlerTest {
 
         final String goodWdl = FileUtils.readFileToString(new File(validFilePath), StandardCharsets.UTF_8);
         Version version = wdlHandler.parseWorkflowContent(validFilePath, goodWdl, Collections.emptySet(), workflow);
-        Assert.assertEquals("Mr. Foo", version.getAuthor());
-        Assert.assertEquals("foo@foo.com", version.getEmail());
-        Assert.assertEquals("This is a cool workflow trying another line \n## This is a header\n* First Bullet\n* Second bullet", version.getDescription());
+        assertEquals("Mr. Foo", version.getAuthor());
+        assertEquals("foo@foo.com", version.getEmail());
+        assertEquals("This is a cool workflow trying another line \n## This is a header\n* First Bullet\n* Second bullet", version.getDescription());
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
         final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
         Version version1 = wdlHandler.parseWorkflowContent(invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), version);
-        Assert.assertNull(version1.getAuthor());
-        Assert.assertNull(version1.getEmail());
+        assertNull(version1.getAuthor());
+        assertNull(version1.getEmail());
     }
 
     @Test
-    public void getWorkflowContentOfTool() throws IOException {
+    void getWorkflowContentOfTool() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Tool tool = new Tool();
         tool.setAuthor("Jane Doe");
         tool.setDescription("A good description");
         tool.setEmail("janedoe@example.org");
 
-        Assert.assertEquals("Jane Doe", tool.getAuthor());
-        Assert.assertEquals("A good description", tool.getDescription());
-        Assert.assertEquals("janedoe@example.org", tool.getEmail());
+        assertEquals("Jane Doe", tool.getAuthor());
+        assertEquals("A good description", tool.getDescription());
+        assertEquals("janedoe@example.org", tool.getEmail());
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
         final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
         wdlHandler.parseWorkflowContent(invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
 
         // Check that parsing an invalid WDL workflow does not corrupt the CWL metadata
-        Assert.assertEquals("Jane Doe", tool.getAuthor());
-        Assert.assertEquals("A good description", tool.getDescription());
-        Assert.assertEquals("janedoe@example.org", tool.getEmail());
+        assertEquals("Jane Doe", tool.getAuthor());
+        assertEquals("A good description", tool.getDescription());
+        assertEquals("janedoe@example.org", tool.getEmail());
     }
 
     @Test
-    public void testRecursiveImports() throws IOException {
+    void testRecursiveImports() throws IOException {
         final File recursiveWdl = new File(ResourceHelpers.resourceFilePath("recursive.wdl"));
 
         final WDLHandler wdlHandler = new WDLHandler();
         String s = FileUtils.readFileToString(recursiveWdl, StandardCharsets.UTF_8);
         try {
             wdlHandler.checkForRecursiveHTTPImports(s, new HashSet<>());
-            Assert.fail("Should've detected recursive import");
+            Assertions.fail("Should've detected recursive import");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, e.getErrorMessage());
+            assertEquals(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, e.getErrorMessage());
         }
 
         final File notRecursiveWdl = new File(ResourceHelpers.resourceFilePath("valid_description_example.wdl"));
@@ -107,7 +113,7 @@ public class WDLHandlerTest {
 
 
     @Test
-    public void testRepeatedFilename() throws IOException {
+    void testRepeatedFilename() throws IOException {
         final String content = getGatkSvMainDescriptorContent();
         final WDLHandler wdlHandler = new WDLHandler();
         Version emptyVersion = new WorkflowVersion();
@@ -115,15 +121,15 @@ public class WDLHandlerTest {
                 .processImports("whatever", content, emptyVersion, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
         // There are 9 Structs.wdl files, in gatk-sv-clinical, but the one in gncv is not imported
         final long structsWdlCount = map.keySet().stream().filter(key -> key.contains("Structs.wdl")).count();
-        Assert.assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
+        assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
 
         final BioWorkflow entry = new BioWorkflow();
         Version version = wdlHandler.parseWorkflowContent("/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), new WorkflowVersion());
-        Assert.assertEquals("Christopher Whelan", version.getAuthor());
+        assertEquals("Christopher Whelan", version.getAuthor());
     }
 
     @Test
-    public void testGetToolsForComplexWorkflow() throws IOException {
+    void testGetToolsForComplexWorkflow() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         Version emptyVersion = new WorkflowVersion();
         final String content = getGatkSvMainDescriptorContent();
@@ -140,15 +146,15 @@ public class WDLHandlerTest {
         if (toolsStr.isPresent()) {
             final Gson gson = new Gson();
             final Object[] tools = gson.fromJson(toolsStr.get(), Object[].class);
-            Assert.assertEquals("There should be 227 tools", 227, tools.length);
+            assertEquals(227, tools.length, "There should be 227 tools");
         } else {
-            Assert.fail("Should be able to get tool json");
+            Assertions.fail("Should be able to get tool json");
         }
 
     }
 
     @Test
-    public void testGetContentWithSyntaxErrors() throws IOException {
+    void testGetContentWithSyntaxErrors() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final File wdlFile = new File(ResourceHelpers.resourceFilePath("brokenWDL.wdl"));
         final Set<SourceFile> emptySet = Collections.emptySet();
@@ -162,9 +168,9 @@ public class WDLHandlerTest {
         try {
             wdlHandler.getContent("/brokenWDL.wdl", FileUtils.readFileToString(wdlFile, StandardCharsets.UTF_8), emptySet,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            Assert.fail("Expected parsing error");
+            Assertions.fail("Expected parsing error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
+            assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
             assertThat(e.getErrorMessage()).contains(WDLHandler.WDL_PARSE_ERROR);
         }
     }

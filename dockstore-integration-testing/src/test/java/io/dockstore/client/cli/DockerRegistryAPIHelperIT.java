@@ -28,12 +28,12 @@ import io.dockstore.webservice.helpers.DockerRegistryAPIHelper;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.util.Optional;
 import okhttp3.Response;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@Category(NonConfidentialTest.class)
+@Tag(NonConfidentialTest.NAME)
 class DockerRegistryAPIHelperIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(

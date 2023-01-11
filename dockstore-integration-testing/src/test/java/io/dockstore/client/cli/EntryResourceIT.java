@@ -5,10 +5,12 @@ import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.ORCID_USER_1;
 import static io.dockstore.common.Hoverfly.ORCID_USER_2;
 import static io.dockstore.common.Hoverfly.PUT_CODE_USER_1;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
@@ -32,25 +34,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.http.HttpStatus;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
-public class EntryResourceIT extends BaseIT {
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
+class EntryResourceIT extends BaseIT {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -62,7 +64,7 @@ public class EntryResourceIT extends BaseIT {
      * Also tests handling of synchronization issues (put code on Dockstore not on ORCID, put code and DOI URL on ORCID, but not on Dockstore)
      */
     @Test
-    public void testOrcidExport() {
+    void testOrcidExport() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(client);
         UsersApi usersApi = new UsersApi(client);
@@ -74,7 +76,7 @@ public class EntryResourceIT extends BaseIT {
         List<Workflow> workflows = usersApi.userWorkflows(user.getId());
         Long workflowId = workflows.get(0).getId();
         workflowsApi.refresh1(workflowId, false);
-        Assert.assertTrue(workflows.size() > 0);
+        assertTrue(workflows.size() > 0);
         Workflow workflow = workflowsApi.getWorkflow(workflowId, null);
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
         Long workflowVersionId = workflowVersions.get(0).getId();
@@ -83,31 +85,31 @@ public class EntryResourceIT extends BaseIT {
             entriesApi.exportToORCID(workflowId, null);
             fail("Should not have been able to export an entry without DOI concept URL");
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
-            Assert.assertEquals(EntryResource.ENTRY_NO_DOI_ERROR_MESSAGE, e.getMessage());
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+            assertEquals(EntryResource.ENTRY_NO_DOI_ERROR_MESSAGE, e.getMessage());
         }
         testingPostgres.runUpdateStatement("update workflow set conceptDOI='https://doi.org/10.1038/s41586-020-1969-6'");
         try {
             entriesApi.exportToORCID(workflowId, workflowVersionId);
             fail("Should not have been able to export a version without DOI URL");
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
-            Assert.assertEquals(EntryResource.VERSION_NO_DOI_ERROR_MESSAGE, e.getMessage());
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+            assertEquals(EntryResource.VERSION_NO_DOI_ERROR_MESSAGE, e.getMessage());
         }
         try {
             entriesApi.exportToORCID(workflowId, workflowVersionId + 1);
             fail("Should not have been able to export a version that doesn't belong to the entry");
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
-            Assert.assertEquals(EntryResource.VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE, e.getMessage());
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+            assertEquals(EntryResource.VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE, e.getMessage());
         }
         try {
             testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
                 + "(9001, 'fakeToken', 'fakeRefreshToken', 'orcid.org', 1, 'Potato', '/authenticate')");
             entriesApi.exportToORCID(workflowId, null);
-            Assert.fail("Cannot insert the actual scope, must be enum");
+            fail("Cannot insert the actual scope, must be enum");
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
             testingPostgres.runUpdateStatement("delete from token where id=9001");
         }
 
@@ -115,9 +117,9 @@ public class EntryResourceIT extends BaseIT {
             testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
                 + "(9001, 'fakeToken', 'fakeRefreshToken', 'orcid.org', 1, 'Potato', '/activities/update')");
             entriesApi.exportToORCID(workflowId, null);
-            Assert.fail("Cannot insert the actual scope, must be enum");
+            fail("Cannot insert the actual scope, must be enum");
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
             testingPostgres.runUpdateStatement("delete from token where id=9001");
         }
 
@@ -130,7 +132,7 @@ public class EntryResourceIT extends BaseIT {
             entriesApi.exportToORCID(workflowId, null);
             fail("Should not have been able to export without a token in the correct scope");
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
         }
 
         testingPostgres.runUpdateStatement("update token set scope='" + TokenScope.ACTIVITIES_UPDATE.name() + "' where id=9001");
@@ -158,12 +160,12 @@ public class EntryResourceIT extends BaseIT {
 
             entriesApi.exportToORCID(workflowId, null); // Exporting should succeed. Dockstore will find the put code and update the ORCID work
             String putCode = testingPostgres.runSelectStatement(String.format("select orcidputcode from entry_orcidputcode where entry_id = '%s'", workflowId), String.class);
-            Assert.assertEquals("Should be able to find the put code for the ORCID work", PUT_CODE_USER_1, putCode);
+            assertEquals(PUT_CODE_USER_1, putCode, "Should be able to find the put code for the ORCID work");
         }
     }
 
     @Test
-    public void testMultipleUsersOrcidExport() {
+    void testMultipleUsersOrcidExport() {
         ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(userClient);
         UsersApi usersApi = new UsersApi(userClient);
@@ -184,10 +186,10 @@ public class EntryResourceIT extends BaseIT {
         Long workflowVersionId = workflowVersions.get(0).getId();
 
         // Give otherUser access to the workflow to mimic being part of the same GitHub organization as the first user
-        Assert.assertEquals("Other user should have no workflows", 0, otherUsersApi.userWorkflows(otherUser.getId()).size());
+        assertEquals(0, otherUsersApi.userWorkflows(otherUser.getId()).size(), "Other user should have no workflows");
         testingPostgres.runUpdateStatement(String.format("insert into user_entry (userid, entryid) values (%s, %s)", otherUser.getId(), workflowId));
         List<Workflow> workflows = otherUsersApi.userWorkflows(otherUser.getId());
-        Assert.assertEquals("Other user should have one workflow", 1, workflows.size());
+        assertEquals(1, workflows.size(), "Other user should have one workflow");
 
         // Give user 1 a fake ORCID token
         testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
@@ -234,7 +236,7 @@ public class EntryResourceIT extends BaseIT {
     }
 
     @Test
-    public void testDescriptionMetrics() {
+    void testDescriptionMetrics() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(client);
         UsersApi usersApi = new UsersApi(client);
@@ -248,7 +250,7 @@ public class EntryResourceIT extends BaseIT {
         Long workflowId = workflows.get(0).getId();
         workflowsApi.refresh1(workflowId, false);
 
-        Assert.assertTrue(workflows.size() > 0);
+        assertTrue(workflows.size() > 0);
 
         Workflow workflow = workflowsApi.getWorkflow(workflowId, null);
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
@@ -257,7 +259,7 @@ public class EntryResourceIT extends BaseIT {
         // The provided workflow should have a description
         try {
             DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
-            Assert.assertTrue(descriptionMetrics.getCalculatedEntropy() > 0
+            assertTrue(descriptionMetrics.getCalculatedEntropy() > 0
                 && descriptionMetrics.getCalculatedWordCount() > 0
                 && descriptionMetrics.getDescriptionLength() > 0);
         } catch (Exception e) {
@@ -271,9 +273,9 @@ public class EntryResourceIT extends BaseIT {
         testingPostgres.runUpdateStatement(updateStatement);
         try {
             DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
-            Assert.assertEquals("Incorrect entropy", 5, (long) descriptionMetrics.getCalculatedEntropy());
-            Assert.assertEquals("Incorrect word count", 2, (long) descriptionMetrics.getCalculatedWordCount());
-            Assert.assertEquals("Incorrect description length", 6, (long) descriptionMetrics.getDescriptionLength());
+            assertEquals(5, (long) descriptionMetrics.getCalculatedEntropy(), "Incorrect entropy");
+            assertEquals(2, (long) descriptionMetrics.getCalculatedWordCount(), "Incorrect word count");
+            assertEquals(6, (long) descriptionMetrics.getDescriptionLength(), "Incorrect description length");
         } catch (ApiException e) {
             fail("Description metrics should have calculated nonzero values for the description.");
         }
@@ -283,16 +285,16 @@ public class EntryResourceIT extends BaseIT {
         testingPostgres.runUpdateStatement(updateToNull);
         try {
             DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
-            Assert.assertEquals("Incorrect entropy", 0, (long) descriptionMetrics.getCalculatedEntropy());
-            Assert.assertEquals("Incorrect word count", 0, (long) descriptionMetrics.getCalculatedWordCount());
-            Assert.assertEquals("Incorrect description length", 0, (long) descriptionMetrics.getDescriptionLength());
+            assertEquals(0, (long) descriptionMetrics.getCalculatedEntropy(), "Incorrect entropy");
+            assertEquals(0, (long) descriptionMetrics.getCalculatedWordCount(), "Incorrect word count");
+            assertEquals(0, (long) descriptionMetrics.getDescriptionLength(), "Incorrect description length");
         } catch (ApiException e) {
             fail("The version does not have a description, so metrics should be set to 0.");
         }
     }
 
     @Test
-    public void testUpdateEntryToGetTopics() {
+    void testUpdateEntryToGetTopics() {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(client);
         ContainersApi containersApi = new ContainersApi(client);

@@ -17,13 +17,10 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.Lists;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -50,30 +47,31 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.hibernate.Session;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
-@Category({ ConfidentialTest.class, WorkflowTest.class })
-public class HostedWorkflowIT extends BaseIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
+@Tag(ConfidentialTest.NAME)
+@Tag(WorkflowTest.NAME)
+class HostedWorkflowIT extends BaseIT {
     public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
 
@@ -83,13 +81,13 @@ public class HostedWorkflowIT extends BaseIT {
         ManagedSessionContext.bind(session);
 
     }
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
     @Test
-    public void testHostedEditAndDelete() {
+    void testHostedEditAndDelete() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
@@ -101,22 +99,22 @@ public class HostedWorkflowIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
         try {
             hostedApi.deleteHostedWorkflowVersion(workflow.getId(), "v1.0");
-            fail("Should throw API exception");
+            Assertions.fail("Should throw API exception");
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("cannot modify non-hosted entries this way"));
+            Assertions.assertTrue(e.getMessage().contains("cannot modify non-hosted entries this way"));
         }
 
         // using hosted apis to edit normal workflow should fail
         try {
             hostedApi.editHostedWorkflow(workflow.getId(), new ArrayList<>());
-            fail("Should throw API exception");
+            Assertions.fail("Should throw API exception");
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("cannot modify non-hosted entries this way"));
+            Assertions.assertTrue(e.getMessage().contains("cannot modify non-hosted entries this way"));
         }
     }
 
     @Test
-    public void testHiddenAndDefaultVersions() {
+    void testHiddenAndDefaultVersions() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -130,9 +128,9 @@ public class HostedWorkflowIT extends BaseIT {
 
         try {
             workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), version.getName());
-            fail("Shouldn't be able to set the default version to one that is hidden.");
+            Assertions.fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
-            assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+            Assertions.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
         }
 
         // Set the default version to a non-hidden version
@@ -144,9 +142,9 @@ public class HostedWorkflowIT extends BaseIT {
         version.setHidden(true);
         try {
             workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
-            fail("Should not be able to hide a default version");
+            Assertions.fail("Should not be able to hide a default version");
         } catch (ApiException ex) {
-            assertEquals("You cannot hide the default version.", ex.getMessage());
+            Assertions.assertEquals("You cannot hide the default version.", ex.getMessage());
         }
 
         // Test same for hosted workflows
@@ -162,9 +160,9 @@ public class HostedWorkflowIT extends BaseIT {
         hostedVersion.setHidden(true);
         try {
             workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
-            fail("Shouldn't be able to hide the default version.");
+            Assertions.fail("Shouldn't be able to hide the default version.");
         } catch (ApiException ex) {
-            assertEquals("You cannot hide the default version.", ex.getMessage());
+            Assertions.assertEquals("You cannot hide the default version.", ex.getMessage());
         }
 
         file.setContent("cwlVersion: v1.0\n\n" + "class: Workflow");
@@ -175,22 +173,22 @@ public class HostedWorkflowIT extends BaseIT {
 
         try {
             workflowsApi.updateWorkflowDefaultVersion(hostedWorkflow.getId(), hostedVersion.getName());
-            fail("Shouldn't be able to set the default version to one that is hidden.");
+            Assertions.fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
-            assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+            Assertions.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
         }
     }
 
     @Test
-    public void testCreationOfIncorrectHostedWorkflowTypeGarbage() {
+    void testCreationOfIncorrectHostedWorkflowTypeGarbage() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        thrown.expect(ApiException.class);
-        hostedApi.createHostedWorkflow("name", null, "garbage type", null, null);
+        assertThrows(ApiException.class, () -> hostedApi.createHostedWorkflow("name", null, "garbage type", null, null));
+
     }
 
     @Test
-    public void testGetEntryByPath() {
+    void testGetEntryByPath() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
@@ -200,17 +198,17 @@ public class HostedWorkflowIT extends BaseIT {
         io.dockstore.openapi.client.model.Workflow workflow = hostedApi.createHostedWorkflow(null, "name", io.openapi.model.DescriptorType.CWL.toString(), null, null);
         try {
             foundEntry = workflowsApi.getEntryByPath("dockstore.org/DockstoreTestUser2/name");
-            assertEquals(workflow.getId(), foundEntry.getId());
+            Assertions.assertEquals(workflow.getId(), foundEntry.getId());
         } catch (io.dockstore.openapi.client.ApiException e) {
-            fail("Should be able to find the workflow entry with path " + workflow.getFullWorkflowPath());
+            Assertions.fail("Should be able to find the workflow entry with path " + workflow.getFullWorkflowPath());
         }
 
         // Try to find a workflow that doesn't exist
         try {
             workflowsApi.getEntryByPath("workflow/does/not/exist");
-            fail("Should not be able to find a workflow that doesn't exist.");
+            Assertions.fail("Should not be able to find a workflow that doesn't exist.");
         } catch (io.dockstore.openapi.client.ApiException e) {
-            assertEquals("Entry not found", e.getMessage());
+            Assertions.assertEquals("Entry not found", e.getMessage());
         }
 
         // Find a hosted tool -> simple case where the repo-name has no slashes: 'foo', no tool name
@@ -218,96 +216,91 @@ public class HostedWorkflowIT extends BaseIT {
             io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
         try {
             foundEntry = workflowsApi.getEntryByPath("public.ecr.aws/abcd1234/foo");
-            assertEquals(tool.getId(), foundEntry.getId());
+            Assertions.assertEquals(tool.getId(), foundEntry.getId());
         } catch (io.dockstore.openapi.client.ApiException e) {
-            fail("Should be able to find the tool entry with path " + tool.getToolPath());
+            Assertions.fail("Should be able to find the tool entry with path " + tool.getToolPath());
         }
 
         // Find a hosted tool -> repo name: 'foo/bar', no tool name
         tool = hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
         try {
             foundEntry = workflowsApi.getEntryByPath("public.ecr.aws/abcd1234/foo/bar");
-            assertEquals(tool.getId(), foundEntry.getId());
+            Assertions.assertEquals(tool.getId(), foundEntry.getId());
         } catch (io.dockstore.openapi.client.ApiException e) {
-            fail("Should be able to find the tool entry with path " + tool.getToolPath());
+            Assertions.fail("Should be able to find the tool entry with path " + tool.getToolPath());
         }
 
         // Find a hosted tool -> repo-name: 'foo/bar', tool name: 'tool-name'
         tool = hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", "tool-name");
         try {
             foundEntry = workflowsApi.getEntryByPath("public.ecr.aws/abcd1234/foo/bar/tool-name");
-            assertEquals(tool.getId(), foundEntry.getId());
+            Assertions.assertEquals(tool.getId(), foundEntry.getId());
         } catch (io.dockstore.openapi.client.ApiException e) {
-            fail("Should be able to find the tool entry with path " + tool.getToolPath());
+            Assertions.fail("Should be able to find the tool entry with path " + tool.getToolPath());
         }
     }
     @Test
-    public void testDuplicateHostedWorkflowCreation() {
+    void testDuplicateHostedWorkflowCreation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
-        thrown.expectMessage("already exists");
-        hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
+        assertThrows(ApiException.class, () -> hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null), "already exists");
     }
 
     @Test
-    public void testDuplicateHostedToolCreation() {
+    void testDuplicateHostedToolCreation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
-        thrown.expectMessage("already exists");
-        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
+        assertThrows(ApiException.class, () -> hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null), "already exists");
     }
 
     @Test
-    public void testAmazonECRHostedToolCreation() {
+    void testAmazonECRHostedToolCreation() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
         io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(webClient);
 
         // Create a hosted Amazon ECR tool using a private repository
         io.dockstore.openapi.client.model.DockstoreTool tool = hostedApi.createHostedTool("test.dkr.ecr.us-east-1.amazonaws.com", "foo", io.openapi.model.DescriptorType.CWL.toString(), "namespace", "bar");
-        assertNotNull(containersApi.getContainer(tool.getId(), ""));
+        Assertions.assertNotNull(containersApi.getContainer(tool.getId(), ""));
 
         // Create a hosted Amazon ECR tool using a public repository
         tool = hostedApi.createHostedTool("public.ecr.aws", "foo", io.openapi.model.DescriptorType.CWL.toString(), "namespace", "bar");
-        assertNotNull(containersApi.getContainer(tool.getId(), ""));
+        Assertions.assertNotNull(containersApi.getContainer(tool.getId(), ""));
     }
 
     @Test
-    public void testDuplicateAmazonECRHostedToolCreation() {
+    void testDuplicateAmazonECRHostedToolCreation() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
         String alreadyExistsMessage = "already exists";
 
         // Simple case: the two tools have the same names and entry names
         hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
-        thrown.expectMessage(alreadyExistsMessage);
-        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+        assertThrows(io.dockstore.openapi.client.ApiException.class, () ->  hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null), alreadyExistsMessage);
 
         // The two tools have different names and entry names, but the tool paths are the same
         // Scenario 1:
         // Tool 1 has name: 'foo/bar' and no entry name
         // Tool 2 has name: 'foo' and entry name: 'bar'
         hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
-        thrown.expectMessage(alreadyExistsMessage);
-        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", "bar");
+        assertThrows(io.dockstore.openapi.client.ApiException.class, () ->   hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", "bar"), alreadyExistsMessage);
 
         // Scenario 2:
         // Tool 1 has name: 'foo' and entry name: 'bar'
         // Tool 2 has name: 'foo/bar' and no entry name
         hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "wxyz6789", "bar");
-        thrown.expectMessage(alreadyExistsMessage);
-        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "wxyz6789", null);
+        assertThrows(io.dockstore.openapi.client.ApiException.class, () ->   hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "wxyz6789", null), alreadyExistsMessage);
     }
 
     @Test
-    public void testHostedWorkflowMetadata() throws IOException {
+    void testHostedWorkflowMetadata() throws IOException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
-        assertNotNull(hostedWorkflow.getLastModifiedDate());
-        assertNotNull(hostedWorkflow.getLastUpdated());
+        Assertions.assertNotNull(hostedWorkflow.getLastModifiedDate());
+        Assertions.assertNotNull(hostedWorkflow.getLastUpdated());
 
         // make a couple garbage edits
         SourceFile source = new SourceFile();
@@ -332,8 +325,8 @@ public class HostedWorkflowIT extends BaseIT {
         source2.setContent("food");
         final Workflow updatedHostedWorkflow = hostedApi
             .editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
-        assertNotNull(updatedHostedWorkflow.getLastModifiedDate());
-        assertNotNull(updatedHostedWorkflow.getLastUpdated());
+        Assertions.assertNotNull(updatedHostedWorkflow.getLastModifiedDate());
+        Assertions.assertNotNull(updatedHostedWorkflow.getLastUpdated());
 
         // note that this workflow contains metadata defined on the inputs to the workflow in the old (pre-map) CWL way that is still valid v1.0 CWL
         source.setContent(FileUtils
@@ -343,7 +336,7 @@ public class HostedWorkflowIT extends BaseIT {
         source2.setContent(
             FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/revtool.cwl")), StandardCharsets.UTF_8));
         Workflow workflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
-        assertFalse(workflow.getInputFileFormats().isEmpty());
-        assertFalse(workflow.getOutputFileFormats().isEmpty());
+        Assertions.assertFalse(workflow.getInputFileFormats().isEmpty());
+        Assertions.assertFalse(workflow.getOutputFileFormats().isEmpty());
     }
 }

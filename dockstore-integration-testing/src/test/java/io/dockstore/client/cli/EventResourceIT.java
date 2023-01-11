@@ -1,5 +1,11 @@
 package io.dockstore.client.cli;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.ToolTest;
@@ -21,39 +27,39 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * This test was originally in BasicIT, but it sometimes fails on travis and fails consistently locally if it is run with another test
  * before it. If testRefreshAfterDeletingAVersion() was run before, eventResource fails. But if you comment out the lines that refresh the
  * tool then in testRefresh, the eventResource will pass. Separating out this test for now.
  */
-@Category({ ConfidentialTest.class, ToolTest.class })
-public class EventResourceIT extends BaseIT {
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(TestStatus.class)
+@org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
+@org.junit.jupiter.api.Tag(ToolTest.NAME)
+class EventResourceIT extends BaseIT {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
     }
 
-    @Test()
-    public void eventResourcePaginationTest() {
+    @Test
+    void eventResourcePaginationTest() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
@@ -63,9 +69,9 @@ public class EventResourceIT extends BaseIT {
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertTrue("No starred entries, so there should be no events returned in starred entries mode", events.isEmpty());
+        assertTrue(events.isEmpty(), "No starred entries, so there should be no events returned in starred entries mode");
         events = eventsApi.getEvents(EventSearchType.ALL_STARRED.toString(), 10, 0);
-        Assert.assertTrue("No starred entries, so there should be no events returned in the all starred mode", events.isEmpty());
+        assertTrue(events.isEmpty(), "No starred entries, so there should be no events returned in the all starred mode");
 
 
         StarRequest starRequest = new StarRequest();
@@ -74,7 +80,7 @@ public class EventResourceIT extends BaseIT {
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0)
             .stream().filter(e -> e.getType() != TypeEnum.PUBLISH_ENTRY && e.getType() != TypeEnum.UNPUBLISH_ENTRY)
             .collect(Collectors.toList());
-        Assert.assertTrue("Should not be an event for the non-tag version that was automatically created for the newly registered tool", events.isEmpty());
+        assertTrue(events.isEmpty(), "Should not be an event for the non-tag version that was automatically created for the newly registered tool");
         // Add and update tag 101 times
         Set<String> randomTagNames = new HashSet<>();
 
@@ -87,25 +93,25 @@ public class EventResourceIT extends BaseIT {
         });
         try {
             events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT + 1, 0);
-            Assert.fail("Should've failed because it's over the limit");
+            fail("Should've failed because it's over the limit");
         } catch (ApiException e) {
-            Assert.assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
+            assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
         }
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT, 0);
-        Assert.assertEquals("Should have been able to use the max limit", EventDAO.MAX_LIMIT, events.size());
+        assertEquals(EventDAO.MAX_LIMIT, events.size(), "Should have been able to use the max limit");
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT - 10, 0);
-        Assert.assertEquals("Should have used a specific limit", EventDAO.MAX_LIMIT  - 10, events.size());
-        events.forEach(event -> Assert.assertNotNull(event.getVersion()));
+        assertEquals(EventDAO.MAX_LIMIT  - 10, events.size(), "Should have used a specific limit");
+        events.forEach(event -> assertNotNull(event.getVersion()));
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 1, 0);
-        Assert.assertEquals("Should have been able to use the min limit", 1, events.size());
+        assertEquals(1, events.size(), "Should have been able to use the min limit");
         try {
             events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 0, 0);
-            Assert.fail("Should've failed because it's under the limit");
+            fail("Should've failed because it's under the limit");
         } catch (ApiException e) {
-            Assert.assertEquals("{\"errors\":[\"query param limit must be greater than or equal to 1\"]}", e.getMessage());
+            assertEquals("{\"errors\":[\"query param limit must be greater than or equal to 1\"]}", e.getMessage());
         }
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), null, null);
-        Assert.assertEquals("Should have used the default limit", 10, events.size());
+        assertEquals(10, events.size(), "Should have used the default limit");
     }
 
     private List<Tag> getRandomTags(String name) {

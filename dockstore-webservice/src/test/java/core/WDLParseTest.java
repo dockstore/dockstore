@@ -18,10 +18,11 @@ package core;
 import static io.dockstore.webservice.languages.WDLHandler.DEFAULT_WDL_VERSION;
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT;
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
@@ -46,32 +47,35 @@ import java.util.Set;
 import java.util.SortedSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
-public class WDLParseTest {
+@ExtendWith(SystemStubsExtension.class)
+class WDLParseTest {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     @Test
-    public void testWDLMetadataExample() throws IOException {
+    void testWDLMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertTrue("incorrect author", entry.getAuthor().contains("Chip Stewart"));
-        assertTrue("incorrect email", entry.getEmail().contains("stewart@broadinstitute.org"));
+        assertTrue(entry.getAuthor().contains("Chip Stewart"), "incorrect author");
+        assertTrue(entry.getEmail().contains("stewart@broadinstitute.org"), "incorrect email");
     }
 
     @Test
-    public void testWDLMetadataExampleWithMerge() throws IOException {
+    void testWDLMetadataExampleWithMerge() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example1.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
@@ -84,7 +88,7 @@ public class WDLParseTest {
     }
 
     @Test
-    public void testWDLMetadataExampleWithWorkflowMeta() throws IOException {
+    void testWDLMetadataExampleWithWorkflowMeta() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
@@ -95,21 +99,21 @@ public class WDLParseTest {
         assertTrue(authorWithEmail.isPresent());
         assertEquals("foo@foo.com", authorWithEmail.get().getEmail());
         authors.stream().filter(author -> !author.getName().equals("Mr. Foo")).forEach(authorWithoutEmail -> assertNull(authorWithoutEmail.getEmail()));
-        assertEquals("incorrect description", "This is a cool workflow", entry.getDescription());
+        assertEquals("This is a cool workflow", entry.getDescription(), "incorrect description");
     }
 
     @Test
-    public void testRecursiveImportsMetadata() {
+    void testRecursiveImportsMetadata() {
         try {
             WDLHandler.checkForRecursiveLocalImports(getSourceFile1().getContent(), getSourceFiles(), new HashSet<>(), "/");
-            Assert.fail("Should have detected recursive local import");
+            fail("Should have detected recursive local import");
         } catch (ParseException e) {
-            Assert.assertEquals("Recursive local import detected: /first-import.wdl", e.getMessage());
+            assertEquals("Recursive local import detected: /first-import.wdl", e.getMessage());
         }
     }
 
     @Test
-    public void testHandlingVariousWorkflowVersions() throws IOException {
+    void testHandlingVariousWorkflowVersions() throws IOException {
         String workflowVersion = "draft-3";
         assertEquals("draft-3", WDLHandler.enhanceSemanticVersionString(workflowVersion));
         workflowVersion = "1.0";
@@ -206,7 +210,7 @@ public class WDLParseTest {
     }
 
     @Test
-    public void testGetLanguageVersion() throws IOException {
+    void testGetLanguageVersion() throws IOException {
         // Test valid 'version' fields
         String languageVersion = "version 1.0";
         SourceFile sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
@@ -218,7 +222,7 @@ public class WDLParseTest {
 
         languageVersion = ""; // No 'version' field specified
         sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
-        assertEquals(WDLHandler.DEFAULT_WDL_VERSION, WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
+        assertEquals(DEFAULT_WDL_VERSION, WDLHandler.getLanguageVersion(sourceFile.getAbsolutePath(), Set.of(sourceFile)).get());
 
         languageVersion = "# A comment can precede the version\nversion 1.0";
         sourceFile = getSimpleWorkflowSourcefileWithVersion(languageVersion);
@@ -273,12 +277,12 @@ public class WDLParseTest {
     }
 
     @Test
-    public void parseRecursiveWorkflowContent() {
+    void parseRecursiveWorkflowContent() {
         WDLHandler wdlHandler = new WDLHandler();
         WorkflowVersion version = new WorkflowVersion();
         wdlHandler.parseWorkflowContent(getSourceFile1().getAbsolutePath(), getSourceFile1().getContent(), getSourceFiles(), version);
         SortedSet<Validation> validations = version.getValidations();
-        Assert.assertTrue(validations.first().getMessage().contains("Recursive local import detected: /first-import.wdl"));
+        assertTrue(validations.first().getMessage().contains("Recursive local import detected: /first-import.wdl"));
     }
 
     private static SourceFile getSourceFile1() {
@@ -312,7 +316,7 @@ public class WDLParseTest {
      * Tests that Dockstore can handle a workflow with locally recursive imports
      */
     @Test
-    public void testLocallyRecursiveImport() {
+    void testLocallyRecursiveImport() {
         String type = "workflow";
         File recursiveWDL = new File(ResourceHelpers.resourceFilePath("local-recursive-import/localrecursive.wdl"));
         String primaryDescriptorFilePath = "localrecursive.wdl";
@@ -343,7 +347,7 @@ public class WDLParseTest {
             assertTrue(validation.getMessage().values().stream()
                     .anyMatch(msg -> StringUtils.contains(msg, ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT)));
         } catch (IOException e) {
-            Assert.fail();
+            fail();
         }
     }
 
@@ -352,7 +356,7 @@ public class WDLParseTest {
      * Tests that Dockstore can handle a workflow with recursive imports
      */
     @Test
-    public void testRecursiveImport() {
+    void testRecursiveImport() {
         String type = "workflow";
         File recursiveWDL = new File(ResourceHelpers.resourceFilePath("recursive.wdl"));
         String primaryDescriptorFilePath = recursiveWDL.getAbsolutePath();
@@ -368,7 +372,7 @@ public class WDLParseTest {
             WDLHandler wdlHandler = new WDLHandler();
             versionTypeValidation = wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
         } catch (IOException e) {
-            Assert.fail();
+            fail();
         } catch (CustomWebApplicationException e) {
             assertTrue(StringUtils.contains(e.getErrorMessage(), ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
         }
@@ -380,7 +384,7 @@ public class WDLParseTest {
      * Tests that Dockstore can handle a workflow with something that kinda looks recursive but isn't
      */
     @Test
-    public void testNotReallyRecursiveImport() {
+    void testNotReallyRecursiveImport() {
         String type = "workflow";
         File recursiveWDL = new File(ResourceHelpers.resourceFilePath("not-really-recursive/not-really-recursive.wdl"));
         String primaryDescriptorFilePath = recursiveWDL.getAbsolutePath();
@@ -395,7 +399,7 @@ public class WDLParseTest {
             WDLHandler wdlHandler = new WDLHandler();
             wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
         } catch (IOException | CustomWebApplicationException e) {
-            Assert.fail();
+            fail();
         }
     }
 
@@ -406,7 +410,7 @@ public class WDLParseTest {
      * Also tests metadata in WDL 1.0 files
      */
     @Test
-    public void testDraft3Code() {
+    void testDraft3Code() {
         String type = "workflow";
         File primaryWDL = new File(ResourceHelpers.resourceFilePath("importTesting.wdl"));
         File importedWDL = new File(ResourceHelpers.resourceFilePath("md5sum.wdl"));
@@ -434,18 +438,18 @@ public class WDLParseTest {
             LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
             Version entry = sInterface
                     .parseWorkflowContent(primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet, new WorkflowVersion());
-            assertEquals("incorrect author", 1, entry.getAuthor().split(",").length);
-            assertEquals("incorrect email", "foobar@foo.com", entry.getEmail());
-            assertTrue("incorrect description", entry.getDescription().length() > 0);
+            assertEquals(1, entry.getAuthor().split(",").length, "incorrect author");
+            assertEquals("foobar@foo.com", entry.getEmail(), "incorrect email");
+            assertTrue(entry.getDescription().length() > 0, "incorrect description");
             assertEquals(1, entry.getDescriptorTypeVersions().size());
             assertEquals("1.0", entry.getDescriptorTypeVersions().get(0));
         } catch (Exception e) {
-            Assert.fail("Should properly parse file and imports.");
+            fail("Should properly parse file and imports.");
         }
     }
 
     @Test
-    public void testGetDescriptorTypeVersions() {
+    void testGetDescriptorTypeVersions() {
         String type = "workflow";
         File primaryWDL = new File(ResourceHelpers.resourceFilePath("importTesting.wdl"));
         File importedWDL = new File(ResourceHelpers.resourceFilePath("md5sum.wdl"));
@@ -482,24 +486,24 @@ public class WDLParseTest {
             sourceFile.setContent(primaryWDLString.replace("version 1.0", "version 1.1"));
             entry = sInterface
                     .parseWorkflowContent(primaryWDL.getAbsolutePath(), sourceFile.getContent(), sourceFileSet, new WorkflowVersion());
-            assertEquals("Should have two language versions", 2, entry.getDescriptorTypeVersions().size());
+            assertEquals(2, entry.getDescriptorTypeVersions().size(), "Should have two language versions");
             assertTrue(entry.getDescriptorTypeVersions().contains("1.0") && entry.getDescriptorTypeVersions().contains("1.1"));
 
             // Add a syntax error to the imported descriptor
             importedFile.setContent(importedWDLString.replace("version 1.0", "version 1.0\n\nimport brokenbrokenbroken"));
             entry = sInterface
                     .parseWorkflowContent(primaryWDL.getAbsolutePath(), sourceFile.getContent(), sourceFileSet, new WorkflowVersion());
-            assertEquals("Should have two language versions", 2, entry.getDescriptorTypeVersions().size());
+            assertEquals(2, entry.getDescriptorTypeVersions().size(), "Should have two language versions");
             assertTrue(entry.getDescriptorTypeVersions().contains("1.0") && entry.getDescriptorTypeVersions().contains("1.1"));
 
             // Use an invalid 'version' for the imported file. The imported source file should not have a version set
             importedFile.setContent(importedWDLString.replace("version 1.0", "version 1 0"));
             entry = sInterface
                     .parseWorkflowContent(primaryWDL.getAbsolutePath(), sourceFile.getContent(), sourceFileSet, new WorkflowVersion());
-            assertEquals("Should have one language version", 1, entry.getDescriptorTypeVersions().size());
+            assertEquals(1, entry.getDescriptorTypeVersions().size(), "Should have one language version");
             assertTrue(entry.getDescriptorTypeVersions().contains("1.1"));
         } catch (Exception e) {
-            Assert.fail("Should properly parse language versions.");
+            fail("Should properly parse language versions.");
         }
     }
 }
