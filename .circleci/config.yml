@@ -263,6 +263,7 @@ jobs:
       - install-postgres
       - install-git-secrets
       - setup_postgres
+      - install-pip
       - run: # Useful for verifying versions
           name: Java/Maven/Python versions
           command: |
