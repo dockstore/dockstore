@@ -976,6 +976,7 @@ paths:
           - SWL
           - NFL
           - service
+          - ipynb
       - in: query
         name: namespace
         schema:
@@ -1630,6 +1631,7 @@ paths:
           - SWL
           - NFL
           - service
+          - ipynb
       responses:
         default:
           content:
@@ -1828,6 +1830,9 @@ paths:
             - GXFORMAT2_TEST_FILE
             - DOCKSTORE_SWL
             - SWL_TEST_JSON
+            - DOCKSTORE_IPYNB
+            - DOCKSTORE_REES
+            - DOCKSTORE_DATA
       responses:
         default:
           content:
@@ -1907,6 +1912,7 @@ paths:
           - SWL
           - NFL
           - service
+          - ipynb
       responses:
         default:
           content:
@@ -2323,6 +2329,9 @@ paths:
                   - GXFORMAT2_TEST_FILE
                   - DOCKSTORE_SWL
                   - SWL_TEST_JSON
+                  - DOCKSTORE_IPYNB
+                  - DOCKSTORE_REES
+                  - DOCKSTORE_DATA
                 uniqueItems: true
           description: default response
       security:
@@ -5757,6 +5766,7 @@ paths:
           - SWL
           - NFL
           - service
+          - ipynb
       - in: query
         name: namespace
         schema:
@@ -6447,6 +6457,7 @@ paths:
           - SWL
           - NFL
           - service
+          - ipynb
       responses:
         default:
           content:
@@ -6599,6 +6610,7 @@ paths:
           - SWL
           - NFL
           - service
+          - ipynb
       responses:
         default:
           content:
@@ -6634,6 +6646,7 @@ paths:
           - SWL
           - NFL
           - service
+          - ipynb
       responses:
         default:
           content:
@@ -6906,6 +6919,7 @@ paths:
           - SWL
           - NFL
           - service
+          - ipynb
       responses:
         default:
           content:
@@ -7331,6 +7345,9 @@ paths:
             - GXFORMAT2_TEST_FILE
             - DOCKSTORE_SWL
             - SWL_TEST_JSON
+            - DOCKSTORE_IPYNB
+            - DOCKSTORE_REES
+            - DOCKSTORE_DATA
       responses:
         default:
           content:
@@ -8137,6 +8154,7 @@ components:
           - WORKFLOW
           - SERVICE
           - APPTOOL
+          - NOTEBOOK
         lastUpdateDate:
           type: integer
           format: int64
@@ -8383,6 +8401,7 @@ components:
           - SWL
           - NFL
           - service
+          - ipynb
         version:
           type: string
     LanguageParsingRequest:
@@ -8403,6 +8422,7 @@ components:
           - SWL
           - NFL
           - service
+          - ipynb
         descriptorRelativePathInGit:
           type: string
           description: The relative path to the primary descriptor (relative to the
@@ -8660,6 +8680,7 @@ components:
           - SWL
           - NFL
           - service
+          - ipynb
         hasHTTPImports:
           type: boolean
         hasLocalImports:
@@ -8832,6 +8853,9 @@ components:
           - GXFORMAT2_TEST_FILE
           - DOCKSTORE_SWL
           - SWL_TEST_JSON
+          - DOCKSTORE_IPYNB
+          - DOCKSTORE_REES
+          - DOCKSTORE_DATA
         typeVersion:
           type: string
           description: The language version for the given descriptor file type
@@ -9539,6 +9563,9 @@ components:
           - GXFORMAT2_TEST_FILE
           - DOCKSTORE_SWL
           - SWL_TEST_JSON
+          - DOCKSTORE_IPYNB
+          - DOCKSTORE_REES
+          - DOCKSTORE_DATA
         valid:
           type: boolean
     VerificationInformation:
@@ -9749,6 +9776,7 @@ components:
           - SWL
           - NFL
           - service
+          - ipynb
         descriptorTypeSubclass:
           type: string
           enum:
@@ -9756,6 +9784,9 @@ components:
           - helm
           - swarm
           - kubernetes
+          - python
+          - r
+          - julia
           - n/a
         email:
           type: string

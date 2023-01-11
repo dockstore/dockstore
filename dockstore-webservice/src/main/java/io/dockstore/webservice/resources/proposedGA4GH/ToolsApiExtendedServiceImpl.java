@@ -33,6 +33,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
@@ -90,6 +91,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
     private static AppToolDAO appToolDAO = null;
+    private static NotebookDAO notebookDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static PublicStateManager publicStateManager = null;
     private static Semaphore elasticSearchConcurrencyLimit = null;
@@ -108,6 +110,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static void setAppToolDAO(AppToolDAO appToolDAO) {
         ToolsApiExtendedServiceImpl.appToolDAO = appToolDAO;
+    }
+
+    public static void setNotebookDAO(NotebookDAO notebookDAO) {
+        ToolsApiExtendedServiceImpl.notebookDAO = notebookDAO;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
