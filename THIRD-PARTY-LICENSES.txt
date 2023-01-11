@@ -259,7 +259,7 @@ Lists of 377 third-party dependencies.
      (The BSD License) JLine Bundle (org.jline:jline:3.21.0 - http://nexus.sonatype.org/oss-repository-hosting.html/jline-parent/jline)
      (Apache License, Version 2.0) JMES Path Query library (com.amazonaws:jmespath-java:1.11.505 - https://aws.amazon.com/sdkforjava)
      (Apache License, Version 2.0) Joda-Time (joda-time:joda-time:2.12.0 - https://www.joda.org/joda-time/)
-     (The JSON License) JSON in Java (org.json:json:20180130 - https://github.com/douglascrockford/JSON-java)
+     (Public Domain) JSON in Java (org.json:json:20220924 - https://github.com/douglascrockford/JSON-java)
      (Revised BSD License) JSONLD Java :: Core (com.github.jsonld-java:jsonld-java:0.8.3 - http://github.com/jsonld-java/jsonld-java/jsonld-java/)
      (MIT License) JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.36 - http://www.slf4j.org)
      (Eclipse Public License 1.0) JUnit (junit:junit:4.13.2 - http://junit.org)
