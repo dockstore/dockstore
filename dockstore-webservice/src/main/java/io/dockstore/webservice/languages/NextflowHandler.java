@@ -641,8 +641,8 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     }
 
     /**
-     * Looks for a line like <code>nextflow.enable.dsl=2</code>, and returns the value, 2 in this
-     * case.
+     * Looks for the first line like <code>nextflow.enable.dsl=2</code>, and returns the value, 2 in this
+     * example.
      * @param fileContent
      * @return
      */

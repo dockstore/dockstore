@@ -2,6 +2,7 @@ package io.dockstore.webservice.languages;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.DockerImageReference;
@@ -17,6 +18,9 @@ import java.util.regex.Matcher;
 import org.junit.jupiter.api.Test;
 
 class NextflowHandlerTest {
+
+    private static final String DSL_V1 = "1";
+    private static final String DSL_V2 = "2";
 
     @Test
     void testGetRelativeImportPathFromLine() {
@@ -60,12 +64,30 @@ class NextflowHandlerTest {
     @Test
     void testDslVersion() {
         final NextflowHandler nextflowHandler = new NextflowHandler();
-        final String dsl1Content = FixtureHelpers.fixture("fixtures/dsl1.nf");
-        final String dsl2Content = FixtureHelpers.fixture("fixtures/dsl2.nf");
-        final String implicitDslContent = FixtureHelpers.fixture("fixtures/implicitDsl.nf");
-        assertEquals("1", nextflowHandler.getDslVersion(dsl1Content).get());
-        assertEquals("2", nextflowHandler.getDslVersion(dsl2Content).get());
-        assertEquals(Optional.empty(), nextflowHandler.getDslVersion(implicitDslContent));
+        final String dsl1 = """
+            #!/usr/bin/env nextflow
+            nextflow.enable.dsl=1
+            exit 0
+            """;
+        assertEquals(DSL_V1, nextflowHandler.getDslVersion(dsl1).get());
+
+        final String dsl2 = dsl1.replace(DSL_V1, DSL_V2);
+        assertEquals(DSL_V2, nextflowHandler.getDslVersion(dsl2).get());
+
+        final String implicitDsl = """
+            #!/usr/bin/env nextflow
+            exit 0
+            """;
+        assertEquals(Optional.empty(), nextflowHandler.getDslVersion(implicitDsl));
+
+        final String dsl1And2 = """
+            #!/usr/bin/env nextflow
+            nextflow.enable.dsl=1
+            nextflow.enable.dsl=2
+            exit 0
+            """;
+        assertEquals(DSL_V1, nextflowHandler.getDslVersion(dsl1And2).get(), "First dsl declaration should win");
+
     }
 
     @Test
@@ -74,15 +96,31 @@ class NextflowHandlerTest {
         final String config = FixtureHelpers.fixture("fixtures/nextflow.config");
         final WorkflowVersion version = new WorkflowVersion();
         final String mainContent = FixtureHelpers.fixture("fixtures/main.nf");
-        final SourceFile sourceFile = new SourceFile();
-        sourceFile.setContent(mainContent);
-        sourceFile.setPath("main.nf");
-        final Set<SourceFile> sourceFiles = Set.of(sourceFile);
-        nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
-        assertEquals(List.of("2"), version.getDescriptorTypeVersions());
+        final SourceFile mainSourceFile = new SourceFile();
+        mainSourceFile.setContent(mainContent);
+        mainSourceFile.setPath("main.nf");
+        final SourceFile secondarySourceFile = new SourceFile();
+        final Set<SourceFile> sourceFiles = Set.of(mainSourceFile, secondarySourceFile);
 
-        sourceFile.setContent(mainContent.replace("nextflow.enable.dsl = 2", "nextflow.enable.dsl = 1"));
         nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
-        assertEquals(List.of("1"), version.getDescriptorTypeVersions());
+        assertEquals(List.of(DSL_V2), version.getDescriptorTypeVersions());
+        sourceFiles.forEach(sourceFile -> assertEquals(DSL_V2, sourceFile.getTypeVersion()));
+
+        mainSourceFile.setContent(mainContent.replace("nextflow.enable.dsl = 2", "nextflow.enable.dsl = 1"));
+        nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
+        assertEquals(List.of(DSL_V1), version.getDescriptorTypeVersions());
+        sourceFiles.forEach(sourceFile -> assertEquals(DSL_V1, sourceFile.getTypeVersion()));
+
+        // No DSL specified
+        mainSourceFile.setContent(mainContent.replace("nextflow.enable.dsl = 2", ""));
+        nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
+        assertEquals(List.of(), version.getDescriptorTypeVersions());
+        sourceFiles.forEach(sourceFile -> assertNull(sourceFile.getTypeVersion()));
+
+        // Descriptor referenced by config does not exist
+        mainSourceFile.setPath("/notthemain.nf");
+        nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
+        assertEquals(List.of(), version.getDescriptorTypeVersions());
+        sourceFiles.forEach(sourceFile -> assertNull(sourceFile.getTypeVersion()));
     }
 }
