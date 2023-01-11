@@ -15,13 +15,13 @@ import javax.persistence.Table;
 @Table(name = "notebook")
 
 @NamedQueries({
-    @NamedQuery(name = "io.dockstore.webservice.core.Notebook.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.NotebookPath(c.sourceControl, c.organization, c.repository, c.workflowName) from Notebook c where c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Notebook.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.NotebookPath(n.sourceControl, n.organization, n.repository, n.workflowName) from Notebook n where n.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Notebook.getEntryLiteByUserId", query =
-        "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteNotebook(s.sourceControl, s.organization, s.repository, s.workflowName, s.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
-            + "FROM Notebook s LEFT JOIN s.workflowVersions v "
-            + "WHERE s.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
-            + "GROUP BY s.sourceControl, s.organization, s.repository, s.workflowName, s.dbUpdateDate"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Notebook.getEntriesByUserId", query = "SELECT s FROM Notebook s WHERE s.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
+        "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteNotebook(n.sourceControl, n.organization, n.repository, n.workflowName, n.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
+            + "FROM Notebook n LEFT JOIN n.workflowVersions v "
+            + "WHERE n.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
+            + "GROUP BY n.sourceControl, n.organization, n.repository, n.workflowName, n.dbUpdateDate"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Notebook.getEntriesByUserId", query = "SELECT n FROM Notebook n WHERE n.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 
 public class Notebook extends Workflow {
