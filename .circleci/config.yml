@@ -407,9 +407,9 @@ jobs:
           # Find the most recent cache used from any branch
           - dockstore-java-
     - save_cache: # save aggregated cache from workspace for all jobs
-      paths:
-        - /tmp/dockstore-web-cache
-      key: dockstore-java-web-cache-{{ .Branch }}-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+        paths:
+          - /tmp/dockstore-web-cache
+        key: dockstore-java-web-cache-{{ .Branch }}-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
     - run:
         name: build
         command: ./mvnw clean install -DskipTests
