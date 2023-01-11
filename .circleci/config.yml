@@ -197,7 +197,12 @@ jobs:
       - checkout # check out source code to working directory
       - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+          keys:
+            # Find a cache corresponding to this specific licenses file checksum
+            # when this file is changed, this key will fail
+            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            # Find the most recent cache used from any branch
+            - dockstore-java-
       - install-git-secrets
       - run:
           name: decrypt and expand confidential test data
@@ -346,8 +351,8 @@ jobs:
           paths:
             - ~/.m2
           key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
-      - save_cache:
-          key: dockstore-web-cache-unit-test-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
+      - persist_to_workspace:
+          root: .
           paths:
             - /tmp/dockstore-web-cache
       - run:
@@ -375,12 +380,17 @@ jobs:
             cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
             cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
       - run:
+          name: Make cache miss report directory
+          command: mkdir /tmp/artifacts/misses
+      - run:
           name: Move cache miss log
-          command: | 
+          command: |
             touch /tmp/dockstore-web-cache.misses.log
-            cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
-      - store_artifacts:
-          path: /tmp/artifacts
+            cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts/misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
+      - persist_to_workspace:
+          root: .
+          paths:
+            - /tmp/artifacts/misses
 
   sonar-cloud:
     docker: # run the steps with Docker
@@ -390,15 +400,24 @@ jobs:
         at: .
     - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
         # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-        key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
-    - restore_cache:
-        key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
+        keys:
+          # Find a cache corresponding to this specific licenses file checksum
+          # when this file is changed, this key will fail
+          - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+          # Find the most recent cache used from any branch
+          - dockstore-java-
+    - save_cache: # save aggregated cache from workspace for all jobs
+      paths:
+        - /tmp/dockstore-web-cache
+      key: dockstore-java-web-cache-{{ .Branch }}-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
     - run:
         name: build
         command: ./mvnw clean install -DskipTests
     - run:
         name: SonarCloud scan - coverage
         command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
+    - store_artifacts:
+        path: /tmp/artifacts/misses
 
 commands:
   install-postgres:
@@ -477,12 +496,20 @@ commands:
           at: .
       - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+          keys:
+            # Find a cache corresponding to this specific licenses file checksum
+            # when this file is changed, this key will fail
+            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            # Find the most recent cache used from any branch
+            - dockstore-java-
       - run:
           name: manually copy back .m2
           command: cp -r .m2 ~/.m2
       - restore_cache:
-          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
+          keys:
+            - dockstore-java-web-cache-{{ .Branch }}-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-java-web-cache-{{ .Branch }}
+            - dockstore-java-web-cache
   setup_integration_test:
     steps:
       - run:
@@ -529,8 +556,8 @@ commands:
 
   save_test_results:
     steps:
-      - save_cache:
-          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
+      - persist_to_workspace:
+          root: .
           paths:
             - /tmp/dockstore-web-cache
       - run:
@@ -543,6 +570,18 @@ commands:
           path: ~/test-results
       - store_artifacts:
           path: /tmp/dockstore-web-cache.misses.log
+      - run:
+          name: Make cache miss report directory
+          command: mkdir /tmp/artifacts/misses
+      - run:
+          name: Move cache miss log
+          command: |
+            touch /tmp/dockstore-web-cache.misses.log
+            cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts/misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
+      - persist_to_workspace:
+          root: .
+          paths:
+            - /tmp/artifacts/misses
   persist_coverage:
     steps:
       - run:
