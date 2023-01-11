@@ -1,0 +1,48 @@
+name: Update license file
+
+on:
+  push:
+    branches:
+      - 'dependabot/**'
+
+# Workflows triggered by Dependabot have a read-only token by default.
+# Need to grant write permissions so this workflow can commit changes to the license file.
+permissions:
+  contents: write
+
+jobs:
+  update_license_file:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version:  '17.0.4+8'
+          distribution: 'adopt'
+
+      - name: Install git-secrets
+        run: npm run install-git-secrets
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Build with mvnw
+        run: ./mvnw clean install
+
+      - name: Push changes if license file changed
+        run: |
+          if [ -n "$(git status --porcelain | grep "THIRD-PARTY-LICENSES.txt")" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add dockstore-webservice/src/main/resources/openapi3/openapi.yaml dockstore-webservice/src/main/resources/swagger.yaml **/generated/**/pom.xml
+            git add THIRD-PARTY-LICENSES.txt
+            git commit -m "Update license file"
+            git push
+          else
+            echo "There were no changes to THIRD-PARTY-LICENSES.txt"
+          fi
