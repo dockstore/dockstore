@@ -1,0 +1,7 @@
+{
+  "successful": true,
+  "schema:actionStatus": "CompletedActionStatus",
+  "schema:totalTime": "10",
+  "dockstore:launchMethod": "DOCKSTORE_LAUNCH_WITH",
+  "dockstore:workflowEngine": "cromwell"
+}

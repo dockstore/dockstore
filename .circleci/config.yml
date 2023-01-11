@@ -270,6 +270,10 @@ jobs:
             ./mvnw -v
             python3 -V
       - run:
+          name: Install localstack
+          command: |
+            scripts/install-and-start-localstack.sh
+      - run:
           name: run the actual tests
           command: |            
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
