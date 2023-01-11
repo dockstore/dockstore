@@ -195,9 +195,9 @@ jobs:
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
       - checkout # check out source code to working directory
-      - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
+      - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: dockstore-java-{{ checksum "pom.xml" }}
+          key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
       - install-git-secrets
       - run:
           name: decrypt and expand confidential test data
@@ -258,8 +258,6 @@ jobs:
     steps: # a collection of executable commands
       - setup_test
       - checkout
-      - restore_cache:
-          key: dockstore-web-cache-unit-test-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
       - install-postgres
       - install-git-secrets
       - setup_postgres
@@ -347,7 +345,7 @@ jobs:
       - save_cache: # saves the project dependencies
           paths:
             - ~/.m2
-          key: dockstore-java-{{ checksum "pom.xml" }}
+          key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
       - save_cache:
           key: dockstore-web-cache-unit-test-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
           paths:
@@ -390,9 +388,9 @@ jobs:
     steps:
     - attach_workspace:
         at: .
-    - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
+    - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
         # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-        key: dockstore-java-{{ checksum "pom.xml" }}
+        key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
     - restore_cache:
         key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
     - run:
@@ -477,9 +475,9 @@ commands:
     steps:
       - attach_workspace:
           at: .
-      - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
+      - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: dockstore-java-{{ checksum "pom.xml" }}
+          key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
       - run:
           name: manually copy back .m2
           command: cp -r .m2 ~/.m2
