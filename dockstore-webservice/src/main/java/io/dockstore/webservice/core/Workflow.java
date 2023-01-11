@@ -131,13 +131,13 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
     @Column(nullable = false)
     @Convert(converter = DescriptorLanguageConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either SMK, CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "SMK, CWL, WDL, NFL, gxformat2, service")
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either SMK, CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "SMK, CWL, WDL, NFL, gxformat2, service, ipynb")
     private DescriptorLanguage descriptorType;
 
     // TODO: Change this to LAZY, this is the source of all our problems
     @Column(nullable = false, columnDefinition = "varchar(255) default 'n/a'")
     @Convert(converter = DescriptorLanguageSubclassConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true, position = 22)
+    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services and notebooks.", required = true, position = 22)
     private DescriptorLanguageSubclass descriptorTypeSubclass = DescriptorLanguageSubclass.NOT_APPLICABLE;
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")

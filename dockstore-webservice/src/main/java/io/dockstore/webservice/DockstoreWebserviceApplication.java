@@ -351,6 +351,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final FileDAO fileDAO = new FileDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
         final AppToolDAO appToolDAO = new AppToolDAO(hibernate.getSessionFactory());
+        final NotebookDAO notebookDAO = new NotebookDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
         final VersionDAO versionDAO = new VersionDAO(hibernate.getSessionFactory());
