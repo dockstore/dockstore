@@ -153,6 +153,22 @@
         <addUniqueConstraint columnNames="actualdefaultversion" constraintName="uk_actualdefaultversion_notebook" tableName="notebook"/>
         <addUniqueConstraint columnNames="checkerid" constraintName="uk_checkerid_notebook" tableName="notebook"/>
         <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="notebook" constraintName="fk_checkerid_notebook" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+        <sql dbms="postgresql">
+            CREATE UNIQUE INDEX if not exists full_notebook_name ON notebook USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
+            CREATE UNIQUE INDEX if not exists partial_notebook_name ON notebook USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
+        </sql>
+        <sql dbms="postgresql">
+            CREATE TRIGGER notebook_path_trigger
+            AFTER INSERT
+            ON notebook
+            FOR EACH ROW
+            EXECUTE PROCEDURE workflow_path_insert_trigger_fnc();
+            CREATE TRIGGER notebook_path_deletion_trigger
+            AFTER DELETE
+            ON notebook
+            FOR EACH ROW
+            EXECUTE PROCEDURE workflow_path_deletion_trigger_fnc();
+        </sql>
     </changeSet>
     <changeSet author="svonworl" id="addNotebookEvents">
         <addColumn tableName="event">
