@@ -28,11 +28,6 @@ executors:
           - http.port: 9200
           - discovery.type: single-node
       - image: localstack/localstack:1.3.1
-    environment:
-      # Dummy credentials used for localstack
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_KEY: test
-      AWS_DEFAULT_REGION: us-east-1
     resource_class: medium+
   machine_integration_test_exec:
     machine: # run the steps with Ubuntu VM, warning this VM does not have a Java 17 equivalent (yet)
@@ -530,6 +525,11 @@ commands:
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
             fi
           # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
+          environment:
+            # Dummy credentials used for localstack
+            AWS_ACCESS_KEY_ID: test
+            AWS_SECRET_KEY: test
+            AWS_DEFAULT_REGION: us-east-1
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
