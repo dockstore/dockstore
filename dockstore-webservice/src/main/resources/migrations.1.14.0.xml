@@ -120,7 +120,6 @@
             <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="licensename" type="VARCHAR(255)"/>
-            <column name="orcidputcode" type="VARCHAR(255)"/>
             <column name="topicid" type="BIGINT"/>
             <column name="checkerid" type="BIGINT"/>
             <column name="descriptortype" type="VARCHAR(255)">
@@ -144,6 +143,11 @@
             </column>
             <column name="workflowname" type="TEXT"/>
             <column name="actualdefaultversion" type="BIGINT"/>
+            <column name="topicautomatic" type="varchar(150 BYTE)"/>
+            <column name="topicmanual" type="varchar(150 BYTE)"/>
+            <column defaultValue="AUTOMATIC" name="topicselection" type="varchar(32 BYTE)">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="notebook" constraintName="fk_defaultversion_notebook" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
         <addUniqueConstraint columnNames="actualdefaultversion" constraintName="uk_actualdefaultversion_notebook" tableName="notebook"/>
