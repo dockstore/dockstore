@@ -64,6 +64,7 @@ services:
     environment:
       - DEBUG=${DEBUG-}
       - LAMBDA_EXECUTOR=${LAMBDA_EXECUTOR-}
+      - PROVIDER_OVERRIDE_S3=asf # Need this so that S3 key encoding works. Remove when there's a new localstack release https://github.com/localstack/localstack/issues/7374#issuecomment-1360950643
       - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:
       - localstack_data:/var/lib/localstack

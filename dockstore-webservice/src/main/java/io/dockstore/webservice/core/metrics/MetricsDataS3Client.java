@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import io.dockstore.webservice.helpers.S3ClientHelper;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -24,10 +25,10 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.io.IOUtils;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -39,12 +40,10 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 public class MetricsDataS3Client {
-    private static final int MAX_TOOL_ID_STRING_SEGMENTS = 5;
-    private static final int TOOL_ID_REPOSITORY_INDEX = 3;
-    private static final int TOOL_ID_TOOLNAME_INDEX = 4;
     private final S3Client s3;
     private final String bucketName;
 
@@ -68,18 +67,20 @@ public class MetricsDataS3Client {
     public void createS3Object(String toolId, String versionName, String platform, String fileName, String owner, String metricsData) {
         try {
             String key = generateKey(toolId, versionName, platform, fileName);
-            Map<String, String> metadata = Map.of(ObjectMetadataEnum.TOOL_ID.toString(), toolId,
-                    ObjectMetadataEnum.VERSION_NAME.toString(), versionName,
-                    ObjectMetadataEnum.PLATFORM.toString(), platform,
-                    ObjectMetadataEnum.FILENAME.toString(), fileName,
-                    ObjectMetadataEnum.OWNER.toString(), owner);
+            Map<String, String> metadata = Map.of(ObjectMetadata.TOOL_ID.toString(), toolId,
+                    ObjectMetadata.VERSION_NAME.toString(), versionName,
+                    ObjectMetadata.PLATFORM.toString(), platform,
+                    ObjectMetadata.FILENAME.toString(), fileName,
+                    ObjectMetadata.OWNER.toString(), owner);
             PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
                     .metadata(metadata)
+                    .contentType(MediaType.APPLICATION_JSON)
                     .build();
             RequestBody requestBody = RequestBody.fromString(metricsData);
-            s3.putObject(request, requestBody);
+            PutObjectResponse response = s3.putObject(request, requestBody);
+            response.versionId();
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -97,39 +98,11 @@ public class MetricsDataS3Client {
      */
     static String generateKey(String toolId, String versionName, String platform, String fileName) throws UnsupportedEncodingException {
         List<String> pathList = new ArrayList<>();
-        pathList.add(convertToolIdToPartialKey(toolId));
+        pathList.add(S3ClientHelper.convertToolIdToPartialKey(toolId));
         pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8));
         pathList.add(URLEncoder.encode(platform, StandardCharsets.UTF_8));
         pathList.add(URLEncoder.encode(fileName, StandardCharsets.UTF_8));
         return String.join("/", pathList);
-    }
-
-    /**
-     * Converts the toolId into a key for s3 storage.  Used by both webservice and tooltester
-     * Workflows will be in a "workflow" directory whereas tools will be in a "tool" directory
-     * repository and optional toolname or workflowname must be encoded or else looking for logs of a specific tool without toolname (quay.io/dockstore/hello_world)
-     * will return logs for the other ones with toolnames (quay.io/dockstore/hello_world/thing)
-     * TODO: Somehow reuse this between repos
-     *
-     * @param toolId TRS tool ID
-     * @return The key for s3
-     */
-    static String convertToolIdToPartialKey(String toolId) throws UnsupportedEncodingException {
-        String partialKey = toolId;
-        if (partialKey.startsWith("#workflow")) {
-            partialKey = partialKey.replaceFirst("#workflow", "workflow");
-        } else {
-            partialKey = "tool/" + partialKey;
-        }
-        String[] split = partialKey.split("/");
-        if (split.length == MAX_TOOL_ID_STRING_SEGMENTS) {
-            split[TOOL_ID_REPOSITORY_INDEX] = URLEncoder
-                    .encode(split[TOOL_ID_REPOSITORY_INDEX] + "/" + split[TOOL_ID_TOOLNAME_INDEX], StandardCharsets.UTF_8.name());
-            String[] encodedToolIdArray = Arrays.copyOf(split, split.length - 1);
-            return String.join("/", encodedToolIdArray);
-        } else {
-            return partialKey;
-        }
     }
 
     public String getMetricsDataFileContent(String toolId, String versionName, String platform, String filename)
@@ -142,7 +115,7 @@ public class MetricsDataS3Client {
     }
 
     public List<MetricsData> getMetricsData(String toolId, String toolVersionName) throws UnsupportedEncodingException {
-        String key = convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
+        String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
         ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).build();
         ListObjectsV2Response listObjectsV2Response = s3.listObjectsV2(request);
         List<S3Object> contents = listObjectsV2Response.contents();
@@ -154,34 +127,11 @@ public class MetricsDataS3Client {
     }
 
     static MetricsData convertUserMetadataToMetricsData(Map<String, String> userMetadata) {
-        String toolId = userMetadata.get(ObjectMetadataEnum.TOOL_ID.toString());
-        String toolVersionName = userMetadata.get(ObjectMetadataEnum.VERSION_NAME.toString());
-        String platform = userMetadata.get(ObjectMetadataEnum.PLATFORM.toString());
-        String fileName = userMetadata.get(ObjectMetadataEnum.FILENAME.toString());
-        String owner = userMetadata.get(ObjectMetadataEnum.OWNER.toString());
+        String toolId = userMetadata.get(ObjectMetadata.TOOL_ID.toString());
+        String toolVersionName = userMetadata.get(ObjectMetadata.VERSION_NAME.toString());
+        String platform = userMetadata.get(ObjectMetadata.PLATFORM.toString());
+        String fileName = userMetadata.get(ObjectMetadata.FILENAME.toString());
+        String owner = userMetadata.get(ObjectMetadata.OWNER.toString());
         return new MetricsData(toolId, toolVersionName, platform, owner, fileName);
-    }
-
-    public enum ObjectMetadataEnum {
-        TOOL_ID("tool_id"),
-        VERSION_NAME("version_name"),
-        PLATFORM("platform"),
-        FILENAME("file_nane"),
-        OWNER("owner");
-
-        private final String metadataKey;
-
-        ObjectMetadataEnum(String metadata) {
-            this.metadataKey = metadata;
-        }
-
-        public String getMetadataKey() {
-            return metadataKey;
-        }
-
-        @Override
-        public String toString() {
-            return metadataKey;
-        }
     }
 }

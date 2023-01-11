@@ -21,19 +21,49 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 public class MetricsDataS3ClientTest {
 
     @Test
     void testGenerateKeys() throws UnsupportedEncodingException {
-        final String toolId = "#workflow/quay.io/briandoconnor/dockstore-tool-md5sum";
-        final String versionName = "1.0.4";
-        final String platform1 = "terra";
-        final String platform2 = "agc";
+        final String versionName = "1.0";
+        final String platform = "terra";
         final String fileName = Instant.now().toEpochMilli() + ".json";
 
-        assertEquals("workflow/quay.io/briandoconnor/dockstore-tool-md5sum/1.0.4/terra/" + fileName, MetricsDataS3Client.generateKey(toolId, versionName, platform1, fileName));
-        assertEquals("workflow/quay.io/briandoconnor/dockstore-tool-md5sum/1.0.4/agc/" + fileName, MetricsDataS3Client.generateKey(toolId, versionName, platform2, fileName));
+        // workflow toolId with no tool name
+        String toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container";
+        assertEquals("workflow/github.com/ENCODE-DCC/pipeline-container/1.0/terra/" + fileName, MetricsDataS3Client.generateKey(toolId, versionName, platform, fileName));
+
+        // workflow toolId with tool name
+        toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container/encode-mapping-cwl";
+        assertEquals("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/terra/" + fileName, MetricsDataS3Client.generateKey(toolId, versionName, platform, fileName));
+
+        // tool toolId with no tool name
+        toolId = "quay.io/briandoconnor/dockstore-tool-md5sum";
+        assertEquals("tool/quay.io/briandoconnor/dockstore-tool-md5sum/1.0/terra/" + fileName, MetricsDataS3Client.generateKey(toolId, versionName, platform, fileName));
+    }
+
+    @Test
+    void testConvertUserMetadataToMetricsData() {
+        final String toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container/encode-mapping-cwl";
+        final String versionName = "1.0";
+        final String platform = "terra";
+        final String fileName = Instant.now().toEpochMilli() + ".json";
+        final String owner = "testUser";
+        Map<String, String> metadata = Map.of(ObjectMetadata.TOOL_ID.toString(), toolId,
+                ObjectMetadata.VERSION_NAME.toString(), versionName,
+                ObjectMetadata.PLATFORM.toString(), platform,
+                ObjectMetadata.FILENAME.toString(), fileName,
+                ObjectMetadata.OWNER.toString(), owner
+        );
+        MetricsData metricsData = MetricsDataS3Client.convertUserMetadataToMetricsData(metadata);
+        assertEquals(toolId, metricsData.getToolId());
+        assertEquals(versionName, metricsData.getToolVersionName());
+        assertEquals(platform, metricsData.getPlatform());
+        assertEquals(fileName, metricsData.getFilename());
+        assertEquals(owner, metricsData.getOwner());
+
     }
 }

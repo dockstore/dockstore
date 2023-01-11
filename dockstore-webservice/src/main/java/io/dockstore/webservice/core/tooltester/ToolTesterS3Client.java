@@ -18,12 +18,12 @@
 
 package io.dockstore.webservice.core.tooltester;
 
+import io.dockstore.webservice.helpers.S3ClientHelper;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -43,9 +43,6 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  * @since 24/04/19
  */
 public class ToolTesterS3Client {
-    private static final int MAX_TOOL_ID_STRING_SEGMENTS = 5;
-    private static final int TOOL_ID_REPOSITORY_INDEX = 3;
-    private static final int TOOL_ID_TOOLNAME_INDEX = 4;
     private final S3Client s3;
     private final String bucketName;
 
@@ -70,7 +67,7 @@ public class ToolTesterS3Client {
     private static String generateKey(String toolId, String versionName, String testFilePath, String runner, String filename)
             throws UnsupportedEncodingException {
         List<String> pathList = new ArrayList<>();
-        pathList.add(convertToolIdToPartialKey(toolId));
+        pathList.add(S3ClientHelper.convertToolIdToPartialKey(toolId));
         pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8.name()));
         pathList.add(URLEncoder.encode(testFilePath, StandardCharsets.UTF_8.name()));
         pathList.add(runner);
@@ -87,34 +84,6 @@ public class ToolTesterS3Client {
         return new ToolTesterLog(toolId, toolVersionName, testFilename, runner, logType, filename);
     }
 
-    /**
-     * Converts the toolId into a key for s3 storage.  Used by both webservice and tooltester
-     * Workflows will be in a "workflow" directory whereas tools will be in a "tool" directory
-     * repository and optional toolname or workflowname must be encoded or else looking for logs of a specific tool without toolname (quay.io/dockstore/hello_world)
-     * will return logs for the other ones with toolnames (quay.io/dockstore/hello_world/thing)
-     * TODO: Somehow reuse this between repos
-     *
-     * @param toolId TRS tool ID
-     * @return The key for s3
-     */
-    static String convertToolIdToPartialKey(String toolId) throws UnsupportedEncodingException {
-        String partialKey = toolId;
-        if (partialKey.startsWith("#workflow")) {
-            partialKey = partialKey.replaceFirst("#workflow", "workflow");
-        } else {
-            partialKey = "tool/" + partialKey;
-        }
-        String[] split = partialKey.split("/");
-        if (split.length == MAX_TOOL_ID_STRING_SEGMENTS) {
-            split[TOOL_ID_REPOSITORY_INDEX] = URLEncoder
-                    .encode(split[TOOL_ID_REPOSITORY_INDEX] + "/" + split[TOOL_ID_TOOLNAME_INDEX], StandardCharsets.UTF_8.name());
-            String[] encodedToolIdArray = Arrays.copyOf(split, split.length - 1);
-            return String.join("/", encodedToolIdArray);
-        } else {
-            return partialKey;
-        }
-    }
-
     public String getToolTesterLog(String toolId, String versionName, String testFilePath, String runner, String filename)
             throws IOException {
         String key = generateKey(toolId, versionName, testFilePath, runner, filename);
@@ -125,7 +94,7 @@ public class ToolTesterS3Client {
     }
 
     public List<ToolTesterLog> getToolTesterLogs(String toolId, String toolVersionName) throws UnsupportedEncodingException {
-        String key = convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8.name());
+        String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8.name());
         ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).build();
         ListObjectsV2Response listObjectsV2Response = s3.listObjectsV2(request);
         List<S3Object> contents = listObjectsV2Response.contents();
