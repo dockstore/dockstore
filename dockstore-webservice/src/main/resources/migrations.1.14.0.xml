@@ -141,7 +141,7 @@
             <column name="sourcecontrol" type="TEXT">
                 <constraints nullable="false"/>
             </column>
-            <column name="workflowname" type="TEXT"/>
+            <column name="workflowname" type="VARCHAR(256)"/>
             <column name="actualdefaultversion" type="BIGINT"/>
             <column name="topicautomatic" type="varchar(150 BYTE)"/>
             <column name="topicmanual" type="varchar(150 BYTE)"/>
