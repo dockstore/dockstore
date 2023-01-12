@@ -20,6 +20,7 @@ import groovyjarjarantlr.RecognitionException;
 import groovyjarjarantlr.TokenStreamException;
 import groovyjarjarantlr.collections.AST;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.DockerParameter;
 import io.dockstore.common.NextflowUtilities;
@@ -121,7 +122,10 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     private void updateDescriptorTypeVersion(final Set<SourceFile> sourceFiles, final Version version,
             final Configuration configuration, final Optional<SourceFile> mainScript) {
         final String dslVersion = this.calculateDslVersion(configuration, mainScript).orElse(null);
-        sourceFiles.forEach(sourceFile -> sourceFile.setTypeVersion(dslVersion));
+        sourceFiles.stream()
+            // Exclude config file and test params
+            .filter(sourceFile -> sourceFile.getType() == FileType.NEXTFLOW)
+            .forEach(sourceFile -> sourceFile.setTypeVersion(dslVersion));
         version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
     }
 
