@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
@@ -49,12 +50,15 @@ import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
+import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.slf4j.Logger;
@@ -116,11 +120,6 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "The checksum(s) of the sourcefile's content", position = 6)
     private List<Checksum> checksums = new ArrayList<>();
 
-    @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The language version for the given descriptor file type", position = 7)
-    @Schema(description = "The language version for the given descriptor file type")
-    private String typeVersion;
-
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
@@ -137,6 +136,15 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "maps from platform to whether an entry successfully ran on it using this test json")
     @BatchSize(size = 25)
     private Map<String, VerificationInformation> verifiedBySource = new HashMap<>();
+
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    private SourceFileMetadata metadata = new SourceFileMetadata();
+
+    public SourceFile() {
+        this.metadata.parent = this;
+    }
 
     public Map<String, VerificationInformation> getVerifiedBySource() {
         return verifiedBySource;
@@ -239,12 +247,12 @@ public class SourceFile implements Comparable<SourceFile> {
         this.frozen = frozen;
     }
 
-    public String getTypeVersion() {
-        return typeVersion;
+    public SourceFileMetadata getMetadata() {
+        return metadata;
     }
 
-    public void setTypeVersion(String typeVersion) {
-        this.typeVersion = typeVersion;
+    public void setMetadata(final SourceFileMetadata metadata) {
+        this.metadata = metadata;
     }
 
     private static synchronized void checkPath(String path) {

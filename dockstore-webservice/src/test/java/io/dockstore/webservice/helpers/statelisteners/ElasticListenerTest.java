@@ -107,7 +107,7 @@ class ElasticListenerTest {
         sourceFile.setPath("/Dockstore.wdl");
         sourceFile.setContent("Doesn't matter");
         version.getSourceFiles().add(sourceFile);
-        version.setDescriptorTypeVersions(descriptorTypeVersions);
+        version.getVersionMetadata().setDescriptorTypeVersions(descriptorTypeVersions);
         // Id is normally set via Hibernate generator; have to use reflection to set it, alas
         FieldUtils.writeField(version, "id", id, true);
     }

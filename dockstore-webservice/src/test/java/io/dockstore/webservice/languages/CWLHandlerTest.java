@@ -423,7 +423,7 @@ class CWLHandlerTest {
         Mockito.doAnswer(invocation -> {
             versionConsumer.accept((String)invocation.getArgument(0));
             return null;
-        }).when(sourceFile).setTypeVersion(Mockito.any());
+        }).when(sourceFile).getMetadata().setTypeVersion(Mockito.any());
         return sourceFile;
     }
 
@@ -431,7 +431,7 @@ class CWLHandlerTest {
         Mockito.doAnswer(invocation -> {
             versionsConsumer.accept((List<String>)invocation.getArgument(0));
             return null;
-        }).when(version).setDescriptorTypeVersions(Mockito.any());
+        }).when(version).getVersionMetadata().setDescriptorTypeVersions(Mockito.any());
         return version;
     }
 

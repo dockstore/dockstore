@@ -498,7 +498,7 @@ public class ElasticListener implements StateListenerInterface {
 
         // Get a list of unique descriptor type versions with the descriptor type prepended. Ex: 'WDL 1.0'
         return workflowVersions.stream()
-                .map(workflowVersion -> (List<String>)workflowVersion.getDescriptorTypeVersions())
+                .map(workflowVersion -> (List<String>)workflowVersion.getVersionMetadata().getDescriptorTypeVersions())
                 .flatMap(List::stream)
                 .distinct()
                 .map(descriptorTypeVersion -> String.join(" ", language, descriptorTypeVersion))
