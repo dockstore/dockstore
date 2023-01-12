@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.DockerParameter;
 import io.dockstore.webservice.core.SourceFile;
@@ -99,7 +100,9 @@ class NextflowHandlerTest {
         final SourceFile mainSourceFile = new SourceFile();
         mainSourceFile.setContent(mainContent);
         mainSourceFile.setPath("main.nf");
+        mainSourceFile.setType(FileType.NEXTFLOW);
         final SourceFile secondarySourceFile = new SourceFile();
+        secondarySourceFile.setType(FileType.NEXTFLOW);
         final Set<SourceFile> sourceFiles = Set.of(mainSourceFile, secondarySourceFile);
 
         nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
