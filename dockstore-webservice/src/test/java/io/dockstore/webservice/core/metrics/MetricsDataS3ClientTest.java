@@ -58,7 +58,7 @@ public class MetricsDataS3ClientTest {
                 ObjectMetadata.FILENAME.toString(), fileName,
                 ObjectMetadata.OWNER.toString(), owner
         );
-        MetricsData metricsData = MetricsDataS3Client.convertUserMetadataToMetricsData(metadata);
+        MetricsData metricsData = MetricsDataS3Client.convertS3ObjectMetadataToMetricsData(metadata);
         assertEquals(toolId, metricsData.getToolId());
         assertEquals(versionName, metricsData.getToolVersionName());
         assertEquals(platform, metricsData.getPlatform());

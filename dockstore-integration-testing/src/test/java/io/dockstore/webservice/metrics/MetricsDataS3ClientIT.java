@@ -53,7 +53,6 @@ public class MetricsDataS3ClientIT {
         s3Client = S3Client.builder().region(Region.US_EAST_1).endpointOverride(localstackEndpoint).build();
         CreateBucketRequest request = CreateBucketRequest.builder().bucket(BUCKET_NAME).build();
         s3Client.createBucket(request);
-        deleteBucketContents();
     }
 
     @AfterEach
@@ -82,14 +81,14 @@ public class MetricsDataS3ClientIT {
         final String platform1 = "terra";
         final String platform2 = "agc";
         final String fileName = Instant.now().toEpochMilli() + ".json";
-        final String owner = "testUser";
+        final long ownerUserId = 1;
         // metricsRequestBody is an example of what the JSON request body would look like. It contains metrics for a workflow execution
         final File metricsRequestBodyFile = new File(ResourceHelpers.resourceFilePath("prototype-metrics-request-body.json"));
         final String metricsRequestBody = Files.asCharSource(metricsRequestBodyFile, StandardCharsets.UTF_8).read();
 
         // Create an object in S3 for the workflow
         MetricsDataS3Client client = new MetricsDataS3Client(BUCKET_NAME, localstackEndpoint);
-        client.createS3Object(toolId1, versionName, platform1, fileName, owner, metricsRequestBody);
+        client.createS3Object(toolId1, versionName, platform1, fileName, ownerUserId, metricsRequestBody);
         List<MetricsData> metricsDataList = client.getMetricsData(toolId1, versionName);
         assertEquals(1, metricsDataList.size());
 
@@ -105,14 +104,14 @@ public class MetricsDataS3ClientIT {
         assertEquals(toolId1, metricsData.getToolId());
         assertEquals(versionName, metricsData.getToolVersionName());
         assertEquals(platform1, metricsData.getPlatform());
-        assertEquals(owner, metricsData.getOwner());
+        assertEquals(ownerUserId, metricsData.getOwner());
 
         // Verify S3 object contents
         String metricsDataContent = client.getMetricsDataFileContent(metricsData.getToolId(), metricsData.getToolVersionName(), metricsData.getPlatform(), metricsData.getFilename());
         assertEquals(metricsRequestBody, metricsDataContent);
 
         // Send more metrics data to S3 for the same workflow version, but different platform
-        client.createS3Object(toolId1, versionName, platform2, fileName, owner, metricsRequestBody);
+        client.createS3Object(toolId1, versionName, platform2, fileName, ownerUserId, metricsRequestBody);
         metricsDataList = client.getMetricsData(toolId1, versionName);
         assertEquals(2, metricsDataList.size());
 
@@ -126,7 +125,7 @@ public class MetricsDataS3ClientIT {
         assertTrue(s3BucketKeys.contains("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/agc/" + fileName));
 
         // Add a tool
-        client.createS3Object(toolId2, versionName, platform1, fileName, owner, metricsRequestBody);
+        client.createS3Object(toolId2, versionName, platform1, fileName, ownerUserId, metricsRequestBody);
         metricsDataList = client.getMetricsData(toolId2, versionName);
         assertEquals(1, metricsDataList.size(), "Should only be one because data was only submitted for one version of the tool");
 

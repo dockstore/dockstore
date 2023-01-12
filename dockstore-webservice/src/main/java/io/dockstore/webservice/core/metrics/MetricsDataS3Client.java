@@ -40,7 +40,6 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 public class MetricsDataS3Client {
@@ -64,14 +63,24 @@ public class MetricsDataS3Client {
         this.s3 = S3Client.builder().region(Region.US_EAST_1).endpointOverride(endpointOverride).build();
     }
 
-    public void createS3Object(String toolId, String versionName, String platform, String fileName, String owner, String metricsData) {
+    /**
+     * Creates an S3 object containing metrics data for the given GA4GH tool and tool version
+     *
+     * @param toolId The GA4GH Tool ID
+     * @param versionName The GA4GH ToolVersion name
+     * @param platform The platform that the metrics data is from
+     * @param fileName The file name to use. Should be the time that the data was submitted in milliseconds since epoch appended with '.json'
+     * @param ownerUserId The user id of the owner (user that sent the metrics data)
+     * @param metricsData The metrics data in JSON format
+     */
+    public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String metricsData) {
         try {
             String key = generateKey(toolId, versionName, platform, fileName);
             Map<String, String> metadata = Map.of(ObjectMetadata.TOOL_ID.toString(), toolId,
                     ObjectMetadata.VERSION_NAME.toString(), versionName,
                     ObjectMetadata.PLATFORM.toString(), platform,
                     ObjectMetadata.FILENAME.toString(), fileName,
-                    ObjectMetadata.OWNER.toString(), owner);
+                    ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId));
             PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
@@ -79,8 +88,7 @@ public class MetricsDataS3Client {
                     .contentType(MediaType.APPLICATION_JSON)
                     .build();
             RequestBody requestBody = RequestBody.fromString(metricsData);
-            PutObjectResponse response = s3.putObject(request, requestBody);
-            response.versionId();
+            s3.putObject(request, requestBody);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -92,9 +100,9 @@ public class MetricsDataS3Client {
      * @param toolId       The GA4GH Tool ID
      * @param versionName  The GA4GH ToolVersion name
      * @param platform      The platform that the metrics data is from
-     * @param fileName     The time that the data was submitted in milliseconds since epoch
+     * @param fileName     The file name to use. Should be the time that the data was submitted in milliseconds since epoch appended with '.json'
      * @return S3 key (file path)
-     * @throws UnsupportedEncodingException Could not endpoint string
+     * @throws UnsupportedEncodingException
      */
     static String generateKey(String toolId, String versionName, String platform, String fileName) throws UnsupportedEncodingException {
         List<String> pathList = new ArrayList<>();
@@ -105,6 +113,15 @@ public class MetricsDataS3Client {
         return String.join("/", pathList);
     }
 
+    /**
+     * Get the metrics data JSON string from S3 for a GA4GH tool version
+     * @param toolId The GA4GH Tool ID
+     * @param versionName The GA4GH ToolVersion name
+     * @param platform The platform that the metrics data is from
+     * @param filename The file name of the S3 object
+     * @return JSON string containing the metrics data
+     * @throws IOException
+     */
     public String getMetricsDataFileContent(String toolId, String versionName, String platform, String filename)
             throws IOException {
         String key = generateKey(toolId, versionName, platform, filename);
@@ -114,6 +131,13 @@ public class MetricsDataS3Client {
 
     }
 
+    /**
+     * Get a list of MetricsData for a GA4GH tool version
+     * @param toolId The GA4GH Tool ID
+     * @param toolVersionName The GA4GH ToolVersion name
+     * @return A list of MetricsData
+     * @throws UnsupportedEncodingException
+     */
     public List<MetricsData> getMetricsData(String toolId, String toolVersionName) throws UnsupportedEncodingException {
         String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
         ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).build();
@@ -122,16 +146,16 @@ public class MetricsDataS3Client {
         return contents.stream().map(s3Object -> {
             HeadObjectRequest build = HeadObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build();
             Map<String, String> metadata = s3.headObject(build).metadata();
-            return convertUserMetadataToMetricsData(metadata);
+            return convertS3ObjectMetadataToMetricsData(metadata);
         }).collect(Collectors.toList());
     }
 
-    static MetricsData convertUserMetadataToMetricsData(Map<String, String> userMetadata) {
-        String toolId = userMetadata.get(ObjectMetadata.TOOL_ID.toString());
-        String toolVersionName = userMetadata.get(ObjectMetadata.VERSION_NAME.toString());
-        String platform = userMetadata.get(ObjectMetadata.PLATFORM.toString());
-        String fileName = userMetadata.get(ObjectMetadata.FILENAME.toString());
-        String owner = userMetadata.get(ObjectMetadata.OWNER.toString());
+    static MetricsData convertS3ObjectMetadataToMetricsData(Map<String, String> s3ObjectMetadata) {
+        String toolId = s3ObjectMetadata.get(ObjectMetadata.TOOL_ID.toString());
+        String toolVersionName = s3ObjectMetadata.get(ObjectMetadata.VERSION_NAME.toString());
+        String platform = s3ObjectMetadata.get(ObjectMetadata.PLATFORM.toString());
+        String fileName = s3ObjectMetadata.get(ObjectMetadata.FILENAME.toString());
+        String owner = s3ObjectMetadata.get(ObjectMetadata.OWNER.toString());
         return new MetricsData(toolId, toolVersionName, platform, owner, fileName);
     }
 }
