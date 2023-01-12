@@ -143,7 +143,7 @@ public class SourceFile implements Comparable<SourceFile> {
     private SourceFileMetadata metadata = new SourceFileMetadata();
 
     public SourceFile() {
-        this.metadata.parent = this;
+        metadata.setParent(this);
     }
 
     public Map<String, VerificationInformation> getVerifiedBySource() {

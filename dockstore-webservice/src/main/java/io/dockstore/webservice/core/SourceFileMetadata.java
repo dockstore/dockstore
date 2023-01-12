@@ -43,7 +43,7 @@ public class SourceFileMetadata {
     @MapsId
     @OneToOne
     @JoinColumn(name = "id")
-    protected SourceFile parent;
+    private SourceFile parent;
 
     public long getId() {
         return id;
@@ -60,4 +60,9 @@ public class SourceFileMetadata {
     public void setTypeVersion(final String typeVersion) {
         this.typeVersion = typeVersion;
     }
+
+    void setParent(final SourceFile parent) {
+        this.parent = parent;
+    }
+
 }

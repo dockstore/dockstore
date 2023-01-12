@@ -20,6 +20,7 @@ import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.dropwizard.testing.ResourceHelpers;
@@ -30,7 +31,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -365,11 +365,11 @@ class CWLHandlerTest {
 
         // create and mock parameters for getContent()
         final String resourceRoot = "requirements-and-hints";
-        final SourceFile parentFile = mockSourceFile(resourceRoot, "/parent.cwl");
+        final SourceFile parentFile = createSourceFile(resourceRoot, "/parent.cwl");
         final Set<SourceFile> secondarySourceFiles = Set.of(
-            mockSourceFile(resourceRoot, "/requirement.cwl"),
-            mockSourceFile(resourceRoot, "/hint.cwl"),
-            mockSourceFile(resourceRoot, "/none.cwl"));
+            createSourceFile(resourceRoot, "/requirement.cwl"),
+            createSourceFile(resourceRoot, "/hint.cwl"),
+            createSourceFile(resourceRoot, "/none.cwl"));
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
 
         // determine the tool information from the "repo"
@@ -391,13 +391,13 @@ class CWLHandlerTest {
         assertEquals(3 * 3 - 1, tools.size(), "there should be a dockerPull for all workflow steps except the one with no requirements/hints");
     }
 
-    private SourceFile mockSourceFile(String resourceRoot, String sourceFilePath) throws IOException {
+    private SourceFile createSourceFile(String resourceRoot, String sourceFilePath) throws IOException {
         String content = FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath(resourceRoot + sourceFilePath)), StandardCharsets.UTF_8);
-        SourceFile sourceFile = Mockito.mock(SourceFile.class);
-        when(sourceFile.getPath()).thenReturn(sourceFilePath);
-        when(sourceFile.getAbsolutePath()).thenReturn(sourceFilePath);
-        when(sourceFile.getContent()).thenReturn(content);
-        when(sourceFile.getType()).thenReturn(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        final SourceFile sourceFile = new SourceFile();
+        sourceFile.setPath(sourceFilePath);
+        sourceFile.setAbsolutePath(sourceFilePath);
+        sourceFile.setContent(content);
+        sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         return sourceFile;
     }
 
@@ -409,36 +409,16 @@ class CWLHandlerTest {
         CWLHandler cwlHandler = new CWLHandler();
 
         final String resourceRoot = "workflow-id-slashes";
-        final SourceFile primaryFile = mockSourceFile(resourceRoot, "/main.cwl");
+        final SourceFile primaryFile = createSourceFile(resourceRoot, "/main.cwl");
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
 
-        String toolTableContent = cwlHandler.getContent(primaryFile.getAbsolutePath(), primaryFile.getContent(), Set.of(mockSourceFile(resourceRoot, "/tool.cwl")), LanguageHandlerInterface.Type.TOOLS, toolDAO).get();
+        String toolTableContent = cwlHandler.getContent(primaryFile.getAbsolutePath(), primaryFile.getContent(), Set.of(
+            createSourceFile(resourceRoot, "/tool.cwl")), LanguageHandlerInterface.Type.TOOLS, toolDAO).get();
         assertTrue(toolTableContent.contains("step_name"), "step id should be part of tool table content");
 
         String dagContent = cwlHandler.getContent(primaryFile.getAbsolutePath(), primaryFile.getContent(), Set.of(), LanguageHandlerInterface.Type.DAG, toolDAO).get();
         assertTrue(dagContent.contains("step_name"), "step id should be part of dag content");
     }
-
-    private SourceFile mockMethodSetTypeVersion(SourceFile sourceFile, Consumer<String> versionConsumer) {
-        Mockito.doAnswer(invocation -> {
-            versionConsumer.accept((String)invocation.getArgument(0));
-            return null;
-        }).when(sourceFile).getMetadata().setTypeVersion(Mockito.any());
-        return sourceFile;
-    }
-
-    private Version mockMethodSetDescriptorTypeVersions(Version version, Consumer<List<String>> versionsConsumer) {
-        Mockito.doAnswer(invocation -> {
-            versionsConsumer.accept((List<String>)invocation.getArgument(0));
-            return null;
-        }).when(version).getVersionMetadata().setDescriptorTypeVersions(Mockito.any());
-        return version;
-    }
-
-    private static String manyVersion;
-    private static String oneVersion;
-    private static String noVersion;
-    private static List<String> versionVersions;
 
     /**
      * Test that language versions are extracted from SourceFiles and set properly.
@@ -448,27 +428,17 @@ class CWLHandlerTest {
         CWLHandler cwlHandler = new CWLHandler();
 
         final String resourceRoot = "multi-version-cwl";
-        final SourceFile manyFile = mockMethodSetTypeVersion(mockSourceFile(resourceRoot, "/many-version.cwl"), v -> manyVersion = v);
-        final SourceFile oneFile = mockMethodSetTypeVersion(mockSourceFile(resourceRoot, "/one-version.cwl"), v -> oneVersion = v);
-        final SourceFile noFile = mockMethodSetTypeVersion(mockSourceFile(resourceRoot, "/no-version.cwl"), v -> noVersion = v);
+        final SourceFile manyFile = createSourceFile(resourceRoot, "/many-version.cwl");
+        final SourceFile oneFile = createSourceFile(resourceRoot, "/one-version.cwl");
+        final SourceFile noFile = createSourceFile(resourceRoot, "/no-version.cwl");
 
         // Test multiple files containing many versions.
-        manyVersion = "bogus";
-        oneVersion = "bogus";
-        noVersion = "bogus";
-        versionVersions = List.of("bogus");
-        final Version version = mockMethodSetDescriptorTypeVersions(Mockito.mock(Version.class), v -> versionVersions = v);
+        final Version version = new WorkflowVersion();
         cwlHandler.parseWorkflowContent(manyFile.getPath(), manyFile.getContent(), Set.of(manyFile, oneFile, noFile), version);
-        assertEquals("v1.2", manyVersion);
-        assertEquals("v1.1", oneVersion);
-        assertEquals(null, noVersion);
-        assertEquals(List.of("v1.2", "v1.1", "v1.0"), versionVersions);
+        assertEquals(List.of("v1.2", "v1.1", "v1.0"), version.getVersionMetadata().getDescriptorTypeVersions());
 
         // Test one file containing no versions.
-        noVersion = "bogus";
-        versionVersions = List.of("bogus");
         cwlHandler.parseWorkflowContent(noFile.getPath(), noFile.getContent(), Set.of(noFile), version);
-        assertEquals(null, noVersion);
-        assertEquals(List.of(), versionVersions);
+        assertEquals(List.of(), version.getVersionMetadata().getDescriptorTypeVersions());
     }
 }
