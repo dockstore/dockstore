@@ -261,7 +261,19 @@ jobs:
           POSTGRES_PASSWORD: postgres
     parallelism: 2
     steps: # a collection of executable commands
-      - setup_test
+      - attach_workspace:
+          at: .
+      - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          keys:
+            # Find a cache corresponding to this specific licenses file checksum
+            # when this file is changed, this key will fail
+            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            # Find the most recent cache used from any branch
+            - dockstore-java-
+      - run:
+          name: manually copy back .m2
+          command: cp -r .m2 ~/.m2
       - checkout
       - install-postgres
       - install-git-secrets
