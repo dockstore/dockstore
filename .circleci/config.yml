@@ -285,8 +285,9 @@ jobs:
       - restore_cache:
           keys:
             - dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
-            - dockstore-web-cache-unit-test
-            - dockstore-web-cache
+            - dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-
+            - dockstore-web-cache-unit-test-
+            - dockstore-web-cache-
       - run:
           name: run the actual tests
           command: |            
@@ -526,8 +527,9 @@ commands:
       - restore_cache:
           keys:
             - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
-            - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}
-            - dockstore-web-cache
+            - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/tests-to-run.txt" }}-
+            - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-
+            - dockstore-web-cache-
   setup_integration_test:
     steps:
       - run:
