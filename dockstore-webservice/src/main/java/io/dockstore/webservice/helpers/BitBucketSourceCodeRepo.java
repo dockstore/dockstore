@@ -119,7 +119,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                         .repositoriesUsernameRepoSlugSrcNodePathGet(repositoryId.split("/")[0], reference, pathToDirectory,
                             repositoryId.split("/")[1], null, null, null);
                 } catch (ApiException e) {
-                    rateLimited = isRateLimited(false, e, "reading branches");
+                    rateLimited = isRateLimited(false, e, "listing files");
                 }
             } while (rateLimited);
 
@@ -154,7 +154,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 try {
                     contributor = repositoriesApi.repositoriesUsernameGet(gitUsername, "contributor");
                 } catch (ApiException e) {
-                    rateLimited = isRateLimited(false, e, "reading branches");
+                    rateLimited = isRateLimited(false, e, "getting repositories");
                 }
             } while (rateLimited);
 
@@ -202,7 +202,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     .invokeAPI(substring, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/json", "application/json",
                         new String[]{"api_key", "basic", "oauth2"}, type).getData();
             } catch (ApiException e) {
-                rateLimited = isRateLimited(false, e, "reading branches");
+                rateLimited = isRateLimited(false, e, "getting pagination");
             }
         } while (rateLimited);
 
@@ -278,17 +278,19 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
      * @return
      */
     private boolean isRateLimited(final boolean rateLimited, ApiException e, String message) {
-        LOG.warn(gitUsername + ": apiexception on " + message + e.getMessage(), e);
+        LOG.warn("%s: apiexception on %s%s".formatted(gitUsername, message, e.getMessage()), e);
         // this is not so critical to warrant a http error code
         boolean newlyRateLimited = false;
         if (e.getCode() == Status.TOO_MANY_REQUESTS.getStatusCode()) {
             newlyRateLimited = true;
-            LOG.error(gitUsername + ": rate-limited on " + message);
+            LOG.error("%s: rate-limited on %s".formatted(gitUsername, message));
             try {
 
                 Thread.sleep(ONE_MINUTE_IN_MS); // one minute, should be exponential back-off
             } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
+                LOG.error("Rate-limit wait interrupted!", e);
+                // Restore interrupted state...
+                Thread.currentThread().interrupt();
             }
         }
         return rateLimited || newlyRateLimited;
