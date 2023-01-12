@@ -21,15 +21,15 @@ public class MetricsData {
     private String toolId;
     private String toolVersionName;
     private String platform;
-    private String owner;
     private String filename;
+    private long owner; // The user id of the user that sent the metrics data
 
-    public MetricsData(String toolId, String toolVersionName, String platform, String owner, String filename) {
+    public MetricsData(String toolId, String toolVersionName, String platform, String filename, long owner) {
         this.toolId = toolId;
         this.toolVersionName = toolVersionName;
         this.platform = platform;
-        this.owner = owner;
         this.filename = filename;
+        this.owner = owner;
     }
 
     public String getToolId() {
@@ -56,19 +56,19 @@ public class MetricsData {
         this.platform = platform;
     }
 
-    public String getOwner() {
-        return owner;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
-
     public String getFilename() {
         return filename;
     }
 
     public void setFilename(String filename) {
         this.filename = filename;
+    }
+
+    public long getOwner() {
+        return owner;
+    }
+
+    public void setOwner(long owner) {
+        this.owner = owner;
     }
 }

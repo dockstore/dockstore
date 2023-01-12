@@ -51,19 +51,19 @@ public class MetricsDataS3ClientTest {
         final String versionName = "1.0";
         final String platform = "terra";
         final String fileName = Instant.now().toEpochMilli() + ".json";
-        final String owner = "testUser";
+        final long ownerUserId = 1;
         Map<String, String> metadata = Map.of(ObjectMetadata.TOOL_ID.toString(), toolId,
                 ObjectMetadata.VERSION_NAME.toString(), versionName,
                 ObjectMetadata.PLATFORM.toString(), platform,
                 ObjectMetadata.FILENAME.toString(), fileName,
-                ObjectMetadata.OWNER.toString(), owner
+                ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId)
         );
         MetricsData metricsData = MetricsDataS3Client.convertS3ObjectMetadataToMetricsData(metadata);
         assertEquals(toolId, metricsData.getToolId());
         assertEquals(versionName, metricsData.getToolVersionName());
         assertEquals(platform, metricsData.getPlatform());
         assertEquals(fileName, metricsData.getFilename());
-        assertEquals(owner, metricsData.getOwner());
+        assertEquals(ownerUserId, metricsData.getOwner());
 
     }
 }

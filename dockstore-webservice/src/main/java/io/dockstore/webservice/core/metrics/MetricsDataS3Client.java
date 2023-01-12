@@ -155,7 +155,7 @@ public class MetricsDataS3Client {
         String toolVersionName = s3ObjectMetadata.get(ObjectMetadata.VERSION_NAME.toString());
         String platform = s3ObjectMetadata.get(ObjectMetadata.PLATFORM.toString());
         String fileName = s3ObjectMetadata.get(ObjectMetadata.FILENAME.toString());
-        String owner = s3ObjectMetadata.get(ObjectMetadata.OWNER.toString());
-        return new MetricsData(toolId, toolVersionName, platform, owner, fileName);
+        long owner = Long.parseLong(s3ObjectMetadata.get(ObjectMetadata.OWNER.toString()));
+        return new MetricsData(toolId, toolVersionName, platform, fileName, owner);
     }
 }
