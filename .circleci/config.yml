@@ -352,14 +352,6 @@ jobs:
             - ~/.m2
           key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
       - run:
-          name: Move web cache
-          command: |
-            cp -R /tmp/dockstore-web-cache dockstore-web-cache
-      - persist_to_workspace:
-          root: .
-          paths:
-            - dockstore-web-cache
-      - run:
           name: Save test results
           command: |
             mkdir -p ~/junit/
@@ -408,14 +400,6 @@ jobs:
           - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
           # Find the most recent cache used from any branch
           - dockstore-java-
-    - run:
-        name: Move web cache
-        command: |
-          cp -R dockstore-web-cache /tmp/dockstore-web-cache
-    - save_cache: # save aggregated cache from workspace for all jobs
-        paths:
-          - /tmp/dockstore-web-cache
-        key: dockstore-java-web-cache-{{ .Branch }}-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
     - run:
         name: build
         command: ./mvnw clean install -DskipTests
@@ -562,14 +546,6 @@ commands:
 
   save_test_results:
     steps:
-      - run:
-          name: Move web cache
-          command: |
-            cp -R /tmp/dockstore-web-cache dockstore-web-cache
-      - persist_to_workspace:
-          root: .
-          paths:
-            - dockstore-web-cache
       - run:
           name: Save test results
           command: |
