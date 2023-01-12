@@ -82,6 +82,12 @@ public class Event {
     private AppTool apptool;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "notebookId", referencedColumnName = "id")
+    @ApiModelProperty(value = "Notebook that the event is acting on.", position = 10)
+    @JsonIgnoreProperties({ "workflowVersions" })
+    private Notebook notebook;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collectionId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "Collection that the event is acting on.", position = 5)
     @JsonIgnoreProperties({ "entries" })
@@ -117,16 +123,6 @@ public class Event {
     private Timestamp dbUpdateDate;
 
     public Event() { }
-
-    public Event(User user, Organization organization, Collection collection, BioWorkflow workflow, Tool tool, User initiatorUser, EventType type) {
-        this.user = user;
-        this.organization = organization;
-        this.collection = collection;
-        this.workflow = workflow;
-        this.tool = tool;
-        this.initiatorUser = initiatorUser;
-        this.type = type;
-    }
 
     public long getId() {
         return id;
@@ -249,6 +245,7 @@ public class Event {
         private BioWorkflow bioWorkflow;
         private AppTool appTool;
         private Service service;
+        private Notebook notebook;
         private Collection collection;
         private User initiatorUser;
         private EventType type;
@@ -288,6 +285,11 @@ public class Event {
 
         public Builder withAppTool(AppTool appTool) {
             this.appTool = appTool;
+            return this;
+        }
+
+        public Builder withNotebook(Notebook notebook) {
+            this.notebook = notebook;
             return this;
         }
 
