@@ -1831,8 +1831,8 @@ paths:
             - DOCKSTORE_SWL
             - SWL_TEST_JSON
             - DOCKSTORE_IPYNB
-            - DOCKSTORE_REES
-            - DOCKSTORE_DATA
+            - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_OTHER
       responses:
         default:
           content:
@@ -2330,8 +2330,8 @@ paths:
                   - DOCKSTORE_SWL
                   - SWL_TEST_JSON
                   - DOCKSTORE_IPYNB
-                  - DOCKSTORE_REES
-                  - DOCKSTORE_DATA
+                  - DOCKSTORE_NOTEBOOK_REES
+                  - DOCKSTORE_NOTEBOOK_OTHER
                 uniqueItems: true
           description: default response
       security:
@@ -7346,8 +7346,8 @@ paths:
             - DOCKSTORE_SWL
             - SWL_TEST_JSON
             - DOCKSTORE_IPYNB
-            - DOCKSTORE_REES
-            - DOCKSTORE_DATA
+            - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_OTHER
       responses:
         default:
           content:
@@ -8854,8 +8854,8 @@ components:
           - DOCKSTORE_SWL
           - SWL_TEST_JSON
           - DOCKSTORE_IPYNB
-          - DOCKSTORE_REES
-          - DOCKSTORE_DATA
+          - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_OTHER
         typeVersion:
           type: string
           description: The language version for the given descriptor file type
@@ -9564,8 +9564,8 @@ components:
           - DOCKSTORE_SWL
           - SWL_TEST_JSON
           - DOCKSTORE_IPYNB
-          - DOCKSTORE_REES
-          - DOCKSTORE_DATA
+          - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_OTHER
         valid:
           type: boolean
     VerificationInformation:

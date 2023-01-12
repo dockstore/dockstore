@@ -124,18 +124,6 @@ public class Event {
 
     public Event() { }
 
-    /*
-    public Event(User user, Organization organization, Collection collection, BioWorkflow workflow, Tool tool, User initiatorUser, EventType type) {
-        this.user = user;
-        this.organization = organization;
-        this.collection = collection;
-        this.workflow = workflow;
-        this.tool = tool;
-        this.initiatorUser = initiatorUser;
-        this.type = type;
-    }
-    */
-
     public long getId() {
         return id;
     }

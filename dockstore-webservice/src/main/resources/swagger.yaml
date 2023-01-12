@@ -7928,8 +7928,8 @@ definitions:
         - "DOCKSTORE_SWL"
         - "SWL_TEST_JSON"
         - "DOCKSTORE_IPYNB"
-        - "DOCKSTORE_REES"
-        - "DOCKSTORE_DATA"
+        - "DOCKSTORE_NOTEBOOK_REES"
+        - "DOCKSTORE_NOTEBOOK_OTHER"
       content:
         type: "string"
         position: 2
@@ -8631,8 +8631,8 @@ definitions:
         - "DOCKSTORE_SWL"
         - "SWL_TEST_JSON"
         - "DOCKSTORE_IPYNB"
-        - "DOCKSTORE_REES"
-        - "DOCKSTORE_DATA"
+        - "DOCKSTORE_NOTEBOOK_REES"
+        - "DOCKSTORE_NOTEBOOK_OTHER"
       valid:
         type: "boolean"
         position: 2
