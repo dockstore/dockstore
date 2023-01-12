@@ -24,7 +24,7 @@ import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-public class MetricsDataS3ClientTest {
+class MetricsDataS3ClientTest {
 
     @Test
     void testGenerateKeys() throws UnsupportedEncodingException {

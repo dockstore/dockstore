@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.UnsupportedEncodingException;
 import org.junit.jupiter.api.Test;
 
-public class S3ClientHelperTest {
+class S3ClientHelperTest {
     /**
      * TODO: Remove this once ToolTester and this webservice's convertToolIdToPartialKey() function is merged and reused
      * @throws UnsupportedEncodingException

@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.S3ClientHelper;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -27,9 +28,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
@@ -43,13 +46,14 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 public class MetricsDataS3Client {
+    private static final Logger LOG = LoggerFactory.getLogger(MetricsDataS3Client.class);
     private final S3Client s3;
     private final String bucketName;
 
     public MetricsDataS3Client(String bucketName) throws URISyntaxException {
-        this.bucketName = bucketName; // TODO:
+        this.bucketName = bucketName;
         //TODO should not need to hardcode region since buckets are global, but http://opensourceforgeeks.blogspot.com/2018/07/how-to-fix-unable-to-find-region-via.html
-        this.s3 = S3Client.builder().region(Region.US_EAST_1).endpointOverride(new URI("http://localhost:4566")).build();
+        this.s3 = S3Client.builder().region(Region.US_EAST_1).build();
     }
 
     /**
@@ -90,7 +94,8 @@ public class MetricsDataS3Client {
             RequestBody requestBody = RequestBody.fromString(metricsData);
             s3.putObject(request, requestBody);
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+            LOG.error("Could not generate S3 key: " + e.getMessage());
+            throw new CustomWebApplicationException("Could not create S3 object", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -147,7 +152,7 @@ public class MetricsDataS3Client {
             HeadObjectRequest build = HeadObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build();
             Map<String, String> metadata = s3.headObject(build).metadata();
             return convertS3ObjectMetadataToMetricsData(metadata);
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     static MetricsData convertS3ObjectMetadataToMetricsData(Map<String, String> s3ObjectMetadata) {
