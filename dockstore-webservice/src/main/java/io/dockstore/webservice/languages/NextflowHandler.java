@@ -695,14 +695,10 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      * @return
      */
     private Optional<String> calculateDslVersion(final Configuration configuration, final Optional<SourceFile> mainScript) {
-        final Optional<String> dslInScript = mainScript.flatMap(sf -> getDslVersion(sf.getContent()));
-        if (dslInScript.isEmpty()) {
-            final String configDsl = configuration.getString("nextflow.enable.dsl", null);
-            return Optional.ofNullable(configDsl);
-        }
-        return dslInScript;
+        return mainScript
+            .flatMap(sf -> getDslVersion(sf.getContent()))
+            .or(() -> Optional.ofNullable(configuration.getString("nextflow.enable.dsl", null)));
     }
-
 
     private boolean isNodeText(AST node, String text) {
         return node != null && text.equals(node.getText());
