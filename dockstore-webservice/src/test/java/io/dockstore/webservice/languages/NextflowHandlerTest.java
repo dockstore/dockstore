@@ -106,24 +106,24 @@ class NextflowHandlerTest {
         final Set<SourceFile> sourceFiles = Set.of(mainSourceFile, secondarySourceFile);
 
         nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
-        assertEquals(List.of(DSL_V2), version.getDescriptorTypeVersions());
-        sourceFiles.forEach(sourceFile -> assertEquals(DSL_V2, sourceFile.getTypeVersion()));
+        assertEquals(List.of(DSL_V2), version.getVersionMetadata().getDescriptorTypeVersions());
+        sourceFiles.forEach(sourceFile -> assertEquals(DSL_V2, sourceFile.getMetadata().getTypeVersion()));
 
         mainSourceFile.setContent(mainContent.replace("nextflow.enable.dsl = 2", "nextflow.enable.dsl = 1"));
         nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
-        assertEquals(List.of(DSL_V1), version.getDescriptorTypeVersions());
-        sourceFiles.forEach(sourceFile -> assertEquals(DSL_V1, sourceFile.getTypeVersion()));
+        assertEquals(List.of(DSL_V1), version.getVersionMetadata().getDescriptorTypeVersions());
+        sourceFiles.forEach(sourceFile -> assertEquals(DSL_V1, sourceFile.getMetadata().getTypeVersion()));
 
         // No DSL specified
         mainSourceFile.setContent(mainContent.replace("nextflow.enable.dsl = 2", ""));
         nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
-        assertEquals(List.of(), version.getDescriptorTypeVersions());
-        sourceFiles.forEach(sourceFile -> assertNull(sourceFile.getTypeVersion()));
+        assertEquals(List.of(), version.getVersionMetadata().getDescriptorTypeVersions());
+        sourceFiles.forEach(sourceFile -> assertNull(sourceFile.getMetadata().getTypeVersion()));
 
         // Descriptor referenced by config does not exist
         mainSourceFile.setPath("/notthemain.nf");
         nextflowHandler.parseWorkflowContent("/main.nf", config, sourceFiles, version);
-        assertEquals(List.of(), version.getDescriptorTypeVersions());
-        sourceFiles.forEach(sourceFile -> assertNull(sourceFile.getTypeVersion()));
+        assertEquals(List.of(), version.getVersionMetadata().getDescriptorTypeVersions());
+        sourceFiles.forEach(sourceFile -> assertNull(sourceFile.getMetadata().getTypeVersion()));
     }
 }
