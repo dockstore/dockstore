@@ -195,7 +195,7 @@ jobs:
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
       - checkout # check out source code to working directory
-      - restore_cache
+      - restore_cache:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
