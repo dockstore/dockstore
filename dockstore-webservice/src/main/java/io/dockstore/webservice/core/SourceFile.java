@@ -146,6 +146,33 @@ public class SourceFile implements Comparable<SourceFile> {
         metadata.setParent(this);
     }
 
+    /**
+     * Copy constructor with special handling for metadata field -- copies its values, rather
+     * than the object, so that you don't end up with the metadata field pointing to the wrong
+     * source file.
+     *
+     * Necessitated by the ugly circular reference JPA requires for one-to-one relationship.
+     *
+     * @param otherSourceFile
+     */
+    public SourceFile(final SourceFile otherSourceFile) {
+        this();
+        id = otherSourceFile.id;
+        type = otherSourceFile.type;
+        content = otherSourceFile.content;
+        path = otherSourceFile.path;
+        absolutePath = otherSourceFile.absolutePath;
+        frozen = otherSourceFile.frozen;
+        checksums = otherSourceFile.checksums;
+        dbCreateDate = otherSourceFile.dbCreateDate;
+        dbUpdateDate = otherSourceFile.dbUpdateDate;
+        verifiedBySource = otherSourceFile.verifiedBySource;
+
+        // Special case, we want SourceFileMetadata.parent to be this SourceFile, not otherSourceFile
+        metadata.setTypeVersion(otherSourceFile.getMetadata().getTypeVersion());
+        metadata.setId(otherSourceFile.getId());
+    }
+
     public Map<String, VerificationInformation> getVerifiedBySource() {
         return verifiedBySource;
     }

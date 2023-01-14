@@ -18,7 +18,6 @@ package io.dockstore.webservice.helpers.statelisteners;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
@@ -447,12 +446,7 @@ public class ElasticListener implements StateListenerInterface {
             detatchedVersion.setName(workflowVersion.getName());
             detatchedVersion.setReference(workflowVersion.getReference());
             SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-            sourceFiles.forEach(sourceFile -> {
-                Gson gson = new Gson();
-                String gsonString = gson.toJson(sourceFile);
-                SourceFile detachedSourceFile = gson.fromJson(gsonString, SourceFile.class);
-                detatchedVersion.addSourceFile(detachedSourceFile);
-            });
+            sourceFiles.forEach(sourceFile -> detatchedVersion.addSourceFile(new SourceFile(sourceFile)));
             detatchedVersion.updateVerified();
             detachedVersions.add(detatchedVersion);
         });

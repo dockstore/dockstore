@@ -104,7 +104,9 @@ class ElasticListenerTest {
         throws IllegalAccessException {
         version.setName(name);
         final SourceFile sourceFile = new SourceFile();
-        sourceFile.setPath("/Dockstore.wdl");
+        final String path = "/Dockstore.wdl";
+        sourceFile.setPath(path);
+        sourceFile.setAbsolutePath(path);
         sourceFile.setContent("Doesn't matter");
         version.getSourceFiles().add(sourceFile);
         version.getVersionMetadata().setDescriptorTypeVersions(descriptorTypeVersions);
