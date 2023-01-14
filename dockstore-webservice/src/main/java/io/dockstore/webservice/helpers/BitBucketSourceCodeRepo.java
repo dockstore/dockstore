@@ -19,7 +19,6 @@ package io.dockstore.webservice.helpers;
 import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 import static io.dockstore.webservice.DockstoreWebserviceApplication.getOkHttpClient;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
@@ -82,7 +81,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private final ApiClient apiClient;
     private final OkHttpClient okHttpClient;
     private final String bitbucketTokenContent;
-    private final ObjectMapper objectMapper;
 
     /**
      * @param gitUsername           username that owns the bitbucket token
@@ -107,8 +105,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         this.okHttpClient = builder.build();
 
         this.bitbucketTokenContent = bitbucketTokenContent;
-        objectMapper = new ObjectMapper();
-        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
     @Override
@@ -231,6 +227,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     if (classType.equals(String.class)) {
                         return (T)execute.body().string();
                     }
+                    ObjectMapper objectMapper = new ObjectMapper();
                     final Object o = objectMapper.readValue(execute.body().string(), classType);
                     return (T) o;
                 }
