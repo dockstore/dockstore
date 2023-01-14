@@ -92,7 +92,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Authorization", "Bearer " + bitbucketTokenContent);
 
-        OkHttpClient.Builder builder = getOkHttpClient().newBuilder();
+        OkHttpClient.Builder builder = (getOkHttpClient() != null ? getOkHttpClient() : new OkHttpClient().newBuilder().build()).newBuilder();
         builder.eventListener(new CacheHitListener(BitBucketSourceCodeRepo.class.getSimpleName(), gitUsername));
         // Must set the cache max age otherwise kohsuke assumes 0 which significantly slows down our GitHub requests
         if (System.getenv("CIRCLE_SHA1") != null) {
