@@ -17,15 +17,11 @@
 package io.dockstore.webservice.helpers;
 
 import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
-import static io.dockstore.webservice.DockstoreWebserviceApplication.getOkHttpClient;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
@@ -42,7 +38,6 @@ import io.swagger.bitbucket.client.model.PaginatedRepositories;
 import io.swagger.bitbucket.client.model.PaginatedTreeentries;
 import io.swagger.bitbucket.client.model.Repository;
 import io.swagger.bitbucket.client.model.Tag;
-import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -52,12 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response.Status;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -79,8 +70,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final ApiClient apiClient;
-    private final OkHttpClient okHttpClient;
-    private final String bitbucketTokenContent;
 
     /**
      * @param gitUsername           username that owns the bitbucket token
@@ -91,20 +80,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
         apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Authorization", "Bearer " + bitbucketTokenContent);
-
-        OkHttpClient.Builder builder = getOkHttpClient().newBuilder();
-        builder.eventListener(new CacheHitListener(BitBucketSourceCodeRepo.class.getSimpleName(), gitUsername));
-        // Must set the cache max age otherwise kohsuke assumes 0 which significantly slows down our GitHub requests
-        if (System.getenv("CIRCLE_SHA1") != null) {
-            // namespace cache by user when testing
-            builder.cache(DockstoreWebserviceApplication.getCache(gitUsername));
-        } else {
-            // use general cache
-            builder.cache(DockstoreWebserviceApplication.getCache(null));
-        }
-        this.okHttpClient = builder.build();
-
-        this.bitbucketTokenContent = bitbucketTokenContent;
     }
 
     @Override
@@ -118,7 +93,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
         try {
             String fileContent = this
-                .getArbitraryURL(BITBUCKET_V2_API_URL + "repositories/" + repositoryId + "/src/" + reference + '/' + fileName, String.class);
+                .getArbitraryURL(BITBUCKET_V2_API_URL + "repositories/" + repositoryId + "/src/" + reference + '/' + fileName,
+                    new GenericType<String>() {
+                    });
             LOG.info(gitUsername + ": FOUND: {}", fileName);
             return fileContent;
         } catch (ApiException e) {
@@ -152,7 +129,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     paginatedTreeentries.getValues().stream().map(entry -> StringUtils.removeStart(entry.getPath(), pathToDirectory + "/"))
                         .toList());
                 if (paginatedTreeentries.getNext() != null) {
-                    paginatedTreeentries = getArbitraryURL(paginatedTreeentries.getNext(), PaginatedTreeentries.class);
+                    paginatedTreeentries = getArbitraryURL(paginatedTreeentries.getNext(), new GenericType<PaginatedTreeentries>() {
+                    });
                 } else {
                     paginatedTreeentries = null;
                 }
@@ -184,7 +162,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 collect.putAll(contributor.getValues().stream().collect(Collectors
                     .toMap(object -> BITBUCKET_GIT_URL_PREFIX + object.getFullName() + BITBUCKET_GIT_URL_SUFFIX, Repository::getFullName)));
                 if (contributor.getNext() != null) {
-                    contributor = getArbitraryURL(contributor.getNext(), PaginatedRepositories.class);
+                    contributor = getArbitraryURL(contributor.getNext(), new GenericType<PaginatedRepositories>() {
+                    });
                 } else {
                     contributor = null;
                 }
@@ -212,32 +191,22 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
      * @return the typed result
      * @throws ApiException swagger classes throw this exception
      */
-    private <T> T getArbitraryURL(String url, Class classType) throws ApiException {
+    private <T> T getArbitraryURL(String url, GenericType<T> type) throws ApiException {
+        String substring = url.substring(BITBUCKET_V2_API_URL.length() - 1);
+        T result = null;
         boolean rateLimited;
         do {
+            rateLimited = false;
             try {
-                Request request = new Request.Builder().url(url).addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON).addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-                    .addHeader("Authorization", "Bearer " + bitbucketTokenContent).build();
-                try (Response execute = this.okHttpClient.newCall(request).execute()) {
-                    if (execute.code() == Status.TOO_MANY_REQUESTS.getStatusCode()) {
-                        throw new ApiException(execute.code(), "too many requests via okhttp");
-                    } else if (execute.code() == Status.NOT_FOUND.getStatusCode()) {
-                        return null;
-                    }
-                    if (classType.equals(String.class)) {
-                        return (T)execute.body().string();
-                    }
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    final Object o = objectMapper.readValue(execute.body().string(), classType);
-                    return (T) o;
-                }
+                result = apiClient
+                    .invokeAPI(substring, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/json", "application/json",
+                        new String[]{"api_key", "basic", "oauth2"}, type).getData();
             } catch (ApiException e) {
                 rateLimited = isRateLimited(false, e, "getting pagination");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
         } while (rateLimited);
-        return null;
+
+        return result;
     }
 
     /**
@@ -425,7 +394,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 });
 
                 if (paginatedRefs.getNext() != null) {
-                    paginatedRefs = getArbitraryURL(paginatedRefs.getNext(), PaginatedRefs.class);
+                    paginatedRefs = getArbitraryURL(paginatedRefs.getNext(), new GenericType<PaginatedRefs>() {
+                    });
                 } else {
                     paginatedRefs = null;
                 }
