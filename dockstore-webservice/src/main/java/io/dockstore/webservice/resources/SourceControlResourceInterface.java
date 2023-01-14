@@ -26,6 +26,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +58,15 @@ public interface SourceControlResourceInterface {
         String bitbucketClientSecret) {
 
         LOG.info("Refreshing the Bitbucket Token");
-        String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
-        String payload = "client_id=" + bitbucketClientID + "&client_secret=" + bitbucketClientSecret
+        // Check that token is an hour old
+        LocalDateTime now = LocalDateTime.now();
+        if (bitbucketToken.getDbUpdateDate() == null || now.isAfter(bitbucketToken.getDbUpdateDate().toLocalDateTime().plusHours(1).minusMinutes(1))) {
+            String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
+            String payload = "client_id=" + bitbucketClientID + "&client_secret=" + bitbucketClientSecret
                 + "&grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
-        refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, payload);
+            LOG.info("Refreshing the bitbucket Token");
+            refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, payload);
+        }
     }
 
     /**
