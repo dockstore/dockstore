@@ -47,6 +47,7 @@ import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
@@ -114,6 +115,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static WorkflowDAO workflowDAO = null;
     private static ServiceDAO serviceDAO = null;
     private static AppToolDAO appToolDAO = null;
+    private static NotebookDAO notebookDAO = null;
     private static FileDAO fileDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
@@ -148,6 +150,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         ToolsApiServiceImpl.appToolDAO = appToolDAO;
         // TODO; look into this
         //ToolsApiServiceImpl.bioWorkflowHelper = () -> appToolDAO;
+    }
+
+    public static void setNotebookDAO(NotebookDAO notebookDAO) {
+        ToolsApiServiceImpl.notebookDAO = notebookDAO;
     }
 
     public static void setFileDAO(FileDAO fileDAO) {

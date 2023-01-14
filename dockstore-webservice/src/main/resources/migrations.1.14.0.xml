@@ -100,4 +100,80 @@
             <column name="descriptortypeversions" type="varchar"/>
         </addColumn>
     </changeSet>
+    <changeSet author="svonworl" id="addNotebook">
+        <createTable tableName="notebook">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="notebook_pkey"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="conceptdoi" type="VARCHAR(255)"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublished" type="BOOLEAN"/>
+            <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="licensename" type="VARCHAR(255)"/>
+            <column name="topicid" type="BIGINT"/>
+            <column name="checkerid" type="BIGINT"/>
+            <column name="descriptortype" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="n/a" name="descriptortypesubclass" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="forumurl" type="VARCHAR(256)"/>
+            <column defaultValue="STUB" name="mode" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repository" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sourcecontrol" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowname" type="VARCHAR(256)"/>
+            <column name="actualdefaultversion" type="BIGINT"/>
+            <column name="topicautomatic" type="varchar(150 BYTE)"/>
+            <column name="topicmanual" type="varchar(150 BYTE)"/>
+            <column defaultValue="AUTOMATIC" name="topicselection" type="varchar(32 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="notebook" constraintName="fk_defaultversion_notebook" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+        <addUniqueConstraint columnNames="actualdefaultversion" constraintName="uk_actualdefaultversion_notebook" tableName="notebook"/>
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_checkerid_notebook" tableName="notebook"/>
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="notebook" constraintName="fk_checkerid_notebook" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+        <sql dbms="postgresql">
+            CREATE UNIQUE INDEX if not exists full_notebook_name ON notebook USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
+            CREATE UNIQUE INDEX if not exists partial_notebook_name ON notebook USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
+        </sql>
+        <sql dbms="postgresql">
+            CREATE TRIGGER notebook_path_trigger
+            AFTER INSERT
+            ON notebook
+            FOR EACH ROW
+            EXECUTE PROCEDURE workflow_path_insert_trigger_fnc();
+            CREATE TRIGGER notebook_path_deletion_trigger
+            AFTER DELETE
+            ON notebook
+            FOR EACH ROW
+            EXECUTE PROCEDURE workflow_path_deletion_trigger_fnc();
+        </sql>
+    </changeSet>
+    <changeSet author="svonworl" id="addNotebookEvents">
+        <addColumn tableName="event">
+            <column name="notebookid" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="notebookid" baseTableName="event" constraintName="fkNotebookId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="notebook"/>
+    </changeSet>
 </databaseChangeLog>

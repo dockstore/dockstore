@@ -195,8 +195,7 @@ jobs:
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
       - checkout # check out source code to working directory
-      - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
-          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+      - restore_cache
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
@@ -263,8 +262,7 @@ jobs:
     steps: # a collection of executable commands
       - attach_workspace:
           at: .
-      - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
-          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+      - restore_cache:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
@@ -287,7 +285,7 @@ jobs:
       - run:
           name: split up tests and create a file for cache checksum
           command: |
-            if [ $CIRCLE_NODE_TOTAL != 1 
+            if [ $CIRCLE_NODE_TOTAL != 1 ]
             then
               TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
             else
@@ -423,8 +421,7 @@ jobs:
     steps:
     - attach_workspace:
         at: .
-    - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
-        # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+    - restore_cache:
         keys:
           # Find a cache corresponding to this specific licenses file checksum
           # when this file is changed, this key will fail
@@ -515,8 +512,7 @@ commands:
     steps:
       - attach_workspace:
           at: .
-      - restore_cache: # restore the saved cache after the first run or if `THIRD-PARTY-LICENSES.txt` has changed
-          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+      - restore_cache:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
