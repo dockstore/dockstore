@@ -54,7 +54,9 @@ import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.assertj.core.util.Files;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -300,8 +302,10 @@ public final class CommonTestUtilities {
         if (!needBitBucketToken) {
             deleteBitBucketToken(testingPostgres);
         } else {
-            //TODO restore bitbucket token from disk cache to reduce rate limit from busting cache with new access tokens
             DockstoreWebserviceApplication application = support.getApplication();
+            Session session = application.getHibernate().getSessionFactory().openSession();
+            ManagedSessionContext.bind(session);
+            //TODO restore bitbucket token from disk cache to reduce rate limit from busting cache with new access tokens
             SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
             TokenDAO tokenDAO = new TokenDAO(sessionFactory);
             final List<Token> allBitBucketTokens = tokenDAO.findAllBitBucketTokens();

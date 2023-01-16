@@ -115,9 +115,6 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         // used to allow us to use workflowDAO outside of the web service
-        DockstoreWebserviceApplication application = SUPPORT.getApplication();
-        Session session = application.getHibernate().getSessionFactory().openSession();
-        ManagedSessionContext.bind(session);
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
     }
 
