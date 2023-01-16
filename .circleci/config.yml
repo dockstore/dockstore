@@ -410,6 +410,8 @@ jobs:
             mkdir misses
             touch /tmp/dockstore-web-cache.misses.log
             cp /tmp/dockstore-web-cache.misses.log misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
+      - store_artifacts:
+          path: /tmp/artifacts
       - persist_to_workspace:
           root: .
           paths:
