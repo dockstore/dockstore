@@ -23,7 +23,13 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import com.google.common.hash.Hashing;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
@@ -31,6 +37,8 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -45,6 +53,8 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.assertj.core.util.Files;
+import org.hibernate.SessionFactory;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +76,7 @@ public final class CommonTestUtilities {
     public static final String CONFIDENTIAL_CONFIG_PATH;
     static final String DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
+    public static final String BITBUCKET_TOKEN_CACHE = "/tmp/dockstore-bitbucket-token-cache/";
 
     static {
         String confidentialConfigPath = null;
@@ -201,9 +212,7 @@ public final class CommonTestUtilities {
         boolean needBitBucketToken) {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, CONFIDENTIAL_CONFIG_PATH);
-        if (!needBitBucketToken) {
-            deleteBitBucketToken(testingPostgres);
-        }
+        handleBitBucketTokens(support, testingPostgres, needBitBucketToken);
     }
 
     /**
@@ -227,6 +236,32 @@ public final class CommonTestUtilities {
      */
     private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) {
         dropAllAndRunMigration(listMigrations("test.confidential1", "test.confidential1_1.5.0"), support.getApplication(), configPath);
+    }
+
+    public static void cacheBitbucketTokens(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
+        DockstoreWebserviceApplication application = support.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+        TokenDAO tokenDAO = new TokenDAO(sessionFactory);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        final List<Token> allBitBucketTokens = tokenDAO.findAllBitBucketTokens();
+        File cacheDirectory = new File(BITBUCKET_TOKEN_CACHE);
+        if (!cacheDirectory.exists()) {
+            Files.newFolder(BITBUCKET_TOKEN_CACHE);
+        }
+        for (Token token : allBitBucketTokens) {
+            // a token with an update time is not straight from the DB dump
+            if (token.getDbUpdateDate() != null) {
+                final String serializedToken = gson.toJson(token);
+                try {
+                    FileUtils.writeStringToFile(new File(BITBUCKET_TOKEN_CACHE + Hashing.sha256().hashString(token.getRefreshToken(), StandardCharsets.UTF_8) + ".json"), serializedToken,
+                        StandardCharsets.UTF_8, false);
+                } catch (IOException | UncheckedIOException e) {
+                    LOG.error("could not cache bitbucket token", e);
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     /**
@@ -261,6 +296,35 @@ public final class CommonTestUtilities {
         runMigration(migrations, application, configPath);
     }
 
+    private static void handleBitBucketTokens(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres, boolean needBitBucketToken) {
+        if (!needBitBucketToken) {
+            deleteBitBucketToken(testingPostgres);
+        } else {
+            //TODO restore bitbucket token from disk cache to reduce rate limit from busting cache with new access tokens
+            DockstoreWebserviceApplication application = support.getApplication();
+            SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+            TokenDAO tokenDAO = new TokenDAO(sessionFactory);
+            final List<Token> allBitBucketTokens = tokenDAO.findAllBitBucketTokens();
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+            for (Token token : allBitBucketTokens) {
+                try {
+                    final String cacheCandidate = FileUtils.readFileToString(new File(BITBUCKET_TOKEN_CACHE + Hashing.sha256().hashString(token.getRefreshToken(), StandardCharsets.UTF_8) + ".json"),
+                        StandardCharsets.UTF_8);
+                    final Token cachedToken = gson.fromJson(cacheCandidate, Token.class);
+                    if (cachedToken != null) {
+                        testingPostgres.runUpdateStatement(
+                            "update token set content = '" + cachedToken.getContent() + "', dbUpdateDate = '" + cachedToken.getDbUpdateDate().toLocalDateTime().toString() + "' where id = "
+                                + cachedToken.getId());
+                    }
+                } catch (IOException | UncheckedIOException e) {
+                    // probably ok
+                    LOG.debug("could not read bitbucket token", e);
+                }
+            }
+        }
+    }
+
     /**
      * Wrapper for dropping and recreating database from migrations for test confidential 2
      *
@@ -273,10 +337,9 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
 
         cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
-        if (!needBitBucketToken) {
-            deleteBitBucketToken(testingPostgres);
-        }
+        handleBitBucketTokens(support, testingPostgres, needBitBucketToken);
     }
+
     /**
      * Wrapper for dropping and recreating database from migrations for test confidential 2
      *

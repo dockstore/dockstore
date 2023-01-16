@@ -35,6 +35,7 @@ import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -52,10 +53,10 @@ class BitBucketExtendedNextflowIT extends BaseIT {
 
     // bitbucket workflow
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW =
-        SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/ampa-nf";
+        SourceControl.BITBUCKET + "/dockstore_testuser2/ampa-nf";
     // workflow with binaries in bin directory
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW =
-        SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/kallisto-nf";
+        SourceControl.BITBUCKET + "/dockstore_testuser2/kallisto-nf";
 
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());
@@ -80,6 +81,11 @@ class BitBucketExtendedNextflowIT extends BaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres, true);
+    }
+
+    @AfterEach
+    public void preserveBitBucketTokens() {
+        CommonTestUtilities.cacheBitbucketTokens(SUPPORT);
     }
 
 

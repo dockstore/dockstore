@@ -48,6 +48,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -89,6 +90,11 @@ class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
+    }
+
+    @AfterEach
+    public void preserveBitBucketTokens() {
+        CommonTestUtilities.cacheBitbucketTokens(SUPPORT);
     }
 
 
