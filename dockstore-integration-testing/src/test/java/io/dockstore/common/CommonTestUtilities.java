@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -252,8 +253,8 @@ public final class CommonTestUtilities {
             Files.newFolder(BITBUCKET_TOKEN_CACHE);
         }
         for (Token token : allBitBucketTokens) {
-            // a token with an update time is not straight from the DB dump
-            if (token.getDbUpdateDate() != null) {
+            // a token with an update time is not straight from the DB dump OR a token with a expiry date
+            if (token.getDbUpdateDate() != null || (token.getExpirationTime() != null) && Instant.now().isBefore(Instant.ofEpochMilli(token.getExpirationTime()))) {
                 final String serializedToken = gson.toJson(token);
                 try {
                     FileUtils.writeStringToFile(new File(BITBUCKET_TOKEN_CACHE + Hashing.sha256().hashString(token.getRefreshToken(), StandardCharsets.UTF_8) + ".json"), serializedToken,

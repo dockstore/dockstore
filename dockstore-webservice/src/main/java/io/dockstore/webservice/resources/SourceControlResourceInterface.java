@@ -26,6 +26,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -91,14 +92,18 @@ public interface SourceControlResourceInterface {
                 String json = asString.get();
 
                 Gson gson = new Gson();
-                Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>)gson.fromJson(json, map.getClass());
+                Map<String, ?> map = new HashMap<>();
+                map = (Map<String, ?>)gson.fromJson(json, map.getClass());
 
-                accessToken = map.get("access_token");
-                refreshToken = map.get("refresh_token");
+                accessToken = (String)map.get("access_token");
+                refreshToken = (String)map.get("refresh_token");
 
                 token.setContent(accessToken);
                 token.setRefreshToken(refreshToken);
+
+                Instant instant = Instant.now();
+                instant = instant.plusSeconds(((Double)map.get("expires_in")).longValue());
+                token.setExpirationTime(instant.getEpochSecond());
 
                 long create = tokenDAO.create(token);
                 return tokenDAO.findById(create);
