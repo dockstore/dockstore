@@ -349,8 +349,17 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
-            PaginatedRefs paginatedRefs = refsApi
-                .repositoriesUsernameRepoSlugRefsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+
+            PaginatedRefs paginatedRefs = null;
+            boolean rateLimited;
+            do {
+                rateLimited = false;
+                try {
+                    paginatedRefs = refsApi.repositoriesUsernameRepoSlugRefsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+                } catch (ApiException e) {
+                    rateLimited = isRateLimited(false, e, "getting pagination");
+                }
+            } while (rateLimited);
             // this pagination structure is repetitive and should be refactored
             while (paginatedRefs != null) {
                 paginatedRefs.getValues().forEach(ref -> {
