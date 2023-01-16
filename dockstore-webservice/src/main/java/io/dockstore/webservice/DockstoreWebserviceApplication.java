@@ -51,6 +51,7 @@ import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Notification;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Organization;
@@ -83,6 +84,7 @@ import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -202,7 +204,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class, WorkflowVersion.class, FileFormat.class,
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
-            AppTool.class, Category.class, FullWorkflowPath.class) {
+            AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -351,6 +353,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final FileDAO fileDAO = new FileDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
         final AppToolDAO appToolDAO = new AppToolDAO(hibernate.getSessionFactory());
+        final NotebookDAO notebookDAO = new NotebookDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
         final VersionDAO versionDAO = new VersionDAO(hibernate.getSessionFactory());
@@ -425,6 +428,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setBioWorkflowDAO(bioWorkflowDAO);
         ToolsApiServiceImpl.setServiceDAO(serviceDAO);
         ToolsApiServiceImpl.setAppToolDAO(appToolDAO);
+        ToolsApiServiceImpl.setNotebookDAO(notebookDAO);
         ToolsApiServiceImpl.setFileDAO(fileDAO);
         ToolsApiServiceImpl.setVersionDAO(versionDAO);
         ToolsApiServiceImpl.setConfig(configuration);
@@ -434,6 +438,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setToolDAO(toolDAO);
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiExtendedServiceImpl.setAppToolDAO(appToolDAO);
+        ToolsApiExtendedServiceImpl.setNotebookDAO(notebookDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 
         DOIGeneratorFactory.setConfig(configuration);
