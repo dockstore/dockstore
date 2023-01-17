@@ -287,7 +287,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             newlyRateLimited = true;
             LOG.error("%s: rate-limited on %s".formatted(gitUsername, message));
             try {
-
+                LOG.error("We sleep");
                 Thread.sleep(ONE_MINUTE_IN_MS); // one minute, should be exponential back-off
             } catch (InterruptedException ex) {
                 LOG.error("Rate-limit wait interrupted!", e);

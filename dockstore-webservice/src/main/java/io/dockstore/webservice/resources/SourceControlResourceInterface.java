@@ -58,7 +58,7 @@ public interface SourceControlResourceInterface {
     default void refreshBitbucketToken(Token bitbucketToken, HttpClient client, TokenDAO tokenDAO, String bitbucketClientID,
         String bitbucketClientSecret) {
 
-        LOG.info("Refreshing the Bitbucket Token");
+        LOG.info("Checking on validity of the Bitbucket Token");
         // Check that token is an hour old
         LocalDateTime now = LocalDateTime.now();
         if (bitbucketToken.getDbUpdateDate() == null || now.isAfter(bitbucketToken.getDbUpdateDate().toLocalDateTime().plusHours(1).minusMinutes(1))) {
