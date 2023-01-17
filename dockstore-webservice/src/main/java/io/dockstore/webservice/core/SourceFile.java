@@ -19,6 +19,10 @@ package io.dockstore.webservice.core;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
@@ -82,6 +86,28 @@ public class SourceFile implements Comparable<SourceFile> {
     public static final String SHA_TYPE = "SHA-256";
     private static Pattern pathRegex = null;
     private static String pathViolationMessage = null;
+
+    private static final String PARENT_FIELD = "parent";
+    /**
+     * When serializing a SourceFile, don't serialize SourceFile.SourceFileMetadata.parent,
+     * because the circular reference causes a StackOverflowError.
+     */
+    private static final ExclusionStrategy PARENT_FIELD_EXCLUSION_STRATEGY = new ExclusionStrategy() {
+        @Override
+        public boolean shouldSkipField(final FieldAttributes f) {
+            return f.getName().equals(PARENT_FIELD);
+        }
+
+        @Override
+        public boolean shouldSkipClass(final Class<?> clazz) {
+            return false;
+        }
+    };
+    /**
+     * One Gson instance to rule them all. Thread-safe.
+     */
+    private static final Gson GSON = new GsonBuilder().setExclusionStrategies(
+        PARENT_FIELD_EXCLUSION_STRATEGY).create();
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -147,30 +173,17 @@ public class SourceFile implements Comparable<SourceFile> {
     }
 
     /**
-     * Copy constructor with special handling for metadata field -- copies its values, rather
-     * than the object, so that you don't end up with the metadata field pointing to the wrong
-     * source file.
-     *
-     * Necessitated by the ugly circular reference JPA requires for one-to-one relationship.
+     * Creates a copy of the SourceFile. Not implemented as a copy constructor because you can't
+     * ensure at compile time that all fields are copied unless they're all final.
      *
      * @param otherSourceFile
      */
-    public SourceFile(final SourceFile otherSourceFile) {
-        this();
-        id = otherSourceFile.id;
-        type = otherSourceFile.type;
-        content = otherSourceFile.content;
-        path = otherSourceFile.path;
-        absolutePath = otherSourceFile.absolutePath;
-        frozen = otherSourceFile.frozen;
-        checksums = otherSourceFile.checksums;
-        dbCreateDate = otherSourceFile.dbCreateDate;
-        dbUpdateDate = otherSourceFile.dbUpdateDate;
-        verifiedBySource = otherSourceFile.verifiedBySource;
-
-        // Special case, we want SourceFileMetadata.parent to be this SourceFile, not otherSourceFile
-        metadata.setTypeVersion(otherSourceFile.getMetadata().getTypeVersion());
-        metadata.setId(otherSourceFile.getId());
+    public static SourceFile copy(final SourceFile otherSourceFile) {
+        final String json = GSON.toJson(otherSourceFile);
+        final SourceFile sourceFile = GSON.fromJson(json, SourceFile.class);
+        // Parent was not serialized, need to explicitly set it. See PARENT_FIELD_EXCLUSION_STRATEGY, above.
+        sourceFile.getMetadata().setParent(sourceFile);
+        return sourceFile;
     }
 
     public Map<String, VerificationInformation> getVerifiedBySource() {

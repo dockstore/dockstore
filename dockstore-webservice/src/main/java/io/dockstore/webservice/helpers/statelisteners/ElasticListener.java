@@ -439,16 +439,16 @@ public class ElasticListener implements StateListenerInterface {
     private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions) {
         Set<Version> detachedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
-            Version detatchedVersion = workflowVersion.createEmptyVersion();
-            detatchedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
-            detatchedVersion.setInputFileFormats(new TreeSet<>(workflowVersion.getInputFileFormats()));
-            detatchedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
-            detatchedVersion.setName(workflowVersion.getName());
-            detatchedVersion.setReference(workflowVersion.getReference());
+            Version detachedVersion = workflowVersion.createEmptyVersion();
+            detachedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
+            detachedVersion.setInputFileFormats(new TreeSet<>(workflowVersion.getInputFileFormats()));
+            detachedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
+            detachedVersion.setName(workflowVersion.getName());
+            detachedVersion.setReference(workflowVersion.getReference());
             SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-            sourceFiles.forEach(sourceFile -> detatchedVersion.addSourceFile(new SourceFile(sourceFile)));
-            detatchedVersion.updateVerified();
-            detachedVersions.add(detatchedVersion);
+            sourceFiles.forEach(sourceFile -> detachedVersion.addSourceFile(SourceFile.copy(sourceFile)));
+            detachedVersion.updateVerified();
+            detachedVersions.add(detachedVersion);
         });
         return detachedVersions;
     }
