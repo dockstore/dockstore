@@ -1355,6 +1355,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "IPYNB"
       - name: "namespace"
         in: "query"
         description: "The Docker namespace (Tools only)"
@@ -2063,6 +2064,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "IPYNB"
       responses:
         200:
           description: "successful operation"
@@ -2254,6 +2256,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "IPYNB"
       responses:
         200:
           description: "successful operation"
@@ -5009,6 +5012,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "IPYNB"
       - name: "namespace"
         in: "query"
         description: "The Docker namespace (Tools only)"
@@ -5720,6 +5724,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "IPYNB"
       responses:
         200:
           description: "successful operation"
@@ -5884,6 +5889,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "IPYNB"
       responses:
         200:
           description: "successful operation"
@@ -6179,6 +6185,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "IPYNB"
       responses:
         200:
           description: "successful operation"
@@ -7243,6 +7250,7 @@ definitions:
         - "WORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       lastUpdateDate:
         type: "integer"
         format: "int64"
@@ -7779,6 +7787,7 @@ definitions:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "IPYNB"
       hasHTTPImports:
         type: "boolean"
       hasLocalImports:
@@ -7918,6 +7927,9 @@ definitions:
         - "GXFORMAT2_TEST_FILE"
         - "DOCKSTORE_SWL"
         - "SWL_TEST_JSON"
+        - "DOCKSTORE_IPYNB"
+        - "DOCKSTORE_NOTEBOOK_REES"
+        - "DOCKSTORE_NOTEBOOK_OTHER"
       content:
         type: "string"
         position: 2
@@ -8618,6 +8630,9 @@ definitions:
         - "GXFORMAT2_TEST_FILE"
         - "DOCKSTORE_SWL"
         - "SWL_TEST_JSON"
+        - "DOCKSTORE_IPYNB"
+        - "DOCKSTORE_NOTEBOOK_REES"
+        - "DOCKSTORE_NOTEBOOK_OTHER"
       valid:
         type: "boolean"
         position: 2
@@ -9020,6 +9035,7 @@ definitions:
         - "NFL"
         - "gxformat2"
         - "service"
+        - "ipynb"
       workflow_path:
         type: "string"
         position: 19
@@ -9042,12 +9058,15 @@ definitions:
         type: "string"
         position: 22
         description: "This is a descriptor type subclass for the workflow. Currently\
-          \ it is only used for services."
+          \ it is only used for services and notebooks."
         enum:
         - "DOCKER_COMPOSE"
         - "HELM"
         - "SWARM"
         - "KUBERNETES"
+        - "PYTHON"
+        - "R"
+        - "JULIA"
         - "NOT_APPLICABLE"
       full_workflow_path:
         type: "string"

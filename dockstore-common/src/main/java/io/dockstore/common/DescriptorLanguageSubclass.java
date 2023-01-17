@@ -26,6 +26,11 @@ public enum DescriptorLanguageSubclass {
     HELM("helm"),
     SWARM("swarm"),
     KUBERNETES("kubernetes"),
+
+    PYTHON("python"),
+    R("r"),
+    JULIA("julia"),
+
     NOT_APPLICABLE("n/a");
 
     private final String shortName;

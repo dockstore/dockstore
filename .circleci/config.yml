@@ -203,9 +203,13 @@ jobs:
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
       - checkout # check out source code to working directory
-      - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
-          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: dockstore-java-{{ checksum "pom.xml" }}
+      - restore_cache:
+          keys:
+            # Find a cache corresponding to this specific licenses file checksum
+            # when this file is changed, this key will fail
+            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            # Find the most recent cache used from any branch
+            - dockstore-java-
       - install-git-secrets
       - run:
           name: decrypt and expand confidential test data
@@ -264,10 +268,19 @@ jobs:
           POSTGRES_PASSWORD: postgres
     parallelism: 2
     steps: # a collection of executable commands
-      - setup_test
-      - checkout
+      - attach_workspace:
+          at: .
       - restore_cache:
-          key: dockstore-web-cache-unit-test-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
+          keys:
+            # Find a cache corresponding to this specific licenses file checksum
+            # when this file is changed, this key will fail
+            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            # Find the most recent cache used from any branch
+            - dockstore-java-
+      - run:
+          name: manually copy back .m2
+          command: cp -r .m2 ~/.m2
+      - checkout
       - install-postgres
       - install-git-secrets
       - setup_postgres
@@ -278,14 +291,28 @@ jobs:
             ./mvnw -v
             python3 -V
       - run:
+          name: split up tests and create a file for cache checksum
+          command: |
+            if [ $CIRCLE_NODE_TOTAL != 1 ]
+            then
+              TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
+            else
+              TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | tr '\n' ',')
+            fi
+            echo $TESTS_TO_RUN > /tmp/tests-to-run.txt
+      - restore_cache:
+          keys:
+            - dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
+            - dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-
+            - dockstore-web-cache-unit-test-
+            - dockstore-web-cache-
+      - run:
           name: run the actual tests
           command: |            
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
-              TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
-              echo $TESTS_TO_RUN
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp \
-              -Dtest=$TESTS_TO_RUN -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+              -Dtest=`cat /tmp/tests-to-run.txt` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
             else 
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
             fi
@@ -355,9 +382,10 @@ jobs:
       - save_cache: # saves the project dependencies
           paths:
             - ~/.m2
-          key: dockstore-java-{{ checksum "pom.xml" }}
+          key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
       - save_cache:
-          key: dockstore-web-cache-unit-test-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
+          # should include non-confidential, but they should probably be split out anyway
+          key: dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
           paths:
             - /tmp/dockstore-web-cache
       - run:
@@ -386,11 +414,14 @@ jobs:
             cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
       - run:
           name: Move cache miss log
-          command: | 
+          command: |
+            mkdir misses
             touch /tmp/dockstore-web-cache.misses.log
-            cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
-      - store_artifacts:
-          path: /tmp/artifacts
+            cp /tmp/dockstore-web-cache.misses.log misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
+      - persist_to_workspace:
+          root: .
+          paths:
+            - misses
 
   sonar-cloud:
     docker: # run the steps with Docker
@@ -398,17 +429,21 @@ jobs:
     steps:
     - attach_workspace:
         at: .
-    - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
-        # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-        key: dockstore-java-{{ checksum "pom.xml" }}
     - restore_cache:
-        key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
+        keys:
+          # Find a cache corresponding to this specific licenses file checksum
+          # when this file is changed, this key will fail
+          - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+          # Find the most recent cache used from any branch
+          - dockstore-java-
     - run:
         name: build
         command: ./mvnw clean install -DskipTests
     - run:
         name: SonarCloud scan - coverage
         command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
+    - store_artifacts:
+        path: misses
 
 commands:
   install-postgres:
@@ -485,14 +520,32 @@ commands:
     steps:
       - attach_workspace:
           at: .
-      - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
-          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: dockstore-java-{{ checksum "pom.xml" }}
+      - restore_cache:
+          keys:
+            # Find a cache corresponding to this specific licenses file checksum
+            # when this file is changed, this key will fail
+            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            # Find the most recent cache used from any branch
+            - dockstore-java-
       - run:
           name: manually copy back .m2
           command: cp -r .m2 ~/.m2
+      - run:
+          name: split up tests and create a file for cache checksum
+          command: |
+            if [ $CIRCLE_NODE_TOTAL != 1 ]
+            then
+              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
+            else
+              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt| tr '\n' ',')
+            fi
+            echo $TESTS_TO_RUN > /tmp/tests-to-run.txt
       - restore_cache:
-          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
+          keys:
+            - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
+            - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/tests-to-run.txt" }}-
+            - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-
+            - dockstore-web-cache-
   setup_integration_test:
     steps:
       - run:
@@ -524,10 +577,8 @@ commands:
           command: |  # Runs normally if it is not being run in parallel
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
-              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
-              echo $TESTS_TO_RUN
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
-              clean verify -Dit.test=$TESTS_TO_RUN -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+              clean verify -Dit.test=`cat /tmp/tests-to-run.txt` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
             else 
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
             fi
@@ -540,7 +591,7 @@ commands:
   save_test_results:
     steps:
       - save_cache:
-          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.DOCKSTORE_CACHE_VERSION }}-segmented
+          key:  dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
           paths:
             - /tmp/dockstore-web-cache
       - run:
@@ -553,6 +604,16 @@ commands:
           path: ~/test-results
       - store_artifacts:
           path: /tmp/dockstore-web-cache.misses.log
+      - run:
+          name: Move cache miss log
+          command: |
+            mkdir misses
+            touch /tmp/dockstore-web-cache.misses.log
+            cp /tmp/dockstore-web-cache.misses.log misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
+      - persist_to_workspace:
+          root: .
+          paths:
+            - misses
   persist_coverage:
     steps:
       - run:
