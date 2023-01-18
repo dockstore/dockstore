@@ -410,6 +410,8 @@ jobs:
             mkdir misses
             touch /tmp/dockstore-web-cache.misses.log
             cp /tmp/dockstore-web-cache.misses.log misses/dockstore-web-cache.misses-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}.log
+      - store_artifacts:
+          path: /tmp/artifacts
       - persist_to_workspace:
           root: .
           paths:
@@ -586,6 +588,7 @@ commands:
           key:  dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
           paths:
             - /tmp/dockstore-web-cache
+            - /tmp/dockstore-bitbucket-token-cache
       - run:
           name: Save test results
           command: |

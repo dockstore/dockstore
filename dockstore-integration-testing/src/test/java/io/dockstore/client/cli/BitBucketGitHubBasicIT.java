@@ -29,6 +29,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -60,6 +61,10 @@ class BitBucketGitHubBasicIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres, true);
     }
 
+    @AfterEach
+    public void preserveBitBucketTokens() {
+        CommonTestUtilities.cacheBitbucketTokens(SUPPORT);
+    }
     /*
      * General-ish tests
      */

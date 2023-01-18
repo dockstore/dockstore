@@ -108,4 +108,8 @@ public class TokenDAO extends AbstractDAO<Token> {
     public List<Token> findAllGoogleTokens() {
         return list(namedTypedQuery("io.dockstore.webservice.core.Token.findAllGoogleTokens"));
     }
+
+    public List<Token> findAllBitBucketTokens() {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Token.findAllBitbucketTokens"));
+    }
 }

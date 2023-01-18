@@ -181,7 +181,9 @@ public final class DockstoreYamlHelper {
             return dockstoreYaml12;
         } catch (UnsupportedOperationException | InvocationTargetException | IllegalAccessException e) {
             final String msg = "Error converting ; " + e.getMessage();
-            LOG.error(msg, e);
+            if (LOG.isDebugEnabled()) {
+                LOG.error(msg, e);
+            }
             throw new DockstoreYamlException(msg);
         }
     }
@@ -223,7 +225,9 @@ public final class DockstoreYamlHelper {
             return yaml.load(content);
         } catch (Exception e) {
             final String exceptionMsg = e.getMessage();
-            LOG.error(ERROR_READING_DOCKSTORE_YML + exceptionMsg, e);
+            if (LOG.isDebugEnabled()) {
+                LOG.error(ERROR_READING_DOCKSTORE_YML + exceptionMsg, e);
+            }
             throw new DockstoreYamlException(exceptionMsg);
         }
     }
@@ -345,7 +349,9 @@ public final class DockstoreYamlHelper {
                         try {
                             fieldClass = Class.forName(className);
                         } catch (ClassNotFoundException ex) {
-                            LOG.error("Could not get the class object for {}", className, ex);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.error("Could not get the class object for {}", className, ex);
+                            }
                             continue;
                         }
                         addNewPropertyClassToQueue(dockstoreYamlPackageName, fieldClass, discoveredClasses, dockstoreYmlPropertiesQueue);
