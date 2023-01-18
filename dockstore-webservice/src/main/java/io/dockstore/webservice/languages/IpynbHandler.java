@@ -2,12 +2,14 @@
 
 package io.dockstore.webservice.languages;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,15 +88,33 @@ public class IpynbHandler implements LanguageHandlerInterface {
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
-        // TODO read rees files
-        return Map.of();
+        Map<String, SourceFile> pathsToFiles = new HashMap<>();
+        for (String reesDir: new String[]{ "/", "/binder/", "/.binder/" }) {
+            for (String reesName: new String[]{ "requirements.txt" }) {
+                String reesPath = reesDir + reesName;
+                SourceFile file = SourceFileHelper.readFile(repositoryId, version, reesPath, sourceCodeRepoInterface, reesPath, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES);
+                if (file != null) {
+                    pathsToFiles.put(file.getAbsolutePath(), file);
+                }
+            }
+        }
+        return pathsToFiles;
     }
 
     @Override
     public Map<String, SourceFile> processOtherFiles(String repositoryId, List<String> otherFilePaths, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> processedPathsToFiles) {
-        // TODO read other files
-        return Map.of();
+        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> existingPathsToFiles) {
+
+        Map<String, SourceFile> otherPathsToFiles = new HashMap<>(existingPathsToFiles);
+        for (String path: otherFilePaths) {
+            if (!otherPathsToFiles.containsKey(path) && !existingPathsToFiles.containsKey(path)) {
+                SourceFile file = SourceFileHelper.readFile(repositoryId, version, path, sourceCodeRepoInterface, path, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER);
+                if (file != null) {
+                    otherPathsToFiles.put(file.getAbsolutePath(), file);
+                }
+            }
+        }
+        return otherPathsToFiles;
     }
 
     @Override
