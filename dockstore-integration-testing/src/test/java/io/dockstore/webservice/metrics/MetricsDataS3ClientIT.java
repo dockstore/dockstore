@@ -27,6 +27,7 @@ import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.IEnvironmentVariableProvider;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.google.common.io.Files;
+import io.dockstore.common.LanguageParsingTest;
 import io.dockstore.webservice.core.metrics.MetricsData;
 import io.dockstore.webservice.core.metrics.MetricsDataMetadata;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -50,6 +52,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @ExtendWith(LocalstackDockerExtension.class)
+@Tag(LanguageParsingTest.NAME) // TODO: remove after testing if this works
 @LocalstackDockerProperties(imageTag = LOCALSTACK_IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = MetricsDataS3ClientIT.LocalStackEnvironmentVariables.class)
 public class MetricsDataS3ClientIT {
     public static final String LOCALSTACK_IMAGE_TAG = "1.3.1";
