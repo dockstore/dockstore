@@ -1,11 +1,8 @@
 package io.dockstore.webservice.core.metrics;
 
 public enum ObjectMetadata {
-    TOOL_ID("tool_id"),
-    VERSION_NAME("version_name"),
-    PLATFORM("platform"),
-    FILENAME("file_nane"),
-    OWNER("owner");
+    OWNER("owner"),
+    DESCRIPTION("description");
 
     private final String metadataKey;
 

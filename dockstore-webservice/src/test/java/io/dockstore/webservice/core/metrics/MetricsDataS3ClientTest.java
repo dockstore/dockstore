@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class MetricsDataS3ClientTest {
@@ -46,24 +45,25 @@ class MetricsDataS3ClientTest {
     }
 
     @Test
-    void testConvertUserMetadataToMetricsData() {
-        final String toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container/encode-mapping-cwl";
+    void testConvertS3KeyToMetricsData() {
         final String versionName = "1.0";
         final String platform = "terra";
         final String fileName = Instant.now().toEpochMilli() + ".json";
-        final long ownerUserId = 1;
-        Map<String, String> metadata = Map.of(ObjectMetadata.TOOL_ID.toString(), toolId,
-                ObjectMetadata.VERSION_NAME.toString(), versionName,
-                ObjectMetadata.PLATFORM.toString(), platform,
-                ObjectMetadata.FILENAME.toString(), fileName,
-                ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId)
-        );
-        MetricsData metricsData = MetricsDataS3Client.convertS3ObjectMetadataToMetricsData(metadata);
-        assertEquals(toolId, metricsData.getToolId());
-        assertEquals(versionName, metricsData.getToolVersionName());
-        assertEquals(platform, metricsData.getPlatform());
-        assertEquals(fileName, metricsData.getFilename());
-        assertEquals(ownerUserId, metricsData.getOwner());
 
+        String toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container";
+        String s3Key = "workflow/github.com/ENCODE-DCC/pipeline-container/1.0/terra/" + fileName;
+        MetricsData metricsData = MetricsDataS3Client.convertS3KeyToMetricsData(s3Key);
+        assertEquals(toolId, metricsData.toolId());
+        assertEquals(versionName, metricsData.toolVersionName());
+        assertEquals(platform, metricsData.platform());
+        assertEquals(fileName, metricsData.fileName());
+
+        toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container/encode-mapping-cwl"; // workflow with workflow name
+        s3Key = "workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/terra/" + fileName;
+        metricsData = MetricsDataS3Client.convertS3KeyToMetricsData(s3Key);
+        assertEquals(toolId, metricsData.toolId());
+        assertEquals(versionName, metricsData.toolVersionName());
+        assertEquals(platform, metricsData.platform());
+        assertEquals(fileName, metricsData.fileName());
     }
 }

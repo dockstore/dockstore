@@ -21,8 +21,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.S3ClientHelper;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -35,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -47,24 +44,21 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 public class MetricsDataS3Client {
     private static final Logger LOG = LoggerFactory.getLogger(MetricsDataS3Client.class);
-    private final S3Client s3;
+    private final S3Client s3; // The S3Client is thread-safe
     private final String bucketName;
 
-    public MetricsDataS3Client(String bucketName) throws URISyntaxException {
-        this.bucketName = bucketName;
-        //TODO should not need to hardcode region since buckets are global, but http://opensourceforgeeks.blogspot.com/2018/07/how-to-fix-unable-to-find-region-via.html
-        this.s3 = S3Client.builder().region(Region.US_EAST_1).build();
+    public MetricsDataS3Client(String bucketName) {
+        this(bucketName, S3ClientHelper.createS3Client());
     }
 
     /**
-     * This constructor is only used for testing with the localstack endpoint
+     * This constructor should only be used by tests so that the test can provide a localstack S3Client
      * @param bucketName
-     * @param endpointOverride
+     * @param s3Client
      */
-    public MetricsDataS3Client(String bucketName, URI endpointOverride) {
-        this.bucketName = bucketName; // TODO:
-        //TODO should not need to hardcode region since buckets are global, but http://opensourceforgeeks.blogspot.com/2018/07/how-to-fix-unable-to-find-region-via.html
-        this.s3 = S3Client.builder().region(Region.US_EAST_1).endpointOverride(endpointOverride).build();
+    public MetricsDataS3Client(String bucketName, S3Client s3Client) {
+        this.bucketName = bucketName;
+        this.s3 = s3Client;
     }
 
     /**
@@ -74,17 +68,15 @@ public class MetricsDataS3Client {
      * @param versionName The GA4GH ToolVersion name
      * @param platform The platform that the metrics data is from
      * @param fileName The file name to use. Should be the time that the data was submitted in milliseconds since epoch appended with '.json'
-     * @param ownerUserId The user id of the owner (user that sent the metrics data)
+     * @param ownerUserId The Dockstore user id of the owner (user that sent the metrics data)
+     * @param description An optional description for the metrics data
      * @param metricsData The metrics data in JSON format
      */
-    public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String metricsData) {
+    public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData) {
         try {
             String key = generateKey(toolId, versionName, platform, fileName);
-            Map<String, String> metadata = Map.of(ObjectMetadata.TOOL_ID.toString(), toolId,
-                    ObjectMetadata.VERSION_NAME.toString(), versionName,
-                    ObjectMetadata.PLATFORM.toString(), platform,
-                    ObjectMetadata.FILENAME.toString(), fileName,
-                    ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId));
+            Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
+                    ObjectMetadata.DESCRIPTION.toString(), description);
             PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
@@ -119,6 +111,31 @@ public class MetricsDataS3Client {
     }
 
     /**
+     * Get a list of MetricsData for a GA4GH tool version
+     * @param toolId The GA4GH Tool ID
+     * @param toolVersionName The GA4GH ToolVersion name
+     * @return A list of MetricsData
+     * @throws UnsupportedEncodingException
+     */
+    public List<MetricsData> getMetricsData(String toolId, String toolVersionName) throws UnsupportedEncodingException {
+        String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
+        List<MetricsData> metricsData = new ArrayList<>();
+        boolean isTruncated = true;
+        String continuationToken = null; // ContinuationToken indicates to S3 that the list is being continued on this bucket with a token
+
+        while (isTruncated) {
+            ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).continuationToken(continuationToken).build();
+            ListObjectsV2Response listObjectsV2Response = s3.listObjectsV2(request);
+            List<S3Object> contents = listObjectsV2Response.contents();
+            metricsData.addAll(contents.stream().map(s3Object -> convertS3KeyToMetricsData(s3Object.key())).toList());
+            continuationToken = listObjectsV2Response.nextContinuationToken();
+            isTruncated = listObjectsV2Response.isTruncated();
+        }
+
+        return metricsData;
+    }
+
+    /**
      * Get the metrics data JSON string from S3 for a GA4GH tool version
      * @param toolId The GA4GH Tool ID
      * @param versionName The GA4GH ToolVersion name
@@ -133,34 +150,22 @@ public class MetricsDataS3Client {
         GetObjectRequest request = GetObjectRequest.builder().bucket(bucketName).key(key).build();
         ResponseInputStream<GetObjectResponse> object = s3.getObject(request);
         return IOUtils.toString(object, StandardCharsets.UTF_8);
-
     }
 
     /**
-     * Get a list of MetricsData for a GA4GH tool version
-     * @param toolId The GA4GH Tool ID
-     * @param toolVersionName The GA4GH ToolVersion name
-     * @return A list of MetricsData
-     * @throws UnsupportedEncodingException
+     * Get the metadata for the MetricsData. The metadata is stored as the S3 object's metadata.
+     * @param metricsData
+     * @return
      */
-    public List<MetricsData> getMetricsData(String toolId, String toolVersionName) throws UnsupportedEncodingException {
-        String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
-        ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).build();
-        ListObjectsV2Response listObjectsV2Response = s3.listObjectsV2(request);
-        List<S3Object> contents = listObjectsV2Response.contents();
-        return contents.stream().map(s3Object -> {
-            HeadObjectRequest build = HeadObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build();
-            Map<String, String> metadata = s3.headObject(build).metadata();
-            return convertS3ObjectMetadataToMetricsData(metadata);
-        }).toList();
+    public MetricsDataMetadata getMetricsDataMetadata(MetricsData metricsData) {
+        HeadObjectRequest request = HeadObjectRequest.builder().bucket(bucketName).key(metricsData.s3Key()).build();
+        Map<String, String> s3ObjectMetadata = s3.headObject(request).metadata();
+        long owner = Long.parseLong(s3ObjectMetadata.get(ObjectMetadata.OWNER.toString()));
+        String description = s3ObjectMetadata.get(ObjectMetadata.DESCRIPTION.toString());
+        return new MetricsDataMetadata(owner, description);
     }
 
-    static MetricsData convertS3ObjectMetadataToMetricsData(Map<String, String> s3ObjectMetadata) {
-        String toolId = s3ObjectMetadata.get(ObjectMetadata.TOOL_ID.toString());
-        String toolVersionName = s3ObjectMetadata.get(ObjectMetadata.VERSION_NAME.toString());
-        String platform = s3ObjectMetadata.get(ObjectMetadata.PLATFORM.toString());
-        String fileName = s3ObjectMetadata.get(ObjectMetadata.FILENAME.toString());
-        long owner = Long.parseLong(s3ObjectMetadata.get(ObjectMetadata.OWNER.toString()));
-        return new MetricsData(toolId, toolVersionName, platform, fileName, owner);
+    static MetricsData convertS3KeyToMetricsData(String key) {
+        return new MetricsData(S3ClientHelper.getToolId(key), S3ClientHelper.getVersionName(key), S3ClientHelper.getPlatform(key), S3ClientHelper.getFileName(key), key);
     }
 }

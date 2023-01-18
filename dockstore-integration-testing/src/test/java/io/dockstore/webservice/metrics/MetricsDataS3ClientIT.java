@@ -17,24 +17,31 @@
 
 package io.dockstore.webservice.metrics;
 
+import static io.dockstore.webservice.metrics.MetricsDataS3ClientIT.LOCALSTACK_IMAGE_TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import cloud.localstack.ServiceName;
+import cloud.localstack.awssdkv2.TestUtils;
+import cloud.localstack.docker.LocalstackDockerExtension;
+import cloud.localstack.docker.annotation.IEnvironmentVariableProvider;
+import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.google.common.io.Files;
 import io.dockstore.webservice.core.metrics.MetricsData;
+import io.dockstore.webservice.core.metrics.MetricsDataMetadata;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.regions.Region;
+import org.junit.jupiter.api.extension.ExtendWith;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -42,17 +49,20 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
+@ExtendWith(LocalstackDockerExtension.class)
+@LocalstackDockerProperties(imageTag = LOCALSTACK_IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = MetricsDataS3ClientIT.LocalStackEnvironmentVariables.class)
 public class MetricsDataS3ClientIT {
+    public static final String LOCALSTACK_IMAGE_TAG = "1.3.1";
     private static final String BUCKET_NAME = "dockstore.metrics.data";
-    private static URI localstackEndpoint;
     private static S3Client s3Client;
 
     @BeforeAll
     public static void setup() throws URISyntaxException {
-        localstackEndpoint = new URI("http://localhost:4566");
-        s3Client = S3Client.builder().region(Region.US_EAST_1).endpointOverride(localstackEndpoint).build();
+        s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client
+        // Create a bucket to be used for tests
         CreateBucketRequest request = CreateBucketRequest.builder().bucket(BUCKET_NAME).build();
         s3Client.createBucket(request);
+        deleteBucketContents(); // This is here just in case a test was stopped before tearDown could clean up the bucket
     }
 
     @AfterEach
@@ -71,6 +81,28 @@ public class MetricsDataS3ClientIT {
         });
     }
 
+    /**
+     * This test is a prototype for how metric data would be stored in S3.
+     *
+     * At the end of this test, the S3 folder structure should look like the following:
+     * dockstore.metrics.data
+     * ├── tool
+     * │   └── quay.io
+     * │       └── briandoconnor
+     * │           └── dockstore-tool-md5sum
+     * │               └── 1.0
+     * │                   └── terra
+     * │                       └── 1673972062578.json
+     * └── workflow
+     *     └── github.com
+     *         └── ENCODE-DCC
+     *             └── pipeline-container%2Fencode-mapping-cwl
+     *                 └── 1.0
+     *                     ├── agc
+     *                     │   └── 1673972062578.json
+     *                     └── terra
+     *                         └── 1673972062578.json
+     */
     @Test
     void testS3Prototype() throws IOException {
         // No endpoint exists yet, but toolId, versionName, and platform should be provided as query parameters.
@@ -82,14 +114,15 @@ public class MetricsDataS3ClientIT {
         final String platform2 = "agc";
         final String fileName = Instant.now().toEpochMilli() + ".json";
         final long ownerUserId = 1;
+        final String description = "This metrics data is a prototype";
         // metricsRequestBody is an example of what the JSON request body would look like. It contains metrics for a workflow execution
         final File metricsRequestBodyFile = new File(ResourceHelpers.resourceFilePath("prototype-metrics-request-body.json"));
         final String metricsRequestBody = Files.asCharSource(metricsRequestBodyFile, StandardCharsets.UTF_8).read();
 
         // Create an object in S3 for the workflow
-        MetricsDataS3Client client = new MetricsDataS3Client(BUCKET_NAME, localstackEndpoint);
-        client.createS3Object(toolId1, versionName, platform1, fileName, ownerUserId, metricsRequestBody);
-        List<MetricsData> metricsDataList = client.getMetricsData(toolId1, versionName);
+        MetricsDataS3Client metricsDataClient = new MetricsDataS3Client(BUCKET_NAME, s3Client);
+        metricsDataClient.createS3Object(toolId1, versionName, platform1, fileName, ownerUserId, description, metricsRequestBody);
+        List<MetricsData> metricsDataList = metricsDataClient.getMetricsData(toolId1, versionName);
         assertEquals(1, metricsDataList.size());
 
         // Verify the S3 folder structure
@@ -101,18 +134,24 @@ public class MetricsDataS3ClientIT {
 
         // Verify that the S3 Object Metadata was recorded correctly
         MetricsData metricsData = metricsDataList.get(0);
-        assertEquals(toolId1, metricsData.getToolId());
-        assertEquals(versionName, metricsData.getToolVersionName());
-        assertEquals(platform1, metricsData.getPlatform());
-        assertEquals(ownerUserId, metricsData.getOwner());
+        assertEquals(toolId1, metricsData.toolId());
+        assertEquals(versionName, metricsData.toolVersionName());
+        assertEquals(platform1, metricsData.platform());
+        assertEquals(fileName, metricsData.fileName());
+        assertEquals("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/terra/" + fileName, metricsData.s3Key());
+
+        // Test getting the metadata of the metrics data
+        MetricsDataMetadata metricsDataMetadata = metricsDataClient.getMetricsDataMetadata(metricsData);
+        assertEquals(ownerUserId, metricsDataMetadata.owner());
+        assertEquals(description, metricsDataMetadata.description());
 
         // Verify S3 object contents
-        String metricsDataContent = client.getMetricsDataFileContent(metricsData.getToolId(), metricsData.getToolVersionName(), metricsData.getPlatform(), metricsData.getFilename());
+        String metricsDataContent = metricsDataClient.getMetricsDataFileContent(metricsData.toolId(), metricsData.toolVersionName(), metricsData.platform(), metricsData.fileName());
         assertEquals(metricsRequestBody, metricsDataContent);
 
         // Send more metrics data to S3 for the same workflow version, but different platform
-        client.createS3Object(toolId1, versionName, platform2, fileName, ownerUserId, metricsRequestBody);
-        metricsDataList = client.getMetricsData(toolId1, versionName);
+        metricsDataClient.createS3Object(toolId1, versionName, platform2, fileName, ownerUserId, description, metricsRequestBody);
+        metricsDataList = metricsDataClient.getMetricsData(toolId1, versionName);
         assertEquals(2, metricsDataList.size());
 
         // Verify S3 folder structure when there is data for more than one platform for a workflow version
@@ -125,8 +164,8 @@ public class MetricsDataS3ClientIT {
         assertTrue(s3BucketKeys.contains("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/agc/" + fileName));
 
         // Add a tool
-        client.createS3Object(toolId2, versionName, platform1, fileName, ownerUserId, metricsRequestBody);
-        metricsDataList = client.getMetricsData(toolId2, versionName);
+        metricsDataClient.createS3Object(toolId2, versionName, platform1, fileName, ownerUserId, description, metricsRequestBody);
+        metricsDataList = metricsDataClient.getMetricsData(toolId2, versionName);
         assertEquals(1, metricsDataList.size(), "Should only be one because data was only submitted for one version of the tool");
 
         // Verify S3 folder structure when there is data for more than one entry
@@ -138,5 +177,45 @@ public class MetricsDataS3ClientIT {
         assertTrue(s3BucketKeys.contains("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/terra/" + fileName));
         assertTrue(s3BucketKeys.contains("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/agc/" + fileName));
         assertTrue(s3BucketKeys.contains("tool/quay.io/briandoconnor/dockstore-tool-md5sum/1.0/terra/" + fileName));
+    }
+
+    /**
+     * Tests the scenario where an S3 folder has more than 1000 objects. The ListObjectsV2Request returns at most 1,000 objects and paginates the rest.
+     * This tests that we can retrieve all S3 objects if there is pagination.
+     * @throws IOException
+     */
+    @Test
+    void testGetMetricsDataPagination() throws IOException {
+        // No endpoint exists yet, but toolId, versionName, and platform should be provided as query parameters.
+        // Owner would be the authenticated user that invokes the endpoint
+        final String toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container/encode-mapping-cwl";
+        final String versionName = "1.0";
+        final String platform = "terra";
+        final long ownerUserId = 1;
+        // metricsRequestBody is an example of what the JSON request body would look like. It contains metrics for a workflow execution
+        final File metricsRequestBodyFile = new File(ResourceHelpers.resourceFilePath("prototype-metrics-request-body.json"));
+        final String metricsRequestBody = Files.asCharSource(metricsRequestBodyFile, StandardCharsets.UTF_8).read();
+
+        // Create an object in S3 for the workflow
+        MetricsDataS3Client client = new MetricsDataS3Client(BUCKET_NAME, s3Client);
+
+        // Add 1001 objects for a workflow version and verify that we retrieve all 1001 objects
+        for (int i = 0; i < 1001; ++i) {
+            // Note that all these objects will be in the same folder because only the file name is different for each object
+            final String fileName = Instant.now().toEpochMilli() + ".json";
+            client.createS3Object(toolId, versionName, platform, fileName, ownerUserId, "", metricsRequestBody);
+        }
+
+        List<MetricsData> metricsDataList = client.getMetricsData(toolId, versionName);
+        assertEquals(1001, metricsDataList.size());
+    }
+
+    public static class LocalStackEnvironmentVariables implements IEnvironmentVariableProvider {
+        @Override
+        public Map<String, String> getEnvironmentVariables() {
+            // Need this so that S3 key encoding works. Remove when there's a new localstack release containing the fix
+            // https://github.com/localstack/localstack/issues/7374#issuecomment-1360950643
+            return Map.of("PROVIDER_OVERRIDE_S3", "asf");
+        }
     }
 }

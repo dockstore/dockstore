@@ -93,6 +93,18 @@
                     <groupId>com.amazonaws</groupId>
                     <artifactId>aws-java-sdk-kinesis</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.amazon.ion</groupId>
+                    <artifactId>ion-java</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.projectlombok</groupId>
+                    <artifactId>lombok</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>

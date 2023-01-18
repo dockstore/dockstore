@@ -18,16 +18,33 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public final class S3ClientHelper {
+    private static final String KEY_DELIMITER = "/";
     private static final int MAX_TOOL_ID_STRING_SEGMENTS = 5;
     private static final int TOOL_ID_REPOSITORY_INDEX = 3;
     private static final int TOOL_ID_TOOLNAME_INDEX = 4;
-    
+
+    // Constants for S3 key indices
+    private static final int ENTRY_TYPE_INDEX = 0;
+    private static final int START_OF_TOOL_ID_INDEX = 1;
+    private static final int END_OF_TOOL_ID_INDEX = 3;
+    private static final int VERSION_NAME_INDEX = 4;
+    private static final int PLATFORM_INDEX = 5;
+    private static final int FILE_NAME_INDEX = 6;
+
     private S3ClientHelper() {}
+
+    public static S3Client createS3Client() {
+        // TODO should not need to hardcode region since buckets are global, but http://opensourceforgeeks.blogspot.com/2018/07/how-to-fix-unable-to-find-region-via.html
+        return S3Client.builder().region(Region.US_EAST_1).build();
+    }
 
     /**
      * Converts the toolId into a key for s3 storage.  Used by both webservice and tooltester
@@ -46,14 +63,47 @@ public final class S3ClientHelper {
         } else {
             partialKey = "tool/" + partialKey;
         }
-        String[] split = partialKey.split("/");
+        String[] split = partialKey.split(KEY_DELIMITER);
         if (split.length == MAX_TOOL_ID_STRING_SEGMENTS) {
             split[TOOL_ID_REPOSITORY_INDEX] = URLEncoder
-                    .encode(split[TOOL_ID_REPOSITORY_INDEX] + "/" + split[TOOL_ID_TOOLNAME_INDEX], StandardCharsets.UTF_8.name());
+                    .encode(split[TOOL_ID_REPOSITORY_INDEX] + KEY_DELIMITER + split[TOOL_ID_TOOLNAME_INDEX], StandardCharsets.UTF_8);
             String[] encodedToolIdArray = Arrays.copyOf(split, split.length - 1);
-            return String.join("/", encodedToolIdArray);
+            return String.join(KEY_DELIMITER, encodedToolIdArray);
         } else {
             return partialKey;
         }
+    }
+
+    public static String getToolId(String key) {
+        final String[] keyComponents = splitKey(key);
+        final String entryType = keyComponents[ENTRY_TYPE_INDEX];
+        final String encodedToolId = String.join(KEY_DELIMITER, Arrays.copyOfRange(keyComponents, START_OF_TOOL_ID_INDEX, END_OF_TOOL_ID_INDEX + 1));
+        final String decodedToolId = URLDecoder.decode(encodedToolId, StandardCharsets.UTF_8);
+        if ("tool".equals(entryType)) {
+            return decodedToolId;
+        } else if ("workflow".equals(entryType)) {
+            return "#workflow/" + decodedToolId;
+        } else {
+            return "";
+        }
+    }
+
+    public static String getVersionName(String key) {
+        final String[] keyComponents = splitKey(key);
+        return keyComponents[VERSION_NAME_INDEX];
+    }
+
+    public static String getPlatform(String key) {
+        final String[] keyComponents = splitKey(key);
+        return keyComponents[PLATFORM_INDEX];
+    }
+
+    public static String getFileName(String key) {
+        final String[] keyComponents = splitKey(key);
+        return keyComponents[FILE_NAME_INDEX];
+    }
+
+    public static String[] splitKey(String key) {
+        return key.split(KEY_DELIMITER);
     }
 }
