@@ -226,7 +226,7 @@ public abstract class SourceCodeRepoInterface {
      * @return workflow with associated workflow versions
      */
     public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh);
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, WorkflowAuxilliaryInfo info, boolean hardRefresh);
 
     /**
      * Determine whether to refresh a version or not
@@ -266,7 +266,7 @@ public abstract class SourceCodeRepoInterface {
      * @param hardRefresh
      * @return workflow
      */
-    public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName, boolean hardRefresh) {
+    public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName, WorkflowAuxilliaryInfo info, boolean hardRefresh) {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId, new BioWorkflow());
 
@@ -306,7 +306,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Create versions and associated source files
         //TODO: calls validation eventually, may simplify if we take into account metadata parsing below
-        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName, hardRefresh);
+        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName, info, hardRefresh);
 
         if (versionName.isPresent() && workflow.getWorkflowVersions().size() == 0) {
             String msg = "Version " + versionName.get() + " was not found on Git repository";
@@ -550,13 +550,16 @@ public abstract class SourceCodeRepoInterface {
      * @return workflow version
      */
     WorkflowVersion combineVersionAndSourcefile(String repositoryId, SourceFile sourceFile, Workflow workflow,
-        DescriptorLanguage.FileType identifiedType, WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
+        DescriptorLanguage.FileType identifiedType, WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults, WorkflowAuxilliaryInfo info) {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         if (sourceFile != null && sourceFile.getContent() != null) {
-            final Map<String, SourceFile> stringSourceFileMap = this
-                .resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version, sourceFile.getPath());
-            sourceFileSet.addAll(stringSourceFileMap.values());
+            final Map<String, SourceFile> importFileMap = 
+                resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version, sourceFile.getPath());
+            sourceFileSet.addAll(importFileMap.values());
+            final Map<String, SourceFile> otherFileMap = 
+                resolveOthers(repositoryId, info.getOtherFilePaths(), identifiedType, version, importFileMap);
+            sourceFileSet.addAll(otherFileMap.values());
         }
 
         // Look for test parameter files if existing workflow
@@ -661,6 +664,11 @@ public abstract class SourceCodeRepoInterface {
     public Map<String, SourceFile> resolveImports(String repositoryId, String content, DescriptorLanguage.FileType fileType, Version<?> version, String filepath) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
         return languageInterface.processImports(repositoryId, content, version, this, filepath);
+    }
+
+    public Map<String, SourceFile> resolveOthers(String repositoryId, List<String> otherFilePaths,  DescriptorLanguage.FileType fileType, Version<?> version, Map<String, SourceFile> alreadyProcessedPathsToFiles) {
+        LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
+        return languageInterface.processOtherFiles(repositoryId, otherFilePaths, version, this, alreadyProcessedPathsToFiles);
     }
 
     /**

@@ -65,6 +65,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
+import io.dockstore.webservice.helpers.WorkflowAuxilliaryInfo;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -378,7 +379,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Create a new workflow based on the current state of the Git repository
         final Workflow newWorkflow = sourceCodeRepo
-            .createWorkflowFromGitRepository(existingWorkflow.getOrganization() + '/' + existingWorkflow.getRepository(), Optional.of(existingWorkflow), version, hardRefresh);
+            .createWorkflowFromGitRepository(existingWorkflow.getOrganization() + '/' + existingWorkflow.getRepository(), Optional.of(existingWorkflow), version, new WorkflowAuxilliaryInfo(), hardRefresh);
         existingWorkflow.getUsers().add(user);
 
         // Use new workflow to update existing workflow

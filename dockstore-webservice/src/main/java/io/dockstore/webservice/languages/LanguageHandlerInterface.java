@@ -144,6 +144,11 @@ public interface LanguageHandlerInterface {
     Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath);
 
+    default Map<String, SourceFile> processOtherFiles(String repositoryId, List<String> otherFilePaths, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> alreadyProcessedFileMap) {
+        // TODO improve
+        return Map.of();
+    }
+
     /**
      * Processes a descriptor and its associated secondary descriptors to either return the tools that a workflow has or a DAG representation
      * of a workflow

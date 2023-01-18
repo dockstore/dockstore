@@ -280,7 +280,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, WorkflowAuxilliaryInfo info, boolean hardRefresh) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             PaginatedRefs paginatedRefs = refsApi
@@ -311,7 +311,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                             // Use default test parameter file if either new version or existing version that hasn't been edited
                             createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
-                            workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+                            workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults, info));
 
                             version.setCommitID(getCommitID(repositoryId, version));
 

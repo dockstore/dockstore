@@ -134,7 +134,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, WorkflowAuxilliaryInfo info, boolean hardRefresh) {
 
         try {
             GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
@@ -144,7 +144,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                 if (versionName.isEmpty() || Objects.equals(versionName.get(), tag.getName())) {
                     Date committedDate = tag.getCommit().getCommittedDate();
                     String commitId = tag.getCommit().getId();
-                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate, commitId, hardRefresh);
+                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate, commitId, info, hardRefresh);
                 }
             });
             branches.forEach(branch -> {
@@ -152,7 +152,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                     Date committedDate = branch.getCommit().getCommittedDate();
                     String commitId = branch.getCommit().getId();
                     handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(),
-                            Version.ReferenceType.BRANCH, committedDate, commitId, hardRefresh);
+                            Version.ReferenceType.BRANCH, committedDate, commitId, info, hardRefresh);
                 }
             });
         } catch (IOException e) {
@@ -163,7 +163,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate, String commitId, boolean hardRefresh) {
+        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate, String commitId, WorkflowAuxilliaryInfo info, boolean hardRefresh) {
         if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
             LOG.info(gitUsername + ": Looking at GitLab reference: " + branchName);
             // Initialize workflow version
@@ -180,7 +180,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             version.setCommitID(commitId);
             // Use default test parameter file if either new version or existing version that hasn't been edited
             createTestParameterFiles(workflow, id, branchName, version, identifiedType);
-            version = combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults);
+            version = combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults, info);
 
             version = versionValidation(version, workflow, calculatedPath);
             if (version != null) {
