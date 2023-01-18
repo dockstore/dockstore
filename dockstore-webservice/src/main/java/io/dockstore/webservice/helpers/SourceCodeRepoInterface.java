@@ -728,7 +728,7 @@ public abstract class SourceCodeRepoInterface {
             if (entry.getEntryType() == EntryType.APPTOOL) {
                 validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateToolSet(sourceFiles, mainDescriptorPath);
             } else {
-                validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+                validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath, entry);
             }
             Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
             version.addOrUpdateValidation(descriptorValidation);

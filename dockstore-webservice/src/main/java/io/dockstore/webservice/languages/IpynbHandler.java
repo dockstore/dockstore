@@ -4,17 +4,20 @@ package io.dockstore.webservice.languages;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.http.HttpStatus;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,64 +33,36 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
     @Override
     public Version parseWorkflowContent(String filePath, String content, Set<SourceFile> sourceFiles, Version version) {
-        // Parse the notebook.
-        JSONObject notebook;
-        JSONObject metadata;
-        int formatMajor;
-        int formatMinor;
-        JSONArray cells;
-
-        try {
-            notebook = new JSONObject(content);
-            metadata = notebook.getJSONObject("metadata");
-            formatMajor = notebook.getInt("nbformat");
-            formatMinor = notebook.getInt("nbformat_minor");
-            cells = notebook.getJSONArray("cells");
-        } catch (JSONException ex) {
-            LOG.info("Notebook file is malformed " + ex.getMessage());
-            // TODO add negative validation
-            return version;
-        }
-
-        /*
-        // Check that the entry's programming language (descriptor language subclass) matches
-        // the programming language of the notebook.
-        try {
-            String entryLanguage = version.getParent().getDescriptorSubclass();
-            String notebookLanguage;
-            // If "language_info" is present, it must contain a key named "name".
-            if (metadata.has("language_info")) {
-                notebookLanguage = metadata.getJSONObject("language_info").getString("name");
-            } else {
-                notebookLanguage = "python";
-            }
-            if (!Objects.equals(entryLanguage, notebookLanguage)) {
-                // TODO add negative validation
-            }
-        } catch (JSONException ex) {
-            // TODO add negative validation
-            return version;
-        }
-        */
 
         // Extract the authors from the metadata.
         try {
-            JSONArray authors = notebook.getJSONObject("metadata").getJSONArray("authors");
-            for (int i = 0; i < authors.length(); i++) {
-                JSONObject author = authors.getJSONObject(i);
-                String name = author.getString("name");
-                LOG.info("Notebook file contains name " + name);
+            JSONArray jsonAuthors = new JSONObject(content).getJSONObject("metadata").getJSONArray("authors");
+            Set<Author> versionAuthors = new LinkedHashSet<>();
+            for (int i = 0; i < jsonAuthors.length(); i++) {
+                JSONObject jsonAuthor = jsonAuthors.getJSONObject(i);
+                String name = jsonAuthor.optString("name", null);
+                String email = jsonAuthor.optString("email", null);
+                if (name != null || email != null) {
+                    Author versionAuthor = new Author();
+                    versionAuthor.setName(name);
+                    versionAuthor.setEmail(email);
+                    versionAuthors.add(versionAuthor);
+                }
+                LOG.info("Notebook file contains author {} {}", name, email);
             }
+            version.setAuthors(versionAuthors);
         } catch (JSONException ex) {
             // Ignore the error extracting the author names.
+            // TODO maybe do something different.
+            LOG.warn("Could not extract notebook author information", ex);
         }
-
         return version;
     }
 
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
+
         Map<String, SourceFile> pathsToFiles = new HashMap<>();
         for (String reesDir: new String[]{ "/", "/binder/", "/.binder/" }) {
             for (String reesName: new String[]{ "requirements.txt" }) {
@@ -120,35 +95,87 @@ public class IpynbHandler implements LanguageHandlerInterface {
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type, ToolDAO dao) {
-        try {
-            // TODO notebooks don't have a DAG
-            // TODO return notebook "image" is type is TOOL
-            return Optional.of("");
-        } catch (Exception ex) {
-            final String exMsg = "Notebook parse error: " + ex.getMessage();
-            LOG.error(exMsg, ex);
-            throw new CustomWebApplicationException(exMsg, HttpStatus.SC_UNPROCESSABLE_ENTITY);
-        }
+
+        // Notebooks don't have a DAG
+        // When we add an "image" reference to the notebook version, figure out a way to return it in the list of tools here, or maybe elsewhere.
+        throw new UnsupportedOperationException("Notebooks do not have DAGs or tools");
     }
 
     @Override
-    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
-        // TODO check if parseable and well-formed
-        // TODO does there exist notebook validation code?
-        return null;
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourceFiles, String notebookPath, Workflow workflow) {
+
+        // Determine the content of the notebook file.
+        Optional<SourceFile> notebookFile = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), notebookPath))).findFirst();
+        if (!notebookFile.isPresent()) {
+            return negativeValidation(notebookPath, "No notebook file is present");
+        }
+        String content = notebookFile.get().getContent();
+
+        // Parse the notebook JSON and check for the existence of some fields.
+        JSONObject notebook;
+        JSONObject metadata;
+        int formatMajor;
+        int formatMinor;
+        JSONArray cells;
+        try {
+            notebook = new JSONObject(content);
+            metadata = notebook.getJSONObject("metadata");
+            formatMajor = notebook.getInt("nbformat");
+            formatMinor = notebook.getInt("nbformat_minor");
+            cells = notebook.getJSONArray("cells");
+        } catch (JSONException ex) {
+            return negativeValidation(notebookPath, "The notebook file is malformed", ex);
+        }
+
+        // Check that the entry's programming language (descriptor language subclass) matches the notebook's programming language.
+        try {
+            String entryLanguage = workflow.getDescriptorTypeSubclass().toString().toLowerCase();
+            String notebookLanguage;
+            // If "language_info" is present, the spec says that it must contain a key named "name".
+            if (metadata.has("language_info")) {
+                notebookLanguage = metadata.getJSONObject("language_info").getString("name").toLowerCase();
+            } else {
+                notebookLanguage = "python";
+            }
+            if (!Objects.equals(entryLanguage, notebookLanguage)) {
+                return negativeValidation(notebookPath, String.format("The notebook programming language must be '%s'", entryLanguage));
+            }
+        } catch (JSONException ex) {
+            return negativeValidation(notebookPath, "Error reading the notebook programming language", ex);
+        }
+
+        // If we reach this point, everything is well, return a positive validation.
+        return positiveValidation();
+    }
+
+    private VersionTypeValidation positiveValidation() {
+        LOG.info("Created positive validation");
+        return new VersionTypeValidation(true, Collections.emptyMap());
+    }
+
+    private VersionTypeValidation negativeValidation(String path, String message) {
+        LOG.warn("Created negative validation, file {}: {}", path, message);
+        return new VersionTypeValidation(false, Map.of(path, message));
+    }
+
+    private VersionTypeValidation negativeValidation(String path, String message, Exception ex) {
+        String reason = ex.getMessage();
+        if (reason != null) {
+            message = String.format("%s: %s", message, reason);
+        }
+        LOG.warn("Created negative validation, file {}: {}", path, message, ex);
+        return new VersionTypeValidation(false, Map.of(path, message));
     }
 
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
+        // TODO is this ok?
         throw new UnsupportedOperationException("Notebooks do not support tools");
     }
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        if (!sourceFiles.isEmpty()) {
-            throw new UnsupportedOperationException("Notebooks do not support test files");
-        }
-        // TODO
-        return null;
+        // TODO is this ok?
+        throw new UnsupportedOperationException("Notebooks do not support test files");
     }
 }

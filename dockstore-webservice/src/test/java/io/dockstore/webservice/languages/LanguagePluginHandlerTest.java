@@ -94,7 +94,7 @@ class LanguagePluginHandlerTest {
         LanguagePluginHandler minimalLanguageHandler = new LanguagePluginHandler(TestLanguage.class);
 
         try {
-            minimalLanguageHandler.validateWorkflowSet(sourceFileSet, SECONDARY_DESCRIPTOR_CWL);
+            minimalLanguageHandler.validateWorkflowSet(sourceFileSet, SECONDARY_DESCRIPTOR_CWL, null);
             fail("Expected method error");
         } catch (CustomWebApplicationException e) {
             // ValidateWorkflowSet can intercept the original exception and
@@ -112,13 +112,13 @@ class LanguagePluginHandlerTest {
         sourceFileSet.add(secondaryDescriptorSourceFile);
         sourceFileSet.add(testSourceFile);
         sourceFileSet.add(dockerFileSourceFile);
-        VersionTypeValidation versionTypeValidation = minimalLanguageHandler.validateWorkflowSet(sourceFileSet, MAIN_DESCRIPTOR_CWL);
+        VersionTypeValidation versionTypeValidation = minimalLanguageHandler.validateWorkflowSet(sourceFileSet, MAIN_DESCRIPTOR_CWL, null);
         assertTrue(versionTypeValidation.isValid());
 
         sourceFileSet.clear();
         // Missing main descriptor should cause an invalid version validation
         sourceFileSet.add(secondaryDescriptorSourceFile);
-        versionTypeValidation = minimalLanguageHandler.validateWorkflowSet(sourceFileSet, MAIN_DESCRIPTOR_CWL);
+        versionTypeValidation = minimalLanguageHandler.validateWorkflowSet(sourceFileSet, MAIN_DESCRIPTOR_CWL, null);
         assertTrue(!versionTypeValidation.isValid()
             && versionTypeValidation.getMessage().containsValue("Primary descriptor file not found."));
 

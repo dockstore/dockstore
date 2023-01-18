@@ -944,7 +944,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     @Override
-    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath, io.dockstore.webservice.core.Workflow workflow) {
         return validateProcessSet(sourceFiles, primaryDescriptorFilePath, "workflow", Set.of(WORKFLOW), "tool", Set.of(COMMAND_LINE_TOOL, EXPRESSION_TOOL));
     }
 
