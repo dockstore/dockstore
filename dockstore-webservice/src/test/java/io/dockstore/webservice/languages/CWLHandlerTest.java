@@ -436,9 +436,15 @@ class CWLHandlerTest {
         final Version version = new WorkflowVersion();
         cwlHandler.parseWorkflowContent(manyFile.getPath(), manyFile.getContent(), Set.of(manyFile, oneFile, noFile), version);
         assertEquals(List.of("v1.2", "v1.1", "v1.0"), version.getVersionMetadata().getDescriptorTypeVersions());
+        assertEquals("v1.2", manyFile.getMetadata().getTypeVersion());
+        assertEquals("v1.1", oneFile.getMetadata().getTypeVersion());
+        assertEquals(null, noFile.getMetadata().getTypeVersion());
 
         // Test one file containing no versions.
+        noFile.getMetadata().setTypeVersion(null); // Reset
+        version.getVersionMetadata().setDescriptorTypeVersions(List.of("bogus"));
         cwlHandler.parseWorkflowContent(noFile.getPath(), noFile.getContent(), Set.of(noFile), version);
+        assertEquals(null, noFile.getMetadata().getTypeVersion());
         assertEquals(List.of(), version.getVersionMetadata().getDescriptorTypeVersions());
     }
 }
