@@ -77,7 +77,8 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findTokenByOnlineProfileIdAndTokenSource",
         query = "SELECT t FROM Token t WHERE t.onlineProfileId = :onlineProfileId AND t.tokenSource = :tokenSource"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findAllGitHubTokens", query = "SELECT t FROM Token t WHERE t.tokenSource = 'github.com'"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findAllGoogleTokens", query = "SELECT t FROM Token t WHERE t.tokenSource = 'google.com'")
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findAllGoogleTokens", query = "SELECT t FROM Token t WHERE t.tokenSource = 'google.com'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findAllBitbucketTokens", query = "SELECT t FROM Token t WHERE t.tokenSource = 'bitbucket.org'")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
