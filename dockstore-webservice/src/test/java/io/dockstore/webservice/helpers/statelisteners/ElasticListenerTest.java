@@ -104,10 +104,12 @@ class ElasticListenerTest {
         throws IllegalAccessException {
         version.setName(name);
         final SourceFile sourceFile = new SourceFile();
-        sourceFile.setPath("/Dockstore.wdl");
+        final String path = "/Dockstore.wdl";
+        sourceFile.setPath(path);
+        sourceFile.setAbsolutePath(path);
         sourceFile.setContent("Doesn't matter");
         version.getSourceFiles().add(sourceFile);
-        version.setDescriptorTypeVersions(descriptorTypeVersions);
+        version.getVersionMetadata().setDescriptorTypeVersions(descriptorTypeVersions);
         // Id is normally set via Hibernate generator; have to use reflection to set it, alas
         FieldUtils.writeField(version, "id", id, true);
     }

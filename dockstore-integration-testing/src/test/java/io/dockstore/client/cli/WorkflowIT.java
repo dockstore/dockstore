@@ -1232,9 +1232,9 @@ public class WorkflowIT extends BaseIT {
         List<io.dockstore.openapi.client.model.SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
         assertNotNull(sourceFiles);
         assertEquals(1, sourceFiles.size());
-        assertEquals(WDLHandler.DEFAULT_WDL_VERSION, sourceFiles.get(0).getTypeVersion(), "Language version of WDL descriptor without 'version' field should be the default version");
-        assertEquals(1, workflowVersion.getDescriptorTypeVersions().size(), "Should only have one language version");
-        assertTrue(workflowVersion.getDescriptorTypeVersions().contains(WDLHandler.DEFAULT_WDL_VERSION));
+        assertEquals(WDLHandler.DEFAULT_WDL_VERSION, sourceFiles.get(0).getMetadata().getTypeVersion(), "Language version of WDL descriptor without 'version' field should be the default version");
+        assertEquals(1, workflowVersion.getVersionMetadata().getDescriptorTypeVersions().size(), "Should only have one language version");
+        assertTrue(workflowVersion.getVersionMetadata().getDescriptorTypeVersions().contains(WDLHandler.DEFAULT_WDL_VERSION));
 
         // Test WDL workflow with 'version 1.0'
         workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/hello-wdl-workflow",
@@ -1247,14 +1247,14 @@ public class WorkflowIT extends BaseIT {
         sourceFiles.forEach(sourceFile -> {
             if ("/Dockstore.wdl".equals(sourceFile.getAbsolutePath())) {
                 assertEquals(FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
-                assertEquals("1.0", sourceFile.getTypeVersion(), "Language version of WDL descriptor with 'version 1.0' should be 1.0");
+                assertEquals("1.0", sourceFile.getMetadata().getTypeVersion(), "Language version of WDL descriptor with 'version 1.0' should be 1.0");
             } else {
                 assertEquals(FileType.WDL_TEST_JSON.name(), sourceFile.getType().getValue());
-                assertNull(sourceFile.getTypeVersion(), "Test files should not have a version");
+                assertNull(sourceFile.getMetadata().getTypeVersion(), "Test files should not have a version");
             }
         });
-        assertEquals(1, workflowVersion.getDescriptorTypeVersions().size(), "Should only have one language version");
-        assertTrue(workflowVersion.getDescriptorTypeVersions().contains("1.0"));
+        assertEquals(1, workflowVersion.getVersionMetadata().getDescriptorTypeVersions().size(), "Should only have one language version");
+        assertTrue(workflowVersion.getVersionMetadata().getDescriptorTypeVersions().contains("1.0"));
 
         // test that versions coming back from TRS 2.0.1 look sane
         workflowsApi.publish1(workflow.getId(), new io.dockstore.openapi.client.model.PublishRequest().publish(true));
@@ -1273,10 +1273,10 @@ public class WorkflowIT extends BaseIT {
         sourceFiles.forEach(sourceFile -> {
             // This workflow has three descriptor files and no test file
             assertEquals(FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
-            assertEquals(WDLHandler.DEFAULT_WDL_VERSION, sourceFile.getTypeVersion(), "Language version of WDL descriptors with no 'version' field should be default version");
+            assertEquals(WDLHandler.DEFAULT_WDL_VERSION, sourceFile.getMetadata().getTypeVersion(), "Language version of WDL descriptors with no 'version' field should be default version");
         });
-        assertEquals(1, workflowVersion.getDescriptorTypeVersions().size(), "Should only have one language version");
-        assertTrue(workflowVersion.getDescriptorTypeVersions().contains(WDLHandler.DEFAULT_WDL_VERSION));
+        assertEquals(1, workflowVersion.getVersionMetadata().getDescriptorTypeVersions().size(), "Should only have one language version");
+        assertTrue(workflowVersion.getVersionMetadata().getDescriptorTypeVersions().contains(WDLHandler.DEFAULT_WDL_VERSION));
     }
 
     /**

@@ -18,7 +18,6 @@ package io.dockstore.webservice.helpers.statelisteners;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
@@ -440,21 +439,16 @@ public class ElasticListener implements StateListenerInterface {
     private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions) {
         Set<Version> detachedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
-            Version detatchedVersion = workflowVersion.createEmptyVersion();
-            detatchedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
-            detatchedVersion.setInputFileFormats(new TreeSet<>(workflowVersion.getInputFileFormats()));
-            detatchedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
-            detatchedVersion.setName(workflowVersion.getName());
-            detatchedVersion.setReference(workflowVersion.getReference());
+            Version detachedVersion = workflowVersion.createEmptyVersion();
+            detachedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
+            detachedVersion.setInputFileFormats(new TreeSet<>(workflowVersion.getInputFileFormats()));
+            detachedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
+            detachedVersion.setName(workflowVersion.getName());
+            detachedVersion.setReference(workflowVersion.getReference());
             SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-            sourceFiles.forEach(sourceFile -> {
-                Gson gson = new Gson();
-                String gsonString = gson.toJson(sourceFile);
-                SourceFile detachedSourceFile = gson.fromJson(gsonString, SourceFile.class);
-                detatchedVersion.addSourceFile(detachedSourceFile);
-            });
-            detatchedVersion.updateVerified();
-            detachedVersions.add(detatchedVersion);
+            sourceFiles.forEach(sourceFile -> detachedVersion.addSourceFile(SourceFile.copy(sourceFile)));
+            detachedVersion.updateVerified();
+            detachedVersions.add(detachedVersion);
         });
         return detachedVersions;
     }
@@ -498,7 +492,7 @@ public class ElasticListener implements StateListenerInterface {
 
         // Get a list of unique descriptor type versions with the descriptor type prepended. Ex: 'WDL 1.0'
         return workflowVersions.stream()
-                .map(workflowVersion -> (List<String>)workflowVersion.getDescriptorTypeVersions())
+                .map(workflowVersion -> (List<String>)workflowVersion.getVersionMetadata().getDescriptorTypeVersions())
                 .flatMap(List::stream)
                 .distinct()
                 .map(descriptorTypeVersion -> String.join(" ", language, descriptorTypeVersion))

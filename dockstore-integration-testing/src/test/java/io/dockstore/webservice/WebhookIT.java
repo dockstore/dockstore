@@ -1594,14 +1594,14 @@ class WebhookIT extends BaseIT {
         sourceFiles.forEach(sourceFile -> {
             if ("/Dockstore.wdl".equals(sourceFile.getAbsolutePath())) {
                 assertEquals(FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
-                assertEquals("1.0", sourceFile.getTypeVersion(), "Language version of WDL descriptor with 'version 1.0' should be 1.0");
+                assertEquals("1.0", sourceFile.getMetadata().getTypeVersion(), "Language version of WDL descriptor with 'version 1.0' should be 1.0");
             } else {
                 assertEquals(FileType.DOCKSTORE_YML.name(), sourceFile.getType().getValue());
-                assertNull(sourceFile.getTypeVersion(), ".dockstore.yml should not have a version");
+                assertNull(sourceFile.getMetadata().getTypeVersion(), ".dockstore.yml should not have a version");
             }
         });
-        assertEquals(1, version.getDescriptorTypeVersions().size(), "Should only have one language version");
-        assertTrue(version.getDescriptorTypeVersions().contains("1.0"));
+        assertEquals(1, version.getVersionMetadata().getDescriptorTypeVersions().size(), "Should only have one language version");
+        assertTrue(version.getVersionMetadata().getDescriptorTypeVersions().contains("1.0"));
     }
 
     // Asserts that the workflow metadata is the same as the default version metadata

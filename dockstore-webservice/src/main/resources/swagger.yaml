@@ -7898,6 +7898,8 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the source file in this web service"
+      metadata:
+        $ref: "#/definitions/SourceFileMetadata"
       verifiedBySource:
         type: "object"
         description: "maps from platform to whether an entry successfully ran on it\
@@ -7953,9 +7955,14 @@ definitions:
         description: "The checksum(s) of the sourcefile's content"
         items:
           $ref: "#/definitions/Checksum"
+  SourceFileMetadata:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
       typeVersion:
         type: "string"
-        position: 7
         description: "The language version for the given descriptor file type"
   StarRequest:
     type: "object"
@@ -7974,11 +7981,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
-      descriptorTypeVersions:
-        type: "array"
-        description: "The language versions for the version's descriptor files"
-        items:
-          type: "string"
       id:
         type: "integer"
         format: "int64"
@@ -8662,11 +8664,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
-      descriptorTypeVersions:
-        type: "array"
-        description: "The language versions for the version's descriptor files"
-        items:
-          type: "string"
       id:
         type: "integer"
         format: "int64"
@@ -8815,6 +8812,11 @@ definitions:
         type: "string"
         description: "This is a human-readable description of this container and what\
           \ it is trying to accomplish, required GA4GH"
+      descriptorTypeVersions:
+        type: "array"
+        description: "The language versions for the version's descriptor files"
+        items:
+          type: "string"
       id:
         type: "integer"
         format: "int64"
@@ -9097,11 +9099,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Author"
-      descriptorTypeVersions:
-        type: "array"
-        description: "The language versions for the version's descriptor files"
-        items:
-          type: "string"
       id:
         type: "integer"
         format: "int64"

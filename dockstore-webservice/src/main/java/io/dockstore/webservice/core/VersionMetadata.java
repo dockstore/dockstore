@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -128,6 +129,11 @@ public class VersionMetadata {
     @ApiModelProperty()
     private Boolean publicAccessibleTestParameterFile;
 
+    @Column(columnDefinition = "varchar")
+    @Convert(converter = DescriptorTypeVersionConverter.class)
+    @ApiModelProperty(value = "The language versions for the version's descriptor files")
+    private List<String> descriptorTypeVersions = new ArrayList<>();
+
     public long getId() {
         return id;
     }
@@ -168,5 +174,13 @@ public class VersionMetadata {
 
     public void setPublicAccessibleTestParameterFile(Boolean publicAccessibleTestParameterFile) {
         this.publicAccessibleTestParameterFile = publicAccessibleTestParameterFile;
+    }
+
+    public List<String> getDescriptorTypeVersions() {
+        return descriptorTypeVersions;
+    }
+
+    public void setDescriptorTypeVersions(final List<String> descriptorTypeVersions) {
+        this.descriptorTypeVersions = descriptorTypeVersions;
     }
 }

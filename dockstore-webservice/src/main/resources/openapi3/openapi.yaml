@@ -8828,6 +8828,8 @@ components:
         id:
           type: integer
           format: int64
+        metadata:
+          $ref: '#/components/schemas/SourceFileMetadata'
         path:
           type: string
           description: Path to sourcefile relative to its parent
@@ -8856,9 +8858,6 @@ components:
           - DOCKSTORE_IPYNB
           - DOCKSTORE_NOTEBOOK_REES
           - DOCKSTORE_NOTEBOOK_OTHER
-        typeVersion:
-          type: string
-          description: The language version for the given descriptor file type
         verifiedBySource:
           type: object
           additionalProperties:
@@ -8867,6 +8866,17 @@ components:
       - absolutePath
       - path
       - type
+    SourceFileMetadata:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        parent:
+          $ref: '#/components/schemas/SourceFile'
+        typeVersion:
+          type: string
+          description: The language version for the given descriptor file type
     StarRequest:
       type: object
       properties:
@@ -8980,10 +8990,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        descriptorTypeVersions:
-          type: array
-          items:
-            type: string
         descriptorTypeVersionsFromSourceFiles:
           type: array
           items:
@@ -9599,10 +9605,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        descriptorTypeVersions:
-          type: array
-          items:
-            type: string
         descriptorTypeVersionsFromSourceFiles:
           type: array
           items:
@@ -9698,6 +9700,10 @@ components:
           type: string
           description: "This is a human-readable description of this container and\
             \ what it is trying to accomplish, required GA4GH"
+        descriptorTypeVersions:
+          type: array
+          items:
+            type: string
         id:
           type: integer
           format: int64
@@ -9941,10 +9947,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        descriptorTypeVersions:
-          type: array
-          items:
-            type: string
         descriptorTypeVersionsFromSourceFiles:
           type: array
           items:
