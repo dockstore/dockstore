@@ -26,7 +26,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
-import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -79,7 +80,9 @@ public class ElasticListener implements StateListenerInterface {
     public static DockstoreWebserviceConfiguration config;
     public static final String TOOLS_INDEX = "tools";
     public static final String WORKFLOWS_INDEX = "workflows";
-    public static final String ALL_INDICES = "tools,workflows";
+    public static final String NOTEBOOKS_INDEX = "notebooks";
+    public static final List<String> INDEXES = List.of(TOOLS_INDEX, WORKFLOWS_INDEX, NOTEBOOKS_INDEX);
+    public static final String ALL_INDICES = String.join(",", INDEXES);
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
@@ -98,13 +101,29 @@ public class ElasticListener implements StateListenerInterface {
         Hibernate.initialize(entry.getAliases());
     }
 
+    private String determineIndex(Entry entry) {
+        if (entry instanceof Tool || entry instanceof AppTool) {
+            return TOOLS_INDEX;
+        }
+        if (entry instanceof Notebook) {
+            return NOTEBOOKS_INDEX;
+        }
+        if (entry instanceof BioWorkflow) {
+            return WORKFLOWS_INDEX;
+        }
+        // #2771 will need to properly create objects/indexes to get services into the index
+        return null;
+    }
+
     @Override
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
         eagerLoadEntry(entry);
         entry = filterCheckerWorkflows(entry);
-        // #2771 will need to disable this and properly create objects to get services into the index
-        entry = entry instanceof Service ? null : entry;
         if (entry == null) {
+            return;
+        }
+        String index = determineIndex(entry);
+        if (index == null) {
             return;
         }
         LOGGER.info("Performing index update with " + command + ".");
@@ -118,12 +137,11 @@ public class ElasticListener implements StateListenerInterface {
         }
         try {
             RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
-            String entryType = entry instanceof Tool || entry instanceof AppTool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             DocWriteResponse post;
             switch (command) {
             case PUBLISH:
             case UPDATE:
-                UpdateRequest updateRequest = new UpdateRequest(entryType, String.valueOf(entry.getId()));
+                UpdateRequest updateRequest = new UpdateRequest(index, String.valueOf(entry.getId()));
                 String json = MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry));
                 // The below should've worked but it doesn't, the 2 lines after are used instead
                 // updateRequest.upsert(json, XContentType.JSON);
@@ -132,7 +150,7 @@ public class ElasticListener implements StateListenerInterface {
                 post = client.update(updateRequest, RequestOptions.DEFAULT);
                 break;
             case DELETE:
-                DeleteRequest deleteRequest = new DeleteRequest(entryType, String.valueOf(entry.getId()));
+                DeleteRequest deleteRequest = new DeleteRequest(index, String.valueOf(entry.getId()));
                 post  = client.delete(deleteRequest, RequestOptions.DEFAULT);
                 break;
             default:
@@ -183,18 +201,18 @@ public class ElasticListener implements StateListenerInterface {
         if (entries.isEmpty()) {
             return;
         }
-        // sort entries into workflows and tools
-        List<Entry> workflowsEntryList = entries.stream().filter(entry -> (entry instanceof BioWorkflow)).collect(Collectors.toList());
-        List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool) || (entry instanceof AppTool)).collect(Collectors.toList());
-        if (!workflowsEntryList.isEmpty()) {
-            postBulkUpdate(WORKFLOWS_INDEX, workflowsEntryList);
-        }
-        if (!toolsEntryList.isEmpty()) {
-            postBulkUpdate(TOOLS_INDEX, toolsEntryList);
+        // for each index, bulk index the corresponding entries.
+        for (String index: INDEXES) {
+            postBulkUpdate(index, entries.stream().filter(entry -> Objects.equals(index, determineIndex(entry))).toList());
         }
     }
 
     private void postBulkUpdate(String index, List<Entry> entries) {
+
+        if (entries.isEmpty()) {
+            return;
+        }
+
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
@@ -382,6 +400,9 @@ public class ElasticListener implements StateListenerInterface {
             AppTool appTool = (AppTool) entry;
             AppTool detachedAppTool = new AppTool();
             detachedEntry = detachWorkflow(detachedAppTool, appTool);
+        } else if (entry instanceof Notebook notebook) {
+            Notebook detachedNotebook = new Notebook();
+            detachedEntry = detachWorkflow(detachedNotebook, notebook); // TODO ok?
         } else {
             return entry;
         }
@@ -462,6 +483,7 @@ public class ElasticListener implements StateListenerInterface {
     private static Workflow detachWorkflow(Workflow detachedWorkflow, Workflow workflow) {
         // These are for facets
         detachedWorkflow.setDescriptorType(workflow.getDescriptorType());
+        detachedWorkflow.setDescriptorTypeSubclass(workflow.getDescriptorTypeSubclass());
         detachedWorkflow.setSourceControl(workflow.getSourceControl());
         detachedWorkflow.setOrganization(workflow.getOrganization());
 

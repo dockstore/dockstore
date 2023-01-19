@@ -83,6 +83,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
     private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
+    private static final String NOTEBOOKS_INDEX = ElasticListener.NOTEBOOKS_INDEX;
     private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
     private static final int SEARCH_TERM_LIMIT = 256;
     private static final int TOO_MANY_REQUESTS_429 = 429;
@@ -184,6 +185,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             LOG.info("Processed {} tools and workflows", totalProcessed);
             totalProcessed += indexDAO(appToolDAO);
             LOG.info("Processed {} tools, workflows, and apptools", totalProcessed);
+            totalProcessed += indexDAO(notebookDAO);
+            LOG.info("Processed {} tools, workflows, apptools, and notebooks", totalProcessed);
         }
         return Response.ok().entity(totalProcessed).build();
     }
@@ -207,8 +210,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             // Delete previous indices
             deleteIndex(client, TOOLS_INDEX);
             deleteIndex(client, WORKFLOWS_INDEX);
+            deleteIndex(client, NOTEBOOKS_INDEX);
             createIndex("queries/mapping_tool.json", TOOLS_INDEX, client);
             createIndex("queries/mapping_workflow.json", WORKFLOWS_INDEX, client);
+            createIndex("queries/mapping_notebook.json", NOTEBOOKS_INDEX, client);
         } catch (IOException | RuntimeException e) {
             LOG.error("Could not clear elastic search index", e);
             throw new CustomWebApplicationException("Search indexing failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
