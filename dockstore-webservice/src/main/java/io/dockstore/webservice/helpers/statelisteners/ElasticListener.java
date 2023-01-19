@@ -111,8 +111,12 @@ public class ElasticListener implements StateListenerInterface {
         if (entry instanceof BioWorkflow) {
             return WORKFLOWS_INDEX;
         }
-        // #2771 will need to properly create objects/indexes to get services into the index
+        // Services are not currently indexed, see #2771
         return null;
+    }
+
+    private List<Entry> entriesInIndex(List<Entry> entries, String index) {
+        return entries.stream().filter(entry -> Objects.equals(determineIndex(entry), index)).toList();
     }
 
     @Override
@@ -197,13 +201,9 @@ public class ElasticListener implements StateListenerInterface {
     public void bulkUpsert(List<Entry> entries) {
         entries.forEach(this::eagerLoadEntry);
         entries = filterCheckerWorkflows(entries);
-        // #2771 will need to disable this and properly create objects to get services into the index
-        if (entries.isEmpty()) {
-            return;
-        }
-        // for each index, bulk index the corresponding entries.
+        // For each index, bulk index the corresponding entries
         for (String index: INDEXES) {
-            postBulkUpdate(index, entries.stream().filter(entry -> Objects.equals(index, determineIndex(entry))).toList());
+            postBulkUpdate(index, entriesInIndex(entries, index));
         }
     }
 

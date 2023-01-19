@@ -92,7 +92,7 @@
       },
       "descriptorTypeSubclass": {
         "type": "keyword"
-      }
+      },
       "email": {
         "type": "text"
       },
