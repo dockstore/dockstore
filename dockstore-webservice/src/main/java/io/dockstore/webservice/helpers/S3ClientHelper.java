@@ -17,7 +17,6 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -56,7 +55,7 @@ public final class S3ClientHelper {
      * @param toolId TRS tool ID
      * @return The key for s3
      */
-    public static String convertToolIdToPartialKey(String toolId) throws UnsupportedEncodingException {
+    public static String convertToolIdToPartialKey(String toolId) {
         String partialKey = toolId;
         if (partialKey.startsWith("#workflow")) {
             partialKey = partialKey.replaceFirst("#workflow", "workflow");

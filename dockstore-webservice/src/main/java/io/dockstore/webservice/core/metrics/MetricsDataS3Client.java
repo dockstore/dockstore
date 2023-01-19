@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,10 +74,14 @@ public class MetricsDataS3Client {
      * @param metricsData The metrics data in JSON format
      */
     public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData) {
+        if (StringUtils.isBlank(metricsData)) {
+            throw new CustomWebApplicationException("Metrics data must be provided", HttpStatus.SC_BAD_REQUEST);
+        }
+
         try {
             String key = generateKey(toolId, versionName, platform, fileName);
             Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
-                    ObjectMetadata.DESCRIPTION.toString(), description);
+                    ObjectMetadata.DESCRIPTION.toString(), description == null ? "" : description);
             PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)

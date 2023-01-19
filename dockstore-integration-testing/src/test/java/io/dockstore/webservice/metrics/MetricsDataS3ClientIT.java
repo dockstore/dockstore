@@ -19,6 +19,7 @@ package io.dockstore.webservice.metrics;
 
 import static io.dockstore.webservice.metrics.MetricsDataS3ClientIT.LOCALSTACK_IMAGE_TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cloud.localstack.ServiceName;
@@ -27,7 +28,8 @@ import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.IEnvironmentVariableProvider;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.google.common.io.Files;
-import io.dockstore.common.AWSTest;
+import io.dockstore.common.LocalStackTest;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.metrics.MetricsData;
 import io.dockstore.webservice.core.metrics.MetricsDataMetadata;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
@@ -52,7 +54,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @ExtendWith(LocalstackDockerExtension.class)
-@Tag(AWSTest.NAME)
+@Tag(LocalStackTest.NAME)
 @LocalstackDockerProperties(imageTag = LOCALSTACK_IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = MetricsDataS3ClientIT.LocalStackEnvironmentVariables.class)
 public class MetricsDataS3ClientIT {
     public static final String LOCALSTACK_IMAGE_TAG = "1.3.1";
@@ -153,7 +155,7 @@ public class MetricsDataS3ClientIT {
         assertEquals(metricsRequestBody, metricsDataContent);
 
         // Send more metrics data to S3 for the same workflow version, but different platform
-        metricsDataClient.createS3Object(toolId1, versionName, platform2, fileName, ownerUserId, description, metricsRequestBody);
+        metricsDataClient.createS3Object(toolId1, versionName, platform2, fileName, ownerUserId, null, metricsRequestBody); // Tests null description
         metricsDataList = metricsDataClient.getMetricsData(toolId1, versionName);
         assertEquals(2, metricsDataList.size());
 
@@ -167,7 +169,7 @@ public class MetricsDataS3ClientIT {
         assertTrue(s3BucketKeys.contains("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/agc/" + fileName));
 
         // Add a tool
-        metricsDataClient.createS3Object(toolId2, versionName, platform1, fileName, ownerUserId, description, metricsRequestBody);
+        metricsDataClient.createS3Object(toolId2, versionName, platform1, fileName, ownerUserId, "", metricsRequestBody); // Test empty string description
         metricsDataList = metricsDataClient.getMetricsData(toolId2, versionName);
         assertEquals(1, metricsDataList.size(), "Should only be one because data was only submitted for one version of the tool");
 
@@ -180,6 +182,11 @@ public class MetricsDataS3ClientIT {
         assertTrue(s3BucketKeys.contains("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/terra/" + fileName));
         assertTrue(s3BucketKeys.contains("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/agc/" + fileName));
         assertTrue(s3BucketKeys.contains("tool/quay.io/briandoconnor/dockstore-tool-md5sum/1.0/terra/" + fileName));
+
+        // Verify that not providing metrics data throws an exception
+        assertThrows(CustomWebApplicationException.class, () -> metricsDataClient.createS3Object(toolId1, versionName, platform1, fileName, ownerUserId, "", null));
+        assertThrows(CustomWebApplicationException.class, () -> metricsDataClient.createS3Object(toolId1, versionName, platform1, fileName, ownerUserId, "", ""));
+        assertThrows(CustomWebApplicationException.class, () -> metricsDataClient.createS3Object(toolId1, versionName, platform1, fileName, ownerUserId, "", "   "));
     }
 
     /**

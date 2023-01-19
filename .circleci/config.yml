@@ -67,7 +67,7 @@ workflows:
           <<: *common_filters
           requires:
             - build
-      - aws-tests:
+      - localstack-tests:
           <<: *common_filters
           requires:
             - build
@@ -94,7 +94,7 @@ workflows:
             - workflow-integration-tests
             - bitbucket-tests
             - language-parsing-tests
-            - aws-tests
+            - localstack-tests
             - tool-integration-tests
             - integration-tests
             - regression-integration-tests
@@ -195,10 +195,10 @@ jobs:
           command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:3000 || true
       - setup_integration_test
       - save_test_results
-  aws-tests:
+  localstack-tests:
     executor: machine_integration_test_exec
     environment:
-      TESTING_PROFILE: aws-tests
+      TESTING_PROFILE: localstack-tests
     steps:
       - setup_machine
       - setup_test

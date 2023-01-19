@@ -18,10 +18,10 @@
 package io.dockstore.common;
 
 /**
- * Setting aside tests that require localstack to emulate AWS services.
+ * Setting aside tests that require LocalStack to emulate AWS services.
  */
-public interface AWSTest {
-    String NAME = "io.dockstore.common.AWSTest";
+public interface LocalStackTest {
+    String NAME = "io.dockstore.common.LocalStackTest";
 
     default String getName() {
         // silly method to satisfy CheckStyle
