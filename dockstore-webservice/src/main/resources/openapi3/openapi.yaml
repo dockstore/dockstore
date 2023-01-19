@@ -68,7 +68,7 @@ tags:
 - description: Optional experimental extensions of the GA4GH API
   name: extendedGA4GH
 - description: "A curated subset of resources proposed as a common standard for tool\
-    \ repositories. Implements TRS [2.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.1)."
+    \ repositories. Implements TRS [2.0.1](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.1)."
   name: GA4GHV20
 - description: "A curated subset of resources proposed as a common standard for tool\
     \ repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)\

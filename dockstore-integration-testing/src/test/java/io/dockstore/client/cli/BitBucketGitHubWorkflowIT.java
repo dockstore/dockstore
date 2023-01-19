@@ -57,6 +57,7 @@ import org.apache.commons.io.IOUtils;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -79,11 +80,11 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 class BitBucketGitHubWorkflowIT extends BaseIT {
     public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
     public static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+        SourceControl.GITHUB + "/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
     public static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
+        SourceControl.GITHUB + "/DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW =
-        SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
+        SourceControl.BITBUCKET + "/dockstore_testuser2/dockstore-workflow";
 
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());
@@ -109,10 +110,17 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
         ManagedSessionContext.bind(session);
 
     }
+
     @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
+        // used to allow us to use workflowDAO outside of the web service
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
+    }
+
+    @AfterEach
+    public void preserveBitBucketTokens() {
+        CommonTestUtilities.cacheBitbucketTokens(SUPPORT);
     }
 
 
