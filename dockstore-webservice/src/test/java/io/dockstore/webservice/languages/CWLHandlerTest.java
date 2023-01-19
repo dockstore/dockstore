@@ -434,6 +434,7 @@ class CWLHandlerTest {
 
         // Test multiple files containing many versions.
         final Version version = new WorkflowVersion();
+        List.of(manyFile, oneFile, noFile).forEach(sourceFile -> sourceFile.getMetadata().setTypeVersion("bogus"));
         cwlHandler.parseWorkflowContent(manyFile.getPath(), manyFile.getContent(), Set.of(manyFile, oneFile, noFile), version);
         assertEquals(List.of("v1.2", "v1.1", "v1.0"), version.getVersionMetadata().getDescriptorTypeVersions());
         assertEquals("v1.2", manyFile.getMetadata().getTypeVersion());
