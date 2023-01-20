@@ -221,7 +221,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             SourceFile existingFile = existingFileMap.get(fileKey);
             if (existingFileMap.containsKey(fileKey)) {
                 existingFile.setContent(file.getContent());
-                existingFile.setTypeVersion(file.getTypeVersion());
+                existingFile.getMetadata().setTypeVersion(file.getMetadata().getTypeVersion());
             } else {
                 final long fileID = fileDAO.create(file);
                 final SourceFile fileFromDB = fileDAO.findById(fileID);

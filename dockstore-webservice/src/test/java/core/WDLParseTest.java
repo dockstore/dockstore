@@ -441,8 +441,8 @@ class WDLParseTest {
             assertEquals(1, entry.getAuthor().split(",").length, "incorrect author");
             assertEquals("foobar@foo.com", entry.getEmail(), "incorrect email");
             assertTrue(entry.getDescription().length() > 0, "incorrect description");
-            assertEquals(1, entry.getDescriptorTypeVersions().size());
-            assertEquals("1.0", entry.getDescriptorTypeVersions().get(0));
+            assertEquals(1, entry.getVersionMetadata().getDescriptorTypeVersions().size());
+            assertEquals("1.0", entry.getVersionMetadata().getDescriptorTypeVersions().get(0));
         } catch (Exception e) {
             fail("Should properly parse file and imports.");
         }
@@ -479,29 +479,29 @@ class WDLParseTest {
             LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
             Version entry = sInterface
                     .parseWorkflowContent(primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet, new WorkflowVersion());
-            assertEquals(1, entry.getDescriptorTypeVersions().size());
-            assertTrue(entry.getDescriptorTypeVersions().contains("1.0"));
+            assertEquals(1, entry.getVersionMetadata().getDescriptorTypeVersions().size());
+            assertTrue(entry.getVersionMetadata().getDescriptorTypeVersions().contains("1.0"));
 
             // Make the primary descriptor version 1.1 so the primary descriptor and imported descriptor have different language versions
             sourceFile.setContent(primaryWDLString.replace("version 1.0", "version 1.1"));
             entry = sInterface
                     .parseWorkflowContent(primaryWDL.getAbsolutePath(), sourceFile.getContent(), sourceFileSet, new WorkflowVersion());
-            assertEquals(2, entry.getDescriptorTypeVersions().size(), "Should have two language versions");
-            assertTrue(entry.getDescriptorTypeVersions().contains("1.0") && entry.getDescriptorTypeVersions().contains("1.1"));
+            assertEquals(2, entry.getVersionMetadata().getDescriptorTypeVersions().size(), "Should have two language versions");
+            assertTrue(entry.getVersionMetadata().getDescriptorTypeVersions().contains("1.0") && entry.getVersionMetadata().getDescriptorTypeVersions().contains("1.1"));
 
             // Add a syntax error to the imported descriptor
             importedFile.setContent(importedWDLString.replace("version 1.0", "version 1.0\n\nimport brokenbrokenbroken"));
             entry = sInterface
                     .parseWorkflowContent(primaryWDL.getAbsolutePath(), sourceFile.getContent(), sourceFileSet, new WorkflowVersion());
-            assertEquals(2, entry.getDescriptorTypeVersions().size(), "Should have two language versions");
-            assertTrue(entry.getDescriptorTypeVersions().contains("1.0") && entry.getDescriptorTypeVersions().contains("1.1"));
+            assertEquals(2, entry.getVersionMetadata().getDescriptorTypeVersions().size(), "Should have two language versions");
+            assertTrue(entry.getVersionMetadata().getDescriptorTypeVersions().contains("1.0") && entry.getVersionMetadata().getDescriptorTypeVersions().contains("1.1"));
 
             // Use an invalid 'version' for the imported file. The imported source file should not have a version set
             importedFile.setContent(importedWDLString.replace("version 1.0", "version 1 0"));
             entry = sInterface
                     .parseWorkflowContent(primaryWDL.getAbsolutePath(), sourceFile.getContent(), sourceFileSet, new WorkflowVersion());
-            assertEquals(1, entry.getDescriptorTypeVersions().size(), "Should have one language version");
-            assertTrue(entry.getDescriptorTypeVersions().contains("1.1"));
+            assertEquals(1, entry.getVersionMetadata().getDescriptorTypeVersions().size(), "Should have one language version");
+            assertTrue(entry.getVersionMetadata().getDescriptorTypeVersions().contains("1.1"));
         } catch (Exception e) {
             fail("Should properly parse language versions.");
         }

@@ -90,13 +90,17 @@
         </sql>
     </changeSet>
     <changeSet author="ktran (generated)" id="addDescriptorTypeVersion">
-        <addColumn tableName="sourcefile">
+        <createTable tableName="sourcefile_metadata">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="sourcefile_metadata_pkey"/>
+            </column>
             <column name="typeversion" type="text"/>
-        </addColumn>
-        <addColumn tableName="tag">
-            <column name="descriptortypeversions" type="varchar"/>
-        </addColumn>
-        <addColumn tableName="workflowversion">
+        </createTable>
+        <sql dbms="postgresql">
+            insert into sourcefile_metadata (id) select id from sourcefile;
+        </sql>
+        <addForeignKeyConstraint baseTableName="sourcefile_metadata" baseColumnNames="id" constraintName="fk_sourcefile_metadata" referencedTableName="sourcefile" referencedColumnNames="id"/>
+        <addColumn tableName="version_metadata">
             <column name="descriptortypeversions" type="varchar"/>
         </addColumn>
     </changeSet>

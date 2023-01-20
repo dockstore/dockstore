@@ -442,14 +442,14 @@ class GeneralIT extends GeneralWorkflowBaseIT {
             sourceFiles.forEach(sourceFile -> {
                 if ("/Dockstore.wdl".equals(sourceFile.getAbsolutePath())) {
                     assertEquals(FileType.DOCKSTORE_WDL, sourceFile.getType());
-                    assertEquals(WDLHandler.DEFAULT_WDL_VERSION, sourceFile.getTypeVersion(), "Language version of WDL descriptor with no 'version' field should be default version");
+                    assertEquals(WDLHandler.DEFAULT_WDL_VERSION, sourceFile.getMetadata().getTypeVersion(), "Language version of WDL descriptor with no 'version' field should be default version");
                 } else {
                     assertEquals(FileType.DOCKERFILE, sourceFile.getType());
-                    assertNull(sourceFile.getTypeVersion(), "Docker files should not have a version");
+                    assertNull(sourceFile.getMetadata().getTypeVersion(), "Docker files should not have a version");
                 }
             });
-            assertEquals(1, tag.getDescriptorTypeVersions().size(), "Should only have one language version");
-            assertTrue(tag.getDescriptorTypeVersions().contains(WDLHandler.DEFAULT_WDL_VERSION));
+            assertEquals(1, tag.getVersionMetadata().getDescriptorTypeVersions().size(), "Should only have one language version");
+            assertTrue(tag.getVersionMetadata().getDescriptorTypeVersions().contains(WDLHandler.DEFAULT_WDL_VERSION));
         });
     }
 

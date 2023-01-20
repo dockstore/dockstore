@@ -19,6 +19,10 @@ package io.dockstore.webservice.core;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
@@ -33,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
@@ -49,12 +54,15 @@ import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
+import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.slf4j.Logger;
@@ -78,6 +86,28 @@ public class SourceFile implements Comparable<SourceFile> {
     public static final String SHA_TYPE = "SHA-256";
     private static Pattern pathRegex = null;
     private static String pathViolationMessage = null;
+
+    private static final String PARENT_FIELD = "parent";
+    /**
+     * When serializing a SourceFile, don't serialize SourceFile.SourceFileMetadata.parent,
+     * because the circular reference causes a StackOverflowError.
+     */
+    private static final ExclusionStrategy PARENT_FIELD_EXCLUSION_STRATEGY = new ExclusionStrategy() {
+        @Override
+        public boolean shouldSkipField(final FieldAttributes f) {
+            return f.getName().equals(PARENT_FIELD);
+        }
+
+        @Override
+        public boolean shouldSkipClass(final Class<?> clazz) {
+            return false;
+        }
+    };
+    /**
+     * One Gson instance to rule them all. Thread-safe.
+     */
+    private static final Gson GSON = new GsonBuilder().setExclusionStrategies(
+        PARENT_FIELD_EXCLUSION_STRATEGY).create();
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -116,11 +146,6 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "The checksum(s) of the sourcefile's content", position = 6)
     private List<Checksum> checksums = new ArrayList<>();
 
-    @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The language version for the given descriptor file type", position = 7)
-    @Schema(description = "The language version for the given descriptor file type")
-    private String typeVersion;
-
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
@@ -137,6 +162,29 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "maps from platform to whether an entry successfully ran on it using this test json")
     @BatchSize(size = 25)
     private Map<String, VerificationInformation> verifiedBySource = new HashMap<>();
+
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    private SourceFileMetadata metadata = new SourceFileMetadata();
+
+    public SourceFile() {
+        metadata.setParent(this);
+    }
+
+    /**
+     * Creates a copy of the SourceFile. Not implemented as a copy constructor because you can't
+     * ensure at compile time that all fields are copied unless they're all final.
+     *
+     * @param otherSourceFile
+     */
+    public static SourceFile copy(final SourceFile otherSourceFile) {
+        final String json = GSON.toJson(otherSourceFile);
+        final SourceFile sourceFile = GSON.fromJson(json, SourceFile.class);
+        // Parent was not serialized, need to explicitly set it. See PARENT_FIELD_EXCLUSION_STRATEGY, above.
+        sourceFile.getMetadata().setParent(sourceFile);
+        return sourceFile;
+    }
 
     public Map<String, VerificationInformation> getVerifiedBySource() {
         return verifiedBySource;
@@ -239,12 +287,12 @@ public class SourceFile implements Comparable<SourceFile> {
         this.frozen = frozen;
     }
 
-    public String getTypeVersion() {
-        return typeVersion;
+    public SourceFileMetadata getMetadata() {
+        return metadata;
     }
 
-    public void setTypeVersion(String typeVersion) {
-        this.typeVersion = typeVersion;
+    public void setMetadata(final SourceFileMetadata metadata) {
+        this.metadata = metadata;
     }
 
     private static synchronized void checkPath(String path) {
