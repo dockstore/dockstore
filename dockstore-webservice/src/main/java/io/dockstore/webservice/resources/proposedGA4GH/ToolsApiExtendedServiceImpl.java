@@ -84,7 +84,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
     private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
     private static final String NOTEBOOKS_INDEX = ElasticListener.NOTEBOOKS_INDEX;
-    private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
+    private static final String COMMA_SEPARATED_INDEXES = String.join(",", ElasticListener.INDEXES);
     private static final int SEARCH_TERM_LIMIT = 256;
     private static final int TOO_MANY_REQUESTS_429 = 429;
     private static final int ELASTICSEARCH_DEFAULT_LIMIT = 15;
@@ -256,14 +256,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                         queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
                     }
                     // This should be using the high-level Elasticsearch client instead
-                    Request request = new Request("GET", "/" + ALL_INDICES + "/_search");
+                    Request request = new Request("GET", "/" + COMMA_SEPARATED_INDEXES + "/_search");
                     if (query != null) {
                         request.setJsonEntity(query);
                     }
                     request.addParameters(parameters);
                     org.elasticsearch.client.Response get = restClient.performRequest(request);
                     if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                        throw new CustomWebApplicationException("Could not search " + ALL_INDICES + "index",
+                        throw new CustomWebApplicationException("Could not search " + COMMA_SEPARATED_INDEXES + " index",
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     }
                     return Response.ok().entity(get.getEntity().getContent()).build();
