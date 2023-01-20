@@ -67,6 +67,10 @@ workflows:
           <<: *common_filters
           requires:
             - build
+      - localstack-tests:
+          <<: *common_filters
+          requires:
+            - build
       - tool-integration-tests:
           <<: *common_filters
           requires:
@@ -90,6 +94,7 @@ workflows:
             - workflow-integration-tests
             - bitbucket-tests
             - language-parsing-tests
+            - localstack-tests
             - tool-integration-tests
             - integration-tests
             - regression-integration-tests
@@ -188,6 +193,16 @@ jobs:
       - run:
           name: Wait for lambda
           command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:3000 || true
+      - setup_integration_test
+      - save_test_results
+  localstack-tests:
+    executor: machine_integration_test_exec
+    environment:
+      TESTING_PROFILE: localstack-tests
+    steps:
+      - setup_machine
+      - setup_test
+      - setup_postgres_docker
       - setup_integration_test
       - save_test_results
   build:
