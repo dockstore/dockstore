@@ -114,7 +114,7 @@ public class ElasticListener implements StateListenerInterface {
         return null;
     }
 
-    private List<Entry> entriesByIndex(List<Entry> entries, String index) {
+    private List<Entry> filterEntriesByIndex(List<Entry> entries, String index) {
         return entries.stream().filter(entry -> Objects.equals(determineIndex(entry), index)).toList();
     }
 
@@ -202,7 +202,7 @@ public class ElasticListener implements StateListenerInterface {
         entries = filterCheckerWorkflows(entries);
         // For each index, bulk index the corresponding entries
         for (String index: INDEXES) {
-            postBulkUpdate(index, entriesByIndex(entries, index));
+            postBulkUpdate(index, filterEntriesByIndex(entries, index));
         }
     }
 
@@ -401,11 +401,10 @@ public class ElasticListener implements StateListenerInterface {
             detachedEntry = detachWorkflow(detachedAppTool, appTool);
         } else if (entry instanceof Notebook notebook) {
             Notebook detachedNotebook = new Notebook();
-            detachedEntry = detachWorkflow(detachedNotebook, notebook); // TODO ok?
+            detachedEntry = detachWorkflow(detachedNotebook, notebook);
         } else {
             return entry;
         }
-
 
         detachedEntry.setDescription(entry.getDescription());
         detachedEntry.setAuthor(entry.getAuthor());
