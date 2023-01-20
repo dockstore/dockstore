@@ -207,10 +207,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         try {
             // FYI. it is real tempting to use a try ... catch with resources to close this client, but it actually permanently messes up the client!
             RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
-            // Delete previous indices
-            deleteIndex(client, TOOLS_INDEX);
-            deleteIndex(client, WORKFLOWS_INDEX);
-            deleteIndex(client, NOTEBOOKS_INDEX);
+            // Delete previous indexes
+            deleteIndex(TOOLS_INDEX, client);
+            deleteIndex(WORKFLOWS_INDEX, client);
+            deleteIndex(NOTEBOOKS_INDEX, client);
+            // Create new indexes
             createIndex("queries/mapping_tool.json", TOOLS_INDEX, client);
             createIndex("queries/mapping_workflow.json", WORKFLOWS_INDEX, client);
             createIndex("queries/mapping_notebook.json", NOTEBOOKS_INDEX, client);
@@ -390,7 +391,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         throw new CustomWebApplicationException("Could not submit verification information", HttpStatus.SC_BAD_REQUEST);
     }
 
-    private void deleteIndex(RestHighLevelClient restClient, String index) {
+    private void deleteIndex(String index, RestHighLevelClient restClient) {
         try {
             DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(index);
             restClient.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT);
