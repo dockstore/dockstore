@@ -482,9 +482,12 @@ public class ElasticListener implements StateListenerInterface {
     private static Workflow detachWorkflow(Workflow detachedWorkflow, Workflow workflow) {
         // These are for facets
         detachedWorkflow.setDescriptorType(workflow.getDescriptorType());
-        detachedWorkflow.setDescriptorTypeSubclass(workflow.getDescriptorTypeSubclass());
         detachedWorkflow.setSourceControl(workflow.getSourceControl());
         detachedWorkflow.setOrganization(workflow.getOrganization());
+        // Set the descriptor type subclass if it has a meaningful value
+        if (workflow.getDescriptorTypeSubclass().isApplicable()) {
+            detachedWorkflow.setDescriptorTypeSubclass(workflow.getDescriptorTypeSubclass());
+        }
 
         // These are for table
         detachedWorkflow.setWorkflowName(workflow.getWorkflowName());
