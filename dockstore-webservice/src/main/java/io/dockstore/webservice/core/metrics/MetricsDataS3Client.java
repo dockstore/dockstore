@@ -20,7 +20,6 @@ package io.dockstore.webservice.core.metrics;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.S3ClientHelper;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -78,22 +77,17 @@ public class MetricsDataS3Client {
             throw new CustomWebApplicationException("Metrics data must be provided", HttpStatus.SC_BAD_REQUEST);
         }
 
-        try {
-            String key = generateKey(toolId, versionName, platform, fileName);
-            Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
-                    ObjectMetadata.DESCRIPTION.toString(), description == null ? "" : description);
-            PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(key)
-                    .metadata(metadata)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .build();
-            RequestBody requestBody = RequestBody.fromString(metricsData);
-            s3.putObject(request, requestBody);
-        } catch (UnsupportedEncodingException e) {
-            LOG.error("Could not generate S3 key: " + e.getMessage());
-            throw new CustomWebApplicationException("Could not create S3 object", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
+        String key = generateKey(toolId, versionName, platform, fileName);
+        Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
+                ObjectMetadata.DESCRIPTION.toString(), description == null ? "" : description);
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .metadata(metadata)
+                .contentType(MediaType.APPLICATION_JSON)
+                .build();
+        RequestBody requestBody = RequestBody.fromString(metricsData);
+        s3.putObject(request, requestBody);
     }
 
     /**
@@ -104,9 +98,8 @@ public class MetricsDataS3Client {
      * @param platform      The platform that the metrics data is from
      * @param fileName     The file name to use. Should be the time that the data was submitted in milliseconds since epoch appended with '.json'
      * @return S3 key (file path)
-     * @throws UnsupportedEncodingException
      */
-    static String generateKey(String toolId, String versionName, String platform, String fileName) throws UnsupportedEncodingException {
+    static String generateKey(String toolId, String versionName, String platform, String fileName) {
         List<String> pathList = new ArrayList<>();
         pathList.add(S3ClientHelper.convertToolIdToPartialKey(toolId));
         pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8));
@@ -120,9 +113,8 @@ public class MetricsDataS3Client {
      * @param toolId The GA4GH Tool ID
      * @param toolVersionName The GA4GH ToolVersion name
      * @return A list of MetricsData
-     * @throws UnsupportedEncodingException
      */
-    public List<MetricsData> getMetricsData(String toolId, String toolVersionName) throws UnsupportedEncodingException {
+    public List<MetricsData> getMetricsData(String toolId, String toolVersionName) {
         String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
         List<MetricsData> metricsData = new ArrayList<>();
         boolean isTruncated = true;
