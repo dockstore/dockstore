@@ -28,6 +28,7 @@ import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.LanguageAndVersions;
 import io.dockstore.webservice.core.OrcidPutCode;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -36,15 +37,20 @@ import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
 import io.dropwizard.auth.Auth;
@@ -115,6 +121,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
+    private final WorkflowVersionDAO workflowVersionDAO;
     private final VersionDAO<?> versionDAO;
     private final UserDAO userDAO;
     private final CollectionHelper collectionHelper;
@@ -128,14 +135,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String hostName;
     private final boolean isProduction;
     private final PermissionsInterface permissionsInterface;
+    private final SessionFactory sesssionFactory;
 
     public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
-        DockstoreWebserviceConfiguration configuration) {
+        WorkflowVersionDAO workflowVersionDAO, DockstoreWebserviceConfiguration configuration) {
+        this.sesssionFactory = sessionFactory;
         this.permissionsInterface = permissionsInterface;
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
         this.userDAO = userDAO;
+        this.workflowVersionDAO = workflowVersionDAO;
         this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO, versionDAO);
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
@@ -419,6 +429,46 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true)
             @PathParam("id") Long id) {
         return createAndSetDiscourseTopic(id);
+    }
+
+    @Path("/updateLanguageVersions")
+    @UnitOfWork
+    @Timed
+    @RolesAllowed("admin")
+    @POST
+    @Operation(operationId = "updateLanguageVerions", description = "Update language versions", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A number")
+    public int updateLanguageVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        boolean done = false;
+        int offset = 0;
+        int pageSize = 50;
+        int processed = 0;
+        while (!done) {
+            final List<LanguageAndVersions> languageAndVersions =
+                this.toolDAO.getLanguageAndVersions(offset, pageSize);
+            if (languageAndVersions.size() < pageSize) {
+                done = true;
+            }
+            processed += languageAndVersions.size();
+            LOG.info("Executing {} workflow updates starting at offset {}", pageSize, offset);
+            offset += pageSize;
+            final TransactionHelper transactionHelper = new TransactionHelper(sesssionFactory);
+            transactionHelper.transaction(() -> languageAndVersions.forEach(language -> {
+                final List<WorkflowVersion> workflowVersions =
+                    workflowVersionDAO.getWorkflowVersionsByWorkflowId(language.id(), Integer.MAX_VALUE, 0);
+                final LanguageHandlerInterface languageHandlerInterface =
+                    LanguageHandlerFactory.getInterface(language.descriptorLanguage());
+                workflowVersions.forEach(workflowVersion -> {
+                    final Optional<SourceFile> maybePrimary
+                        = workflowVersion.getSourceFiles().stream()
+                        .filter(sf -> sf.getPath().equals(workflowVersion.getWorkflowPath()))
+                        .findFirst();
+                    maybePrimary.ifPresent(primary -> languageHandlerInterface
+                        .parseWorkflowContent(primary.getPath(), primary.getContent(), workflowVersion.getSourceFiles(), workflowVersion));
+                });
+            }));
+        }
+        return processed;
     }
 
     @GET

@@ -2589,6 +2589,21 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
+  /entries/updateLanguageVersions:
+    post:
+      tags:
+      - "entries"
+      operationId: "updateLanguageVersions"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "integer"
+            format: "int32"
   /entries/{entryId}/versions/{versionId}/descriptionMetrics:
     get:
       tags:

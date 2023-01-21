@@ -24,6 +24,7 @@ import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.LanguageAndVersions;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -320,6 +321,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<Entry> findAllGitHubEntriesWithNoTopicAutomatic() {
         return list(this.currentSession().getNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic"));
+    }
+
+    public List<LanguageAndVersions> getLanguageAndVersions(int offset, int pageSize) {
+        return (List<LanguageAndVersions>)this.currentSession().getNamedQuery("Entry.getWorkflowVersions")
+            .setFirstResult(offset).setMaxResults(pageSize).getResultList();
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {

@@ -2193,6 +2193,17 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/updateLanguageVersions:
+    post:
+      description: Update language versions
+      operationId: updateLanguageVerions
+      responses:
+        "200":
+          description: A number
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{entryId}/exportToOrcid:
     post:
       description: Export entry to ORCID. DOI is required

@@ -93,6 +93,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
@@ -381,7 +382,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(hibernate.getSessionFactory(), authorizer, tokenDAO, toolDAO, versionDAO, userDAO, configuration);
+        final EntryResource entryResource = new EntryResource(hibernate.getSessionFactory(), authorizer, tokenDAO, toolDAO, versionDAO, userDAO, new WorkflowVersionDAO(hibernate.getSessionFactory()), configuration);
         environment.jersey().register(entryResource);
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
