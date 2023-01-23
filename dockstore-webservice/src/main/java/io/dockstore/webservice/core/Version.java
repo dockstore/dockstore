@@ -27,7 +27,7 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -228,7 +228,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @MapKeyColumn(name = "platform")
     @MapKeyEnumerated(EnumType.STRING)
     @ApiModelProperty(value = "The aggregated metrics for executions of this version, grouped by platform", position = 26)
-    private Map<Partner, Metrics> metricsByPlatform = new HashMap<>();
+    private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
 
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)

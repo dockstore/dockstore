@@ -59,10 +59,10 @@ public abstract class StatisticMetric {
     @Schema(description = "The number of data points used to calculate the average")
     private String numberOfDataPointsForAverage;
 
-    public StatisticMetric() {
+    protected StatisticMetric() {
     }
 
-    public StatisticMetric(String minimum, String maximum, String average) {
+    protected StatisticMetric(String minimum, String maximum, String average) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.average = average;

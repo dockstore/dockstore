@@ -41,11 +41,7 @@ public abstract class CountMetric<T> {
 
     public abstract Map<T, Integer> getCount();
 
-    public CountMetric() {
-    }
-
-    public CountMetric(long id) {
-        this.id = id;
+    protected CountMetric() {
     }
 
     public long getId() {
