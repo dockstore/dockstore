@@ -63,13 +63,23 @@ public class IpynbHandler implements LanguageHandlerInterface {
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
 
+        // Read any REES (https://repo2docker.readthedocs.io/en/latest/specification.html files),
+        // which must be in one of the following directories: /, /binder, or /.binder
+        final List<String> reesNames = List.of("environment.yml", "Pipfile", "Pipfile.lock", "requirements.txt", "setup.py", "Project.toml", "REQUIRE", "install.R", "apt.txt", "DESCRIPTION", "postBuild", "start", "runtime.txt", "default.nix", "Dockerfile");
+        final List<String> reesDirs = List.of("/", "/binder/", "/.binder/");
+        
         Map<String, SourceFile> pathsToFiles = new HashMap<>();
-        for (String reesDir: new String[]{ "/", "/binder/", "/.binder/" }) {
-            for (String reesName: new String[]{ "requirements.txt" }) {
-                String reesPath = reesDir + reesName;
-                SourceFile file = SourceFileHelper.readFile(repositoryId, version, reesPath, sourceCodeRepoInterface, reesPath, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES);
-                if (file != null) {
-                    pathsToFiles.put(file.getAbsolutePath(), file);
+        for (String reesDir: reesDirs) {
+            List<String> paths = sourceCodeRepoInterface.listFiles(repositoryId, reesDir, version.getReference()); 
+            if (paths != null) {
+                for (String reesName: reesNames) {
+                    String reesPath = reesDir + reesName;
+                    if (paths.contains(reesPath)) {
+                        SourceFile file = SourceFileHelper.readFile(repositoryId, version, reesPath, sourceCodeRepoInterface, reesPath, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES);
+                        if (file != null) {
+                            pathsToFiles.put(file.getAbsolutePath(), file);
+                        }
+                    }
                 }
             }
         }
