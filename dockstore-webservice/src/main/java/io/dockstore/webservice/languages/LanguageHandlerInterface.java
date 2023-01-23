@@ -145,7 +145,7 @@ public interface LanguageHandlerInterface {
     Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath);
 
-    default Map<String, SourceFile> processOtherFiles(String repositoryId, List<String> otherFilePaths, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> alreadyProcessedFileMap) {
+    default Map<String, SourceFile> processOtherFiles(String repositoryId, List<String> otherFilePaths, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
         // TODO improve
         return Map.of();
     }

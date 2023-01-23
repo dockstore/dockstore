@@ -98,11 +98,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static final String LANGUAGE_VERSION_REGEX = "v1.[0-9]";
     private static final Pattern LANGUAGE_VERSION_PATTERN = Pattern.compile(LANGUAGE_VERSION_REGEX);
 
-    @Override
-    protected DescriptorLanguage.FileType getFileType() {
-        return DescriptorLanguage.FileType.DOCKSTORE_CWL;
-    }
-
     private String firstNonNullAndNonEmpty(String... values) {
         for (String value: values) {
             if (value != null && !value.isEmpty()) {
@@ -788,7 +783,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     private void handleAndProcessImport(String repositoryId, String absolutePath, Version version, Map<String, SourceFile> imports, String relativePath, SourceCodeRepoInterface sourceCodeRepoInterface) {
         if (!imports.containsKey(absolutePath)) {
-            handleImport(repositoryId, version, imports, relativePath, sourceCodeRepoInterface, absolutePath);
+            handleImport(repositoryId, version, imports, relativePath, sourceCodeRepoInterface, absolutePath, DescriptorLanguage.FileType.DOCKSTORE_CWL);
             SourceFile imported = imports.get(absolutePath);
             if (imported != null) {
                 processImport(repositoryId, imported.getContent(), version, sourceCodeRepoInterface, absolutePath, imports);

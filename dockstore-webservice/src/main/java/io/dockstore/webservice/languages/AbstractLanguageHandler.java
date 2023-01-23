@@ -4,7 +4,10 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,12 +19,6 @@ public abstract class AbstractLanguageHandler {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractLanguageHandler.class);
 
     /**
-     *
-     * @return  The file type that resolved imports will be automatically set to
-     */
-    protected abstract DescriptorLanguage.FileType getFileType();
-
-    /**
      * Grabs a import file from Git based on its absolute path and add to imports mapping
      * @param repositoryId              identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param version                   version of the files to get
@@ -30,19 +27,32 @@ public abstract class AbstractLanguageHandler {
      * @param sourceCodeRepoInterface   used too retrieve imports
      * @param absoluteImportPath        absolute path of import in git repository
      */
-    protected void handleImport(String repositoryId, Version version, Map<String, SourceFile> imports, String givenImportPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absoluteImportPath) {
-        DescriptorLanguage.FileType fileType = getFileType();
-        // create a new source file
-        final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
+    protected void handleImport(String repositoryId, Version version, Map<String, SourceFile> imports, String givenImportPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absoluteImportPath, DescriptorLanguage.FileType fileType) {
+        final SourceFile sourceFile = readFile(repositoryId, version, givenImportPath, sourceCodeRepoInterface, absoluteImportPath, fileType);
+        if (sourceFile != null) {
+            imports.put(absoluteImportPath, sourceFile);
+        }
+    }
+
+    protected SourceFile readFile(String repositoryId, Version version, String givenPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absolutePath, DescriptorLanguage.FileType fileType) {
+        final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absolutePath);
         if (fileResponse == null) {
-            LOG.error("Could not read: " + absoluteImportPath);
-            return;
+            LOG.error("Could not read file: " + absolutePath);
+            return null;
         }
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(fileType);
         sourceFile.setContent(fileResponse);
-        sourceFile.setPath(givenImportPath);
-        sourceFile.setAbsolutePath(absoluteImportPath);
-        imports.put(absoluteImportPath, sourceFile);
+        sourceFile.setPath(givenPath);
+        sourceFile.setAbsolutePath(absolutePath);
+        return sourceFile;
+    }
+
+    protected List<SourceFile> readFiles(String repositoryId, Version version, List<String> paths, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths, DescriptorLanguage.FileType fileType) {
+        return paths.stream()
+            .filter(path -> !excludePaths.contains(path))
+            .map(path -> readFile(repositoryId, version, path, sourceCodeRepoInterface, path, fileType))
+            .filter(Objects::nonNull)
+            .toList();
     }
 }

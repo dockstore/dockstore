@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * This class provides support for Jupyter .ipynb notebooks.
  * https://nbformat.readthedocs.io/en/latest/format_description.html
  */
-public class IpynbHandler implements LanguageHandlerInterface {
+public class IpynbHandler extends AbstractLanguageHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(IpynbHandler.class);
 
     @Override
@@ -77,7 +79,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
                 for (String reesName: reesNames) {
                     String reesPath = reesDir + reesName;
                     if (paths.contains(reesPath)) {
-                        SourceFile file = SourceFileHelper.readFile(repositoryId, version, reesPath, sourceCodeRepoInterface, reesPath, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES);
+                        SourceFile file = readFile(repositoryId, version, reesPath, sourceCodeRepoInterface, reesPath, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES);
                         if (file != null) {
                             pathsToFiles.put(file.getAbsolutePath(), file);
                         }
@@ -89,19 +91,11 @@ public class IpynbHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Map<String, SourceFile> processOtherFiles(String repositoryId, List<String> otherFilePaths, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> existingPathsToFiles) {
+    public Map<String, SourceFile> processOtherFiles(String repositoryId, List<String> paths, Version version,
+        SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
 
-        Map<String, SourceFile> otherPathsToFiles = new HashMap<>(existingPathsToFiles);
-        for (String path: otherFilePaths) {
-            if (!otherPathsToFiles.containsKey(path) && !existingPathsToFiles.containsKey(path)) {
-                SourceFile file = SourceFileHelper.readFile(repositoryId, version, path, sourceCodeRepoInterface, path, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER);
-                if (file != null) {
-                    otherPathsToFiles.put(file.getAbsolutePath(), file);
-                }
-            }
-        }
-        return otherPathsToFiles;
+        return readFiles(repositoryId, version, paths, sourceCodeRepoInterface, excludePaths, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES).stream()
+            .collect(Collectors.toMap(SourceFile::getAbsolutePath, Function.identity()));
     }
 
     @Override

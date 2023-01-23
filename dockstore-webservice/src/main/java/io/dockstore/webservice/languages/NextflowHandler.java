@@ -68,11 +68,6 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     private static final Pattern INCLUDE_CONFIG_PATTERN = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
 
     @Override
-    protected DescriptorLanguage.FileType getFileType() {
-        return DescriptorLanguage.FileType.NEXTFLOW;
-    }
-
-    @Override
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         // this is where we can look for things like Nextflow config files or maybe a future Dockstore.yml
         try {
@@ -192,7 +187,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         while (m.find()) {
             String path = getRelativeImportPathFromLine(m.group(), workingDirectoryForFile);
             String absoluteImportPath = unsafeConvertRelativePathToAbsolutePath(workingDirectoryForFile, path);
-            handleImport(repositoryId, version, imports, path, sourceCodeRepoInterface, absoluteImportPath);
+            handleImport(repositoryId, version, imports, path, sourceCodeRepoInterface, absoluteImportPath, DescriptorLanguage.FileType.NEXTFLOW);
         }
         Map<String, SourceFile> recursiveImports = new HashMap<>();
         for (Map.Entry<String, SourceFile> importFile : imports.entrySet()) {
