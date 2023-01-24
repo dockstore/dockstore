@@ -48,11 +48,31 @@ public abstract class AbstractLanguageHandler {
         return sourceFile;
     }
 
+    protected List<SourceFile> readPath(String repositoryId, Version version, String givenPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absolutePath, Set<String> excludePaths, DescriptorLanguage.FileType fileType) {
+        if (excludePaths.contains(absolutePath)) {
+            return List.of();
+        }
+        SourceFile file = readFile(repositoryId, version, givenPath, sourceCodeRepoInterface, absolutePath, fileType);
+        if (file != null) {
+            return List.of(file);
+        }
+        List<String> paths = sourceCodeRepoInterface.listFiles(repositoryId, absolutePath, version.getReference());
+        if (paths != null) {
+            return readPaths(repositoryId, version, paths, sourceCodeRepoInterface, excludePaths, fileType);
+        }
+        LOG.error("Could not read path: " + absolutePath);
+        return List.of();
+    }
+
     protected List<SourceFile> readFiles(String repositoryId, Version version, List<String> paths, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths, DescriptorLanguage.FileType fileType) {
         return paths.stream()
             .filter(path -> !excludePaths.contains(path))
             .map(path -> readFile(repositoryId, version, path, sourceCodeRepoInterface, path, fileType))
             .filter(Objects::nonNull)
             .toList();
+    }
+
+    protected List<SourceFile> readPaths(String repositoryId, Version version, List<String> paths, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths, DescriptorLanguage.FileType fileType) {
+        return paths.stream().flatMap(path -> readPath(repositoryId, version, path, sourceCodeRepoInterface, path, excludePaths, fileType).stream()).toList();
     }
 }

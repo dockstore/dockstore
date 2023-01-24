@@ -94,7 +94,7 @@ public class IpynbHandler extends AbstractLanguageHandler implements LanguageHan
     public Map<String, SourceFile> processUserFiles(String repositoryId, List<String> paths, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
 
-        return readFiles(repositoryId, version, paths, sourceCodeRepoInterface, excludePaths, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES).stream()
+        return readPaths(repositoryId, version, paths, sourceCodeRepoInterface, excludePaths, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER).stream()
             .collect(Collectors.toMap(SourceFile::getAbsolutePath, Function.identity()));
     }
 
