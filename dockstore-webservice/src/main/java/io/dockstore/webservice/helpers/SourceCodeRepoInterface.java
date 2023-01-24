@@ -156,6 +156,39 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
+     * Read the specified file or directory and convert it to a list of SourceFiles.
+     * If the specified path is a file, a list containing the single corresponding SourceFile is returned.
+     * If the specified path is a directory, it is searched recursively and a SourceFile corresponding to each file is returned.
+     * If the specified path is neither a file or directory, or if the path is excluded, an empty list is returned.
+     */
+    public List<SourceFile> readPath(String repositoryId, Version<?> version, DescriptorLanguage.FileType fileType, Set<String> excludePaths, String path) {
+        // If the path is excluded, return an empty list.
+        if (excludePaths.contains(path)) {
+            return List.of();
+        }
+        // Attempt to read the path as a file, and if we're successful, return it.
+        Optional<SourceFile> file = readFile(repositoryId, version, fileType, path);
+        if (file.isPresent()) {
+            return List.of(file.get());
+        }
+        // Attempt to list the contents of the path as if it was a directory, and if we're successful, read the contents.
+        List<String> dirPaths = listFiles(repositoryId, path, version.getReference());
+        if (dirPaths != null) {
+            return readPaths(repositoryId, version, fileType, excludePaths, dirPaths);
+        }
+        // We couldn't read the path, return an empty list.
+        return List.of();
+    }
+
+    /**
+     * Read the specified list of files and directories.
+     */
+    public List<SourceFile> readPaths(String repositoryId, Version<?> version, DescriptorLanguage.FileType fileType, Set<String> excludePaths, List<String> paths) {
+        return paths.stream().flatMap(path -> readPath(repositoryId, version, fileType, excludePaths, path).stream()).toList();
+    }
+
+
+    /**
      * For Nextflow workflows, they seem to auto-import the contents of the lib and bin directories
      * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param pathToDirectory  full path to the directory to list
