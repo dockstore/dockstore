@@ -31,18 +31,13 @@ public abstract class AbstractLanguageHandler {
      * @param absoluteImportPath        absolute path of import in git repository
      */
     protected void handleImport(String repositoryId, Version version, Map<String, SourceFile> imports, String givenImportPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absoluteImportPath) {
-        DescriptorLanguage.FileType fileType = getFileType();
-        // create a new source file
-        final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
-        if (fileResponse == null) {
-            LOG.error("Could not read: " + absoluteImportPath);
-            return;
-        }
-        SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(fileType);
-        sourceFile.setContent(fileResponse);
-        sourceFile.setPath(givenImportPath);
-        sourceFile.setAbsolutePath(absoluteImportPath);
-        imports.put(absoluteImportPath, sourceFile);
+        sourceCodeRepoInterface.readFile(repositoryId, version, getFileType(), absoluteImportPath)
+            .ifPresentOrElse(
+                file -> {
+                    file.setPath(givenImportPath);
+                    imports.put(absoluteImportPath, file);
+                },
+                () -> LOG.error("Could not read: " + absoluteImportPath)
+            );
     }
 }
