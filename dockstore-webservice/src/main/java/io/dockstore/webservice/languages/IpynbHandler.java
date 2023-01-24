@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * This class provides support for Jupyter .ipynb notebooks.
  * https://nbformat.readthedocs.io/en/latest/format_description.html
  */
-public class IpynbHandler extends AbstractLanguageHandler implements LanguageHandlerInterface {
+public class IpynbHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(IpynbHandler.class);
 
     @Override
@@ -71,17 +71,18 @@ public class IpynbHandler extends AbstractLanguageHandler implements LanguageHan
         final List<String> reesNames = List.of("environment.yml", "Pipfile", "Pipfile.lock", "requirements.txt", "setup.py", "Project.toml", "REQUIRE", "install.R", "apt.txt", "DESCRIPTION", "postBuild", "start", "runtime.txt", "default.nix", "Dockerfile");
         final List<String> reesDirs = List.of("/", "/binder/", "/.binder/");
 
-        // Inspect each directory and read the matching files.
+        // For each possible REES directory, list the directory contents, and if we find configuration files, read them.
         Map<String, SourceFile> pathsToFiles = new HashMap<>();
         for (String reesDir: reesDirs) {
             List<String> paths = sourceCodeRepoInterface.listFiles(repositoryId, reesDir, version.getReference());
             if (paths != null) {
-                for (String reesName: reesNames) {
-                    String reesPath = reesDir + reesName;
-                    if (paths.contains(reesPath)) {
-                        SourceFile file = readFile(repositoryId, version, reesPath, sourceCodeRepoInterface, reesPath, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES);
-                        if (file != null) {
-                            pathsToFiles.put(file.getAbsolutePath(), file);
+                for (String path: paths) {
+                    for (String reesName: reesNames) {
+                        if (path.endsWith("/" + reesName)) {
+                            Optional<SourceFile> file = sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES, path);
+                            if (file.isPresent()) {
+                                pathsToFiles.put(file.get().getAbsolutePath(), file.get());
+                            }
                         }
                     }
                 }
@@ -94,7 +95,7 @@ public class IpynbHandler extends AbstractLanguageHandler implements LanguageHan
     public Map<String, SourceFile> processUserFiles(String repositoryId, List<String> paths, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
 
-        return readPaths(repositoryId, version, paths, sourceCodeRepoInterface, excludePaths, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER).stream()
+        return sourceCodeRepoInterface.readPaths(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER, excludePaths, paths).stream()
             .collect(Collectors.toMap(SourceFile::getAbsolutePath, Function.identity()));
     }
 
