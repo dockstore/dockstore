@@ -30,7 +30,11 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.permissions.PermissionsFactory;
+import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -45,6 +49,7 @@ import io.swagger.client.model.FileWrapper;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.TokenUser;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.Workflow;
@@ -91,13 +96,14 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
 
     private FileDAO fileDAO;
+    private TokenDAO tokenDAO;
 
     @Before
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
-
         this.fileDAO = new FileDAO(sessionFactory);
+        this.tokenDAO = new TokenDAO(sessionFactory);
 
         // used to allow us to use workflowDAO outside of the web service
         Session session = application.getHibernate().getSessionFactory().openSession();
@@ -570,5 +576,43 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         assertNotNull("Should retrieve the workflow by alias", aliasWorkflow);
     }
 
+    /**
+     * Tests for https://ucsc-cgl.atlassian.net/browse/SEAB-5167
+     * This tests that an authenticated call for a user without a Google token or with an expired Google refresh token does not fail.
+     *
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    @Test
+    void testAuthenticatedUserWithNoOrExpiredGoogleToken() throws URISyntaxException, IOException {
+        // Set configuration to use SAM authorizer
+        SUPPORT.getConfiguration().setAuthorizerType("sam");
+        ToolsApiServiceImpl.setAuthorizer(PermissionsFactory.createAuthorizer(tokenDAO, SUPPORT.getConfiguration()));
 
+        ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
+        workflowApi.refresh(workflowByPathGithub.getId(), false);
+        workflowApi.publish(workflowByPathGithub.getId(), CommonTestUtilities.createPublishRequest(true));
+
+        ApiClient otherUserWebClient = getWebClient(OTHER_USERNAME, testingPostgres);
+        UsersApi otherUserUsersApi = new UsersApi(otherUserWebClient);
+        Ga4GhApi otherUserGa4Ghv2Api = new Ga4GhApi(otherUserWebClient);
+        // Check that user has no Google token
+        assertTrue(otherUserUsersApi.getUserTokens(otherUserUsersApi.getUser().getId()).stream()
+                .map(TokenUser::getTokenSource)
+                .noneMatch(tokenSource -> TokenType.GOOGLE_COM.toString().equals(tokenSource)));
+        FileWrapper toolDescriptor = otherUserGa4Ghv2Api
+                .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
+        String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        assertFalse(content.isEmpty()); // An authenticated user with no Google token should be able to get the tool descriptor
+        // Add a fake Google token. This mimics an expired Google refresh token
+        testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
+                + String.format("(9001, 'fakeToken', 'fakeRefreshToken', 'google.com', %s, '%s', null)", otherUserUsersApi.getUser().getId(), otherUserUsersApi.getUser().getUsername()));
+        toolDescriptor = otherUserGa4Ghv2Api
+                .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
+        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        assertFalse(content.isEmpty()); // An authenticated user with an expired Google refresh token should be able to get the tool descriptor
+    }
 }
