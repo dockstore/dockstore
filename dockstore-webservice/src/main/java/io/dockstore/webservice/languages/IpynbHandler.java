@@ -91,7 +91,7 @@ public class IpynbHandler extends AbstractLanguageHandler implements LanguageHan
     }
 
     @Override
-    public Map<String, SourceFile> processOtherFiles(String repositoryId, List<String> paths, Version version,
+    public Map<String, SourceFile> processUserFiles(String repositoryId, List<String> paths, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
 
         return readFiles(repositoryId, version, paths, sourceCodeRepoInterface, excludePaths, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES).stream()

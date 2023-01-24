@@ -558,7 +558,7 @@ public abstract class SourceCodeRepoInterface {
                 resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version, sourceFile.getPath());
             sourceFileSet.addAll(importFileMap.values());
             final Map<String, SourceFile> otherFileMap = 
-                resolveOthers(repositoryId, info.getOtherFilePaths(), identifiedType, version, importFileMap.keySet());
+                resolveUserFiles(repositoryId, info.getOtherFilePaths(), identifiedType, version, importFileMap.keySet());
             sourceFileSet.addAll(otherFileMap.values());
         }
 
@@ -666,9 +666,9 @@ public abstract class SourceCodeRepoInterface {
         return languageInterface.processImports(repositoryId, content, version, this, filepath);
     }
 
-    public Map<String, SourceFile> resolveOthers(String repositoryId, List<String> otherFilePaths,  DescriptorLanguage.FileType fileType, Version<?> version, Set<String> excludePaths) {
+    public Map<String, SourceFile> resolveUserFiles(String repositoryId, List<String> otherFilePaths,  DescriptorLanguage.FileType fileType, Version<?> version, Set<String> excludePaths) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
-        return languageInterface.processOtherFiles(repositoryId, otherFilePaths, version, this, excludePaths);
+        return languageInterface.processUserFiles(repositoryId, otherFilePaths, version, this, excludePaths);
     }
 
     /**

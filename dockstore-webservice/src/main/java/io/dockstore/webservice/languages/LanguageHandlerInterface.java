@@ -145,8 +145,12 @@ public interface LanguageHandlerInterface {
     Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath);
 
-    default Map<String, SourceFile> processOtherFiles(String repositoryId, List<String> otherFilePaths, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
-        // TODO improve
+    // TODO add documentation
+    default Map<String, SourceFile> processUserFiles(String repositoryId, List<String> paths, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
+        if (paths != null && !paths.isEmpty()) {
+            LOG.error("this language does not support user-specified files");
+            throw new CustomWebApplicationException("this language does not support user-specified files", HttpStatus.SC_BAD_REQUEST);
+        }
         return Map.of();
     }
 
