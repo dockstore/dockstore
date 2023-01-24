@@ -29,9 +29,13 @@ import org.slf4j.LoggerFactory;
 /**
  * This class provides support for Jupyter .ipynb notebooks.
  * https://nbformat.readthedocs.io/en/latest/format_description.html
+ * https://repo2docker.readthedocs.io/en/latest/specification.html
  */
 public class IpynbHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(IpynbHandler.class);
+
+    public static final Set<String> REES_FILES = Set.of("environment.yml", "Pipfile", "Pipfile.lock", "requirements.txt", "setup.py", "Project.toml", "REQUIRE", "install.R", "apt.txt", "DESCRIPTION", "postBuild", "start", "runtime.txt", "default.nix", "Dockerfile");
+    public static final Set<String> REES_DIRS = Set.of("/", "/binder/", "/.binder/");
 
     @Override
     public Version parseWorkflowContent(String filePath, String content, Set<SourceFile> sourceFiles, Version version) {
@@ -61,31 +65,25 @@ public class IpynbHandler implements LanguageHandlerInterface {
         return version;
     }
 
+    private String fileName(String path) {
+        String[] parts = path.split("/");
+        return parts[parts.length - 1];
+    }
+
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
 
-        // Read any REES configuration files.
-        // Per the spec, REES files reside in the following directories: /, /binder, /.binder
-        // https://repo2docker.readthedocs.io/en/latest/specification.html
-        final List<String> reesNames = List.of("environment.yml", "Pipfile", "Pipfile.lock", "requirements.txt", "setup.py", "Project.toml", "REQUIRE", "install.R", "apt.txt", "DESCRIPTION", "postBuild", "start", "runtime.txt", "default.nix", "Dockerfile");
-        final List<String> reesDirs = List.of("/", "/binder/", "/.binder/");
-
         // For each possible REES directory, list the directory contents, and if we find configuration files, read them.
         Map<String, SourceFile> pathsToFiles = new HashMap<>();
-        for (String reesDir: reesDirs) {
+        for (String reesDir: REES_DIRS) {
             List<String> paths = sourceCodeRepoInterface.listFiles(repositoryId, reesDir, version.getReference());
             if (paths != null) {
-                for (String path: paths) {
-                    for (String reesName: reesNames) {
-                        if (path.endsWith("/" + reesName)) {
-                            Optional<SourceFile> file = sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES, path);
-                            if (file.isPresent()) {
-                                pathsToFiles.put(file.get().getAbsolutePath(), file.get());
-                            }
-                        }
-                    }
-                }
+                paths.stream()
+                    .filter(path -> REES_FILES.contains(fileName(path)))
+                    .map(path -> sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES, path))
+                    .flatMap(Optional::stream)
+                    .forEach(file -> pathsToFiles.put(file.getAbsolutePath(), file));
             }
         }
         return pathsToFiles;
