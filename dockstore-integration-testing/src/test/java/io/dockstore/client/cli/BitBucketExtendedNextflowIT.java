@@ -90,7 +90,7 @@ class BitBucketExtendedNextflowIT extends BaseIT {
 
 
     @Test
-    void testBitbucketNextflowWorkflow() throws Exception {
+    void testBitbucketNextflowWorkflow() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // get workflow stubs
@@ -152,7 +152,7 @@ class BitBucketExtendedNextflowIT extends BaseIT {
 
 
     @Test
-    void testBitbucketBinaryWorkflow() throws Exception {
+    void testBitbucketBinaryWorkflow() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // get workflow stubs

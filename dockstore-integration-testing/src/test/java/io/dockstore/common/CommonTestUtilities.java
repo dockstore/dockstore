@@ -299,7 +299,7 @@ public final class CommonTestUtilities {
         runMigration(migrations, application, configPath);
     }
 
-    private static void handleBitBucketTokens(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres, boolean needBitBucketToken) {
+    public static void handleBitBucketTokens(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres, boolean needBitBucketToken) {
         if (!needBitBucketToken) {
             deleteBitBucketToken(testingPostgres);
         } else {

@@ -48,7 +48,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.Response.Status;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -65,8 +64,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private static final String BITBUCKET_V2_API_URL = "https://api.bitbucket.org/2.0/";
     private static final String BITBUCKET_GIT_URL_PREFIX = "git@bitbucket.org:";
     private static final String BITBUCKET_GIT_URL_SUFFIX = ".git";
-
-    private static final long ONE_MINUTE_IN_MS = 60_000L;
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final ApiClient apiClient;
@@ -109,20 +106,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         RepositoriesApi repositoriesApi = new RepositoriesApi(apiClient);
         try {
             List<String> files = new ArrayList<>();
-
-            PaginatedTreeentries paginatedTreeentries = null;
-            boolean rateLimited;
-            do {
-                rateLimited = false;
-                try {
-                    paginatedTreeentries = repositoriesApi
-                        .repositoriesUsernameRepoSlugSrcNodePathGet(repositoryId.split("/")[0], reference, pathToDirectory,
-                            repositoryId.split("/")[1], null, null, null);
-                } catch (ApiException e) {
-                    rateLimited = isRateLimited(false, e, "listing files");
-                }
-            } while (rateLimited);
-
+            PaginatedTreeentries paginatedTreeentries = repositoriesApi
+                .repositoriesUsernameRepoSlugSrcNodePathGet(repositoryId.split("/")[0], reference, pathToDirectory,
+                    repositoryId.split("/")[1], null, null, null);
             // TODO: this pagination pattern happens a lot with Bitbucket, a future exercise would clean this up
             while (paginatedTreeentries != null) {
                 files.addAll(
@@ -147,17 +133,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         RepositoriesApi repositoriesApi = new RepositoriesApi(apiClient);
         try {
             Map<String, String> collect = new HashMap<>();
-            PaginatedRepositories contributor = null;
-            boolean rateLimited;
-            do {
-                rateLimited = false;
-                try {
-                    contributor = repositoriesApi.repositoriesUsernameGet(gitUsername, "contributor");
-                } catch (ApiException e) {
-                    rateLimited = isRateLimited(false, e, "getting repositories");
-                }
-            } while (rateLimited);
-
+            PaginatedRepositories contributor = repositoriesApi.repositoriesUsernameGet(gitUsername, "contributor");
             while (contributor != null) {
                 collect.putAll(contributor.getValues().stream().collect(Collectors
                     .toMap(object -> BITBUCKET_GIT_URL_PREFIX + object.getFullName() + BITBUCKET_GIT_URL_SUFFIX, Repository::getFullName)));
@@ -193,20 +169,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private <T> T getArbitraryURL(String url, GenericType<T> type) throws ApiException {
         String substring = url.substring(BITBUCKET_V2_API_URL.length() - 1);
-        T result = null;
-        boolean rateLimited;
-        do {
-            rateLimited = false;
-            try {
-                result = apiClient
-                    .invokeAPI(substring, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/json", "application/json",
-                        new String[]{"api_key", "basic", "oauth2"}, type).getData();
-            } catch (ApiException e) {
-                rateLimited = isRateLimited(false, e, "getting pagination");
-            }
-        } while (rateLimited);
-
-        return result;
+        return apiClient
+            .invokeAPI(substring, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/json", "application/json",
+                new String[] { "api_key", "basic", "oauth2" }, type).getData();
     }
 
     /**
@@ -247,55 +212,24 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         RefsApi refsApi = new RefsApi(apiClient);
         // There isn't exactly a single Bitbucket endpoint to get a version which then allows us to determine if it's a branch or tag.
         // This code checks two endpoints (branches and tags) to see if it belongs in which.
-        boolean rateLimited;
-        do {
-            try {
-                refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(workspace, name, repoSlug);
-                version.setReferenceType(Version.ReferenceType.BRANCH);
-                return;
-            } catch (ApiException e) {
-                rateLimited = isRateLimited(false, e, "reading branches");
-            }
+        try {
+            refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(workspace, name, repoSlug);
+            version.setReferenceType(Version.ReferenceType.BRANCH);
+            return;
+        } catch (ApiException e) {
+            LOG.warn(gitUsername + ": apiexception on reading branches" + e.getMessage(), e);
+            // this is not so critical to warrant a http error code
+        }
 
-            try {
-                refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(workspace, name, repoSlug);
-                version.setReferenceType(Version.ReferenceType.TAG);
-                return;
-            } catch (ApiException e) {
-                // this is not so critical to warrant a http error code
-                rateLimited = isRateLimited(rateLimited, e, "reading tags");
-            }
-        } while (rateLimited);
-
+        try {
+            refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(workspace, name, repoSlug);
+            version.setReferenceType(Version.ReferenceType.TAG);
+            return;
+        } catch (ApiException e) {
+            LOG.warn(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
+            // this is not so critical to warrant a http error code
+        }
         throw new CustomWebApplicationException(name + " is not a Bitbucket branch or tag in " + repositoryId, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-    }
-
-    /**
-     * determine whether a request is rate-limited, output logging mesages, and potentially sleep past rate-limiting
-     * @param rateLimited
-     * @param e
-     * @param message
-     * @return
-     */
-    private boolean isRateLimited(final boolean rateLimited, ApiException e, String message) {
-        if (LOG.isWarnEnabled()) {
-            LOG.warn("%s: apiexception on %s%s".formatted(gitUsername, message, e.getMessage()), e);
-        }
-        // this is not so critical to warrant a http error code
-        boolean newlyRateLimited = false;
-        if (e.getCode() == Status.TOO_MANY_REQUESTS.getStatusCode()) {
-            newlyRateLimited = true;
-            LOG.error("%s: rate-limited on %s".formatted(gitUsername, message));
-            try {
-                LOG.error("We sleep");
-                Thread.sleep(ONE_MINUTE_IN_MS); // one minute, should be exponential back-off
-            } catch (InterruptedException ex) {
-                LOG.error("Rate-limit wait interrupted!", e);
-                // Restore interrupted state...
-                Thread.currentThread().interrupt();
-            }
-        }
-        return rateLimited || newlyRateLimited;
     }
 
     @Override
@@ -314,7 +248,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
         try {
             Tag tag = refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(repositoryId.split("/")[0], version.getReference(),
-                    repositoryId.split("/")[1]);
+                repositoryId.split("/")[1]);
             if (tag != null) {
                 return tag.getTarget().getHash();
             }
@@ -349,17 +283,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
-
-            PaginatedRefs paginatedRefs = null;
-            boolean rateLimited;
-            do {
-                rateLimited = false;
-                try {
-                    paginatedRefs = refsApi.repositoriesUsernameRepoSlugRefsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-                } catch (ApiException e) {
-                    rateLimited = isRateLimited(false, e, "getting pagination");
-                }
-            } while (rateLimited);
+            PaginatedRefs paginatedRefs = refsApi
+                .repositoriesUsernameRepoSlugRefsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
             // this pagination structure is repetitive and should be refactored
             while (paginatedRefs != null) {
                 paginatedRefs.getValues().forEach(ref -> {
@@ -429,7 +354,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             return null;
         }
         repositoryId = gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY) + "/"
-                + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
+            + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
         return repositoryId;
     }
 
