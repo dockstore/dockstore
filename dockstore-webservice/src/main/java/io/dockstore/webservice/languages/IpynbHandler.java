@@ -11,6 +11,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,16 +71,20 @@ public class IpynbHandler implements LanguageHandlerInterface {
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
-
+        Map<String, SourceFile> pathsToFiles = new HashMap<>();
         // For each possible REES directory, list the directory contents, and if we find configuration files, read them.
-        return REES_DIRS.stream()
-            .map(reesDir -> sourceCodeRepoInterface.listFiles(repositoryId, reesDir, version.getReference()))
-            .filter(Objects::nonNull)
-            .flatMap(paths -> paths.stream()
-                .filter(path -> REES_FILES.contains(fileName(path)))
-                .map(path -> sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES, path))
-                .flatMap(Optional::stream))
-            .collect(Collectors.toMap(SourceFile::getAbsolutePath, Function.identity()));
+        for (String reesDir: REES_DIRS) {
+            List<String> names = sourceCodeRepoInterface.listFiles(repositoryId, reesDir, version.getReference());
+            if (names != null) {
+                for (String name: names) {
+                    if (REES_FILES.contains(name)) {
+                        sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES, reesDir + name)
+                            .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
+                    }
+                }
+            }
+        }
+        return pathsToFiles;
     }
 
     @Override

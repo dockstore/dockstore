@@ -155,6 +155,11 @@ public abstract class SourceCodeRepoInterface {
         return Optional.empty();
     }
 
+    private List<String> prependPath(String path, List<String> names) {
+        String normalizedPath = path.endsWith("/") ? path : path + "/";
+        return names.stream().map(name -> normalizedPath + name).toList();
+    }
+
     /**
      * Read the specified file or directory and convert it to a list of SourceFiles.
      * If the specified path is a file, a list containing the single corresponding SourceFile is returned.
@@ -172,9 +177,9 @@ public abstract class SourceCodeRepoInterface {
             return List.of(file.get());
         }
         // Attempt to list the contents of the path as if it was a directory, and if we're successful, read the contents.
-        List<String> dirPaths = listFiles(repositoryId, path, version.getReference());
-        if (dirPaths != null) {
-            return readPaths(repositoryId, version, fileType, excludePaths, dirPaths);
+        List<String> names = listFiles(repositoryId, path, version.getReference());
+        if (names != null) {
+            return readPaths(repositoryId, version, fileType, excludePaths, prependPath(path, names));
         }
         // We couldn't read the path, return an empty list.
         return List.of();

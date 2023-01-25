@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
@@ -17,11 +18,13 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.FileFormat;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.dropwizard.testing.ResourceHelpers;
@@ -31,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -62,14 +66,9 @@ class IpynbHandlerTest {
     */
 
     private IpynbHandler handler;
+    private Notebook notebook;
     private WorkflowVersion version;
   
-    @BeforeEach
-    void init() {
-        handler = new IpynbHandler();
-        version = new WorkflowVersion();
-    }
-
     private String read(String resourceName) {
         try {
             return FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("notebooks/ipynb/" + resourceName)));
@@ -85,6 +84,43 @@ class IpynbHandlerTest {
 
     private <T, F> Set<F> map(Set<T> set, Function<T, F> mapper) {
         return set.stream().map(mapper).collect(Collectors.toSet());
+    }
+
+    private SourceFile mockSourceFile(String path, DescriptorLanguage.FileType fileType) {
+        SourceFile file = new SourceFile();
+        file.setPath(path);
+        file.setAbsolutePath(path);
+        file.setType(fileType);
+        return file;
+    }
+
+    private SourceCodeRepoInterface mockRepo(Set<String> paths) {
+
+        SourceCodeRepoInterface repo = Mockito.mock(SourceCodeRepoInterface.class);
+        when(repo.listFiles(any(), any(), any())).thenAnswer(
+            invocation -> {
+                String dir = invocation.getArgument(1, String.class);
+                String normalizedDir = dir.endsWith("/") ? dir : dir + "/";
+                return paths.stream().filter(path -> path.startsWith(normalizedDir)).map(path -> path.substring(normalizedDir.length()).split("/")[0]).toList();
+            }
+        );
+        when(repo.readFile(any(), any(), any(), any())).thenAnswer(
+            invocation -> {
+                DescriptorLanguage.FileType type = invocation.getArgument(2, DescriptorLanguage.FileType.class);
+                String path = invocation.getArgument(3, String.class);
+                return Optional.ofNullable(paths.contains(path) ? mockSourceFile(path, type) : null);
+            }
+        );
+        when(repo.readPath(any(), any(), any(), any(), any())).thenCallRealMethod();
+        when(repo.readPaths(any(), any(), any(), any(), any())).thenCallRealMethod();
+        return repo;
+    }
+
+    @BeforeEach
+    void init() {
+        handler = new IpynbHandler();
+        notebook = new Notebook();
+        version = new WorkflowVersion();
     }
 
     @Test
@@ -112,11 +148,23 @@ class IpynbHandlerTest {
     }
 
     @Test
-    void testProcessImports() {
+    void testProcessImportsNoRees() {
+        Map<String, SourceFile> map = handler.processImports("", "", version, mockRepo(Set.of("/some.ipynb")), "/");
+        assertTrue(map.keySet().isEmpty());
+    }
+
+    @Test
+    void testProcessImportsRootRequirementsTxt() {
+        Map<String, SourceFile> map = handler.processImports("", "", version, mockRepo(Set.of("/some.ipynb", "/requirements.txt", "/blah/requirements.txt")), "/");
+        assertEquals(Set.of("/requirements.txt"), map.keySet());
+        assertTrue(map.values().stream().map(SourceFile::getType).allMatch(type -> type == DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES));
     }
 
     @Test
     void testProcessUserFiles() {
+        Map<String, SourceFile> map = handler.processUserFiles("", List.of("/data", "/existing_file.txt", "/missing_file.txt"), version, mockRepo(Set.of("/some.ipynb", "/data/a.txt", "/data/b.txt", "/existing_file.txt")), Set.of("/data/b.txt"));
+        assertEquals(Set.of("/data/a.txt", "/existing_file.txt"), map.keySet());
+        assertTrue(map.values().stream().map(SourceFile::getType).allMatch(type -> type == DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER));
     }
 
     @Test
