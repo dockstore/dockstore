@@ -48,8 +48,8 @@ class IpynbHandlerTest {
     @SystemStub
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
-    private static final String PATH = "/authors.ipynb";
-    private static final String CONTENT = read("authors.ipynb");
+    private static final String PATH = "/hello.ipynb";
+    private static final String CONTENT = read("hello.ipynb");
 
     private IpynbHandler handler;
     private Notebook notebook;
