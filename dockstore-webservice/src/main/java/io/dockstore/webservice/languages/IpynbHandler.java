@@ -98,10 +98,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type, ToolDAO dao) {
-
-        // Notebooks don't have a DAG
-        // When we add an "image" reference to the notebook version, figure out a way to return it in the list of tools here, or maybe elsewhere.
-        throw new UnsupportedOperationException("Notebooks do not have DAGs or tools");
+        return Optional.empty();
     }
 
     @Override
@@ -172,13 +169,11 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
-        // TODO is this ok?
         throw new UnsupportedOperationException("Notebooks do not support tools");
     }
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        // TODO is this ok?
         throw new UnsupportedOperationException("Notebooks do not support test files");
     }
 }

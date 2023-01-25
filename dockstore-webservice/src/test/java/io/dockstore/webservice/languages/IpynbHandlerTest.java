@@ -2,12 +2,14 @@
 package io.dockstore.webservice.languages;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 import io.dockstore.common.DescriptorLanguage;
-// import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.SourceFile;
@@ -16,6 +18,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,14 +64,15 @@ class IpynbHandlerTest {
         return String.join("\n", List.of(content.split("\n")).stream().filter(line -> !line.contains(match)).toList());
     }
 
-    private <T, F> Set<F> map(Set<T> set, Function<T, F> mapper) {
-        return set.stream().map(mapper).collect(Collectors.toSet());
+    private <T, F> Set<F> map(Collection<T> values, Function<T, F> mapper) {
+        return values.stream().map(mapper).collect(Collectors.toSet());
     }
 
-    private SourceFile mockSourceFile(String path, DescriptorLanguage.FileType fileType) {
+    private SourceFile mockSourceFile(String path, String content, DescriptorLanguage.FileType fileType) {
         SourceFile file = new SourceFile();
         file.setPath(path);
         file.setAbsolutePath(path);
+        file.setContent(content);
         file.setType(fileType);
         return file;
     }
@@ -87,7 +91,7 @@ class IpynbHandlerTest {
             invocation -> {
                 DescriptorLanguage.FileType type = invocation.getArgument(2, DescriptorLanguage.FileType.class);
                 String path = invocation.getArgument(3, String.class);
-                return Optional.ofNullable(paths.contains(path) ? mockSourceFile(path, type) : null);
+                return Optional.ofNullable(paths.contains(path) ? mockSourceFile(path, "content of " + path, type) : null);
             }
         );
         when(repo.readPath(any(), any(), any(), any(), any())).thenCallRealMethod();
@@ -128,37 +132,61 @@ class IpynbHandlerTest {
 
     @Test
     void testProcessImportsNoRees() {
-        Map<String, SourceFile> map = handler.processImports("", "", version, mockRepo(Set.of("/some.ipynb")), "/");
-        assertTrue(map.keySet().isEmpty());
+        Map<String, SourceFile> rees = handler.processImports("", "", version, mockRepo(Set.of("/some.ipynb")), "/");
+        assertTrue(rees.keySet().isEmpty());
     }
 
     @Test
     void testProcessImportsRootRequirementsTxt() {
-        Map<String, SourceFile> map = handler.processImports("", "", version, mockRepo(Set.of("/some.ipynb", "/requirements.txt", "/blah/requirements.txt")), "/");
-        assertEquals(Set.of("/requirements.txt"), map.keySet());
-        assertTrue(map.values().stream().map(SourceFile::getType).allMatch(type -> type == DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES));
+        Map<String, SourceFile> rees = handler.processImports("", "", version, mockRepo(Set.of("/some.ipynb", "/requirements.txt", "/blah/requirements.txt")), "/");
+        assertEquals(Set.of("/requirements.txt"), rees.keySet());
+        assertEquals(Set.of(DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES), map(rees.values(), SourceFile::getType));
     }
 
     @Test
     void testProcessUserFiles() {
-        Map<String, SourceFile> map = handler.processUserFiles("", List.of("/data", "/existing_file.txt", "/missing_file.txt"), version, mockRepo(Set.of("/some.ipynb", "/data/a.txt", "/data/b.txt", "/data/sub/c.txt", "/existing_file.txt")), Set.of("/data/b.txt"));
-        assertEquals(Set.of("/data/a.txt", "/data/sub/c.txt", "/existing_file.txt"), map.keySet());
-        assertTrue(map.values().stream().map(SourceFile::getType).allMatch(type -> type == DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER));
+        Map<String, SourceFile> files = handler.processUserFiles("", List.of("/data", "/existing_file.txt", "/missing_file.txt"), version, mockRepo(Set.of("/some.ipynb", "/data/a.txt", "/data/b.txt", "/data/sub/c.txt", "/existing_file.txt")), Set.of("/data/b.txt"));
+        assertEquals(Set.of("/data/a.txt", "/data/sub/c.txt", "/existing_file.txt"), files.keySet());
+        assertEquals(Set.of(DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER), map(files.values(), SourceFile::getType));
     }
 
     @Test
     void testGetContent() {
+        assertEquals(Optional.empty(), handler.getContent("authors.ipynb", read("authors.ipynb"), Set.of(), LanguageHandlerInterface.Type.TOOLS, null));
+        assertEquals(Optional.empty(), handler.getContent("authors.ipynb", read("authors.ipynb"), Set.of(), LanguageHandlerInterface.Type.DAG, null));
     }
 
     @Test
     void testValidateWorkflowSet() {
+        final String path = "/authors.ipynb";
+        final String content = read("authors.ipynb");
+        notebook.setDescriptorType(DescriptorLanguage.IPYNB);
+        notebook.setDescriptorTypeSubclass(DescriptorLanguageSubclass.PYTHON);
+
+        // Well-formed.
+        SourceFile file = mockSourceFile(path, content, DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertTrue(handler.validateWorkflowSet(Set.of(file), path, notebook).isValid());
+
+        // Invalid JSON.
+        file = mockSourceFile(path, content.replaceFirst("\\{", "["), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertFalse(handler.validateWorkflowSet(Set.of(file), path, notebook).isValid());
+
+        // Valid JSON but no "cells" field.
+        file = mockSourceFile(path, content.replaceFirst("\"cells\"", "\"foo\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertFalse(handler.validateWorkflowSet(Set.of(file), path, notebook).isValid());
+
+        // Different programming language.
+        file = mockSourceFile(path, content.replace("\"python\"", "\"julia\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertFalse(handler.validateWorkflowSet(Set.of(file), path, notebook).isValid());
     }
 
     @Test
     void testValidateToolSet() {
+        assertThrows(UnsupportedOperationException.class, () -> handler.validateToolSet(Set.of(), "/"));
     }
 
     @Test
     void testValidateTestParameterSet() {
+        assertThrows(UnsupportedOperationException.class, () -> handler.validateTestParameterSet(Set.of(), "/"));
     }
 }
