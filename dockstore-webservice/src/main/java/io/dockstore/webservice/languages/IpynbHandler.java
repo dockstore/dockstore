@@ -41,24 +41,22 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
         // Extract the authors from the metadata.
         try {
+            // This code will intentionally throw a JSONException if the "authors" field is not present.
             JSONArray jsonAuthors = new JSONObject(content).getJSONObject("metadata").getJSONArray("authors");
             Set<Author> versionAuthors = new LinkedHashSet<>();
             for (int i = 0; i < jsonAuthors.length(); i++) {
                 JSONObject jsonAuthor = jsonAuthors.getJSONObject(i);
                 String name = jsonAuthor.optString("name", null);
-                String email = jsonAuthor.optString("email", null);
-                if (name != null || email != null) {
+                if (name != null && name.length() > 0) {
                     Author versionAuthor = new Author();
                     versionAuthor.setName(name);
-                    versionAuthor.setEmail(email);
                     versionAuthors.add(versionAuthor);
                 }
-                LOG.info("Notebook file contains author {} {}", name, email);
+                LOG.info("Notebook file contains author {}", name);
             }
             version.setAuthors(versionAuthors);
         } catch (JSONException ex) {
             // Ignore the error extracting the author names.
-            // TODO maybe do something different.
             LOG.warn("Could not extract notebook author information", ex);
         }
         return version;
