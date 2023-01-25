@@ -83,7 +83,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
     private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
-    private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
+    private static final String NOTEBOOKS_INDEX = ElasticListener.NOTEBOOKS_INDEX;
+    private static final String COMMA_SEPARATED_INDEXES = String.join(",", ElasticListener.INDEXES);
     private static final int SEARCH_TERM_LIMIT = 256;
     private static final int TOO_MANY_REQUESTS_429 = 429;
     private static final int ELASTICSEARCH_DEFAULT_LIMIT = 15;
@@ -184,6 +185,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             LOG.info("Processed {} tools and workflows", totalProcessed);
             totalProcessed += indexDAO(appToolDAO);
             LOG.info("Processed {} tools, workflows, and apptools", totalProcessed);
+            totalProcessed += indexDAO(notebookDAO);
+            LOG.info("Processed {} tools, workflows, apptools, and notebooks", totalProcessed);
         }
         return Response.ok().entity(totalProcessed).build();
     }
@@ -204,11 +207,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         try {
             // FYI. it is real tempting to use a try ... catch with resources to close this client, but it actually permanently messes up the client!
             RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
-            // Delete previous indices
-            deleteIndex(client, TOOLS_INDEX);
-            deleteIndex(client, WORKFLOWS_INDEX);
+            // Delete previous indexes
+            deleteIndex(TOOLS_INDEX, client);
+            deleteIndex(WORKFLOWS_INDEX, client);
+            deleteIndex(NOTEBOOKS_INDEX, client);
+            // Create new indexes
             createIndex("queries/mapping_tool.json", TOOLS_INDEX, client);
             createIndex("queries/mapping_workflow.json", WORKFLOWS_INDEX, client);
+            createIndex("queries/mapping_notebook.json", NOTEBOOKS_INDEX, client);
         } catch (IOException | RuntimeException e) {
             LOG.error("Could not clear elastic search index", e);
             throw new CustomWebApplicationException("Search indexing failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -251,14 +257,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                         queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
                     }
                     // This should be using the high-level Elasticsearch client instead
-                    Request request = new Request("GET", "/" + ALL_INDICES + "/_search");
+                    Request request = new Request("GET", "/" + COMMA_SEPARATED_INDEXES + "/_search");
                     if (query != null) {
                         request.setJsonEntity(query);
                     }
                     request.addParameters(parameters);
                     org.elasticsearch.client.Response get = restClient.performRequest(request);
                     if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                        throw new CustomWebApplicationException("Could not search " + ALL_INDICES + "index",
+                        throw new CustomWebApplicationException("Could not search " + COMMA_SEPARATED_INDEXES + " index",
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     }
                     return Response.ok().entity(get.getEntity().getContent()).build();
@@ -385,7 +391,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         throw new CustomWebApplicationException("Could not submit verification information", HttpStatus.SC_BAD_REQUEST);
     }
 
-    private void deleteIndex(RestHighLevelClient restClient, String index) {
+    private void deleteIndex(String index, RestHighLevelClient restClient) {
         try {
             DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(index);
             restClient.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT);
