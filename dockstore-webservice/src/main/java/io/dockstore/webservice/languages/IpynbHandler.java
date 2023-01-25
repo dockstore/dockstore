@@ -53,10 +53,19 @@ public class IpynbHandler implements LanguageHandlerInterface {
     @Override
     public Version parseWorkflowContent(String filePath, String content, Set<SourceFile> sourceFiles, Version version) {
 
+        // Parse the notebook JSON.
+        JSONObject notebook;
+        try {
+            notebook = new JSONObject(content);
+        } catch (JSONException ex) {
+            LOG.error("Could not parse notebook", ex);
+            return version;
+        }
+
         // Extract the authors from the metadata.
         try {
             // This code will intentionally throw a JSONException if the "authors" field is not present.
-            JSONArray jsonAuthors = new JSONObject(content).getJSONObject("metadata").getJSONArray("authors");
+            JSONArray jsonAuthors = notebook.getJSONObject("metadata").getJSONArray("authors");
             Set<Author> versionAuthors = new LinkedHashSet<>();
             for (int i = 0; i < jsonAuthors.length(); i++) {
                 JSONObject jsonAuthor = jsonAuthors.getJSONObject(i);
@@ -70,9 +79,22 @@ public class IpynbHandler implements LanguageHandlerInterface {
             }
             version.setAuthors(versionAuthors);
         } catch (JSONException ex) {
-            // Ignore the error extracting the author names.
             LOG.warn("Could not extract notebook author information", ex);
         }
+
+        // Extract the notebook format number from the metadata.
+        try {
+            int formatMajor = notebook.getInt("nbformat");
+            int formatMinor = notebook.getInt("nbformat_minor");
+            String format = formatMajor + "." + formatMinor;
+            sourceFiles.stream()
+                .filter(file -> file.getAbsolutePath().equals(filePath))
+                .forEach(file -> file.setTypeVersion(format));
+            version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
+        } catch (JSONException ex) {
+            LOG.warn("Could not extract version information", ex);
+        }
+
         return version;
     }
 
@@ -126,15 +148,15 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
         // Parse the notebook JSON and check for the existence of some fields.
         JSONObject notebook;
-        JSONObject metadata;
         int formatMajor;
         int formatMinor;
+        JSONObject metadata;
         JSONArray cells;
         try {
             notebook = new JSONObject(content);
-            metadata = notebook.getJSONObject("metadata");
             formatMajor = notebook.getInt("nbformat");
             formatMinor = notebook.getInt("nbformat_minor");
+            metadata = notebook.getJSONObject("metadata");
             cells = notebook.getJSONArray("cells");
         } catch (JSONException ex) {
             return negativeValidation(notebookPath, "The notebook file is malformed", ex);

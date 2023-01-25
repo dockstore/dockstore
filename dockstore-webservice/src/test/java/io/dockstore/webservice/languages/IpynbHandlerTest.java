@@ -124,7 +124,7 @@ class IpynbHandlerTest {
     }
 
     @Test
-    void testParseWorkflowContentAuthor() {
+    void testParseWorkflowContentExtractAuthors() {
         // No authors.
         handler.parseWorkflowContent(PATH, CONTENT.replace("authors", "foo"), Set.of(), version);
         assertTrue(version.getAuthors().isEmpty());
@@ -143,6 +143,14 @@ class IpynbHandlerTest {
         reset();
         handler.parseWorkflowContent(PATH, CONTENT, Set.of(), version);
         assertEquals(Set.of("Author One", "Author Two"), mapToSet(version.getAuthors(), Author::getName));
+    }
+
+    @Test
+    void testParseWorkflowContentExtractVersion() {
+        SourceFile file = mockSourceFile(PATH, CONTENT, DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        handler.parseWorkflowContent(PATH, CONTENT, Set.of(file), version);
+        assertEquals("4.0", file.getTypeVersion());
+        assertEquals(List.of("4.0"), version.getDescriptorTypeVersions());
     }
 
     @Test
