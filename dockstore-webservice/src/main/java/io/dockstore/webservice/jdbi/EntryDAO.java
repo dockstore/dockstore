@@ -24,7 +24,6 @@ import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
-import io.dockstore.webservice.core.LanguageAndVersions;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -323,8 +322,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return list(this.currentSession().getNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic"));
     }
 
-    public List<LanguageAndVersions> getLanguageAndVersions(int offset, int pageSize) {
-        return (List<LanguageAndVersions>)this.currentSession().getNamedQuery("Entry.getWorkflowVersions")
+    public List<Long> getWorkflowIds(int offset, int pageSize,
+        final DescriptorLanguage descriptorLanguage, final boolean published) {
+        return (List<Long>)this.currentSession().getNamedQuery("Entry.getWorkflowIds")
+            .setParameter("descriptorLanguage", descriptorLanguage)
+            .setParameter("isPublished", published)
             .setFirstResult(offset).setMaxResults(pageSize).getResultList();
     }
 

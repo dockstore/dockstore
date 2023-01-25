@@ -28,7 +28,6 @@ import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.LanguageAndVersions;
 import io.dockstore.webservice.core.OrcidPutCode;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -118,6 +117,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public static final String ENTRY_NO_DOI_ERROR_MESSAGE = "Entry does not have a concept DOI associated with it";
     public static final String VERSION_NO_DOI_ERROR_MESSAGE = "Version does not have a DOI url associated with it";
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
+    private static final int PAGE_SIZE = 50;
 
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
@@ -137,6 +137,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final PermissionsInterface permissionsInterface;
     private final SessionFactory sesssionFactory;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
         WorkflowVersionDAO workflowVersionDAO, DockstoreWebserviceConfiguration configuration) {
         this.sesssionFactory = sessionFactory;
@@ -436,28 +437,30 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Timed
     @RolesAllowed("admin")
     @POST
-    @Operation(operationId = "updateLanguageVerions", description = "Update language versions", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "updateLanguageVersions", description = "Update language versions", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A number")
-    public int updateLanguageVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+    public int updateLanguageVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Parameter(description = "The descriptor language", in = ParameterIn.QUERY, required = true) @QueryParam("language") DescriptorLanguage descriptorLanguage,
+        @Parameter(description = "Published or unpublished", in = ParameterIn.QUERY, required = true) @QueryParam("published") boolean published) {
         boolean done = false;
         int offset = 0;
-        int pageSize = 50;
+        int pageSize = PAGE_SIZE;
         int processed = 0;
         while (!done) {
-            final List<LanguageAndVersions> languageAndVersions =
-                this.toolDAO.getLanguageAndVersions(offset, pageSize);
-            if (languageAndVersions.size() < pageSize) {
+            final List<Long> workflowIds =
+                this.toolDAO.getWorkflowIds(offset, pageSize, descriptorLanguage, published);
+            if (workflowIds.size() < pageSize) {
                 done = true;
             }
-            processed += languageAndVersions.size();
+            processed += workflowIds.size();
             LOG.info("Executing {} workflow updates starting at offset {}", pageSize, offset);
             offset += pageSize;
             final TransactionHelper transactionHelper = new TransactionHelper(sesssionFactory);
-            transactionHelper.transaction(() -> languageAndVersions.forEach(language -> {
+            transactionHelper.transaction(() -> workflowIds.forEach(workflowId -> {
                 final List<WorkflowVersion> workflowVersions =
-                    workflowVersionDAO.getWorkflowVersionsByWorkflowId(language.id(), Integer.MAX_VALUE, 0);
+                    workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflowId, Integer.MAX_VALUE, 0);
                 final LanguageHandlerInterface languageHandlerInterface =
-                    LanguageHandlerFactory.getInterface(language.descriptorLanguage());
+                    LanguageHandlerFactory.getInterface(descriptorLanguage);
                 workflowVersions.forEach(workflowVersion -> {
                     final Optional<SourceFile> maybePrimary
                         = workflowVersion.getSourceFiles().stream()

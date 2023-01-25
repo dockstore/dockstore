@@ -2196,7 +2196,29 @@ paths:
   /entries/updateLanguageVersions:
     post:
       description: Update language versions
-      operationId: updateLanguageVerions
+      operationId: updateLanguageVersions
+      parameters:
+      - description: The descriptor language
+        in: query
+        name: language
+        required: true
+        schema:
+          type: string
+          enum:
+          - SMK
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
+          - ipynb
+      - description: Published or unpublished
+        in: query
+        name: published
+        required: true
+        schema:
+          type: boolean
       responses:
         "200":
           description: A number
