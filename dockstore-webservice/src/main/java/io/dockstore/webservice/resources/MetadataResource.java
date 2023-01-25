@@ -54,6 +54,7 @@ import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -141,6 +142,7 @@ public class MetadataResource {
     private final CollectionDAO collectionDAO;
     private final BioWorkflowDAO bioWorkflowDAO;
     private final AppToolDAO appToolDAO;
+    private final NotebookDAO notebookDAO;
     private final DockstoreWebserviceConfiguration config;
     private final SitemapListener sitemapListener;
     private final RSSListener rssListener;
@@ -156,6 +158,7 @@ public class MetadataResource {
         this.config = config;
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.appToolDAO = new AppToolDAO(sessionFactory);
+        this.notebookDAO = new NotebookDAO(sessionFactory);
         this.sitemapListener = PublicStateManager.getInstance().getSitemapListener();
         this.rssListener = PublicStateManager.getInstance().getRSSListener();
     }
@@ -185,6 +188,7 @@ public class MetadataResource {
         urls.addAll(getBioWorkflowPaths());
         urls.addAll(getAppToolPaths());
         urls.addAll(getOrganizationAndCollectionPaths());
+        urls.addAll(getNotebookPaths());
         return urls;
     }
 
@@ -216,6 +220,9 @@ public class MetadataResource {
         return appToolDAO.findAllPublishedPaths().stream().map(appToolPath -> createWorkflowURL(appToolPath.getAppTool())).collect(Collectors.toList());
     }
 
+    private List<String> getNotebookPaths() {
+        return notebookDAO.findAllPublishedPaths().stream().map(notebookPath -> createWorkflowURL(notebookPath.getNotebook())).collect(Collectors.toList());
+    }
     private String createOrganizationURL(Organization organization) {
         return MetadataResourceHelper.createOrganizationURL(organization);
     }
