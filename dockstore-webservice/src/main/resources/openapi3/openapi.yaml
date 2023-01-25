@@ -9921,6 +9921,7 @@ components:
       - BIOWORKFLOW
       - SERVICE
       - APPTOOL
+      - NOTEBOOK
     WorkflowVersion:
       type: object
       properties:

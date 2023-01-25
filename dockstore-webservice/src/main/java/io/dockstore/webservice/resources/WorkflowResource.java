@@ -40,6 +40,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.Service;
@@ -880,6 +881,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             targetClass = BioWorkflow.class;
         } else if (subclass == WorkflowSubClass.APPTOOL) {
             targetClass = AppTool.class;
+        } else if (subclass == WorkflowSubClass.NOTEBOOK) {
+            targetClass = Notebook.class;
         } else {
             throw new CustomWebApplicationException(subclass + " is not a valid subclass.", HttpStatus.SC_BAD_REQUEST);
         }
