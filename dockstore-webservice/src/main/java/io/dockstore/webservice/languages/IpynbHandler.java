@@ -136,7 +136,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
             String notebookLanguage;
             // If "language_info" is present, the spec says that it must contain a key named "name".
             if (metadata.has("language_info")) {
-                notebookLanguage = metadata.getJSONObject("language_info").getString("name").toLowerCase();
+                notebookLanguage = metadata.getJSONObject("language_info").optString("name", "python").toLowerCase();
             } else {
                 notebookLanguage = "python";
             }

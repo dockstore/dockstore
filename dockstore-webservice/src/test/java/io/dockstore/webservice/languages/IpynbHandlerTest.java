@@ -162,8 +162,8 @@ class IpynbHandlerTest {
 
     @Test
     void testProcessUserFiles() {
-        Map<String, SourceFile> map = handler.processUserFiles("", List.of("/data", "/existing_file.txt", "/missing_file.txt"), version, mockRepo(Set.of("/some.ipynb", "/data/a.txt", "/data/b.txt", "/existing_file.txt")), Set.of("/data/b.txt"));
-        assertEquals(Set.of("/data/a.txt", "/existing_file.txt"), map.keySet());
+        Map<String, SourceFile> map = handler.processUserFiles("", List.of("/data", "/existing_file.txt", "/missing_file.txt"), version, mockRepo(Set.of("/some.ipynb", "/data/a.txt", "/data/b.txt", "/data/sub/c.txt", "/existing_file.txt")), Set.of("/data/b.txt"));
+        assertEquals(Set.of("/data/a.txt", "/data/sub/c.txt", "/existing_file.txt"), map.keySet());
         assertTrue(map.values().stream().map(SourceFile::getType).allMatch(type -> type == DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER));
     }
 
