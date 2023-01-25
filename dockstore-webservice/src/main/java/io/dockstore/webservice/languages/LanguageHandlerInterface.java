@@ -138,18 +138,26 @@ public interface LanguageHandlerInterface {
      * @param repositoryId            identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param content                 content of the primary descriptor
      * @param version                 version of the files to get
-     * @param sourceCodeRepoInterface used too retrieve imports
+     * @param sourceCodeRepoInterface used to retrieve imports
      * @param filepath                used to help find relative imports, must be absolute
      * @return map of file paths to SourceFile objects
      */
     Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath);
 
-    // TODO add documentation
+    /**
+     * Read and process user-specified files.
+     * @param repositoryId            identifies the git repository that we wish to use, normally something like 'organization/repo_name'
+     * @param paths                   paths of the user-specified files
+     * @param version                 version of the files to get
+     * @param sourceCodeRepoInterface used to retrieve files
+     * @param excludePaths            paths to exclude
+     * @return map of file paths to user-specified SourceFile objects
+     */
     default Map<String, SourceFile> processUserFiles(String repositoryId, List<String> paths, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
         if (paths != null && !paths.isEmpty()) {
-            LOG.error("this language does not support user-specified files");
-            throw new CustomWebApplicationException("this language does not support user-specified files", HttpStatus.SC_BAD_REQUEST);
+            LOG.error("This language does not support user-specified files");
+            throw new CustomWebApplicationException("This language does not support user-specified files", HttpStatus.SC_BAD_REQUEST);
         }
         return Map.of();
     }
