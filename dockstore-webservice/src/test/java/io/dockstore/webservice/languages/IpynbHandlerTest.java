@@ -1,46 +1,28 @@
 // TODO add copyright
 package io.dockstore.webservice.languages;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
-import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DockerImageReference;
-import io.dockstore.common.Registry;
-import io.dockstore.webservice.CustomWebApplicationException;
+// import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Author;
-import io.dockstore.webservice.core.DescriptionSource;
-import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Notebook;
-import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
-import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,13 +39,11 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 class IpynbHandlerTest {
 
-    /*
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());
 
     @SystemStub
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
-    */
 
     private IpynbHandler handler;
     private Notebook notebook;
@@ -72,8 +52,7 @@ class IpynbHandlerTest {
     private String read(String resourceName) {
         try {
             return FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("notebooks/ipynb/" + resourceName)));
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
     }
