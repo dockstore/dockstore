@@ -584,7 +584,7 @@ public class Ga4GhTRSAPIWorkflowIT extends BaseIT {
      * @throws URISyntaxException
      */
     @Test
-    void testAuthenticatedUserWithNoOrExpiredGoogleToken() throws URISyntaxException, IOException {
+    public void testAuthenticatedUserWithNoOrExpiredGoogleToken() throws URISyntaxException, IOException {
         // Set configuration to use SAM authorizer
         SUPPORT.getConfiguration().setAuthorizerType("sam");
         ToolsApiServiceImpl.setAuthorizer(PermissionsFactory.createAuthorizer(tokenDAO, SUPPORT.getConfiguration()));
