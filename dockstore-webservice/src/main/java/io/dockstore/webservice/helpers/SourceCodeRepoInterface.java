@@ -264,7 +264,7 @@ public abstract class SourceCodeRepoInterface {
      * @return workflow with associated workflow versions
      */
     public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, WorkflowAuxilliaryInfo info, boolean hardRefresh);
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, WorkflowSpecifications specs, boolean hardRefresh);
 
     /**
      * Determine whether to refresh a version or not
@@ -304,7 +304,7 @@ public abstract class SourceCodeRepoInterface {
      * @param hardRefresh
      * @return workflow
      */
-    public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName, WorkflowAuxilliaryInfo info, boolean hardRefresh) {
+    public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName, WorkflowSpecifications specs, boolean hardRefresh) {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId, new BioWorkflow());
 
@@ -344,7 +344,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Create versions and associated source files
         //TODO: calls validation eventually, may simplify if we take into account metadata parsing below
-        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName, info, hardRefresh);
+        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName, specs, hardRefresh);
 
         if (versionName.isPresent() && workflow.getWorkflowVersions().size() == 0) {
             String msg = "Version " + versionName.get() + " was not found on Git repository";
@@ -588,7 +588,7 @@ public abstract class SourceCodeRepoInterface {
      * @return workflow version
      */
     WorkflowVersion combineVersionAndSourcefile(String repositoryId, SourceFile sourceFile, Workflow workflow,
-        DescriptorLanguage.FileType identifiedType, WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults, WorkflowAuxilliaryInfo info) {
+        DescriptorLanguage.FileType identifiedType, WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults, WorkflowSpecifications specs) {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         if (sourceFile != null && sourceFile.getContent() != null) {
@@ -596,7 +596,7 @@ public abstract class SourceCodeRepoInterface {
                 resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version, sourceFile.getPath());
             sourceFileSet.addAll(importFileMap.values());
             final Map<String, SourceFile> otherFileMap = 
-                resolveUserFiles(repositoryId, info.getOtherFilePaths(), identifiedType, version, importFileMap.keySet());
+                resolveUserFiles(repositoryId, specs.getUserFilePaths(), identifiedType, version, importFileMap.keySet());
             sourceFileSet.addAll(otherFileMap.values());
         }
 
