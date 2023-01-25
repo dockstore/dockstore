@@ -48,11 +48,14 @@ class IpynbHandlerTest {
     @SystemStub
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
+    private static final String PATH = "/authors.ipynb";
+    private static final String CONTENT = read("authors.ipynb");
+
     private IpynbHandler handler;
     private Notebook notebook;
     private WorkflowVersion version;
   
-    private String read(String resourceName) {
+    private static String read(String resourceName) {
         try {
             return FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("notebooks/ipynb/" + resourceName)));
         } catch (IOException ex) {
@@ -64,7 +67,7 @@ class IpynbHandlerTest {
         return String.join("\n", List.of(content.split("\n")).stream().filter(line -> !line.contains(match)).toList());
     }
 
-    private <T, F> Set<F> map(Collection<T> values, Function<T, F> mapper) {
+    private <T, F> Set<F> mapToSet(Collection<T> values, Function<T, F> mapper) {
         return values.stream().map(mapper).collect(Collectors.toSet());
     }
 
@@ -100,84 +103,80 @@ class IpynbHandlerTest {
     }
 
     @BeforeEach
-    void init() {
+    void reset() {
         handler = new IpynbHandler();
         notebook = new Notebook();
         version = new WorkflowVersion();
     }
 
     @Test
-    void testParseWorkflowContentNoAuthor() {
-        handler.parseWorkflowContent("authors.ipynb", read("authors.ipynb").replace("authors", "foo"), Set.of(), version);
+    void testParseWorkflowContentAuthor() {
+        // No authors.
+        handler.parseWorkflowContent(PATH, CONTENT.replace("authors", "foo"), Set.of(), version);
         assertTrue(version.getAuthors().isEmpty());
-    }
 
-    @Test
-    void testParseWorkflowContentBlankAuthor() {
-        handler.parseWorkflowContent("authors.ipynb", deleteMatchingLines(read("authors.ipynb"), "Author"), Set.of(), version);
+        // Empty "authors" list.
+        reset();
+        handler.parseWorkflowContent(PATH, deleteMatchingLines(CONTENT, "Author"), Set.of(), version);
         assertTrue(version.getAuthors().isEmpty());
-    }
 
-    @Test
-    void testParseWorkflowContentOneAuthor() {
-        handler.parseWorkflowContent("authors.ipynb", deleteMatchingLines(read("authors.ipynb"), "Author Two"), Set.of(), version);
-        assertEquals(Set.of("Author One"), map(version.getAuthors(), Author::getName));
-    }
+        // One author.
+        reset();
+        handler.parseWorkflowContent(PATH, deleteMatchingLines(CONTENT, "Author Two"), Set.of(), version);
+        assertEquals(Set.of("Author One"), mapToSet(version.getAuthors(), Author::getName));
 
-    @Test
-    void testParseWorkflowContentTwoAuthors() {
-        handler.parseWorkflowContent("authors.ipynb", read("authors.ipynb"), Set.of(), version);
-        assertEquals(Set.of("Author One", "Author Two"), map(version.getAuthors(), Author::getName));
+        // Two authors.
+        reset();
+        handler.parseWorkflowContent(PATH, CONTENT, Set.of(), version);
+        assertEquals(Set.of("Author One", "Author Two"), mapToSet(version.getAuthors(), Author::getName));
     }
 
     @Test
     void testProcessImportsNoRees() {
-        Map<String, SourceFile> rees = handler.processImports("", "", version, mockRepo(Set.of("/some.ipynb")), "/");
+        Map<String, SourceFile> rees = handler.processImports("", "", version, mockRepo(Set.of(PATH)), "/");
         assertTrue(rees.keySet().isEmpty());
     }
 
     @Test
     void testProcessImportsRootRequirementsTxt() {
-        Map<String, SourceFile> rees = handler.processImports("", "", version, mockRepo(Set.of("/some.ipynb", "/requirements.txt", "/blah/requirements.txt")), "/");
+        Map<String, SourceFile> rees = handler.processImports("", "", version, mockRepo(Set.of(PATH, "/requirements.txt", "/blah/requirements.txt")), "/");
         assertEquals(Set.of("/requirements.txt"), rees.keySet());
-        assertEquals(Set.of(DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES), map(rees.values(), SourceFile::getType));
+        assertEquals(Set.of(DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES), mapToSet(rees.values(), SourceFile::getType));
     }
 
     @Test
     void testProcessUserFiles() {
-        Map<String, SourceFile> files = handler.processUserFiles("", List.of("/data", "/existing_file.txt", "/missing_file.txt"), version, mockRepo(Set.of("/some.ipynb", "/data/a.txt", "/data/b.txt", "/data/sub/c.txt", "/existing_file.txt")), Set.of("/data/b.txt"));
+        Map<String, SourceFile> files = handler.processUserFiles("", List.of("/data", "/existing_file.txt", "/missing_file.txt"), version, mockRepo(Set.of(PATH, "/data/a.txt", "/data/b.txt", "/data/sub/c.txt", "/existing_file.txt")), Set.of("/data/b.txt"));
         assertEquals(Set.of("/data/a.txt", "/data/sub/c.txt", "/existing_file.txt"), files.keySet());
-        assertEquals(Set.of(DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER), map(files.values(), SourceFile::getType));
+        assertEquals(Set.of(DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER), mapToSet(files.values(), SourceFile::getType));
     }
 
     @Test
     void testGetContent() {
-        assertEquals(Optional.empty(), handler.getContent("authors.ipynb", read("authors.ipynb"), Set.of(), LanguageHandlerInterface.Type.TOOLS, null));
-        assertEquals(Optional.empty(), handler.getContent("authors.ipynb", read("authors.ipynb"), Set.of(), LanguageHandlerInterface.Type.DAG, null));
+        assertEquals(Optional.empty(), handler.getContent(PATH, CONTENT, Set.of(), LanguageHandlerInterface.Type.TOOLS, null));
+        assertEquals(Optional.empty(), handler.getContent(PATH, CONTENT, Set.of(), LanguageHandlerInterface.Type.DAG, null));
     }
 
     @Test
     void testValidateWorkflowSet() {
-        final String path = "/authors.ipynb";
-        final String content = read("authors.ipynb");
         notebook.setDescriptorType(DescriptorLanguage.IPYNB);
         notebook.setDescriptorTypeSubclass(DescriptorLanguageSubclass.PYTHON);
 
         // Well-formed.
-        SourceFile file = mockSourceFile(path, content, DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
-        assertTrue(handler.validateWorkflowSet(Set.of(file), path, notebook).isValid());
+        SourceFile file = mockSourceFile(PATH, CONTENT, DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertTrue(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Invalid JSON.
-        file = mockSourceFile(path, content.replaceFirst("\\{", "["), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
-        assertFalse(handler.validateWorkflowSet(Set.of(file), path, notebook).isValid());
+        file = mockSourceFile(PATH, CONTENT.replaceFirst("\\{", "["), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Valid JSON but no "cells" field.
-        file = mockSourceFile(path, content.replaceFirst("\"cells\"", "\"foo\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
-        assertFalse(handler.validateWorkflowSet(Set.of(file), path, notebook).isValid());
+        file = mockSourceFile(PATH, CONTENT.replaceFirst("\"cells\"", "\"foo\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Different programming language.
-        file = mockSourceFile(path, content.replace("\"python\"", "\"julia\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
-        assertFalse(handler.validateWorkflowSet(Set.of(file), path, notebook).isValid());
+        file = mockSourceFile(PATH, CONTENT.replace("\"python\"", "\"julia\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
     }
 
     @Test
@@ -187,6 +186,6 @@ class IpynbHandlerTest {
 
     @Test
     void testValidateTestParameterSet() {
-        assertThrows(UnsupportedOperationException.class, () -> handler.validateTestParameterSet(Set.of(), "/"));
+        assertThrows(UnsupportedOperationException.class, () -> handler.validateTestParameterSet(Set.of()));
     }
 }
