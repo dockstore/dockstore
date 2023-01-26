@@ -39,11 +39,14 @@ public enum DescriptorLanguageSubclass {
         this.shortName = shortName;
     }
 
+    public boolean isApplicable() {
+        return this != NOT_APPLICABLE;
+    }
+
     @Override
     public String toString() {
         return shortName;
     }
-
 
     public String getShortName() {
         return shortName;
