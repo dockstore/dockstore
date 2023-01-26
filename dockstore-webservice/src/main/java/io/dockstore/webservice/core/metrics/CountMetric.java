@@ -41,6 +41,10 @@ public abstract class CountMetric<T> {
 
     public abstract Map<T, Integer> getCount();
 
+    public void addCount(T key, int count) {
+        getCount().put(key, getCount().getOrDefault(key, 0) + count);
+    }
+
     protected CountMetric() {
     }
 

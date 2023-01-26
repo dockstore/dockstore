@@ -77,6 +77,9 @@ public class Metrics {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    public Metrics() {
+    }
+
     public Metrics(ExecutionStatusCountMetric executionStatusCount) {
         this.executionStatusCount = executionStatusCount;
     }

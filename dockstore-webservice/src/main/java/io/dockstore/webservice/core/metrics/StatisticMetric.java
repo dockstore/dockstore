@@ -57,15 +57,16 @@ public abstract class StatisticMetric {
     @Column
     @ApiModelProperty(value = "The number of data points used to calculate the average")
     @Schema(description = "The number of data points used to calculate the average")
-    private String numberOfDataPointsForAverage;
+    private int numberOfDataPointsForAverage;
 
     protected StatisticMetric() {
     }
 
-    protected StatisticMetric(String minimum, String maximum, String average) {
+    protected StatisticMetric(String minimum, String maximum, String average, int numberOfDataPointsForAverage) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.average = average;
+        this.numberOfDataPointsForAverage = numberOfDataPointsForAverage;
     }
 
     public long getId() {
@@ -100,11 +101,11 @@ public abstract class StatisticMetric {
         this.average = average;
     }
 
-    public String getNumberOfDataPointsForAverage() {
+    public int getNumberOfDataPointsForAverage() {
         return numberOfDataPointsForAverage;
     }
 
-    public void setNumberOfDataPointsForAverage(String numberOfDataPointsForAverage) {
+    public void setNumberOfDataPointsForAverage(int numberOfDataPointsForAverage) {
         this.numberOfDataPointsForAverage = numberOfDataPointsForAverage;
     }
 }

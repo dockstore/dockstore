@@ -22,7 +22,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-// Note that execution time is stored in ISO 8601 duration format like https://schema.org/totalTime
+/**
+ * Note that execution time is stored in ISO 8601 duration format like https://schema.org/totalTime
+ */
 @Entity
 @Table(name = "execution_time_metric")
 @ApiModel(value = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in ISO 8601 for workflow executions.")
@@ -31,7 +33,7 @@ public class ExecutionTimeStatisticMetric extends StatisticMetric {
     public ExecutionTimeStatisticMetric() {
     }
 
-    public ExecutionTimeStatisticMetric(String minimum, String maximum, String average) {
-        super(minimum, maximum, average);
+    public ExecutionTimeStatisticMetric(String minimum, String maximum, String average, int numberOfDataPointsForAverage) {
+        super(minimum, maximum, average, numberOfDataPointsForAverage);
     }
 }

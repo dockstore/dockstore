@@ -202,14 +202,13 @@
             <column name="executionstatusid" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="execution_status_count_pkey"/>
             </column>
-            <column name="count_id" type="BIGINT">
+            <column name="count" type="int">
                 <constraints nullable="false"/>
             </column>
-            <column name="executionstatus" type="INTEGER">
+            <column name="executionstatus" type="varchar(255)">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="execution_status_count_pkey"/>
             </column>
         </createTable>
-        <addUniqueConstraint columnNames="count_id" constraintName="uk_count_id_execution_status_count" tableName="execution_status_count"/>
         <addForeignKeyConstraint baseColumnNames="executionstatusid" baseTableName="execution_status_count" constraintName="fk_executionstatusid_execution_status_count" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_status"/>
 
         <createTable tableName="cpu_metric">
@@ -219,7 +218,7 @@
             <column name="average" type="VARCHAR(255)"/>
             <column name="maximum" type="VARCHAR(255)"/>
             <column name="minimum" type="VARCHAR(255)"/>
-            <column name="numberofdatapointsforaverage" type="VARCHAR(255)"/>
+            <column name="numberofdatapointsforaverage" type="int"/>
         </createTable>
         <createTable tableName="execution_time_metric">
             <column name="id" type="BIGINT">
@@ -228,7 +227,7 @@
             <column name="average" type="VARCHAR(255)"/>
             <column name="maximum" type="VARCHAR(255)"/>
             <column name="minimum" type="VARCHAR(255)"/>
-            <column name="numberofdatapointsforaverage" type="VARCHAR(255)"/>
+            <column name="numberofdatapointsforaverage" type="int"/>
         </createTable>
         <createTable tableName="memory_metric">
             <column name="id" type="BIGINT">
@@ -237,7 +236,7 @@
             <column name="average" type="VARCHAR(255)"/>
             <column name="maximum" type="VARCHAR(255)"/>
             <column name="minimum" type="VARCHAR(255)"/>
-            <column name="numberofdatapointsforaverage" type="VARCHAR(255)"/>
+            <column name="numberofdatapointsforaverage" type="int"/>
         </createTable>
         <createTable tableName="metrics">
             <column autoIncrement="true" name="id" type="BIGINT">

@@ -22,24 +22,31 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.EnumMap;
 import java.util.Map;
-import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
-import javax.persistence.OneToMany;
+import javax.persistence.MapKeyEnumerated;
 import javax.persistence.Table;
+import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Table(name = "execution_status")
-@ApiModel()
+@ApiModel(value = "ExecutionStatusMetric", description = "Aggregated metrics about workflow execution statuses")
+@Schema(name = "ExecutionStatusMetric", description = "Aggregated metrics about workflow execution statuses")
+@SuppressWarnings("checkstyle:magicnumber")
 public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCountMetric.ExecutionStatus> {
 
-    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL, targetEntity = CountMetric.class)
-    @JoinTable(name = "execution_status_count", joinColumns = @JoinColumn(name = "executionstatusid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @ElementCollection(fetch = FetchType.LAZY)
+    @MapKeyEnumerated(EnumType.STRING)
     @MapKeyColumn(name = "executionstatus")
+    @Column(name = "count", nullable = false)
+    @CollectionTable(name = "execution_status_count", joinColumns = @JoinColumn(name = "executionstatusid", referencedColumnName = "id"))
+    @BatchSize(size = 25)
     @ApiModelProperty(value = "A map containing the count for each key")
     private Map<ExecutionStatus, Integer> count = new EnumMap<>(ExecutionStatus.class);
 
@@ -55,16 +62,33 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     @Schema(description = "Indicates if all executions of the workflow are semantic and runtime valid")
     boolean isValid;
 
+    public ExecutionStatusCountMetric() {
+        count.put(ExecutionStatus.SUCCESSFUL, 0);
+        count.put(ExecutionStatus.FAILED_RUNTIME_INVALID, 0);
+        count.put(ExecutionStatus.FAILED_SEMANTIC_INVALID, 0);
+        calculateValidAndNumberOfExecutions();
+    }
+
     public ExecutionStatusCountMetric(Map<ExecutionStatus, Integer> count) {
         this.count = count;
-        this.isValid = !count.containsKey(ExecutionStatus.FAILED_SEMANTIC_INVALID) && !count.containsKey(ExecutionStatus.FAILED_RUNTIME_INVALID);
-        this.numberOfSuccessfulExecutions = count.getOrDefault(ExecutionStatus.SUCCESSFUL, 0);
-        this.numberOfFailedExecutions = count.getOrDefault(ExecutionStatus.FAILED_SEMANTIC_INVALID, 0) + count.getOrDefault(ExecutionStatus.FAILED_RUNTIME_INVALID, 0);
+        calculateValidAndNumberOfExecutions();
     }
 
     @Override
     public Map<ExecutionStatus, Integer> getCount() {
         return count;
+    }
+
+    @Override
+    public void addCount(ExecutionStatus key, int countToAdd) {
+        super.addCount(key, countToAdd);
+        calculateValidAndNumberOfExecutions();
+    }
+
+    private void calculateValidAndNumberOfExecutions() {
+        this.isValid = (count.getOrDefault(ExecutionStatus.FAILED_SEMANTIC_INVALID, 0) + count.getOrDefault(ExecutionStatus.FAILED_RUNTIME_INVALID, 0)) == 0;
+        this.numberOfSuccessfulExecutions = count.getOrDefault(ExecutionStatus.SUCCESSFUL, 0);
+        this.numberOfFailedExecutions = count.getOrDefault(ExecutionStatus.FAILED_SEMANTIC_INVALID, 0) + count.getOrDefault(ExecutionStatus.FAILED_RUNTIME_INVALID, 0);
     }
 
     public void setCount(Map<ExecutionStatus, Integer> count) {
@@ -93,6 +117,10 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
 
     public void setValid(boolean valid) {
         isValid = valid;
+    }
+
+    public int getNumberOfExecutions() {
+        return numberOfSuccessfulExecutions + numberOfFailedExecutions;
     }
 
     public enum ExecutionStatus {

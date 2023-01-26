@@ -30,7 +30,7 @@ public class MemoryStatisticMetric extends StatisticMetric {
     public MemoryStatisticMetric() {
     }
 
-    public MemoryStatisticMetric(String minimum, String maximum, String average) {
-        super(minimum, maximum, average);
+    public MemoryStatisticMetric(String minimum, String maximum, String average, int numberOfDataPointsForAverage) {
+        super(minimum, maximum, average, numberOfDataPointsForAverage);
     }
 }

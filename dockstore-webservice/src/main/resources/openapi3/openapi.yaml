@@ -7770,7 +7770,8 @@ components:
           type: string
           description: The minimum value from the data points
         numberOfDataPointsForAverage:
-          type: string
+          type: integer
+          format: int32
           description: The number of data points used to calculate the average
     DescriptionMetrics:
       type: object
@@ -8244,9 +8245,9 @@ components:
           $ref: '#/components/schemas/Version'
         workflow:
           $ref: '#/components/schemas/Workflow'
-    ExecutionStatusCountMetric:
+    ExecutionStatusMetric:
       type: object
-      description: A count of the different execution statuses from the workflow executions
+      description: Aggregated metrics about workflow execution statuses
       properties:
         count:
           type: object
@@ -8257,6 +8258,9 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the count metrics in this webservice
+        numberOfExecutions:
+          type: integer
+          format: int32
         numberOfFailedExecutions:
           type: integer
           format: int32
@@ -8288,7 +8292,8 @@ components:
           type: string
           description: The minimum value from the data points
         numberOfDataPointsForAverage:
-          type: string
+          type: integer
+          format: int32
           description: The number of data points used to calculate the average
     ExtendedUserData:
       type: object
@@ -8588,7 +8593,8 @@ components:
           type: string
           description: The minimum value from the data points
         numberOfDataPointsForAverage:
-          type: string
+          type: integer
+          format: int32
           description: The number of data points used to calculate the average
     Metrics:
       type: object
@@ -8603,7 +8609,7 @@ components:
           type: string
           format: date-time
         executionStatusCount:
-          $ref: '#/components/schemas/ExecutionStatusCountMetric'
+          $ref: '#/components/schemas/ExecutionStatusMetric'
         executionTime:
           $ref: '#/components/schemas/ExecutionTimeMetric'
         id:
