@@ -37,7 +37,7 @@ public abstract class AbstractLanguageHandler {
                     file.setPath(givenImportPath);
                     imports.put(absoluteImportPath, file);
                 },
-                () -> LOG.error("Could not read: " + absoluteImportPath)
+                () -> LOG.error("Could not read: {}", absoluteImportPath)
             );
     }
 }

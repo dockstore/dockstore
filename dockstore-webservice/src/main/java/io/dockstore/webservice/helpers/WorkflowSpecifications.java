@@ -18,9 +18,6 @@ public class WorkflowSpecifications {
 
     private List<String> userFilePaths = List.of();
 
-    public WorkflowSpecifications() {
-    }
-
     /**
      * Set the list of user-specified file paths.
      */

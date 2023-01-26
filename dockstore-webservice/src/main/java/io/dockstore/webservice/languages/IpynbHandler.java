@@ -98,11 +98,6 @@ public class IpynbHandler implements LanguageHandlerInterface {
         return version;
     }
 
-    private String fileName(String path) {
-        String[] parts = path.split("/");
-        return parts[parts.length - 1];
-    }
-
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
@@ -148,16 +143,13 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
         // Parse the notebook JSON and check for the existence of some fields.
         JSONObject notebook;
-        int formatMajor;
-        int formatMinor;
         JSONObject metadata;
-        JSONArray cells;
         try {
             notebook = new JSONObject(content);
-            formatMajor = notebook.getInt("nbformat");
-            formatMinor = notebook.getInt("nbformat_minor");
             metadata = notebook.getJSONObject("metadata");
-            cells = notebook.getJSONArray("cells");
+            notebook.getInt("nbformat");
+            notebook.getInt("nbformat_minor");
+            notebook.getJSONArray("cells");
         } catch (JSONException ex) {
             return negativeValidation(notebookPath, "The notebook file is malformed", ex);
         }
@@ -183,6 +175,16 @@ public class IpynbHandler implements LanguageHandlerInterface {
         return positiveValidation();
     }
 
+    @Override
+    public VersionTypeValidation validateToolSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
+        throw new UnsupportedOperationException("Notebooks do not support tools");
+    }
+
+    @Override
+    public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
+        throw new UnsupportedOperationException("Notebooks do not support test files");
+    }
+
     private VersionTypeValidation positiveValidation() {
         LOG.info("Created positive validation");
         return new VersionTypeValidation(true, Collections.emptyMap());
@@ -200,15 +202,5 @@ public class IpynbHandler implements LanguageHandlerInterface {
         }
         LOG.warn("Created negative validation, file {}: {}", path, message, ex);
         return new VersionTypeValidation(false, Map.of(path, message));
-    }
-
-    @Override
-    public VersionTypeValidation validateToolSet(Set<SourceFile> sourceFiles, String primaryDescriptorFilePath) {
-        throw new UnsupportedOperationException("Notebooks do not support tools");
-    }
-
-    @Override
-    public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        throw new UnsupportedOperationException("Notebooks do not support test files");
     }
 }
