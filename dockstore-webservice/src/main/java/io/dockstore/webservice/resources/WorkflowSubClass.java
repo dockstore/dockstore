@@ -9,27 +9,19 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(enumAsRef = true)
 public enum WorkflowSubClass {
-    BIOWORKFLOW,
-    SERVICE,
-    APPTOOL,
-    NOTEBOOK;
+    BIOWORKFLOW(BioWorkflow.class),
+    SERVICE(Service.class),
+    APPTOOL(AppTool.class),
+    NOTEBOOK(Notebook.class);
 
-    /**
-     * Returns the corresponding workflow class
-     *
-     */
+    private final Class<? extends Workflow> targetClass;
+
+    WorkflowSubClass(Class<? extends Workflow> targetClass) {
+        this.targetClass = targetClass;
+    }
+
     public Class<? extends Workflow> getTargetClass() {
-        switch (this) {
-        case APPTOOL:
-            return AppTool.class;
-        case BIOWORKFLOW:
-            return BioWorkflow.class;
-        case SERVICE:
-            return Service.class;
-        case NOTEBOOK:
-            return Notebook.class;
-        default:
-            return null;
-        }
+        return targetClass;
     }
 }
+
