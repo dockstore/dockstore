@@ -14,6 +14,10 @@ public enum WorkflowSubClass {
     APPTOOL,
     NOTEBOOK;
 
+    /**
+     * Returns the corresponding workflow class
+     *
+     */
     public Class<? extends Workflow> getTargetClass() {
         switch (this) {
         case APPTOOL:
