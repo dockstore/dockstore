@@ -25,6 +25,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.ObjectUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -102,14 +104,26 @@ public class IpynbHandler implements LanguageHandlerInterface {
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
         Map<String, SourceFile> pathsToFiles = new HashMap<>();
-        // For each possible REES directory, list the directory contents, and if we find configuration files, read them.
+
+        // To avoid listing the contents of non-existent directories and generating non-cachable requests
+        // https://github.com/dockstore/dockstore/pull/5329#discussion_r1088120869
+        // we first determine the contents of '/'
+        Set<String> rootNames = new HashSet<>(ObjectUtils.firstNonNull(sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference()), List.of()));
+
+        // For each possible REES directory:
         for (String reesDir: REES_DIRS) {
-            List<String> names = sourceCodeRepoInterface.listFiles(repositoryId, reesDir, version.getReference());
-            if (names != null) {
-                for (String name: names) {
-                    if (REES_FILES.contains(name)) {
-                        sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES, reesDir + name)
-                            .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
+            // Confirm the directory [probably] exists.
+            if ("/".equals(reesDir) || rootNames.contains(reesDir.replace("/", ""))) {
+                // List the files in the directory.
+                List<String> names = sourceCodeRepoInterface.listFiles(repositoryId, reesDir, version.getReference());
+                if (names != null) {
+                    // Check each file in the directory.
+                    for (String name: names) {
+                        // If it's a REES file, read it into a SourceFile and add it to the map.
+                        if (REES_FILES.contains(name)) {
+                            sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES, reesDir + name)
+                                .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
+                        }
                     }
                 }
             }
