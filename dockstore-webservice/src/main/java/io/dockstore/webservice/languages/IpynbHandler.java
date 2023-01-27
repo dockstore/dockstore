@@ -56,6 +56,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
     private static final String NBFORMAT_MINOR_KEY = "nbformat_minor";
     private static final String METADATA_KEY = "metadata";
     private static final String CELLS_KEY = "cells";
+    private static final String AUTHORS_KEY = "authors";
     private static final String LANGUAGE_INFO_KEY = "language_info";
     private static final String NAME_KEY = "name";
     private static final String PYTHON = "python";
@@ -81,11 +82,11 @@ public class IpynbHandler implements LanguageHandlerInterface {
     private void processAuthors(JSONObject notebook, Version version) {
         try {
             // This code will intentionally throw a JSONException if the "authors" field is not present.
-            JSONArray jsonAuthors = notebook.getJSONObject("metadata").getJSONArray("authors");
+            JSONArray jsonAuthors = notebook.getJSONObject(METADATA_KEY).getJSONArray(AUTHORS_KEY);
             Set<Author> versionAuthors = new LinkedHashSet<>();
             for (int i = 0; i < jsonAuthors.length(); i++) {
                 JSONObject jsonAuthor = jsonAuthors.getJSONObject(i);
-                String name = jsonAuthor.optString("name", null);
+                String name = jsonAuthor.optString(NAME_KEY, null);
                 if (name != null && name.length() > 0) {
                     Author versionAuthor = new Author();
                     versionAuthor.setName(name);
@@ -187,7 +188,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
         try {
             String entryLanguage = workflow.getDescriptorTypeSubclass().toString();
             String notebookLanguage = extractProgrammingLanguage(notebook);
-            if (!Objects.equals(entryLanguage.toLowerCase(), notebookLanguage.toLowerCase())) {
+            if (!entryLanguage.equalsIgnoreCase(notebookLanguage)) {
                 return negativeValidation(notebookPath, String.format("The notebook programming language must be '%s'", entryLanguage));
             }
         } catch (JSONException ex) {
