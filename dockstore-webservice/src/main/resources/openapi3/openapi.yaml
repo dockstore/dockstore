@@ -7544,6 +7544,8 @@ components:
           - CAVATICA
           - NEXTFLOW_TOWER
           - ELWAZI
+          - AGC
+          - OTHER
         supportedLanguages:
           type: array
           items:

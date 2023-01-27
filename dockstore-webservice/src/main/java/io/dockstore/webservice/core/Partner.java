@@ -13,5 +13,7 @@ public enum Partner {
     ANVIL,
     CAVATICA,
     NEXTFLOW_TOWER,
-    ELWAZI
+    ELWAZI,
+    AGC,
+    OTHER // This is meant for platforms that want to submit Metrics to Dockstore, but they're not officially a Partner
 }
