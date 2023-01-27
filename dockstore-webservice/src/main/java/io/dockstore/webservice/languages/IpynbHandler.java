@@ -52,6 +52,14 @@ public class IpynbHandler implements LanguageHandlerInterface {
     public static final Set<String> REES_FILES = Set.of("environment.yml", "Pipfile", "Pipfile.lock", "requirements.txt", "setup.py", "Project.toml", "REQUIRE", "install.R", "apt.txt", "DESCRIPTION", "postBuild", "start", "runtime.txt", "default.nix", "Dockerfile");
     public static final Set<String> REES_DIRS = Set.of("/", "/binder/", "/.binder/");
 
+    private static final String NBFORMAT_KEY = "nbformat";
+    private static final String NBFORMAT_MINOR_KEY = "nbformat_minor";
+    private static final String METADATA_KEY = "metadata";
+    private static final String CELLS_KEY = "cells";
+    private static final String LANGUAGE_INFO_KEY = "language_info";
+    private static final String NAME_KEY = "name";
+    private static final String PYTHON = "python";
+
     @Override
     public Version parseWorkflowContent(String filePath, String content, Set<SourceFile> sourceFiles, Version version) {
 
@@ -93,8 +101,8 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
     private void processRelease(JSONObject notebook, Version version, String notebookPath, Set<SourceFile> sourceFiles) {
         try {
-            int formatMajor = notebook.getInt("nbformat");
-            int formatMinor = notebook.getInt("nbformat_minor");
+            int formatMajor = notebook.getInt(NBFORMAT_KEY);
+            int formatMinor = notebook.getInt(NBFORMAT_MINOR_KEY);
             String format = formatMajor + "." + formatMinor;
             sourceFiles.stream()
                 .filter(file -> file.getAbsolutePath().equals(notebookPath))
@@ -154,7 +162,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
     public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourceFiles, String notebookPath, Workflow workflow) {
 
         // Determine the content of the notebook file.
-        Optional<SourceFile> file = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), notebookPath))).findFirst();
+        Optional<SourceFile> file = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), notebookPath))).findFirst();
         if (!file.isPresent()) {
             return negativeValidation(notebookPath, "No notebook file is present");
         }
@@ -177,9 +185,9 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
         // Check that the entry's programming language (descriptor language subclass) matches the notebook's programming language.
         try {
-            String entryLanguage = workflow.getDescriptorTypeSubclass().toString().toLowerCase();
-            String notebookLanguage = extractProgrammingLanguage(notebook).toLowerCase();
-            if (!Objects.equals(entryLanguage, notebookLanguage)) {
+            String entryLanguage = workflow.getDescriptorTypeSubclass().toString();
+            String notebookLanguage = extractProgrammingLanguage(notebook);
+            if (!Objects.equals(entryLanguage.toLowerCase(), notebookLanguage.toLowerCase())) {
                 return negativeValidation(notebookPath, String.format("The notebook programming language must be '%s'", entryLanguage));
             }
         } catch (JSONException ex) {
@@ -191,19 +199,20 @@ public class IpynbHandler implements LanguageHandlerInterface {
     }
 
     private void checkEssentialFields(JSONObject notebook) throws JSONException {
-        notebook.getJSONObject("metadata");
-        notebook.getInt("nbformat");
-        notebook.getInt("nbformat_minor");
-        notebook.getJSONArray("cells");
+        // The JSONObject.get* methods throw if the key is missing or not set to the expected type of value.
+        notebook.getJSONObject(METADATA_KEY);
+        notebook.getInt(NBFORMAT_KEY);
+        notebook.getInt(NBFORMAT_MINOR_KEY);
+        notebook.getJSONArray(CELLS_KEY);
     }
 
     private String extractProgrammingLanguage(JSONObject notebook) throws JSONException {
-        JSONObject metadata = notebook.getJSONObject("metadata");
+        JSONObject metadata = notebook.getJSONObject(METADATA_KEY);
         // If key "language_info" is present, the spec says that it must contain the key "name".
-        if (metadata.has("language_info")) {
-            return metadata.getJSONObject("language_info").optString("name", "python");
+        if (metadata.has(LANGUAGE_INFO_KEY)) {
+            return metadata.getJSONObject(LANGUAGE_INFO_KEY).optString(NAME_KEY, PYTHON);
         }
-        return "python";
+        return PYTHON;
     }
 
     @Override
