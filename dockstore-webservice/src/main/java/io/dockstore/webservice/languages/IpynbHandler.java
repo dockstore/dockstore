@@ -64,7 +64,13 @@ public class IpynbHandler implements LanguageHandlerInterface {
             return version;
         }
 
-        // Extract the authors from the metadata.
+        processAuthors(notebook, version);
+        processRelease(notebook, version, filePath, sourceFiles);
+
+        return version;
+    }
+
+    private void processAuthors(JSONObject notebook, Version version) {
         try {
             // This code will intentionally throw a JSONException if the "authors" field is not present.
             JSONArray jsonAuthors = notebook.getJSONObject("metadata").getJSONArray("authors");
@@ -83,21 +89,20 @@ public class IpynbHandler implements LanguageHandlerInterface {
         } catch (JSONException ex) {
             LOG.warn("Could not extract notebook author information", ex);
         }
+    }
 
-        // Extract the notebook format number from the metadata.
+    private void processRelease(JSONObject notebook, Version version, String notebookPath, Set<SourceFile> sourceFiles) {
         try {
             int formatMajor = notebook.getInt("nbformat");
             int formatMinor = notebook.getInt("nbformat_minor");
             String format = formatMajor + "." + formatMinor;
             sourceFiles.stream()
-                .filter(file -> file.getAbsolutePath().equals(filePath))
+                .filter(file -> file.getAbsolutePath().equals(notebookPath))
                 .forEach(file -> file.setTypeVersion(format));
             version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
         } catch (JSONException ex) {
-            LOG.warn("Could not extract version information", ex);
+            LOG.warn("Could not extract notebook version information", ex);
         }
-
-        return version;
     }
 
     @Override
@@ -149,21 +154,23 @@ public class IpynbHandler implements LanguageHandlerInterface {
     public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourceFiles, String notebookPath, Workflow workflow) {
 
         // Determine the content of the notebook file.
-        Optional<SourceFile> notebookFile = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), notebookPath))).findFirst();
-        if (!notebookFile.isPresent()) {
+        Optional<SourceFile> file = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), notebookPath))).findFirst();
+        if (!file.isPresent()) {
             return negativeValidation(notebookPath, "No notebook file is present");
         }
-        String content = notebookFile.get().getContent();
+        String content = file.get().getContent();
 
-        // Parse the notebook JSON and check for the existence of some fields.
+        // Parse the notebook JSON.
         JSONObject notebook;
-        JSONObject metadata;
         try {
             notebook = new JSONObject(content);
-            metadata = notebook.getJSONObject("metadata");
-            notebook.getInt("nbformat");
-            notebook.getInt("nbformat_minor");
-            notebook.getJSONArray("cells");
+        } catch (JSONException ex) {
+            return negativeValidation(notebookPath, "The notebook file is not valid JSON", ex);
+        }
+
+        // Confirm the existence and typedness of the fields that should always be present.
+        try {
+            checkEssentialFields(notebook);
         } catch (JSONException ex) {
             return negativeValidation(notebookPath, "The notebook file is malformed", ex);
         }
@@ -171,13 +178,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
         // Check that the entry's programming language (descriptor language subclass) matches the notebook's programming language.
         try {
             String entryLanguage = workflow.getDescriptorTypeSubclass().toString().toLowerCase();
-            String notebookLanguage;
-            // If "language_info" is present, the spec says that it must contain a key named "name".
-            if (metadata.has("language_info")) {
-                notebookLanguage = metadata.getJSONObject("language_info").optString("name", "python").toLowerCase();
-            } else {
-                notebookLanguage = "python";
-            }
+            String notebookLanguage = extractProgrammingLanguage(notebook).toLowerCase();
             if (!Objects.equals(entryLanguage, notebookLanguage)) {
                 return negativeValidation(notebookPath, String.format("The notebook programming language must be '%s'", entryLanguage));
             }
@@ -187,6 +188,22 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
         // If we reach this point, everything is well, return a positive validation.
         return positiveValidation();
+    }
+
+    private void checkEssentialFields(JSONObject notebook) throws JSONException {
+        notebook.getJSONObject("metadata");
+        notebook.getInt("nbformat");
+        notebook.getInt("nbformat_minor");
+        notebook.getJSONArray("cells");
+    }
+
+    private String extractProgrammingLanguage(JSONObject notebook) throws JSONException {
+        JSONObject metadata = notebook.getJSONObject("metadata");
+        // If key "language_info" is present, the spec says that it must contain the key "name".
+        if (metadata.has("language_info")) {
+            return metadata.getJSONObject("language_info").optString("name", "python");
+        }
+        return "python";
     }
 
     @Override
