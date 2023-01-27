@@ -331,6 +331,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         workflows.forEach(workflow -> {
             workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen());
             FileFormatHelper.updateEntryLevelFileFormats(workflow);
+
+            // Delete the workflow if it no longer has any versions
+            if (workflow.getWorkflowVersions().isEmpty()) {
+                PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
+                eventDAO.deleteEventByEntryID(workflow.getId());
+                workflowDAO.delete(workflow);
+            }
         });
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
         lambdaEventDAO.create(lambdaEvent);
