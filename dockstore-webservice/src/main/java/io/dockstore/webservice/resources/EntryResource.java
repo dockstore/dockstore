@@ -519,9 +519,16 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         workflowVersion.getSourceFiles().stream()
             .filter(sf -> isPrimaryDescriptor(primaryPath, sf))
             .findFirst()
-            .ifPresent(primary ->
-                languageHandlerInterface.parseWorkflowContent(primaryPath,
-                    primary.getContent(), workflowVersion.getSourceFiles(), workflowVersion));
+            .ifPresent(primary -> {
+                try {
+                    languageHandlerInterface.parseWorkflowContent(primaryPath,
+                        primary.getContent(), workflowVersion.getSourceFiles(), workflowVersion);
+                } catch (RuntimeException e) {
+                    // Log the error and carry on.
+                    final String message = String.format("Error parsing workflow content for version %s", workflowVersion.getId());
+                    LOG.error(message, e);
+                }
+            });
     }
 
     private boolean isPrimaryDescriptor(String path, SourceFile sourceFile) {
