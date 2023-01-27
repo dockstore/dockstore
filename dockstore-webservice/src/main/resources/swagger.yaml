@@ -2597,23 +2597,11 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "language"
-        in: "query"
-        required: false
-        type: "string"
-        enum:
-        - "SMK"
-        - "CWL"
-        - "WDL"
-        - "GXFORMAT2"
-        - "SWL"
-        - "NEXTFLOW"
-        - "SERVICE"
-        - "IPYNB"
-      - name: "published"
+      - name: "allVersions"
         in: "query"
         required: false
         type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -2621,6 +2609,7 @@ paths:
           schema:
             type: "integer"
             format: "int32"
+      deprecated: true
   /entries/{entryId}/versions/{versionId}/descriptionMetrics:
     get:
       tags:
@@ -5293,6 +5282,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5324,6 +5314,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5479,6 +5470,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       - name: "versionName"
         in: "query"
         description: "Version name"
@@ -5578,6 +5570,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"

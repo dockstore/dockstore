@@ -36,6 +36,7 @@ import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
@@ -47,7 +48,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
-import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
@@ -82,10 +83,12 @@ import java.net.URL;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -117,11 +120,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public static final String ENTRY_NO_DOI_ERROR_MESSAGE = "Entry does not have a concept DOI associated with it";
     public static final String VERSION_NO_DOI_ERROR_MESSAGE = "Version does not have a DOI url associated with it";
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
-    private static final int PAGE_SIZE = 50;
+    private static final int LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE = 25;
 
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
-    private final WorkflowVersionDAO workflowVersionDAO;
+    private final WorkflowDAO workflowDAO;
     private final VersionDAO<?> versionDAO;
     private final UserDAO userDAO;
     private final CollectionHelper collectionHelper;
@@ -139,14 +142,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
-        WorkflowVersionDAO workflowVersionDAO, DockstoreWebserviceConfiguration configuration) {
+        WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration configuration) {
         this.sesssionFactory = sessionFactory;
         this.permissionsInterface = permissionsInterface;
+        this.workflowDAO = workflowDAO;
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
         this.userDAO = userDAO;
-        this.workflowVersionDAO = workflowVersionDAO;
         this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO, versionDAO);
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
@@ -433,45 +436,109 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     @Path("/updateLanguageVersions")
-    @UnitOfWork
-    @Timed
     @RolesAllowed("admin")
+    @Deprecated
+    @UnitOfWork
     @POST
     @Operation(operationId = "updateLanguageVersions", description = "Update language versions", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A number")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Number of entries processed",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)))
     public int updateLanguageVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @Parameter(description = "The descriptor language", in = ParameterIn.QUERY, required = true) @QueryParam("language") DescriptorLanguage descriptorLanguage,
-        @Parameter(description = "Published or unpublished", in = ParameterIn.QUERY, required = true) @QueryParam("published") boolean published) {
-        boolean done = false;
-        int offset = 0;
-        int pageSize = PAGE_SIZE;
-        int processed = 0;
-        while (!done) {
-            final List<Long> workflowIds =
-                this.toolDAO.getWorkflowIds(offset, pageSize, descriptorLanguage, published);
-            if (workflowIds.size() < pageSize) {
-                done = true;
-            }
-            processed += workflowIds.size();
-            LOG.info("Executing {} workflow updates starting at offset {}", pageSize, offset);
-            offset += pageSize;
+        @Parameter(description = "Whether to process all versions or only versions without language descriptor already set", in = ParameterIn.QUERY, required = false) @QueryParam("allVersions") @DefaultValue("false") boolean allVersions) {
+        return updateLanguageVersionsForLegacyTools(allVersions) + updateLanguageVersionsForWorkflows(allVersions);
+    }
+
+    private int updateLanguageVersionsForWorkflows(boolean allVersions) {
+        final LanguageVersionProgress progress = new LanguageVersionProgress();
+        while (!progress.done) {
             final TransactionHelper transactionHelper = new TransactionHelper(sesssionFactory);
-            transactionHelper.transaction(() -> workflowIds.forEach(workflowId -> {
-                final List<WorkflowVersion> workflowVersions =
-                    workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflowId, Integer.MAX_VALUE, 0);
-                final LanguageHandlerInterface languageHandlerInterface =
-                    LanguageHandlerFactory.getInterface(descriptorLanguage);
-                workflowVersions.forEach(workflowVersion -> {
-                    final Optional<SourceFile> maybePrimary
-                        = workflowVersion.getSourceFiles().stream()
-                        .filter(sf -> sf.getPath().equals(workflowVersion.getWorkflowPath()))
-                        .findFirst();
-                    maybePrimary.ifPresent(primary -> languageHandlerInterface
-                        .parseWorkflowContent(primary.getPath(), primary.getContent(), workflowVersion.getSourceFiles(), workflowVersion));
+            transactionHelper.transaction(() -> {
+                final List<Workflow> workflows = this.workflowDAO
+                    .findAllWorkflows(progress.offset, LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE);
+                if (workflows.size() < LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE) {
+                    progress.done = true;
+                }
+                progress.processedEntries += workflows.size();
+                LOG.info("Executing {} workflow language version updates starting at offset {}",
+                    LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE, progress.offset);
+                progress.offset += LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE;
+                workflows.forEach(workflow -> {
+                    final DescriptorLanguage descriptorLanguage = workflow.getDescriptorType();
+                    processWorkflowVersions(descriptorLanguage, workflow.getWorkflowVersions(), allVersions);
                 });
-            }));
+            });
         }
-        return processed;
+        LOG.info("Completed processing {} workflows", progress.processedEntries);
+        return progress.processedEntries;
+    }
+
+    private int updateLanguageVersionsForLegacyTools(boolean allVersions) {
+        final LanguageVersionProgress progress = new LanguageVersionProgress();
+        while (!progress.done) {
+            final TransactionHelper transactionHelper = new TransactionHelper(sesssionFactory);
+            transactionHelper.transaction(() -> {
+                final List<Tool> tools =
+                    this.toolDAO.findAllTools(progress.offset, LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE);
+                if (tools.size() < LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE) {
+                    progress.done = true;
+                }
+                progress.processedEntries += tools.size();
+                LOG.info("Executing {} tool language version updates starting at offset {}",
+                    LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE, progress.offset);
+                progress.offset += LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE;
+                tools.stream()
+                    .filter(tool -> tool.getDescriptorType().size() == 1) // Only support tools with 1 language
+                    .forEach(tool -> {
+                        final String descriptorLanguageText = tool.getDescriptorType().get(0);
+                        final DescriptorLanguage descriptorLanguage =
+                            DescriptorLanguage.convertShortStringToEnum(descriptorLanguageText);
+                        processTags(descriptorLanguage, tool.getWorkflowVersions(), allVersions);
+                    });
+            });
+        }
+        LOG.info("Completed processing {} legacy tools", progress.processedEntries);
+        return progress.processedEntries;
+    }
+
+    private void updateVersionWithLanguageVersions(final LanguageHandlerInterface languageHandlerInterface,
+        final Version<? extends Version> workflowVersion, String primaryPath) {
+        workflowVersion.getSourceFiles().stream()
+            .filter(sf -> isPrimaryDescriptor(primaryPath, sf))
+            .findFirst()
+            .ifPresent(primary ->
+                languageHandlerInterface.parseWorkflowContent(primaryPath,
+                    primary.getContent(), workflowVersion.getSourceFiles(), workflowVersion));
+    }
+
+    private void processWorkflowVersions(final DescriptorLanguage descriptorLanguage, final Set<WorkflowVersion> versions,
+        final boolean allVersions) {
+        LanguageHandlerInterface languageHandlerInterface = LanguageHandlerFactory.getInterface(descriptorLanguage);
+        versions.stream()
+            .filter(version -> allVersions || version.getVersionMetadata().getDescriptorTypeVersions().isEmpty())
+            .forEach(version -> {
+                final String primaryPath = version.getWorkflowPath();
+                updateVersionWithLanguageVersions(languageHandlerInterface, version, primaryPath);
+            });
+    }
+
+    private void processTags(final DescriptorLanguage descriptorLanguage, final Set<io.dockstore.webservice.core.Tag> versions,
+        final boolean allVersions) {
+        LanguageHandlerInterface languageHandlerInterface = LanguageHandlerFactory.getInterface(descriptorLanguage);
+        versions.stream()
+            .filter(version -> allVersions || version.getVersionMetadata().getDescriptorTypeVersions().isEmpty())
+            .forEach(version -> {
+                final String primaryPath;
+                if (descriptorLanguage == DescriptorLanguage.WDL) {
+                    primaryPath = version.getWdlPath();
+                } else { // We do not plan to add new languages to Tool (perhaps to AppTool), so this is safe
+                    primaryPath = version.getCwlPath();
+                }
+                updateVersionWithLanguageVersions(languageHandlerInterface, version, primaryPath);
+            });
+    }
+
+    private boolean isPrimaryDescriptor(String path, SourceFile sourceFile) {
+        return sourceFile.getPath().equals(path);
     }
 
     @GET
@@ -605,4 +672,16 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public boolean canShare(User user, Entry entry) {
         return AuthenticatedResourceInterface.super.canShare(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.SHARE);
     }
+
+    /**
+     * Need this because
+     *
+     * Can't
+     */
+    private static class LanguageVersionProgress {
+        private int offset = 0;
+        private int processedEntries = 0;
+        private boolean done = false;
+    }
+
 }

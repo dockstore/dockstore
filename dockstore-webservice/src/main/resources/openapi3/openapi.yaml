@@ -2195,33 +2195,25 @@ paths:
       - entries
   /entries/updateLanguageVersions:
     post:
+      deprecated: true
       description: Update language versions
       operationId: updateLanguageVersions
       parameters:
-      - description: The descriptor language
+      - description: Whether to process all versions or only versions without language
+          descriptor already set
         in: query
-        name: language
-        required: true
-        schema:
-          type: string
-          enum:
-          - SMK
-          - CWL
-          - WDL
-          - gxformat2
-          - SWL
-          - NFL
-          - service
-          - ipynb
-      - description: Published or unpublished
-        in: query
-        name: published
-        required: true
+        name: allVersions
         schema:
           type: boolean
+          default: false
       responses:
         "200":
-          description: A number
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+          description: Number of entries processed
       security:
       - BEARER: []
       tags:
@@ -9954,6 +9946,7 @@ components:
       - BIOWORKFLOW
       - SERVICE
       - APPTOOL
+      - NOTEBOOK
     WorkflowVersion:
       type: object
       properties:

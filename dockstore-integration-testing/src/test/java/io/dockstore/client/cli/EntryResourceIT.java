@@ -317,4 +317,25 @@ class EntryResourceIT extends BaseIT {
         workflow = workflowsApi.getWorkflow(workflow.getId(), "");
         assertEquals("test repo for CWL and WDL workflows", workflow.getTopic());
     }
+
+    @Test
+    void testUpdateLanguageVersions() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/dockstore.wdl", "",
+            DescriptorLanguage.WDL.getShortName(), "");
+        workflowsApi.refresh1(workflow.getId(), true);
+        assertEquals(0, rowsWithDescriptorTypeVersions());
+        final Integer processed = entriesApi.updateLanguageVersions(Boolean.TRUE);
+        assertEquals(5, processed); // 4 tools, plus workflow above
+        // A lot of the test content is invalid, hence only 2 versions' metadata get set
+        assertEquals(2, rowsWithDescriptorTypeVersions());
+    }
+
+    private Long rowsWithDescriptorTypeVersions() {
+        return testingPostgres.runSelectStatement(
+            "select count(*) from version_metadata where descriptortypeversions is not null",
+            Long.class);
+    }
 }

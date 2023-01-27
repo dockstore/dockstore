@@ -330,6 +330,14 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             .setFirstResult(offset).setMaxResults(pageSize).getResultList();
     }
 
+    public List<Long> getToolIds(int offset, int pageSize, DescriptorLanguage descriptorLanguage) {
+        return (List<Long>) this.currentSession().getNamedQuery("Entry.getToolIds")
+            .setParameter("descriptorLanguage", descriptorLanguage)
+            .setFirstResult(offset)
+            .setMaxResults(pageSize)
+            .getResultList();
+    }
+
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
         List<Predicate> predicates = new ArrayList<>();
         if (!Strings.isNullOrEmpty(filter)) {
