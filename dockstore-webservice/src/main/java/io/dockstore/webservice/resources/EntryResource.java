@@ -435,7 +435,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     @Path("/updateLanguageVersions")
     @RolesAllowed("admin")
-    @Deprecated
     @UnitOfWork
     @POST
     @Operation(operationId = "updateLanguageVersions", description = "Update language versions", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
@@ -668,7 +667,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     /**
-     * Need this class because one cannot access non-final variables from inside a lambda
+     * Need this class because the values need to be accessed from a lambda, and a lambda can
+     * only access "effectively final" variables from outside the lambda.
      *
      */
     private static class LanguageVersionProgress {

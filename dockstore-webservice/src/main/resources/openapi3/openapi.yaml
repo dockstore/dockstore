@@ -2195,7 +2195,6 @@ paths:
       - entries
   /entries/updateLanguageVersions:
     post:
-      deprecated: true
       description: Update language versions
       operationId: updateLanguageVersions
       parameters:

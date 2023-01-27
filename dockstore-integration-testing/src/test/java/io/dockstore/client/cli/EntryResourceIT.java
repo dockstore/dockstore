@@ -323,14 +323,43 @@ class EntryResourceIT extends BaseIT {
         ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EntriesApi entriesApi = new EntriesApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/dockstore.wdl", "",
-            DescriptorLanguage.WDL.getShortName(), "");
-        workflowsApi.refresh1(workflow.getId(), true);
         assertEquals(0, rowsWithDescriptorTypeVersions());
+        Workflow wdlWorkflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "",
+            DescriptorLanguage.WDL.getShortName(), "");
+        wdlWorkflow = workflowsApi.refresh1(wdlWorkflow.getId(), true);
+        final List<WorkflowVersion> wdlWorkflowVersions = wdlWorkflow.getWorkflowVersions();
+        Workflow cwlWorkflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "cwlworkflow",
+            DescriptorLanguage.CWL.getShortName(), "");
+        cwlWorkflow = workflowsApi.refresh1(cwlWorkflow.getId(), true);
+        final List<WorkflowVersion> cwlWorkflowVersions = cwlWorkflow.getWorkflowVersions();
+
+        // Clear descriptor language versions
+        testingPostgres.runUpdateStatement("update version_metadata set descriptortypeversions = null");
+        testingPostgres.runUpdateStatement("update sourcefile_metadata set typeVersion = null");
+        // Confirm the above worked cleared out the language versions
+        wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
+        wdlWorkflow.getWorkflowVersions().forEach(wv -> assertEquals(List.of(), wv.getVersionMetadata().getDescriptorTypeVersions()));
+        cwlWorkflow = workflowsApi.getWorkflow(cwlWorkflow.getId(), null);
+        cwlWorkflow.getWorkflowVersions().forEach(wv -> assertEquals(List.of(), wv.getVersionMetadata().getDescriptorTypeVersions()));
+
         final Integer processed = entriesApi.updateLanguageVersions(Boolean.TRUE);
-        assertEquals(5, processed); // 4 tools, plus workflow above
-        // A lot of the test content is invalid, hence only 2 versions' metadata get set
-        assertEquals(2, rowsWithDescriptorTypeVersions());
+
+        // Running the endpoint should have restored the language versions to what they were
+        // before wiping the DB rows.
+        wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
+        wdlWorkflow.getWorkflowVersions().forEach(wv -> assertTrue(languageVersionsMatch(wv, wdlWorkflowVersions)));
+        cwlWorkflow = workflowsApi.getWorkflow(cwlWorkflow.getId(), null);
+        cwlWorkflow.getWorkflowVersions().forEach(wv -> assertTrue(languageVersionsMatch(wv, cwlWorkflowVersions)));
+
+        assertEquals(6, processed); // 4 tools, plus 2 workflows above
+        assertEquals(7, rowsWithDescriptorTypeVersions());
+    }
+
+    private boolean languageVersionsMatch(WorkflowVersion updatedVersion, List<WorkflowVersion> oldVersions) {
+        return oldVersions.stream().filter(oldVersion -> oldVersion.getName().equals(updatedVersion.getName()))
+            .findFirst()
+            .map(found -> found.getVersionMetadata().getDescriptorTypeVersions().equals(updatedVersion.getVersionMetadata().getDescriptorTypeVersions()))
+            .orElse(Boolean.FALSE);
     }
 
     private Long rowsWithDescriptorTypeVersions() {
