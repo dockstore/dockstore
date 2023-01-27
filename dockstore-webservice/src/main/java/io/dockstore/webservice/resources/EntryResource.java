@@ -136,12 +136,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String hostName;
     private final boolean isProduction;
     private final PermissionsInterface permissionsInterface;
-    private final SessionFactory sesssionFactory;
+    private final SessionFactory sessionFactory;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
         WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration configuration) {
-        this.sesssionFactory = sessionFactory;
+        this.sessionFactory = sessionFactory;
         this.permissionsInterface = permissionsInterface;
         this.workflowDAO = workflowDAO;
         this.toolDAO = toolDAO;
@@ -449,7 +449,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private int updateLanguageVersionsForWorkflows(boolean allVersions) {
         final LanguageVersionProgress progress = new LanguageVersionProgress();
         while (!progress.done) {
-            final TransactionHelper transactionHelper = new TransactionHelper(sesssionFactory);
+            final TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
             transactionHelper.transaction(() -> {
                 final List<Workflow> workflows = this.workflowDAO
                     .findAllWorkflows(progress.offset, LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE);
@@ -479,7 +479,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private int updateLanguageVersionsForLegacyTools(boolean allVersions) {
         final LanguageVersionProgress progress = new LanguageVersionProgress();
         while (!progress.done) {
-            final TransactionHelper transactionHelper = new TransactionHelper(sesssionFactory);
+            final TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
             transactionHelper.transaction(() -> {
                 final List<Tool> tools =
                     this.toolDAO.findAllTools(progress.offset, LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE);
