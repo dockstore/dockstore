@@ -668,9 +668,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     /**
-     * Need this because
+     * Need this class because one cannot access non-final variables from inside a lambda
      *
-     * Can't
      */
     private static class LanguageVersionProgress {
         private int offset = 0;

@@ -5282,7 +5282,6 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
-        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5314,7 +5313,6 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
-        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5470,7 +5468,6 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
-        - "NOTEBOOK"
       - name: "versionName"
         in: "query"
         description: "Version name"
@@ -5570,7 +5567,6 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
-        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
