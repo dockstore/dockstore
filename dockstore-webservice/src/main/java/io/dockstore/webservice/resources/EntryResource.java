@@ -37,7 +37,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -83,7 +82,6 @@ import java.net.URL;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -463,8 +461,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                     LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE, progress.offset);
                 progress.offset += LANGUAGE_VERSION_PROCESSOR_PAGE_SIZE;
                 workflows.forEach(workflow -> {
-                    final DescriptorLanguage descriptorLanguage = workflow.getDescriptorType();
-                    processWorkflowVersions(descriptorLanguage, workflow.getWorkflowVersions(), allVersions);
+                    LanguageHandlerInterface languageHandlerInterface = LanguageHandlerFactory.getInterface(
+                        workflow.getDescriptorType());
+                    workflow.getWorkflowVersions().stream()
+                        .filter(version -> allVersions || version.getVersionMetadata().getDescriptorTypeVersions().isEmpty())
+                        .forEach(version -> {
+                            final String primaryPath = version.getWorkflowPath();
+                            readSourceFilesAndUpdate(languageHandlerInterface, version, primaryPath);
+                        });
                 });
             });
         }
@@ -490,9 +494,19 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                     .filter(tool -> tool.getDescriptorType().size() == 1) // Only support tools with 1 language
                     .forEach(tool -> {
                         final String descriptorLanguageText = tool.getDescriptorType().get(0);
-                        final DescriptorLanguage descriptorLanguage =
-                            DescriptorLanguage.convertShortStringToEnum(descriptorLanguageText);
-                        processTags(descriptorLanguage, tool.getWorkflowVersions(), allVersions);
+                        LanguageHandlerInterface languageHandlerInterface = LanguageHandlerFactory.getInterface(
+                            DescriptorLanguage.convertShortStringToEnum(descriptorLanguageText));
+                        tool.getWorkflowVersions().stream()
+                            .filter(version -> allVersions || version.getVersionMetadata().getDescriptorTypeVersions().isEmpty())
+                            .forEach(version -> {
+                                final String primaryPath;
+                                if (DescriptorLanguage.convertShortStringToEnum(descriptorLanguageText) == DescriptorLanguage.WDL) {
+                                    primaryPath = version.getWdlPath();
+                                } else { // We will not add new languages to Tool (perhaps to AppTool), so this is safe
+                                    primaryPath = version.getCwlPath();
+                                }
+                                readSourceFilesAndUpdate(languageHandlerInterface, version, primaryPath);
+                            });
                     });
             });
         }
@@ -500,7 +514,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return progress.processedEntries;
     }
 
-    private void updateVersionWithLanguageVersions(final LanguageHandlerInterface languageHandlerInterface,
+    private void readSourceFilesAndUpdate(final LanguageHandlerInterface languageHandlerInterface,
         final Version<? extends Version> workflowVersion, String primaryPath) {
         workflowVersion.getSourceFiles().stream()
             .filter(sf -> isPrimaryDescriptor(primaryPath, sf))
@@ -508,33 +522,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             .ifPresent(primary ->
                 languageHandlerInterface.parseWorkflowContent(primaryPath,
                     primary.getContent(), workflowVersion.getSourceFiles(), workflowVersion));
-    }
-
-    private void processWorkflowVersions(final DescriptorLanguage descriptorLanguage, final Set<WorkflowVersion> versions,
-        final boolean allVersions) {
-        LanguageHandlerInterface languageHandlerInterface = LanguageHandlerFactory.getInterface(descriptorLanguage);
-        versions.stream()
-            .filter(version -> allVersions || version.getVersionMetadata().getDescriptorTypeVersions().isEmpty())
-            .forEach(version -> {
-                final String primaryPath = version.getWorkflowPath();
-                updateVersionWithLanguageVersions(languageHandlerInterface, version, primaryPath);
-            });
-    }
-
-    private void processTags(final DescriptorLanguage descriptorLanguage, final Set<io.dockstore.webservice.core.Tag> versions,
-        final boolean allVersions) {
-        LanguageHandlerInterface languageHandlerInterface = LanguageHandlerFactory.getInterface(descriptorLanguage);
-        versions.stream()
-            .filter(version -> allVersions || version.getVersionMetadata().getDescriptorTypeVersions().isEmpty())
-            .forEach(version -> {
-                final String primaryPath;
-                if (descriptorLanguage == DescriptorLanguage.WDL) {
-                    primaryPath = version.getWdlPath();
-                } else { // We do not plan to add new languages to Tool (perhaps to AppTool), so this is safe
-                    primaryPath = version.getCwlPath();
-                }
-                updateVersionWithLanguageVersions(languageHandlerInterface, version, primaryPath);
-            });
     }
 
     private boolean isPrimaryDescriptor(String path, SourceFile sourceFile) {
