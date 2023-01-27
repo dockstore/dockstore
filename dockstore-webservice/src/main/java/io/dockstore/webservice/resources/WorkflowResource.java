@@ -873,11 +873,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     private Class<? extends Workflow> getSubClass(WorkflowSubClass subclass) {
-        try {
-            return subclass.getTargetClass();
-        } catch (Exception e) {
-            throw new CustomWebApplicationException(subclass + " is not a valid subclass.", HttpStatus.SC_BAD_REQUEST);
+        if (subclass == null) {
+            throw new CustomWebApplicationException("Subclass cannot be null", HttpStatus.SC_BAD_REQUEST);
         }
+        return subclass.getTargetClass();
     }
 
     @SuppressWarnings("checkstyle:MagicNumber")
