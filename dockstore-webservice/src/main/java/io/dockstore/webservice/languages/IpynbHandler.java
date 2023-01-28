@@ -192,11 +192,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
     }
 
     private String extractProgrammingLanguage(Nbformat notebook) {
-        Nbformat.Metadata.LanguageInfo languageInfo = notebook.getMetadata().getLanguageInfo();
-        if (languageInfo != null) {
-            return ObjectUtils.firstNonNull(languageInfo.getName(), PYTHON);
-        }
-        return PYTHON;
+        return notebook.getMetadata().optLanguageInfo().flatMap(Nbformat.Metadata.LanguageInfo::optName).orElse(PYTHON);
     }
 
     @Override
@@ -273,8 +269,16 @@ public class IpynbHandler implements LanguageHandlerInterface {
                 return authors;
             }
 
+            public Optional<List<Author>> optAuthors() {
+                return Optional.ofNullable(getAuthors());
+            }
+
             public LanguageInfo getLanguageInfo() {
                 return languageInfo;
+            }
+
+            public Optional<LanguageInfo> optLanguageInfo() {
+                return Optional.ofNullable(getLanguageInfo());
             }
 
             public static class Author {
@@ -285,6 +289,10 @@ public class IpynbHandler implements LanguageHandlerInterface {
                 private String getName() {
                     return name;
                 }
+
+                private Optional<String> optName() {
+                    return Optional.ofNullable(getName());
+                }
             }
 
             public static class LanguageInfo {
@@ -294,6 +302,10 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
                 private String getName() {
                     return name;
+                }
+
+                private Optional<String> optName() {
+                    return Optional.ofNullable(getName());
                 }
             }
         }
