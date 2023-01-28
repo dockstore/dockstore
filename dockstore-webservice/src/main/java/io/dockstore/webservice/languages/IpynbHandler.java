@@ -87,19 +87,18 @@ public class IpynbHandler implements LanguageHandlerInterface {
     }
 
     private void processAuthors(Nbformat notebook, Version version) {
-        List<Nbformat.Metadata.Author> notebookAuthors = notebook.getMetadata().getAuthors();
-        if (notebookAuthors != null) {
-            version.setAuthors(
-                notebookAuthors.stream()
-                    .map(Nbformat.Metadata.Author::getName)
-                    .filter(StringUtils::isNotEmpty)
-                    .map(name -> {
-                        Author versionAuthor = new Author();
-                        versionAuthor.setName(name);
-                        LOG.info("Notebook file contains author '{}'", name);
-                        return versionAuthor;
-                    })
-                    .collect(Collectors.toSet())
+        List<Nbformat.Metadata.Author> authors = notebook.getMetadata().getAuthors();
+        if (authors != null) {
+            version.setAuthors(authors.stream()
+                .map(Nbformat.Metadata.Author::getName)
+                .filter(StringUtils::isNotEmpty)
+                .map(name -> {
+                    Author versionAuthor = new Author();
+                    versionAuthor.setName(name);
+                    LOG.info("Notebook file contains author '{}'", name);
+                    return versionAuthor;
+                })
+                .collect(Collectors.toSet())
             );
         }
     }
@@ -233,9 +232,6 @@ public class IpynbHandler implements LanguageHandlerInterface {
      * Partial read-only POJO representation of a parsed notebook file.
      */
     public static class Nbformat {
-       
-        @SerializedName("metadata")
-        private Metadata metadata;
 
         @SerializedName("nbformat")
         private Integer formatMajor;
@@ -243,12 +239,11 @@ public class IpynbHandler implements LanguageHandlerInterface {
         @SerializedName("nbformat_minor")
         private Integer formatMinor;
 
+        @SerializedName("metadata")
+        private Metadata metadata;
+
         @SerializedName("cells")
         private List<Cell> cells;
-
-        public Metadata getMetadata() {
-            return metadata;
-        }
 
         public Integer getFormatMajor() {
             return formatMajor;
@@ -260,6 +255,10 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
         public List<Cell> getCells() {
             return cells;
+        }
+
+        public Metadata getMetadata() {
+            return metadata;
         }
 
         public static class Metadata {
