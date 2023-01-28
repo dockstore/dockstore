@@ -15,6 +15,9 @@
 
 package io.dockstore.webservice.languages;
 
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.annotations.SerializedName;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Author;
@@ -35,9 +38,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ObjectUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,23 +53,15 @@ public class IpynbHandler implements LanguageHandlerInterface {
     public static final Set<String> REES_FILES = Set.of("environment.yml", "Pipfile", "Pipfile.lock", "requirements.txt", "setup.py", "Project.toml", "REQUIRE", "install.R", "apt.txt", "DESCRIPTION", "postBuild", "start", "runtime.txt", "default.nix", "Dockerfile");
     public static final Set<String> REES_DIRS = Set.of("/", "/binder/", "/.binder/");
 
-    private static final String NBFORMAT_KEY = "nbformat";
-    private static final String NBFORMAT_MINOR_KEY = "nbformat_minor";
-    private static final String METADATA_KEY = "metadata";
-    private static final String CELLS_KEY = "cells";
-    private static final String AUTHORS_KEY = "authors";
-    private static final String LANGUAGE_INFO_KEY = "language_info";
-    private static final String NAME_KEY = "name";
     private static final String PYTHON = "python";
 
     @Override
     public Version parseWorkflowContent(String filePath, String content, Set<SourceFile> sourceFiles, Version version) {
 
-        // Parse the notebook JSON.
-        JSONObject notebook;
+        Nbformat notebook;
         try {
-            notebook = new JSONObject(content);
-        } catch (JSONException ex) {
+            notebook = parseNotebook(content);
+        } catch (JsonSyntaxException ex) {
             LOG.error("Could not parse notebook", ex);
             return version;
         }
@@ -79,39 +72,46 @@ public class IpynbHandler implements LanguageHandlerInterface {
         return version;
     }
 
-    private void processAuthors(JSONObject notebook, Version version) {
-        try {
-            // This code will intentionally throw a JSONException if the "authors" field is not present.
-            JSONArray jsonAuthors = notebook.getJSONObject(METADATA_KEY).getJSONArray(AUTHORS_KEY);
-            Set<Author> versionAuthors = new LinkedHashSet<>();
-            for (int i = 0; i < jsonAuthors.length(); i++) {
-                JSONObject jsonAuthor = jsonAuthors.getJSONObject(i);
-                String name = jsonAuthor.optString(NAME_KEY, null);
-                if (name != null && name.length() > 0) {
-                    Author versionAuthor = new Author();
-                    versionAuthor.setName(name);
-                    versionAuthors.add(versionAuthor);
-                }
-                LOG.info("Notebook file contains author {}", name);
-            }
-            version.setAuthors(versionAuthors);
-        } catch (JSONException ex) {
-            LOG.warn("Could not extract notebook author information", ex);
+    private Nbformat parseNotebook(String content) throws JsonSyntaxException {
+        Nbformat notebook = new GsonBuilder().create().fromJson(content, Nbformat.class);
+        if (notebook.getMetadata() == null) {
+            throw new JsonSyntaxException("Notebook is missing the 'metadata' field");
+        }
+        if (notebook.getCells() == null) {
+            throw new JsonSyntaxException("Notebook is missing the 'cells' field");
+        }
+        if (notebook.getFormatMajor() == null || notebook.getFormatMinor() == null) {
+            throw new JsonSyntaxException("Notebook format fields are missing or malformed");
+        }
+        return notebook;
+    }
+
+    private void processAuthors(Nbformat notebook, Version version) {
+        List<Nbformat.Metadata.Author> notebookAuthors = notebook.getMetadata().getAuthors();
+        if (notebookAuthors != null) {
+            version.setAuthors(
+                notebookAuthors.stream()
+                    .map(Nbformat.Metadata.Author::getName)
+                    .filter(StringUtils::isNotEmpty)
+                    .map(name -> {
+                        Author versionAuthor = new Author();
+                        versionAuthor.setName(name);
+                        LOG.info("Notebook file contains author '{}'", name);
+                        return versionAuthor;
+                    })
+                    .collect(Collectors.toSet())
+            );
         }
     }
 
-    private void processRelease(JSONObject notebook, Version version, String notebookPath, Set<SourceFile> sourceFiles) {
-        try {
-            int formatMajor = notebook.getInt(NBFORMAT_KEY);
-            int formatMinor = notebook.getInt(NBFORMAT_MINOR_KEY);
-            String format = formatMajor + "." + formatMinor;
-            sourceFiles.stream()
-                .filter(file -> file.getAbsolutePath().equals(notebookPath))
-                .forEach(file -> file.setTypeVersion(format));
-            version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
-        } catch (JSONException ex) {
-            LOG.warn("Could not extract notebook version information", ex);
-        }
+    private void processRelease(Nbformat notebook, Version version, String notebookPath, Set<SourceFile> sourceFiles) {
+        Integer formatMajor = notebook.getFormatMajor();
+        Integer formatMinor = notebook.getFormatMinor();
+        String format = formatMajor + "." + formatMinor;
+        sourceFiles.stream()
+            .filter(file -> file.getAbsolutePath().equals(notebookPath))
+            .forEach(file -> file.setTypeVersion(format));
+        version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
     }
 
     @Override
@@ -169,29 +169,22 @@ public class IpynbHandler implements LanguageHandlerInterface {
         }
         String content = file.get().getContent();
 
-        // Parse the notebook JSON.
-        JSONObject notebook;
+        // Parse the notebook.
+        Nbformat notebook;
         try {
-            notebook = new JSONObject(content);
-        } catch (JSONException ex) {
-            return negativeValidation(notebookPath, "The notebook file is not valid JSON", ex);
-        }
-
-        // Confirm the existence and typedness of the fields that should always be present.
-        try {
-            checkEssentialFields(notebook);
-        } catch (JSONException ex) {
+            notebook = parseNotebook(content);
+        } catch (JsonSyntaxException ex) {
             return negativeValidation(notebookPath, "The notebook file is malformed", ex);
         }
 
-        // Check that the entry's programming language (descriptor language subclass) matches the notebook's programming language.
+        // Confirm that the entry's programming language (descriptor type subclass) matches the notebook's programming language.
         try {
             String entryLanguage = workflow.getDescriptorTypeSubclass().toString();
             String notebookLanguage = extractProgrammingLanguage(notebook);
             if (!entryLanguage.equalsIgnoreCase(notebookLanguage)) {
                 return negativeValidation(notebookPath, String.format("The notebook programming language must be '%s'", entryLanguage));
             }
-        } catch (JSONException ex) {
+        } catch (JsonSyntaxException ex) {
             return negativeValidation(notebookPath, "Error reading the notebook programming language", ex);
         }
 
@@ -199,19 +192,10 @@ public class IpynbHandler implements LanguageHandlerInterface {
         return positiveValidation();
     }
 
-    private void checkEssentialFields(JSONObject notebook) throws JSONException {
-        // The JSONObject.get* methods throw if the key is missing or not set to the expected type of value.
-        notebook.getJSONObject(METADATA_KEY);
-        notebook.getInt(NBFORMAT_KEY);
-        notebook.getInt(NBFORMAT_MINOR_KEY);
-        notebook.getJSONArray(CELLS_KEY);
-    }
-
-    private String extractProgrammingLanguage(JSONObject notebook) throws JSONException {
-        JSONObject metadata = notebook.getJSONObject(METADATA_KEY);
-        // If key "language_info" is present, the spec says that it must contain the key "name".
-        if (metadata.has(LANGUAGE_INFO_KEY)) {
-            return metadata.getJSONObject(LANGUAGE_INFO_KEY).optString(NAME_KEY, PYTHON);
+    private String extractProgrammingLanguage(Nbformat notebook) {
+        Nbformat.Metadata.LanguageInfo languageInfo = notebook.getMetadata().getLanguageInfo();
+        if (languageInfo != null) {
+            return ObjectUtils.firstNonNull(languageInfo.getName(), PYTHON);
         }
         return PYTHON;
     }
@@ -243,5 +227,79 @@ public class IpynbHandler implements LanguageHandlerInterface {
         }
         LOG.warn("Created negative validation, file {}: {}", path, message, ex);
         return new VersionTypeValidation(false, Map.of(path, message));
+    }
+
+    /**
+     * Partial read-only POJO representation of a parsed notebook file.
+     */
+    public static class Nbformat {
+       
+        @SerializedName("metadata")
+        private Metadata metadata;
+
+        @SerializedName("nbformat")
+        private Integer formatMajor;
+
+        @SerializedName("nbformat_minor")
+        private Integer formatMinor;
+
+        @SerializedName("cells")
+        private List<Cell> cells;
+
+        public Metadata getMetadata() {
+            return metadata;
+        }
+
+        public Integer getFormatMajor() {
+            return formatMajor;
+        }
+
+        public Integer getFormatMinor() {
+            return formatMinor;
+        }
+
+        public List<Cell> getCells() {
+            return cells;
+        }
+
+        public static class Metadata {
+
+            @SerializedName("authors")
+            private List<Author> authors;
+
+            @SerializedName("language_info")
+            private LanguageInfo languageInfo;
+
+            public List<Author> getAuthors() {
+                return authors;
+            }
+
+            public LanguageInfo getLanguageInfo() {
+                return languageInfo;
+            }
+
+            public static class Author {
+
+                @SerializedName("name")
+                private String name;
+
+                private String getName() {
+                    return name;
+                }
+            }
+
+            public static class LanguageInfo {
+
+                @SerializedName("name")
+                private String name;
+
+                private String getName() {
+                    return name;
+                }
+            }
+        }
+
+        public static class Cell {
+        }
     }
 }

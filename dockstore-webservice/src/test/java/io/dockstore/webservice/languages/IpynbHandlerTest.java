@@ -56,11 +56,13 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 class IpynbHandlerTest {
 
+    /*
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());
 
     @SystemStub
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    */
 
     private static final String PATH = "/hello.ipynb";
     private static final String CONTENT = read("hello.ipynb");
@@ -188,12 +190,24 @@ class IpynbHandlerTest {
         SourceFile file = mockSourceFile(PATH, CONTENT, DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
         assertTrue(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
-        // Invalid JSON.
+        // Invalid JSON syntax.
         file = mockSourceFile(PATH, CONTENT.replaceFirst("\\{", "["), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
+
+        // Valid JSON but no "metadata" field.
+        file = mockSourceFile(PATH, CONTENT.replaceFirst("\"metadata\"", "\"foo\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Valid JSON but no "cells" field.
         file = mockSourceFile(PATH, CONTENT.replaceFirst("\"cells\"", "\"foo\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
+
+        // Valid JSON but no "nbformat" field.
+        file = mockSourceFile(PATH, CONTENT.replaceFirst("\"nbformat\"", "\"foo\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
+
+        // Valid JSON but non-integer "nbformat" field.
+        file = mockSourceFile(PATH, CONTENT.replaceFirst("4,", "\"foo\","), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Different programming language.
