@@ -56,13 +56,11 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @ExtendWith(SystemStubsExtension.class)
 class IpynbHandlerTest {
 
-    /*
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());
 
     @SystemStub
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
-    */
 
     private static final String PATH = "/hello.ipynb";
     private static final String CONTENT = read("hello.ipynb");
@@ -94,6 +92,10 @@ class IpynbHandlerTest {
         file.setContent(content);
         file.setType(fileType);
         return file;
+    }
+
+    private SourceFile mockIpynb(String path, String content) {
+        return mockSourceFile(path, content, DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
     }
 
     private SourceCodeRepoInterface mockRepo(Set<String> paths) {
@@ -187,31 +189,39 @@ class IpynbHandlerTest {
         notebook.setDescriptorTypeSubclass(DescriptorLanguageSubclass.PYTHON);
 
         // Well-formed.
-        SourceFile file = mockSourceFile(PATH, CONTENT, DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        SourceFile file = mockIpynb(PATH, CONTENT);
         assertTrue(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
+        // Empty file.
+        file = mockIpynb(PATH, "");
+        assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
+
+        // Empty object.
+        file = mockIpynb(PATH, "{ }");
+        assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
+
         // Invalid JSON syntax.
-        file = mockSourceFile(PATH, CONTENT.replaceFirst("\\{", "["), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        file = mockIpynb(PATH, CONTENT.replaceFirst("\\{", "["));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Valid JSON but no "metadata" field.
-        file = mockSourceFile(PATH, CONTENT.replaceFirst("\"metadata\"", "\"foo\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        file = mockIpynb(PATH, CONTENT.replaceFirst("\"metadata\"", "\"foo\""));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Valid JSON but no "cells" field.
-        file = mockSourceFile(PATH, CONTENT.replaceFirst("\"cells\"", "\"foo\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        file = mockIpynb(PATH, CONTENT.replaceFirst("\"cells\"", "\"foo\""));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Valid JSON but no "nbformat" field.
-        file = mockSourceFile(PATH, CONTENT.replaceFirst("\"nbformat\"", "\"foo\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        file = mockIpynb(PATH, CONTENT.replaceFirst("\"nbformat\"", "\"foo\""));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Valid JSON but non-integer "nbformat" field.
-        file = mockSourceFile(PATH, CONTENT.replaceFirst("4,", "\"foo\","), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        file = mockIpynb(PATH, CONTENT.replaceFirst("4,", "\"foo\","));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Different programming language.
-        file = mockSourceFile(PATH, CONTENT.replace("\"python\"", "\"julia\""), DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        file = mockIpynb(PATH, CONTENT.replace("\"python\"", "\"julia\""));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
     }
 

@@ -16,7 +16,7 @@
 package io.dockstore.webservice.languages;
 
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonParseException;
 import com.google.gson.annotations.SerializedName;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
@@ -29,7 +29,6 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -61,7 +60,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
         Nbformat notebook;
         try {
             notebook = parseNotebook(content);
-        } catch (JsonSyntaxException ex) {
+        } catch (JsonParseException ex) {
             LOG.error("Could not parse notebook", ex);
             return version;
         }
@@ -72,16 +71,19 @@ public class IpynbHandler implements LanguageHandlerInterface {
         return version;
     }
 
-    private Nbformat parseNotebook(String content) throws JsonSyntaxException {
+    private Nbformat parseNotebook(String content) throws JsonParseException {
         Nbformat notebook = new GsonBuilder().create().fromJson(content, Nbformat.class);
+        if (notebook == null) {
+            throw new JsonParseException("Notebook does not contain any content.");
+        }
         if (notebook.getMetadata() == null) {
-            throw new JsonSyntaxException("Notebook is missing the 'metadata' field");
+            throw new JsonParseException("Notebook is missing the 'metadata' field");
         }
         if (notebook.getCells() == null) {
-            throw new JsonSyntaxException("Notebook is missing the 'cells' field");
+            throw new JsonParseException("Notebook is missing the 'cells' field");
         }
         if (notebook.getFormatMajor() == null || notebook.getFormatMinor() == null) {
-            throw new JsonSyntaxException("Notebook format fields are missing or malformed");
+            throw new JsonParseException("Notebook format fields are missing or malformed");
         }
         return notebook;
     }
@@ -172,7 +174,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
         Nbformat notebook;
         try {
             notebook = parseNotebook(content);
-        } catch (JsonSyntaxException ex) {
+        } catch (JsonParseException ex) {
             return negativeValidation(notebookPath, "The notebook file is malformed", ex);
         }
 
@@ -183,7 +185,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
             if (!entryLanguage.equalsIgnoreCase(notebookLanguage)) {
                 return negativeValidation(notebookPath, String.format("The notebook programming language must be '%s'", entryLanguage));
             }
-        } catch (JsonSyntaxException ex) {
+        } catch (JsonParseException ex) {
             return negativeValidation(notebookPath, "Error reading the notebook programming language", ex);
         }
 
