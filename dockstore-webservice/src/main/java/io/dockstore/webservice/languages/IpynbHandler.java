@@ -149,7 +149,6 @@ public class IpynbHandler implements LanguageHandlerInterface {
     @Override
     public Map<String, SourceFile> processUserFiles(String repositoryId, List<String> paths, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
-
         return sourceCodeRepoInterface.readPaths(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_OTHER, excludePaths, paths).stream()
             .collect(Collectors.toMap(SourceFile::getAbsolutePath, Function.identity()));
     }

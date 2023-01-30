@@ -9058,6 +9058,10 @@ components:
         size:
           type: integer
           format: int64
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:
@@ -9667,6 +9671,10 @@ components:
           - BRANCH
           - NOT_APPLICABLE
           - UNSET
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:
@@ -10023,6 +10031,10 @@ components:
           - HELM
         synced:
           type: boolean
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:

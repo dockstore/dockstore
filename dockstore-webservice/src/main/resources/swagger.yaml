@@ -7990,6 +7990,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      userFiles:
+        type: "array"
+        description: "The user-specified files for each version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       reference:
@@ -8678,6 +8683,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      userFiles:
+        type: "array"
+        description: "The user-specified files for each version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -9115,6 +9125,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      userFiles:
+        type: "array"
+        description: "The user-specified files for each version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:

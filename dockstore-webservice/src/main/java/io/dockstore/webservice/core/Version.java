@@ -229,7 +229,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column(columnDefinition = "varchar")
     @Convert(converter = UserFilesConverter.class)
     @ApiModelProperty(value = "The user-specified files for each version.")
-    private List<String> userFiles = new ArrayList<>();
+    private List<String> userFiles;
 
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
@@ -620,6 +620,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
                 .distinct()
                 .collect(Collectors.toList());
         this.setDescriptorTypeVersions(languageVersions);
+    }
+
+    public List<String> getUserFiles() {
+        return userFiles;
+    }
+
+    public void setUserFiles(List<String> userFiles) {
+        this.userFiles = userFiles;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

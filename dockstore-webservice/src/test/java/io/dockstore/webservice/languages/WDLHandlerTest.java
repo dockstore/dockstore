@@ -17,7 +17,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.helpers.WorkflowSpecifications;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
@@ -240,7 +239,7 @@ class WDLHandlerTest {
 
         @Override
         public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-                Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, WorkflowSpecifications specs, boolean hardRefresh) {
+                Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
             return null;
         }
 
