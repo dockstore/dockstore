@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 
@@ -20,12 +19,17 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
     protected abstract Logger getLogger();
     protected abstract String getDelimiter();
     protected abstract String getSubject(boolean isPlural);
+    protected abstract boolean isNullableDatabaseColumn();
+    protected abstract boolean isNullableEntityAttribute();
 
     @Override
     public String convertToDatabaseColumn(List<String> list) {
-        final String delimiter = getDelimiter();
+        if (list == null) {
+            return isNullableDatabaseColumn() ? null : emptyString();
+        }
 
         // Determine the list of values that contain the delimiter.
+        final String delimiter = getDelimiter();
         final List<String> containingDelimiter = list.stream()
                 .filter(value -> value.contains(delimiter))
                 .collect(Collectors.toList());
@@ -42,19 +46,27 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
             throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_BAD_REQUEST);
         }
 
-        // If the list contains one or more values, return a delimiter-separated string, otherwise null.
-        if (list != null && !list.isEmpty()) {
-            return String.join(delimiter, list);
-        }
-        return null;
+        // Return the delimiter-separated string.
+        return String.join(delimiter, list);
     }
 
     @Override
     public List<String> convertToEntityAttribute(String string) {
-        if (StringUtils.isNotEmpty(string)) {
-            return Arrays.asList(string.split(getDelimiter()));
-        } else {
-            return new ArrayList<>();
+        if (string == null) {
+            return isNullableEntityAttribute() ? null : emptyList();
         }
+        // This check is necessary because String.split("") returns [ "" ].
+        if (string.isEmpty()) {
+            return emptyList();
+        }
+        return Arrays.asList(string.split(getDelimiter()));
+    }
+
+    private String emptyString() {
+        return "";
+    }
+
+    private List<String> emptyList() {
+        return new ArrayList<>();
     }
 }

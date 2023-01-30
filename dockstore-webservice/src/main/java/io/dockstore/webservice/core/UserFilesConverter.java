@@ -19,4 +19,12 @@ public class UserFilesConverter extends DelimitedValuesConverter {
     protected String getSubject(boolean isPlural) {
         return "User file" + (isPlural ? "s" : "");
     }
+
+    protected boolean isNullableDatabaseColumn() {
+        return true;
+    }
+
+    protected boolean isNullableEntityAttribute() {
+        return true;
+    }
 }
