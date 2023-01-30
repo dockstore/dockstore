@@ -339,6 +339,26 @@ class WebhookIT extends BaseIT {
             "User should have 3 workflows, 2 from DockstoreTestUser2 org and one from DockstoreTestUser/dockstore-whalesay-wdl");
 
     }
+
+    /**
+     * This tests just the github release process for installs
+     */
+    @Test
+    void testGitHubReleaseInstallationOnly() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
+
+        // Track install event
+        client.handleGitHubInstallation(installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertTrue(workflowCount >= 2, "should see 2 workflows from the .dockstore.yml from the master branch");
+
+    }
+
+
     /**
      * This tests the GitHub release process
      */
@@ -356,13 +376,13 @@ class WebhookIT extends BaseIT {
         // Release 0.1 on GitHub - one new wdl workflow
         client.handleGitHubRelease("refs/tags/0.1", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
-        assertEquals(1, workflowCount);
+        assertTrue(workflowCount >= 2, "should see 2 workflows from the .dockstore.yml from the master branch");
 
         // Ensure that new workflow is created and is what is expected
         io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
         assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
         assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
-        assertEquals(1, workflow.getWorkflowVersions().size(), "Should have one version 0.1");
+        assertEquals(1, workflow.getWorkflowVersions().stream().filter(v -> v.getName().contains("0.1")).toList().size(), "Should have one version 0.1");
         assertEquals("A repo that includes .dockstore.yml", workflow.getTopicAutomatic());
 
         // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
@@ -377,7 +397,7 @@ class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
         assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType(), "Should be a CWL workflow");
         assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode(), "Should be type DOCKSTORE_YML");
-        assertEquals(1, workflow2.getWorkflowVersions().size(), "Should have one version 0.2");
+        assertEquals(1, workflow2.getWorkflowVersions().stream().filter(v -> v.getName().contains("0.2")).toList().size(), "Should have one version 0.2");
 
 
         // Unset the license information to simulate license change
@@ -447,29 +467,29 @@ class WebhookIT extends BaseIT {
 
         // There should be 5 successful lambda events
         List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
-        assertEquals(5, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be 5 successful events");
+        assertEquals(6, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be 5 successful events");
 
         // Test pagination for user github events
         events = usersApi.getUserGitHubEvents("2", 2);
         assertEquals(2, events.size(), "There should be 2 events (id 3 and 4)");
-        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(3L, lambdaEvent.getId())), "Should have event with ID 3");
         assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())), "Should have event with ID 4");
+        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(5L, lambdaEvent.getId())), "Should have event with ID 5");
 
         // Test the organization events endpoint
         List<io.dockstore.openapi.client.model.LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
-        assertEquals(6, orgEvents.size(), "There should be 6 events");
+        assertEquals(7, orgEvents.size(), "There should be 7 events");
 
         // Test pagination
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "2", 2);
         assertEquals(2, orgEvents.size(), "There should be 2 events (id 3 and 4)");
-        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(3L, lambdaEvent.getId())), "Should have event with ID 3");
         assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())), "Should have event with ID 4");
+        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(5L, lambdaEvent.getId())), "Should have event with ID 5");
 
         // Change organization to test filter
         testingPostgres.runUpdateStatement("UPDATE lambdaevent SET repository = 'workflow-dockstore-yml', organization = 'DockstoreTestUser3' WHERE id = '1'");
 
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
-        assertEquals(5, orgEvents.size(), "There should now be 5 events");
+        assertEquals(6, orgEvents.size(), "There should now be 6 events");
 
         try {
             lambdaEventsApi.getLambdaEventsByOrganization("IAmMadeUp", "0", 10);

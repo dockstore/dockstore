@@ -967,7 +967,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
     }
 
-    private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
+    public void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
         if (startRateLimit != null && endRateLimit != null) {
             int used = startRateLimit.getRemaining() - endRateLimit.getRemaining();
             if (used > 0) {
@@ -1055,20 +1055,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+
+
     @Override
     public String getMainBranch(Entry entry, String repositoryId) {
         String mainBranch = null;
 
         // Get repository based on username and repo id
-        if (repositoryId != null) {
-            try {
-                GHRepository repository = github.getRepository(repositoryId);
-                // Determine the default branch on Github
-                mainBranch = repository.getDefaultBranch();
-            } catch (IOException e) {
-                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
-                return null;
-            }
+        mainBranch = getDefaultBranch(repositoryId);
+        if (mainBranch == null) {
+            return null;
         }
         // Determine which branch to use for tool info
         if (entry.getDefaultVersion() != null) {
@@ -1076,6 +1072,45 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         return mainBranch;
+    }
+
+    @Override
+    public String getDefaultBranch(String repositoryId) {
+        if (repositoryId != null) {
+            try {
+                GHRepository repository = github.getRepository(repositoryId);
+                // Determine the default branch on GitHub
+                return "refs/heads/" + repository.getDefaultBranch();
+            } catch (IOException e) {
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public Set<String> detectDockstoreYml(String repositoryId) {
+        Set<String> candidateBranches = new HashSet<>();
+        if (repositoryId != null) {
+            try {
+                GHRepository repository = getRepository(repositoryId);
+                // see if there is a .dockstore.yml on any path
+                // unfortunately, there is no nice way to map this to a specific tag or branch, arbitrarily pick 5
+                final int arbitraryNumberOfGuesses = 5;
+                final List<GHCommit> ghCommits = repository.queryCommits().path(DOCKSTORE_YML_PATH).pageSize(arbitraryNumberOfGuesses).list().toList();
+                for (GHCommit ghCommit : ghCommits) {
+                    try {
+                        ghCommit.listBranchesWhereHead().toList().forEach(branch -> candidateBranches.add("refs/heads/" + branch.getName()));
+                    } catch (IOException e) {
+                        // do nothing and proceed to next commit
+                    }
+                }
+            } catch (IOException e) {
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
+                return candidateBranches;
+            }
+        }
+        return candidateBranches;
     }
 
     @Override

@@ -320,6 +320,11 @@ class LanguagePluginHandlerTest {
         }
 
         @Override
+        public String getDefaultBranch(String repositoryId) {
+            return null;
+        }
+
+        @Override
         public String getRepositoryId(Entry entry) {
             return null;
         }

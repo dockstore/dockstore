@@ -314,8 +314,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         // Find all workflows and services that are github apps and use the given repo
-        List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).collect(
-                Collectors.toList());
+        List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).toList();
 
         // When the git reference to delete is the default version, set it to the next latest version
         workflows.forEach(workflow -> {
@@ -334,6 +333,27 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         });
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
         lambdaEventDAO.create(lambdaEvent);
+    }
+
+    protected Set<String> identifyGitReferencesToRelease(String repository, String username, String installationId) {
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
+        GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+
+        Set<String> branchCandidates = new HashSet<>(gitHubSourceCodeRepo.detectDockstoreYml(repository));
+        // see if there is a .dockstore.yml on any branch
+        if (!branchCandidates.isEmpty()) {
+            // throw in the default branch as well
+            String defaultBranch = gitHubSourceCodeRepo.getDefaultBranch(repository);
+            branchCandidates.add(defaultBranch);
+            return branchCandidates;
+        } else {
+            // if there is no .dockstore.yml, do not bother looking more into it
+            //TODO: could do something with https://github.com/dockstore/dockstore/issues/5331 here though
+            LOG.info("could not find any .dockstore.yml for " + repository);
+        }
+        GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+        gitHubSourceCodeRepo.reportOnRateLimit("identifyGitReferencesToRelease", startRateLimit, endRateLimit);
+        return branchCandidates;
     }
 
     /**
@@ -427,19 +447,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private boolean isGitHubRateLimitError(Exception ex) {
-        if (ex instanceof CustomWebApplicationException) {
-            final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
+        if (ex instanceof final CustomWebApplicationException customWebAppEx) {
             final String errorMessage = customWebAppEx.getErrorMessage();
-            if (errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT)) {
-                return true;
-            }
+            return errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT);
         }
         return false;
     }
 
     private boolean isServerError(Exception ex) {
-        if (ex instanceof CustomWebApplicationException) {
-            final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
+        if (ex instanceof final CustomWebApplicationException customWebAppEx) {
             final int code = customWebAppEx.getResponse().getStatus();
             return code >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
@@ -569,7 +585,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private void addValidationsToMessage(Workflow workflow, WorkflowVersion version, PrintWriter messageWriter) {
-        List<Validation> validations = version.getValidations().stream().filter(v -> !v.isValid()).collect(Collectors.toList());
+        List<Validation> validations = version.getValidations().stream().filter(v -> !v.isValid()).toList();
         if (!validations.isEmpty()) {
             messageWriter.printf("In version '%s' of %s '%s':%n", version.getName(), workflow.getEntryType().getTerm(), computeFullWorkflowName(workflow));
             validations.forEach(validation -> addValidationToMessage(validation, messageWriter));

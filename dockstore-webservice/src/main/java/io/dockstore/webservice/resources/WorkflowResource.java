@@ -513,7 +513,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         updateInfo(wf, workflow);
-        wf.getWorkflowVersions().stream().forEach(workflowVersion -> workflowVersion.setSynced(false));
+        wf.getWorkflowVersions().forEach(workflowVersion -> workflowVersion.setSynced(false));
         Workflow result = workflowDAO.findById(workflowId);
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
@@ -2036,7 +2036,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         List<Token> scTokens = this.tokenDAO.findByUserId(foundUser.getId())
             .stream()
             .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
-            .collect(Collectors.toList());
+            .toList();
 
         if (scTokens.size() == 0) {
             LOG.error(SC_REGISTRY_ACCESS_MESSAGE);
@@ -2109,8 +2109,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(repositories), Utilities.cleanForLogging(username)));
         }
+        // record installation event as lambda event
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
-        Arrays.asList(repositories.split(",")).stream().forEach(repository -> {
+        Arrays.asList(repositories.split(",")).forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
             String[] splitRepository = repository.split("/");
             lambdaEvent.setOrganization(splitRepository[0]);
@@ -2120,6 +2121,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             triggerUser.ifPresent(lambdaEvent::setUser);
             lambdaEventDAO.create(lambdaEvent);
         });
+        // make some educated guesses whether we should try to retrospectively release some old versions
+        // note that for large organizations, this loop could be quite large if many repositories are added at the same time
+        for (String repository: repositories.split(",")) {
+            final Set<String> strings = identifyGitReferencesToRelease(repository, username, installationId);
+            for (String gitReference: strings) {
+                if (LOG.isInfoEnabled()) {
+                    LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
+                }
+                githubWebhookRelease(repository, username, gitReference, installationId);
+            }
+        }
         return Response.status(HttpStatus.SC_OK).build();
     }
 
