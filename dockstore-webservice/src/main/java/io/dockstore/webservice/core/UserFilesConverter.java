@@ -1,30 +1,15 @@
 package io.dockstore.webservice.core;
 
 import javax.persistence.Converter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Converter(autoApply = true)
 public class UserFilesConverter extends DelimitedValuesConverter {
-    private static final Logger LOG = LoggerFactory.getLogger(UserFilesConverter.class);
 
-    protected Logger getLogger() {
-        return LOG;
+    public UserFilesConverter() {
+        super("/t", true);
     }
 
-    protected String getDelimiter() {
-        return "/t";
-    }
-
-    protected String getSubject(boolean isPlural) {
-        return "User file" + (isPlural ? "s" : "");
-    }
-
-    protected boolean isNullableDatabaseColumn() {
-        return true;
-    }
-
-    protected boolean isNullableEntityAttribute() {
-        return true;
+    public String getSubject(boolean isPlural) {
+        return isPlural ? "User files" : "User file";
     }
 }
