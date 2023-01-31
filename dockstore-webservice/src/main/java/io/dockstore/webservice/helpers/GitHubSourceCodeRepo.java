@@ -1080,7 +1080,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             try {
                 GHRepository repository = github.getRepository(repositoryId);
                 // Determine the default branch on GitHub
-                return "refs/heads/" + repository.getDefaultBranch();
+                return repository.getDefaultBranch();
             } catch (IOException e) {
                 LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
                 return null;
@@ -1094,19 +1094,36 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         if (repositoryId != null) {
             try {
                 GHRepository repository = getRepository(repositoryId);
-                // see if there is a .dockstore.yml on any path
-                // unfortunately, there is no nice way to map this to a specific tag or branch, arbitrarily pick 5
+                // see if there is a .dockstore.yml on any path that was just added to a branch/the HEAD
+                // unfortunately, there is no nice way to map this to a specific tag or branch, arbitrarily pick 5 to try
                 final int arbitraryNumberOfGuesses = 5;
                 final List<GHCommit> ghCommits = repository.queryCommits().path(DOCKSTORE_YML_PATH).pageSize(arbitraryNumberOfGuesses).list().toList();
                 for (GHCommit ghCommit : ghCommits) {
                     try {
+                        // this will only resolve if a .dockstore.yml (is not eligible for cache since it uses JWT)
                         ghCommit.listBranchesWhereHead().toList().forEach(branch -> candidateBranches.add("refs/heads/" + branch.getName()));
                     } catch (IOException e) {
                         // do nothing and proceed to next commit
                     }
                 }
+                // examine the default branch, good chance it will have it
+                String defaultBranch = "refs/heads/" + getDefaultBranch(repositoryId);
+                final String defaultFileContent = readFile(repositoryId, DOCKSTORE_YML_PATH, defaultBranch);
+                if (defaultFileContent != null && defaultFileContent.length() > 0) {
+                    candidateBranches.add(defaultBranch);
+                }
+                // if we still don't have a candidate try guessing at some arbitrary branches
+                if (candidateBranches.isEmpty()) {
+                    String[] totalGuesses = {"master", "main", "develop"};
+                    Arrays.stream(totalGuesses).toList().stream().map(guess -> "refs/heads/" + guess).forEach(guess -> {
+                        final String candidateFileContent = readFile(repositoryId, DOCKSTORE_YML_PATH, guess);
+                        if (candidateFileContent != null && candidateFileContent.length() > 0) {
+                            candidateBranches.add(guess);
+                        }
+                    });
+                }
             } catch (IOException e) {
-                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
+                LOG.error("Unable to retrieve analyze branch candidates for repository " + repositoryId, e);
                 return candidateBranches;
             }
         }

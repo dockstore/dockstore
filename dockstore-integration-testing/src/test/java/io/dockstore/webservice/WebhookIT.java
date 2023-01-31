@@ -80,6 +80,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -87,7 +88,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * @author agduncan
@@ -105,9 +105,9 @@ class WebhookIT extends BaseIT {
     private static final String WORKFLOWS_ENTRY_SEARCH_TYPE = "WORKFLOWS";
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOutRule = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErrRule = new SystemErr();
 
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
@@ -118,6 +118,8 @@ class WebhookIT extends BaseIT {
     private final String taggedToolRepoPath = "dockstore-testing/tagged-apptool/md5sum";
     private final String authorsRepo = "DockstoreTestUser2/test-authors";
     private final String multiEntryRepo = "dockstore-testing/multi-entry";
+    private final String unusualBranchWorkflowDockstoreYmlRepo = "DockstoreTestUser2/dockstore_workflow_cnv";
+    private final String largeWorkflowDockstoreYmlRepo = "dockstore-testing/rodent-of-unusual-size";
     private final String workflowDockstoreYmlRepo = "dockstore-testing/workflow-dockstore-yml";
     private final String whalesay2Repo = "DockstoreTestUser/dockstore-whalesay-2";
     private FileDAO fileDAO;
@@ -348,14 +350,46 @@ class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
-        LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
 
         // Track install event
         client.handleGitHubInstallation(installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertTrue(workflowCount >= 2, "should see 2 workflows from the .dockstore.yml from the master branch");
+    }
 
+    /**
+     * This tests just the github release process for installs but with a very large repo.
+     * This repo has had the .dockstore.yml added a while back (10 months)
+     */
+    @Test
+    @Disabled("this repo is huge and this test takes forever to run (but not because of the .dockstore.yml detection code), can use this for manual testing but probably do not want this on CI")
+    void testGitHubReleaseLargeInstallationOnly() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+
+        // Track install event
+        client.handleGitHubInstallation(installationId, largeWorkflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertTrue(workflowCount >= 12, "should see a lot of workflows from the .dockstore.yml from the master branch from some branch or another");
+    }
+
+    /**
+     * This tests just the github release process for installs but the .dockstore.yml is in a develop branch
+     * and missing from the default branch
+     */
+    @Test
+    void testGitHubReleaseFeatureBranchInstallationOnly() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+
+        // Track install event
+        client.handleGitHubInstallation(installationId, unusualBranchWorkflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(1, workflowCount, "should see a workflow from the .dockstore.yml");
+        long workflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion where reference like 'develop'", long.class);
+        assertEquals(1, workflowVersionCount, "should see a workflow from the .dockstore.yml from a specific branch");
     }
 
 

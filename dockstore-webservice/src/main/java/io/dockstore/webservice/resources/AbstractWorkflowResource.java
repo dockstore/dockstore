@@ -335,22 +335,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         lambdaEventDAO.create(lambdaEvent);
     }
 
-    protected Set<String> identifyGitReferencesToRelease(String repository, String username, String installationId) {
+    protected Set<String> identifyGitReferencesToRelease(String repository, String installationId) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
 
+        // see if there is a .dockstore.yml on any branch that was just added
         Set<String> branchCandidates = new HashSet<>(gitHubSourceCodeRepo.detectDockstoreYml(repository));
-        // see if there is a .dockstore.yml on any branch
-        if (!branchCandidates.isEmpty()) {
-            // throw in the default branch as well
-            String defaultBranch = gitHubSourceCodeRepo.getDefaultBranch(repository);
-            branchCandidates.add(defaultBranch);
-            return branchCandidates;
-        } else {
-            // if there is no .dockstore.yml, do not bother looking more into it
-            //TODO: could do something with https://github.com/dockstore/dockstore/issues/5331 here though
-            LOG.info("could not find any .dockstore.yml for " + repository);
-        }
+
         GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
         gitHubSourceCodeRepo.reportOnRateLimit("identifyGitReferencesToRelease", startRateLimit, endRateLimit);
         return branchCandidates;
