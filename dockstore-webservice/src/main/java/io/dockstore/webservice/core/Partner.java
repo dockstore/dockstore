@@ -12,5 +12,8 @@ public enum Partner {
     NHLBI_BIODATA_CATALYST,
     ANVIL,
     CAVATICA,
-    NEXTFLOW_TOWER
+    NEXTFLOW_TOWER,
+    ELWAZI,
+    AGC,
+    OTHER // This is meant for platforms that want to submit Metrics to Dockstore, but they're not officially a Partner
 }
