@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,8 +55,7 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
 
     @Override
     public List<String> convertToEntityAttribute(String string) {
-        // This check is necessary because String.split("") returns [ "" ].
-        if (string == null || string.isEmpty()) {
+        if (StringUtils.isEmpty(string)) {
             return new ArrayList<>();
         }
         return Arrays.asList(string.split(delimiter));
