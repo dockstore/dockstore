@@ -88,6 +88,7 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
+import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * @author agduncan
@@ -105,9 +106,9 @@ class WebhookIT extends BaseIT {
     private static final String WORKFLOWS_ENTRY_SEARCH_TYPE = "WORKFLOWS";
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut();
+    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr();
+    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
