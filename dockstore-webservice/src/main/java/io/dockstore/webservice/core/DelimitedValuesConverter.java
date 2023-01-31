@@ -65,7 +65,7 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
         return Arrays.asList(string.split(delimiter));
     }
 
-    protected String getSubject(boolean isPlural) {
-        return isPlural ? "Values" : "Value";
+    public String getSubject(boolean isPlural) {
+        return "Value" + (isPlural ? "s" : "");
     }
 }

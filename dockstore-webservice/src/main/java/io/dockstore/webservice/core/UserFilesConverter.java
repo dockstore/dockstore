@@ -6,10 +6,11 @@ import javax.persistence.Converter;
 public class UserFilesConverter extends DelimitedValuesConverter {
 
     public UserFilesConverter() {
-        super("/t");
+        super("\t");
     }
 
+    @Override
     public String getSubject(boolean isPlural) {
-        return isPlural ? "User files" : "User file";
+        return "User file" + (isPlural ? "s" : "");
     }
 }
