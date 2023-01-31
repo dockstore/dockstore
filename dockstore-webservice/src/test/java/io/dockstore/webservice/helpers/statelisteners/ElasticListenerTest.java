@@ -211,7 +211,7 @@ class ElasticListenerTest {
     }
 
     @Test
-    public void testOpenData() throws IOException {
+    void testOpenData() throws IOException {
         // Test null getPublicAccessibleTestParameterFile
         assertNull(firstWorkflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
         JsonNode entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
