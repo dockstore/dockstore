@@ -180,6 +180,14 @@
         </addColumn>
         <addForeignKeyConstraint baseColumnNames="notebookid" baseTableName="event" constraintName="fkNotebookId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="notebook"/>
     </changeSet>
+    <changeSet author="svonworl" id="addUserFiles">
+        <addColumn tableName="tag">
+            <column name="userfiles" type="varchar"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="userfiles" type="varchar"/>
+        </addColumn>
+    </changeSet>
     <changeSet author="ktran (generated)" id="addMetrics">
         <createSequence cacheSize="1" cycle="false" incrementBy="1" maxValue="9223372036854775807" minValue="1" sequenceName="countmetric_id_seq" startValue="1"/>
         <createSequence cacheSize="1" cycle="false" incrementBy="1" maxValue="9223372036854775807" minValue="1" sequenceName="statisticmetric_id_seq" startValue="1"/>

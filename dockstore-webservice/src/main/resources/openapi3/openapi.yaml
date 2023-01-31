@@ -1832,6 +1832,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_IPYNB
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
         default:
@@ -2331,6 +2332,7 @@ paths:
                   - SWL_TEST_JSON
                   - DOCKSTORE_IPYNB
                   - DOCKSTORE_NOTEBOOK_REES
+                  - DOCKSTORE_NOTEBOOK_TEST_FILE
                   - DOCKSTORE_NOTEBOOK_OTHER
                 uniqueItems: true
           description: default response
@@ -7347,6 +7349,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_IPYNB
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
         default:
@@ -8976,6 +8979,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_IPYNB
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         verifiedBySource:
           type: object
@@ -9187,6 +9191,10 @@ components:
         size:
           type: integer
           format: int64
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:
@@ -9694,6 +9702,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_IPYNB
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         valid:
           type: boolean
@@ -9796,6 +9805,10 @@ components:
           - BRANCH
           - NOT_APPLICABLE
           - UNSET
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:
@@ -10157,6 +10170,10 @@ components:
           - HELM
         synced:
           type: boolean
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:

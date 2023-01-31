@@ -29,6 +29,7 @@ import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.lang.reflect.InvocationTargetException;
@@ -77,7 +78,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, Workflow workflow) {
         if (minimalLanguageInterface instanceof RecommendedLanguageInterface) {
             Optional<SourceFile> mainDescriptor = sourcefiles.stream()
                     .filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();

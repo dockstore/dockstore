@@ -31,6 +31,7 @@ import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.io.IOException;
@@ -705,7 +706,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     }
 
     @Override
-    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, Workflow workflow) {
         Optional<SourceFile> mainDescriptor = findSourceFileByPath(sourcefiles, primaryDescriptorFilePath);
         Map<String, String> validationMessageObject = new HashMap<>();
         String validationMessage;

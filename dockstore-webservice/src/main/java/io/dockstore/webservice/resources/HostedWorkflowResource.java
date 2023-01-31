@@ -232,7 +232,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         VersionTypeValidation validDescriptorSet;
         Validation descriptorValidation;
         if (mainDescriptor.isPresent()) {
-            validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath, entry);
         } else {
             Map<String, String> validationMessage = new HashMap<>();
             validationMessage.put("Unknown", "Missing the primary descriptor.");
