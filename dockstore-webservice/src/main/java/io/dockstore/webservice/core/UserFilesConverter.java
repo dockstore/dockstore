@@ -6,7 +6,7 @@ import javax.persistence.Converter;
 public class UserFilesConverter extends DelimitedValuesConverter {
 
     public UserFilesConverter() {
-        super("/t", true);
+        super("/t");
     }
 
     public String getSubject(boolean isPlural) {

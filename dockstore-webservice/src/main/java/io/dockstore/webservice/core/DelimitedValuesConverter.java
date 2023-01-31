@@ -20,23 +20,15 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
     private static final Logger LOG = LoggerFactory.getLogger(DelimitedValuesConverter.class);
 
     private final String delimiter;
-    private final boolean isNullableDatabaseColumn;
-    private final boolean isNullableEntityAttribute;
 
-    public DelimitedValuesConverter(String delimiter, boolean isNullableDatabaseColumn, boolean isNullableEntityAttribute) {
+    public DelimitedValuesConverter(String delimiter) {
         this.delimiter = delimiter;
-        this.isNullableDatabaseColumn = isNullableDatabaseColumn;
-        this.isNullableEntityAttribute = isNullableEntityAttribute;
-    }
-
-    public DelimitedValuesConverter(String delimiter, boolean isNullable) {
-        this(delimiter, isNullable, isNullable);
     }
 
     @Override
     public String convertToDatabaseColumn(List<String> list) {
         if (list == null) {
-            return isNullableDatabaseColumn ? null : "";
+            return null;
         }
 
         // Determine the list of values that contain the delimiter.
@@ -63,8 +55,9 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
     @Override
     public List<String> convertToEntityAttribute(String string) {
         if (string == null) {
-            return isNullableEntityAttribute ? null : new ArrayList<>();
+            return null;
         }
+
         // This check is necessary because String.split("") returns [ "" ].
         if (string.isEmpty()) {
             return new ArrayList<>();
