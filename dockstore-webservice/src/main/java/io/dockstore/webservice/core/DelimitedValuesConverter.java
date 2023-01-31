@@ -22,7 +22,7 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
 
     private final String delimiter;
 
-    public DelimitedValuesConverter(String delimiter) {
+    protected DelimitedValuesConverter(String delimiter) {
         this.delimiter = delimiter;
     }
 
@@ -34,8 +34,7 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
 
         // Determine the list of values that contain the delimiter.
         final List<String> offenders = list.stream()
-                .filter(value -> value.contains(delimiter))
-                .collect(Collectors.toList());
+                .filter(value -> value.contains(delimiter)).toList();
 
         // If one or more values contain the delimiter, log and throw.
         if (!offenders.isEmpty()) {

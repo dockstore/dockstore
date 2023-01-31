@@ -81,7 +81,7 @@ public enum DescriptorLanguage {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_SERVICE_OTHER;
         }
     },
-    IPYNB("ipynb", "Jupyter IPYNB notebook", FileType.DOCKSTORE_IPYNB, null, false, false, Set.of("ipynb"), false, false) {
+    IPYNB("ipynb", "Jupyter IPYNB notebook", FileType.DOCKSTORE_IPYNB, FileType.DOCKSTORE_NOTEBOOK_TEST_FILE, false, false, Set.of("ipynb"), false, false) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_NOTEBOOK_REES || type == FileType.DOCKSTORE_NOTEBOOK_OTHER;
@@ -252,7 +252,7 @@ public enum DescriptorLanguage {
         DOCKSTORE_SERVICE_YML(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_SERVICE_TEST_JSON(FileTypeCategory.TEST_FILE), DOCKSTORE_SERVICE_OTHER(FileTypeCategory.OTHER),
         DOCKSTORE_GXFORMAT2(FileTypeCategory.GENERIC_DESCRIPTOR), GXFORMAT2_TEST_FILE(FileTypeCategory.TEST_FILE),
         DOCKSTORE_SWL(FileTypeCategory.GENERIC_DESCRIPTOR), SWL_TEST_JSON(FileTypeCategory.TEST_FILE),
-        DOCKSTORE_IPYNB(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_NOTEBOOK_REES(FileTypeCategory.CONFIGURATION_FILE), DOCKSTORE_NOTEBOOK_OTHER(FileTypeCategory.OTHER);
+        DOCKSTORE_IPYNB(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_NOTEBOOK_REES(FileTypeCategory.CONFIGURATION_FILE), DOCKSTORE_NOTEBOOK_TEST_FILE(FileTypeCategory.TEST_FILE), DOCKSTORE_NOTEBOOK_OTHER(FileTypeCategory.OTHER);
         // DOCKSTORE-2428 - demo how to add new workflow language
 
         private final FileTypeCategory category;

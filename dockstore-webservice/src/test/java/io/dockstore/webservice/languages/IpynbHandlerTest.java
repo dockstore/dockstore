@@ -232,6 +232,6 @@ class IpynbHandlerTest {
 
     @Test
     void testValidateTestParameterSet() {
-        assertThrows(UnsupportedOperationException.class, () -> handler.validateTestParameterSet(Set.of()));
+        handler.validateTestParameterSet(Set.of(mockIpynb(PATH, "")));
     }
 }

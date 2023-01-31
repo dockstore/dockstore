@@ -203,7 +203,8 @@ public class IpynbHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        throw new UnsupportedOperationException("Notebooks do not support test files");
+        // For now, until we determine the type(s) of test files we should be validating, return without inspecting the files.
+        return positiveValidation();
     }
 
     private VersionTypeValidation positiveValidation() {

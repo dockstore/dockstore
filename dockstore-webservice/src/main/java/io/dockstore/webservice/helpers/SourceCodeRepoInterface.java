@@ -706,12 +706,7 @@ public abstract class SourceCodeRepoInterface {
 
     public Map<String, SourceFile> resolveUserFiles(String repositoryId, DescriptorLanguage.FileType fileType, Version<?> version, Set<String> excludePaths) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
-        List<String> userFiles = version.getUserFiles();
-        if (userFiles != null && !userFiles.isEmpty()) { 
-            return languageInterface.processUserFiles(repositoryId, version.getUserFiles(), version, this, excludePaths);
-        } else {
-            return Map.of();
-        }
+        return languageInterface.processUserFiles(repositoryId, version.getUserFiles(), version, this, excludePaths);
     }
 
     /**

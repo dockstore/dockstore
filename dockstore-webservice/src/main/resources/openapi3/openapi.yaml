@@ -1832,6 +1832,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_IPYNB
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
         default:
@@ -2331,6 +2332,7 @@ paths:
                   - SWL_TEST_JSON
                   - DOCKSTORE_IPYNB
                   - DOCKSTORE_NOTEBOOK_REES
+                  - DOCKSTORE_NOTEBOOK_TEST_FILE
                   - DOCKSTORE_NOTEBOOK_OTHER
                 uniqueItems: true
           description: default response
@@ -7347,6 +7349,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_IPYNB
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
         default:
@@ -8855,6 +8858,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_IPYNB
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         typeVersion:
           type: string
@@ -9569,6 +9573,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_IPYNB
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         valid:
           type: boolean
