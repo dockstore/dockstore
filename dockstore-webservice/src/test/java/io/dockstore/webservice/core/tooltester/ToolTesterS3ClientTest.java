@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.Maps;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Disabled;
@@ -37,21 +36,6 @@ import org.junit.jupiter.api.Test;
  * @since 03/05/19
  */
 class ToolTesterS3ClientTest {
-    /**
-     * TODO: Remove this once ToolTester and this webservice's convertToolIdToPartialKey() function is merged and reused
-     * @throws UnsupportedEncodingException
-     */
-    @Test
-    void convertToolIdToPartialKey() throws UnsupportedEncodingException {
-        String toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container/encode-mapping-cwl";
-        assertEquals("workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
-        toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container";
-        assertEquals("workflow/github.com/ENCODE-DCC/pipeline-container", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
-        toolId = "quay.io/pancancer/pcawg-bwa-mem-workflow";
-        assertEquals("tool/quay.io/pancancer/pcawg-bwa-mem-workflow", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
-        toolId = "quay.io/pancancer/pcawg-bwa-mem-workflow/thing";
-        assertEquals("tool/quay.io/pancancer/pcawg-bwa-mem-workflow%2Fthing", ToolTesterS3Client.convertToolIdToPartialKey(toolId));
-    }
 
     /**
      * Test whether the metadata and filename of an s3 object can be converted into the ToolTesterLog object that the UI reads

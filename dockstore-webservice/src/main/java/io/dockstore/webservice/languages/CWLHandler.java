@@ -209,11 +209,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         for (SourceFile file: sourceFiles) {
             if (file.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
                 Set<String> fileVersions = getCwlVersionsFromSourceFile(file);
-                file.setTypeVersion(newestVersion(fileVersions));
+                file.getMetadata().setTypeVersion(newestVersion(fileVersions));
                 allVersions.addAll(fileVersions);
             }
         }
-        version.setDescriptorTypeVersions(sortVersionsDescending(allVersions));
+        version.getVersionMetadata().setDescriptorTypeVersions(sortVersionsDescending(allVersions));
     }
 
     /**

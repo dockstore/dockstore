@@ -179,7 +179,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             final SourceFile sourceFile = new SourceFile();
             sourceFile.setPath(entry.getKey());
             sourceFile.setContent(entry.getValue().content());
-            sourceFile.setTypeVersion(entry.getValue().languageVersion());
+            sourceFile.getMetadata().setTypeVersion(entry.getValue().languageVersion());
             if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);

@@ -7546,6 +7546,9 @@ components:
           - ANVIL
           - CAVATICA
           - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
         supportedLanguages:
           type: array
           items:
@@ -7753,6 +7756,28 @@ components:
           type: string
         zenodoScope:
           type: string
+    CpuMetric:
+      type: object
+      description: This describes aggregated CPU metrics for workflow executions.
+      properties:
+        average:
+          type: string
+          description: The average value from the data points
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for statistical metrics in this
+            webservice
+        maximum:
+          type: string
+          description: The maximum value from the data points
+        minimum:
+          type: string
+          description: The minimum value from the data points
+        numberOfDataPointsForAverage:
+          type: integer
+          format: int32
+          description: The number of data points used to calculate the average
     DescriptionMetrics:
       type: object
       properties:
@@ -8225,6 +8250,56 @@ components:
           $ref: '#/components/schemas/Version'
         workflow:
           $ref: '#/components/schemas/Workflow'
+    ExecutionStatusMetric:
+      type: object
+      description: Aggregated metrics about workflow execution statuses
+      properties:
+        count:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int32
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the count metrics in this webservice
+        numberOfExecutions:
+          type: integer
+          format: int32
+        numberOfFailedExecutions:
+          type: integer
+          format: int32
+          description: Number of failed executions. An execution may have failed because
+            it was semantically or runtime invalid
+        numberOfSuccessfulExecutions:
+          type: integer
+          format: int32
+          description: Number of successful executions
+        valid:
+          type: boolean
+    ExecutionTimeMetric:
+      type: object
+      description: This describes aggregated execution time metrics in ISO 8601 for
+        workflow executions.
+      properties:
+        average:
+          type: string
+          description: The average value from the data points
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for statistical metrics in this
+            webservice
+        maximum:
+          type: string
+          description: The maximum value from the data points
+        minimum:
+          type: string
+          description: The minimum value from the data points
+        numberOfDataPointsForAverage:
+          type: integer
+          format: int32
+          description: The number of data points used to calculate the average
     ExtendedUserData:
       type: object
       properties:
@@ -8504,6 +8579,50 @@ components:
         hostedEntryVersionLimit:
           type: integer
           format: int32
+    MemoryMetric:
+      type: object
+      description: This describes aggregated memory metrics for workflow executions.
+      properties:
+        average:
+          type: string
+          description: The average value from the data points
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for statistical metrics in this
+            webservice
+        maximum:
+          type: string
+          description: The maximum value from the data points
+        minimum:
+          type: string
+          description: The minimum value from the data points
+        numberOfDataPointsForAverage:
+          type: integer
+          format: int32
+          description: The number of data points used to calculate the average
+    Metrics:
+      type: object
+      description: Aggregated metrics associated with entry versions
+      properties:
+        cpu:
+          $ref: '#/components/schemas/CpuMetric'
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        executionStatusCount:
+          $ref: '#/components/schemas/ExecutionStatusMetric'
+        executionTime:
+          $ref: '#/components/schemas/ExecutionTimeMetric'
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the metrics in this webservice
+        memory:
+          $ref: '#/components/schemas/MemoryMetric'
     Notification:
       type: object
       properties:
@@ -8831,6 +8950,8 @@ components:
         id:
           type: integer
           format: int64
+        metadata:
+          $ref: '#/components/schemas/SourceFileMetadata'
         path:
           type: string
           description: Path to sourcefile relative to its parent
@@ -8860,9 +8981,6 @@ components:
           - DOCKSTORE_NOTEBOOK_REES
           - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
-        typeVersion:
-          type: string
-          description: The language version for the given descriptor file type
         verifiedBySource:
           type: object
           additionalProperties:
@@ -8871,6 +8989,17 @@ components:
       - absolutePath
       - path
       - type
+    SourceFileMetadata:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        parent:
+          $ref: '#/components/schemas/SourceFile'
+        typeVersion:
+          type: string
+          description: The language version for the given descriptor file type
     StarRequest:
       type: object
       properties:
@@ -8984,10 +9113,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        descriptorTypeVersions:
-          type: array
-          items:
-            type: string
         descriptorTypeVersionsFromSourceFiles:
           type: array
           items:
@@ -9030,6 +9155,10 @@ components:
         last_built:
           type: integer
           format: int64
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         name:
           type: string
           description: "Implementation specific, can be a quay.io or docker hub tag\
@@ -9608,10 +9737,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        descriptorTypeVersions:
-          type: array
-          items:
-            type: string
         descriptorTypeVersionsFromSourceFiles:
           type: array
           items:
@@ -9647,6 +9772,10 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         name:
           type: string
           description: "Implementation specific, can be a quay.io or docker hub tag\
@@ -9711,6 +9840,10 @@ components:
           type: string
           description: "This is a human-readable description of this container and\
             \ what it is trying to accomplish, required GA4GH"
+        descriptorTypeVersions:
+          type: array
+          items:
+            type: string
         id:
           type: integer
           format: int64
@@ -9928,6 +10061,7 @@ components:
       - BIOWORKFLOW
       - SERVICE
       - APPTOOL
+      - NOTEBOOK
     WorkflowVersion:
       type: object
       properties:
@@ -9954,10 +10088,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        descriptorTypeVersions:
-          type: array
-          items:
-            type: string
         descriptorTypeVersionsFromSourceFiles:
           type: array
           items:
@@ -9998,6 +10128,10 @@ components:
           format: int64
         legacyVersion:
           type: boolean
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         name:
           type: string
           description: "Implementation specific, can be a quay.io or docker hub tag\

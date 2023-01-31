@@ -126,7 +126,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         sourceFiles.stream()
             // Exclude config file and test params
             .filter(sourceFile -> sourceFile.getType() == FileType.NEXTFLOW)
-            .forEach(sourceFile -> sourceFile.setTypeVersion(dslVersion));
+            .forEach(sourceFile -> sourceFile.getMetadata().setTypeVersion(dslVersion));
         version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
     }
 

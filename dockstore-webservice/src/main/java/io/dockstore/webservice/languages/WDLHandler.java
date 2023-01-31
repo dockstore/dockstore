@@ -136,7 +136,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 // Set language version for descriptor source files
                 for (SourceFile sourceFile : sourceFiles) {
                     if (sourceFile.getType() == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
-                        sourceFile.setTypeVersion(getLanguageVersion(sourceFile.getAbsolutePath(), sourceFiles).orElse(null));
+                        sourceFile.getMetadata().setTypeVersion(getLanguageVersion(sourceFile.getAbsolutePath(), sourceFiles).orElse(null));
                     }
                 }
                 version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);

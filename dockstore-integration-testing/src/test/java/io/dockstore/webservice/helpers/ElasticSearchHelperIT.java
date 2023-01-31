@@ -43,7 +43,9 @@ class ElasticSearchHelperIT extends BaseIT {
         deleteIndex(ElasticListener.TOOLS_INDEX, esClient);
         assertFalse(ElasticSearchHelper.doMappingsExist(), "Should return false if one of the indices are missing its mapping");
         deleteIndex(ElasticListener.WORKFLOWS_INDEX, esClient);
-        assertFalse(ElasticSearchHelper.doMappingsExist(), "Should return false if all indices are missing its mapping");
+        assertFalse(ElasticSearchHelper.doMappingsExist(), "Should return false if two of the indices are missing its mapping");
+        deleteIndex(ElasticListener.NOTEBOOKS_INDEX, esClient);
+        assertFalse(ElasticSearchHelper.doMappingsExist(), "Should return false if all indices are missing their mapping");
     }
 
     @Test

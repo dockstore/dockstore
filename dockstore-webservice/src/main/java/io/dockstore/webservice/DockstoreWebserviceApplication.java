@@ -59,6 +59,7 @@ import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.SourceFileMetadata;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
@@ -67,6 +68,12 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.VersionMetadata;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.metrics.CountMetric;
+import io.dockstore.webservice.core.metrics.CpuStatisticMetric;
+import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
+import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
+import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
+import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
@@ -204,7 +211,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class, WorkflowVersion.class, FileFormat.class,
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
-            AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class) {
+            AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class, SourceFileMetadata.class, Metrics.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, ExecutionTimeStatisticMetric.class,
+            CountMetric.class, ExecutionStatusCountMetric.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();

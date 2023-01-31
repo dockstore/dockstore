@@ -615,7 +615,7 @@ public abstract class SourceCodeRepoInterface {
         if (sourceFile != null && sourceFile.getContent() != null) {
             // carry over metadata from plugins
             final Optional<SourceFile> matchingFile = sourceFileSet.stream().filter(f -> f.getPath().equals(sourceFile.getPath())).findFirst();
-            matchingFile.ifPresent(file -> sourceFile.setTypeVersion(file.getTypeVersion()));
+            matchingFile.ifPresent(file -> sourceFile.getMetadata().setTypeVersion(file.getMetadata().getTypeVersion()));
             version.getSourceFiles().add(sourceFile);
         }
 
