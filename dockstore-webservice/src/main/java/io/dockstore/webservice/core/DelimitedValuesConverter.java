@@ -27,7 +27,7 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
 
     @Override
     public String convertToDatabaseColumn(List<String> list) {
-        if (list == null) {
+        if (list == null || list.isEmpty()) {
             return null;
         }
 
@@ -42,7 +42,7 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
             final String commaSeparated = offenders.stream()
                     .map(value -> String.format("'%s'", value))
                     .collect(Collectors.joining(", "));
-            final String errorMessage = String.format("%s '%s' contain%s the delimiter '%s'",
+            final String errorMessage = String.format("%s %s contain%s the delimiter '%s'",
                     getSubject(isMultiple), commaSeparated, isMultiple ? "" : "s", delimiter);
             LOG.error(errorMessage);
             throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_BAD_REQUEST);
@@ -54,12 +54,8 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
 
     @Override
     public List<String> convertToEntityAttribute(String string) {
-        if (string == null) {
-            return null;
-        }
-
         // This check is necessary because String.split("") returns [ "" ].
-        if (string.isEmpty()) {
+        if (string == null || string.isEmpty()) {
             return new ArrayList<>();
         }
         return Arrays.asList(string.split(delimiter));

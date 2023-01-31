@@ -7992,7 +7992,7 @@ definitions:
           $ref: "#/definitions/OrcidAuthor"
       userFiles:
         type: "array"
-        description: "The user-specified files for each version."
+        description: "The user-specified files for the version."
         items:
           type: "string"
       versionMetadata:
@@ -8685,7 +8685,7 @@ definitions:
           $ref: "#/definitions/OrcidAuthor"
       userFiles:
         type: "array"
-        description: "The user-specified files for each version."
+        description: "The user-specified files for the version."
         items:
           type: "string"
       versionMetadata:
@@ -9127,7 +9127,7 @@ definitions:
           $ref: "#/definitions/OrcidAuthor"
       userFiles:
         type: "array"
-        description: "The user-specified files for each version."
+        description: "The user-specified files for the version."
         items:
           type: "string"
       versionMetadata:

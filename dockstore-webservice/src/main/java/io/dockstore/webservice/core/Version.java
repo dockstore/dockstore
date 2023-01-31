@@ -228,8 +228,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @Column(columnDefinition = "varchar")
     @Convert(converter = UserFilesConverter.class)
-    @ApiModelProperty(value = "The user-specified files for each version.")
-    private List<String> userFiles;
+    @ApiModelProperty(value = "The user-specified files for the version.")
+    private List<String> userFiles = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
