@@ -2127,7 +2127,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
             for (String gitReference: strings) {
                 if (LOG.isInfoEnabled()) {
-                    LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
+                    LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
+                        Utilities.cleanForLogging(username)));
                 }
                 githubWebhookRelease(repository, username, gitReference, installationId);
             }

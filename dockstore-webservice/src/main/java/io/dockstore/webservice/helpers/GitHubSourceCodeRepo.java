@@ -1089,6 +1089,15 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return null;
     }
 
+    /**
+     * Detect branches that include a .dockstore.yml using a variety of heuristics.
+     * <p>
+     * Heuristics include looking at the default branch, commits that just touched a .dockstore.yml at the end of a branch, etc. while trying to avoid too many
+     * API calls, particularly an unbounded number of calls based on factors that can change between repos (number of tags, branches, etc.)
+     *
+     * @param repositoryId
+     * @return
+     */
     public Set<String> detectDockstoreYml(String repositoryId) {
         Set<String> candidateBranches = new HashSet<>();
         if (repositoryId != null) {
@@ -1100,7 +1109,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 final List<GHCommit> ghCommits = repository.queryCommits().path(DOCKSTORE_YML_PATH).pageSize(arbitraryNumberOfGuesses).list().toList();
                 for (GHCommit ghCommit : ghCommits) {
                     try {
-                        // this will only resolve if a .dockstore.yml (is not eligible for cache since it uses JWT)
+                        // this will only resolve if a .dockstore.yml was in the last commit to be touched (is not eligible for cache since it uses JWT)
                         ghCommit.listBranchesWhereHead().toList().forEach(branch -> candidateBranches.add("refs/heads/" + branch.getName()));
                     } catch (IOException e) {
                         // do nothing and proceed to next commit
@@ -1112,7 +1121,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 if (defaultFileContent != null && defaultFileContent.length() > 0) {
                     candidateBranches.add(defaultBranch);
                 }
-                // if we still don't have a candidate try guessing at some arbitrary branches
+                // if we still don't have a candidate try guessing at some arbitrary (but a constant number of) branches. Hopefully this does not trigger too often
                 if (candidateBranches.isEmpty()) {
                     String[] totalGuesses = {"master", "main", "develop"};
                     Arrays.stream(totalGuesses).toList().stream().map(guess -> "refs/heads/" + guess).forEach(guess -> {

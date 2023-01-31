@@ -335,6 +335,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         lambdaEventDAO.create(lambdaEvent);
     }
 
+    /**
+     * Identify git references that may be worth trying to handle as a github apps release event
+     * @param repository
+     * @param installationId
+     * @return
+     */
     protected Set<String> identifyGitReferencesToRelease(String repository, String installationId) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
