@@ -153,8 +153,8 @@ class IpynbHandlerTest {
     void testParseWorkflowContentExtractVersion() {
         SourceFile file = mockSourceFile(PATH, CONTENT, DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
         handler.parseWorkflowContent(PATH, CONTENT, Set.of(file), version);
-        assertEquals("4.0", file.getTypeVersion());
-        assertEquals(List.of("4.0"), version.getDescriptorTypeVersions());
+        assertEquals("4.0", file.getMetadata().getTypeVersion());
+        assertEquals(List.of("4.0"), version.getVersionMetadata().getDescriptorTypeVersions());
     }
 
     @Test

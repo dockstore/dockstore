@@ -111,7 +111,7 @@ public class IpynbHandler implements LanguageHandlerInterface {
         String format = formatMajor + "." + formatMinor;
         sourceFiles.stream()
             .filter(file -> file.getAbsolutePath().equals(notebookPath))
-            .forEach(file -> file.setTypeVersion(format));
+            .forEach(file -> file.getMetadata().setTypeVersion(format));
         version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
     }
 
