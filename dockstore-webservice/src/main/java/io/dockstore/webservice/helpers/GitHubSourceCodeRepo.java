@@ -665,7 +665,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param versionName Optional version name to refresh
      * @return WorkflowVersion for the given reference
      */
-    @SuppressWarnings("checkstyle:ParameterNumber")
     private WorkflowVersion setupWorkflowVersionsHelper(Workflow workflow, Triple<String, Date, String> ref, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults, GHRepository repository, SourceFile dockstoreYml, Optional<String> versionName) {
         LOG.info(gitUsername + ": Looking at GitHub reference: " + ref.toString());
