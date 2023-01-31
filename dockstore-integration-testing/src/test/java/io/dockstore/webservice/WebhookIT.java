@@ -580,11 +580,18 @@ class WebhookIT extends BaseIT {
         assertEquals(1, workflow.getWorkflowVersions().size(), "should have 1 version after deletion");
         assertNotNull(workflow.getDefaultVersion(), "should have reassigned the default version during deletion");
 
+        // Publish workflow
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        client.publish(workflow.getId(), publishRequest);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
+        assertTrue(workflow.isIsPublished());
+
         // Delete 2.0 tag, unset default version
         client.handleGitHubBranchDeletion(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/2.0", installationId);
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
         assertEquals(0, workflow.getWorkflowVersions().size(), "should have 0 versions after deletion");
         assertNull(workflow.getDefaultVersion(), "should have no default version after final version is deleted");
+        assertFalse(workflow.isIsPublished(), "should not be published if it has 0 versions");
     }
 
     /**
