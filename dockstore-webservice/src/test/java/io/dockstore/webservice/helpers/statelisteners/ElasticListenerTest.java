@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers.statelisteners;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -207,6 +208,27 @@ class ElasticListenerTest {
         entry = ElasticListener.dockstoreEntryToElasticSearchObject(appTool);
         descriptorTypeVersions = entry.get("descriptor_type_versions");
         assertEquals(0, descriptorTypeVersions.size());
+    }
+
+    @Test
+    void testOpenData() throws IOException {
+        // Test null getPublicAccessibleTestParameterFile
+        assertNull(firstWorkflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+        JsonNode entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
+        JsonNode openDataNode = entry.get("openData");
+        assertFalse(openDataNode.asBoolean());
+
+        // Test false getPublicAccessibleTestParameterFile
+        firstWorkflowVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(Boolean.FALSE);
+        entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
+        openDataNode = entry.get("openData");
+        assertFalse(openDataNode.asBoolean());
+
+        // Test true getPublicAccessibleTestParameterFile
+        firstWorkflowVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(Boolean.TRUE);
+        entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
+        openDataNode = entry.get("openData");
+        assertTrue(openDataNode.asBoolean());
     }
 
     private List<String> getDescriptorTypeVersionsFromJsonNode(JsonNode descriptorTypeVersionsJsonNode) {
