@@ -16,22 +16,22 @@
 package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.yaml.DockstoreYaml12;
-import javax.validation.ConstraintValidator;
+import java.util.List;
 import javax.validation.ConstraintValidatorContext;
 
 /**
  * Validates that a DockstoreYaml12 instance has at least one workflow, tool, or service
  */
-public class HasEntry12Validator implements ConstraintValidator<HasEntry12, DockstoreYaml12> {
-    @Override
-    public void initialize(final HasEntry12 constraintAnnotation) {
-        // Intentionally empty
-    }
+public class HasEntry12Validator extends BaseConstraintValidator<HasEntry12, DockstoreYaml12> {
 
     @Override
-    public boolean isValid(final DockstoreYaml12 value, final ConstraintValidatorContext context) {
+    public boolean isValidNotNull(final DockstoreYaml12 value, final ConstraintValidatorContext context) {
         return value.getService() != null
-            || value.getWorkflows() != null && !value.getWorkflows().isEmpty()  // NOSONAR suppress incorrect "can't be null" analysis
-            || value.getTools() != null && !value.getTools().isEmpty();  // NOSONAR suppress incorrect "can't be null" analysis
+            || !isEmpty(value.getWorkflows())
+            || !isEmpty(value.getTools());
+    }
+
+    private boolean isEmpty(List<?> list) {
+        return list == null || list.isEmpty();
     }
 }
