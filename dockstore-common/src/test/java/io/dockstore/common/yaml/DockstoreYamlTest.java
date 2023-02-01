@@ -412,7 +412,7 @@ class DockstoreYamlTest {
     @Test
     void testGetDockstoreYamlProperties() {
         Set<String> properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml12.class);
-        assertEquals(36, properties.size(), "Should have the correct number of unique properties for a version 1.2 .dockstore.yml");
+        assertEquals(37, properties.size(), "Should have the correct number of unique properties for a version 1.2 .dockstore.yml");
 
         properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml11.class);
         assertEquals(29, properties.size(), "Should have the correct number of unique properties for a version 1.1 .dockstore.yml");

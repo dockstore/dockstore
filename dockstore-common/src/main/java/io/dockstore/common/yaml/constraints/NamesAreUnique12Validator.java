@@ -35,10 +35,11 @@ public class NamesAreUnique12Validator extends BaseConstraintValidator<NamesAreU
     public boolean isValidNotNull(final DockstoreYaml12 yaml, final ConstraintValidatorContext context) {
 
         List<Workflowish> entries = new ArrayList<>();
-        Optional.ofNullable(yaml.getTools()).ifPresent(entries::addAll);
         Optional.ofNullable(yaml.getWorkflows()).ifPresent(entries::addAll);
+        Optional.ofNullable(yaml.getNotebooks()).ifPresent(entries::addAll);
+        Optional.ofNullable(yaml.getTools()).ifPresent(entries::addAll);
 
-        // Create a set of tool/workflow names and check for duplicates in the process.
+        // Create a set of entry names and check for duplicates in the process.
         Set<String> names = new HashSet<>();
         for (Workflowish entry: entries) {
             String name = ObjectUtils.firstNonNull(entry.getName(), "");

@@ -28,6 +28,7 @@ public class HasEntry12Validator extends BaseConstraintValidator<HasEntry12, Doc
     public boolean isValidNotNull(final DockstoreYaml12 value, final ConstraintValidatorContext context) {
         return value.getService() != null
             || !isEmpty(value.getWorkflows())
+            || !isEmpty(value.getNotebooks())
             || !isEmpty(value.getTools());
     }
 
