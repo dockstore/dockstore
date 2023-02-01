@@ -32,7 +32,7 @@ import javax.validation.Payload;
 @Constraint(validatedBy = NamesAreUnique12Validator.class)
 public @interface NamesAreUnique12 {
 
-    String MUST_HAVE_A_UNIQUE_NAME = "must have a unique name for each workflow and tool";
+    String MUST_HAVE_A_UNIQUE_NAME = "must contain unique names";
 
     String message () default MUST_HAVE_A_UNIQUE_NAME;
     Class<?>[] groups () default {};

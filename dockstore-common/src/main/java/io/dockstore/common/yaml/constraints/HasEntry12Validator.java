@@ -30,8 +30,16 @@ public class HasEntry12Validator implements ConstraintValidator<HasEntry12, Dock
 
     @Override
     public boolean isValid(final DockstoreYaml12 value, final ConstraintValidatorContext context) {
-        return value.getService() != null
-            || value.getWorkflows() != null && !value.getWorkflows().isEmpty()  // NOSONAR suppress incorrect "can't be null" analysis
-            || value.getTools() != null && !value.getTools().isEmpty();  // NOSONAR suppress incorrect "can't be null" analysis
+        if (value.getEntries().isEmpty()) {
+            addConstraintViolation(context, value);
+            return false;
+        }
+        return true;
+    }
+
+    private static void addConstraintViolation(final ConstraintValidatorContext context, DockstoreYaml12 yaml) {
+        String msg = String.format("must have at least one %s", String.join(", ", yaml.getEntryTerms()));
+        context.disableDefaultConstraintViolation();
+        context.buildConstraintViolationWithTemplate(msg).addConstraintViolation();
     }
 }

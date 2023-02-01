@@ -18,11 +18,10 @@ package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.Workflowish;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.Map;
+import java.util.Objects;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.ObjectUtils;
@@ -42,29 +41,34 @@ public class NamesAreUnique12Validator implements ConstraintValidator<NamesAreUn
             return true;
         }
 
-        List<Workflowish> entries = new ArrayList<>();
-        Optional.ofNullable(yaml.getTools()).ifPresent(entries::addAll);
-        Optional.ofNullable(yaml.getWorkflows()).ifPresent(entries::addAll);
+        List<Workflowish> entries = yaml.getEntries();
 
-        // Create a set of tool/workflow names and check for duplicates in the process.
-        Set<String> names = new HashSet<>();
+        // Create a map of names to entries and check for duplicate names in the process.
+        Map<String, Workflowish> namesToEntries = new HashMap<>();
         for (Workflowish entry: entries) {
             String name = ObjectUtils.firstNonNull(entry.getName(), "");
-            if (!names.add(name)) {
-                String reason = "at least two workflows or tools have " + ("".equals(name) ? "no name" : String.format("the same name '%s'", name));
+            if (namesToEntries.containsKey(name)) {
+                Workflowish otherEntry = namesToEntries.get(name);
+                String reason = String.format("%s have %s",
+                    getSubject(entry, otherEntry),
+                    "".equals(name) ? "no name" : String.format("the same name '%s'", name));
                 addConstraintViolation(context, reason);
                 return false;
             }
-        }
-
-        // If a service exists, check for any non-services without names.
-        if (yaml.getService() != null && names.contains("")) {
-            String reason = "a service always has no name, so any workflows or tools must be named";
-            addConstraintViolation(context, reason);
-            return false;
+            namesToEntries.put(name, entry);
         }
 
         return true;
+    }
+
+    private String getSubject(Workflowish a, Workflowish b) {
+        String termA = a.getTerm(false);
+        String termB = b.getTerm(false);
+        if (Objects.equals(termA, termB)) {
+            return String.format("at least two %s", a.getTerm(true));
+        } else {
+            return String.format("a %s and a %s", termA, termB);
+        }
     }
 
     private static void addConstraintViolation(final ConstraintValidatorContext context, String reason) {

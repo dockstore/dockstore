@@ -126,4 +126,8 @@ public class YamlWorkflow implements Workflowish {
     public void setLatestTagAsDefault(boolean latestTagAsDefault) {
         this.latestTagAsDefault = latestTagAsDefault;
     }
+
+    public String getTerm(boolean isPlural) {
+        return isPlural ? "workflows" : "workflow";
+    }
 }

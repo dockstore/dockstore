@@ -15,4 +15,5 @@ public interface Workflowish {
     boolean getLatestTagAsDefault();
     Object getSubclass();
     Filters getFilters();
+    String getTerm(boolean isPlural);
 }

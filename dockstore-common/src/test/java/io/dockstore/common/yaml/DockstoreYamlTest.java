@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.common.yaml.DockstoreYamlHelper.Version;
-import io.dockstore.common.yaml.constraints.HasEntry12;
 import io.dropwizard.testing.FixtureHelpers;
 import java.io.IOException;
 import java.net.URL;
@@ -174,7 +173,7 @@ class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12("version: 1.2");
             fail("Dockstore yaml with no entries should fail");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            assertTrue(e.getMessage().contains(HasEntry12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
+            assertTrue(e.getMessage().contains("at least one"));
         }
     }
 
@@ -185,7 +184,7 @@ class DockstoreYamlTest {
                 DockstoreYamlHelper.readDockstoreYaml(String.format("version: 1.2\n%s:\n", emptyProperty), true);
                 fail("Dockstore yaml with no entries should fail");
             } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-                assertTrue(e.getMessage().contains(HasEntry12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
+                assertTrue(e.getMessage().contains("at least one"));
             }
         }
     }
@@ -257,7 +256,7 @@ class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12(workflowsKey);
             fail("Shouldn't be able to parse correctly");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertTrue(ex.getMessage().contains("must have at least 1 workflow, tool, or service"));
+            assertTrue(ex.getMessage().contains("at least one"));
         }
 
         final String nameKey = DOCKSTORE_GALAXY_YAML.replaceFirst("name", "Name");

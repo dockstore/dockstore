@@ -19,6 +19,7 @@ import io.dockstore.common.yaml.constraints.HasEntry12;
 import io.dockstore.common.yaml.constraints.NamesAreUnique12;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -29,7 +30,7 @@ import javax.validation.constraints.Pattern;
  */
 @HasEntry12
 @NamesAreUnique12
-public class DockstoreYaml12 implements DockstoreYaml {
+public class DockstoreYaml12 implements DockstoreYaml12Plus {
 
     private String version;
     private List<YamlWorkflow> workflows = new ArrayList<>();
@@ -76,4 +77,17 @@ public class DockstoreYaml12 implements DockstoreYaml {
         return version;
     }
 
+    @Override
+    public List<Workflowish> getEntries() {
+        List<Workflowish> entries = new ArrayList<>();
+        Optional.ofNullable(workflows).ifPresent(entries::addAll);
+        Optional.ofNullable(tools).ifPresent(entries::addAll);
+        Optional.ofNullable(service).ifPresent(entries::add);
+        return entries;
+    }
+ 
+    @Override
+    public List<String> getEntryTerms() {
+        return List.of("workflow", "tool", "service");
+    }
 }
