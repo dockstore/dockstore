@@ -85,7 +85,7 @@ public class DockstoreYaml12 implements DockstoreYaml12AndUp {
         Optional.ofNullable(service).ifPresent(entries::add);
         return entries;
     }
- 
+
     @Override
     public List<String> getEntryTerms() {
         return List.of("workflow", "tool", "service");

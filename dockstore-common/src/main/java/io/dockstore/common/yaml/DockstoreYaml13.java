@@ -69,7 +69,7 @@ public class DockstoreYaml13 implements DockstoreYaml12AndUp {
     }
 
     @NotNull
-    @Pattern(regexp = "1\\.2", message = "must be \"1.2\"")
+    @Pattern(regexp = "1\\.3", message = "must be \"1.3\"")
     @Override
     public String getVersion() {
         return version;
@@ -84,7 +84,7 @@ public class DockstoreYaml13 implements DockstoreYaml12AndUp {
         Optional.ofNullable(service).ifPresent(entries::add);
         return entries;
     }
- 
+
     @Override
     public List<String> getEntryTerms() {
         return List.of("workflow", "notebook", "tool", "service");

@@ -14,7 +14,7 @@ public class YamlNotebook extends YamlWorkflow {
     public List<String> getUserPaths() {
         return userPaths;
     }
- 
+
     public void setUserPaths(List<String> userPaths) {
         this.userPaths = userPaths;
     }
