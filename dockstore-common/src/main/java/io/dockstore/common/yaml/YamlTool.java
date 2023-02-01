@@ -23,8 +23,4 @@ import io.dockstore.common.yaml.constraints.ToolIsCwl;
  */
 @ToolIsCwl
 public class YamlTool extends YamlWorkflow {
-
-    public String getTerm(boolean isPlural) {
-        return isPlural ? "tools" : "tool";
-    }
 }

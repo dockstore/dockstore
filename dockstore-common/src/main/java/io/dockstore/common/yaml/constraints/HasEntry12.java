@@ -24,10 +24,12 @@ import javax.validation.Payload;
 
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = HasEntryValidator.class)
-public @interface HasEntry {
+@Constraint(validatedBy = HasEntry12Validator.class)
+public @interface HasEntry12  {
 
-    String message () default "must have at least one entry";
+    String AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE = "must have at least 1 workflow, tool, or service";
+
+    String message () default AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE;
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }

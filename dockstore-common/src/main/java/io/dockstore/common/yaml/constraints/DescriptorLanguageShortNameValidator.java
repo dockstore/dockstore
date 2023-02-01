@@ -17,12 +17,17 @@
 package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.DescriptorLanguage;
+import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
  * Validates a descriptor language short name.
  */
-public class DescriptorLanguageShortNameValidator extends BaseConstraintValidator<DescriptorLanguageShortName, String> {
+public class DescriptorLanguageShortNameValidator implements ConstraintValidator<DescriptorLanguageShortName, String> {
+    @Override
+    public void initialize(final DescriptorLanguageShortName constraintAnnotation) {
+        // Intentionally empty
+    }
 
     @Override
     public boolean isValid(final String shortName, final ConstraintValidatorContext context) {

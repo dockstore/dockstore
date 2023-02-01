@@ -18,12 +18,17 @@ package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.yaml.YamlTool;
+import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
  * Validates that an apptool has the descriptor language CWL.
  */
-public class ToolIsCwlValidator extends BaseConstraintValidator<ToolIsCwl, YamlTool> {
+public class ToolIsCwlValidator implements ConstraintValidator<ToolIsCwl, YamlTool> {
+    @Override
+    public void initialize(final ToolIsCwl constraintAnnotation) {
+        // Intentionally empty
+    }
 
     @Override
     public boolean isValid(final YamlTool tool, final ConstraintValidatorContext context) {

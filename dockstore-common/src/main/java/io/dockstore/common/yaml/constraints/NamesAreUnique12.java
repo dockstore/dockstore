@@ -24,17 +24,17 @@ import javax.validation.Constraint;
 import javax.validation.Payload;
 
 /**
- * Defines the `NamesAreUnique` constraint annotation, which
+ * Defines the `NamesAreUnique12` constraint annotation, which
  * is valid if every entry of a `DockstoreYaml12` has a unique name.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = NamesAreUniqueValidator.class)
-public @interface NamesAreUnique {
+@Constraint(validatedBy = NamesAreUnique12Validator.class)
+public @interface NamesAreUnique12 {
 
-    String MUST_HAVE_UNIQUE_NAMES = "must contain unique names";
+    String MUST_HAVE_A_UNIQUE_NAME = "must have a unique name for each workflow and tool";
 
-    String message () default MUST_HAVE_UNIQUE_NAMES;
+    String message () default MUST_HAVE_A_UNIQUE_NAME;
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }

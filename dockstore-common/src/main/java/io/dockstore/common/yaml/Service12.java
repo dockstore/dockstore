@@ -38,7 +38,4 @@ public class Service12 extends AbstractYamlService implements Workflowish {
         this.subclass = subclass;
     }
 
-    public String getTerm(boolean isPlural) {
-        return isPlural ? "services" : "service";
-    }
 }

@@ -34,4 +34,5 @@ public class DockstoreYaml11 implements DockstoreYaml {
     public void setService(final YamlService11 service) {
         this.service = service;
     }
+
 }
