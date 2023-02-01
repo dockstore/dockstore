@@ -311,6 +311,13 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
     }
 
+    public List<Workflow> findAllWorkflows(int offset, int pageSize) {
+        return (List<Workflow>) namedQuery("io.dockstore.webservice.core.Workflow.findAllWorkflows")
+            .setMaxResults(pageSize)
+            .setFirstResult(offset)
+            .list();
+    }
+
     /**
      * Finds a workflow based on a workflow version id. If the workflow cannot be found
      * and an exception is generated an empty optional is returned

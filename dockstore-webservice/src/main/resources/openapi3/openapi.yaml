@@ -2194,6 +2194,30 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/updateLanguageVersions:
+    post:
+      description: Update language versions
+      operationId: updateLanguageVersions
+      parameters:
+      - description: Whether to process all versions or only versions without language
+          descriptor already set
+        in: query
+        name: allVersions
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+          description: Number of entries processed
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{entryId}/exportToOrcid:
     post:
       description: Export entry to ORCID. DOI is required
