@@ -32,9 +32,9 @@ import javax.validation.Payload;
 @Constraint(validatedBy = NamesAreUniqueValidator.class)
 public @interface NamesAreUnique {
 
-    String MUST_HAVE_A_UNIQUE_NAME = "must contain unique names";
+    String MUST_HAVE_UNIQUE_NAMES = "must contain unique names";
 
-    String message () default MUST_HAVE_A_UNIQUE_NAME;
+    String message () default MUST_HAVE_UNIQUE_NAMES;
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }

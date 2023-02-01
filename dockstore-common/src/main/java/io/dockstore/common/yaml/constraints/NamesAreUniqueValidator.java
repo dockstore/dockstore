@@ -19,21 +19,16 @@ package io.dockstore.common.yaml.constraints;
 import io.dockstore.common.yaml.DockstoreYaml12AndUp;
 import io.dockstore.common.yaml.Workflowish;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Validates that every entry of a `DockstoreYaml12` has a unique name.
  */
-public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUnique, DockstoreYaml12AndUp> {
-    @Override
-    public void initialize(final NamesAreUnique constraintAnnotation) {
-        // Intentionally empty
-    }
+public class NamesAreUniqueValidator extends BaseConstraintValidator<NamesAreUnique, DockstoreYaml12AndUp> {
 
     @Override
     public boolean isValid(final DockstoreYaml12AndUp yaml, final ConstraintValidatorContext context) {
@@ -41,18 +36,14 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
             return true;
         }
 
-        List<Workflowish> entries = yaml.getEntries();
-
         // Create a map of names to entries and check for duplicate names in the process.
         Map<String, Workflowish> namesToEntries = new HashMap<>();
-        for (Workflowish entry: entries) {
+        for (Workflowish entry: yaml.getEntries()) {
             String name = ObjectUtils.firstNonNull(entry.getName(), "");
             if (namesToEntries.containsKey(name)) {
                 Workflowish otherEntry = namesToEntries.get(name);
-                String reason = String.format("%s have %s",
-                    getSubject(entry, otherEntry),
-                    "".equals(name) ? "no name" : String.format("the same name '%s'", name));
-                addConstraintViolation(context, reason);
+                String message = createMessage(entry, otherEntry, name);
+                addConstraintViolation(context, message);
                 return false;
             }
             namesToEntries.put(name, entry);
@@ -61,7 +52,12 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
         return true;
     }
 
-    private String getSubject(Workflowish a, Workflowish b) {
+    private String createMessage(Workflowish a, Workflowish b, String name) {
+        String reason = String.format("%s have %s", createSubject(a, b), createAttribute(name));
+        return String.format("%s (%s)", NamesAreUnique.MUST_HAVE_UNIQUE_NAMES, reason);
+    }
+
+    private String createSubject(Workflowish a, Workflowish b) {
         String termA = a.getTerm(false);
         String termB = b.getTerm(false);
         if (Objects.equals(termA, termB)) {
@@ -71,9 +67,7 @@ public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUniq
         }
     }
 
-    private static void addConstraintViolation(final ConstraintValidatorContext context, String reason) {
-        String msg = String.format("%s (%s)", NamesAreUnique.MUST_HAVE_A_UNIQUE_NAME, reason);
-        context.disableDefaultConstraintViolation();
-        context.buildConstraintViolationWithTemplate(msg).addConstraintViolation();
+    private String createAttribute(String name) {
+        return StringUtils.isEmpty(name) ? "no name" : String.format("the same name '%s'", name);
     }
 }

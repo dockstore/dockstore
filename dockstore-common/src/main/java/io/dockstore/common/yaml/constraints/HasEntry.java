@@ -27,9 +27,7 @@ import javax.validation.Payload;
 @Constraint(validatedBy = HasEntryValidator.class)
 public @interface HasEntry {
 
-    String AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE = "must have at least one entry";
-
-    String message () default AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE;
+    String message () default "must have at least one entry";
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }
