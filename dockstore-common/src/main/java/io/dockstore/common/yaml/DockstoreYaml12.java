@@ -15,8 +15,8 @@
  */
 package io.dockstore.common.yaml;
 
-import io.dockstore.common.yaml.constraints.HasEntry12;
-import io.dockstore.common.yaml.constraints.NamesAreUnique12;
+import io.dockstore.common.yaml.constraints.HasEntry;
+import io.dockstore.common.yaml.constraints.NamesAreUnique;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -28,9 +28,9 @@ import javax.validation.constraints.Pattern;
  * The preferred .dockstore.yml since 1.9. Supports workflows, one-step workflows (tools), and services.
  * Workflows and tools are allowed to have multiple instances.
  */
-@HasEntry12
-@NamesAreUnique12
-public class DockstoreYaml12 implements DockstoreYaml12Plus {
+@HasEntry
+@NamesAreUnique
+public class DockstoreYaml12 implements DockstoreYaml12AndUp {
 
     private String version;
     private List<YamlWorkflow> workflows = new ArrayList<>();

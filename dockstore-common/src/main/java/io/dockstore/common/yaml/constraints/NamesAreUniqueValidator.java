@@ -16,7 +16,7 @@
 
 package io.dockstore.common.yaml.constraints;
 
-import io.dockstore.common.yaml.DockstoreYaml12;
+import io.dockstore.common.yaml.DockstoreYaml12AndUp;
 import io.dockstore.common.yaml.Workflowish;
 import java.util.HashMap;
 import java.util.List;
@@ -29,14 +29,14 @@ import org.apache.commons.lang3.ObjectUtils;
 /**
  * Validates that every entry of a `DockstoreYaml12` has a unique name.
  */
-public class NamesAreUnique12Validator implements ConstraintValidator<NamesAreUnique12, DockstoreYaml12> {
+public class NamesAreUniqueValidator implements ConstraintValidator<NamesAreUnique, DockstoreYaml12AndUp> {
     @Override
-    public void initialize(final NamesAreUnique12 constraintAnnotation) {
+    public void initialize(final NamesAreUnique constraintAnnotation) {
         // Intentionally empty
     }
 
     @Override
-    public boolean isValid(final DockstoreYaml12 yaml, final ConstraintValidatorContext context) {
+    public boolean isValid(final DockstoreYaml12AndUp yaml, final ConstraintValidatorContext context) {
         if (yaml == null) {
             return true;
         }
@@ -72,7 +72,7 @@ public class NamesAreUnique12Validator implements ConstraintValidator<NamesAreUn
     }
 
     private static void addConstraintViolation(final ConstraintValidatorContext context, String reason) {
-        String msg = String.format("%s (%s)", NamesAreUnique12.MUST_HAVE_A_UNIQUE_NAME, reason);
+        String msg = String.format("%s (%s)", NamesAreUnique.MUST_HAVE_A_UNIQUE_NAME, reason);
         context.disableDefaultConstraintViolation();
         context.buildConstraintViolationWithTemplate(msg).addConstraintViolation();
     }

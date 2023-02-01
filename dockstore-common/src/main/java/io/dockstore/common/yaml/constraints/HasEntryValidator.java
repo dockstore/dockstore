@@ -15,21 +15,21 @@
  */
 package io.dockstore.common.yaml.constraints;
 
-import io.dockstore.common.yaml.DockstoreYaml12;
+import io.dockstore.common.yaml.DockstoreYaml12AndUp;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
- * Validates that a DockstoreYaml12 instance has at least one workflow, tool, or service
+ * Validates that a DockstoreYaml12+ instance has at least one workflow, tool, or service
  */
-public class HasEntry12Validator implements ConstraintValidator<HasEntry12, DockstoreYaml12> {
+public class HasEntryValidator implements ConstraintValidator<HasEntry, DockstoreYaml12AndUp> {
     @Override
-    public void initialize(final HasEntry12 constraintAnnotation) {
+    public void initialize(final HasEntry constraintAnnotation) {
         // Intentionally empty
     }
 
     @Override
-    public boolean isValid(final DockstoreYaml12 value, final ConstraintValidatorContext context) {
+    public boolean isValid(final DockstoreYaml12AndUp value, final ConstraintValidatorContext context) {
         if (value.getEntries().isEmpty()) {
             addConstraintViolation(context, value);
             return false;
@@ -37,7 +37,7 @@ public class HasEntry12Validator implements ConstraintValidator<HasEntry12, Dock
         return true;
     }
 
-    private static void addConstraintViolation(final ConstraintValidatorContext context, DockstoreYaml12 yaml) {
+    private static void addConstraintViolation(final ConstraintValidatorContext context, DockstoreYaml12AndUp yaml) {
         String msg = String.format("must have at least one %s", String.join(", ", yaml.getEntryTerms()));
         context.disableDefaultConstraintViolation();
         context.buildConstraintViolationWithTemplate(msg).addConstraintViolation();
