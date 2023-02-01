@@ -17,7 +17,7 @@ public class YamlNotebook implements Workflowish {
     private String format = "ipynb";
     private String language = "python";
     private String primaryDescriptorPath;
-    private Boolean publish = false;
+    private Boolean publish;
     private boolean latestTagAsDefault = false;
     private Filters filters = new Filters();
     private List<YamlAuthor> authors = new ArrayList<>();

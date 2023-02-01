@@ -124,6 +124,40 @@ class DockstoreYamlTest {
         authors = service.getAuthors();
         assertEquals(1, authors.size());
         assertEquals("Institute", authors.get(0).getRole());
+
+        final List<YamlNotebook> notebooks = dockstoreYaml.getNotebooks();
+        assertEquals(2, notebooks.size());
+
+        final YamlNotebook notebook = notebooks.get(0);
+        assertEquals("notebook0", notebook.getName());
+        assertEquals("Ipynb", notebook.getFormat());
+        assertEquals("Python", notebook.getLanguage());
+        assertEquals("/notebook0.ipynb", notebook.getPrimaryDescriptorPath());
+        assertEquals(true, notebook.getPublish());
+        assertEquals(true, notebook.getLatestTagAsDefault());
+        assertEquals(1, notebook.getFilters().getBranches().size());
+        assertEquals("branch0", notebook.getFilters().getBranches().get(0));
+        assertEquals(1, notebook.getFilters().getTags().size());
+        assertEquals("tag0", notebook.getFilters().getTags().get(0));
+        assertEquals(1, notebook.getAuthors().size());
+        assertEquals("author0", notebook.getAuthors().get(0).getName());
+        assertEquals(1, notebook.getTestParameterFiles().size());
+        assertEquals("/test0", notebook.getTestParameterFiles().get(0));
+        assertEquals(1, notebook.getOtherFiles().size());
+        assertEquals("/other0", notebook.getOtherFiles().get(0));
+
+        final YamlNotebook notebook1 = notebooks.get(1);
+        assertEquals("notebook1", notebook1.getName());
+        assertEquals("ipynb", notebook1.getFormat());
+        assertEquals("python", notebook1.getLanguage());
+        assertEquals("/notebook1.ipynb", notebook1.getPrimaryDescriptorPath());
+        assertEquals(null, notebook1.getPublish());
+        assertEquals(false, notebook1.getLatestTagAsDefault());
+        assertTrue(notebook1.getFilters().getBranches().isEmpty());
+        assertTrue(notebook1.getFilters().getTags().isEmpty());
+        assertTrue(notebook1.getAuthors().isEmpty());
+        assertTrue(notebook1.getTestParameterFiles().isEmpty());
+        assertTrue(notebook1.getOtherFiles().isEmpty());
     }
 
     @Test
