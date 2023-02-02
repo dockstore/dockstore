@@ -35,10 +35,10 @@ public final class PipHelper {
             semVerString = "9001.9001.9001";
         }
         Version semVer = Version.valueOf(semVerString);
-        if (semVer.greaterThanOrEqualTo(Version.valueOf("1.13.0"))) {
-            return "1.13.0";
+        if (semVer.greaterThanOrEqualTo(Version.valueOf("1.14.0"))) {
+            return "1.14.0";
         } else {
-            return "1.10.0";
+            return "1.13.0";
         }
     }
 
@@ -49,7 +49,7 @@ public final class PipHelper {
      */
     public static Map<String, String> convertPipRequirementsStringToMap(String pipRequirementsString) {
         String[] lines = pipRequirementsString.split(System.getProperty("line.separator"));
-        List<String> pipDeps = new ArrayList(Arrays.asList(lines));
+        List<String> pipDeps = new ArrayList<>(Arrays.asList(lines));
         Map<String, String> pipDepMap = new HashMap<>();
         pipDeps.forEach(pipDep -> {
             String[] split = pipDep.split("==");
