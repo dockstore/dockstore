@@ -42,6 +42,7 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.LicenseInformation;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -454,6 +455,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         return service;
+    }
+
+    public Notebook initializeNotebookFromGitHub(String repositoryId, String format, String language, String workflowName) {
+        Notebook notebook = new Notebook();
+        // return setWorkflowInfo(repositoryId, format, language, workflowName, notebook);
+        return notebook; // TODO replace with above
     }
 
     /**

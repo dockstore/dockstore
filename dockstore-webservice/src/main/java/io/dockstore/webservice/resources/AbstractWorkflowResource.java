@@ -17,12 +17,14 @@ import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
 import io.dockstore.common.yaml.Workflowish;
 import io.dockstore.common.yaml.YamlAuthor;
+import io.dockstore.common.yaml.YamlNotebook;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -369,6 +371,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter);
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, AppTool.class, messageWriter);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getNotebooks(), repository, gitReference, installationId, username, dockstoreYml, Notebook.class, messageWriter);
 
         } catch (Exception ex) {
 
@@ -504,7 +507,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
                         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
 
-                        Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
+                        Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
                         workflow.syncMetadataWithDefault();
 
@@ -617,7 +620,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitHubSourceCodeRepo Source Code Repo
      * @return New or updated workflow
      */
-    private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
+    private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, Workflowish wf, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
         Optional<T> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
@@ -632,14 +635,18 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             StringInputValidationHelper.checkEntryName(workflowType, workflowName);
 
-            if (workflowType == BioWorkflow.class) {
+            if (workflowType == Notebook.class) {
+                YamlNotebook yamlNotebook = (YamlNotebook)wf;
+                LOG.info("Would've created notebook {} {}", yamlNotebook.getFormat(), yamlNotebook.getLanguage());
+                // TODO gitHubSourceCodeRepo.initializeNotebookFromGitHub(repository, yamlNotebook.getFormat(), yamlNotebook.getLanguage(), workflowName);
+            } else if (workflowType == BioWorkflow.class) {
                 workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, AppTool.class);
-                workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, wf.getSubclass().toString(), workflowName);
             } else if (workflowType == Service.class) {
-                workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, subclass);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, wf.getSubclass().toString());
             } else if (workflowType == AppTool.class) {
                 workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, BioWorkflow.class);
-                workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, subclass, workflowName);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, wf.getSubclass().toString(), workflowName);
             } else {
                 throw new CustomWebApplicationException(workflowType.getCanonicalName()  + " is not a valid workflow type. Currently only workflows, tools, and services are supported by GitHub Apps.", LAMBDA_FAILURE);
             }
@@ -663,8 +670,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // For services, we must compare the descriptor type subclasses
         // For workflows and tools, we must compare the descriptor types (languages)
         // The `convertShortName` methods throw `UnsupportedOperationException` when passed an unknown subclass
+        String subclass = wf.getSubclass().toString();
         try {
-            if (workflowType == Service.class) {
+            if (workflowType == Notebook.class) {
+                // TODO add check
+            } else if (workflowType == Service.class) {
                 checkSame(workflowToUpdate.getDescriptorTypeSubclass(), DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass), "descriptor type subclass", "service");
             } else {
                 checkSame(workflowToUpdate.getDescriptorType(), DescriptorLanguage.convertShortStringToEnum(subclass), "descriptor language (subclass)", workflowType == AppTool.class ? "tool" : "workflow");
