@@ -314,8 +314,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         // Find all workflows and services that are github apps and use the given repo
-        List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).collect(
-                Collectors.toList());
+        List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).toList();
 
         // When the git reference to delete is the default version, set it to the next latest version
         workflows.forEach(workflow -> {
@@ -333,8 +332,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             FileFormatHelper.updateEntryLevelFileFormats(workflow);
 
             // Unpublish the workflow if it was published and no longer has any versions
-            if (workflow.getWorkflowVersions().isEmpty()) {
-                workflow.setIsPublished(false);
+            if (workflow.getIsPublished() && workflow.getWorkflowVersions().isEmpty()) {
+                User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
+                publishWorkflow(workflow, false, user);
+            } else {
+                PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
             }
         });
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
