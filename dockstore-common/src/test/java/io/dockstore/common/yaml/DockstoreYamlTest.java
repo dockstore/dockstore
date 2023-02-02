@@ -132,7 +132,7 @@ class DockstoreYamlTest {
         assertEquals("notebook0", notebook.getName());
         assertEquals("Ipynb", notebook.getFormat());
         assertEquals("Python", notebook.getLanguage());
-        assertEquals("/notebook0.ipynb", notebook.getPrimaryDescriptorPath());
+        assertEquals("/notebook0.ipynb", notebook.getPath());
         assertEquals(true, notebook.getPublish());
         assertEquals(true, notebook.getLatestTagAsDefault());
         assertEquals(1, notebook.getFilters().getBranches().size());
@@ -150,7 +150,7 @@ class DockstoreYamlTest {
         assertEquals("notebook1", notebook1.getName());
         assertEquals("ipynb", notebook1.getFormat());
         assertEquals("python", notebook1.getLanguage());
-        assertEquals("/notebook1.ipynb", notebook1.getPrimaryDescriptorPath());
+        assertEquals("/notebook1.ipynb", notebook1.getPath());
         assertEquals(null, notebook1.getPublish());
         assertEquals(false, notebook1.getLatestTagAsDefault());
         assertTrue(notebook1.getFilters().getBranches().isEmpty());
@@ -446,7 +446,7 @@ class DockstoreYamlTest {
     @Test
     void testGetDockstoreYamlProperties() {
         Set<String> properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml12.class);
-        assertEquals(37, properties.size(), "Should have the correct number of unique properties for a version 1.2 .dockstore.yml");
+        assertEquals(38, properties.size(), "Should have the correct number of unique properties for a version 1.2 .dockstore.yml");
 
         properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml11.class);
         assertEquals(29, properties.size(), "Should have the correct number of unique properties for a version 1.1 .dockstore.yml");

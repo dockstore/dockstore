@@ -74,7 +74,7 @@ notebooks:
   - name: notebook0
     format: Ipynb
     language: Python
-    primaryDescriptorPath: /notebook0.ipynb
+    path: /notebook0.ipynb
     publish: true
     latestTagAsDefault: true
     filters:
@@ -89,4 +89,4 @@ notebooks:
     otherFiles:
       - /other0
   - name: notebook1
-    primaryDescriptorPath: /notebook1.ipynb
+    path: /notebook1.ipynb

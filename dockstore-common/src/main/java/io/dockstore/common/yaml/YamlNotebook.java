@@ -16,7 +16,7 @@ public class YamlNotebook implements Workflowish {
     private String name;
     private String format = "ipynb";
     private String language = "python";
-    private String primaryDescriptorPath;
+    private String path;
     private Boolean publish;
     private boolean latestTagAsDefault = false;
     private Filters filters = new Filters();
@@ -56,12 +56,12 @@ public class YamlNotebook implements Workflowish {
     }
 
     @NotNull
-    public String getPrimaryDescriptorPath() {
-        return primaryDescriptorPath;
+    public String getPath() {
+        return path;
     }
 
-    public void setPrimaryDescriptorPath(final String primaryDescriptorPath) {
-        this.primaryDescriptorPath = primaryDescriptorPath;
+    public void setPath(final String path) {
+        this.path = path;
     }
 
     public Boolean getPublish() {
