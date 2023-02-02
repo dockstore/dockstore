@@ -208,7 +208,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repo = github.getRepository(repositoryId);
             List<GHContent> directoryContent = repo.getDirectoryContent(pathToDirectory, reference);
-            return directoryContent.stream().map(GHContent::getName).collect(Collectors.toList());
+            return directoryContent.stream().map(GHContent::getName).toList();
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
             return null;

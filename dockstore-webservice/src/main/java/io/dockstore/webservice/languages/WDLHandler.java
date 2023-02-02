@@ -66,6 +66,7 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wdl.draft3.parser.WdlParser;
+import wdl.draft3.parser.WdlParser.SyntaxError;
 
 /**
  * This class will eventually handle support for understanding WDL
@@ -678,6 +679,22 @@ public class WDLHandler implements LanguageHandlerInterface {
                     + " this workflow is " + semVersionString.get() + ". Dockstore cannot verify or parse this WDL version.");
         } else {
             return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Map<String, String>> getInputFiles(Set<SourceFile> sourceFiles, SourceFile primaryDescriptor) {
+        final WdlBridge wdlBridge = new WdlBridge();
+        wdlBridge.setSecondaryFiles(sourceFiles.stream().collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent)));
+        File tempMainDescriptor = null;
+        try {
+            tempMainDescriptor = java.nio.file.Files.createTempFile("main", "descriptor").toFile();
+            Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptor.getContent());
+            return Optional.of(wdlBridge.getInputFiles(tempMainDescriptor.getPath()));
+        } catch (SyntaxError | IOException e) {
+            return Optional.empty();
+        } finally {
+            FileUtils.deleteQuietly(tempMainDescriptor); // Works with null parameter
         }
     }
 
