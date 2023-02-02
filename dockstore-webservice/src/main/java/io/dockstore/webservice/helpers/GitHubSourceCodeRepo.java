@@ -428,39 +428,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param subclass The subclass of the workflow (ex. docker-compose)
      * @return Service
      */
-    public Service initializeServiceFromGitHub(String repositoryId, String subclass) {
+    public Service initializeServiceFromGitHub(String repositoryId, String subclass, String workflowName) {
         Service service = new Service();
-        service.setOrganization(repositoryId.split("/")[0]);
-        service.setRepository(repositoryId.split("/")[1]);
-        service.setSourceControl(SourceControl.GITHUB);
-        service.setGitUrl("git@github.com:" + repositoryId + ".git");
-        service.setLastUpdated(new Date());
-        service.setDescriptorType(DescriptorLanguage.SERVICE);
-        service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
-        service.setMode(WorkflowMode.DOCKSTORE_YML);
-        service.setTopicAutomatic(this.getTopic(repositoryId));
-        this.setLicenseInformation(service, repositoryId);
-        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, service.getOrganization() + '/' + service.getRepository());
-        service.setLicenseInformation(licenseInformation);
-        // Validate subclass
-        if (subclass != null) {
-            DescriptorLanguageSubclass descriptorLanguageSubclass;
-            try {
-                descriptorLanguageSubclass = DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass);
-            } catch (UnsupportedOperationException ex) {
-                // TODO: https://github.com/dockstore/dockstore/issues/3239
-                throw new CustomWebApplicationException("Subclass " + subclass + " is not a valid descriptor language subclass.", LAMBDA_FAILURE);
-            }
-            service.setDescriptorTypeSubclass(descriptorLanguageSubclass);
-        }
-
+        setWorkflowInfo(repositoryId, DescriptorLanguage.SERVICE.toString(), subclass, workflowName, service);
         return service;
     }
 
     public Notebook initializeNotebookFromGitHub(String repositoryId, String format, String language, String workflowName) {
         Notebook notebook = new Notebook();
-        // return setWorkflowInfo(repositoryId, format, language, workflowName, notebook);
-        return notebook; // TODO replace with above
+        setWorkflowInfo(repositoryId, format, language, workflowName, notebook);
+        return notebook;
     }
 
     /**
@@ -470,14 +447,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflowName Name of the workflow
      * @return Workflow
      */
-    public Workflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+    public BioWorkflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
         BioWorkflow workflow = new BioWorkflow();
-        return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
+        setWorkflowInfo(repositoryId, subclass, DescriptorLanguageSubclass.NOT_APPLICABLE.toString(), workflowName, workflow);
+        return workflow;
     }
 
-    public Workflow initializeOneStepWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
-        AppTool workflow = new AppTool();
-        return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
+    public AppTool initializeOneStepWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+        AppTool appTool = new AppTool();
+        setWorkflowInfo(repositoryId, subclass, DescriptorLanguageSubclass.NOT_APPLICABLE.toString(), workflowName, appTool);
+        return appTool;
     }
 
     /**
@@ -488,26 +467,32 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflow Workflow to update
      * @return Workflow
      */
-    public Workflow setWorkflowInfo(final String repositoryId, final String subclass, final String workflowName,
-            final Workflow workflow) {
+    private void setWorkflowInfo(final String repositoryId, final String type, final String typeSubclass, final String workflowName, final Workflow workflow) {
+
+        workflow.setWorkflowName(workflowName);
         workflow.setOrganization(repositoryId.split("/")[0]);
         workflow.setRepository(repositoryId.split("/")[1]);
         workflow.setSourceControl(SourceControl.GITHUB);
         workflow.setGitUrl("git@github.com:" + repositoryId + ".git");
         workflow.setLastUpdated(new Date());
+        workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
-        workflow.setWorkflowName(workflowName);
         workflow.setTopicAutomatic(this.getTopic(repositoryId));
         this.setLicenseInformation(workflow, repositoryId);
-        DescriptorLanguage descriptorLanguage;
+
         try {
-            descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(subclass);
+            DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
             workflow.setDescriptorType(descriptorLanguage);
         } catch (UnsupportedOperationException ex) {
-            throw new CustomWebApplicationException("The given descriptor type is not supported: " + subclass, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("The given descriptor type is not supported: " + type, LAMBDA_FAILURE);
         }
-        workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
-        return workflow;
+
+        try {
+            DescriptorLanguageSubclass descriptorLanguageSubclass = DescriptorLanguageSubclass.convertShortNameStringToEnum(typeSubclass);
+            workflow.setDescriptorTypeSubclass(descriptorLanguageSubclass);
+        } catch (UnsupportedOperationException ex) {
+            throw new CustomWebApplicationException("Subclass " + typeSubclass + " is not a valid descriptor language subclass.", LAMBDA_FAILURE);
+        }
     }
 
     /**
