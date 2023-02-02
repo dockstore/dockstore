@@ -19,14 +19,13 @@ package io.dockstore.webservice.core.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 class MetricsDataS3ClientTest {
 
     @Test
-    void testGenerateKeys() throws UnsupportedEncodingException {
+    void testGenerateKeys() {
         final String versionName = "1.0";
         final String platform = "terra";
         final String fileName = Instant.now().toEpochMilli() + ".json";

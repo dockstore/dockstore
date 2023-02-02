@@ -238,14 +238,18 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         if (entry.getDefaultVersion() != null) {
             return getBranchNameFromDefaultVersion(entry);
         } else {
-            try {
-                GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-                return project.getDefaultBranch();
-            } catch (IOException e) {
-                LOG.info("could not find " + repositoryId + " due to " + e.getMessage());
-            }
+            return getDefaultBranch(repositoryId);
         }
+    }
 
+    @Override
+    public String getDefaultBranch(String repositoryId) {
+        try {
+            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            return project.getDefaultBranch();
+        } catch (IOException e) {
+            LOG.info("could not find " + repositoryId + " due to " + e.getMessage());
+        }
         return null;
     }
 

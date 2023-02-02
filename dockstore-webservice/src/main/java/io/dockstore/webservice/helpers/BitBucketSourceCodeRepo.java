@@ -360,20 +360,29 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public String getMainBranch(Entry entry, String repositoryId) {
-        RepositoriesApi api = new RepositoriesApi(apiClient);
         // Is default version set?
         if (entry.getDefaultVersion() != null) {
             return getBranchNameFromDefaultVersion(entry);
         } else {
             // If default version is not set, need to find the main branch
-            try {
-                Repository repository = api.repositoriesUsernameRepoSlugGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-                return repository.getMainbranch().getName();
-            } catch (ApiException e) {
-                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
-                return null;
-            }
+            return getDefaultBranch(repositoryId);
         }
+    }
+
+    @Override
+    public String getDefaultBranch(String repositoryId) {
+        RepositoriesApi api = new RepositoriesApi(apiClient);
+        Repository repository;
+        try {
+            repository = api.repositoriesUsernameRepoSlugGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            if (repository != null && repository.getMainbranch() != null) {
+                return repository.getMainbranch().getName();
+            }
+        } catch (ApiException e) {
+            LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
+            return null;
+        }
+        return null;
     }
 
     @Override

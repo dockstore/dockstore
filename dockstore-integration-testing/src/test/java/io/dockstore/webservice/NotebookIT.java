@@ -97,7 +97,7 @@ class NotebookIT extends BaseIT {
 
         assertEquals(1, notebookDAO.findAllPublishedPaths().size());
         assertEquals(1, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
-
+        assertEquals(1, workflowDAO.findAllPublished(1, Integer.valueOf(PAGINATION_LIMIT), null, null, null).size());
         session.close();
     }
 

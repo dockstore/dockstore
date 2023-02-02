@@ -180,4 +180,100 @@
         </addColumn>
         <addForeignKeyConstraint baseColumnNames="notebookid" baseTableName="event" constraintName="fkNotebookId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="notebook"/>
     </changeSet>
+    <changeSet author="svonworl" id="addUserFiles">
+        <addColumn tableName="tag">
+            <column name="userfiles" type="varchar"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="userfiles" type="varchar"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addMetrics">
+        <createSequence cacheSize="1" cycle="false" incrementBy="1" maxValue="9223372036854775807" minValue="1" sequenceName="countmetric_id_seq" startValue="1"/>
+        <createSequence cacheSize="1" cycle="false" incrementBy="1" maxValue="9223372036854775807" minValue="1" sequenceName="statisticmetric_id_seq" startValue="1"/>
+
+        <createTable tableName="execution_status">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="executionstatus_pkey"/>
+            </column>
+            <column name="isvalid" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberoffailedexecutions" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberofsuccessfulexecutions" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="execution_status_count">
+            <column name="executionstatusid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="execution_status_count_pkey"/>
+            </column>
+            <column name="count" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="executionstatus" type="varchar(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="execution_status_count_pkey"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="executionstatusid" baseTableName="execution_status_count" constraintName="fk_executionstatusid_execution_status_count" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_status"/>
+
+        <createTable tableName="cpu_metric">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="cpu_metric_pkey"/>
+            </column>
+            <column name="average" type="VARCHAR(255)"/>
+            <column name="maximum" type="VARCHAR(255)"/>
+            <column name="minimum" type="VARCHAR(255)"/>
+            <column name="numberofdatapointsforaverage" type="int"/>
+        </createTable>
+        <createTable tableName="execution_time_metric">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="execution_time_metric_pkey"/>
+            </column>
+            <column name="average" type="VARCHAR(255)"/>
+            <column name="maximum" type="VARCHAR(255)"/>
+            <column name="minimum" type="VARCHAR(255)"/>
+            <column name="numberofdatapointsforaverage" type="int"/>
+        </createTable>
+        <createTable tableName="memory_metric">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="memory_metric_pkey"/>
+            </column>
+            <column name="average" type="VARCHAR(255)"/>
+            <column name="maximum" type="VARCHAR(255)"/>
+            <column name="minimum" type="VARCHAR(255)"/>
+            <column name="numberofdatapointsforaverage" type="int"/>
+        </createTable>
+        <createTable tableName="metrics">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="metrics_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="cpu" type="BIGINT"/>
+            <column name="executionstatuscount" type="BIGINT"/>
+            <column name="executiontime" type="BIGINT"/>
+            <column name="memory" type="BIGINT"/>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="executiontime" baseTableName="metrics" constraintName="fk_executiontime_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_time_metric"/>
+        <addForeignKeyConstraint baseColumnNames="cpu" baseTableName="metrics" constraintName="fk_cpu_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cpu_metric"/>
+        <addForeignKeyConstraint baseColumnNames="memory" baseTableName="metrics" constraintName="fk_memory_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="memory_metric"/>
+        <addForeignKeyConstraint baseColumnNames="executionstatuscount" baseTableName="metrics" constraintName="fk_executionstatuscount_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_status"/>
+
+        <createTable tableName="version_metrics">
+            <column name="versionid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metrics_pkey"/>
+            </column>
+            <column name="metricsid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="platform" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metrics_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="metricsid" constraintName="uk_metricsid_version_metrics" tableName="version_metrics"/>
+        <addForeignKeyConstraint baseColumnNames="metricsid" baseTableName="version_metrics" constraintName="fk_metricsid_version_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metrics"/>
+    </changeSet>
 </databaseChangeLog>

@@ -2589,6 +2589,26 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
+  /entries/updateLanguageVersions:
+    post:
+      tags:
+      - "entries"
+      operationId: "updateLanguageVersions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "allVersions"
+        in: "query"
+        required: false
+        type: "boolean"
+        default: false
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "integer"
+            format: "int32"
   /entries/{entryId}/versions/{versionId}/descriptionMetrics:
     get:
       tags:
@@ -5261,6 +5281,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5292,6 +5313,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5447,6 +5469,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       - name: "versionName"
         in: "query"
         description: "Version name"
@@ -5546,6 +5569,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -6791,6 +6815,27 @@ definitions:
       zenodoScope:
         type: "string"
     description: "Configuration information for UI clients of the Dockstore webservice."
+  CpuMetric:
+    type: "object"
+    properties:
+      average:
+        type: "string"
+        description: "The average value from the data points"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for statistical metrics in this webservice"
+      maximum:
+        type: "string"
+        description: "The maximum value from the data points"
+      minimum:
+        type: "string"
+        description: "The minimum value from the data points"
+      numberOfDataPointsForAverage:
+        type: "integer"
+        format: "int32"
+        description: "The number of data points used to calculate the average"
+    description: "This describes aggregated CPU metrics for workflow executions."
   DescriptionMetrics:
     type: "object"
     properties:
@@ -7340,6 +7385,53 @@ definitions:
         description: "(github) apps tool that the event is acting on."
         $ref: "#/definitions/AppTool"
     description: "This describes events that occur on the Dockstore site."
+  ExecutionStatusMetric:
+    type: "object"
+    properties:
+      count:
+        type: "object"
+        description: "A map containing the count for each key"
+        additionalProperties:
+          type: "integer"
+          format: "int32"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the count metrics in this webservice"
+      numberOfExecutions:
+        type: "integer"
+        format: "int32"
+      numberOfFailedExecutions:
+        type: "integer"
+        format: "int32"
+      numberOfSuccessfulExecutions:
+        type: "integer"
+        format: "int32"
+      valid:
+        type: "boolean"
+    description: "Aggregated metrics about workflow execution statuses"
+  ExecutionTimeMetric:
+    type: "object"
+    properties:
+      average:
+        type: "string"
+        description: "The average value from the data points"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for statistical metrics in this webservice"
+      maximum:
+        type: "string"
+        description: "The maximum value from the data points"
+      minimum:
+        type: "string"
+        description: "The minimum value from the data points"
+      numberOfDataPointsForAverage:
+        type: "integer"
+        format: "int32"
+        description: "The number of data points used to calculate the average"
+    description: "This describes aggregated execution time metrics in ISO 8601 for\
+      \ workflow executions."
   ExtendedUserData:
     type: "object"
     properties:
@@ -7519,6 +7611,27 @@ definitions:
       hostedEntryVersionLimit:
         type: "integer"
         format: "int32"
+  MemoryMetric:
+    type: "object"
+    properties:
+      average:
+        type: "string"
+        description: "The average value from the data points"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for statistical metrics in this webservice"
+      maximum:
+        type: "string"
+        description: "The maximum value from the data points"
+      minimum:
+        type: "string"
+        description: "The minimum value from the data points"
+      numberOfDataPointsForAverage:
+        type: "integer"
+        format: "int32"
+        description: "The number of data points used to calculate the average"
+    description: "This describes aggregated memory metrics for workflow executions."
   Metadata:
     type: "object"
     required:
@@ -7552,6 +7665,33 @@ definitions:
       version:
         type: "string"
     description: "Describes this registry to better allow for mirroring and indexing."
+  Metrics:
+    type: "object"
+    properties:
+      cpu:
+        description: "Aggregated CPU metrics"
+        $ref: "#/definitions/CpuMetric"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      executionStatusCount:
+        description: "A count of the different execution statuses from the workflow\
+          \ executions"
+        $ref: "#/definitions/ExecutionStatusMetric"
+      executionTime:
+        description: "Aggregated execution time metrics in ISO 8601 duration format"
+        $ref: "#/definitions/ExecutionTimeMetric"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the metrics in this webservice"
+      memory:
+        description: "Aggregated memory metrics"
+        $ref: "#/definitions/MemoryMetric"
+    description: "Aggregated metrics associated with entry versions"
   Notification:
     type: "object"
     properties:
@@ -7931,6 +8071,7 @@ definitions:
         - "SWL_TEST_JSON"
         - "DOCKSTORE_IPYNB"
         - "DOCKSTORE_NOTEBOOK_REES"
+        - "DOCKSTORE_NOTEBOOK_TEST_FILE"
         - "DOCKSTORE_NOTEBOOK_OTHER"
       content:
         type: "string"
@@ -7992,6 +8133,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      userFiles:
+        type: "array"
+        description: "The user-specified files for the version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       reference:
@@ -8122,6 +8268,13 @@ definitions:
       email:
         type: "string"
         position: 24
+      metricsByPlatform:
+        type: "object"
+        position: 26
+        description: "The aggregated metrics for executions of this version, grouped\
+          \ by platform"
+        additionalProperties:
+          $ref: "#/definitions/Metrics"
       last_built:
         type: "integer"
         format: "int64"
@@ -8634,6 +8787,7 @@ definitions:
         - "SWL_TEST_JSON"
         - "DOCKSTORE_IPYNB"
         - "DOCKSTORE_NOTEBOOK_REES"
+        - "DOCKSTORE_NOTEBOOK_TEST_FILE"
         - "DOCKSTORE_NOTEBOOK_OTHER"
       valid:
         type: "boolean"
@@ -8675,6 +8829,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      userFiles:
+        type: "array"
+        description: "The user-specified files for the version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -8804,6 +8963,13 @@ definitions:
       email:
         type: "string"
         position: 24
+      metricsByPlatform:
+        type: "object"
+        position: 26
+        description: "The aggregated metrics for executions of this version, grouped\
+          \ by platform"
+        additionalProperties:
+          $ref: "#/definitions/Metrics"
     description: "Base class for versions of entries in the Dockstore"
   VersionMetadata:
     type: "object"
@@ -9112,6 +9278,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      userFiles:
+        type: "array"
+        description: "The user-specified files for the version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -9241,6 +9412,13 @@ definitions:
       email:
         type: "string"
         position: 24
+      metricsByPlatform:
+        type: "object"
+        position: 26
+        description: "The aggregated metrics for executions of this version, grouped\
+          \ by platform"
+        additionalProperties:
+          $ref: "#/definitions/Metrics"
       workflow_path:
         type: "string"
         position: 101

@@ -198,6 +198,13 @@ public class ToolDAO extends EntryDAO<Tool> {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Tool.getByAlias").setParameter("alias", alias));
     }
 
+    public List<Tool> findAllTools(int offset, int pageSize) {
+        return (List<Tool>) namedQuery("io.dockstore.webservice.core.Tool.findAllTools")
+            .setMaxResults(pageSize)
+            .setFirstResult(offset)
+            .list();
+    }
+
     @SuppressWarnings("checkstyle:ParameterNumber")
     protected Root<Tool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, CriteriaQuery<?> q) {

@@ -63,6 +63,8 @@ public final class LanguageHandlerFactory {
             return new NextflowHandler();
         case SERVICE:
             return new LanguagePluginHandler(ServicePrototypePlugin.class);
+        case IPYNB:
+            return new IpynbHandler();
         default:
             // look through plugin list
             if (pluginMap.containsKey(type)) {
@@ -82,6 +84,8 @@ public final class LanguageHandlerFactory {
             return new NextflowHandler();
         case DOCKSTORE_SERVICE_YML:
             return new LanguagePluginHandler(ServicePrototypePlugin.class);
+        case DOCKSTORE_IPYNB:
+            return new IpynbHandler();
         default:
             // look through plugin list
             if (fileTypeMap.containsKey(type)) {

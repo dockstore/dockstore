@@ -314,8 +314,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         // Find all workflows and services that are github apps and use the given repo
-        List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).collect(
-                Collectors.toList());
+        List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).toList();
 
         // When the git reference to delete is the default version, set it to the next latest version
         workflows.forEach(workflow -> {
@@ -331,9 +330,35 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         workflows.forEach(workflow -> {
             workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen());
             FileFormatHelper.updateEntryLevelFileFormats(workflow);
+
+            // Unpublish the workflow if it was published and no longer has any versions
+            if (workflow.getIsPublished() && workflow.getWorkflowVersions().isEmpty()) {
+                User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
+                publishWorkflow(workflow, false, user);
+            } else {
+                PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
+            }
         });
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
         lambdaEventDAO.create(lambdaEvent);
+    }
+
+    /**
+     * Identify git references that may be worth trying to handle as a github apps release event
+     * @param repository
+     * @param installationId
+     * @return
+     */
+    protected Set<String> identifyGitReferencesToRelease(String repository, String installationId) {
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
+        GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+
+        // see if there is a .dockstore.yml on any branch that was just added
+        Set<String> branchCandidates = new HashSet<>(gitHubSourceCodeRepo.detectDockstoreYml(repository));
+
+        GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+        gitHubSourceCodeRepo.reportOnRateLimit("identifyGitReferencesToRelease", startRateLimit, endRateLimit);
+        return branchCandidates;
     }
 
     /**
@@ -427,19 +452,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private boolean isGitHubRateLimitError(Exception ex) {
-        if (ex instanceof CustomWebApplicationException) {
-            final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
+        if (ex instanceof final CustomWebApplicationException customWebAppEx) {
             final String errorMessage = customWebAppEx.getErrorMessage();
-            if (errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT)) {
-                return true;
-            }
+            return errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT);
         }
         return false;
     }
 
     private boolean isServerError(Exception ex) {
-        if (ex instanceof CustomWebApplicationException) {
-            final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
+        if (ex instanceof final CustomWebApplicationException customWebAppEx) {
             final int code = customWebAppEx.getResponse().getStatus();
             return code >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
@@ -569,7 +590,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private void addValidationsToMessage(Workflow workflow, WorkflowVersion version, PrintWriter messageWriter) {
-        List<Validation> validations = version.getValidations().stream().filter(v -> !v.isValid()).collect(Collectors.toList());
+        List<Validation> validations = version.getValidations().stream().filter(v -> !v.isValid()).toList();
         if (!validations.isEmpty()) {
             messageWriter.printf("In version '%s' of %s '%s':%n", version.getName(), workflow.getEntryType().getTerm(), computeFullWorkflowName(workflow));
             validations.forEach(validation -> addValidationToMessage(validation, messageWriter));
