@@ -641,7 +641,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 // TODO gitHubSourceCodeRepo.initializeNotebookFromGitHub(repository, yamlNotebook.getFormat(), yamlNotebook.getLanguage(), workflowName);
             } else if (workflowType == BioWorkflow.class) {
                 workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, AppTool.class);
-                workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, wf.getSubclass().toString(), workflowName);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, wf.getSubclass().toString(), null);
             } else if (workflowType == Service.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, wf.getSubclass().toString(), workflowName);
             } else if (workflowType == AppTool.class) {
