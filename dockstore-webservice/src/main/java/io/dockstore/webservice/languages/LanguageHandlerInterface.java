@@ -29,6 +29,7 @@ import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.dockerhub.DockerHubImage;
 import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
@@ -114,7 +115,7 @@ public interface LanguageHandlerInterface {
      * @param primaryDescriptorFilePath Primary descriptor path
      * @return Is a valid workflow set, error message
      */
-    VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+    VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, Workflow workflow);
 
     /**
      * Validates a tool set for the workflow described by with primaryDescriptorFilePath
@@ -137,12 +138,29 @@ public interface LanguageHandlerInterface {
      * @param repositoryId            identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param content                 content of the primary descriptor
      * @param version                 version of the files to get
-     * @param sourceCodeRepoInterface used too retrieve imports
+     * @param sourceCodeRepoInterface used to retrieve imports
      * @param filepath                used to help find relative imports, must be absolute
      * @return map of file paths to SourceFile objects
      */
     Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath);
+
+    /**
+     * Read and process user-specified files.
+     * @param repositoryId            identifies the git repository that we wish to use, normally something like 'organization/repo_name'
+     * @param paths                   paths of the user-specified files
+     * @param version                 version of the files to get
+     * @param sourceCodeRepoInterface used to retrieve files
+     * @param excludePaths            paths to exclude
+     * @return map of file paths to user-specified SourceFile objects
+     */
+    default Map<String, SourceFile> processUserFiles(String repositoryId, List<String> paths, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
+        if (paths != null && !paths.isEmpty()) {
+            LOG.error("This language does not support user-specified files");
+            throw new CustomWebApplicationException("This language does not support user-specified files", HttpStatus.SC_BAD_REQUEST);
+        }
+        return Map.of();
+    }
 
     /**
      * Processes a descriptor and its associated secondary descriptors to either return the tools that a workflow has or a DAG representation

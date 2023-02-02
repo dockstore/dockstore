@@ -26,6 +26,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -39,6 +40,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -229,6 +231,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @MapKeyEnumerated(EnumType.STRING)
     @ApiModelProperty(value = "The aggregated metrics for executions of this version, grouped by platform", position = 26)
     private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
+
+    @Column(columnDefinition = "varchar")
+    @Convert(converter = UserFilesConverter.class)
+    @ApiModelProperty(value = "The user-specified files for the version.")
+    private List<String> userFiles = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
@@ -620,6 +627,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setMetricsByPlatform(Map<Partner, Metrics> metricsByPlatform) {
         this.metricsByPlatform = metricsByPlatform;
+    }
+
+    public List<String> getUserFiles() {
+        return userFiles;
+    }
+
+    public void setUserFiles(List<String> userFiles) {
+        this.userFiles = userFiles;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

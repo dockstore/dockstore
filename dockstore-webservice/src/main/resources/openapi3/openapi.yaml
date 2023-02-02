@@ -1832,6 +1832,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_IPYNB
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
         default:
@@ -2193,6 +2194,30 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/updateLanguageVersions:
+    post:
+      description: Update language versions
+      operationId: updateLanguageVersions
+      parameters:
+      - description: Whether to process all versions or only versions without language
+          descriptor already set
+        in: query
+        name: allVersions
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+          description: Number of entries processed
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{entryId}/exportToOrcid:
     post:
       description: Export entry to ORCID. DOI is required
@@ -2331,6 +2356,7 @@ paths:
                   - SWL_TEST_JSON
                   - DOCKSTORE_IPYNB
                   - DOCKSTORE_NOTEBOOK_REES
+                  - DOCKSTORE_NOTEBOOK_TEST_FILE
                   - DOCKSTORE_NOTEBOOK_OTHER
                 uniqueItems: true
           description: default response
@@ -7347,6 +7373,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_IPYNB
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
         default:
@@ -8976,6 +9003,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_IPYNB
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         verifiedBySource:
           type: object
@@ -9187,6 +9215,10 @@ components:
         size:
           type: integer
           format: int64
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:
@@ -9694,6 +9726,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_IPYNB
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         valid:
           type: boolean
@@ -9796,6 +9829,10 @@ components:
           - BRANCH
           - NOT_APPLICABLE
           - UNSET
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:
@@ -10157,6 +10194,10 @@ components:
           - HELM
         synced:
           type: boolean
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:

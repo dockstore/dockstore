@@ -328,9 +328,13 @@ public class ElasticListener implements StateListenerInterface {
      * @throws IOException  Mapper problems
      */
     public static JsonNode dockstoreEntryToElasticSearchObject(final Entry entry) throws IOException {
-        // TODO: avoid loading all versions to calculate verified and descriptor type versions
+        // TODO: avoid loading all versions to calculate verified, openData and descriptor type versions
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
+        final boolean openData = workflowVersions.stream()
+            .map(wv -> wv.getVersionMetadata().getPublicAccessibleTestParameterFile())
+            .filter(Objects::nonNull)
+            .anyMatch(Boolean::booleanValue);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
         List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
         Entry detachedEntry = removeIrrelevantProperties(entry);
@@ -338,6 +342,7 @@ public class ElasticListener implements StateListenerInterface {
         // add number of starred users to allow sorting in the UI
         ((ObjectNode)jsonNode).put("stars_count", (long) entry.getStarredUsers().size());
         ((ObjectNode)jsonNode).put("verified", verified);
+        ((ObjectNode)jsonNode).put("openData", openData);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
         ((ObjectNode)jsonNode).put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
         addCategoriesJson(jsonNode, entry);

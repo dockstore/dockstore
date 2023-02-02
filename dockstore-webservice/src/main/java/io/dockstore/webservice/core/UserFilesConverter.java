@@ -3,14 +3,14 @@ package io.dockstore.webservice.core;
 import javax.persistence.Converter;
 
 @Converter(autoApply = true)
-public class DescriptorTypeVersionConverter extends DelimitedValuesConverter {
+public class UserFilesConverter extends DelimitedValuesConverter {
 
-    public DescriptorTypeVersionConverter() {
+    public UserFilesConverter() {
         super("\t");
     }
 
     @Override
     public String getSubject(boolean isPlural) {
-        return "Descriptor type version" + (isPlural ? "s" : "");
+        return "User file" + (isPlural ? "s" : "");
     }
 }
