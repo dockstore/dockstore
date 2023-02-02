@@ -637,7 +637,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             if (workflowType == Notebook.class) {
                 YamlNotebook yamlNotebook = (YamlNotebook)wf;
-                gitHubSourceCodeRepo.initializeNotebookFromGitHub(repository, yamlNotebook.getFormat(), yamlNotebook.getLanguage(), workflowName);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeNotebookFromGitHub(repository, yamlNotebook.getFormat(), yamlNotebook.getLanguage(), workflowName);
             } else if (workflowType == BioWorkflow.class) {
                 workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, AppTool.class);
                 workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, wf.getSubclass().toString(), workflowName);
