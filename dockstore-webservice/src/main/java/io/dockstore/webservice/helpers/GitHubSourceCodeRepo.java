@@ -18,6 +18,7 @@
 package io.dockstore.webservice.helpers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.dockstore.webservice.Constants.DOCKSTORE_ALTERNATE_YML_PATH;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
@@ -359,7 +360,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     public boolean isOneOfMyOrganizations(String organization) {
         try {
-            return organization.equals(githubTokenUsername) || github.getMyOrganizations().keySet().contains(organization);
+            return organization.equals(githubTokenUsername) || github.getMyOrganizations().containsKey(organization);
         } catch (IOException e) {
             LOG.error("could not determine organization accessibility due to ", e);
             throw new CustomWebApplicationException("could not determine organization accessibility on github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -369,8 +370,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public Set<String> getOrganizationMemberships() {
         try {
-            final Set<String> orgsAndAccount = new HashSet<>();
-            orgsAndAccount.addAll(github.getMyOrganizations().keySet());
+            final Set<String> orgsAndAccount = new HashSet<>(github.getMyOrganizations().keySet());
             orgsAndAccount.add(githubTokenUsername);
             return orgsAndAccount;
         } catch (IOException e) {
@@ -967,7 +967,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
     }
 
-    private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
+    public void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
         if (startRateLimit != null && endRateLimit != null) {
             int used = startRateLimit.getRemaining() - endRateLimit.getRemaining();
             if (used > 0) {
@@ -1055,20 +1055,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+
+
     @Override
     public String getMainBranch(Entry entry, String repositoryId) {
         String mainBranch = null;
 
         // Get repository based on username and repo id
-        if (repositoryId != null) {
-            try {
-                GHRepository repository = github.getRepository(repositoryId);
-                // Determine the default branch on Github
-                mainBranch = repository.getDefaultBranch();
-            } catch (IOException e) {
-                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
-                return null;
-            }
+        mainBranch = getDefaultBranch(repositoryId);
+        if (mainBranch == null) {
+            return null;
         }
         // Determine which branch to use for tool info
         if (entry.getDefaultVersion() != null) {
@@ -1076,6 +1072,75 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         return mainBranch;
+    }
+
+    @Override
+    public String getDefaultBranch(String repositoryId) {
+        if (repositoryId != null) {
+            try {
+                GHRepository repository = github.getRepository(repositoryId);
+                // Determine the default branch on GitHub
+                return repository.getDefaultBranch();
+            } catch (IOException e) {
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Detect branches that include a .dockstore.yml using a variety of heuristics.
+     * <p>
+     * Heuristics include looking at the default branch, commits that just touched a .dockstore.yml at the end of a branch, etc. while trying to avoid too many
+     * API calls, particularly an unbounded number of calls based on factors that can change between repos (number of tags, branches, etc.)
+     *
+     * @param repositoryId
+     * @return
+     */
+    public Set<String> detectDockstoreYml(String repositoryId) {
+        Set<String> candidateBranches = new HashSet<>();
+        if (repositoryId != null) {
+            try {
+                GHRepository repository = getRepository(repositoryId);
+                // see if there is a .dockstore.yml on any path that was just added to a branch/the HEAD
+                // unfortunately, there is no nice way to map this to a specific tag or branch, arbitrarily pick 2 to try
+                final int arbitraryNumberOfGuesses = 2;
+                final List<GHCommit> ghCommits = new ArrayList<>(repository.queryCommits().path(DOCKSTORE_YML_PATH).pageSize(arbitraryNumberOfGuesses).list().toList());
+                ghCommits.addAll(repository.queryCommits().path(DOCKSTORE_ALTERNATE_YML_PATH).pageSize(arbitraryNumberOfGuesses).list().toList());
+                for (GHCommit ghCommit : ghCommits) {
+                    try {
+                        // this will only resolve if a .dockstore.yml was in the last commit to be touched (is not eligible for cache since it uses JWT)
+                        ghCommit.listBranchesWhereHead().toList().forEach(branch -> candidateBranches.add("refs/heads/" + branch.getName()));
+                    } catch (IOException e) {
+                        // do nothing and proceed to next commit
+                        LOG.info("had issue processing branch for .dockstore.yml", e);
+                    }
+                }
+                // examine the default branch, good chance it will have it
+                String defaultBranch = "refs/heads/" + getDefaultBranch(repositoryId);
+                examineBranchForDockstoreYml(repositoryId, candidateBranches, defaultBranch);
+                // if we still don't have a candidate try guessing at some arbitrary (but a constant number of) branches. Hopefully this does not trigger too often
+                if (candidateBranches.isEmpty()) {
+                    String[] totalGuesses = {"master", "main", "develop"};
+                    Arrays.stream(totalGuesses).toList().stream().map(guess -> "refs/heads/" + guess).forEach(guess -> {
+                        examineBranchForDockstoreYml(repositoryId, candidateBranches, guess);
+                    });
+                }
+            } catch (IOException e) {
+                LOG.error("Unable to retrieve analyze branch candidates for repository " + repositoryId, e);
+                return candidateBranches;
+            }
+        }
+        return candidateBranches;
+    }
+
+    private void examineBranchForDockstoreYml(String repositoryId, Set<String> candidateBranches, String branch) {
+        String defaultFileContent = readFile(repositoryId, DOCKSTORE_YML_PATH, branch);
+        defaultFileContent = StringUtils.isNotEmpty(defaultFileContent) ? defaultFileContent : readFile(repositoryId, DOCKSTORE_ALTERNATE_YML_PATH, branch);
+        if (StringUtils.isNotEmpty(defaultFileContent)) {
+            candidateBranches.add(branch);
+        }
     }
 
     @Override

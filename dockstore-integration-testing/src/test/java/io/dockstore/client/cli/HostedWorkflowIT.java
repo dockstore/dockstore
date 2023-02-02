@@ -165,7 +165,10 @@ class HostedWorkflowIT extends BaseIT {
             Assertions.assertEquals("You cannot hide the default version.", ex.getMessage());
         }
 
-        file.setContent("cwlVersion: v1.0\n\n" + "class: Workflow");
+        file.setContent("""
+            cwlVersion: v1.0
+
+            class: Workflow""");
         hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
         hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).stream().filter(v -> v.getName().equals("1")).findFirst().get();
         hostedVersion.setHidden(true);

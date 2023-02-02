@@ -515,6 +515,8 @@ public abstract class SourceCodeRepoInterface {
      */
     public abstract String getMainBranch(Entry<?, ?> entry, String repositoryId);
 
+    public abstract String getDefaultBranch(String repositoryId);
+
     /**
 
     /**
