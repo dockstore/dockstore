@@ -314,7 +314,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
         try {
             Tag tag = refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(repositoryId.split("/")[0], version.getReference(),
-                repositoryId.split("/")[1]);
+                    repositoryId.split("/")[1]);
             if (tag != null) {
                 return tag.getTarget().getHash();
             }
@@ -429,7 +429,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             return null;
         }
         repositoryId = gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY) + "/"
-            + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
+                + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
         return repositoryId;
     }
 
