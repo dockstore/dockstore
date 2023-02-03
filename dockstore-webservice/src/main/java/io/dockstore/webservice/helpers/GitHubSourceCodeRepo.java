@@ -34,7 +34,7 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
-import io.dockstore.common.yaml.YamlWorkflow;
+import io.dockstore.common.yaml.Workflowish;
 import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -830,19 +830,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private WorkflowVersion setupWorkflowFilesForGitHubVersion(Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
         // Determine version information from dockstore.yml
-        YamlWorkflow theWf = null;
+        Workflowish theWf = null;
         List<String> testParameterPaths = null;
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             // TODO: Need to handle services; the YAML is guaranteed to have at least one of either
-            List<? extends YamlWorkflow> workflows;
-            if (workflow instanceof AppTool) {
+            List<? extends Workflowish> workflows;
+            if (workflow instanceof Notebook) {
+                workflows = dockstoreYaml12.getNotebooks();
+            } else if (workflow instanceof AppTool) {
                 workflows = dockstoreYaml12.getTools();
             } else {
                 workflows = dockstoreYaml12.getWorkflows();
             }
 
-            final Optional<? extends YamlWorkflow> maybeWorkflow = workflows.stream().filter(wf -> {
+            final Optional<? extends Workflowish> maybeWorkflow = workflows.stream().filter(wf -> {
                 final String wfName = wf.getName();
                 final String dockstoreWorkflowPath =
                         "github.com/" + repository.getFullName() + (wfName != null && !wfName.isEmpty() ? "/" + wfName : "");

@@ -114,4 +114,8 @@ public class YamlNotebook implements Workflowish {
     public void setOtherFiles(List<String> otherFiles) {
         this.otherFiles = otherFiles;
     }
+
+    public String getPrimaryDescriptorPath() {
+        return getPath();
+    }
 }
