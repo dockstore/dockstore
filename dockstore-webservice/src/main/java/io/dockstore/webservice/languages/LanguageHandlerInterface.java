@@ -960,7 +960,7 @@ public interface LanguageHandlerInterface {
         return Optional.empty();
     }
 
-    default Optional<Map<String, String>> getInputFiles(Set<SourceFile> sourceFiles, SourceFile primaryDescriptor) {
+    default Optional<Set<String>> getFileInputParameterNames(Set<SourceFile> sourceFiles, SourceFile primaryDescriptor) {
         return Optional.empty();
     }
 

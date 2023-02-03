@@ -91,13 +91,15 @@ public final class CheckUrlHelper {
     /**
      * Get all the URLs from a JSON file.
      *
-     * @param contents Contents of a JSON file
+     * @param contents                Contents of a JSON file
+     * @param fileInputParameterNames
      * @return The URLs
      */
-    public static Set<String> getUrlsFromJSON(String contents) {
+    static Set<String> getUrlsFromJSON(String contents,
+        final Optional<Set<String>> fileInputParameterNames) {
         Set<String> urls = new HashSet<>();
         JSONObject jsonFile = new JSONObject(contents);
-        getUrlsFromJSON(jsonFile, urls);
+        getUrlsFromJSON(jsonFile, urls, fileInputParameterNames);
         return urls;
     }
 
@@ -120,26 +122,30 @@ public final class CheckUrlHelper {
         }
     }
 
-    private static void getUrlsFromJSON(JSONObject jsonObject, Set<String> urls) {
+    private static void getUrlsFromJSON(JSONObject jsonObject, Set<String> urls, final Optional<Set<String>> fileInputParameterNames) {
         Iterator<?> keys = jsonObject.keys();
         while (keys.hasNext()) {
             String key = (String) keys.next();
             Object o = jsonObject.get(key);
-            getUrlsFromJSON(o, urls);
+            if (fileInputParameterNames.isEmpty() || fileInputParameterNames.get().contains(key)) {
+                getUrlsFromJSON(o, urls);
+            }
         }
     }
 
     /**
      * Get all the URLs from a YAML file.
      *
-     * @param content Contents of a YAML file
+     * @param content                 Contents of a YAML file
+     * @param fileInputParameterNames
      * @return The URLs
      */
-    public static Set<String> getUrlsFromYAML(String content) {
+    static Set<String> getUrlsFromYAML(String content,
+        final Optional<Set<String>> fileInputParameterNames) {
         Yaml yaml = new Yaml();
         Map<String, Object> map = yaml.load(content);
         JSONObject jsonObject = new JSONObject(map);
-        return getUrlsFromJSON(jsonObject.toString());
+        return getUrlsFromJSON(jsonObject.toString(), fileInputParameterNames);
     }
 
     private static void getUrl(String string, Set<String> urls) {
@@ -159,13 +165,14 @@ public final class CheckUrlHelper {
      * @param baseURL Base URL of the CheckURL lambda
      * @return Whether the URLs of the JSON are publicly accessible
      */
-    public static Optional<Boolean> checkTestParameterFile(String content, String baseURL, TestFileType fileType) {
+    public static Optional<Boolean> checkTestParameterFile(String content, String baseURL,
+        TestFileType fileType, Optional<Set<String>> fileInputParameterNames) {
         try {
             Set<String> urls;
             if (fileType == TestFileType.YAML) {
-                urls = getUrlsFromYAML(content);
+                urls = getUrlsFromYAML(content, fileInputParameterNames);
             } else {
-                urls = getUrlsFromJSON(content);
+                urls = getUrlsFromJSON(content, fileInputParameterNames);
             }
             return checkUrls(urls, baseURL);
         } catch (Exception e) {

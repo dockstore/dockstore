@@ -56,7 +56,8 @@ class CheckUrlHelperIT {
         String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
+            descriptorType);
         assertTrue(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
@@ -70,7 +71,8 @@ class CheckUrlHelperIT {
         String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
+            descriptorType);
         assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
@@ -84,7 +86,8 @@ class CheckUrlHelperIT {
         String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
+            descriptorType);
         assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
@@ -98,7 +101,8 @@ class CheckUrlHelperIT {
         String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
+            descriptorType);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 

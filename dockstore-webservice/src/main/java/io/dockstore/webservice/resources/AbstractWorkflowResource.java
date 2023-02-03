@@ -58,6 +58,8 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.swagger.annotations.Api;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -203,17 +205,20 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     workflowVersionFromDB.setToolTableJson(null);
                     workflowVersionFromDB.setDagJson(null);
 
-                    updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
+                    updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version, newWorkflow.getDescriptorType());
                 });
     }
 
     /**
      * Updates the sourcefiles in the database to match the sourcefiles on the remote
+     *
      * @param existingVersion
      * @param remoteVersion
+     * @param descriptorType
      * @return WorkflowVersion with updated sourcefiles
      */
-    private WorkflowVersion updateDBVersionSourceFilesWithRemoteVersionSourceFiles(WorkflowVersion existingVersion, WorkflowVersion remoteVersion) {
+    private WorkflowVersion updateDBVersionSourceFilesWithRemoteVersionSourceFiles(WorkflowVersion existingVersion, WorkflowVersion remoteVersion,
+        final DescriptorLanguage descriptorType) {
         // Update source files for each version
         Map<String, SourceFile> existingFileMap = new HashMap<>();
         existingVersion.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getAbsolutePath(), file));
@@ -251,22 +256,36 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         // Setup CheckUrl
         if (checkUrlLambdaUrl != null) {
-            publicAccessibleUrls(existingVersion, checkUrlLambdaUrl);
+            publicAccessibleUrls(existingVersion, checkUrlLambdaUrl, descriptorType);
         }
 
         return existingVersion;
     }
 
     /**
-     * Sets the publicly accessible URL version metadata.
-     * If at least one test parameter file is publicly accessible, then version metadata is true
-     * If there's 1+ test parameter file that is null but there's no false, then version metadata is null
-     * If there's 1+ test parameter file that is false, then version metadata is false
+     * Sets the publicly accessible URL version metadata. If at least one test parameter file is
+     * publicly accessible, then version metadata is true If there's 1+ test parameter file that is
+     * null but there's no false, then version metadata is null If there's 1+ test parameter file
+     * that is false, then version metadata is false
      *
      * @param existingVersion   Hibernate initialized version
      * @param checkUrlLambdaUrl URL of the checkUrl lambda
+     * @param descriptorType
      */
-    public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl) {
+    public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl,
+        final DescriptorLanguage descriptorType) {
+        final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
+        final Optional<SourceFile> primaryDescriptor = existingVersion.getSourceFiles().stream()
+            .filter(sf -> sf.getPath().equals(existingVersion.getWorkflowPath()))
+            .findFirst();
+        final Optional<Set<String>> fileInputParameterNames;
+        if (primaryDescriptor.isPresent()) {
+            fileInputParameterNames =
+                languageHandler.getFileInputParameterNames(existingVersion.getSourceFiles(),
+                    primaryDescriptor.get());
+        } else {
+            fileInputParameterNames = Optional.empty();
+        }
         Boolean publicAccessibleTestParameterFile = null;
         Iterator<SourceFile> sourceFileIterator = existingVersion.getSourceFiles().stream().filter(sourceFile -> sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)).iterator();
         while (sourceFileIterator.hasNext()) {
@@ -274,11 +293,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             Optional<Boolean> publicAccessibleUrls = Optional.empty();
             if (sourceFile.getAbsolutePath().endsWith(".json")) {
                 publicAccessibleUrls =
-                    CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl, TestFileType.JSON);
+                    CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
+                        TestFileType.JSON, fileInputParameterNames);
             } else {
                 if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
                     publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
-                        TestFileType.YAML);
+                        TestFileType.YAML, fileInputParameterNames);
                 }
             }
             // Do not care about null, it will never override a true/false
@@ -785,11 +805,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setToolTableJson(null);
                 existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
-                updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
+                updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion,
+                    workflow.getDescriptorType());
                 updatedWorkflowVersion = existingWorkflowVersion;
             } else {
                 if (checkUrlLambdaUrl != null) {
-                    publicAccessibleUrls(remoteWorkflowVersion, checkUrlLambdaUrl);
+                    publicAccessibleUrls(remoteWorkflowVersion, checkUrlLambdaUrl, workflow.getDescriptorType());
                 }
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
                 updatedWorkflowVersion = remoteWorkflowVersion;

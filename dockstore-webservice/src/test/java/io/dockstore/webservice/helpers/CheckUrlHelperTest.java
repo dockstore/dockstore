@@ -26,6 +26,7 @@ import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,15 +49,18 @@ class CheckUrlHelperTest {
     void getUrlsFromJSON() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("testParameterFile1.json"));
         String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
-        Set<String> urls = CheckUrlHelper.getUrlsFromJSON(s);
+        Set<String> urls = CheckUrlHelper.getUrlsFromJSON(s, Optional.empty());
         assertEquals(3, urls.size(), "Should have two from GitHub, 1 from FTP");
+        final Set<String> urls2 = CheckUrlHelper.getUrlsFromJSON(s,
+            Optional.of(Set.of("TopMedVariantCaller.input_cram_files")));
+        assertEquals(1, urls2.size(), "Should have 1 matching parameter name");
     }
 
     @Test
     void getUrlsFromYAML() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("testParameterFile1.yaml"));
         String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
-        Set<String> urls = CheckUrlHelper.getUrlsFromYAML(s);
+        Set<String> urls = CheckUrlHelper.getUrlsFromYAML(s, Optional.empty());
         assertEquals(3, urls.size(), "Should have same amount of URLs as the JSON equivalent above");
     }
 
@@ -64,7 +68,7 @@ class CheckUrlHelperTest {
     void getUrlsFromInvalidFile() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("valid_description_example.wdl"));
         String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
-        assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.YAML).isEmpty());
-        assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.JSON).isEmpty());
+        assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.YAML, Optional.empty()).isEmpty());
+        assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.JSON, Optional.empty()).isEmpty());
     }
 }

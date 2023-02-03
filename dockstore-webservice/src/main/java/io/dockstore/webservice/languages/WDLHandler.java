@@ -683,14 +683,14 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Optional<Map<String, String>> getInputFiles(Set<SourceFile> sourceFiles, SourceFile primaryDescriptor) {
+    public Optional<Set<String>> getFileInputParameterNames(Set<SourceFile> sourceFiles, SourceFile primaryDescriptor) {
         final WdlBridge wdlBridge = new WdlBridge();
         wdlBridge.setSecondaryFiles(sourceFiles.stream().collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent)));
         File tempMainDescriptor = null;
         try {
             tempMainDescriptor = java.nio.file.Files.createTempFile("main", "descriptor").toFile();
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptor.getContent());
-            return Optional.of(wdlBridge.getInputFiles(tempMainDescriptor.getPath()));
+            return Optional.of(wdlBridge.getInputFiles(tempMainDescriptor.getPath()).keySet());
         } catch (SyntaxError | IOException e) {
             return Optional.empty();
         } finally {

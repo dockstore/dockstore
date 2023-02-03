@@ -746,16 +746,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowId", required = true, in = ParameterIn.PATH) @ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId,
         @Parameter(name = "include", description = WORKFLOW_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = WORKFLOW_INCLUDE_MESSAGE) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
-        workflow.getWorkflowVersions().stream().forEach(wv -> {
-            wv.getSourceFiles().stream().filter(sf -> sf.getPath().equals(wv.getWorkflowPath()))
-                .findFirst().ifPresent(primarySourceFile -> {
-                    final LanguageHandlerInterface languageHandler =
-                        LanguageHandlerFactory.getInterface(FileType.DOCKSTORE_WDL);
-                    final Optional<Map<String, String>> inputFiles =
-                        languageHandler.getInputFiles(wv.getSourceFiles(), primarySourceFile);
-                    System.out.println("inputFiles = " + inputFiles);
-                });
-        });
         checkNotNullEntry(workflow);
         initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
