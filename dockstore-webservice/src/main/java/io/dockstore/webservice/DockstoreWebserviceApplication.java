@@ -275,7 +275,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         if (System.getenv("CIRCLE_SHA1") != null) {
             builder.eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName(), "central"));
         }
-        builder.addNetworkInterceptor(new RateLimitInterceptor());
         okHttpClient = builder.cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS)
                 .writeTimeout(0, TimeUnit.SECONDS).build();
         try {

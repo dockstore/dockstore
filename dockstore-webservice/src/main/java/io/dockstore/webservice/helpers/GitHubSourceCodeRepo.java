@@ -56,9 +56,6 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -95,7 +92,7 @@ import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubAbuseLimitHandler;
 import org.kohsuke.github.GitHubBuilder;
-import org.kohsuke.github.GitHubRateLimitHandler;
+import org.kohsuke.github.RateLimitChecker.LiteralValue;
 import org.kohsuke.github.connector.GitHubConnectorResponse;
 import org.kohsuke.github.extras.okhttp3.OkHttpGitHubConnector;
 import org.slf4j.Logger;
@@ -107,6 +104,8 @@ import org.slf4j.LoggerFactory;
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
+    public static final int SLEEP_AT_RATE_LIMIT_OR_BELOW = 50;
+
     public static final String GITHUB_ABUSE_LIMIT_REACHED = "GitHub abuse limit reached";
     public static final int GITHUB_MAX_CACHE_AGE_SECONDS = 30; // GitHub's default max-cache age is 60 seconds
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
@@ -133,7 +132,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         OkHttpGitHubConnector okHttp3Connector = new OkHttpGitHubConnector(build, GITHUB_MAX_CACHE_AGE_SECONDS);
         try {
             this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername)
-                    .withRateLimitHandler(new FailRateLimitHandler(githubTokenUsername))
+                    .withRateLimitChecker(new LiteralValue(SLEEP_AT_RATE_LIMIT_OR_BELOW))
                     .withAbuseLimitHandler(new FailAbuseLimitHandler(githubTokenUsername))
                     .withConnector(okHttp3Connector)
                     .build();
@@ -382,11 +381,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public boolean checkSourceControlTokenValidity() {
         try {
-            GHRateLimit ghRateLimit = github.getRateLimit();
-            if (ghRateLimit.getRemaining() == 0) {
-                ZonedDateTime zonedDateTime = Instant.ofEpochMilli(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
-                throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + ", please wait til " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
-            }
             github.getMyOrganizations();
         } catch (IOException e) {
             throw new CustomWebApplicationException(
@@ -1322,26 +1316,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // Create version with sourcefiles and validate
         return setupWorkflowVersionsHelper(workflow, ref, Optional.of(workflow), existingDefaults, ghRepository, dockstoreYml, Optional.empty());
-    }
-
-    /**
-     * 1. This logs username
-     * 2. We control the string in the error message
-     */
-    private static final class FailRateLimitHandler extends GitHubRateLimitHandler {
-
-        private final String username;
-
-        private FailRateLimitHandler(String username) {
-            this.username = username;
-        }
-
-        @Override
-        public void onError(GitHubConnectorResponse connectorResponse) {
-            LOG.error(OUT_OF_GIT_HUB_RATE_LIMIT + " for " + username);
-            throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT, HttpStatus.SC_BAD_REQUEST);
-        }
-
     }
 
     private static final class FailAbuseLimitHandler extends GitHubAbuseLimitHandler {
