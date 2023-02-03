@@ -22,6 +22,7 @@ import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
@@ -70,6 +71,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final ApiClient apiClient;
+    private final boolean runningOnCircleCI;
 
     /**
      * @param gitUsername           username that owns the bitbucket token
@@ -80,6 +82,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
         apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Authorization", "Bearer " + bitbucketTokenContent);
+        
+        this.runningOnCircleCI = DockstoreWebserviceApplication.runningOnCircleCI();
     }
 
     @Override
@@ -284,15 +288,19 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         // this is not so critical to warrant a http error code
         boolean newlyRateLimited = false;
         if (e.getCode() == Status.TOO_MANY_REQUESTS.getStatusCode()) {
-            newlyRateLimited = true;
             LOG.error("%s: rate-limited on %s".formatted(gitUsername, message));
-            try {
-                LOG.error("We sleep");
-                Thread.sleep(ONE_MINUTE_IN_MS); // one minute, should be exponential back-off
-            } catch (InterruptedException ex) {
-                LOG.error("Rate-limit wait interrupted!", e);
-                // Restore interrupted state...
-                Thread.currentThread().interrupt();
+            if (runningOnCircleCI) {
+                newlyRateLimited = true;
+                try {
+                    LOG.error("We sleep");
+                    Thread.sleep(ONE_MINUTE_IN_MS); // one minute, should be exponential back-off
+                } catch (InterruptedException ex) {
+                    LOG.error("Rate-limit wait interrupted!", e);
+                    // Restore interrupted state...
+                    Thread.currentThread().interrupt();
+                }
+            } else {
+                throw new CustomWebApplicationException("rate limited by bitbucket, please wait for up to one hour for quota to re-generate", HttpStatus.SC_BAD_REQUEST);
             }
         }
         return rateLimited || newlyRateLimited;

@@ -71,6 +71,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.validation.constraints.NotNull;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -92,6 +93,7 @@ import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubAbuseLimitHandler;
 import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.GitHubRateLimitHandler;
 import org.kohsuke.github.RateLimitChecker.LiteralValue;
 import org.kohsuke.github.connector.GitHubConnectorResponse;
 import org.kohsuke.github.extras.okhttp3.OkHttpGitHubConnector;
@@ -120,7 +122,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         this.githubTokenUsername = githubTokenUsername;
         OkHttpClient.Builder builder = getOkHttpClient().newBuilder();
         builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), githubTokenUsername));
-        if (System.getenv("CIRCLE_SHA1") != null) {
+        if (DockstoreWebserviceApplication.runningOnCircleCI()) {
             // namespace cache by user when testing
             builder.cache(DockstoreWebserviceApplication.getCache(gitUsername));
         } else {
@@ -131,11 +133,15 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // Must set the cache max age otherwise kohsuke assumes 0 which significantly slows down our GitHub requests
         OkHttpGitHubConnector okHttp3Connector = new OkHttpGitHubConnector(build, GITHUB_MAX_CACHE_AGE_SECONDS);
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername)
-                    .withRateLimitChecker(new LiteralValue(SLEEP_AT_RATE_LIMIT_OR_BELOW))
-                    .withAbuseLimitHandler(new FailAbuseLimitHandler(githubTokenUsername))
-                    .withConnector(okHttp3Connector)
-                    .build();
+            GitHubBuilder gitHubBuilder = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername)
+                .withAbuseLimitHandler(new FailAbuseLimitHandler(githubTokenUsername))
+                .withConnector(okHttp3Connector);
+            if (DockstoreWebserviceApplication.runningOnCircleCI()) {
+                gitHubBuilder = gitHubBuilder.withRateLimitChecker(new LiteralValue(SLEEP_AT_RATE_LIMIT_OR_BELOW));
+            } else {
+                gitHubBuilder = gitHubBuilder.withRateLimitHandler(new FailRateLimitHandler(githubTokenUsername));
+            }
+            this.github = gitHubBuilder.build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -1326,9 +1332,30 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         @Override
-        public void onError(GitHubConnectorResponse connectorResponse) {
+        public void onError(@NotNull GitHubConnectorResponse connectorResponse) {
             LOG.error(GITHUB_ABUSE_LIMIT_REACHED + " for " + username);
             throw new CustomWebApplicationException(GITHUB_ABUSE_LIMIT_REACHED, HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+
+    /**
+     * 1. This logs username
+     * 2. We control the string in the error message
+     */
+    private static final class FailRateLimitHandler extends GitHubRateLimitHandler {
+
+        private final String username;
+
+        private FailRateLimitHandler(String username) {
+            this.username = username;
+        }
+
+        @Override
+        public void onError(@NotNull GitHubConnectorResponse connectorResponse) {
+            LOG.error(OUT_OF_GIT_HUB_RATE_LIMIT + " for " + username);
+            throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT, HttpStatus.SC_BAD_REQUEST);
+        }
+
     }
 }

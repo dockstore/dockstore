@@ -195,6 +195,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String DOCKSTORE_WEB_CACHE_MISS_LOG_FILE = "/tmp/dockstore-web-cache.misses.log";
     public static final File CACHE_MISS_LOG_FILE = new File(DOCKSTORE_WEB_CACHE_MISS_LOG_FILE);
 
+    /**
+     * use this to detect whether we're running on CircleCI. Definitely not kosher, use sparingly and only as required.
+     */
+    public static final String CIRCLE_SHA_1 = "CIRCLE_SHA1";
+
     private static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
@@ -272,7 +277,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         }
         // match HttpURLConnection which does not have a timeout by default
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
-        if (System.getenv("CIRCLE_SHA1") != null) {
+        if (runningOnCircleCI()) {
             builder.eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName(), "central"));
         }
         okHttpClient = builder.cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS)
@@ -288,6 +293,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 throw new RuntimeException(factoryException);
             }
         }
+    }
+
+    public static boolean runningOnCircleCI() {
+        return System.getenv(CIRCLE_SHA_1) != null;
     }
 
     private static Cache generateCache(String suffix) {
