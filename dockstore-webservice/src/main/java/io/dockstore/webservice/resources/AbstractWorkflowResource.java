@@ -10,6 +10,7 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.yaml.DockstoreYaml12;
@@ -647,7 +648,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, BioWorkflow.class);
                 workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, wf.getSubclass().toString(), workflowName);
             } else {
-                throw new CustomWebApplicationException(workflowType.getCanonicalName()  + " is not a valid workflow type. Currently only workflows, tools, and services are supported by GitHub Apps.", LAMBDA_FAILURE);
+                throw new CustomWebApplicationException(workflowType.getCanonicalName()  + " is not a valid workflow type. Currently only workflows, tools, notebooks, and services are supported by GitHub Apps.", LAMBDA_FAILURE);
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
@@ -665,22 +666,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
-        // Check that the subclass is the same as the entry to update
-        // For services, we must compare the descriptor type subclasses
-        // For workflows and tools, we must compare the descriptor types (languages)
-        // The `convertShortName` methods throw `UnsupportedOperationException` when passed an unknown subclass
-        String subclass = wf.getSubclass().toString();
-        try {
-            if (workflowType == Notebook.class) {
-                // TODO add check
-            } else if (workflowType == Service.class) {
-                checkSame(workflowToUpdate.getDescriptorTypeSubclass(), DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass), "descriptor type subclass", "service");
-            } else {
-                checkSame(workflowToUpdate.getDescriptorType(), DescriptorLanguage.convertShortStringToEnum(subclass), "descriptor language (subclass)", workflowType == AppTool.class ? "tool" : "workflow");
-            }
-        } catch (UnsupportedOperationException e) {
-            throw new CustomWebApplicationException(String.format("Unknown subclass '%s'", subclass), HttpStatus.SC_BAD_REQUEST);
-        }
+        // Check that the descriptor type and type subclass are the same as the entry to update
+        checkTypeAndSubclass(workflowToUpdate, wf);
 
         if (user != null) {
             workflowToUpdate.getUsers().add(user);
@@ -689,9 +676,61 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return workflowToUpdate;
     }
 
-    private <T> void checkSame(T currentValue, T newValue, String valueDescription, String entryDescription) {
-        if (!Objects.equals(currentValue, newValue)) {
-            throw new CustomWebApplicationException(String.format("You can't add a %s version to a %s %s, the %s of all versions must be the same.", newValue, currentValue, entryDescription, valueDescription), HttpStatus.SC_BAD_REQUEST);
+    private void checkTypeAndSubclass(Workflow existing, Workflowish update) {
+
+        EntryType existingType = existing.getEntryType();
+        String existingTerm = existingType.getTerm();
+
+        switch (existingType) {
+
+        case NOTEBOOK:
+            YamlNotebook notebook = (YamlNotebook)update;
+            if (existing.getDescriptorType() != toDescriptorType(notebook.getFormat())
+                || existing.getDescriptorTypeSubclass() !=  toDescriptorTypeSubclass(notebook.getLanguage())) {
+                throw new CustomWebApplicationException(
+                    String.format("You can't add a %s %s version to a %s %s notebook, the format and programming language of all versions must be the same.", notebook.getFormat(), notebook.getLanguage(), existing.getDescriptorType(), existing.getDescriptorTypeSubclass()),
+                    HttpStatus.SC_BAD_REQUEST);
+            }
+            break;
+
+        case WORKFLOW:
+        case TOOL:
+            if (existing.getDescriptorType() != toDescriptorType(update.getSubclass().toString())) {
+                throw new CustomWebApplicationException(
+                    String.format("You can't add a %s version to a %s %s, the descriptor language of all versions must be the same.", update.getSubclass(), existing.getDescriptorType(), existingTerm),
+                    HttpStatus.SC_BAD_REQUEST);
+            }
+            break;
+
+        case SERVICE:
+            if (existing.getDescriptorTypeSubclass() != toDescriptorTypeSubclass(update.getSubclass().toString())) {
+                throw new CustomWebApplicationException(
+                    String.format("You can't add a %s version to a %s service, the subclass of all versions must be the same.", update.getSubclass(), existing.getDescriptorTypeSubclass()),
+                    HttpStatus.SC_BAD_REQUEST);
+            }
+            break;
+
+        default:
+            // This should never happen in normal operation.
+            throw new CustomWebApplicationException("Unknown entry type " + existingType, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private DescriptorLanguage toDescriptorType(String value) {
+        try {
+            return DescriptorLanguage.convertShortStringToEnum(value);
+        } catch (UnsupportedOperationException e) {
+            // This should never happen in normal operation.
+            throw new CustomWebApplicationException("Unknown descriptor language/type " + value, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private DescriptorLanguageSubclass toDescriptorTypeSubclass(String value) {
+        try {
+            return DescriptorLanguageSubclass.convertShortNameStringToEnum(value);
+        } catch (UnsupportedOperationException e) {
+            // This should never happen in normal operation.
+            throw new CustomWebApplicationException("Unknown descriptor language/type subclass" + value, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
