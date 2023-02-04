@@ -9214,6 +9214,8 @@ definitions:
         - "KUBERNETES"
         - "PYTHON"
         - "R"
+        - "JAVASCRIPT"
+        - "SCALA"
         - "JULIA"
         - "NOT_APPLICABLE"
       full_workflow_path:

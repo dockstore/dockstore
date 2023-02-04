@@ -686,7 +686,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         case NOTEBOOK:
             YamlNotebook notebook = (YamlNotebook)update;
             if (existing.getDescriptorType() != toDescriptorType(notebook.getFormat())
-                || existing.getDescriptorTypeSubclass() !=  toDescriptorTypeSubclass(notebook.getLanguage())) {
+                || existing.getDescriptorTypeSubclass() != toDescriptorTypeSubclass(notebook.getLanguage())) {
                 throw new CustomWebApplicationException(
                     String.format("You can't add a %s %s version to a %s %s notebook, the format and programming language of all versions must be the same.", notebook.getFormat(), notebook.getLanguage(), existing.getDescriptorType(), existing.getDescriptorTypeSubclass()),
                     HttpStatus.SC_BAD_REQUEST);
@@ -694,6 +694,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             break;
 
         case WORKFLOW:
+        case APPTOOL:
         case TOOL:
             if (existing.getDescriptorType() != toDescriptorType(update.getSubclass().toString())) {
                 throw new CustomWebApplicationException(
