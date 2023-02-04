@@ -482,14 +482,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         try {
             DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
-            workflow.setDescriptorType(descriptorLanguage);
+            if (descriptorLanguage.getEntryTypes().contains(workflow.getEntryType())) {
+                workflow.setDescriptorType(descriptorLanguage);
+            } else {
+                throw new CustomWebApplicationException(String.format("The descriptor type %s is not supported by the %s", descriptorLanguage, workflow.getEntryType()), LAMBDA_FAILURE);
+            }
         } catch (UnsupportedOperationException ex) {
-            throw new CustomWebApplicationException("The given descriptor type is not supported: " + type, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("Type " + type + " is not a valid descriptor language.", LAMBDA_FAILURE);
         }
 
         try {
             DescriptorLanguageSubclass descriptorLanguageSubclass = DescriptorLanguageSubclass.convertShortNameStringToEnum(typeSubclass);
-            workflow.setDescriptorTypeSubclass(descriptorLanguageSubclass);
+            if (descriptorLanguageSubclass.getEntryTypes().contains(workflow.getEntryType())) {
+                workflow.setDescriptorTypeSubclass(descriptorLanguageSubclass);
+            } else {
+                throw new CustomWebApplicationException(String.format("The descriptor type subclass %s is not supported by the %s", descriptorLanguageSubclass, workflow.getEntryType()), LAMBDA_FAILURE);
+            }
         } catch (UnsupportedOperationException ex) {
             throw new CustomWebApplicationException("Subclass " + typeSubclass + " is not a valid descriptor language subclass.", LAMBDA_FAILURE);
         }
