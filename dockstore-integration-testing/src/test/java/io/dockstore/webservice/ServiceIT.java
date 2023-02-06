@@ -22,6 +22,7 @@ import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -53,6 +54,7 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
 import java.util.List;
 import java.util.Map;
+import javax.persistence.PersistenceException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -129,6 +131,13 @@ class ServiceIT extends BaseIT {
         final Service byId1 = serviceDAO.findById(workflowID);
 
         assertTrue(byId != null && byId1 == null);
+        session.close();
+    }
+
+    @Test
+    void testDuplicateWorkflowName() {
+        new CreateContent().invoke(false, "Hive");
+        assertThrows(PersistenceException.class, () -> new CreateContent().invoke(false, "hive"));
         session.close();
     }
 
@@ -431,10 +440,14 @@ class ServiceIT extends BaseIT {
         }
 
         CreateContent invoke() {
-            return invoke(true);
+            return invoke(true, null);
         }
 
         CreateContent invoke(boolean cleanup) {
+            return invoke(cleanup, null);
+        }
+
+        CreateContent invoke(boolean cleanup, String workflowName) {
             final Transaction transaction = session.beginTransaction();
 
             Workflow testWorkflow = new BioWorkflow();
@@ -444,6 +457,7 @@ class ServiceIT extends BaseIT {
             testWorkflow.setDescriptorType(DescriptorLanguage.CWL);
             testWorkflow.setOrganization("shield");
             testWorkflow.setRepository("shield_repo");
+            testWorkflow.setWorkflowName(workflowName);
 
             Service testService = new Service();
             testService.setDescription("test service");

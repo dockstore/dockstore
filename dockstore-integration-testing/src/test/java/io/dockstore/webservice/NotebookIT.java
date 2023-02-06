@@ -20,6 +20,7 @@ import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
@@ -35,6 +36,7 @@ import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import java.util.List;
+import javax.persistence.PersistenceException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -84,7 +86,7 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testDAOs() {
-        CreateContent createContent = new CreateContent().invoke(false);
+        CreateContent createContent = new CreateContent().invoke();
         long notebookID = createContent.getNotebookID();
 
         // might not be right if our test database is larger than PAGINATION_LIMIT
@@ -101,6 +103,13 @@ class NotebookIT extends BaseIT {
         session.close();
     }
 
+    @Test
+    void testDuplicateNotebookName() {
+        new CreateContent().invoke(false, "Hive");
+        assertThrows(PersistenceException.class, () -> new CreateContent().invoke(false, "hive"));
+        session.close();
+    }
+
     private class CreateContent {
         private long notebookID;
 
@@ -109,10 +118,10 @@ class NotebookIT extends BaseIT {
         }
 
         CreateContent invoke() {
-            return invoke(true);
+            return invoke(false, null);
         }
 
-        CreateContent invoke(boolean cleanup) {
+        CreateContent invoke(boolean cleanup, String notebookName) {
             final Transaction transaction = session.beginTransaction();
 
             Notebook testNotebook = new Notebook();
@@ -123,6 +132,7 @@ class NotebookIT extends BaseIT {
             testNotebook.setMode(WorkflowMode.DOCKSTORE_YML);
             testNotebook.setOrganization("hydra");
             testNotebook.setRepository("hydra_repo");
+            testNotebook.setWorkflowName(notebookName);
             testNotebook.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
 
             // add all users to all things for now
