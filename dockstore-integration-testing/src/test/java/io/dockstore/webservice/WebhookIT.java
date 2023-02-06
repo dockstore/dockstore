@@ -1434,6 +1434,14 @@ class WebhookIT extends BaseIT {
         return countTableRows("workflow");
     }
 
+    private long countNotebooks() {
+        return countTableRows("notebook");
+    }
+
+    private long countServices() {
+        return countTableRows("service");
+    }
+
     private long countTableRows(String tableName) {
         return testingPostgres.runSelectStatement("select count(*) from " + tableName, long.class);
     }
@@ -1479,6 +1487,13 @@ class WebhookIT extends BaseIT {
         assertEquals(2, countTools());
     }
 
+    private void confirmNoEntries() {
+        assertEquals(0, countWorkflows());
+        assertEquals(0, countTools());
+        assertEquals(0, countNotebooks());
+        assertEquals(0, countServices());
+    }
+
     @Test
     void testMultiEntrySameName() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -1487,22 +1502,31 @@ class WebhookIT extends BaseIT {
 
         // test tool-tool name collision
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-tool-tool", installationId));
-        assertEquals(0, countWorkflows() + countTools());
+        confirmNoEntries();
 
         // test workflow-workflow name collision
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-workflow-workflow", installationId));
-        assertEquals(0, countWorkflows() + countTools());
+        confirmNoEntries();
 
         // test tool-workflow name collision
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-tool-workflow", installationId));
-        assertEquals(0, countWorkflows() + countTools());
+        confirmNoEntries();
 
         // test no names
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/no-names", installationId));
-        assertEquals(0, countWorkflows() + countTools());
+        confirmNoEntries();
 
         // test service and unnamed workflows
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/service-and-unnamed-workflow", installationId));
+        confirmNoEntries();
+
+        // test same name notebook-workflow collision
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-notebook-workflow", installationId));
+        confirmNoEntries();
+
+        // test no name notebook-workflow collision
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/no-name-notebook-workflow", installationId));
+        confirmNoEntries();
     }
 
     /**

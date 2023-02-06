@@ -101,6 +101,22 @@ class NotebookIT extends BaseIT {
         session.close();
     }
 
+    @Test
+    void registerSimpleNotebook() {
+        // TODO implement
+    }
+
+    @Test
+    void registerLessSimpleNotebook() {
+        // TODO implement
+        // make sure accompanying files are registered
+    }
+
+    @Test
+    void registerCorruptNotebook() {
+        // TODO implement
+    }
+
     private class CreateContent {
         private long notebookID;
 
