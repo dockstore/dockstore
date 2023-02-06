@@ -25,16 +25,16 @@ import javax.validation.Constraint;
 import javax.validation.Payload;
 
 /**
- * Defines the `DescriptorLanguageShortName` constraint annotation, which
- * checks for a valid descriptor language short name.
+ * Defines the `DescriptorLanguageSubclassShortName` constraint annotation, which
+ * checks for a valid descriptor language subclass short name.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = DescriptorLanguageShortNameValidator.class)
-public @interface DescriptorLanguageShortName {
+@Constraint(validatedBy = DescriptorLanguageSubclassShortNameValidator.class)
+public @interface DescriptorLanguageSubclassShortName {
 
     EntryType entryType() default EntryType.WORKFLOW;
-    String message () default "must be a valid descriptor language";
+    String message () default "must be a valid descriptor language subclass";
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }

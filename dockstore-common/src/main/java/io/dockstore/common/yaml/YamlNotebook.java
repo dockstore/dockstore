@@ -2,6 +2,9 @@
 
 package io.dockstore.common.yaml;
 
+import io.dockstore.common.EntryType;
+import io.dockstore.common.yaml.constraints.DescriptorLanguageShortName;
+import io.dockstore.common.yaml.constraints.DescriptorLanguageSubclassShortName;
 import io.dockstore.common.yaml.constraints.EntryName;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +37,7 @@ public class YamlNotebook implements Workflowish {
     }
 
     @NotNull
+    @DescriptorLanguageShortName(entryType = EntryType.NOTEBOOK, message = "must be a supported notebook format (currently \"ipynb\")")
     public String getFormat() {
         return format;
     }
@@ -47,6 +51,7 @@ public class YamlNotebook implements Workflowish {
     }
 
     @NotNull
+    @DescriptorLanguageSubclassShortName(entryType = EntryType.NOTEBOOK, message = "must be a supported notebook programming language (such as \"Python\")")
     public String getLanguage() {
         return language;
     }

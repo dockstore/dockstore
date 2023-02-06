@@ -16,7 +16,7 @@
 
 package io.dockstore.common.yaml.constraints;
 
-import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.EntryType;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
@@ -24,12 +24,12 @@ import javax.validation.ConstraintValidatorContext;
 /**
  * Validates a descriptor language short name.
  */
-public class DescriptorLanguageShortNameValidator implements ConstraintValidator<DescriptorLanguageShortName, String> {
+public class DescriptorLanguageSubclassShortNameValidator implements ConstraintValidator<DescriptorLanguageSubclassShortName, String> {
 
     private EntryType entryType;
 
     @Override
-    public void initialize(DescriptorLanguageShortName annotation) {
+    public void initialize(DescriptorLanguageSubclassShortName annotation) {
         entryType = annotation.entryType();
     }
 
@@ -39,7 +39,7 @@ public class DescriptorLanguageShortNameValidator implements ConstraintValidator
             return true;
         }
         try {
-            return DescriptorLanguage.convertShortStringToEnum(shortName).getEntryTypes().contains(entryType);
+            return DescriptorLanguageSubclass.convertShortNameStringToEnum(shortName).getEntryTypes().contains(entryType);
         } catch (UnsupportedOperationException ex) {
             return false;
         }

@@ -16,6 +16,7 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.yaml.constraints.DescriptorLanguageShortName;
 import io.dockstore.common.yaml.constraints.EntryName;
 import java.util.ArrayList;
@@ -64,7 +65,7 @@ public class YamlWorkflow implements Workflowish {
     }
 
     @NotNull
-    @DescriptorLanguageShortName
+    @DescriptorLanguageShortName(entryType = EntryType.WORKFLOW, message = "must be a supported descriptor language (\"CWL\", \"WDL\", \"GALAXY\", or \"NFL\")")
     public String getSubclass() {
         if (NEW_GALAXY_SUBCLASS.equalsIgnoreCase(subclass)) {
             return DescriptorLanguage.GXFORMAT2.getShortName();
