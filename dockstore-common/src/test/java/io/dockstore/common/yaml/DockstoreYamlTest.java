@@ -137,7 +137,7 @@ class DockstoreYamlTest {
         assertEquals(true, notebook.getLatestTagAsDefault());
         assertEquals(List.of("branch0"), notebook.getFilters().getBranches());
         assertEquals(List.of("tag0"), notebook.getFilters().getTags());
-        assertEquals(List.of("author0"), notebook.getAuthors());
+        assertEquals(List.of("author0"), notebook.getAuthors().stream().map(YamlAuthor::getName).toList());
         assertEquals(List.of("/test0"), notebook.getTestParameterFiles());
         assertEquals(List.of("/other0"), notebook.getOtherFiles());
 
