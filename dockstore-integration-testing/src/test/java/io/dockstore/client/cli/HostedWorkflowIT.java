@@ -17,6 +17,7 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.Lists;
@@ -99,7 +100,9 @@ class HostedWorkflowIT extends BaseIT {
 
         // delete default version via DB
         testingPostgres.runUpdateStatement("update workflow set actualDefaultVersion = null");
-        hostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), hostedVersion.getName());
+        final Entry entry = hostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), hostedVersion.getName());
+        // we're really checking that deleting a workflow version did not result in an exception
+        assertNotNull(entry);
     }
 
     @Test

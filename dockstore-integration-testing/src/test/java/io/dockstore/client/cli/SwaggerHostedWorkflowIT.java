@@ -58,6 +58,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
+ * This tests various operations having to do with hosted workflows.
  * @deprecated uses swagger client, prefer the openapi client in SwaggerWorkflowIT
  */
 @ExtendWith(SystemStubsExtension.class)
