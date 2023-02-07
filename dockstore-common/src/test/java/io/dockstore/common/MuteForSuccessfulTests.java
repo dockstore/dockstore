@@ -1,10 +1,6 @@
 package io.dockstore.common;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
 import uk.org.webcompere.systemstubs.stream.SystemStreamBase;
