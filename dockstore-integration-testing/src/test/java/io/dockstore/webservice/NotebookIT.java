@@ -20,13 +20,18 @@ import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
+import io.dockstore.client.cli.BasicIT;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.SourceFile.TypeEnum;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -35,6 +40,7 @@ import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import java.util.List;
+import java.util.Objects;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -54,10 +60,15 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @Tag(ConfidentialTest.NAME)
 class NotebookIT extends BaseIT {
 
+    /*
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());
     @SystemStub
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    */
+
+    private final String installationId = "1179416";
+    private final String simpleRepo = "svonworl/simple-notebook";
 
     private NotebookDAO notebookDAO;
     private WorkflowDAO workflowDAO;
@@ -103,7 +114,25 @@ class NotebookIT extends BaseIT {
 
     @Test
     void registerSimpleNotebook() {
-        // TODO implement
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+
+        String path = "github.com/" + simpleRepo;
+        io.dockstore.openapi.client.model.Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(path, notebook.getFullWorkflowPath());
+        assertEquals(WorkflowSubClass.NOTEBOOK, notebook.getType());
+        assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.IPYNB, notebook.getDescriptorType());
+        assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
+        assertEquals(path, notebook.getWorkflowPath());
+        assertEquals(1, notebook.getWorkflowVersions().size());
+        io.dockstore.openapi.client.model.WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        assertEquals("/notebook.ipynb", version.getWorkflowPath());
+        assertEquals(2, version.getAuthors().size());
+        List<io.dockstore.openapi.client.model.SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
+        assertEquals(1, sourceFiles.size());
+        assertEquals("/notebook.ipynb", sourceFiles.get(0).getAbsolutePath());
     }
 
     @Test
@@ -114,7 +143,16 @@ class NotebookIT extends BaseIT {
 
     @Test
     void registerCorruptNotebook() {
-        // TODO implement
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/corrupt-ipynb", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+
+        // The update should be "successful" but there should be a negative validation on the notebook file.
+        String path = "github.com/" + simpleRepo;
+        io.dockstore.openapi.client.model.Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        io.dockstore.openapi.client.model.WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        assertFalse(version.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), TypeEnum.DOCKSTORE_IPYNB)).findFirst().get().isValid(), "Should have invalid notebook file");
     }
 
     private class CreateContent {
