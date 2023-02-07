@@ -481,15 +481,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setTopicAutomatic(this.getTopic(repositoryId));
         this.setLicenseInformation(workflow, repositoryId);
 
+        // The checks/catches in the following blocks are all backups, they should not fail in normal operation.
+        // Thus, the error messages are more technical and less user-friendly.
         try {
             DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
             if (descriptorLanguage.getEntryTypes().contains(workflow.getEntryType())) {
                 workflow.setDescriptorType(descriptorLanguage);
             } else {
-                throw new CustomWebApplicationException(String.format("The descriptor type %s is not supported by the %s", descriptorLanguage, workflow.getEntryType()), LAMBDA_FAILURE);
+                logAndThrowLambdaFailure(String.format("The descriptor type %s is not supported by the %s", descriptorLanguage, workflow.getEntryType()));
             }
         } catch (UnsupportedOperationException ex) {
-            throw new CustomWebApplicationException("Type " + type + " is not a valid descriptor language.", LAMBDA_FAILURE);
+            logAndThrowLambdaFailure(String.format("Type %s is not a valid descriptor language.", type));
         }
 
         try {
@@ -497,11 +499,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (descriptorLanguageSubclass.getEntryTypes().contains(workflow.getEntryType())) {
                 workflow.setDescriptorTypeSubclass(descriptorLanguageSubclass);
             } else {
-                throw new CustomWebApplicationException(String.format("The descriptor type subclass %s is not supported by the %s", descriptorLanguageSubclass, workflow.getEntryType()), LAMBDA_FAILURE);
+                logAndThrowLambdaFailure(String.format("The descriptor type subclass %s is not supported by the %s", descriptorLanguageSubclass, workflow.getEntryType()));
             }
         } catch (UnsupportedOperationException ex) {
-            throw new CustomWebApplicationException("Subclass " + typeSubclass + " is not a valid descriptor language subclass.", LAMBDA_FAILURE);
+            logAndThrowLambdaFailure(String.format("Subclass %s is not a valid descriptor language subclass.", typeSubclass));
         }
+    }
+
+    private void logAndThrowLambdaFailure(String message) {
+        LOG.error(message);
+        throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
     }
 
     /**

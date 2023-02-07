@@ -40,6 +40,7 @@ public enum DescriptorLanguageSubclass {
     JAVASCRIPT("Javascript", NOTEBOOK),
     SCALA("Scala", NOTEBOOK),
     JULIA("Julia", NOTEBOOK),
+    OTHER("other", NOTEBOOK),
 
     NOT_APPLICABLE("n/a", Set.of(SERVICE, WORKFLOW, APPTOOL, TOOL));
 

@@ -9224,6 +9224,7 @@ definitions:
         - "JAVASCRIPT"
         - "SCALA"
         - "JULIA"
+        - "OTHER"
         - "NOT_APPLICABLE"
       full_workflow_path:
         type: "string"

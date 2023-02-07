@@ -499,7 +499,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                     // Update the workflow version in its own database transaction.
                     transactionHelper.transaction(() -> {
-                        String subclass = wf.getSubclass().toString();
                         final String workflowName = workflowType == Service.class ? "" : wf.getName();
                         final Boolean publish = wf.getPublish();
                         final var defaultVersion = wf.getLatestTagAsDefault();
@@ -670,7 +669,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         // Check that the descriptor type and type subclass are the same as the entry to update
-        checkTypeAndSubclass(workflowToUpdate, wf);
+        checkCompatibleTypeAndSubclass(workflowToUpdate, wf);
 
         if (user != null) {
             workflowToUpdate.getUsers().add(user);
@@ -679,62 +678,58 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return workflowToUpdate;
     }
 
-    private void checkTypeAndSubclass(Workflow existing, Workflowish update) {
+    private void checkCompatibleTypeAndSubclass(Workflow existing, Workflowish update) {
 
         EntryType existingType = existing.getEntryType();
         String existingTerm = existingType.getTerm();
 
-        switch (existingType) {
-
-        case NOTEBOOK:
+        if (existingType == EntryType.NOTEBOOK) {
             YamlNotebook notebook = (YamlNotebook)update;
             if (existing.getDescriptorType() != toDescriptorType(notebook.getFormat())
                 || existing.getDescriptorTypeSubclass() != toDescriptorTypeSubclass(notebook.getLanguage())) {
-                throw new CustomWebApplicationException(
-                    String.format("You can't add a %s %s version to a %s %s notebook, the format and programming language of all versions must be the same.", notebook.getFormat(), notebook.getLanguage(), existing.getDescriptorType(), existing.getDescriptorTypeSubclass()),
-                    HttpStatus.SC_BAD_REQUEST);
+                logAndThrowBadRequest(
+                    String.format("You can't add a %s %s version to a %s %s notebook, the format and programming language of all versions must be the same.", notebook.getFormat(), notebook.getLanguage(), existing.getDescriptorType(), existing.getDescriptorTypeSubclass()));
             }
-            break;
-
-        case WORKFLOW:
-        case APPTOOL:
-        case TOOL:
+        } else if (existingType == EntryType.WORKFLOW || existingType == EntryType.APPTOOL || existingType == EntryType.TOOL) {
             if (existing.getDescriptorType() != toDescriptorType(update.getSubclass().toString())) {
-                throw new CustomWebApplicationException(
-                    String.format("You can't add a %s version to a %s %s, the descriptor language of all versions must be the same.", update.getSubclass(), existing.getDescriptorType(), existingTerm),
-                    HttpStatus.SC_BAD_REQUEST);
+                logAndThrowBadRequest(
+                    String.format("You can't add a %s version to a %s %s, the descriptor language of all versions must be the same.", update.getSubclass(), existing.getDescriptorType(), existingTerm));
             }
-            break;
-
-        case SERVICE:
+        } else if (existingType == EntryType.SERVICE) {
             if (existing.getDescriptorTypeSubclass() != toDescriptorTypeSubclass(update.getSubclass().toString())) {
-                throw new CustomWebApplicationException(
-                    String.format("You can't add a %s version to a %s service, the subclass of all versions must be the same.", update.getSubclass(), existing.getDescriptorTypeSubclass()),
-                    HttpStatus.SC_BAD_REQUEST);
+                logAndThrowBadRequest(
+                    String.format("You can't add a %s version to a %s service, the subclass of all versions must be the same.", update.getSubclass(), existing.getDescriptorTypeSubclass()));
             }
-            break;
-
-        default:
-            // This should never happen in normal operation.
-            throw new CustomWebApplicationException("Unknown entry type " + existingType, HttpStatus.SC_BAD_REQUEST);
+        } else {
+            // This is a backup check, it should never happen in normal operation.  Thus, the message is terse.
+            logAndThrowBadRequest("Unknown entry type " + existingType);
         }
+    }
+
+    private void logAndThrowBadRequest(String message) {
+        LOG.error(message);
+        throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
     }
 
     private DescriptorLanguage toDescriptorType(String value) {
         try {
             return DescriptorLanguage.convertShortStringToEnum(value);
-        } catch (UnsupportedOperationException e) {
-            // This should never happen in normal operation.
-            throw new CustomWebApplicationException("Unknown descriptor language/type " + value, HttpStatus.SC_BAD_REQUEST);
+        } catch (UnsupportedOperationException ex) {
+            // This is a backup catch, it should never happen in normal operation.  Thus, the message is terse.
+            String message = "Unknown descriptor language/type " + value;
+            LOG.error(message, ex);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
     private DescriptorLanguageSubclass toDescriptorTypeSubclass(String value) {
         try {
             return DescriptorLanguageSubclass.convertShortNameStringToEnum(value);
-        } catch (UnsupportedOperationException e) {
-            // This should never happen in normal operation.
-            throw new CustomWebApplicationException("Unknown descriptor language/type subclass" + value, HttpStatus.SC_BAD_REQUEST);
+        } catch (UnsupportedOperationException ex) {
+            // This is a backup catch, it should never happen in normal operation.  Thus, the message is terse.
+            String message = "Unknown descriptor language/type subclass" + value;
+            LOG.error(message, ex);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
     }
 

@@ -135,16 +135,11 @@ class DockstoreYamlTest {
         assertEquals("/notebook0.ipynb", notebook.getPath());
         assertEquals(true, notebook.getPublish());
         assertEquals(true, notebook.getLatestTagAsDefault());
-        assertEquals(1, notebook.getFilters().getBranches().size());
-        assertEquals("branch0", notebook.getFilters().getBranches().get(0));
-        assertEquals(1, notebook.getFilters().getTags().size());
-        assertEquals("tag0", notebook.getFilters().getTags().get(0));
-        assertEquals(1, notebook.getAuthors().size());
-        assertEquals("author0", notebook.getAuthors().get(0).getName());
-        assertEquals(1, notebook.getTestParameterFiles().size());
-        assertEquals("/test0", notebook.getTestParameterFiles().get(0));
-        assertEquals(1, notebook.getOtherFiles().size());
-        assertEquals("/other0", notebook.getOtherFiles().get(0));
+        assertEquals(List.of("branch0"), notebook.getFilters().getBranches());
+        assertEquals(List.of("tag0"), notebook.getFilters().getTags());
+        assertEquals(List.of("author0"), notebook.getAuthors());
+        assertEquals(List.of("/test0"), notebook.getTestParameterFiles());
+        assertEquals(List.of("/other0"), notebook.getOtherFiles());
 
         final YamlNotebook notebook1 = notebooks.get(1);
         assertEquals("notebook1", notebook1.getName());
