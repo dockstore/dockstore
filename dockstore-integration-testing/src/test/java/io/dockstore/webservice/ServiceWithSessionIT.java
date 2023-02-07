@@ -49,6 +49,8 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
+ * This particular test does not seem to play well with the other tests in ServiceIT, it manages to "breakthrough" the database reset code.
+ *
  * @author dyuen
  */
 @ExtendWith(SystemStubsExtension.class)
