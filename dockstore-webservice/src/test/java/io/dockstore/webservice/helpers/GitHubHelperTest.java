@@ -2,6 +2,7 @@ package io.dockstore.webservice.helpers;
 
 import static io.dockstore.webservice.helpers.GitHubSourceCodeRepo.GIT_BRANCH_TAG_PATTERN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -40,9 +41,28 @@ class GitHubHelperTest {
         testReferenceString("refs/heads/foo.bar", "heads/foo.bar");
         testReferenceString("refs/heads/.foo.bar", "heads/.foo.bar");
         testReferenceString("refs/heads/_leadingunderscore", "heads/_leadingunderscore");
+        // unicode character classes
+        testReferenceString("refs/heads/AshO'Farrell", "heads/AshO'Farrell");
+        testReferenceString("refs/heads/Νάξος", "heads/Νάξος");
+        testReferenceString("refs/heads/孤独のグルメ", "heads/孤独のグルメ");
+
+        // not sure if the following would make it into github in the first place, but wouldn't hurt to double-check to make sure they don't get into our DB
+
+        // disallow consecutive slashes in name https://docs.github.com/en/get-started/using-git/dealing-with-special-characters-in-branch-and-tag-names#about-branch-and-tag-names
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo//bar", "heads/_foo_bar"));
+        // disallow consecutive dots in name https://git-scm.com/docs/git-check-ref-format
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo..bar", "heads/_foo_bar"));
+        // disallow control characters https://git-scm.com/docs/git-check-ref-format
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo~bar", "heads/_foo_bar"));
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo?bar", "heads/_foo_bar"));
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo[bar", "heads/_foo_bar"));
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo~bar", "heads/_foo_bar"));
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/@{.", "heads/_foo_bar"));
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/@", "heads/_foo_bar"));
+
     }
 
-    private static void testReferenceString(String gitReference, String expectedString) {
+    private void testReferenceString(String gitReference, String expectedString) {
         Matcher matcher = GIT_BRANCH_TAG_PATTERN.matcher(gitReference);
         final boolean b = matcher.find();
         String gitBranchType = matcher.group(1);
