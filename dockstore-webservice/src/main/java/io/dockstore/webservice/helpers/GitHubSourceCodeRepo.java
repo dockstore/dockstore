@@ -108,7 +108,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     public static final String GITHUB_ABUSE_LIMIT_REACHED = "GitHub abuse limit reached";
     public static final int GITHUB_MAX_CACHE_AGE_SECONDS = 30; // GitHub's default max-cache age is 60 seconds
-    public static final Pattern GIT_BRANCH_TAG_PATTERN = Pattern.compile("^refs/(tags|heads)/((?!.*//)(?!.*\\.\\.)[.'\\p{L}\\d\\-_/]+)$");
+    public static final Pattern GIT_BRANCH_TAG_PATTERN = Pattern.compile("^refs/(tags|heads)/((?!.*//)(?!.*\\\\)(?!.*@)(?!.*\\[)(?!.*\\?)(?!.*~)(?!.*\\.\\.)[\\p{Punct}\\p{L}\\d\\-_/]+)$");
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
     private String githubTokenUsername;

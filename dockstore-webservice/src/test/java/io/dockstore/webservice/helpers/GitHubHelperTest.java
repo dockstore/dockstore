@@ -45,6 +45,10 @@ class GitHubHelperTest {
         testReferenceString("refs/heads/AshO'Farrell", "heads/AshO'Farrell");
         testReferenceString("refs/heads/Νάξος", "heads/Νάξος");
         testReferenceString("refs/heads/孤独のグルメ", "heads/孤独のグルメ");
+        // plain weird character classes
+        testReferenceString("refs/heads/foo()bar", "heads/foo()bar");
+        testReferenceString("refs/heads/foo{}bar", "heads/foo{}bar");
+
 
         // not sure if the following would make it into github in the first place, but wouldn't hurt to double-check to make sure they don't get into our DB
 
@@ -57,6 +61,7 @@ class GitHubHelperTest {
         assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo?bar", "heads/_foo_bar"));
         assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo[bar", "heads/_foo_bar"));
         assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo~bar", "heads/_foo_bar"));
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo\\bar", "heads/_foo_bar"));
         assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/@{.", "heads/_foo_bar"));
         assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/@", "heads/_foo_bar"));
 
