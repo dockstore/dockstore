@@ -5,6 +5,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import org.apache.http.HttpStatus;
@@ -27,7 +28,9 @@ public final class StringInputValidationHelper {
         if (name != null && !name.isEmpty() && (!ValidationConstants.ENTRY_NAME_PATTERN.matcher(name).matches() || name.length() > ValidationConstants.ENTRY_NAME_LENGTH_MAX)) {
             String entryTypeString;
 
-            if (entryType.equals(Tool.class) || entryType.equals(AppTool.class)) {
+            if (entryType.equals(Notebook.class)) {
+                entryTypeString = "notebook";
+            } else if (entryType.equals(Tool.class) || entryType.equals(AppTool.class)) {
                 entryTypeString = "tool";
             } else if (entryType.equals(BioWorkflow.class)) {
                 entryTypeString = "workflow";

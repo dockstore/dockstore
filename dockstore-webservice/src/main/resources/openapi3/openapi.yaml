@@ -8623,6 +8623,10 @@ components:
           description: Implementation specific ID for the metrics in this webservice
         memory:
           $ref: '#/components/schemas/MemoryMetric'
+    Notebook:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
     Notification:
       type: object
       properties:

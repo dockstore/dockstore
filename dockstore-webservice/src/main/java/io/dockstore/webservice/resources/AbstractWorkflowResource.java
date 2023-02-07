@@ -560,6 +560,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private String computeTermFromClass(Class<?> workflowType) {
+        if (workflowType == Notebook.class) {
+            return "notebook";
+        }
         if (workflowType == AppTool.class) {
             return "tool";
         }
