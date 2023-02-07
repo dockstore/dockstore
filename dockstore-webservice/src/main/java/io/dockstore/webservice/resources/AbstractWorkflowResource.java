@@ -46,6 +46,7 @@ import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceFilesHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.TransactionHelper;
@@ -275,38 +276,36 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl,
         final DescriptorLanguage descriptorType) {
         final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
-        final Optional<SourceFile> primaryDescriptor = existingVersion.getSourceFiles().stream()
-            .filter(sf -> sf.getPath().equals(existingVersion.getWorkflowPath()))
-            .findFirst();
-        final Optional<Set<String>> fileInputParameterNames;
-        if (primaryDescriptor.isPresent()) {
-            fileInputParameterNames =
-                languageHandler.getFileInputParameterNames(existingVersion.getSourceFiles(),
-                    primaryDescriptor.get());
-        } else {
-            fileInputParameterNames = Optional.empty();
-        }
+        final Optional<SourceFile> primaryDescriptor = SourceFilesHelper.findFileByPath(existingVersion.getSourceFiles(),
+            existingVersion.getWorkflowPath());
         Boolean publicAccessibleTestParameterFile = null;
-        Iterator<SourceFile> sourceFileIterator = existingVersion.getSourceFiles().stream().filter(sourceFile -> sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)).iterator();
-        while (sourceFileIterator.hasNext()) {
-            SourceFile sourceFile = sourceFileIterator.next();
-            Optional<Boolean> publicAccessibleUrls = Optional.empty();
-            if (sourceFile.getAbsolutePath().endsWith(".json")) {
-                publicAccessibleUrls =
-                    CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
-                        TestFileType.JSON, fileInputParameterNames);
-            } else {
-                if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
-                    publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
-                        TestFileType.YAML, fileInputParameterNames);
+
+        final Optional<Set<String>> fileInputParameterNames = primaryDescriptor.map(
+                pd -> languageHandler.getFileInputParameterNames(existingVersion.getSourceFiles(), pd))
+            .orElse(Optional.empty());
+        // Only determine if input data is public if we know what the file inputs are
+        if (fileInputParameterNames.isPresent()) {
+            Iterator<SourceFile> sourceFileIterator = existingVersion.getSourceFiles().stream().filter(sourceFile -> sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)).iterator();
+            while (sourceFileIterator.hasNext()) {
+                SourceFile sourceFile = sourceFileIterator.next();
+                Optional<Boolean> publicAccessibleUrls = Optional.empty();
+                if (sourceFile.getAbsolutePath().endsWith(".json")) {
+                    publicAccessibleUrls =
+                        CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
+                            TestFileType.JSON, fileInputParameterNames);
+                } else {
+                    if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
+                        publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
+                            TestFileType.YAML, fileInputParameterNames);
+                    }
                 }
-            }
-            // Do not care about null, it will never override a true/false
-            if (publicAccessibleUrls.isPresent()) {
-                publicAccessibleTestParameterFile = publicAccessibleUrls.get();
-                if (Boolean.TRUE.equals(publicAccessibleUrls.get())) {
-                    // If the current test parameter file is publicly accessible, then all previous and future ones don't matter
-                    break;
+                // Do not care about null, it will never override a true/false
+                if (publicAccessibleUrls.isPresent()) {
+                    publicAccessibleTestParameterFile = publicAccessibleUrls.get();
+                    if (Boolean.TRUE.equals(publicAccessibleUrls.get())) {
+                        // If the current test parameter file is publicly accessible, then all previous and future ones don't matter
+                        break;
+                    }
                 }
             }
         }

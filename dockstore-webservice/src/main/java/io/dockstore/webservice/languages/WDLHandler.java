@@ -35,6 +35,7 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceFilesHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.io.File;
 import java.io.IOException;
@@ -257,8 +258,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
         if (filteredSourceFiles.size() > 0) {
             try {
-                Optional<SourceFile> primaryDescriptor = filteredSourceFiles.stream()
-                        .filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
+                Optional<SourceFile> primaryDescriptor = SourceFilesHelper.findFileByPath(filteredSourceFiles, primaryDescriptorFilePath);
 
                 if (primaryDescriptor.isPresent()) {
                     if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {

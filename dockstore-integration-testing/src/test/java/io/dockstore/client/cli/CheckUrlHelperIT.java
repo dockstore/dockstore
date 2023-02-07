@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.io.Files;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -57,7 +58,7 @@ class CheckUrlHelperIT {
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
-            descriptorType);
+            DescriptorLanguage.WDL);
         assertTrue(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
@@ -72,7 +73,7 @@ class CheckUrlHelperIT {
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
-            descriptorType);
+            DescriptorLanguage.WDL);
         assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
@@ -87,7 +88,7 @@ class CheckUrlHelperIT {
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
-            descriptorType);
+            DescriptorLanguage.WDL);
         assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
@@ -102,14 +103,14 @@ class CheckUrlHelperIT {
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
-            descriptorType);
+            DescriptorLanguage.WDL);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
     private WorkflowVersion setupWorkflowVersion(String fileContents) {
         WorkflowVersion workflowVersion = new WorkflowVersion();
         SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(FileType.CWL_TEST_JSON);
+        sourceFile.setType(FileType.WDL_TEST_JSON);
         sourceFile.setContent(fileContents);
         sourceFile.setAbsolutePath("/asdf.json");
         workflowVersion.addSourceFile(sourceFile);
