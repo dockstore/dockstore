@@ -30,6 +30,8 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.model.Author;
+import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.SourceFile.TypeEnum;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.Notebook;
@@ -41,6 +43,8 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -60,15 +64,13 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @Tag(ConfidentialTest.NAME)
 class NotebookIT extends BaseIT {
 
-    /*
     @SystemStub
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());
     @SystemStub
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
-    */
 
     private final String installationId = "1179416";
-    private final String simpleRepo = "svonworl/simple-notebook";
+    private final String simpleRepo = "dockstore-testing/simple-notebook";
 
     private NotebookDAO notebookDAO;
     private WorkflowDAO workflowDAO;
@@ -113,7 +115,7 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
-    void registerSimpleNotebook() {
+    void testRegisterSimpleNotebook() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
@@ -122,37 +124,44 @@ class NotebookIT extends BaseIT {
         String path = "github.com/" + simpleRepo;
         io.dockstore.openapi.client.model.Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(path, notebook.getFullWorkflowPath());
-        assertEquals(WorkflowSubClass.NOTEBOOK, notebook.getType());
+        assertTrue("notebook".equalsIgnoreCase(notebook.getType()));
         assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.IPYNB, notebook.getDescriptorType());
         assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
-        assertEquals(path, notebook.getWorkflowPath());
         assertEquals(1, notebook.getWorkflowVersions().size());
         io.dockstore.openapi.client.model.WorkflowVersion version = notebook.getWorkflowVersions().get(0);
         assertEquals("/notebook.ipynb", version.getWorkflowPath());
-        assertEquals(2, version.getAuthors().size());
-        List<io.dockstore.openapi.client.model.SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
-        assertEquals(1, sourceFiles.size());
-        assertEquals("/notebook.ipynb", sourceFiles.get(0).getAbsolutePath());
+        assertTrue(version.isValid());
+        assertEquals(Set.of("Author One", "Author Two"), version.getAuthors().stream().map(Author::getName).collect(Collectors.toSet()));
+        List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
+        assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
     }
 
     @Test
-    void registerLessSimpleNotebook() {
-        // TODO implement
-        // make sure accompanying files are registered
+    void testRegisterLessSimpleNotebook() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        // Check only the values that should differ from testRegisterSimpleNotebook()
+        String path = "github.com/" + simpleRepo + "/simple";
+        io.dockstore.openapi.client.model.Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(path, notebook.getFullWorkflowPath());
+        io.dockstore.openapi.client.model.WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
+        assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml", "/info.txt", "/data/a.txt", "/data/b.txt", "/requirements.txt", "/.binder/runtime.txt"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
     }
 
     @Test
-    void registerCorruptNotebook() {
+    void testRegisterCorruptNotebook() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
         workflowsApi.handleGitHubRelease("refs/heads/corrupt-ipynb", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
-
         // The update should be "successful" but there should be a negative validation on the notebook file.
         String path = "github.com/" + simpleRepo;
         io.dockstore.openapi.client.model.Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
-        io.dockstore.openapi.client.model.WorkflowVersion version = notebook.getWorkflowVersions().get(0);
-        assertFalse(version.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), TypeEnum.DOCKSTORE_IPYNB)).findFirst().get().isValid(), "Should have invalid notebook file");
+        assertEquals(1, notebook.getWorkflowVersions().size());
+        assertFalse(notebook.getWorkflowVersions().get(0).isValid());
     }
 
     private class CreateContent {

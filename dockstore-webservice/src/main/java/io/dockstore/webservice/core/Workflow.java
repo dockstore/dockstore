@@ -393,7 +393,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
         @Override
         public String convertToDatabaseColumn(DescriptorLanguageSubclass attribute) {
-            return attribute.getShortName();
+            return attribute.getShortName().toLowerCase();
         }
 
         @Override

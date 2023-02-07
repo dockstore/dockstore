@@ -24,6 +24,7 @@ import static io.dockstore.common.EntryType.SERVICE;
 import static io.dockstore.common.EntryType.TOOL;
 import static io.dockstore.common.EntryType.WORKFLOW;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
@@ -64,6 +65,7 @@ public enum DescriptorLanguageSubclass {
         return shortName;
     }
 
+    @JsonValue
     public String getShortName() {
         return shortName;
     }

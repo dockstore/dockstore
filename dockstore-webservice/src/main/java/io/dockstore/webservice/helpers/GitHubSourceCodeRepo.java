@@ -35,6 +35,7 @@ import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
 import io.dockstore.common.yaml.Workflowish;
+import io.dockstore.common.yaml.YamlNotebook;
 import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -868,6 +869,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             String msg = "Invalid .dockstore.yml: " + ex.getMessage();
             LOG.info(msg, ex);
             return null;
+        }
+
+        // If this is a notebook, set the version's user-specified files.
+        if (theWf instanceof YamlNotebook yamlNotebook) {
+            version.setUserFiles(yamlNotebook.getOtherFiles());
         }
 
         // No need to check for null, has been validated

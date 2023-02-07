@@ -1,4 +1,17 @@
-// TODO add copyright header
+/*
+ * Copyright 2023 OICR, UCSC
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package io.dockstore.common.yaml.constraints;
 
@@ -6,7 +19,10 @@ import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
- * Base class for most ConstraintValidators.
+ * Base class for most ConstraintValidators, with an empty initializer
+ * code that handles null values correctly, and a helper method
+ * addConstraintViolation() that creates a constraint violation with
+ * the specified message.
  */
 public abstract class BaseConstraintValidator<AnnotationT extends java.lang.annotation.Annotation, TargetT> implements ConstraintValidator<AnnotationT, TargetT> {
     @Override
