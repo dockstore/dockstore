@@ -38,5 +38,4 @@ class MuteTest {
         System.out.println("more success output to stdout");
         System.err.println("more success output to stderr");
     }
-
 }
