@@ -31,6 +31,7 @@ import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
@@ -78,13 +79,14 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(TestStatus.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @Tag(ConfidentialTest.NAME)
 class ServiceIT extends BaseIT {
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOutRule = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErrRule = new SystemErr();
 
     private WorkflowDAO workflowDAO;
     private ServiceDAO serviceDAO;

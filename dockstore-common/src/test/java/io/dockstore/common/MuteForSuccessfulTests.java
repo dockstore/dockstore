@@ -11,12 +11,16 @@ public class MuteForSuccessfulTests implements TestWatcher {
     public void testFailed(ExtensionContext context, Throwable cause) {
         try {
             Object test = context.getRequiredTestInstance();
-            // Iterate the fields of the test object.
+            // Iterate over the fields of the test object.
             for (Field field: test.getClass().getDeclaredFields()) {
                 // Skip any field that doesn't extend SystemStreamBase,
-                // thus avoiding an IllegalAccessException on an irrelevant private field.
+                // thus avoiding a potential security/access exception on an irrelevant private field.
                 if (SystemStreamBase.class.isAssignableFrom(field.getType())) {
-                    // Attempt to extract the field value.
+                    // Make the "stream" field accessible if it is not already.
+                    if (!field.isAccessible()) {
+                        field.setAccessible(true);
+                    }
+                    // Extract the "stream" field value.
                     if (field.get(test) instanceof SystemStreamBase stream) {
                         // Get the captured text and output it.
                         String text = stream.getText();
@@ -28,7 +32,7 @@ public class MuteForSuccessfulTests implements TestWatcher {
                 }
             }
         } catch (Exception ex) {
-            System.err.println(String.format("Exception in extension: %s", ex.getMessage()));
+            System.err.println(String.format("Exception in MuteForSuccessfulTests extension: %s", ex.getMessage()));
         }
     }
 }
