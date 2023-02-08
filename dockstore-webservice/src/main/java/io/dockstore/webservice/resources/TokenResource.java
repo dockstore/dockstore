@@ -814,7 +814,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             orcid = tokenResponse.get("orcid").toString();
             scope = tokenResponse.getScope();
             Instant instant = Instant.now();
-            instant.plusSeconds(tokenResponse.getExpiresInSeconds());
+            instant = instant.plusSeconds(tokenResponse.getExpiresInSeconds());
             expirationTime = instant.getEpochSecond();
 
         } catch (IOException e) {

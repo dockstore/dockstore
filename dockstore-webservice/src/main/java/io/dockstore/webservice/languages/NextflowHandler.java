@@ -654,7 +654,10 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     protected Optional<String> getDslVersion(String fileContent) {
         try {
             List<GroovySourceAST> assignmentsAst = getGroovySourceASTList(fileContent, "=");
-            final Optional<String> dslVersion = assignmentsAst.stream()
+            if (assignmentsAst == null) {
+                throw new IOException("getGroovySourceASTList had a null result");
+            }
+            return assignmentsAst.stream()
                 .filter(equalsAst -> {
                     final AST firstDotAst = equalsAst.getFirstChild();
                     if (isNodeText(firstDotAst, ".")) {
@@ -673,7 +676,6 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                 })
                 .map(ast -> ast.getFirstChild().getNextSibling().getText())
                 .findFirst();
-            return dslVersion;
         } catch (IOException | TokenStreamException | RecognitionException e) {
             LOG.warn("could not parse", e);
         }
