@@ -38,9 +38,9 @@ class CloudInstanceIT extends BaseIT {
     public static final CloudInstance.PartnerEnum ADMIN_PARTNER_1 = CloudInstance.PartnerEnum.TERRA;
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @BeforeEach
     @Override

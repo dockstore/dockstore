@@ -75,9 +75,9 @@ class GitHubWorkflowIT extends BaseIT {
     private static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
 
     private FileDAO fileDAO;

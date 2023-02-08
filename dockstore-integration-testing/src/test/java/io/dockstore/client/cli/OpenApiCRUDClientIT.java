@@ -71,9 +71,9 @@ class OpenApiCRUDClientIT extends BaseIT {
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @Test
     void testToolCreation() {

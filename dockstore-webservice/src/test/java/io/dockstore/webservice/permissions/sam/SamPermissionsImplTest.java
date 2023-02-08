@@ -73,10 +73,10 @@ class SamPermissionsImplTest {
     private static final String JANE_DOE_GITHUB_ID = "jdoe";
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
 
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     private AccessPolicyResponseEntry ownerPolicy;
     private AccessPolicyResponseEntry writerPolicy;

@@ -51,10 +51,10 @@ class DockstoreYamlTest {
     private static final String DOCKSTORE_GALAXY_YAML = FixtureHelpers.fixture("fixtures/dockstoreGalaxy.yml");
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
 
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @Test
     void testFindVersion() {

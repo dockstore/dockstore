@@ -63,9 +63,9 @@ public abstract class GA4GHIT {
     protected static javax.ws.rs.client.Client client;
     protected static TestingPostgres testingPostgres;
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     final String basePath = SUPPORT.getConfiguration().getExternalConfig().getBasePath();
     final String baseURL = String.format("http://localhost:%d" + basePath + getApiVersion(), SUPPORT.getLocalPort());

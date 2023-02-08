@@ -12,7 +12,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 class MuteTest {
 
     @SystemStub
-    SystemOut systemOut = new SystemOut();
+    public final SystemOut systemOut = new SystemOut();
 
     @SystemStub
     SystemErr systemErr;

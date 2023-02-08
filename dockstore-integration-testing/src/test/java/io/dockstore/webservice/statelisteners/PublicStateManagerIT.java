@@ -60,10 +60,10 @@ class PublicStateManagerIT {
     private static ElasticSearchHelper esHelper;
 
     @SystemStub
-    private final SystemOut systemOut = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
 
     @SystemStub
-    private final SystemErr systemErr = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @BeforeAll
     public static void setupManager() {

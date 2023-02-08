@@ -82,10 +82,10 @@ class AdvancedIndexingBenchmarkIT extends BaseIT {
     private static final java.util.Random RAND = new java.util.Random();
     private static final Set<String> IDENTIFIERS = new HashSet<>();
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
 
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
     private DockstoreWebserviceApplication application;
     private Session session;
     private ArrayList<String> fixedStringLabels;

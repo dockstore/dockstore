@@ -68,9 +68,9 @@ class ClientRegressionIT extends BaseIT {
     private static final Logger LOG = LoggerFactory.getLogger(ClientRegressionIT.class);
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @BeforeAll
     public static void getOldDockstoreClient() throws IOException {
@@ -145,20 +145,20 @@ class ClientRegressionIT extends BaseIT {
         commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "--server-metadata" };
         stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         assertTrue(stringStringImmutablePair.getLeft().contains("version"));
-        systemOutRule.clear();
+        systemOut.clear();
     }
 
     @Test
     void testCacheCleaningOld() throws IOException {
         runOldDockstoreClient(dockstore, new String[] { "--config", TestUtility.getConfigFileLocation(true), "--clean-cache" });
-        systemOutRule.clear();
+        systemOut.clear();
     }
 
     @Test
     void pluginDownloadOld() throws IOException {
         String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "plugin", "download" };
         runOldDockstoreClient(dockstore, commandArray);
-        systemOutRule.clear();
+        systemOut.clear();
     }
 
     /**

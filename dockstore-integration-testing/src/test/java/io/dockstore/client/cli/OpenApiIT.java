@@ -56,9 +56,9 @@ class OpenApiIT {
     protected static javax.ws.rs.client.Client client;
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
     private final String basePath = "/"; //SUPPORT.getConfiguration().getExternalConfig().getBasePath();
     private final String baseURL = String.format("http://localhost:%d" + basePath, SUPPORT.getLocalPort());
 

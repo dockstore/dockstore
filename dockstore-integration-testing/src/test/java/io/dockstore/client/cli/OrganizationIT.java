@@ -70,9 +70,9 @@ public class OrganizationIT extends BaseIT {
     private static final StarRequest UNSTAR_REQUEST = getStarRequest(false);
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     private final List<String> goodCollectionNames = Arrays.asList("baa", "baaa", "bAaaa", "BAAAAA", "baa123", "daa-daa", "d-a-a-a-a", "d0-a-9", "daa-1234", "daa5-678", "aaz", "zaa");
     // All numbers, too short, bad pattern, too long, foreign characters

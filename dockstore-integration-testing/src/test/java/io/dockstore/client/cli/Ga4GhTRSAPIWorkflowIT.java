@@ -100,9 +100,9 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
     private static final String GATK_SV_TAG = "dockstore-test";
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
 
     private FileDAO fileDAO;

@@ -84,9 +84,9 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 class ServiceIT extends BaseIT {
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut();
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr();
+    public final SystemErr systemErr = new SystemErr();
 
     private WorkflowDAO workflowDAO;
     private ServiceDAO serviceDAO;
