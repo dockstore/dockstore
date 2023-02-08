@@ -5,6 +5,15 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
 import uk.org.webcompere.systemstubs.stream.SystemStreamBase;
 
+/**
+ * Implements a Junit 5 extension that will print the captured output
+ * from any SystemStubs "stream" test fields (any field with a type that
+ * is a subclass of SystemStreamBase, such as SystemOut and SystemErr)
+ * to stdout for any failed test.
+ *
+ * Note that the default behavior, without this extension, is for
+ * SystemOut/SystemErr to capture the output, but not print it.
+ */
 public class MuteForSuccessfulTests implements TestWatcher {
 
     @Override
