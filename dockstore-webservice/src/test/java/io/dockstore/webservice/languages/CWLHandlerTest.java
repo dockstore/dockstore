@@ -52,15 +52,15 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(MuteForSuccessfulTests.class)
 class CWLHandlerTest {
 
-    private Set<String> toValues(Set<FileFormat> formats) {
-        return formats.stream().map(FileFormat::getValue).collect(Collectors.toSet());
-    }
-
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
 
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
+
+    private Set<String> toValues(Set<FileFormat> formats) {
+        return formats.stream().map(FileFormat::getValue).collect(Collectors.toSet());
+    }
 
     /**
      * Tests if the input and output file formats can be extracted from a CWL descriptor file
