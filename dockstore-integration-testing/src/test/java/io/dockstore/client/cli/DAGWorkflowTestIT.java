@@ -27,6 +27,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.webservice.core.dag.ElementsDefinition;
 import io.dockstore.webservice.languages.WDLHandler;
@@ -51,6 +52,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * Created by jpatricia on 24/06/16.
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Tag(WorkflowTest.NAME)

@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -55,6 +56,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @Tag(NonConfidentialTest.NAME)
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 class NoPluginIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;

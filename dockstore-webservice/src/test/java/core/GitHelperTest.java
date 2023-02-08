@@ -3,6 +3,7 @@ package core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.helpers.GitHelper;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author aduncan
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class GitHelperTest {
 
     @SystemStub

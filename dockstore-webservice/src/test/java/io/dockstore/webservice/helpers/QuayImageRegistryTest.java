@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
@@ -29,6 +30,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class QuayImageRegistryTest {
 
     @SystemStub

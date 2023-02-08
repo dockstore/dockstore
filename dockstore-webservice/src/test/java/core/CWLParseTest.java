@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
@@ -41,6 +42,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class CWLParseTest {
 
     @SystemStub

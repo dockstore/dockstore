@@ -3,6 +3,7 @@ package io.swagger.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.ChecksumConverter;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class ChecksumConverterTest {
 
     @SystemStub

@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.openapi.client.ApiClient;
@@ -64,6 +65,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author dyuen
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 class OpenApiCRUDClientIT extends BaseIT {
 

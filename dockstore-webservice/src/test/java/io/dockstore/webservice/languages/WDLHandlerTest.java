@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -41,6 +42,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class WDLHandlerTest {
 
     public static final String MAIN_WDL = "/GATKSVPipelineClinical.wdl";

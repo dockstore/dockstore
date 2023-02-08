@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.SourceFile;
@@ -54,6 +55,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * Tests public methods in IpynbHandler
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class IpynbHandlerTest {
 
     @SystemStub

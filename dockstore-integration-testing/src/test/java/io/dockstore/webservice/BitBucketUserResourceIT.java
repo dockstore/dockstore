@@ -26,6 +26,7 @@ import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
@@ -49,6 +50,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(BitBucketTest.NAME)
 class BitBucketUserResourceIT extends BaseIT {

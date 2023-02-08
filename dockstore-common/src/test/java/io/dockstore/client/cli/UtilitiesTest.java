@@ -3,6 +3,7 @@ package io.dockstore.client.cli;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.io.ByteStreams;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Utilities;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -17,6 +18,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class UtilitiesTest {
 
     @SystemStub

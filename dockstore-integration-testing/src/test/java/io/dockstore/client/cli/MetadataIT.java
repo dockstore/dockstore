@@ -3,6 +3,7 @@ package io.dockstore.client.cli;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.PipHelper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -22,6 +23,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 class MetadataIT extends BaseIT {
     @SystemStub

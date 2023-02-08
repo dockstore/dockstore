@@ -30,6 +30,7 @@ import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.helpers.AppToolHelper;
 import io.swagger.client.ApiClient;
@@ -67,6 +68,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  *
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Deprecated(since = "1.14")

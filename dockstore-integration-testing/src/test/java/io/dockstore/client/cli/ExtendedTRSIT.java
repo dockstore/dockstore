@@ -21,6 +21,7 @@ import static org.junit.Assert.assertThrows;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiClient;
@@ -57,6 +58,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author dyuen
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
 class ExtendedTRSIT extends BaseIT {

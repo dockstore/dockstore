@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.LanguageHandlerHelper;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.WdlBridge;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
@@ -43,6 +44,7 @@ import wdl.draft3.parser.WdlParser;
  * @author dyuen
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 class CromwellIT {
 

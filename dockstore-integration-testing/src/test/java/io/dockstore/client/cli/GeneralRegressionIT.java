@@ -22,6 +22,7 @@ import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.TestUtility;
@@ -59,6 +60,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @since 1.4.0
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(RegressionTest.NAME)
 class GeneralRegressionIT extends BaseIT {

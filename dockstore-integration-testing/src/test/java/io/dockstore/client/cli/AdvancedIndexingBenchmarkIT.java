@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.ToolTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -72,6 +73,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 @Tag(ToolTest.NAME)
 @Disabled("more like benchmarking than a test per say")
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     private static final int TOOL_COUNT = 10;

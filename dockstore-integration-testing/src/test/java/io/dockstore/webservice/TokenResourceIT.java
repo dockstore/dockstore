@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.core.Token;
@@ -83,6 +84,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @since 24/07/18
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @ExtendWith(HoverflyExtension.class)
 @HoverflyCore(mode = HoverflyMode.SIMULATE)

@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.io.Files;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
@@ -35,6 +36,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class CheckUrlHelperTest {
 
     @SystemStub

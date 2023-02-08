@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Author;
@@ -49,6 +50,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @since 1.5.0
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class CWLHandlerTest {
 
     private Set<String> toValues(Set<FileFormat> formats) {

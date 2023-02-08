@@ -27,6 +27,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
@@ -74,6 +75,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author aduncan
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
 @org.junit.jupiter.api.Tag(ToolTest.NAME)

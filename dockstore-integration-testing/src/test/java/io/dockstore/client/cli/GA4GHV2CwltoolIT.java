@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.LanguageParsingTest;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -47,6 +48,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @since 02/01/18
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(LanguageParsingTest.NAME)
 class GA4GHV2CwltoolIT {

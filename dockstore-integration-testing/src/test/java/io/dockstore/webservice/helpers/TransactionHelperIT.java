@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -42,6 +43,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * Test the TransactionHelper class.
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 class TransactionHelperIT extends BaseIT {

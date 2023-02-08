@@ -78,6 +78,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author dyuen
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @Tag(ConfidentialTest.NAME)

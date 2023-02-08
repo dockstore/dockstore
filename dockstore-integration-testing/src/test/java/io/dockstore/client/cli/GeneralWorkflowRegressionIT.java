@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
@@ -63,6 +64,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @since 1.4.0
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(RegressionTest.NAME)
 class GeneralWorkflowRegressionIT extends BaseIT {

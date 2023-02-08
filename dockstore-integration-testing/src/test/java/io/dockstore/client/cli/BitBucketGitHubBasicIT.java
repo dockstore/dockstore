@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -47,6 +48,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author aduncan
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(BitBucketTest.NAME)
 class BitBucketGitHubBasicIT extends BaseIT {

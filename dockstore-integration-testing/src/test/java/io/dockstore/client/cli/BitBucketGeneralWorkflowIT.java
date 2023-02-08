@@ -26,6 +26,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -64,6 +65,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * Created by aduncan on 05/04/16.
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @org.junit.jupiter.api.Tag(BitBucketTest.NAME)
 class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {

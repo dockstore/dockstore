@@ -24,6 +24,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.WorkflowTest;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
@@ -47,6 +48,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author jpatricia on 04/07/16.
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Tag(WorkflowTest.NAME)
