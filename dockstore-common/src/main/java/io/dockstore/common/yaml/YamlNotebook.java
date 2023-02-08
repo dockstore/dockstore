@@ -49,12 +49,18 @@ public class YamlNotebook implements Workflowish {
         this.name = name;
     }
 
+    /**
+     * Get the format (i.e. IPYNB) of the notebook file.
+     */
     @NotNull
     @ValidDescriptorLanguage(entryType = EntryType.NOTEBOOK, message = "must be a supported notebook format (currently \"ipynb\")")
     public String getFormat() {
         return format;
     }
 
+    /**
+     * Set the format (i.e. IPYNB) of the notebook file.
+     */
     public void setFormat(String format) {
         this.format = format;
     }
@@ -63,21 +69,33 @@ public class YamlNotebook implements Workflowish {
         return format;
     }
 
+    /**
+     * Get the programming language of the code contained in the notebook.
+     */
     @NotNull
     @ValidDescriptorLanguageSubclass(entryType = EntryType.NOTEBOOK, message = "must be a supported notebook programming language (such as \"Python\")")
     public String getLanguage() {
         return language;
     }
 
+    /**
+     * Set the programming language of the code contained in the notebook.
+     */
     public void setLanguage(String language) {
         this.language = language;
     }
 
+    /**
+     * Get the absolute path of the notebook file.
+     */
     @NotNull
     public String getPath() {
         return path;
     }
 
+    /**
+     * Set the absolute path of the notebook file.
+     */
     public void setPath(final String path) {
         this.path = path;
     }
@@ -124,11 +142,19 @@ public class YamlNotebook implements Workflowish {
         this.testParameterFiles = testParameterFiles;
     }
 
+    /**
+     * Get the list of user-specified "other" files that should be
+     * read and included with the notebook.
+     */
     @NotNull
     public List<String> getOtherFiles() {
         return otherFiles;
     }
 
+    /**
+     * Set the list of user-specified "other" files that should be
+     * read and included with the notebook.
+     */
     public void setOtherFiles(List<String> otherFiles) {
         this.otherFiles = otherFiles;
     }
