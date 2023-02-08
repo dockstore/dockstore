@@ -26,7 +26,8 @@ import uk.org.webcompere.systemstubs.stream.SystemStreamBase;
  * Implements a Junit 5 extension that will print the captured output
  * from any SystemStubs "stream" test fields (any field with a type that
  * is a subclass of SystemStreamBase, such as SystemOut and SystemErr)
- * to stdout for any failed test.
+ * to stdout for any failed test.  The "stream" test fields should be
+ * public to ensure that the extension can access them.
  *
  * Note that the default behavior, without this extension, is for
  * SystemOut/SystemErr to capture the output, but not print it.
@@ -43,7 +44,6 @@ public class MuteForSuccessfulTests implements TestWatcher {
                 // thus avoiding a potential security/access exception on an irrelevant private field.
                 if (SystemStreamBase.class.isAssignableFrom(field.getType())) {
                     // Extract the "stream" field value.
-                    field.setAccessible(true);
                     if (field.get(test) instanceof SystemStreamBase stream) {
                         // Get the captured text and output it.
                         String text = stream.getText();
