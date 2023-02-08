@@ -44,6 +44,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -72,6 +73,7 @@ import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -163,6 +165,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final EventDAO eventDAO;
     private final LambdaEventDAO lambdaEventDAO;
     private final DeletedUsernameDAO deletedUsernameDAO;
+    private final NotebookDAO notebookDAO;
     private final PermissionsInterface authorizer;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
     private final HttpClient client;
@@ -183,6 +186,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.deletedUsernameDAO = new DeletedUsernameDAO(sessionFactory);
+        this.notebookDAO = new NotebookDAO(sessionFactory);
         this.sessionFactory = sessionFactory;
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
@@ -653,6 +657,25 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         List<Workflow> appTools = appToolDAO.findMyEntries(fetchedUser.getId()).stream().map(AppTool.class::cast).collect(Collectors.toList());
         EntryVersionHelper.stripContentFromEntries(appTools, this.userDAO);
         return appTools;
+    }
+
+    @GET
+    @Path("/{userId}/notebooks")
+    @Timed
+    @UnitOfWork
+    @Operation(operationId = "userNotebooks", description = "List all notebooks owned by the authenticated user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), method = "GET")
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+        + "", description = "A list of notebooks owned by the user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Notebook.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
+    public List<Workflow> userNotebooks(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        checkUserId(user, userId);
+        final User fetchedUser = this.userDAO.findById(userId);
+        checkNotNullUser(fetchedUser);
+        List<Workflow> notebooks = notebookDAO.findMyEntries(fetchedUser.getId()).stream().map(Notebook.class::cast).collect(Collectors.toList());
+        EntryVersionHelper.stripContentFromEntries(notebooks, this.userDAO);
+        return notebooks;
     }
 
     private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {

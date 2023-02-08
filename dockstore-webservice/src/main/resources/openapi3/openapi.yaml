@@ -5476,6 +5476,35 @@ paths:
       - BEARER: []
       tags:
       - users
+  /users/{userId}/notebooks:
+    get:
+      description: List all notebooks owned by the authenticated user.
+      operationId: userNotebooks
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notebook'
+          description: A list of notebooks owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/{userId}/privileges:
     put:
       description: "Updates the provided userID to admin or curator status, usable\
@@ -6097,11 +6126,12 @@ paths:
           - OWNER
           - WRITER
           - READER
-      - in: query
-        name: services
+      - description: Which Workflow subclass to retrieve.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
@@ -6124,11 +6154,12 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
-        name: services
+      - description: Which Workflow subclass to retrieve.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
@@ -6151,11 +6182,12 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
-        name: services
+      - description: Which Workflow subclass to retrieve.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       requestBody:
         content:
           application/json:
@@ -8647,6 +8679,10 @@ components:
           description: Implementation specific ID for the metrics in this webservice
         memory:
           $ref: '#/components/schemas/MemoryMetric'
+    Notebook:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
     Notification:
       type: object
       properties:
@@ -9954,9 +9990,12 @@ components:
           - helm
           - swarm
           - kubernetes
-          - python
-          - r
-          - julia
+          - Python
+          - R
+          - Javascript
+          - Scala
+          - Julia
+          - other
           - n/a
         email:
           type: string

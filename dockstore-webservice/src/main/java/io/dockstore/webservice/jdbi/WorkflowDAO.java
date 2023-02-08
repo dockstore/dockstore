@@ -20,7 +20,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.AppTool;
-import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -198,7 +198,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     public <T extends Workflow> void checkForDuplicateAcrossTables(String path, Class<T> clazz) {
         final List<Workflow> workflows = findByPath(path, false);
         final List<Workflow> filteredWorkflows = workflows.stream()
-            .filter(workflow -> workflow.getClass() != Service.class)
+            .filter(workflow -> workflow.getClass() == BioWorkflow.class || workflow.getClass() == AppTool.class)
             .collect(Collectors.toList());
 
         if (filteredWorkflows.size() > 0) {
