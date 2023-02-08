@@ -18,7 +18,9 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.metrics.Execution;
 import io.dockstore.webservice.resources.ResourceConstants;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -33,13 +35,17 @@ import io.swagger.model.Error;
 import io.swagger.model.ToolV1;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -194,6 +200,48 @@ public class ToolsExtendedApi {
         @ApiParam(value = "Additional information on the verification (notes, explanation)", required = true) @QueryParam("metadata") String metadata,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.setSourceFileMetadata(type, id, versionId, platform, platformVersion, relativePath, verified, metadata);
+    }
+
+    @POST
+    @UnitOfWork
+    @RolesAllowed({"curator", "admin"})
+    @Path("/{id}/versions/{version_id}/executions")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = ExecutionMetricsPost.SUMMARY, notes = ExecutionMetricsPost.DESCRIPTION, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    @ApiResponses(value = {
+        @ApiResponse(code = HttpStatus.SC_NO_CONTENT, message = ExecutionMetricsPost.OK_RESPONSE),
+        @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = ExecutionMetricsPost.NOT_FOUND_RESPONSE, response = Error.class),
+        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = ExecutionMetricsPost.UNAUTHORIZED_RESPONSE, response = Error.class)})
+    @Operation(operationId = "executionMetricsPost", summary = ExecutionMetricsPost.SUMMARY, description = ExecutionMetricsPost.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = ExecutionMetricsPost.OK_RESPONSE),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = ExecutionMetricsPost.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+                + "", description = ExecutionMetricsPost.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+    })
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public Response executionMetricsPost(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
+            @ApiParam(value = ExecutionMetricsPost.ID_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsPost.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+            @ApiParam(value = ExecutionMetricsPost.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsPost.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+            @ApiParam(value = ExecutionMetricsPost.PLATFORM_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsPost.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
+            @ApiParam(value = ExecutionMetricsPost.DESCRIPTION_DESCRIPTION) @Parameter(description = ExecutionMetricsPost.DESCRIPTION_DESCRIPTION, in = ParameterIn.QUERY) @QueryParam("description") String description,
+            @ApiParam(value = ExecutionMetricsPost.EXECUTIONS_DESCRIPTION, required = true) @RequestBody(description = ExecutionMetricsPost.EXECUTIONS_DESCRIPTION, required = true, content = @Content(array = @ArraySchema(schema = @Schema(implementation = Execution.class)))) List<Execution> executions,
+            @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        return delegate.submitMetricsData(id, versionId, platform, user, description, executions);
+    }
+
+    private static final class ExecutionMetricsPost {
+        public static final String SUMMARY = "Submit execution metrics for a workflow that was executed on a platform.";
+        public static final String DESCRIPTION = "This endpoint submits execution metrics for a workflow that was executed on a platform";
+        public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
+        public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
+        public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
+        public static final String DESCRIPTION_DESCRIPTION = "Optional description about the execution metrics";
+        public static final String EXECUTIONS_DESCRIPTION = "Execution metrics to submit";
+        public static final String OK_RESPONSE = "Execution metrics submitted successfully.";
+        public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to submit execution metrics.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 
     private static final class VerifyTestParameterFilePost {

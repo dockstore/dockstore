@@ -62,19 +62,19 @@ public class MetricsDataS3Client {
     }
 
     /**
-     * Creates an S3 object containing metrics data for the given GA4GH tool and tool version
+     * Creates an S3 object containing execution metrics data for the given GA4GH tool and tool version
      *
      * @param toolId The GA4GH Tool ID
      * @param versionName The GA4GH ToolVersion name
-     * @param platform The platform that the metrics data is from
+     * @param platform The platform that the execution metrics data is from
      * @param fileName The file name to use. Should be the time that the data was submitted in milliseconds since epoch appended with '.json'
      * @param ownerUserId The Dockstore user id of the owner (user that sent the metrics data)
-     * @param description An optional description for the metrics data
+     * @param description An optional description for the execution metrics data
      * @param metricsData The metrics data in JSON format
      */
     public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData) {
-        if (StringUtils.isBlank(metricsData)) {
-            throw new CustomWebApplicationException("Metrics data must be provided", HttpStatus.SC_BAD_REQUEST);
+        if (StringUtils.isBlank(metricsData) || "[]".equals(metricsData)) {
+            throw new CustomWebApplicationException("Execution metrics data must be provided", HttpStatus.SC_BAD_REQUEST);
         }
 
         String key = generateKey(toolId, versionName, platform, fileName);

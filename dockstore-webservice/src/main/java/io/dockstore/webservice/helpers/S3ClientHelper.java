@@ -20,6 +20,7 @@ package io.dockstore.webservice.helpers;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -104,5 +105,13 @@ public final class S3ClientHelper {
 
     public static String[] splitKey(String key) {
         return key.split(KEY_DELIMITER);
+    }
+
+    /**
+     * Creates a file name using the current time in milliseconds since epoch appended with '.json'
+     * @return
+     */
+    public static String createFileName() {
+        return Instant.now().toEpochMilli() + ".json";
     }
 }
