@@ -1,6 +1,5 @@
 package io.dockstore.common;
 
-import io.dockstore.common.MuteForSuccessfulTests;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
