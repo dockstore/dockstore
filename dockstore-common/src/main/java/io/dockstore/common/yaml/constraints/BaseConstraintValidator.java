@@ -19,10 +19,10 @@ import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
- * Base class for most ConstraintValidators, with an empty initializer
- * code that handles null values correctly, and a helper method
- * addConstraintViolation() that creates a constraint violation with
- * the specified message.
+ * Base class for most ConstraintValidators that has an empty initializer,
+ * code that handles null values correctly (see below), and a helper method
+ * addConstraintViolation() that creates a constraint violation with the
+ * specified message.
  */
 public abstract class BaseConstraintValidator<AnnotationT extends java.lang.annotation.Annotation, TargetT> implements ConstraintValidator<AnnotationT, TargetT> {
     @Override
@@ -32,6 +32,10 @@ public abstract class BaseConstraintValidator<AnnotationT extends java.lang.anno
 
     @Override
     public boolean isValid(TargetT target, ConstraintValidatorContext context) {
+        // Validations are cumulative and their order of application is not defined,
+        // so the pattern for most validators is to consider `null` values as valid,
+        // so that they can either be marked invalid by an accompanying @NotNull
+        // annotation, or pass through, valid, without event.
         if (target == null) {
             return true;
         }

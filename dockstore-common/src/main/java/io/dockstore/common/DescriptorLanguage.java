@@ -60,7 +60,7 @@ public enum DescriptorLanguage {
         }
     },
     GXFORMAT2("gxformat2", "Galaxy Workflow Format 2", FileType.DOCKSTORE_GXFORMAT2, FileType.GXFORMAT2_TEST_FILE, false, true,
-        Set.of("ga", "yaml", "yml"), true, false, Set.of(WORKFLOW, APPTOOL, TOOL)) {
+        Set.of("ga", "yaml", "yml"), true, false, Set.of(WORKFLOW)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_YML;
@@ -73,7 +73,7 @@ public enum DescriptorLanguage {
             return super.isRelevantFileType(type);
         }
     },
-    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false, Set.of("config"), true, false, Set.of(WORKFLOW, APPTOOL, TOOL)) {
+    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false, Set.of("config"), true, false, Set.of(WORKFLOW)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.NEXTFLOW || type == FileType.DOCKSTORE_YML;
