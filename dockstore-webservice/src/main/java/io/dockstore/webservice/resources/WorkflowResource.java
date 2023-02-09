@@ -866,13 +866,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return workflow;
     }
 
-    private Class<? extends Workflow> getSubClass(WorkflowSubClass subclass) {
-        if (subclass == null) {
-            throw new CustomWebApplicationException("Subclass cannot be null", HttpStatus.SC_BAD_REQUEST);
-        }
-        return subclass.getTargetClass();
-    }
-
     @SuppressWarnings("checkstyle:MagicNumber")
     private void setWorkflowVersionSubset(Workflow workflow, String include, String versionName) {
         sessionFactory.getCurrentSession().detach(workflow);
@@ -1872,11 +1865,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
-    private Class<? extends Workflow> workflowSubClass(boolean services, WorkflowSubClass subClass) {
+    private Class<? extends Workflow> workflowSubClass(Boolean services, WorkflowSubClass subClass) {
         if (subClass != null) {
-            return getSubClass(subClass);
+            return subClass.getTargetClass();
         }
-        return services ? Service.class : BioWorkflow.class;
+        if (services != null) {
+            return services.booleanValue() ? Service.class : BioWorkflow.class;
+        }
+        throw new CustomWebApplicationException("Subclass and services cannot both be null", HttpStatus.SC_BAD_REQUEST);
     }
 
     @Override
