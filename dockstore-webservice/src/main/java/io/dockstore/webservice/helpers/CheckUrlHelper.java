@@ -95,40 +95,39 @@ public final class CheckUrlHelper {
      * @param fileInputParameterNames
      * @return The URLs
      */
-    static Set<String> getUrlsFromJSON(String contents,
-        final Optional<Set<String>> fileInputParameterNames) {
+    static Set<String> getUrlsFromJSON(String contents, final Set<String> fileInputParameterNames) {
         Set<String> urls = new HashSet<>();
         JSONObject jsonFile = new JSONObject(contents);
         getUrlsFromJSON(jsonFile, urls, fileInputParameterNames);
         return urls;
     }
 
-    private static void getUrlsFromJSON(Object object, Set<String> urls) {
+    private static void getUrlsFromJSON(Object object, Set<String> urls, final Set<String> fileInputParameterNames) {
         if (object instanceof JSONObject) {
-            getUrlsFromJSON((JSONObject) object, urls);
+            getUrlsFromJSON((JSONObject) object, urls, fileInputParameterNames);
         }
         if (object instanceof String) {
             getUrl((String) object, urls);
         }
         if (object instanceof JSONArray) {
-            getUrlsFromJSON((JSONArray) object, urls);
+            getUrlsFromJSON((JSONArray) object, urls, fileInputParameterNames);
         }
         // Ignore instanceof boolean, number, or null
     }
 
-    private static void getUrlsFromJSON(JSONArray jsonArray, Set<String> urls) {
+    private static void getUrlsFromJSON(JSONArray jsonArray, Set<String> urls, final Set<String> fileInputParameterNames) {
         for (int i = 0; i < jsonArray.length(); i++) {
-            getUrlsFromJSON(jsonArray.get(i), urls);
+            getUrlsFromJSON(jsonArray.get(i), urls, fileInputParameterNames);
         }
     }
 
-    private static void getUrlsFromJSON(JSONObject jsonObject, Set<String> urls, final Optional<Set<String>> fileInputParameterNames) {
+    private static void getUrlsFromJSON(JSONObject jsonObject, Set<String> urls, final Set<String> fileInputParameterNames) {
         Iterator<?> keys = jsonObject.keys();
         while (keys.hasNext()) {
             String key = (String) keys.next();
             Object o = jsonObject.get(key);
-            if (fileInputParameterNames.isEmpty() || fileInputParameterNames.get().contains(key)) {
-                getUrlsFromJSON(o, urls);
+            if (fileInputParameterNames.contains(key)) {
+                getUrlsFromJSON(o, urls, fileInputParameterNames);
             }
         }
     }
@@ -140,8 +139,7 @@ public final class CheckUrlHelper {
      * @param fileInputParameterNames
      * @return The URLs
      */
-    static Set<String> getUrlsFromYAML(String content,
-        final Optional<Set<String>> fileInputParameterNames) {
+    static Set<String> getUrlsFromYAML(String content, final Set<String> fileInputParameterNames) {
         Yaml yaml = new Yaml();
         Map<String, Object> map = yaml.load(content);
         JSONObject jsonObject = new JSONObject(map);
@@ -166,9 +164,13 @@ public final class CheckUrlHelper {
      * @return Whether the URLs of the JSON are publicly accessible
      */
     public static Optional<Boolean> checkTestParameterFile(String content, String baseURL,
-        TestFileType fileType, Optional<Set<String>> fileInputParameterNames) {
+        TestFileType fileType, Set<String> fileInputParameterNames) {
+        if (fileInputParameterNames.isEmpty()) {
+            // If there are no input file parameters, then it uses no public access data.
+            return Optional.empty();
+        }
         try {
-            Set<String> urls;
+            final Set<String> urls;
             if (fileType == TestFileType.YAML) {
                 urls = getUrlsFromYAML(content, fileInputParameterNames);
             } else {

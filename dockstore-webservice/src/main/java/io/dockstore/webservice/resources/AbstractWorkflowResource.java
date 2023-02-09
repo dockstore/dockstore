@@ -9,6 +9,7 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
@@ -72,7 +73,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -273,43 +273,33 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param checkUrlLambdaUrl URL of the checkUrl lambda
      * @param descriptorType
      */
-    public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl,
-        final DescriptorLanguage descriptorType) {
-        final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
-        final Optional<SourceFile> primaryDescriptor = SourceFilesHelper.findFileByPath(existingVersion.getSourceFiles(),
-            existingVersion.getWorkflowPath());
-        Boolean publicAccessibleTestParameterFile = null;
+    public static void publicAccessibleUrls(WorkflowVersion existingVersion,
+        final String checkUrlLambdaUrl, final DescriptorLanguage descriptorType) {
+        final Optional<Boolean> hasPublicData = SourceFilesHelper.findFileByPath(existingVersion.getSourceFiles(), existingVersion.getWorkflowPath())
+            .map(primaryDescriptor -> {
+                final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
+                return languageHandler.getFileInputParameterNames(existingVersion.getSourceFiles(), primaryDescriptor)
+                    .map(fileInputParameterNames -> existingVersion.getSourceFiles().stream()
+                        .filter(sourceFile -> sourceFile.getType().getCategory().equals(FileTypeCategory.TEST_FILE))
+                        .anyMatch(sourceFile -> findTestFileType(sourceFile)
+                            .map(testFileType -> CheckUrlHelper.checkTestParameterFile(
+                                sourceFile.getContent(), checkUrlLambdaUrl,
+                                testFileType, fileInputParameterNames).orElse(Boolean.FALSE))
+                            .orElse(false))
+                    );
+            }).orElse(null);
+        existingVersion.getVersionMetadata()
+            .setPublicAccessibleTestParameterFile(hasPublicData.orElse(null));
+    }
 
-        final Optional<Set<String>> fileInputParameterNames = primaryDescriptor.map(
-                pd -> languageHandler.getFileInputParameterNames(existingVersion.getSourceFiles(), pd))
-            .orElse(Optional.empty());
-        // Only determine if input data is public if we know what the file inputs are
-        if (fileInputParameterNames.isPresent()) {
-            Iterator<SourceFile> sourceFileIterator = existingVersion.getSourceFiles().stream().filter(sourceFile -> sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)).iterator();
-            while (sourceFileIterator.hasNext()) {
-                SourceFile sourceFile = sourceFileIterator.next();
-                Optional<Boolean> publicAccessibleUrls = Optional.empty();
-                if (sourceFile.getAbsolutePath().endsWith(".json")) {
-                    publicAccessibleUrls =
-                        CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
-                            TestFileType.JSON, fileInputParameterNames);
-                } else {
-                    if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
-                        publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
-                            TestFileType.YAML, fileInputParameterNames);
-                    }
-                }
-                // Do not care about null, it will never override a true/false
-                if (publicAccessibleUrls.isPresent()) {
-                    publicAccessibleTestParameterFile = publicAccessibleUrls.get();
-                    if (Boolean.TRUE.equals(publicAccessibleUrls.get())) {
-                        // If the current test parameter file is publicly accessible, then all previous and future ones don't matter
-                        break;
-                    }
-                }
-            }
+    private static Optional<TestFileType> findTestFileType(SourceFile sourceFile) {
+        final String absolutePath = sourceFile.getAbsolutePath();
+        if (absolutePath.endsWith(".json")) {
+            return Optional.of(TestFileType.JSON);
+        } else if (absolutePath.endsWith(".yaml") || absolutePath.endsWith(".yml")) {
+            return Optional.of(TestFileType.YAML);
         }
-        existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleTestParameterFile);
+        return Optional.empty();
     }
 
     /**
@@ -518,7 +508,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId Installation id needed to setup GitHub apps
-     * @param username Name of user that triggered action
+     * @param username       Name of user that triggered action
      * @param dockstoreYml
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
