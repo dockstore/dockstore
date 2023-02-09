@@ -124,6 +124,35 @@ class DockstoreYamlTest {
         authors = service.getAuthors();
         assertEquals(1, authors.size());
         assertEquals("Institute", authors.get(0).getRole());
+
+        final List<YamlNotebook> notebooks = dockstoreYaml.getNotebooks();
+        assertEquals(2, notebooks.size());
+
+        final YamlNotebook notebook = notebooks.get(0);
+        assertEquals("notebook0", notebook.getName());
+        assertEquals("Ipynb", notebook.getFormat());
+        assertEquals("Python", notebook.getLanguage());
+        assertEquals("/notebook0.ipynb", notebook.getPath());
+        assertEquals(true, notebook.getPublish());
+        assertEquals(true, notebook.getLatestTagAsDefault());
+        assertEquals(List.of("branch0"), notebook.getFilters().getBranches());
+        assertEquals(List.of("tag0"), notebook.getFilters().getTags());
+        assertEquals(List.of("author0"), notebook.getAuthors().stream().map(YamlAuthor::getName).toList());
+        assertEquals(List.of("/test0"), notebook.getTestParameterFiles());
+        assertEquals(List.of("/other0"), notebook.getOtherFiles());
+
+        final YamlNotebook notebook1 = notebooks.get(1);
+        assertEquals("notebook1", notebook1.getName());
+        assertEquals("ipynb", notebook1.getFormat());
+        assertEquals("python", notebook1.getLanguage());
+        assertEquals("/notebook1.ipynb", notebook1.getPath());
+        assertEquals(null, notebook1.getPublish());
+        assertEquals(false, notebook1.getLatestTagAsDefault());
+        assertTrue(notebook1.getFilters().getBranches().isEmpty());
+        assertTrue(notebook1.getFilters().getTags().isEmpty());
+        assertTrue(notebook1.getAuthors().isEmpty());
+        assertTrue(notebook1.getTestParameterFiles().isEmpty());
+        assertTrue(notebook1.getOtherFiles().isEmpty());
     }
 
     @Test
@@ -412,7 +441,7 @@ class DockstoreYamlTest {
     @Test
     void testGetDockstoreYamlProperties() {
         Set<String> properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml12.class);
-        assertEquals(33, properties.size(), "Should have the correct number of unique properties for a version 1.2 .dockstore.yml");
+        assertEquals(38, properties.size(), "Should have the correct number of unique properties for a version 1.2 .dockstore.yml");
 
         properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml11.class);
         assertEquals(29, properties.size(), "Should have the correct number of unique properties for a version 1.1 .dockstore.yml");

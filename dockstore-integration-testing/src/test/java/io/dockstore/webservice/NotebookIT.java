@@ -20,22 +20,29 @@ import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
+import io.dockstore.client.cli.BasicIT;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.core.Notebook;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.openapi.client.model.Author;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
+import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.persistence.PersistenceException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -60,6 +67,9 @@ class NotebookIT extends BaseIT {
     public final SystemOut systemOutRule = new SystemOut(new NoopStream());
     @SystemStub
     public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+
+    private final String installationId = AppToolHelper.INSTALLATION_ID;
+    private final String simpleRepo = "dockstore-testing/simple-notebook";
 
     private NotebookDAO notebookDAO;
     private WorkflowDAO workflowDAO;
@@ -90,10 +100,10 @@ class NotebookIT extends BaseIT {
         long notebookID = createContent.getNotebookID();
 
         // might not be right if our test database is larger than PAGINATION_LIMIT
-        final List<Workflow> allPublished = workflowDAO.findAllPublished(0, Integer.valueOf(PAGINATION_LIMIT), null, null, null);
-        assertTrue(allPublished.stream().anyMatch(workflow -> workflow.getId() == notebookID && workflow instanceof Notebook));
+        final List<io.dockstore.webservice.core.Workflow> allPublished = workflowDAO.findAllPublished(0, Integer.valueOf(PAGINATION_LIMIT), null, null, null);
+        assertTrue(allPublished.stream().anyMatch(workflow -> workflow.getId() == notebookID && workflow instanceof io.dockstore.webservice.core.Notebook));
 
-        final Notebook byID = notebookDAO.findById(notebookID);
+        final io.dockstore.webservice.core.Notebook byID = notebookDAO.findById(notebookID);
         assertNotNull(byID);
         assertEquals(byID.getId(), notebookID);
 
@@ -108,6 +118,56 @@ class NotebookIT extends BaseIT {
         new CreateContent().invoke(false, "Hive");
         assertThrows(PersistenceException.class, () -> new CreateContent().invoke(false, "hive"));
         session.close();
+    }
+    
+    @Test
+    void testRegisterSimpleNotebook() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+
+        String path = "github.com/" + simpleRepo;
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(path, notebook.getFullWorkflowPath());
+        assertTrue("notebook".equalsIgnoreCase(notebook.getType()));
+        assertEquals(Workflow.DescriptorTypeEnum.IPYNB, notebook.getDescriptorType());
+        assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
+        assertEquals(1, notebook.getWorkflowVersions().size());
+        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        assertEquals("/notebook.ipynb", version.getWorkflowPath());
+        assertTrue(version.isValid());
+        assertEquals(Set.of("Author One", "Author Two"), version.getAuthors().stream().map(Author::getName).collect(Collectors.toSet()));
+        List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
+        assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
+    }
+
+    @Test
+    void testRegisterLessSimpleNotebook() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        // Check only the values that should differ from testRegisterSimpleNotebook()
+        String path = "github.com/" + simpleRepo + "/simple";
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(path, notebook.getFullWorkflowPath());
+        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
+        assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml", "/info.txt", "/data/a.txt", "/data/b.txt", "/requirements.txt", "/.binder/runtime.txt"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
+    }
+
+    @Test
+    void testRegisterCorruptNotebook() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/corrupt-ipynb", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        // The update should be "successful" but there should be a negative validation on the notebook file.
+        String path = "github.com/" + simpleRepo;
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(1, notebook.getWorkflowVersions().size());
+        assertFalse(notebook.getWorkflowVersions().get(0).isValid());
     }
 
     private class CreateContent {
@@ -124,19 +184,19 @@ class NotebookIT extends BaseIT {
         CreateContent invoke(boolean cleanup, String notebookName) {
             final Transaction transaction = session.beginTransaction();
 
-            Notebook testNotebook = new Notebook();
+            io.dockstore.webservice.core.Notebook testNotebook = new io.dockstore.webservice.core.Notebook();
             testNotebook.setDescription("test notebook");
             testNotebook.setIsPublished(true);
             testNotebook.setSourceControl(SourceControl.GITHUB);
             testNotebook.setDescriptorType(DescriptorLanguage.SERVICE);
-            testNotebook.setMode(WorkflowMode.DOCKSTORE_YML);
+            testNotebook.setMode(io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML);
             testNotebook.setOrganization("hydra");
             testNotebook.setRepository("hydra_repo");
             testNotebook.setWorkflowName(notebookName);
             testNotebook.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
 
             // add all users to all things for now
-            for (User user : userDAO.findAll()) {
+            for (io.dockstore.webservice.core.User user : userDAO.findAll()) {
                 testNotebook.addUser(user);
             }
 
