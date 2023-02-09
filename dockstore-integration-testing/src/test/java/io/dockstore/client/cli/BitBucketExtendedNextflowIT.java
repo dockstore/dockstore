@@ -52,12 +52,13 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(BitBucketTest.NAME)
 class BitBucketExtendedNextflowIT extends BaseIT {
 
+    public static final String DOCKSTORE_TEST_USER = "DockstoreTestUser";
     // bitbucket workflow
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW =
-        SourceControl.BITBUCKET + "/DockstoreTestUser/ampa-nf";
+        SourceControl.BITBUCKET + "/" + DOCKSTORE_TEST_USER + "/ampa-nf";
     // workflow with binaries in bin directory
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW =
-        SourceControl.BITBUCKET + "/DockstoreTestUser/kallisto-nf";
+        SourceControl.BITBUCKET + "/" + DOCKSTORE_TEST_USER + "/kallisto-nf";
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -95,7 +96,7 @@ class BitBucketExtendedNextflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // get workflow stubs
-        Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
+        Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), DOCKSTORE_TEST_USER + "/ampa-nf", "/nextflow.config", "",
                 DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
         workflowApi.refresh(workflow.getId(), false);
 
@@ -159,7 +160,7 @@ class BitBucketExtendedNextflowIT extends BaseIT {
         // get workflow stubs
 
         Workflow workflow = workflowApi
-                .manualRegister(SourceControl.BITBUCKET.name(), "DockstoreTestUser/kallisto-nf", "/nextflow.config", "",
+                .manualRegister(SourceControl.BITBUCKET.name(), DOCKSTORE_TEST_USER + "/kallisto-nf", "/nextflow.config", "",
                         DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
         workflowApi.refresh(workflow.getId(), false);
 

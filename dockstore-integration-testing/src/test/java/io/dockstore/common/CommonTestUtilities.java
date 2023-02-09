@@ -552,7 +552,7 @@ public final class CommonTestUtilities {
     }
 
     public enum TestUser {
-        TEST_USER1("test.confidential", "test.confidential1_1.5.0"),
+        TEST_USER1("test.confidential1", "test.confidential1_1.5.0"),
         TEST_USER2("test.confidential2", "test.confidential2_1.5.0");
 
         public final String databasedump;
