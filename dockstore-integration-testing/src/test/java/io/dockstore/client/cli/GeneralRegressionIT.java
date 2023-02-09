@@ -22,6 +22,7 @@ import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.TestUtility;
@@ -47,7 +48,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Extra confidential integration tests with old dockstore client, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
@@ -59,6 +59,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @since 1.4.0
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(RegressionTest.NAME)
 class GeneralRegressionIT extends BaseIT {
@@ -69,9 +70,9 @@ class GeneralRegressionIT extends BaseIT {
     private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @BeforeAll
     public static void getOldDockstoreClient() throws IOException {

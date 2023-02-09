@@ -22,6 +22,7 @@ import static io.dockstore.common.Hoverfly.SUFFIX2;
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.core.Token;
@@ -46,7 +47,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Tests services endpoints from UserResource
@@ -63,6 +63,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * TODO: this class has no tests but was like this before 1.14.0, not sure what is going on here
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @ExtendWith(HoverflyExtension.class)
 @HoverflyCore(mode = HoverflyMode.SIMULATE)
@@ -83,9 +84,9 @@ public class UserResourceServicesIT {
     private static TestingPostgres testingPostgres;
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @BeforeAll
     public static void dropAndRecreateDB() throws Exception {

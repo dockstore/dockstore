@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -44,7 +45,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * This test does not require confidential data.
@@ -55,6 +55,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  */
 @Tag(NonConfidentialTest.NAME)
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 class NoPluginIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;
@@ -75,9 +76,9 @@ class NoPluginIT {
     private static TestingPostgres testingPostgres;
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @BeforeAll
     public static void dropAndRecreateDB() throws Exception {

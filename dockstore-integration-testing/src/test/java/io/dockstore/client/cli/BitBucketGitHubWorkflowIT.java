@@ -28,6 +28,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
@@ -66,7 +67,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Extra confidential integration tests, focus on testing workflow interactions
@@ -75,6 +75,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author dyuen
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(BitBucketTest.NAME)
 class BitBucketGitHubWorkflowIT extends BaseIT {
@@ -87,9 +88,9 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
         SourceControl.BITBUCKET + "/dockstore_testuser2/dockstore-workflow";
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
 
     private WorkflowDAO workflowDAO;

@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
@@ -51,7 +52,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * This test suite will have tests for the workflow mode of the old Dockstore Client.
@@ -63,6 +63,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @since 1.4.0
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(RegressionTest.NAME)
 class GeneralWorkflowRegressionIT extends BaseIT {
@@ -75,9 +76,9 @@ class GeneralWorkflowRegressionIT extends BaseIT {
     static File dockstore;
     private static File md5sumJson;
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @BeforeAll
     public static void getOldDockstoreClient() throws IOException {

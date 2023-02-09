@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -39,7 +40,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Testing openapi transition
@@ -47,6 +47,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author dyuen
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(NonConfidentialTest.NAME)
 class OpenApiIT {
@@ -56,9 +57,9 @@ class OpenApiIT {
     protected static javax.ws.rs.client.Client client;
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
     private final String basePath = "/"; //SUPPORT.getConfiguration().getExternalConfig().getBasePath();
     private final String baseURL = String.format("http://localhost:%d" + basePath, SUPPORT.getLocalPort());
 

@@ -33,6 +33,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
@@ -93,7 +94,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Extra confidential integration tests, focus on testing workflow interactions
@@ -102,6 +102,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author dyuen
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Tag(WorkflowTest.NAME)
@@ -125,9 +126,9 @@ public class WorkflowIT extends BaseIT {
     private static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
 
     private WorkflowDAO workflowDAO;
