@@ -865,7 +865,7 @@ class SwaggerClientIT extends BaseIT {
         final Permission permission = new Permission();
         permission.setEmail(user);
         permission.setRole(role);
-        workflowsApi.addWorkflowPermission(path, permission, false);
+        workflowsApi.addWorkflowPermission(path, permission, BIOWORKFLOW);
     }
 
     private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
