@@ -79,7 +79,6 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
-@ExtendWith(MuteForSuccessfulTests.class)
 @Tag(ConfidentialTest.NAME)
 class ServiceIT extends BaseIT {
 
