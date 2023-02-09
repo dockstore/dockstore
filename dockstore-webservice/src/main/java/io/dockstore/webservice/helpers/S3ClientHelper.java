@@ -43,7 +43,7 @@ public final class S3ClientHelper {
 
     public static S3Client createS3Client() {
         // TODO should not need to hardcode region since buckets are global, but http://opensourceforgeeks.blogspot.com/2018/07/how-to-fix-unable-to-find-region-via.html
-        return S3Client.builder().region(Region.US_EAST_1).build();
+        return S3Client.builder().region(Region.US_EAST_2).build();
     }
 
     /**
