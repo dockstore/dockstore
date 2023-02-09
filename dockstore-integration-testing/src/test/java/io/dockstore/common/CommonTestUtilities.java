@@ -204,6 +204,12 @@ public final class CommonTestUtilities {
             LOG.info("testingPostgres is null");
         }
     }
+
+    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
+        TestingPostgres testingPostgres, boolean needBitBucketToken) {
+        cleanStatePrivate(support, isNewApplication, testingPostgres, needBitBucketToken, TestUser.TEST_USER1);
+    }
+
     /**
      * Wrapper for dropping and recreating database from migrations for test confidential 1 and optionally deleting BitBucket tokens
      *
@@ -213,9 +219,7 @@ public final class CommonTestUtilities {
      */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres,
         boolean needBitBucketToken) {
-        LOG.info("Dropping and Recreating the database with confidential 1 test data");
-        cleanStatePrivate1(support, CONFIDENTIAL_CONFIG_PATH);
-        handleBitBucketTokens(support, testingPostgres, needBitBucketToken);
+        cleanStatePrivate(support, testingPostgres, needBitBucketToken, TestUser.TEST_USER1);
     }
 
     /**
@@ -227,8 +231,17 @@ public final class CommonTestUtilities {
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres) {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, testingPostgres, false);
-        // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
-        // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+    }
+
+    /**
+     * Drops and recreates database from migrations for test confidential 1
+     *
+     * @param support reference to testing instance of the dockstore web service
+     * @param configPath
+     */
+    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
+        boolean isNewApplication) {
+        cleanStatePrivate(support, configPath, isNewApplication, TestUser.TEST_USER1);
     }
 
     /**
@@ -238,7 +251,31 @@ public final class CommonTestUtilities {
      * @param configPath
      */
     private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) {
-        dropAllAndRunMigration(listMigrations("test.confidential1", "test.confidential1_1.5.0"), support.getApplication(), configPath);
+        cleanStatePrivate(support, configPath, TestUser.TEST_USER1);
+    }
+
+    public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
+        boolean isNewApplication, TestUser testUser) {
+        dropAllAndRunMigration(listMigrations(testUser.databasedump, testUser.databasedumpUpgrade), getApplication(support, isNewApplication), configPath);
+    }
+
+    public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres,
+        boolean needBitBucketToken, TestUser testUser) {
+        LOG.info("Dropping and Recreating the database with confidential " + (testUser.ordinal() + 1) + " test data");
+        cleanStatePrivate(support, CONFIDENTIAL_CONFIG_PATH, testUser);
+        handleBitBucketTokens(support, testingPostgres, needBitBucketToken);
+    }
+
+    private static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath, TestUser user) {
+        dropAllAndRunMigration(listMigrations(user.databasedump, user.databasedumpUpgrade), support.getApplication(), configPath);
+    }
+
+    public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
+        TestingPostgres testingPostgres, boolean needBitBucketToken, TestUser testUser) {
+        LOG.info("Dropping and Recreating the database with confidential " + (testUser.ordinal() + 1) + " test data");
+
+        cleanStatePrivate(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication, testUser);
+        handleBitBucketTokens(support, testingPostgres, needBitBucketToken);
     }
 
     public static void cacheBitbucketTokens(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
@@ -279,7 +316,7 @@ public final class CommonTestUtilities {
     public static void runMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
         String configPath) {
         try {
-            application.run("db", "migrate", configPath, "--include", migrations.stream().collect(Collectors.joining(",")));
+            application.run("db", "migrate", configPath, "--include", String.join(",", migrations));
         } catch (Exception e) {
             Assert.fail("database migration failed");
         }
@@ -339,10 +376,7 @@ public final class CommonTestUtilities {
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
         TestingPostgres testingPostgres, boolean needBitBucketToken) {
-        LOG.info("Dropping and Recreating the database with confidential 2 test data");
-
-        cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
-        handleBitBucketTokens(support, testingPostgres, needBitBucketToken);
+        cleanStatePrivate(support, isNewApplication, testingPostgres, needBitBucketToken, TestUser.TEST_USER2);
     }
 
     /**
@@ -367,7 +401,7 @@ public final class CommonTestUtilities {
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
         boolean isNewApplication) {
-        dropAllAndRunMigration(listMigrations("test.confidential2", "test.confidential2_1.5.0"), getApplication(support, isNewApplication), configPath);
+        cleanStatePrivate(support, configPath, isNewApplication, TestUser.TEST_USER2);
     }
 
     /**
@@ -515,5 +549,19 @@ public final class CommonTestUtilities {
      */
     public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
         return getArbitraryURL(url, type, client, "application/zip");
+    }
+
+    public enum TestUser {
+        TEST_USER1("test.confidential", "test.confidential1_1.5.0"),
+        TEST_USER2("test.confidential2", "test.confidential2_1.5.0");
+
+        public final String databasedump;
+
+        public final String databasedumpUpgrade;
+
+        TestUser(String databasedump, String databasedumpUpgrade) {
+            this.databasedump = databasedump;
+            this.databasedumpUpgrade = databasedumpUpgrade;
+        }
     }
 }
