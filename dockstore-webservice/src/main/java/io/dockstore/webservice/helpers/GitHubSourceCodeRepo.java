@@ -35,7 +35,8 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
-import io.dockstore.common.yaml.YamlWorkflow;
+import io.dockstore.common.yaml.Workflowish;
+import io.dockstore.common.yaml.YamlNotebook;
 import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -43,6 +44,7 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.LicenseInformation;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -421,33 +423,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param subclass The subclass of the workflow (ex. docker-compose)
      * @return Service
      */
-    public Service initializeServiceFromGitHub(String repositoryId, String subclass) {
+    public Service initializeServiceFromGitHub(String repositoryId, String subclass, String workflowName) {
         Service service = new Service();
-        service.setOrganization(repositoryId.split("/")[0]);
-        service.setRepository(repositoryId.split("/")[1]);
-        service.setSourceControl(SourceControl.GITHUB);
-        service.setGitUrl("git@github.com:" + repositoryId + ".git");
-        service.setLastUpdated(new Date());
-        service.setDescriptorType(DescriptorLanguage.SERVICE);
-        service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
-        service.setMode(WorkflowMode.DOCKSTORE_YML);
-        service.setTopicAutomatic(this.getTopic(repositoryId));
-        this.setLicenseInformation(service, repositoryId);
-        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, service.getOrganization() + '/' + service.getRepository());
-        service.setLicenseInformation(licenseInformation);
-        // Validate subclass
-        if (subclass != null) {
-            DescriptorLanguageSubclass descriptorLanguageSubclass;
-            try {
-                descriptorLanguageSubclass = DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass);
-            } catch (UnsupportedOperationException ex) {
-                // TODO: https://github.com/dockstore/dockstore/issues/3239
-                throw new CustomWebApplicationException("Subclass " + subclass + " is not a valid descriptor language subclass.", LAMBDA_FAILURE);
-            }
-            service.setDescriptorTypeSubclass(descriptorLanguageSubclass);
-        }
-
+        setWorkflowInfo(repositoryId, DescriptorLanguage.SERVICE.toString(), subclass, workflowName, service);
         return service;
+    }
+
+    public Notebook initializeNotebookFromGitHub(String repositoryId, String format, String language, String workflowName) {
+        Notebook notebook = new Notebook();
+        setWorkflowInfo(repositoryId, format, language, workflowName, notebook);
+        return notebook;
     }
 
     /**
@@ -457,14 +442,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflowName Name of the workflow
      * @return Workflow
      */
-    public Workflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+    public BioWorkflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
         BioWorkflow workflow = new BioWorkflow();
-        return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
+        setWorkflowInfo(repositoryId, subclass, DescriptorLanguageSubclass.NOT_APPLICABLE.toString(), workflowName, workflow);
+        return workflow;
     }
 
-    public Workflow initializeOneStepWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
-        AppTool workflow = new AppTool();
-        return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
+    public AppTool initializeOneStepWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+        AppTool appTool = new AppTool();
+        setWorkflowInfo(repositoryId, subclass, DescriptorLanguageSubclass.NOT_APPLICABLE.toString(), workflowName, appTool);
+        return appTool;
     }
 
     /**
@@ -475,26 +462,47 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflow Workflow to update
      * @return Workflow
      */
-    public Workflow setWorkflowInfo(final String repositoryId, final String subclass, final String workflowName,
-            final Workflow workflow) {
+    private void setWorkflowInfo(final String repositoryId, final String type, final String typeSubclass, final String workflowName, final Workflow workflow) {
+
+        workflow.setWorkflowName(workflowName);
         workflow.setOrganization(repositoryId.split("/")[0]);
         workflow.setRepository(repositoryId.split("/")[1]);
         workflow.setSourceControl(SourceControl.GITHUB);
         workflow.setGitUrl("git@github.com:" + repositoryId + ".git");
         workflow.setLastUpdated(new Date());
+        workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
-        workflow.setWorkflowName(workflowName);
         workflow.setTopicAutomatic(this.getTopic(repositoryId));
         this.setLicenseInformation(workflow, repositoryId);
-        DescriptorLanguage descriptorLanguage;
+
+        // The checks/catches in the following blocks are all backups, they should not fail in normal operation.
+        // Thus, the error messages are more technical and less user-friendly.
         try {
-            descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(subclass);
-            workflow.setDescriptorType(descriptorLanguage);
+            DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
+            if (descriptorLanguage.getEntryTypes().contains(workflow.getEntryType())) {
+                workflow.setDescriptorType(descriptorLanguage);
+            } else {
+                logAndThrowLambdaFailure(String.format("The descriptor type %s is not supported by the %s", descriptorLanguage, workflow.getEntryType()));
+            }
         } catch (UnsupportedOperationException ex) {
-            throw new CustomWebApplicationException("The given descriptor type is not supported: " + subclass, LAMBDA_FAILURE);
+            logAndThrowLambdaFailure(String.format("Type %s is not a valid descriptor language.", type));
         }
-        workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
-        return workflow;
+
+        try {
+            DescriptorLanguageSubclass descriptorLanguageSubclass = DescriptorLanguageSubclass.convertShortNameStringToEnum(typeSubclass);
+            if (descriptorLanguageSubclass.getEntryTypes().contains(workflow.getEntryType())) {
+                workflow.setDescriptorTypeSubclass(descriptorLanguageSubclass);
+            } else {
+                logAndThrowLambdaFailure(String.format("The descriptor type subclass %s is not supported by the %s", descriptorLanguageSubclass, workflow.getEntryType()));
+            }
+        } catch (UnsupportedOperationException ex) {
+            logAndThrowLambdaFailure(String.format("Subclass %s is not a valid descriptor language subclass.", typeSubclass));
+        }
+    }
+
+    private void logAndThrowLambdaFailure(String message) {
+        LOG.error(message);
+        throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
     }
 
     /**
@@ -832,19 +840,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private WorkflowVersion setupWorkflowFilesForGitHubVersion(Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
         // Determine version information from dockstore.yml
-        YamlWorkflow theWf = null;
+        Workflowish theWf = null;
         List<String> testParameterPaths = null;
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             // TODO: Need to handle services; the YAML is guaranteed to have at least one of either
-            List<? extends YamlWorkflow> workflows;
-            if (workflow instanceof AppTool) {
+            List<? extends Workflowish> workflows;
+            if (workflow instanceof Notebook) {
+                workflows = dockstoreYaml12.getNotebooks();
+            } else if (workflow instanceof AppTool) {
                 workflows = dockstoreYaml12.getTools();
             } else {
                 workflows = dockstoreYaml12.getWorkflows();
             }
 
-            final Optional<? extends YamlWorkflow> maybeWorkflow = workflows.stream().filter(wf -> {
+            final Optional<? extends Workflowish> maybeWorkflow = workflows.stream().filter(wf -> {
                 final String wfName = wf.getName();
                 final String dockstoreWorkflowPath =
                         "github.com/" + repository.getFullName() + (wfName != null && !wfName.isEmpty() ? "/" + wfName : "");
@@ -860,6 +870,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             String msg = "Invalid .dockstore.yml: " + ex.getMessage();
             LOG.info(msg, ex);
             return null;
+        }
+
+        // If this is a notebook, set the version's user-specified files.
+        if (theWf instanceof YamlNotebook yamlNotebook) {
+            version.setUserFiles(yamlNotebook.getOtherFiles());
         }
 
         // No need to check for null, has been validated

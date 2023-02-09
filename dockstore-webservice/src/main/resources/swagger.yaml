@@ -7692,6 +7692,13 @@ definitions:
         description: "Aggregated memory metrics"
         $ref: "#/definitions/MemoryMetric"
     description: "Aggregated metrics associated with entry versions"
+  Notebook:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties: {}
+      description: "This describes one notebook in the dockstore as a special degenerate\
+        \ case of a workflow"
   Notification:
     type: "object"
     properties:
@@ -9234,7 +9241,10 @@ definitions:
         - "KUBERNETES"
         - "PYTHON"
         - "R"
+        - "JAVASCRIPT"
+        - "SCALA"
         - "JULIA"
+        - "OTHER"
         - "NOT_APPLICABLE"
       full_workflow_path:
         type: "string"

@@ -10,6 +10,7 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.yaml.DockstoreYaml12;
@@ -17,12 +18,14 @@ import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
 import io.dockstore.common.yaml.Workflowish;
 import io.dockstore.common.yaml.YamlAuthor;
+import io.dockstore.common.yaml.YamlNotebook;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -394,6 +397,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter);
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
             isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, AppTool.class, messageWriter);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getNotebooks(), repository, gitReference, installationId, username, dockstoreYml, Notebook.class, messageWriter);
 
         } catch (Exception ex) {
 
@@ -516,7 +520,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                     // Update the workflow version in its own database transaction.
                     transactionHelper.transaction(() -> {
-                        String subclass = wf.getSubclass().toString();
                         final String workflowName = workflowType == Service.class ? "" : wf.getName();
                         final Boolean publish = wf.getPublish();
                         final var defaultVersion = wf.getLatestTagAsDefault();
@@ -525,7 +528,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
                         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
 
-                        Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
+                        Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
                         workflow.syncMetadataWithDefault();
 
@@ -577,6 +580,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private String computeTermFromClass(Class<?> workflowType) {
+        if (workflowType == Notebook.class) {
+            return "notebook";
+        }
         if (workflowType == AppTool.class) {
             return "tool";
         }
@@ -638,7 +644,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitHubSourceCodeRepo Source Code Repo
      * @return New or updated workflow
      */
-    private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
+    private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, Workflowish wf, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
         Optional<T> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
@@ -653,16 +659,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             StringInputValidationHelper.checkEntryName(workflowType, workflowName);
 
-            if (workflowType == BioWorkflow.class) {
+            if (workflowType == Notebook.class) {
+                YamlNotebook yamlNotebook = (YamlNotebook)wf;
+                workflowToUpdate = gitHubSourceCodeRepo.initializeNotebookFromGitHub(repository, yamlNotebook.getFormat(), yamlNotebook.getLanguage(), workflowName);
+            } else if (workflowType == BioWorkflow.class) {
                 workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, AppTool.class);
-                workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, wf.getSubclass().toString(), workflowName);
             } else if (workflowType == Service.class) {
-                workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, subclass);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, wf.getSubclass().toString(), null);
             } else if (workflowType == AppTool.class) {
                 workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, BioWorkflow.class);
-                workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, subclass, workflowName);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, wf.getSubclass().toString(), workflowName);
             } else {
-                throw new CustomWebApplicationException(workflowType.getCanonicalName()  + " is not a valid workflow type. Currently only workflows, tools, and services are supported by GitHub Apps.", LAMBDA_FAILURE);
+                throw new CustomWebApplicationException(workflowType.getCanonicalName()  + " is not a valid workflow type. Currently only workflows, tools, notebooks, and services are supported by GitHub Apps.", LAMBDA_FAILURE);
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
@@ -680,19 +689,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
-        // Check that the subclass is the same as the entry to update
-        // For services, we must compare the descriptor type subclasses
-        // For workflows and tools, we must compare the descriptor types (languages)
-        // The `convertShortName` methods throw `UnsupportedOperationException` when passed an unknown subclass
-        try {
-            if (workflowType == Service.class) {
-                checkSame(workflowToUpdate.getDescriptorTypeSubclass(), DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass), "descriptor type subclass", "service");
-            } else {
-                checkSame(workflowToUpdate.getDescriptorType(), DescriptorLanguage.convertShortStringToEnum(subclass), "descriptor language (subclass)", workflowType == AppTool.class ? "tool" : "workflow");
-            }
-        } catch (UnsupportedOperationException e) {
-            throw new CustomWebApplicationException(String.format("Unknown subclass '%s'", subclass), HttpStatus.SC_BAD_REQUEST);
-        }
+        // Check that the descriptor type and type subclass are the same as the entry to update
+        checkCompatibleTypeAndSubclass(workflowToUpdate, wf);
 
         if (user != null) {
             workflowToUpdate.getUsers().add(user);
@@ -701,9 +699,58 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return workflowToUpdate;
     }
 
-    private <T> void checkSame(T currentValue, T newValue, String valueDescription, String entryDescription) {
-        if (!Objects.equals(currentValue, newValue)) {
-            throw new CustomWebApplicationException(String.format("You can't add a %s version to a %s %s, the %s of all versions must be the same.", newValue, currentValue, entryDescription, valueDescription), HttpStatus.SC_BAD_REQUEST);
+    private void checkCompatibleTypeAndSubclass(Workflow existing, Workflowish update) {
+
+        EntryType existingType = existing.getEntryType();
+        String existingTerm = existingType.getTerm();
+
+        if (existingType == EntryType.NOTEBOOK) {
+            YamlNotebook notebook = (YamlNotebook)update;
+            if (existing.getDescriptorType() != toDescriptorType(notebook.getFormat())
+                || existing.getDescriptorTypeSubclass() != toDescriptorTypeSubclass(notebook.getLanguage())) {
+                logAndThrowBadRequest(
+                    String.format("You can't add a %s %s version to a %s %s notebook, the format and programming language of all versions must be the same.", notebook.getFormat(), notebook.getLanguage(), existing.getDescriptorType(), existing.getDescriptorTypeSubclass()));
+            }
+        } else if (existingType == EntryType.WORKFLOW || existingType == EntryType.APPTOOL || existingType == EntryType.TOOL) {
+            if (existing.getDescriptorType() != toDescriptorType(update.getSubclass().toString())) {
+                logAndThrowBadRequest(
+                    String.format("You can't add a %s version to a %s %s, the descriptor language of all versions must be the same.", update.getSubclass(), existing.getDescriptorType(), existingTerm));
+            }
+        } else if (existingType == EntryType.SERVICE) {
+            if (existing.getDescriptorTypeSubclass() != toDescriptorTypeSubclass(update.getSubclass().toString())) {
+                logAndThrowBadRequest(
+                    String.format("You can't add a %s version to a %s service, the subclass of all versions must be the same.", update.getSubclass(), existing.getDescriptorTypeSubclass()));
+            }
+        } else {
+            // This is a backup check, it should never happen in normal operation.  Thus, the message is terse.
+            logAndThrowBadRequest("Unknown entry type " + existingType);
+        }
+    }
+
+    private void logAndThrowBadRequest(String message) {
+        LOG.error(message);
+        throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
+    }
+
+    private DescriptorLanguage toDescriptorType(String value) {
+        try {
+            return DescriptorLanguage.convertShortStringToEnum(value);
+        } catch (UnsupportedOperationException ex) {
+            // This is a backup catch, it should never happen in normal operation.  Thus, the message is terse.
+            String message = "Unknown descriptor language/type " + value;
+            LOG.error(message, ex);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private DescriptorLanguageSubclass toDescriptorTypeSubclass(String value) {
+        try {
+            return DescriptorLanguageSubclass.convertShortNameStringToEnum(value);
+        } catch (UnsupportedOperationException ex) {
+            // This is a backup catch, it should never happen in normal operation.  Thus, the message is terse.
+            String message = "Unknown descriptor language/type subclass" + value;
+            LOG.error(message, ex);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 OICR and UCSC
+ * Copyright 2023 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,30 @@
 package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
  * Validates a descriptor language short name.
  */
-public class DescriptorLanguageShortNameValidator implements ConstraintValidator<DescriptorLanguageShortName, String> {
+public class ValidDescriptorLanguageValidator implements ConstraintValidator<ValidDescriptorLanguage, String> {
+
+    private EntryType entryType;
+
     @Override
-    public void initialize(final DescriptorLanguageShortName constraintAnnotation) {
-        // Intentionally empty
+    public void initialize(ValidDescriptorLanguage annotation) {
+        entryType = annotation.entryType();
     }
 
     @Override
     public boolean isValid(final String shortName, final ConstraintValidatorContext context) {
+        // nulls are valid, see note in BaseConstraintValidator for more.
         if (shortName == null) {
             return true;
         }
         try {
-            DescriptorLanguage.convertShortStringToEnum(shortName);
-            return true;
+            return DescriptorLanguage.convertShortStringToEnum(shortName).getEntryTypes().contains(entryType);
         } catch (UnsupportedOperationException ex) {
             return false;
         }

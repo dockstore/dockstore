@@ -33,6 +33,7 @@ public class DockstoreYaml12 implements DockstoreYaml {
 
     private String version;
     private List<YamlWorkflow> workflows = new ArrayList<>();
+    private List<YamlNotebook> notebooks = new ArrayList<>();
     private List<YamlTool> tools = new ArrayList<>();
     private Service12 service;
 
@@ -48,6 +49,16 @@ public class DockstoreYaml12 implements DockstoreYaml {
 
     public void setWorkflows(final List<YamlWorkflow> workflows) {
         this.workflows = workflows;
+    }
+
+    @Valid
+    @NotNull // But may be empty
+    public List<YamlNotebook> getNotebooks() {
+        return notebooks;
+    }
+
+    public void setNotebooks(final List<YamlNotebook> notebooks) {
+        this.notebooks = notebooks;
     }
 
     @Valid

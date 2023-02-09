@@ -69,3 +69,24 @@ service:
           description: Data for Xena in TSV format
         metadata:
           description: The metadata, in JSON format, that corresponds to the previous tsv file
+
+notebooks:
+  - name: notebook0
+    format: Ipynb
+    language: Python
+    path: /notebook0.ipynb
+    publish: true
+    latestTagAsDefault: true
+    filters:
+      branches:
+        - branch0
+      tags:
+        - tag0
+    authors:
+      - name: author0
+    testParameterFiles:
+      - /test0
+    otherFiles:
+      - /other0
+  - name: notebook1
+    path: /notebook1.ipynb

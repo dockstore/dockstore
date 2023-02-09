@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
@@ -46,7 +47,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Tests a variety of basic dockstore CLI commands along with some tool commands
@@ -57,6 +57,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @since 1.4.0
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(RegressionTest.NAME)
 class ClientRegressionIT extends BaseIT {
@@ -68,9 +69,9 @@ class ClientRegressionIT extends BaseIT {
     private static final Logger LOG = LoggerFactory.getLogger(ClientRegressionIT.class);
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @BeforeAll
     public static void getOldDockstoreClient() throws IOException {
@@ -145,20 +146,20 @@ class ClientRegressionIT extends BaseIT {
         commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "--server-metadata" };
         stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         assertTrue(stringStringImmutablePair.getLeft().contains("version"));
-        systemOutRule.clear();
+        systemOut.clear();
     }
 
     @Test
     void testCacheCleaningOld() throws IOException {
         runOldDockstoreClient(dockstore, new String[] { "--config", TestUtility.getConfigFileLocation(true), "--clean-cache" });
-        systemOutRule.clear();
+        systemOut.clear();
     }
 
     @Test
     void pluginDownloadOld() throws IOException {
         String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "plugin", "download" };
         runOldDockstoreClient(dockstore, commandArray);
-        systemOutRule.clear();
+        systemOut.clear();
     }
 
     /**

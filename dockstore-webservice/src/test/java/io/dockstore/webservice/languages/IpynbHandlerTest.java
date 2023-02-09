@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.SourceFile;
@@ -48,19 +49,19 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Tests public methods in IpynbHandler
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class IpynbHandlerTest {
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
 
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     private static final String PATH = "/hello.ipynb";
     private static final String CONTENT = read("hello.ipynb");
