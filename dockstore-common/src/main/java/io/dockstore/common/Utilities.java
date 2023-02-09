@@ -22,7 +22,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -154,7 +153,6 @@ public final class Utilities {
             }
 
             DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
-            String utf8 = StandardCharsets.UTF_8.name();
             try {
                 final CommandLine parse = CommandLine.parse(command);
                 // When running bash commands directly, we need this to substitute variables
@@ -187,18 +185,14 @@ public final class Utilities {
                     LOG.error(PROBLEMS_RUNNING_COMMAND, command, resultHandler.getException());
                     throw new ExecuteException(PROBLEMS_RUNNING_COMMAND + command, resultHandler.getExitValue());
                 }
-                return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
+                return new ImmutablePair<>(localStdoutStream.toString(StandardCharsets.UTF_8), localStdErrStream.toString(StandardCharsets.UTF_8));
             } catch (InterruptedException | IOException e) {
                 throw new IllegalStateException(PROBLEMS_RUNNING_COMMAND + command, e);
             } finally {
                 if (dumpOutput) {
                     LOG.info("exit code: " + resultHandler.getExitValue());
-                    try {
-                        LOG.debug("stderr was: " + localStdErrStream.toString(utf8));
-                        LOG.debug("stdout was: " + localStdoutStream.toString(utf8));
-                    } catch (UnsupportedEncodingException e) {
-                        throw new RuntimeException("utf-8 does not exist?", e);
-                    }
+                    LOG.debug("stderr was: " + localStdErrStream.toString(StandardCharsets.UTF_8));
+                    LOG.debug("stdout was: " + localStdoutStream.toString(StandardCharsets.UTF_8));
                 }
             }
         } catch (IOException e) {
