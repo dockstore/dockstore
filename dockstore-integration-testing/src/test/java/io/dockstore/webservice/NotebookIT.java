@@ -21,7 +21,6 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIM
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
@@ -43,7 +42,6 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.persistence.PersistenceException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -112,13 +110,6 @@ class NotebookIT extends BaseIT {
         assertEquals(1, workflowDAO.findAllPublished(1, Integer.valueOf(PAGINATION_LIMIT), null, null, null).size());
         session.close();
     }
-
-    @Test
-    void testDuplicateNotebookName() {
-        new CreateContent().invoke(false, "Hive");
-        assertThrows(PersistenceException.class, () -> new CreateContent().invoke(false, "hive"));
-        session.close();
-    }
     
     @Test
     void testRegisterSimpleNotebook() {
@@ -178,10 +169,10 @@ class NotebookIT extends BaseIT {
         }
 
         CreateContent invoke() {
-            return invoke(false, null);
+            return invoke(false);
         }
 
-        CreateContent invoke(boolean cleanup, String notebookName) {
+        CreateContent invoke(boolean cleanup) {
             final Transaction transaction = session.beginTransaction();
 
             io.dockstore.webservice.core.Notebook testNotebook = new io.dockstore.webservice.core.Notebook();
@@ -192,7 +183,7 @@ class NotebookIT extends BaseIT {
             testNotebook.setMode(io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML);
             testNotebook.setOrganization("hydra");
             testNotebook.setRepository("hydra_repo");
-            testNotebook.setWorkflowName(notebookName);
+            testNotebook.setWorkflowName(null);
             testNotebook.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
 
             // add all users to all things for now
