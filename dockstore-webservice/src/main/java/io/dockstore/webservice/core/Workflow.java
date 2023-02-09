@@ -95,7 +95,8 @@ import org.hibernate.annotations.Filter;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({@JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
     @JsonSubTypes.Type(value = Service.class, name = "Service"),
-    @JsonSubTypes.Type(value = AppTool.class, name = "AppTool")})
+    @JsonSubTypes.Type(value = AppTool.class, name = "AppTool"),
+    @JsonSubTypes.Type(value = Notebook.class, name = "Notebook")})
 public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
@@ -393,7 +394,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
         @Override
         public String convertToDatabaseColumn(DescriptorLanguageSubclass attribute) {
-            return attribute.getShortName();
+            return attribute.getShortName().toLowerCase();
         }
 
         @Override
