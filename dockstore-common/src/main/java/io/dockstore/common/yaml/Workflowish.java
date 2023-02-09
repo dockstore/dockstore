@@ -15,4 +15,6 @@ public interface Workflowish {
     boolean getLatestTagAsDefault();
     Object getSubclass();
     Filters getFilters();
+    List<String> getTestParameterFiles();
+    String getPrimaryDescriptorPath();
 }
