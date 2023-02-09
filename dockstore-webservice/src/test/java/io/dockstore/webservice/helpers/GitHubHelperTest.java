@@ -64,7 +64,12 @@ class GitHubHelperTest {
         assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo\\bar", "heads/_foo_bar"));
         assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/@{.", "heads/_foo_bar"));
         assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/@", "heads/_foo_bar"));
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo:bar", "heads/_foo_bar"));
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo^bar", "heads/_foo_bar"));
 
+        // ASCII control characters
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo\tbar", "heads/_foo_bar"));
+        assertThrows(IllegalStateException.class, () -> testReferenceString("refs/heads/foo\nbar", "heads/_foo_bar"));
     }
 
     private void testReferenceString(String gitReference, String expectedString) {
