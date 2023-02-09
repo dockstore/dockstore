@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - develop
-      - feature/seab-5062/metrics-endpoints
 jobs:
   build:
     runs-on: ubuntu-22.04
