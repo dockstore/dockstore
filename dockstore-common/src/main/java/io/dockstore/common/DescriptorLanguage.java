@@ -67,12 +67,7 @@ public enum DescriptorLanguage {
         }
     },
     // DOCKSTORE-2428 - demo how to add new workflow language
-    SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON, false, true, Set.of("swl"), false, false, Set.of(WORKFLOW, APPTOOL, TOOL)) {
-        @Override
-        public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type);
-        }
-    },
+    SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON, false, true, Set.of("swl"), false, false, Set.of(WORKFLOW, APPTOOL, TOOL)),
     NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false, Set.of("config"), true, false, Set.of(WORKFLOW)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
@@ -300,9 +295,9 @@ public enum DescriptorLanguage {
      */
     public static class DescriptorLanguageBean {
 
-        public String value;
+        public final String value;
 
-        public String friendlyName;
+        public final String friendlyName;
 
         public DescriptorLanguageBean(DescriptorLanguage descriptorLanguage) {
             this.value = descriptorLanguage.toString();

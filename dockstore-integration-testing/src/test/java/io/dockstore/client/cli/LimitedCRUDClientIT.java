@@ -28,6 +28,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -62,7 +63,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Tests CRUD style operations for tools and workflows hosted directly on Dockstore
@@ -70,6 +70,7 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @author dyuen, agduncan
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 class LimitedCRUDClientIT {
@@ -86,9 +87,9 @@ class LimitedCRUDClientIT {
     public static final int SYSTEM_LIMIT = 10;
     private static TestingPostgres testingPostgres;
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     //TODO: duplicates BaseIT but with a different config file, attempt to simplify after release
 
