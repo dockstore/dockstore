@@ -280,9 +280,9 @@
         <sql dbms="postgresql">
             DELETE FROM user_entry ue WHERE ue.entryid NOT IN (SELECT id FROM workflow UNION ALL
                                                                SELECT id FROM apptool UNION ALL
-                                                               SELECT id from service UNION ALL
-                                                               SELECT id from tool UNION ALL
-                                                               SELECT id from notebook);
+                                                               SELECT id FROM service UNION ALL
+                                                               SELECT id FROM tool UNION ALL
+                                                               SELECT id FROM notebook);
         </sql>
     </changeSet>
 </databaseChangeLog>
