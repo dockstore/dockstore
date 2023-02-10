@@ -28,6 +28,7 @@ import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidPutCode;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -576,6 +577,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         if (entry instanceof BioWorkflow) {
             entryPath = ((BioWorkflow)entry).getWorkflowPath();
             sitePath = "workflows/" + entryPath;
+        } else if (entry instanceof Notebook) {
+            entryPath = ((Notebook)entry).getWorkflowPath();
+            sitePath = "notebooks/" + entryPath;
         } else if (entry instanceof Service) {
             entryPath = ((Service)entry).getWorkflowPath();
             sitePath = "services/" + entryPath;

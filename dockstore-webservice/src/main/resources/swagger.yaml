@@ -5328,7 +5328,7 @@ paths:
         type: "string"
       - name: "subclass"
         in: "query"
-        description: "Which Workflow subclass to retrieve."
+        description: "Which Workflow subclass to retrieve actions for."
         required: true
         type: "string"
         enum:
@@ -5367,7 +5367,7 @@ paths:
         type: "string"
       - name: "subclass"
         in: "query"
-        description: "Which Workflow subclass to retrieve."
+        description: "Which Workflow subclass to retrieve permissions for."
         required: true
         type: "string"
         enum:
@@ -5414,7 +5414,7 @@ paths:
         - "READER"
       - name: "subclass"
         in: "query"
-        description: "Which Workflow subclass to retrieve."
+        description: "Which Workflow subclass to remove a role from."
         required: true
         type: "string"
         enum:
@@ -5456,7 +5456,7 @@ paths:
           $ref: "#/definitions/Permission"
       - name: "subclass"
         in: "query"
-        description: "Which Workflow subclass to retrieve."
+        description: "Which Workflow subclass to add a permission to."
         required: true
         type: "string"
         enum:

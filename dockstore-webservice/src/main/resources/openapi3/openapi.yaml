@@ -6080,7 +6080,7 @@ paths:
         required: true
         schema:
           type: string
-      - description: Which Workflow subclass to retrieve.
+      - description: Which Workflow subclass to retrieve actions for.
         in: query
         name: subclass
         required: true
@@ -6126,7 +6126,7 @@ paths:
           - OWNER
           - WRITER
           - READER
-      - description: Which Workflow subclass to retrieve.
+      - description: Which Workflow subclass to remove a role from.
         in: query
         name: subclass
         required: true
@@ -6154,7 +6154,7 @@ paths:
         required: true
         schema:
           type: string
-      - description: Which Workflow subclass to retrieve.
+      - description: Which Workflow subclass to retrieve permissions for.
         in: query
         name: subclass
         required: true
@@ -6182,7 +6182,7 @@ paths:
         required: true
         schema:
           type: string
-      - description: Which Workflow subclass to retrieve.
+      - description: Which Workflow subclass to add a permission to.
         in: query
         name: subclass
         required: true
