@@ -140,8 +140,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         entry.setTopicSelection(TopicSelection.MANUAL);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
-        T byId = getEntryDAO().findById(l);
-        return byId;
+        return getEntryDAO().findById(l);
     }
 
     protected abstract void checkForDuplicatePath(T entry);
@@ -237,10 +236,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         String invalidFileNames = String.join(",", invalidFileNames(version));
         if (!invalidFileNames.isEmpty()) {
-            StringBuilder message = new StringBuilder();
-            message.append("Files must have a name. Unable to save new version due to the following files: ");
-            message.append(invalidFileNames);
-            throw new CustomWebApplicationException(message.toString(), HttpStatus.SC_BAD_REQUEST);
+            String message = "Files must have a name. Unable to save new version due to the following files: "
+                + invalidFileNames;
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
 
         validatedVersion.setValid(true); // Hosted entry versions must be valid to save
@@ -400,7 +398,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
 
         // If the version that's about to be deleted is the default version, unset it
-        if (entry.getActualDefaultVersion().getName().equals(version)) {
+        if (entry.getActualDefaultVersion() != null && entry.getActualDefaultVersion().getName().equals(version)) {
             Optional<U> max = entry.getWorkflowVersions().stream().filter(v -> !Objects.equals(v.getName(), version))
                     .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
             entry.setActualDefaultVersion(max.orElse(null));
