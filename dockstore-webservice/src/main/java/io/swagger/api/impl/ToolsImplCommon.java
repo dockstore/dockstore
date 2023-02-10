@@ -74,6 +74,7 @@ import org.slf4j.LoggerFactory;
 public final class ToolsImplCommon {
     public static final String WORKFLOW_PREFIX = "#workflow";
     public static final String SERVICE_PREFIX = "#service";
+    public static final String NOTEBOOK_PREFIX = "#notebook";
     public static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
 
@@ -468,6 +469,8 @@ public final class ToolsImplCommon {
             String workflowPath = workflow.getWorkflowPath();
             if (descriptorType == DescriptorLanguage.SERVICE) {
                 return SERVICE_PREFIX + "/" + workflowPath;
+            } else if (descriptorType == DescriptorLanguage.NOTEBOOK) {
+                return NOTEBOOK_PREFIX + "/" + workflowPath;
             } else {
                 return WORKFLOW_PREFIX + "/" + workflowPath;
             }
@@ -517,6 +520,8 @@ public final class ToolsImplCommon {
             tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getWorkflowClass());
         } else if (container instanceof Service) {
             tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getServiceClass());
+        } else if (container instanceof Notebook) {
+            tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getNotebookClass());
         } else {
             throw new UnsupportedOperationException("encountered unknown entry type in TRS");
         }
