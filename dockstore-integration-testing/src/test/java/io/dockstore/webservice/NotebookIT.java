@@ -95,7 +95,7 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testDAOs() {
-        CreateContent createContent = new CreateContent().invoke(false);
+        CreateContent createContent = new CreateContent().invoke();
         long notebookID = createContent.getNotebookID();
 
         // might not be right if our test database is larger than PAGINATION_LIMIT
@@ -111,7 +111,7 @@ class NotebookIT extends BaseIT {
         assertEquals(1, workflowDAO.findAllPublished(1, Integer.valueOf(PAGINATION_LIMIT), null, null, null).size());
         session.close();
     }
-
+    
     @Test
     void testRegisterSimpleNotebook() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -170,7 +170,7 @@ class NotebookIT extends BaseIT {
         }
 
         CreateContent invoke() {
-            return invoke(true);
+            return invoke(false);
         }
 
         CreateContent invoke(boolean cleanup) {
@@ -184,6 +184,7 @@ class NotebookIT extends BaseIT {
             testNotebook.setMode(io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML);
             testNotebook.setOrganization("hydra");
             testNotebook.setRepository("hydra_repo");
+            testNotebook.setWorkflowName(null);
             testNotebook.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
 
             // add all users to all things for now

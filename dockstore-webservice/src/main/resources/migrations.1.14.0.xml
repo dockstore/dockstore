@@ -276,4 +276,13 @@
         <addUniqueConstraint columnNames="metricsid" constraintName="uk_metricsid_version_metrics" tableName="version_metrics"/>
         <addForeignKeyConstraint baseColumnNames="metricsid" baseTableName="version_metrics" constraintName="fk_metricsid_version_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metrics"/>
     </changeSet>
+    <changeSet id="tighten constraint for names" author="dyuen">
+        <sql dbms="postgresql">
+            CREATE UNIQUE INDEX case_insensitive_toolname on tool using btree (registry, namespace, name, lower(toolname)) where toolname is not null;
+            CREATE UNIQUE INDEX case_insensitive_apptool_toolname on apptool using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
+            CREATE UNIQUE INDEX case_insensitive_notebook_workflowname on notebook using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
+            -- see https://github.com/dockstore/dockstore/issues/5287, the id may need to be incremented depending on how often people stumble into this
+            CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 18876;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
