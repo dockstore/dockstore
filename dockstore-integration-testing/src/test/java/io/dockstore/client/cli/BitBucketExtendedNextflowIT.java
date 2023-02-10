@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.CommonTestUtilities.TestUser;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
@@ -52,13 +53,13 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(BitBucketTest.NAME)
 class BitBucketExtendedNextflowIT extends BaseIT {
 
-    public static final String DOCKSTORE_TEST_USER = "DockstoreTestUser";
+    public static final String DOCKSTORE_TEST_USER_4 = TestUser.TEST_USER4.dockstoreUserName;
     // bitbucket workflow
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW =
-        SourceControl.BITBUCKET + "/" + DOCKSTORE_TEST_USER + "/ampa-nf";
+        SourceControl.BITBUCKET + "/" + DOCKSTORE_TEST_USER_4 + "/ampa-nf";
     // workflow with binaries in bin directory
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW =
-        SourceControl.BITBUCKET + "/" + DOCKSTORE_TEST_USER + "/kallisto-nf";
+        SourceControl.BITBUCKET + "/" + DOCKSTORE_TEST_USER_4 + "/kallisto-nf";
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -82,7 +83,7 @@ class BitBucketExtendedNextflowIT extends BaseIT {
     @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate1(SUPPORT, false, testingPostgres, true);
+        CommonTestUtilities.cleanStatePrivate(SUPPORT, false, testingPostgres, true, TestUser.TEST_USER4);
     }
 
     @AfterEach
@@ -93,10 +94,10 @@ class BitBucketExtendedNextflowIT extends BaseIT {
 
     @Test
     void testBitbucketNextflowWorkflow() {
-        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
+        final ApiClient webClient = getWebClient(USER_4_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // get workflow stubs
-        Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), DOCKSTORE_TEST_USER + "/ampa-nf", "/nextflow.config", "",
+        Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), DOCKSTORE_TEST_USER_4 + "/ampa-nf", "/nextflow.config", "",
                 DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
         workflowApi.refresh(workflow.getId(), false);
 
@@ -155,12 +156,12 @@ class BitBucketExtendedNextflowIT extends BaseIT {
 
     @Test
     void testBitbucketBinaryWorkflow() {
-        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
+        final ApiClient webClient = getWebClient(USER_4_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // get workflow stubs
 
         Workflow workflow = workflowApi
-                .manualRegister(SourceControl.BITBUCKET.name(), DOCKSTORE_TEST_USER + "/kallisto-nf", "/nextflow.config", "",
+                .manualRegister(SourceControl.BITBUCKET.name(), DOCKSTORE_TEST_USER_4 + "/kallisto-nf", "/nextflow.config", "",
                         DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
         workflowApi.refresh(workflow.getId(), false);
 

@@ -551,17 +551,24 @@ public final class CommonTestUtilities {
         return getArbitraryURL(url, type, client, "application/zip");
     }
 
+    /**
+     * This collects some information about our test users
+     */
     public enum TestUser {
-        TEST_USER1("test.confidential1", "test.confidential1_1.5.0"),
-        TEST_USER2("test.confidential2", "test.confidential2_1.5.0");
+        TEST_USER1("test.confidential1", "test.confidential1_1.5.0", "DockstoreTestUser"),
+        TEST_USER2("test.confidential2", "test.confidential2_1.5.0", "DockstoreTestUser2"),
+        TEST_USER4("test.confidential4", "test.confidential4_1.5.0", "DockstoreTestUser4");
 
         public final String databasedump;
 
         public final String databasedumpUpgrade;
 
-        TestUser(String databasedump, String databasedumpUpgrade) {
+        public final String dockstoreUserName;
+
+        TestUser(String databasedump, String databasedumpUpgrade, String dockstoreUserName) {
             this.databasedump = databasedump;
             this.databasedumpUpgrade = databasedumpUpgrade;
+            this.dockstoreUserName = dockstoreUserName;
         }
     }
 }
