@@ -1869,10 +1869,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (subClass != null) {
             return subClass.getTargetClass();
         }
-        if (services != null) {
-            return services.booleanValue() ? Service.class : BioWorkflow.class;
-        }
-        throw new CustomWebApplicationException("Subclass and services cannot both be null", HttpStatus.SC_BAD_REQUEST);
+        return (services != null && services.booleanValue()) ? Service.class : BioWorkflow.class;
     }
 
     @Override
