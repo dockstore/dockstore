@@ -254,11 +254,27 @@ public final class CommonTestUtilities {
         cleanStatePrivate(support, configPath, TestUser.TEST_USER1);
     }
 
+    /**
+     * Clean the database and reset it with a specific test user.
+     * @param support
+     * @param configPath
+     * @param isNewApplication
+     * @param testUser
+     */
     public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
         boolean isNewApplication, TestUser testUser) {
         dropAllAndRunMigration(listMigrations(testUser.databasedump, testUser.databasedumpUpgrade), getApplication(support, isNewApplication), configPath);
     }
 
+    /**
+     * Clean the database and reset it with a specific test user, but also manage the bitbucket tokens.
+     *
+     * For efficiency, bitbucket tests should use this to preserve the bitbucket tokens to avoid them resetting with every test, breaking the cache.
+     * @param support
+     * @param testingPostgres
+     * @param needBitBucketToken
+     * @param testUser
+     */
     public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres,
         boolean needBitBucketToken, TestUser testUser) {
         LOG.info("Dropping and Recreating the database with confidential " + (testUser.ordinal() + 1) + " test data");
@@ -270,6 +286,16 @@ public final class CommonTestUtilities {
         dropAllAndRunMigration(listMigrations(user.databasedump, user.databasedumpUpgrade), support.getApplication(), configPath);
     }
 
+    /**
+     * Clean the database and reset it with a specific test user, but also manage the bitbucket tokens and set whether we want to restart the web service (I think).
+     *
+     * For efficiency, bitbucket tests should use this to preserve the bitbucket tokens to avoid them resetting with every test, breaking the cache.
+     * @param support
+     * @param isNewApplication
+     * @param testingPostgres
+     * @param needBitBucketToken
+     * @param testUser
+     */
     public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
         TestingPostgres testingPostgres, boolean needBitBucketToken, TestUser testUser) {
         LOG.info("Dropping and Recreating the database with confidential " + (testUser.ordinal() + 1) + " test data");
