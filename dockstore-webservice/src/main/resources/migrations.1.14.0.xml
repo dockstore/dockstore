@@ -276,6 +276,15 @@
         <addUniqueConstraint columnNames="metricsid" constraintName="uk_metricsid_version_metrics" tableName="version_metrics"/>
         <addForeignKeyConstraint baseColumnNames="metricsid" baseTableName="version_metrics" constraintName="fk_metricsid_version_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metrics"/>
     </changeSet>
+    <changeSet id="deleteNonExistentEntries" author="nhyun">
+        <sql dbms="postgresql">
+            DELETE FROM user_entry ue WHERE ue.entryid NOT IN (SELECT id FROM workflow UNION ALL
+                                                               SELECT id FROM apptool UNION ALL
+                                                               SELECT id FROM service UNION ALL
+                                                               SELECT id FROM tool UNION ALL
+                                                               SELECT id FROM notebook);       
+        </sql>
+    </changeSet>
     <changeSet id="tighten constraint for names" author="dyuen">
         <sql dbms="postgresql">
             CREATE UNIQUE INDEX case_insensitive_toolname on tool using btree (registry, namespace, name, lower(toolname)) where toolname is not null;
