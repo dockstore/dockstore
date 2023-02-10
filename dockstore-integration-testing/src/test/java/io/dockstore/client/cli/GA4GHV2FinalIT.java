@@ -401,11 +401,17 @@ class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     void testGetHeaderLinksContainFilters() throws Exception {
-        Response response = checkedResponse(baseURL + "tools?toolClass=Tool&limit=1");
+        // Insert the 4 workflows into the database using migrations
+        CommonTestUtilities.setupSamePathsTest(SUPPORT);
+
+        Response response = checkedResponse(baseURL + "tools?toolClass=Workflow&limit=1");
         MultivaluedMap<String, Object> headers = response.getHeaders();
-        assertTrue(headers.get("self_link").toString().contains("toolClass=Tool"));
-        assertTrue(headers.get("last_page").toString().contains("toolClass=Tool"));
-        assertTrue(headers.get("next_page").toString().contains("toolClass=Tool"));
+        assertTrue(headers.get("self_link").toString().contains("toolClass=Workflow"));
+        assertTrue(headers.get("last_page").toString().contains("toolClass=Workflow"));
+        assertTrue(headers.get("next_page").toString().contains("toolClass=Workflow"));
+
+        // reset DB for other tests
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
 }
