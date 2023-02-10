@@ -29,6 +29,7 @@ import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.model.Author;
 import io.dockstore.openapi.client.model.SourceFile;
@@ -54,17 +55,17 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 class NotebookIT extends BaseIT {
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     private final String installationId = AppToolHelper.INSTALLATION_ID;
     private final String simpleRepo = "dockstore-testing/simple-notebook";
@@ -94,7 +95,7 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testDAOs() {
-        CreateContent createContent = new CreateContent().invoke(false);
+        CreateContent createContent = new CreateContent().invoke();
         long notebookID = createContent.getNotebookID();
 
         // might not be right if our test database is larger than PAGINATION_LIMIT
@@ -110,7 +111,7 @@ class NotebookIT extends BaseIT {
         assertEquals(1, workflowDAO.findAllPublished(1, Integer.valueOf(PAGINATION_LIMIT), null, null, null).size());
         session.close();
     }
-
+    
     @Test
     void testRegisterSimpleNotebook() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -169,7 +170,7 @@ class NotebookIT extends BaseIT {
         }
 
         CreateContent invoke() {
-            return invoke(true);
+            return invoke(false);
         }
 
         CreateContent invoke(boolean cleanup) {
@@ -183,6 +184,7 @@ class NotebookIT extends BaseIT {
             testNotebook.setMode(io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML);
             testNotebook.setOrganization("hydra");
             testNotebook.setRepository("hydra_repo");
+            testNotebook.setWorkflowName(null);
             testNotebook.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
 
             // add all users to all things for now
