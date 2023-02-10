@@ -499,7 +499,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
 
             // calculate whether we want a page of tools, a page of workflows, or a page that includes both
-            boolean countAll = toolClass == null;
+            boolean countAll = (toolClass == null);
             numTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || countAll ? toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
             numWorkflows = WORKFLOW.equalsIgnoreCase(toolClass) || countAll ? bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
             numAppTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || countAll ? appToolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
