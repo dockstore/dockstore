@@ -20,8 +20,10 @@ import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.NOTEBOOK;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.SERVICE;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
+import static io.swagger.api.impl.ToolsImplCommon.NOTEBOOK_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
@@ -34,6 +36,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -458,6 +461,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @SuppressWarnings("checkstyle:ParameterNumber")
     private NumberOfEntityTypes getEntries(List<Entry<?, ?>> all, String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, Optional<User> user, int actualLimit, int offset) throws UnsupportedEncodingException {
+
         long numTools = 0;
         long numWorkflows = 0;
         long numAppTools = 0;
@@ -490,17 +494,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 } catch (UnsupportedOperationException ex) {
                     // If unable to match descriptor language, do not return any entries.
                     LOG.info(ex.getMessage());
-                    return new NumberOfEntityTypes(numTools, numWorkflows, numAppTools, numServices, numNotebooks);
+                    return new NumberOfEntityTypes(0, 0, 0, 0, 0);
                 }
             }
 
             // calculate whether we want a page of tools, a page of workflows, or a page that includes both
-            // TODO
-            numTools = WORKFLOW.equalsIgnoreCase(toolClass) || SERVICE.equalsIgnoreCase(toolClass) ? 0 : toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            numWorkflows = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || SERVICE.equalsIgnoreCase(toolClass) ? 0 : bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            numAppTools = WORKFLOW.equalsIgnoreCase(toolClass) || SERVICE.equalsIgnoreCase(toolClass) ? 0 : appToolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            numServices = WORKFLOW.equalsIgnoreCase(toolClass) || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) ? 0 : serviceDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-
+            boolean countAll = toolClass == null;
+            numTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || countAll ? toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numWorkflows = WORKFLOW.equalsIgnoreCase(toolClass) || countAll ? bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numAppTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || countAll ? appToolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numServices = SERVICE.equalsIgnoreCase(toolClass) || countAll ? serviceDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numNotebooks = NOTEBOOK.equalsIgnoreCase(toolClass) || countAll ? notebookDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
 
             long startIndex = offset;
             long pageRemaining = actualLimit;
