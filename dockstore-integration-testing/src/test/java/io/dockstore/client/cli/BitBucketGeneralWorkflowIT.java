@@ -173,7 +173,7 @@ class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", BIOWORKFLOW, "");
+            .getWorkflowByPath(SourceControl.BITBUCKET + "/dockstore_testuser2/dockstore-workflow", BIOWORKFLOW, "");
 
         // Update workflow path
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);

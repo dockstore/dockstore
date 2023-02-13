@@ -73,7 +73,7 @@ public interface SourceControlResourceInterface {
     /**
      * Refreshes user's token.
      *
-     * @param refreshUrl e.g. https://sandbox.zenodo.org/oauth/token
+     * @param refreshUrl e.g. <a href="https://sandbox.zenodo.org/oauth/token">...</a>
      * @param token
      * @param client
      * @param tokenDAO
