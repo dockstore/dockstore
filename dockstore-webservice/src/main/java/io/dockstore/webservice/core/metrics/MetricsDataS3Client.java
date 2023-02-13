@@ -109,7 +109,8 @@ public class MetricsDataS3Client {
     }
 
     /**
-     * Get a list of MetricsData for a GA4GH tool version
+     * Get a list of MetricsData for a GA4GH tool version.
+     * Note that the ListObjectsV2Request returns at most 1,000 objects and paginates the rest (<a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">source</a>).
      * @param toolId The GA4GH Tool ID
      * @param toolVersionName The GA4GH ToolVersion name
      * @return A list of MetricsData
@@ -118,7 +119,8 @@ public class MetricsDataS3Client {
         String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
         List<MetricsData> metricsData = new ArrayList<>();
         boolean isTruncated = true;
-        String continuationToken = null; // ContinuationToken indicates to S3 that the list is being continued on this bucket with a token
+        // ContinuationToken indicates to S3 that the list is being continued on this bucket with a token. This is present if the response was paginated
+        String continuationToken = null;
 
         while (isTruncated) {
             ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).continuationToken(continuationToken).build();

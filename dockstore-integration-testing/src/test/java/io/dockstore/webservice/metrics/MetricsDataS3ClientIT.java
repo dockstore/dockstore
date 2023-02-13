@@ -18,6 +18,9 @@
 package io.dockstore.webservice.metrics;
 
 import static io.dockstore.webservice.metrics.MetricsDataS3ClientIT.LOCALSTACK_IMAGE_TAG;
+import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_STATUS_ERROR;
+import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
+import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,8 +34,10 @@ import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LocalStackTest;
 import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ContainersApi;
@@ -119,7 +124,7 @@ public class MetricsDataS3ClientIT extends BaseIT {
     /**
      * Test submitting metrics data using the Extended GA4GH endpoint.
      *
-     * At the end of this test, the S3 folder structure should look like the following:
+     * At the end of this test, the S3 folder structure should look like the following. Note that OBJECT METADATA is the S3 object metadata and is not part of the folder structure
      * local-dockstore-metrics-data
      * ├── tool
      * │   └── quay.io
@@ -128,6 +133,9 @@ public class MetricsDataS3ClientIT extends BaseIT {
      * │               └── symbolic.v1
      * │                   └── TERRA
      * │                       └── 1673972062578.json
+     * │                           └── OBJECT METADATA
+     * │                               └── owner: 1
+     * │                               └── description:
      * └── workflow
      *     └── github.com
      *         └── DockstoreTestUser2
@@ -135,8 +143,14 @@ public class MetricsDataS3ClientIT extends BaseIT {
      *                 └── master
      *                     ├── TERRA
      *                     │   └── 1673972062578.json
+     *                     │       └── OBJECT METADATA
+     *                     │           └── owner: 1
+     *                     │           └── description: A single execution
      *                     └── DNA_STACK
      *                         └── 1673972062578.json
+     *                             └── OBJECT METADATA
+     *                                 └── owner: 1
+     *                                 └── description: A single execution
      * @throws IOException
      */
     @Test
@@ -156,7 +170,7 @@ public class MetricsDataS3ClientIT extends BaseIT {
         final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
         final String workflowVersionId = "master";
         final String workflowExpectedS3KeyPrefixFormat = "workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/master/%s"; // This is the prefix without the file name
-        Workflow workflow = workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
                 "/test.json");
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
@@ -223,16 +237,16 @@ public class MetricsDataS3ClientIT extends BaseIT {
         // Test ID that doesn't exist
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(List.of(), platform, "github.com/nonexistent/id", "master", null));
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), exception.getCode(), "Should not be able to submit metrics for non-existent id");
-        assertTrue(exception.getMessage().contains("Tool not found"), "Should not be able to submit metrics for non-existent id");
+        assertTrue(exception.getMessage().contains(TOOL_NOT_FOUND_ERROR), "Should not be able to submit metrics for non-existent id");
 
         // Test version ID that doesn't exist
-        Workflow workflow = workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
-                "/test.json");
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "",
+                DescriptorLanguage.CWL.toString(), "/test.json");
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(List.of(), platform, id, "nonexistentVersionId", null));
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), exception.getCode(), "Should not be able to submit metrics for non-existent version");
-        assertTrue(exception.getMessage().contains("Version not found"), "Should not be able to submit metrics for non-existent version");
+        assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR), "Should not be able to submit metrics for non-existent version");
 
         // Test that a non-admin/non-curator user can't submit metrics
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(createExecutions(1), platform, id, versionId, description));
@@ -243,7 +257,7 @@ public class MetricsDataS3ClientIT extends BaseIT {
         executions.forEach(execution -> execution.setExecutionStatus(null));
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(executions, platform, id, versionId, description));
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getCode(), "Should not be able to submit metrics if ExecutionStatus is missing");
-        assertTrue(exception.getMessage().contains("must contain ExecutionStatus"), "Should not be able to submit metrics if ExecutionStatus is missing");
+        assertTrue(exception.getMessage().contains(EXECUTION_STATUS_ERROR), "Should not be able to submit metrics if ExecutionStatus is missing");
 
         // Verify that not providing metrics data throws an exception
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(List.of(), platform, id, versionId, description));
@@ -252,7 +266,7 @@ public class MetricsDataS3ClientIT extends BaseIT {
     }
 
     /**
-     * Tests the scenario where an S3 folder has more than 1000 objects. The ListObjectsV2Request returns at most 1,000 objects and paginates the rest.
+     * Tests the scenario where an S3 folder has more than 1000 objects. The ListObjectsV2Request returns at most 1,000 objects and paginates the rest (<a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">source</a>)
      * This tests that we can retrieve all S3 objects if there is pagination.
      * @throws IOException
      */
@@ -271,8 +285,8 @@ public class MetricsDataS3ClientIT extends BaseIT {
         // Register and publish a workflow
         final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
         final String workflowVersionId = "master";
-        Workflow workflow = workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
-                "/test.json");
+        Workflow workflow = workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "",
+                DescriptorLanguage.CWL.toString(), "/test.json");
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
@@ -282,18 +296,20 @@ public class MetricsDataS3ClientIT extends BaseIT {
             extendedGa4GhApi.executionMetricsPost(executions, platform, workflowId, workflowVersionId, description);
         }
 
-        List<MetricsData> metricsDataList = metricsDataClient.getMetricsData(workflowId, workflowVersionId);
+        List<MetricsData> metricsDataList = metricsDataClient.  getMetricsData(workflowId, workflowVersionId);
         assertEquals(1001, metricsDataList.size());
     }
 
     private List<Execution> createExecutions(int numberOfExecutions) {
         List<Execution> executions = new ArrayList<>();
         for (int i = 0; i < numberOfExecutions; ++i) {
-            // A successful execution that ran for 5 minutes
+            // A successful execution that ran for 5 minutes, requires 2 CPUs and 2 GBs of memory
             Execution execution = new Execution();
             execution.setExecutionStatus(Execution.ExecutionStatusEnum.SUCCESSFUL);
-            execution.setExecutionTime("PT5m");
-            Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5m");
+            execution.setExecutionTime("PT5M");
+            execution.setCpuRequirements(2);
+            execution.setMemoryRequirements("2GB");
+            Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
             execution.setAdditionalProperties(additionalProperties);
             executions.add(execution);
         }

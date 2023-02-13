@@ -8368,8 +8368,10 @@ components:
               schema: https://schema.org
             schema:actionStatus: CompletedActionStatus
         cpuRequirements:
-          type: string
+          type: integer
+          format: int32
           description: CPU requirements for the execution
+          example: 2
         executionStatus:
           type: string
           description: The status of the execution
@@ -8379,10 +8381,14 @@ components:
           - FAILED_RUNTIME_INVALID
         executionTime:
           type: string
-          description: The total time it took for the execution to complete
+          description: The total time it took for the execution to complete in ISO
+            8601 duration format
+          example: PT30S to represent an execution that took 30 seconds
         memoryRequirements:
           type: string
-          description: Memory requirements for the execution
+          description: Memory requirements for the execution in GB. Provide the numerical
+            value and the GB unit with no spaces
+          example: 2GB
       required:
       - executionStatus
     ExecutionStatusMetric:
@@ -8414,8 +8420,8 @@ components:
           type: boolean
     ExecutionTimeMetric:
       type: object
-      description: This describes aggregated execution time metrics in ISO 8601 for
-        workflow executions.
+      description: This describes aggregated execution time metrics in ISO 8601 duration
+        format for workflow executions.
       properties:
         average:
           type: string
@@ -8716,7 +8722,8 @@ components:
           format: int32
     MemoryMetric:
       type: object
-      description: This describes aggregated memory metrics for workflow executions.
+      description: This describes aggregated memory metrics for workflow executions
+        in GB.
       properties:
         average:
           type: string

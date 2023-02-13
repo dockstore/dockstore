@@ -88,6 +88,9 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static final int ES_BATCH_INSERT_SIZE = 500;
+    public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
+    public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
+    public static final String EXECUTION_STATUS_ERROR = "All executions must contain ExecutionStatus";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
@@ -419,16 +422,18 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             return BAD_DECODE_REGISTRY_RESPONSE;
         }
 
-        Optional<? extends Version<?>> version = getVersion(entry, versionId);
         if (entry == null) {
-            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), "Tool not found").build();
-        } else if (version.isEmpty()) {
-            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), "Version not found").build();
+            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), TOOL_NOT_FOUND_ERROR).build();
+        }
+
+        Optional<? extends Version<?>> version = getVersion(entry, versionId);
+        if (version.isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), VERSION_NOT_FOUND_ERROR).build();
         }
 
         // Check that all executions have at least the ExecutionStatus
         if (executions.stream().anyMatch(execution -> execution.getExecutionStatus() == null)) {
-            return Response.status(Response.Status.BAD_REQUEST.getStatusCode(), "All executions must contain ExecutionStatus").build();
+            return Response.status(Response.Status.BAD_REQUEST.getStatusCode(), EXECUTION_STATUS_ERROR).build();
         }
 
         try {

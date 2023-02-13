@@ -7465,7 +7465,8 @@ definitions:
         additionalProperties:
           type: "object"
       cpuRequirements:
-        type: "string"
+        type: "integer"
+        format: "int32"
       executionStatus:
         type: "string"
         enum:
@@ -7521,8 +7522,8 @@ definitions:
         type: "integer"
         format: "int32"
         description: "The number of data points used to calculate the average"
-    description: "This describes aggregated execution time metrics in ISO 8601 for\
-      \ workflow executions."
+    description: "This describes aggregated execution time metrics in ISO 8601 duration\
+      \ format for workflow executions."
   ExtendedUserData:
     type: "object"
     properties:
@@ -7722,7 +7723,8 @@ definitions:
         type: "integer"
         format: "int32"
         description: "The number of data points used to calculate the average"
-    description: "This describes aggregated memory metrics for workflow executions."
+    description: "This describes aggregated memory metrics for workflow executions\
+      \ in GB."
   Metadata:
     type: "object"
     required:
