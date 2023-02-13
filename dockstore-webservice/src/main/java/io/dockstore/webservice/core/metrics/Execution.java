@@ -35,7 +35,7 @@ public class Execution {
     private ExecutionStatus executionStatus;
 
     @JsonProperty
-    @Schema(description = "The total time it took for the execution to complete in ISO 8601 duration format", example = "PT30S to represent an execution that took 30 seconds")
+    @Schema(description = "The total time it took for the execution to complete in ISO 8601 duration format", example = "PT30S")
     private String executionTime;
 
     @JsonProperty

@@ -8383,7 +8383,7 @@ components:
           type: string
           description: The total time it took for the execution to complete in ISO
             8601 duration format
-          example: PT30S to represent an execution that took 30 seconds
+          example: PT30S
         memoryRequirements:
           type: string
           description: Memory requirements for the execution in GB. Provide the numerical
