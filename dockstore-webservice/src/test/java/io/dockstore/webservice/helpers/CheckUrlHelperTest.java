@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.io.Files;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
@@ -32,16 +33,16 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class CheckUrlHelperTest {
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
 
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @Test
     void getUrlsFromJSON() throws IOException {

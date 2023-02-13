@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -38,18 +39,18 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class WDLHandlerTest {
 
     public static final String MAIN_WDL = "/GATKSVPipelineClinical.wdl";
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
 
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     @Test
     void getWorkflowContent() throws IOException {

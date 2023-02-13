@@ -26,6 +26,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -57,21 +58,21 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * This test suite tests various workflow related processes.
  * Created by aduncan on 05/04/16.
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @org.junit.jupiter.api.Tag(BitBucketTest.NAME)
 class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     private FileDAO fileDAO;
 

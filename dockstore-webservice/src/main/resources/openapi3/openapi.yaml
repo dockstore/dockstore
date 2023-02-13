@@ -8765,6 +8765,10 @@ components:
           description: Implementation specific ID for the metrics in this webservice
         memory:
           $ref: '#/components/schemas/MemoryMetric'
+    Notebook:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
     Notification:
       type: object
       properties:
@@ -10072,9 +10076,12 @@ components:
           - helm
           - swarm
           - kubernetes
-          - python
-          - r
-          - julia
+          - Python
+          - R
+          - Javascript
+          - Scala
+          - Julia
+          - other
           - n/a
         email:
           type: string

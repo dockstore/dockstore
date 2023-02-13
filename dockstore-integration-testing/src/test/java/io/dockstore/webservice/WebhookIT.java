@@ -40,6 +40,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ValidationConstants;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
@@ -88,12 +89,12 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * @author agduncan
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 class WebhookIT extends BaseIT {
@@ -106,9 +107,9 @@ class WebhookIT extends BaseIT {
     private static final String WORKFLOWS_ENTRY_SEARCH_TYPE = "WORKFLOWS";
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
@@ -1215,7 +1216,7 @@ class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
         client.publish(appTool.getId(), publishRequest);
         client.publish(workflow.getId(), publishRequest);
-        assertFalse(systemOutRule.getText().contains("Could not submit index to elastic search"));
+        assertFalse(systemOut.getText().contains("Could not submit index to elastic search"));
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
         final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
@@ -1232,7 +1233,7 @@ class WebhookIT extends BaseIT {
         publishRequest.setPublish(false);
         client.publish(appTool.getId(), publishRequest);
         client.publish(workflow.getId(), publishRequest);
-        assertFalse(systemOutRule.getText().contains("Could not submit index to elastic search"));
+        assertFalse(systemOut.getText().contains("Could not submit index to elastic search"));
     }
 
     @Test
@@ -1492,6 +1493,14 @@ class WebhookIT extends BaseIT {
         return countTableRows("workflow");
     }
 
+    private long countNotebooks() {
+        return countTableRows("notebook");
+    }
+
+    private long countServices() {
+        return countTableRows("service");
+    }
+
     private long countTableRows(String tableName) {
         return testingPostgres.runSelectStatement("select count(*) from " + tableName, long.class);
     }
@@ -1537,6 +1546,13 @@ class WebhookIT extends BaseIT {
         assertEquals(2, countTools());
     }
 
+    private void confirmNoEntries() {
+        assertEquals(0, countWorkflows());
+        assertEquals(0, countTools());
+        assertEquals(0, countNotebooks());
+        assertEquals(0, countServices());
+    }
+
     @Test
     void testMultiEntrySameName() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -1545,22 +1561,31 @@ class WebhookIT extends BaseIT {
 
         // test tool-tool name collision
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-tool-tool", installationId));
-        assertEquals(0, countWorkflows() + countTools());
+        confirmNoEntries();
 
         // test workflow-workflow name collision
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-workflow-workflow", installationId));
-        assertEquals(0, countWorkflows() + countTools());
+        confirmNoEntries();
 
         // test tool-workflow name collision
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-tool-workflow", installationId));
-        assertEquals(0, countWorkflows() + countTools());
+        confirmNoEntries();
 
         // test no names
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/no-names", installationId));
-        assertEquals(0, countWorkflows() + countTools());
+        confirmNoEntries();
 
         // test service and unnamed workflows
         shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/service-and-unnamed-workflow", installationId));
+        confirmNoEntries();
+
+        // test same name notebook-workflow collision
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/same-name-notebook-workflow", installationId));
+        confirmNoEntries();
+
+        // test no name notebook-workflow collision
+        shouldThrowLambdaError(() -> client.handleGitHubRelease(multiEntryRepo, BasicIT.USER_2_USERNAME, "refs/heads/no-name-notebook-workflow", installationId));
+        confirmNoEntries();
     }
 
     /**

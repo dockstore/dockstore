@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.LanguageParsingTest;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -40,13 +41,13 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * @author gluu
  * @since 02/01/18
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(LanguageParsingTest.NAME)
 class GA4GHV2CwltoolIT {
@@ -56,9 +57,9 @@ class GA4GHV2CwltoolIT {
     protected static javax.ws.rs.client.Client client;
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     final String basePath = SUPPORT.getConfiguration().getExternalConfig().getBasePath();
 

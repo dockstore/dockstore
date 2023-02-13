@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 OICR and UCSC
+ * Copyright 2023 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.dockstore.common.yaml.constraints;
 
+import io.dockstore.common.EntryType;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,17 +25,16 @@ import javax.validation.Constraint;
 import javax.validation.Payload;
 
 /**
- * Defines the `DescriptorLanguageShortName` constraint annotation, which
- * checks for a valid descriptor language short name.
+ * Defines the `ValidDescriptorLanguageSubclass` constraint annotation, which
+ * checks for a valid descriptor language subclass short name.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = DescriptorLanguageShortNameValidator.class)
-public @interface DescriptorLanguageShortName {
+@Constraint(validatedBy = ValidDescriptorLanguageSubclassValidator.class)
+public @interface ValidDescriptorLanguageSubclass {
 
-    String MUST_BE_VALID_SHORT_NAME = "must be a supported descriptor language (\"CWL\", \"WDL\", \"GALAXY\", or \"NFL\")";
-
-    String message () default MUST_BE_VALID_SHORT_NAME;
+    EntryType entryType() default EntryType.WORKFLOW;
+    String message () default "must be a valid descriptor language subclass";
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }

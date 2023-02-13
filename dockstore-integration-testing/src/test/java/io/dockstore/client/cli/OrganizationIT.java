@@ -13,6 +13,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.openapi.client.api.HostedApi;
@@ -58,9 +59,9 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 public class OrganizationIT extends BaseIT {
@@ -70,9 +71,9 @@ public class OrganizationIT extends BaseIT {
     private static final StarRequest UNSTAR_REQUEST = getStarRequest(false);
 
     @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
+    public final SystemOut systemOut = new SystemOut();
     @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
+    public final SystemErr systemErr = new SystemErr();
 
     private final List<String> goodCollectionNames = Arrays.asList("baa", "baaa", "bAaaa", "BAAAAA", "baa123", "daa-daa", "d-a-a-a-a", "d0-a-9", "daa-1234", "daa5-678", "aaz", "zaa");
     // All numbers, too short, bad pattern, too long, foreign characters

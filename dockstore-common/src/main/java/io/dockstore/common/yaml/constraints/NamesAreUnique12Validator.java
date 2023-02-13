@@ -23,36 +23,29 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.ObjectUtils;
 
 /**
  * Validates that every entry of a `DockstoreYaml12` has a unique name.
  */
-public class NamesAreUnique12Validator implements ConstraintValidator<NamesAreUnique12, DockstoreYaml12> {
-    @Override
-    public void initialize(final NamesAreUnique12 constraintAnnotation) {
-        // Intentionally empty
-    }
+public class NamesAreUnique12Validator extends BaseConstraintValidator<NamesAreUnique12, DockstoreYaml12> {
 
     @Override
-    public boolean isValid(final DockstoreYaml12 yaml, final ConstraintValidatorContext context) {
-        if (yaml == null) {
-            return true;
-        }
+    public boolean isValidNotNull(final DockstoreYaml12 yaml, final ConstraintValidatorContext context) {
 
         List<Workflowish> entries = new ArrayList<>();
-        Optional.ofNullable(yaml.getTools()).ifPresent(entries::addAll);
         Optional.ofNullable(yaml.getWorkflows()).ifPresent(entries::addAll);
+        Optional.ofNullable(yaml.getNotebooks()).ifPresent(entries::addAll);
+        Optional.ofNullable(yaml.getTools()).ifPresent(entries::addAll);
 
-        // Create a set of tool/workflow names and check for duplicates in the process.
+        // Create a set of entry names and check for duplicates in the process.
         Set<String> names = new HashSet<>();
         for (Workflowish entry: entries) {
             String name = ObjectUtils.firstNonNull(entry.getName(), "");
             if (!names.add(name)) {
                 String reason = "at least two workflows or tools have " + ("".equals(name) ? "no name" : String.format("the same name '%s'", name));
-                addConstraintViolation(context, reason);
+                addConstraintViolation(context, getMessage(reason));
                 return false;
             }
         }
@@ -60,16 +53,14 @@ public class NamesAreUnique12Validator implements ConstraintValidator<NamesAreUn
         // If a service exists, check for any non-services without names.
         if (yaml.getService() != null && names.contains("")) {
             String reason = "a service always has no name, so any workflows or tools must be named";
-            addConstraintViolation(context, reason);
+            addConstraintViolation(context, getMessage(reason));
             return false;
         }
 
         return true;
     }
 
-    private static void addConstraintViolation(final ConstraintValidatorContext context, String reason) {
-        String msg = String.format("%s (%s)", NamesAreUnique12.MUST_HAVE_A_UNIQUE_NAME, reason);
-        context.disableDefaultConstraintViolation();
-        context.buildConstraintViolationWithTemplate(msg).addConstraintViolation();
+    private String getMessage(String reason) {
+        return String.format("%s (%s)", NamesAreUnique12.MUST_HAVE_A_UNIQUE_NAME, reason);
     }
 }

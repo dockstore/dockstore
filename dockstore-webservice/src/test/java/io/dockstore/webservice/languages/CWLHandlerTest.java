@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Author;
@@ -41,7 +42,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import uk.org.webcompere.systemstubs.stream.output.NoopStream;
 
 /**
  * Tests public methods in the CWLHandler file
@@ -49,17 +49,18 @@ import uk.org.webcompere.systemstubs.stream.output.NoopStream;
  * @since 1.5.0
  */
 @ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
 class CWLHandlerTest {
+
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
     private Set<String> toValues(Set<FileFormat> formats) {
         return formats.stream().map(FileFormat::getValue).collect(Collectors.toSet());
     }
-
-    @SystemStub
-    public final SystemOut systemOutRule = new SystemOut(new NoopStream());
-
-    @SystemStub
-    public final SystemErr systemErrRule = new SystemErr(new NoopStream());
 
     /**
      * Tests if the input and output file formats can be extracted from a CWL descriptor file
