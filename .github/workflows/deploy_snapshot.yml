@@ -26,7 +26,9 @@ jobs:
         image: postgres:13.7
         # Provide the password for postgres
         env:
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: dockstore
+          POSTGRES_USER: dockstore
+          POSTGRES_DB: webservice_test
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -105,16 +107,6 @@ jobs:
       # deploy database documentation and also verify that non-confidential migrations seem sane
       - name: Setup Pages
         uses: actions/configure-pages@v3
-      - name: Install PostgreSQL client
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes postgresql-client        
-      - name: Setup postgres
-        run: |
-          psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-          psql -c 'create database webservice_test with owner = dockstore;' -U postgres
-        env:
-          PGPASSWORD: postgres_password      
       - name: Generate database documentation  
         run: | 
           rm dockstore-webservice/target/dockstore-webservice-*sources.jar || true
