@@ -1,10 +1,14 @@
-{
-  "@context": {
-    "schema": "https://schema.org",
-    "dockstore": "https://dockstore.org"
-  },
-  "schema:actionStatus": "CompletedActionStatus",
-  "schema:totalTime": "10",
-  "dockstore:launchMethod": "DOCKSTORE_LAUNCH_WITH",
-  "dockstore:workflowEngine": "cromwell"
-}
+[
+  {
+    "executionStatus": "SUCCESSFUL",
+    "totalTime": "PT5m",
+    "additionalProperties": {
+      "@context": {
+        "schema": "https://schema.org"
+      },
+      "schema:actionStatus": "CompletedActionStatus",
+      "schema:totalTime": "PT5M"
+    }
+  }
+]
+
