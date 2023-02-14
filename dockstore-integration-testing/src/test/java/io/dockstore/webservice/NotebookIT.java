@@ -184,6 +184,15 @@ class NotebookIT extends BaseIT {
         assertEquals(0, workflows.size());
     }
 
+    @Test
+    void testPublishInYml() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        assertEquals(0, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
+        workflowsApi.handleGitHubRelease("refs/heads/simple-published", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        assertEquals(1, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
+    }
 
     private class CreateContent {
         private long notebookID;
