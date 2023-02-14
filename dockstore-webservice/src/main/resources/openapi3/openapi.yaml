@@ -5568,7 +5568,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Notebook'
+                  $ref: '#/components/schemas/Workflow'
           description: A list of notebooks owned by the user
         "403":
           description: Forbidden

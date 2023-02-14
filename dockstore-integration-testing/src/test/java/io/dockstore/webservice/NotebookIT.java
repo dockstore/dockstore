@@ -31,6 +31,9 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Author;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
@@ -115,8 +118,8 @@ class NotebookIT extends BaseIT {
     @Test
     void testRegisterSimpleNotebook() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/heads/simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
 
         String path = "github.com/" + simpleRepo;
@@ -137,8 +140,8 @@ class NotebookIT extends BaseIT {
     @Test
     void testRegisterLessSimpleNotebook() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         // Check only the values that should differ from testRegisterSimpleNotebook()
         String path = "github.com/" + simpleRepo + "/simple";
@@ -152,8 +155,8 @@ class NotebookIT extends BaseIT {
     @Test
     void testRegisterCorruptNotebook() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/heads/corrupt-ipynb", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         // The update should be "successful" but there should be a negative validation on the notebook file.
         String path = "github.com/" + simpleRepo;
@@ -161,6 +164,26 @@ class NotebookIT extends BaseIT {
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertFalse(notebook.getWorkflowVersions().get(0).isValid());
     }
+
+    @Test
+    void testUserNotebooks() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath("github.com/" + simpleRepo, WorkflowSubClass.NOTEBOOK, "versions");
+        assertNotNull(notebook);
+
+        UsersApi usersApi = new UsersApi(apiClient);
+        final long userId = testingPostgres.runSelectStatement("select userid from user_entry where entryid = '" + notebook.getId() + "'", long.class);
+
+        List<Workflow> notebooks = usersApi.userNotebooks(userId);
+        assertEquals(1, notebooks.size());
+        assertEquals(notebook.getId(), notebooks.get(0).getId());
+        List<Workflow> workflows = usersApi.userWorkflows(userId);
+        assertEquals(0, workflows.size());
+    }
+
 
     private class CreateContent {
         private long notebookID;
