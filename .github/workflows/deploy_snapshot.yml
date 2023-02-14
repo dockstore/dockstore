@@ -3,13 +3,38 @@ name: Deploy develop snapshot
 on:
   push:
     branches:
-      - develop
+       - develop
+      
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  
 jobs:
   build:
     runs-on: ubuntu-22.04
     
     permissions:
-      id-token: write    
+      contents: read
+      pages: write
+      id-token: write 
+      
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres:13.7
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432          
 
     steps:
       - uses: actions/checkout@v3
@@ -75,3 +100,30 @@ jobs:
 
       - name: Copy checksum files
         run: aws s3 cp image-digest.txt  s3://${{ secrets.AWS_BUCKET }}/${{ env.S3_FOLDER }}-${{ steps.slug.outputs.sha7 }}/image-digest.txt
+
+      # deploy database documentation and also verify that non-confidential migrations seem sane
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      - name: Install PostgreSQL client
+        run: |
+          apt-get update
+          apt-get install --yes postgresql-client        
+      - name: Setup postgres
+        run: |
+            psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
+            psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+        env:
+          PGPASSWORD: postgres_password      
+      - name: Generate database documentation  
+        run: | 
+          rm dockstore-webservice/target/dockstore-webservice-*sources.jar || true
+          java -jar dockstore-webservice/target/dockstore-webservice-*.jar db generate-docs dockstore-integration-testing/src/test/resources/dockstore.yml generated-docs
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          # Upload entire repository
+          path: 'generated-docs'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
+        
