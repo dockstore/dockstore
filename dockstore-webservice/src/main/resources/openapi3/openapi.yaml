@@ -512,6 +512,79 @@ paths:
       summary: List workflows of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
+    post:
+      description: This endpoint submits execution metrics for a workflow that was
+        executed on a platform
+      operationId: executionMetricsPost
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - description: Platform that the tool was executed on
+        in: query
+        name: platform
+        required: true
+        schema:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+      - description: Optional description about the execution metrics
+        in: query
+        name: description
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Execution'
+        description: Execution metrics to submit
+        required: true
+      responses:
+        "204":
+          description: Execution metrics submitted successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to submit execution metrics.
+      security:
+      - BEARER: []
+      summary: Submit execution metrics for a workflow that was executed on a platform.
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
     post:
       description: Test JSON can be annotated with whether they ran correctly keyed
@@ -8274,6 +8347,50 @@ components:
           $ref: '#/components/schemas/Version'
         workflow:
           $ref: '#/components/schemas/Workflow'
+    Execution:
+      type: object
+      description: Metrics of a workflow execution on a platform
+      properties:
+        additionalProperties:
+          type: object
+          additionalProperties:
+            type: object
+            description: "Additional properties that aren't defined. Provide a context,\
+              \ like one for schema.org, if you want to use a specific vocabulary"
+            example:
+              '@context':
+                schema: https://schema.org
+              schema:actionStatus: CompletedActionStatus
+          description: "Additional properties that aren't defined. Provide a context,\
+            \ like one for schema.org, if you want to use a specific vocabulary"
+          example:
+            '@context':
+              schema: https://schema.org
+            schema:actionStatus: CompletedActionStatus
+        cpuRequirements:
+          type: integer
+          format: int32
+          description: CPU requirements for the execution
+          example: 2
+        executionStatus:
+          type: string
+          description: The status of the execution
+          enum:
+          - SUCCESSFUL
+          - FAILED_SEMANTIC_INVALID
+          - FAILED_RUNTIME_INVALID
+        executionTime:
+          type: string
+          description: The total time it took for the execution to complete in ISO
+            8601 duration format
+          example: PT30S
+        memoryRequirements:
+          type: string
+          description: Memory requirements for the execution in GB. Provide the numerical
+            value and the GB unit with no spaces
+          example: 2GB
+      required:
+      - executionStatus
     ExecutionStatusMetric:
       type: object
       description: Aggregated metrics about workflow execution statuses
@@ -8303,8 +8420,8 @@ components:
           type: boolean
     ExecutionTimeMetric:
       type: object
-      description: This describes aggregated execution time metrics in ISO 8601 for
-        workflow executions.
+      description: This describes aggregated execution time metrics in ISO 8601 duration
+        format for workflow executions.
       properties:
         average:
           type: string
@@ -8605,7 +8722,8 @@ components:
           format: int32
     MemoryMetric:
       type: object
-      description: This describes aggregated memory metrics for workflow executions.
+      description: This describes aggregated memory metrics for workflow executions
+        in GB.
       properties:
         average:
           type: string

@@ -52,6 +52,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @Valid
     private LimitConfig limitConfig = new LimitConfig();
 
+    @Valid
+    private MetricsConfig metricsConfig = new MetricsConfig();
+
     @NotEmpty
     private String template;
 
@@ -529,6 +532,15 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     @JsonProperty
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    public void setMetricsConfig(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
+    }
+
+    @JsonProperty
     public UIConfig getUiConfig() {
         return uiConfig;
     }
@@ -718,6 +730,18 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setWorkflowVersionLimit(int workflowVersionLimit) {
             this.workflowVersionLimit = workflowVersionLimit;
+        }
+    }
+
+    public static class MetricsConfig {
+        private String s3BucketName;
+
+        public String getS3BucketName() {
+            return s3BucketName;
+        }
+
+        public void setS3BucketName(String s3BucketName) {
+            this.s3BucketName = s3BucketName;
         }
     }
 

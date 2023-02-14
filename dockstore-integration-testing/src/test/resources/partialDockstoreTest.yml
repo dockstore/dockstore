@@ -22,6 +22,9 @@ externalConfig:
   scheme: http
   port: 8080
 
+metricsConfig:
+  s3BucketName: local-dockstore-metrics-data
+
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=0s
 
 database:
