@@ -107,12 +107,12 @@ jobs:
         uses: actions/configure-pages@v3
       - name: Install PostgreSQL client
         run: |
-          apt-get update
-          apt-get install --yes postgresql-client        
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client        
       - name: Setup postgres
         run: |
-            psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-            psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+          psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
+          psql -c 'create database webservice_test with owner = dockstore;' -U postgres
         env:
           PGPASSWORD: postgres_password      
       - name: Generate database documentation  
