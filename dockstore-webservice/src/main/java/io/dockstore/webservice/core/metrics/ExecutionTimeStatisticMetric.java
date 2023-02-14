@@ -27,8 +27,8 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "execution_time_metric")
-@ApiModel(value = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in ISO 8601 for workflow executions.")
-@Schema(name = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in ISO 8601 for workflow executions.")
+@ApiModel(value = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in ISO 8601 duration format for workflow executions.")
+@Schema(name = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in ISO 8601 duration format for workflow executions.")
 public class ExecutionTimeStatisticMetric extends StatisticMetric {
     public ExecutionTimeStatisticMetric() {
     }
