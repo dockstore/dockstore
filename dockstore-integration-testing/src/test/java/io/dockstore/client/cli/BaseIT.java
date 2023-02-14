@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.codahale.metrics.Gauge;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.CommonTestUtilities.TestUser;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
 import io.dockstore.common.DescriptorLanguage;
@@ -76,9 +77,11 @@ public class BaseIT {
     // This is obviously an admin
     public static final String ADMIN_USERNAME = "admin@admin.com";
     // This is also an admin
-    public static final String USER_1_USERNAME = "DockstoreTestUser";
+    public static final String USER_1_USERNAME = TestUser.TEST_USER1.dockstoreUserName;
     // This is also an admin
-    public static final String USER_2_USERNAME = "DockstoreTestUser2";
+    public static final String USER_2_USERNAME = TestUser.TEST_USER2.dockstoreUserName;
+    // This is also an admin
+    public static final String USER_4_USERNAME = TestUser.TEST_USER4.dockstoreUserName;
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     protected static TestingPostgres testingPostgres;
