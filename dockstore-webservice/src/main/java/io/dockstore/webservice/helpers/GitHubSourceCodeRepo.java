@@ -110,6 +110,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     public static final String GITHUB_ABUSE_LIMIT_REACHED = "GitHub abuse limit reached";
     public static final int GITHUB_MAX_CACHE_AGE_SECONDS = 30; // GitHub's default max-cache age is 60 seconds
+    /**
+     * each section that starts with (?!.* is excluding a specific character
+     */
+    public static final Pattern GIT_BRANCH_TAG_PATTERN = Pattern.compile("^refs/(tags|heads)/((?!.*//)(?!.*\\^)(?!.*:)(?!.*\\\\)(?!.*@)(?!.*\\[)(?!.*\\?)(?!.*~)(?!.*\\.\\.)[\\p{Punct}\\p{L}\\d\\-_/]+)$");
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
     private String githubTokenUsername;
@@ -1310,8 +1314,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRepository ghRepository = getRepository(repository);
 
         // Match the github reference (ex. refs/heads/feature/foobar or refs/tags/1.0)
-        Pattern pattern = Pattern.compile("^refs/(tags|heads)/([a-zA-Z0-9]+([./_-]?[a-zA-Z0-9]+)*)$");
-        Matcher matcher = pattern.matcher(gitReference);
+        Matcher matcher = GIT_BRANCH_TAG_PATTERN.matcher(gitReference);
 
         if (!matcher.find()) {
             throw new CustomWebApplicationException("Reference " + gitReference + " is not of the valid form", LAMBDA_FAILURE);

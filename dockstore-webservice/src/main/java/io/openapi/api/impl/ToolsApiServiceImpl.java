@@ -1045,7 +1045,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (toolIdStringSegments.size() < SEGMENTS_IN_ID) {
                 Error error = new Error();
                 error.setCode(HttpStatus.SC_BAD_REQUEST);
-                error.setMessage("Tool ID should have at least 3 separate segments, seperated by /");
+                error.setMessage("Tool ID should have at least 3 separate segments, separated by /");
                 Response errorResponse = Response.status(HttpStatus.SC_BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON).build();
                 throw new WebApplicationException(errorResponse);
             }
