@@ -19,15 +19,11 @@ import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.resources.TokenResource.HTTP_TRANSPORT;
 import static io.dockstore.webservice.resources.TokenResource.JSON_FACTORY;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTCreationException;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.http.GenericUrl;
-import com.google.api.client.util.PemReader;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.LicenseInformation;
@@ -35,19 +31,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Calendar;
-import java.util.Date;
-import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.GHLicense;
 import org.kohsuke.github.GHRepository;
@@ -102,46 +86,6 @@ public final class GitHubHelper {
         } catch (IOException e) {
             LOG.info("Could not get license information from GitHub for repository: " + repositoryName, e);
             return new LicenseInformation();
-        }
-    }
-
-
-    /**
-     * Refresh the JWT for GitHub apps
-     * @param gitHubAppId
-     * @param gitHubPrivateKeyFile
-     */
-    public static void checkJWT(String gitHubAppId, String gitHubPrivateKeyFile) {
-        RSAPrivateKey rsaPrivateKey = null;
-        System.out.println("working dir=" + Paths.get("").toAbsolutePath());
-        try {
-            String pemFileContent = FileUtils
-                    .readFileToString(new File(gitHubPrivateKeyFile), StandardCharsets.UTF_8);
-            final PemReader.Section privateKey = PemReader.readFirstSectionAndClose(new StringReader(pemFileContent), "PRIVATE KEY");
-            if (privateKey != null) {
-                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-                PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(privateKey.getBase64DecodedBytes());
-                rsaPrivateKey = (RSAPrivateKey)keyFactory.generatePrivate(pkcs8EncodedKeySpec);
-            } else {
-                LOG.error("No private key found in " + gitHubPrivateKeyFile);
-            }
-        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
-            LOG.error(ex.getMessage(), ex);
-        }
-
-        if (rsaPrivateKey != null) {
-            final int tenMinutes = 600000;
-            try {
-                Algorithm algorithm = Algorithm.RSA256(null, rsaPrivateKey);
-                String jsonWebToken = JWT.create()
-                        .withIssuer(gitHubAppId)
-                        .withIssuedAt(new Date())
-                        .withExpiresAt(new Date(Calendar.getInstance().getTimeInMillis() + tenMinutes))
-                        .sign(algorithm);
-                CacheConfigManager.setJsonWebToken(jsonWebToken);
-            } catch (JWTCreationException ex) {
-                LOG.error(ex.getMessage(), ex);
-            }
         }
     }
 

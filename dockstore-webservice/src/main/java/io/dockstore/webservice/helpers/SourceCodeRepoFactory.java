@@ -47,12 +47,21 @@ public final class SourceCodeRepoFactory {
     public static final String GIT_URL_SOURCE_KEY = "Source";
 
     /**
-     * Constructor essentially only for jwttokens
+     * Constructor essentially fake for testing
      * @param token
      * @return
      */
     public static SourceCodeRepoInterface createGitHubAppRepo(String token) {
-        return new GitHubSourceCodeRepo(token);
+        return new GitHubSourceCodeRepo("fake-name", token);
+    }
+
+    /**
+     * Constructor essentially only for jwttokens
+     * @param installationId
+     * @return
+     */
+    public static SourceCodeRepoInterface createGitHubAppRepo(long installationId) {
+        return new GitHubSourceCodeRepo(installationId);
     }
 
     /**
