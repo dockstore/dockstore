@@ -22,6 +22,7 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface.FileMetadata;
+import io.dockstore.language.MinimalLanguageInterface.FileReader;
 import io.dockstore.language.MinimalLanguageInterface.GenericFileType;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -72,6 +73,29 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             version.addAuthor(author);
         }
         version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
+        if (version.getVersionMetadata().getDescriptorTypeVersions().isEmpty()) {
+            // TODO: this can probably be removed after EntryResource.updateLanguageVersions is removed since this should only happen with previously imported data
+            // with old data, we need to re-parse original content since original parsing lacked file-level metadata
+            final Map<String, FileMetadata> stringFileMetadataMap = minimalLanguageInterface.indexWorkflowFiles(filepath, content, new FileReader() {
+                @Override
+                public String readFile(String path) {
+                    return sourceFiles.stream().filter(file -> file.getPath().equals(path)).findFirst().get().getContent();
+                }
+
+                @Override
+                public List<String> listFiles(String pathToDirectory) {
+                    return sourceFiles.stream().map(SourceFile::getPath).toList();
+                }
+            });
+            // save file versioning back to source files
+            sourceFiles.forEach(file -> {
+                final FileMetadata fileMetadata = stringFileMetadataMap.get(file.getPath());
+                if (fileMetadata != null) {
+                    file.getMetadata().setTypeVersion(fileMetadata.languageVersion());
+                }
+            });
+            version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
+        }
         version.setDescriptionAndDescriptionSource(workflowMetadata.getDescription(), DescriptionSource.DESCRIPTOR);
         // TODO: hook up validation object to version for parsing metadata
         return version;
