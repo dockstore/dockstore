@@ -113,7 +113,7 @@ public final class GitHubHelper {
      */
     public static void checkJWT(String gitHubAppId, String gitHubPrivateKeyFile) {
         RSAPrivateKey rsaPrivateKey = null;
-        System.out.println("working dir=" + Paths.get("").toAbsolutePath().toString());
+        System.out.println("working dir=" + Paths.get("").toAbsolutePath());
         try {
             String pemFileContent = FileUtils
                     .readFileToString(new File(gitHubPrivateKeyFile), StandardCharsets.UTF_8);

@@ -1,19 +1,13 @@
 package io.dockstore.webservice.helpers;
 
-import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import org.kohsuke.github.GHAppInstallation;
+import org.kohsuke.github.GHAppInstallationToken;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,38 +39,10 @@ public class CacheConfigManager {
      * @return Installation Access Token
      */
     private String getInstallationAccessTokenFromInstallationId(String installationId) throws Exception {
-        Request request = new Request.Builder()
-                .url("https://api.github.com/app/installations/" + installationId + "/access_tokens")
-                .post(RequestBody.create(MediaType.parse(""), "")) // Empty body to appease library
-                .addHeader("Accept", "application/vnd.github.machine-man-preview+json")
-                .addHeader("Authorization", "Bearer " + jsonWebToken)
-                .build();
-
-        String errorMsg = "Unable to retrieve installation access token.";
-        try {
-            Response response = DockstoreWebserviceApplication.getOkHttpClient().newCall(request).execute();
-            JsonElement body = new JsonParser().parse(response.body().string());
-            if (body.isJsonObject()) {
-                JsonObject responseBody = body.getAsJsonObject();
-                if (response.isSuccessful()) {
-                    JsonElement token = responseBody.get("token");
-                    if (token.isJsonPrimitive()) {
-                        return token.getAsString();
-                    }
-                } else {
-                    JsonElement errorMessage = responseBody.get("message");
-                    if (errorMessage.isJsonPrimitive()) {
-                        errorMsg = errorMessage.getAsString();
-                    }
-                }
-            }
-        } catch (IOException ex) {
-            LOG.error(errorMsg, ex);
-            throw new Exception(errorMsg, ex);
-        }
-
-        LOG.error(errorMsg);
-        throw new Exception(errorMsg);
+        GitHub gitHubApp = new GitHubBuilder().withJwtToken(jsonWebToken).build();
+        GHAppInstallation appInstallation = gitHubApp.getApp().getInstallationById(Long.parseLong(installationId)); // Installation Id
+        GHAppInstallationToken appInstallationToken = appInstallation.createToken().create();
+        return appInstallationToken.getToken();
     }
 
     /**
@@ -92,12 +58,9 @@ public class CacheConfigManager {
                     .maximumSize(maxSize)
                     .expireAfterWrite(timeOutInMinutes, TimeUnit.MINUTES)
                     .recordStats()
-                    .build(new CacheLoader<>() {
-                        @Override
-                        public String load(String installationId) throws Exception {
-                            LOG.info("Fetching installation " + installationId + " from cache.");
-                            return getInstallationAccessTokenFromInstallationId(installationId);
-                        }
+                    .build(installationId -> {
+                        LOG.info("Fetching installation " + installationId + " from cache.");
+                        return getInstallationAccessTokenFromInstallationId(installationId);
                     });
         }
     }
