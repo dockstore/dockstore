@@ -499,12 +499,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
 
             // calculate whether we want a page of tools, a page of workflows, or a page that includes both
-            boolean countAll = (toolClass == null);
-            numTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || countAll ? toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
-            numWorkflows = WORKFLOW.equalsIgnoreCase(toolClass) || countAll ? bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
-            numAppTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || countAll ? appToolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
-            numServices = SERVICE.equalsIgnoreCase(toolClass) || countAll ? serviceDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
-            numNotebooks = NOTEBOOK.equalsIgnoreCase(toolClass) || countAll ? notebookDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            boolean allClasses = (toolClass == null);
+            numTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || allClasses ? toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numWorkflows = WORKFLOW.equalsIgnoreCase(toolClass) || allClasses ? bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numAppTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || allClasses ? appToolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numServices = SERVICE.equalsIgnoreCase(toolClass) || allClasses ? serviceDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numNotebooks = NOTEBOOK.equalsIgnoreCase(toolClass) || allClasses ? notebookDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
 
             long startIndex = offset;
             long pageRemaining = actualLimit;

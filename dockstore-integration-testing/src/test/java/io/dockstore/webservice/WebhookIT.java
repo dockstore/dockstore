@@ -22,6 +22,7 @@ import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOC
 import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.NOTEBOOK;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1376,6 +1377,9 @@ class WebhookIT extends BaseIT {
         tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.SERVICE.getShortName(), null, null, null, null, null, null, false, null, null);
         // neither are services this way either
         assertEquals(0, tools.size());
+        tools = ga4Ghv20Api.toolsGet(null, null, NOTEBOOK, null, null, null, null, null, null, null, false, null, null);
+        // no notebooks
+        assertEquals(0, tools.size());
 
         // testing paging
 
@@ -1396,7 +1400,6 @@ class WebhookIT extends BaseIT {
         assertEquals(0, tools.size());
 
     }
-
 
     @Test
     void testDuplicatePathsAcrossTables() {
