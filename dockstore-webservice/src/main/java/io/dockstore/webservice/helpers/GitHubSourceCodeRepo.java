@@ -147,6 +147,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    /**
+     * Get a github client builder with everything configured except for auth
+     * @param cacheNamespace namespace for logging in the cache, cache miss reports, etc.
+     * @return github client builder
+     */
     public static GitHubBuilder getBuilder(String cacheNamespace) {
         OkHttpClient.Builder builder = getOkHttpClient().newBuilder();
         builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), cacheNamespace));
@@ -481,7 +486,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Initialize bioworkflow/apptool object for GitHub repository
      * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
-     * @param subclass Subclass of the workflow
+     * @param typeSubclass Subclass of the workflow
      * @param workflowName Name of the workflow
      * @param workflow Workflow to update
      * @return Workflow
