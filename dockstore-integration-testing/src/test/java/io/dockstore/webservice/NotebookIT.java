@@ -122,7 +122,7 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/heads/simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
 
-        String path = "github.com/" + simpleRepo;
+        String path = SourceControl.GITHUB + "/" + simpleRepo;
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(path, notebook.getFullWorkflowPath());
         assertTrue("notebook".equalsIgnoreCase(notebook.getType()));
@@ -144,7 +144,7 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         // Check only the values that should differ from testRegisterSimpleNotebook()
-        String path = "github.com/" + simpleRepo + "/simple";
+        String path = SourceControl.GITHUB + "/" + simpleRepo + "/simple";
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(path, notebook.getFullWorkflowPath());
         WorkflowVersion version = notebook.getWorkflowVersions().get(0);
@@ -159,7 +159,7 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/heads/corrupt-ipynb", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         // The update should be "successful" but there should be a negative validation on the notebook file.
-        String path = "github.com/" + simpleRepo;
+        String path = SourceControl.GITHUB + "/" + simpleRepo;
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertFalse(notebook.getWorkflowVersions().get(0).isValid());
@@ -171,7 +171,7 @@ class NotebookIT extends BaseIT {
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/heads/simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
-        Workflow notebook = workflowsApi.getWorkflowByPath("github.com/" + simpleRepo, WorkflowSubClass.NOTEBOOK, "versions");
+        Workflow notebook = workflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + simpleRepo, WorkflowSubClass.NOTEBOOK, "versions");
         assertNotNull(notebook);
 
         UsersApi usersApi = new UsersApi(apiClient);
