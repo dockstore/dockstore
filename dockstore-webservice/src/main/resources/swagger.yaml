@@ -5658,7 +5658,7 @@ paths:
         - "desc"
       - name: "services"
         in: "query"
-        description: "Should only be used by Dockstore CLI versions < 1.12.0. Indicates\
+        description: "Should only be used by Dockstore versions < 1.14.0. Indicates\
           \ whether to get a service or workflow"
         required: false
         type: "boolean"
