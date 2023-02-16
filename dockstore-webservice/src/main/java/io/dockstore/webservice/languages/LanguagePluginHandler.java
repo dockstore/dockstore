@@ -72,30 +72,29 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             author.setEmail(workflowMetadata.getEmail());
             version.addAuthor(author);
         }
-        version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
-        if (version.getVersionMetadata().getDescriptorTypeVersions().isEmpty()) {
-            // TODO: this can probably be removed after EntryResource.updateLanguageVersions is removed since this should only happen with previously imported data
-            // with old data, we need to re-parse original content since original parsing lacked file-level metadata
-            final Map<String, FileMetadata> stringFileMetadataMap = minimalLanguageInterface.indexWorkflowFiles(filepath, content, new FileReader() {
-                @Override
-                public String readFile(String path) {
-                    return sourceFiles.stream().filter(file -> file.getPath().equals(path)).findFirst().map(SourceFile::getContent).orElse(null);
-                }
 
-                @Override
-                public List<String> listFiles(String pathToDirectory) {
-                    return sourceFiles.stream().map(SourceFile::getPath).toList();
-                }
-            });
-            // save file versioning back to source files
-            sourceFiles.forEach(file -> {
-                final FileMetadata fileMetadata = stringFileMetadataMap.get(file.getPath());
-                if (fileMetadata != null) {
-                    file.getMetadata().setTypeVersion(fileMetadata.languageVersion());
-                }
-            });
-            version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
-        }
+        // TODO: this can probably be removed after EntryResource.updateLanguageVersions is removed since this should only happen with previously imported data
+        // with old data, we need to re-parse original content since original parsing lacked file-level metadata
+        final Map<String, FileMetadata> stringFileMetadataMap = minimalLanguageInterface.indexWorkflowFiles(filepath, content, new FileReader() {
+            @Override
+            public String readFile(String path) {
+                return sourceFiles.stream().filter(file -> file.getPath().equals(path)).findFirst().map(SourceFile::getContent).orElse(null);
+            }
+
+            @Override
+            public List<String> listFiles(String pathToDirectory) {
+                return sourceFiles.stream().map(SourceFile::getPath).toList();
+            }
+        });
+        // save file versioning back to source files
+        sourceFiles.forEach(file -> {
+            final FileMetadata fileMetadata = stringFileMetadataMap.get(file.getPath());
+            if (fileMetadata != null) {
+                file.getMetadata().setTypeVersion(fileMetadata.languageVersion());
+            }
+        });
+        version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
+
         version.setDescriptionAndDescriptionSource(workflowMetadata.getDescription(), DescriptionSource.DESCRIPTOR);
         // TODO: hook up validation object to version for parsing metadata
         return version;
