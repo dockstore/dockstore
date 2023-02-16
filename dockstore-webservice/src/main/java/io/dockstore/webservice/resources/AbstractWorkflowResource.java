@@ -47,7 +47,6 @@ import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.helpers.SourceFilesHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.TransactionHelper;
@@ -275,19 +274,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     public static void publicAccessibleUrls(WorkflowVersion existingVersion,
         final String checkUrlLambdaUrl, final DescriptorLanguage descriptorType) {
-        final Optional<Boolean> hasPublicData = SourceFilesHelper.findFileByPath(existingVersion.getSourceFiles(), existingVersion.getWorkflowPath())
-            .map(primaryDescriptor -> {
-                final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
-                return languageHandler.getFileInputParameterNames(existingVersion.getSourceFiles(), primaryDescriptor)
-                    .map(fileInputParameterNames -> existingVersion.getSourceFiles().stream()
-                        .filter(sourceFile -> sourceFile.getType().getCategory().equals(FileTypeCategory.TEST_FILE))
-                        .anyMatch(sourceFile -> findTestFileType(sourceFile)
-                            .map(testFileType -> CheckUrlHelper.checkTestParameterFile(
-                                sourceFile.getContent(), checkUrlLambdaUrl,
-                                testFileType, fileInputParameterNames).orElse(Boolean.FALSE))
-                            .orElse(false))
-                    );
-            }).orElse(null);
+        final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
+        final Optional<Boolean> hasPublicData = languageHandler.getFileInputParameterNames(existingVersion.getSourceFiles(), existingVersion.getWorkflowPath())
+            .map(fileInputParameterNames -> existingVersion.getSourceFiles().stream()
+                .filter(sourceFile -> sourceFile.getType().getCategory().equals(FileTypeCategory.TEST_FILE))
+                .anyMatch(sourceFile -> findTestFileType(sourceFile)
+                    .map(testFileType -> CheckUrlHelper.checkTestParameterFile(
+                        sourceFile.getContent(), checkUrlLambdaUrl,
+                        testFileType, fileInputParameterNames).orElse(Boolean.FALSE))
+                    .orElse(false)));
         existingVersion.getVersionMetadata()
             .setPublicAccessibleTestParameterFile(hasPublicData.orElse(null));
     }
