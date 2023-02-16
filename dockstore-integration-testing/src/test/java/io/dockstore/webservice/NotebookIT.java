@@ -172,9 +172,16 @@ class NotebookIT extends BaseIT {
         workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         String path = "github.com/" + simpleRepo + "/simple";
         Long notebookID = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions").getId();
+
+        //star notebook
         workflowsApi.starEntry1(notebookID, new StarRequest().star(true));
-        Workflow notebook = workflowsApi.getWorkflow(notebookID,"");
+        Workflow notebook = workflowsApi.getWorkflow(notebookID, "");
         assertEquals(1, notebook.getStarredUsers().size());
+
+        //unstar notebook
+        workflowsApi.starEntry1(notebookID, new StarRequest().star(false));
+        notebook = workflowsApi.getWorkflow(notebookID, "");
+        assertEquals(0, notebook.getStarredUsers().size());
     }
 
     private class CreateContent {
