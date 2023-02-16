@@ -24,8 +24,8 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "memory_metric")
-@ApiModel(value = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions.")
-@Schema(name = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions.")
+@ApiModel(value = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions in GB.")
+@Schema(name = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions in GB.")
 public class MemoryStatisticMetric extends StatisticMetric {
     public MemoryStatisticMetric() {
     }

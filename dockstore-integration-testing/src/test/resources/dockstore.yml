@@ -51,6 +51,9 @@ limitConfig:
   workflowLimit: 10
   workflowVersionLimit: 10
 
+metricsConfig:
+  s3BucketName: local-dockstore-metrics-data
+
 database:
   # the name of your JDBC driver
   driverClass: org.postgresql.Driver

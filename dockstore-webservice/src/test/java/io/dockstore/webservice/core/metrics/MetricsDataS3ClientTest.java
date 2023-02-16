@@ -19,7 +19,7 @@ package io.dockstore.webservice.core.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.time.Instant;
+import io.dockstore.webservice.helpers.S3ClientHelper;
 import org.junit.jupiter.api.Test;
 
 class MetricsDataS3ClientTest {
@@ -28,7 +28,7 @@ class MetricsDataS3ClientTest {
     void testGenerateKeys() {
         final String versionName = "1.0";
         final String platform = "terra";
-        final String fileName = Instant.now().toEpochMilli() + ".json";
+        final String fileName = S3ClientHelper.createFileName();
 
         // workflow toolId with no tool name
         String toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container";
@@ -47,7 +47,7 @@ class MetricsDataS3ClientTest {
     void testConvertS3KeyToMetricsData() {
         final String versionName = "1.0";
         final String platform = "terra";
-        final String fileName = Instant.now().toEpochMilli() + ".json";
+        final String fileName = S3ClientHelper.createFileName();
 
         String toolId = "#workflow/github.com/ENCODE-DCC/pipeline-container";
         String s3Key = "workflow/github.com/ENCODE-DCC/pipeline-container/1.0/terra/" + fileName;
