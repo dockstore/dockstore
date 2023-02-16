@@ -20,8 +20,6 @@ public class CacheConfigManager {
 
     private static LoadingCache<Long, GitHub> githubClientAPICache;
 
-    private static String appId;
-    private static String privateKeyFile;
 
     public static CacheConfigManager getInstance() {
         return CACHE_CONFIG_MANAGER;
@@ -31,7 +29,7 @@ public class CacheConfigManager {
      * @param installationId App installation ID (per user)
      * @return github api client
      */
-    private static GitHub getGitHubClientFromInstallationId(long installationId) throws GeneralSecurityException, IOException {
+    private static GitHub getGitHubClientFromInstallationId(String appId, String privateKeyFile, long installationId) throws GeneralSecurityException, IOException {
         JWTTokenProvider tokenProvider = new JWTTokenProvider(appId, Path.of(privateKeyFile));
         final InstallationIDAuthorizationProvider installationIDAuthorizationProvider = new InstallationIDAuthorizationProvider(installationId, tokenProvider);
         return GitHubSourceCodeRepo.getBuilder(Long.toString(installationId)).withAuthorizationProvider(installationIDAuthorizationProvider).build();
@@ -41,8 +39,7 @@ public class CacheConfigManager {
      * Initialize the cache for GitHub api clients
      */
     public static void initCache(String githubAppId, String gitHubPrivateKeyFile) {
-        appId = githubAppId;
-        privateKeyFile = gitHubPrivateKeyFile;
+
         final int maxSize = 100;
         //providers self-renew
         if (githubClientAPICache == null) {
@@ -51,7 +48,7 @@ public class CacheConfigManager {
                 .recordStats()
                 .build(installationId -> {
                     LOG.info("Fetching github client for installation id %d from cache.".formatted(installationId));
-                    return getGitHubClientFromInstallationId(installationId);
+                    return getGitHubClientFromInstallationId(githubAppId, gitHubPrivateKeyFile, installationId);
                 });
         }
     }
