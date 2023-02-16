@@ -3,7 +3,9 @@ package io.dockstore.webservice.helpers;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.authorization.InstallationIDAuthorizationProvider;
 import org.kohsuke.github.extras.authorization.JWTTokenProvider;
@@ -18,8 +20,8 @@ public class CacheConfigManager {
 
     private static LoadingCache<Long, GitHub> githubClientAPICache;
 
-    private String appId;
-    private String privateKeyFile;
+    private static String appId;
+    private static String privateKeyFile;
 
     public static CacheConfigManager getInstance() {
         return CACHE_CONFIG_MANAGER;
@@ -29,7 +31,7 @@ public class CacheConfigManager {
      * @param installationId App installation ID (per user)
      * @return github api client
      */
-    private GitHub getGitHubClientFromInstallationId(long installationId) throws Exception {
+    private static GitHub getGitHubClientFromInstallationId(long installationId) throws GeneralSecurityException, IOException {
         JWTTokenProvider tokenProvider = new JWTTokenProvider(appId, Path.of(privateKeyFile));
         final InstallationIDAuthorizationProvider installationIDAuthorizationProvider = new InstallationIDAuthorizationProvider(installationId, tokenProvider);
         return GitHubSourceCodeRepo.getBuilder(Long.toString(installationId)).withAuthorizationProvider(installationIDAuthorizationProvider).build();
@@ -38,9 +40,9 @@ public class CacheConfigManager {
     /**
      * Initialize the cache for GitHub api clients
      */
-    public void initCache(String githubAppId, String gitHubPrivateKeyFile) {
-        this.appId = githubAppId;
-        this.privateKeyFile = gitHubPrivateKeyFile;
+    public static void initCache(String githubAppId, String gitHubPrivateKeyFile) {
+        appId = githubAppId;
+        privateKeyFile = gitHubPrivateKeyFile;
         final int maxSize = 100;
         //providers self-renew
         if (githubClientAPICache == null) {
@@ -48,7 +50,7 @@ public class CacheConfigManager {
                 .maximumSize(maxSize)
                 .recordStats()
                 .build(installationId -> {
-                    LOG.info("Fetching organization provider " + installationId + " from cache.");
+                    LOG.info("Fetching organization provider %d from cache.".formatted(installationId));
                     return getGitHubClientFromInstallationId(installationId);
                 });
         }
