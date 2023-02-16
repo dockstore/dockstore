@@ -79,7 +79,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             final Map<String, FileMetadata> stringFileMetadataMap = minimalLanguageInterface.indexWorkflowFiles(filepath, content, new FileReader() {
                 @Override
                 public String readFile(String path) {
-                    return sourceFiles.stream().filter(file -> file.getPath().equals(path)).findFirst().get().getContent();
+                    return sourceFiles.stream().filter(file -> file.getPath().equals(path)).findFirst().map(SourceFile::getContent).orElse(null);
                 }
 
                 @Override
