@@ -44,7 +44,6 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
-import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -673,7 +672,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUserId(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
-        List<Workflow> notebooks = notebookDAO.findMyEntries(fetchedUser.getId()).stream().map(Notebook.class::cast).collect(Collectors.toList());
+        List<Workflow> notebooks = notebookDAO.findMyEntries(fetchedUser.getId()).stream().map(Workflow.class::cast).toList();
         EntryVersionHelper.stripContentFromEntries(notebooks, this.userDAO);
         return notebooks;
     }

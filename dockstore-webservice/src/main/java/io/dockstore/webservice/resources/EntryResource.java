@@ -574,21 +574,24 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         final String entryPath;
         final String sitePath;
-        if (entry instanceof BioWorkflow) {
-            entryPath = ((BioWorkflow)entry).getWorkflowPath();
+        if (entry instanceof BioWorkflow bioWorkflow) {
+            entryPath = bioWorkflow.getWorkflowPath();
             sitePath = "workflows/" + entryPath;
-        } else if (entry instanceof Notebook) {
-            entryPath = ((Notebook)entry).getWorkflowPath();
+        } else if (entry instanceof Notebook notebook) {
+            entryPath = notebook.getWorkflowPath();
             sitePath = "notebooks/" + entryPath;
-        } else if (entry instanceof Service) {
-            entryPath = ((Service)entry).getWorkflowPath();
+        } else if (entry instanceof Service service) {
+            entryPath = service.getWorkflowPath();
             sitePath = "services/" + entryPath;
-        } else if (entry instanceof AppTool) {
-            entryPath = ((AppTool)entry).getWorkflowPath();
+        } else if (entry instanceof AppTool appTool) {
+            entryPath = appTool.getWorkflowPath();
+            sitePath = "tools/" + entryPath;
+        } else if (entry instanceof Tool tool) {
+            entryPath = tool.getToolPath();
             sitePath = "tools/" + entryPath;
         } else {
-            entryPath = ((Tool)entry).getToolPath();
-            sitePath = "tools/" + entryPath;
+            LOG.error("Unknown entry type: {}", entry);
+            throw new CustomWebApplicationException("Unknown entry type", HttpStatus.SC_BAD_REQUEST);
         }
 
         final String title = isProduction ? entryPath : (baseUrl + " " + entryPath);
