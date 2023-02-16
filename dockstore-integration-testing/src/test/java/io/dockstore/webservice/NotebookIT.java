@@ -31,11 +31,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
-import io.dockstore.openapi.client.model.Author;
-import io.dockstore.openapi.client.model.SourceFile;
-import io.dockstore.openapi.client.model.Workflow;
-import io.dockstore.openapi.client.model.WorkflowSubClass;
-import io.dockstore.openapi.client.model.WorkflowVersion;
+import io.dockstore.openapi.client.model.*;
 import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -43,6 +39,7 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -160,6 +157,19 @@ class NotebookIT extends BaseIT {
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertFalse(notebook.getWorkflowVersions().get(0).isValid());
+    }
+
+    @Test
+    void testStarringNotebook() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        String path = "github.com/" + simpleRepo + "/simple";
+        Long notebookID = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions").getId();
+        workflowsApi.starEntry1(notebookID, new StarRequest().star(true));
+        Workflow notebook = workflowsApi.getWorkflow(notebookID,"");
+        assertEquals(1, notebook.getStarredUsers().size());
     }
 
     private class CreateContent {
