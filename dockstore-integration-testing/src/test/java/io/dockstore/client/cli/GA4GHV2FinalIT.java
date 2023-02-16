@@ -22,7 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.WorkflowsApi;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.TRSService;
 import io.dockstore.openapi.client.model.Tool;
@@ -42,6 +45,9 @@ import org.junit.jupiter.api.Test;
  * @since 1.9
  */
 class GA4GHV2FinalIT extends GA4GHIT {
+    private final String installationId = AppToolHelper.INSTALLATION_ID;
+    private final String simpleNotebookRepo = "dockstore-testing/simple-notebook";
+
     private static final String API_VERSION = "ga4gh/trs/v2/";
 
     public String getApiVersion() {
@@ -410,6 +416,30 @@ class GA4GHV2FinalIT extends GA4GHIT {
         assertTrue(headers.get("last_page").toString().contains("toolClass=Workflow"));
         assertTrue(headers.get("next_page").toString().contains("toolClass=Workflow"));
 
+        // reset DB for other tests
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
+    }
+
+    @Test
+    void testNotebook() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+
+        // register and publish the notebook
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(apiClient);
+        workflowsApi.handleGitHubRelease("refs/tags/less-simple", installationId, simpleNotebookRepo, BasicIT.USER_2_USERNAME);
+
+        // retrieve the tool and do a cursory check of the response
+        String trsURL = "tools/%23notebook%2Fgithub.com%2F" + simpleNotebookRepo.replace("/", "%2F");
+        Response response = checkedResponse(baseURL + trsURL);
+        Tool responseObject = response.readEntity(Tool.class);
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("Author One");
+
+        // retrieve the tools files and do a cursory check of the response
+        Response response = checkedResponse(baseURL + trsURL + "/files");
+        List<?> responseObject = response.readEntity(List.class);
+        assertEquals(6, responseObject.size());
+`
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
