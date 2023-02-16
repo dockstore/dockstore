@@ -467,8 +467,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 "Authorization, X-Auth-Username, X-Auth-Password, X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
 
         // Initialize GitHub App Installation Access Token cache
-        CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
-        cacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
+        CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
 
         environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
             // Register connection pool health check after server starts so the environment has dropwizard metrics

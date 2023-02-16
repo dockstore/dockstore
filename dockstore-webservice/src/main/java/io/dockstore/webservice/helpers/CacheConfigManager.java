@@ -50,7 +50,7 @@ public class CacheConfigManager {
                 .maximumSize(maxSize)
                 .recordStats()
                 .build(installationId -> {
-                    LOG.info("Fetching organization provider %d from cache.".formatted(installationId));
+                    LOG.info("Fetching github client for installation id %d from cache.".formatted(installationId));
                     return getGitHubClientFromInstallationId(installationId);
                 });
         }
