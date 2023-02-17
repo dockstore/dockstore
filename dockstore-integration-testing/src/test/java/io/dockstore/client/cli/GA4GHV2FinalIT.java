@@ -426,16 +426,22 @@ class GA4GHV2FinalIT extends GA4GHIT {
     void testNotebook() throws Exception {
         CommonTestUtilities.dropAllAndRunMigration(CommonTestUtilities.listMigrations("add_notebook_1.14.0"), SUPPORT.newApplication(), CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
 
-        // retrieve the notebook and do a cursory check of the response
+        // retrieve the notebook and do a cursory check of various queries.
         String trsURL = baseURL + "tools/%23notebook%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2Fnotebook0";
-        Response response = checkedResponse(trsURL);
-        Tool responseObject = response.readEntity(Tool.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("Author0");
 
-        // retrieve the notebook's tools files and do a cursory check of the response
-        response = checkedResponse(trsURL + "/files");
-        List<?> responseList = response.readEntity(List.class);
-        assertEquals(1, responseList.size());
+        Response response = checkedResponse(trsURL);
+        Tool responseTool = response.readEntity(Tool.class);
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseTool)).contains("notebook0");
+
+        response = checkedResponse(trsURL + "/versions");
+        assertEquals(1, response.readEntity(List.class).size());
+
+        response = checkedResponse(trsURL + "/versions/version0");
+        ToolVersion responseVersion = response.readEntity(ToolVersion.class);
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseVersion)).contains("notebook0");
+
+        response = checkedResponse(trsURL + "/versions/version0/IPYNB/files");
+        assertEquals(1, response.readEntity(List.class).size());
 
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
