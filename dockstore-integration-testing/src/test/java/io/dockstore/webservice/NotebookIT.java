@@ -169,7 +169,7 @@ class NotebookIT extends BaseIT {
     void testStarringNotebook() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
         workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         String path = "github.com/" + simpleRepo + "/simple";
         Long notebookID = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions").getId();
