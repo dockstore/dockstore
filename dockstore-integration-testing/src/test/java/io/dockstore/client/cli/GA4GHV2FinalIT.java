@@ -424,23 +424,18 @@ class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     void testNotebook() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(BaseIT.SUPPORT, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH, true);
+        CommonTestUtilities.dropAllAndRunMigration(CommonTestUtilities.listMigrations("add_notebook_1.14.0"), SUPPORT.newApplication(), CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
 
-        // register and publish the notebook
-        ApiClient apiClient = CommonTestUtilities.getOpenAPIWebClient(true, BasicIT.USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v1", installationId, simpleNotebookRepo, BasicIT.USER_2_USERNAME);
-
-        // retrieve the tool and do a cursory check of the response
-        String trsURL = baseURL + "tools/%23notebook%2Fgithub.com%2F" + simpleNotebookRepo.replace("/", "%2F");
+        // retrieve the notebook and do a cursory check of the response
+        String trsURL = baseURL + "tools/%23notebook%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2Fnotebook0";
         Response response = checkedResponse(trsURL);
         Tool responseObject = response.readEntity(Tool.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("Author One");
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("Author0");
 
-        // retrieve the tools files and do a cursory check of the response
+        // retrieve the notebook's tools files and do a cursory check of the response
         response = checkedResponse(trsURL + "/files");
         List<?> responseList = response.readEntity(List.class);
-        assertEquals(6, responseList.size());
+        assertEquals(1, responseList.size());
 
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
