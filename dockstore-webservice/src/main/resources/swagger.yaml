@@ -597,6 +597,76 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/ToolV1"
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
+    post:
+      tags:
+      - "extendedGA4GH"
+      summary: "Submit execution metrics for a workflow that was executed on a platform."
+      description: "This endpoint submits execution metrics for a workflow that was\
+        \ executed on a platform"
+      operationId: "executionMetricsPost"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      - name: "platform"
+        in: "query"
+        description: "Platform that the tool was executed on"
+        required: true
+        type: "string"
+        enum:
+        - "GALAXY"
+        - "TERRA"
+        - "DNA_STACK"
+        - "DNA_NEXUS"
+        - "CGC"
+        - "NHLBI_BIODATA_CATALYST"
+        - "ANVIL"
+        - "CAVATICA"
+        - "NEXTFLOW_TOWER"
+        - "ELWAZI"
+        - "AGC"
+        - "OTHER"
+      - name: "description"
+        in: "query"
+        description: "Optional description about the execution metrics"
+        required: false
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "Execution metrics to submit"
+        required: true
+        schema:
+          type: "array"
+          items:
+            $ref: "#/definitions/Execution"
+      responses:
+        204:
+          description: "Execution metrics submitted successfully."
+        401:
+          description: "Credentials not provided or incorrect."
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: "The tool cannot be found to submit execution metrics."
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+      - BEARER: []
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
     post:
       tags:
@@ -4768,6 +4838,28 @@ paths:
               $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
+  /users/{userId}/notebooks:
+    get:
+      tags:
+      - "users"
+      operationId: "userNotebooks"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
   /users/{userId}/services:
     get:
       tags:
@@ -5306,7 +5398,7 @@ paths:
         type: "string"
       - name: "subclass"
         in: "query"
-        description: "Which Workflow subclass to retrieve."
+        description: "Which Workflow subclass to retrieve actions for."
         required: true
         type: "string"
         enum:
@@ -5343,12 +5435,16 @@ paths:
         description: "repository path"
         required: true
         type: "string"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to retrieve permissions for."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5386,12 +5482,16 @@ paths:
         - "OWNER"
         - "WRITER"
         - "READER"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to remove a role from."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5424,12 +5524,16 @@ paths:
         required: true
         schema:
           $ref: "#/definitions/Permission"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to add a permission to."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5554,7 +5658,7 @@ paths:
         - "desc"
       - name: "services"
         in: "query"
-        description: "Should only be used by Dockstore CLI versions < 1.12.0. Indicates\
+        description: "Should only be used by Dockstore versions < 1.14.0. Indicates\
           \ whether to get a service or workflow"
         required: false
         type: "boolean"
@@ -7385,6 +7489,28 @@ definitions:
         description: "(github) apps tool that the event is acting on."
         $ref: "#/definitions/AppTool"
     description: "This describes events that occur on the Dockstore site."
+  Execution:
+    type: "object"
+    required:
+    - "executionStatus"
+    properties:
+      additionalProperties:
+        type: "object"
+        additionalProperties:
+          type: "object"
+      cpuRequirements:
+        type: "integer"
+        format: "int32"
+      executionStatus:
+        type: "string"
+        enum:
+        - "SUCCESSFUL"
+        - "FAILED_SEMANTIC_INVALID"
+        - "FAILED_RUNTIME_INVALID"
+      executionTime:
+        type: "string"
+      memoryRequirements:
+        type: "string"
   ExecutionStatusMetric:
     type: "object"
     properties:
@@ -7430,8 +7556,8 @@ definitions:
         type: "integer"
         format: "int32"
         description: "The number of data points used to calculate the average"
-    description: "This describes aggregated execution time metrics in ISO 8601 for\
-      \ workflow executions."
+    description: "This describes aggregated execution time metrics in ISO 8601 duration\
+      \ format for workflow executions."
   ExtendedUserData:
     type: "object"
     properties:
@@ -7631,7 +7757,8 @@ definitions:
         type: "integer"
         format: "int32"
         description: "The number of data points used to calculate the average"
-    description: "This describes aggregated memory metrics for workflow executions."
+    description: "This describes aggregated memory metrics for workflow executions\
+      \ in GB."
   Metadata:
     type: "object"
     required:

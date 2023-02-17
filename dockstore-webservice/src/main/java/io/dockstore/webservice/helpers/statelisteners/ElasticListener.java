@@ -34,6 +34,8 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
+import io.openapi.model.DescriptorType;
+import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -513,7 +515,7 @@ public class ElasticListener implements StateListenerInterface {
             // Only set descriptor type versions if there's one descriptor type otherwise we can't tell which version belongs to which type without looking at the source files
             language = tool.getDescriptorType().get(0);
         } else if (entry instanceof BioWorkflow || entry instanceof AppTool) {
-            language = ((Workflow)entry).getDescriptorType().toString();
+            language = ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(((Workflow) entry).getDescriptorType()).map(DescriptorType::toString).orElse("unsupported language");
         } else {
             return List.of();
         }

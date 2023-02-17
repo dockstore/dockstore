@@ -20,6 +20,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
@@ -39,6 +40,8 @@ public final class MetadataResourceHelper {
     public static String createWorkflowURL(Workflow workflow) {
         if (workflow instanceof BioWorkflow) {
             return baseUrl + "/workflows/" + workflow.getWorkflowPath();
+        } else if (workflow instanceof Notebook) {
+            return baseUrl + "/notebooks/" + workflow.getWorkflowPath();
         } else if (workflow instanceof Service) {
             return baseUrl + "/services/" + workflow.getWorkflowPath();
         } else if (workflow instanceof AppTool) {
