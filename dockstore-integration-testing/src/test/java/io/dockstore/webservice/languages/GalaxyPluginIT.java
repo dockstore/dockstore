@@ -83,7 +83,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(WorkflowTest.NAME)
 class GalaxyPluginIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;
-    public static final String GALAXY_PLUGIN_VERSION = "0.0.4";
+    public static final String GALAXY_PLUGIN_VERSION = "0.0.8";
     public static final String GALAXY_PLUGIN_FILENAME = "dockstore-galaxy-interface-" + GALAXY_PLUGIN_VERSION + ".jar";
     public static final String GALAXY_PLUGIN_LOCATION =
         "https://artifacts.oicr.on.ca/artifactory/collab-release/com/github/galaxyproject/dockstore-galaxy-interface/dockstore-galaxy-interface/"

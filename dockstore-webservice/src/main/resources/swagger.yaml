@@ -4838,6 +4838,28 @@ paths:
               $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
+  /users/{userId}/notebooks:
+    get:
+      tags:
+      - "users"
+      operationId: "userNotebooks"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
   /users/{userId}/services:
     get:
       tags:
@@ -5376,7 +5398,7 @@ paths:
         type: "string"
       - name: "subclass"
         in: "query"
-        description: "Which Workflow subclass to retrieve."
+        description: "Which Workflow subclass to retrieve actions for."
         required: true
         type: "string"
         enum:
@@ -5413,12 +5435,16 @@ paths:
         description: "repository path"
         required: true
         type: "string"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to retrieve permissions for."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5456,12 +5482,16 @@ paths:
         - "OWNER"
         - "WRITER"
         - "READER"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to remove a role from."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5494,12 +5524,16 @@ paths:
         required: true
         schema:
           $ref: "#/definitions/Permission"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to add a permission to."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5624,7 +5658,7 @@ paths:
         - "desc"
       - name: "services"
         in: "query"
-        description: "Should only be used by Dockstore CLI versions < 1.12.0. Indicates\
+        description: "Should only be used by Dockstore versions < 1.14.0. Indicates\
           \ whether to get a service or workflow"
         required: false
         type: "boolean"
