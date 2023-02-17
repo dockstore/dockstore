@@ -35,6 +35,7 @@ import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Author;
 import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
@@ -162,6 +163,26 @@ class NotebookIT extends BaseIT {
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertFalse(notebook.getWorkflowVersions().get(0).isValid());
+    }
+
+    @Test
+    void testStarringNotebook() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        String path = "github.com/" + simpleRepo + "/simple";
+        Long notebookID = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions").getId();
+
+        //star notebook
+        workflowsApi.starEntry1(notebookID, new StarRequest().star(true));
+        Workflow notebook = workflowsApi.getWorkflow(notebookID, "");
+        assertEquals(1, notebook.getStarredUsers().size());
+
+        //unstar notebook
+        workflowsApi.starEntry1(notebookID, new StarRequest().star(false));
+        notebook = workflowsApi.getWorkflow(notebookID, "");
+        assertEquals(0, notebook.getStarredUsers().size());
     }
 
     private class CreateContent {
