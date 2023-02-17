@@ -801,7 +801,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
-        @ApiParam(value = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow") @DefaultValue("false") @QueryParam("services") boolean services,
+        @ApiParam(value = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to get a service or workflow") @DefaultValue("false") @QueryParam("services") boolean services,
         @ApiParam(value = "Which workflow subclass to retrieve. If present takes precedence over services parameter") @QueryParam("subclass") WorkflowSubClass subclass,
         @Context HttpServletResponse response) {
         // delete the next line if GUI pagination is not working by 1.5.0 release
@@ -856,27 +856,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @Parameter(name = "include", description = WORKFLOW_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = WORKFLOW_INCLUDE_MESSAGE) @QueryParam("include") String include,
         @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
-        @Parameter(name = "services", description = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
-        final Class<? extends Workflow> targetClass;
-        if (services != null) {
-            targetClass = services ? Service.class : BioWorkflow.class;
-        } else {
-            targetClass = getSubClass(subclass);
-        }
-
+        @Parameter(name = "services", description = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
+        final Class<? extends Workflow> targetClass = workflowSubClass(services, subclass);
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkNotNullEntry(workflow);
         checkCanExamine(user, workflow);
         Hibernate.initialize(workflow.getAliases());
         initializeAdditionalFields(include, workflow);
         return workflow;
-    }
-
-    private Class<? extends Workflow> getSubClass(WorkflowSubClass subclass) {
-        if (subclass == null) {
-            throw new CustomWebApplicationException("Subclass cannot be null", HttpStatus.SC_BAD_REQUEST);
-        }
-        return subclass.getTargetClass();
     }
 
     @SuppressWarnings("checkstyle:MagicNumber")
@@ -939,8 +926,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
-        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve permissions for.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve permissions for.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
+        @Parameter(name = "services", description = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to retrieve permissions for a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
+        final Class<? extends Workflow> targetClass = workflowSubClass(services, subclass);
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkNotNullEntry(workflow);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
@@ -955,15 +943,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Role.Action.class, responseContainer = "List")
     public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
-        @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
-        @Parameter(name = "services", description = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
-        final Class<? extends Workflow> targetClass;
-        if (services != null) {
-            targetClass = services ? Service.class : BioWorkflow.class;
-        } else {
-            targetClass = getSubClass(subclass);
-        }
-
+        @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve actions for.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve actions for.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
+        @Parameter(name = "services", description = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to get actions for a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
+        final Class<? extends Workflow> targetClass = workflowSubClass(services, subclass);
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkNotNullEntry(workflow);
         return this.permissionsInterface.getActionsForWorkflow(user, workflow);
@@ -980,8 +962,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user permission", required = true) Permission permission,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
-        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        @Parameter(name = "subclass", description = "Which Workflow subclass to add a permission to.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to add a permission to.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
+        @Parameter(name = "services", description = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to add a permission to a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
+        final Class<? extends Workflow> targetClass = workflowSubClass(services, subclass);
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkNotNullEntry(workflow);
         // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/dockstore/dockstore/issues/1593
@@ -1002,8 +985,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
         @ApiParam(value = "role", required = true) @QueryParam("role") Role role,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
-        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        @Parameter(name = "subclass", description = "Which Workflow subclass to remove a role from.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to remove a role from.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
+        @Parameter(name = "services", description = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to remove a role from a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
+        final Class<? extends Workflow> targetClass = workflowSubClass(services, subclass);
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkNotNullEntry(workflow);
         this.permissionsInterface.removePermission(user, workflow, email, role);
@@ -1076,14 +1060,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @Parameter(name = "include", description = WORKFLOW_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = WORKFLOW_INCLUDE_MESSAGE) @QueryParam("include") String include,
         @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
-        @Parameter(name = "services", description = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services,
+        @Parameter(name = "services", description = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services,
         @Parameter(name = "versionName", description = "Version name", in = ParameterIn.QUERY) @ApiParam(value = "Version name") @QueryParam("versionName") String versionName) {
-        final Class<? extends Workflow> targetClass;
-        if (services != null) {
-            targetClass = services ? Service.class : BioWorkflow.class;
-        } else {
-            targetClass = getSubClass(subclass);
-        }
+        final Class<? extends Workflow> targetClass = workflowSubClass(services, subclass);
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkNotNullEntry(workflow);
 
@@ -1886,11 +1865,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
-    private Class<? extends Workflow> workflowSubClass(boolean services, WorkflowSubClass subClass) {
+    private Class<? extends Workflow> workflowSubClass(Boolean services, WorkflowSubClass subClass) {
         if (subClass != null) {
-            return getSubClass(subClass);
+            return subClass.getTargetClass();
         }
-        return services ? Service.class : BioWorkflow.class;
+        return (services != null && services.booleanValue()) ? Service.class : BioWorkflow.class;
     }
 
     @Override
