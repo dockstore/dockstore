@@ -39,9 +39,7 @@ import io.dockstore.webservice.helpers.DockerRegistryAPIHelper;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import io.swagger.quay.client.ApiClient;
 import io.swagger.quay.client.ApiException;
-import io.swagger.quay.client.Configuration;
 import io.swagger.quay.client.model.QuayTag;
 import java.io.IOException;
 import java.net.URL;
@@ -74,11 +72,9 @@ import org.yaml.snakeyaml.error.YAMLException;
  * This interface will be the future home of all methods that will need to be added to support a new workflow language
  */
 public interface LanguageHandlerInterface {
-    String QUAY_URL = "https://quay.io/api/v1/";
     String DOCKERHUB_URL = AbstractImageRegistry.DOCKERHUB_URL;
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
     Gson GSON = new Gson();
-    ApiClient API_CLIENT = Configuration.getDefaultApiClient();
     // public.ecr.aws/<registry_alias>/<repository_name>:<image_tag> -> public.ecr.aws/ubuntu/ubuntu:18.04
     // public.ecr.aws/<registry_alias>/<repository_name>@sha256:<image_digest>
     Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)([a-z0-9._-]++)/([a-z0-9._/-]++)(:|@sha256:)(.++)");
