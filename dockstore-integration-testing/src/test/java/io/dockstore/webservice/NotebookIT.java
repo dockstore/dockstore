@@ -162,6 +162,16 @@ class NotebookIT extends BaseIT {
         assertFalse(notebook.getWorkflowVersions().get(0).isValid());
     }
 
+    @Test
+    void testAddNotebookToCollection() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/corrupt-ipynb", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(openApiClient);
+        final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(openApiClient);
+    }
+
     private class CreateContent {
         private long notebookID;
 
