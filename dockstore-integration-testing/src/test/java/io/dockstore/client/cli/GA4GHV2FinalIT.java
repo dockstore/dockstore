@@ -422,6 +422,10 @@ class GA4GHV2FinalIT extends GA4GHIT {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
+    private <T> String toJson(T value) throws Exception {
+        return SUPPORT.getObjectMapper().writeValueAsString(value);
+    }
+
     @Test
     void testNotebook() throws Exception {
         CommonTestUtilities.dropAllAndRunMigration(CommonTestUtilities.listMigrations("add_notebook_1.14.0"), SUPPORT.newApplication(), CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
@@ -429,19 +433,19 @@ class GA4GHV2FinalIT extends GA4GHIT {
         // retrieve the notebook and do a cursory check of various queries.
         String trsURL = baseURL + "tools/%23notebook%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2Fnotebook0";
 
-        Response response = checkedResponse(trsURL);
-        Tool responseTool = response.readEntity(Tool.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseTool)).contains("notebook0");
+        Tool tool = checkedResponse(trsURL).readEntity(Tool.class);
+        assertThat(toJson(tool)).contains("notebook0");
 
-        response = checkedResponse(trsURL + "/versions");
-        assertEquals(1, response.readEntity(List.class).size());
+        List<?> versions = checkedResponse(trsURL + "/versions").readEntity(List.class);
+        assertEquals(1, versions.size());
+        assertThat(toJson(versions)).contains("version0");
 
-        response = checkedResponse(trsURL + "/versions/version0");
-        ToolVersion responseVersion = response.readEntity(ToolVersion.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseVersion)).contains("notebook0");
+        ToolVersion version = checkedResponse(trsURL + "/versions/version0").readEntity(ToolVersion.class);
+        assertThat(toJson(version)).contains("version0");
 
-        response = checkedResponse(trsURL + "/versions/version0/IPYNB/files");
-        assertEquals(1, response.readEntity(List.class).size());
+        List<?> files = checkedResponse(trsURL + "/versions/version0/IPYNB/files").readEntity(List.class);
+        assertEquals(1, files.size());
+        assertThat(toJson(files)).contains("notebook.ipynb");
 
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
