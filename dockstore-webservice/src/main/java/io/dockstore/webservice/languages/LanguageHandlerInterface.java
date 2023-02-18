@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.dockerhub.DockerHubImage;
 import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
@@ -958,21 +959,13 @@ public interface LanguageHandlerInterface {
 
 
     /**
-     * Returns the names of the input parameters whose type is File. If unable to determine
+     * Returns the names of the input parameters whose type is File or a list of Files. If unable to determine
      * the input parameters, e.g., the primary descriptor does not exist or is not parseable,
      * returns <code>Optional.empty()</code>.
-     * @param sourceFiles
-     * @param primaryDescriptorPath
+     * @param workflowVersion
      * @return
      */
-    default Optional<Set<String>> getFileInputParameterNames(Set<SourceFile> sourceFiles, String primaryDescriptorPath) {
-        return sourceFiles.stream()
-            .filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorPath))
-            .findFirst()
-            .flatMap(primaryDescriptor -> getFileInputParameterNames(sourceFiles, primaryDescriptor));
-    }
-
-    default Optional<Set<String>> getFileInputParameterNames(Set<SourceFile> sourceFiles, SourceFile primaryDescriptor) {
+    default Optional<Set<String>> getFileInputParameterNames(WorkflowVersion workflowVersion) {
         return Optional.empty();
     }
 

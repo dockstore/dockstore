@@ -15,6 +15,8 @@
  */
 package io.dockstore.webservice.languages;
 
+import static io.dockstore.webservice.helpers.SourceFileHelper.findPrimaryDescriptor;
+
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.github.zafarkhaja.semver.expr.LexerException;
 import com.github.zafarkhaja.semver.expr.UnexpectedTokenException;
@@ -34,6 +36,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.io.File;
@@ -55,6 +58,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -684,20 +688,30 @@ public class WDLHandler implements LanguageHandlerInterface {
         }
     }
 
+    /**
+     * Returns the file input parameter names for a workflow version;
+     * @param workflowVersion
+     * @return
+     */
     @Override
-    public Optional<Set<String>> getFileInputParameterNames(Set<SourceFile> sourceFiles, SourceFile primaryDescriptor) {
-        final WdlBridge wdlBridge = new WdlBridge();
-        wdlBridge.setSecondaryFiles(sourceFiles.stream().collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent)));
-        File tempMainDescriptor = null;
-        try {
-            tempMainDescriptor = java.nio.file.Files.createTempFile("main", "descriptor").toFile();
-            Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptor.getContent());
-            return Optional.of(wdlBridge.getInputFiles(tempMainDescriptor.getPath()).keySet());
-        } catch (SyntaxError | IOException e) {
-            return Optional.empty();
-        } finally {
-            FileUtils.deleteQuietly(tempMainDescriptor); // Works with null parameter
-        }
+    public Optional<Set<String>> getFileInputParameterNames(WorkflowVersion workflowVersion) {
+        return findPrimaryDescriptor(workflowVersion)
+            .map(primaryDescriptor -> {
+                final SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+                final WdlBridge wdlBridge = new WdlBridge();
+                wdlBridge.setSecondaryFiles(sourceFiles.stream().collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent)));
+                File tempMainDescriptor = null;
+                try {
+                    tempMainDescriptor = java.nio.file.Files.createTempFile("main", "descriptor").toFile();
+                    Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptor.getContent());
+                    return wdlBridge.getInputFiles(tempMainDescriptor.getPath()).keySet();
+                } catch (SyntaxError | IOException e) {
+                    LOG.error("Error ");
+                    return null;
+                } finally {
+                    FileUtils.deleteQuietly(tempMainDescriptor); // Works with null parameter
+                }
+            });
     }
 
     private static RuntimeException createStackOverflowThrowable(StackOverflowError error) {

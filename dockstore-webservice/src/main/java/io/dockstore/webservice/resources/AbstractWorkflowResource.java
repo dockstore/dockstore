@@ -6,10 +6,11 @@ import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.FULL;
 import static io.dockstore.webservice.core.WorkflowMode.STUB;
+import static io.dockstore.webservice.helpers.SourceFileHelper.findPrimaryDescriptor;
+import static io.dockstore.webservice.helpers.SourceFileHelper.findTestFiles;
 
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
@@ -274,15 +275,18 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     public static void publicAccessibleUrls(WorkflowVersion existingVersion,
         final String checkUrlLambdaUrl, final DescriptorLanguage descriptorType) {
-        final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
-        final Optional<Boolean> hasPublicData = languageHandler.getFileInputParameterNames(existingVersion.getSourceFiles(), existingVersion.getWorkflowPath())
-            .map(fileInputParameterNames -> existingVersion.getSourceFiles().stream()
-                .filter(sourceFile -> sourceFile.getType().getCategory().equals(FileTypeCategory.TEST_FILE))
-                .anyMatch(sourceFile -> findTestFileType(sourceFile)
-                    .map(testFileType -> CheckUrlHelper.checkTestParameterFile(
-                        sourceFile.getContent(), checkUrlLambdaUrl,
-                        testFileType, fileInputParameterNames).orElse(Boolean.FALSE))
-                    .orElse(false)));
+        final Optional<Boolean> hasPublicData = findPrimaryDescriptor(existingVersion)
+            .map(primaryDescriptor -> {
+                final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
+                return languageHandler.getFileInputParameterNames(existingVersion)
+                    .map(fileInputParameterNames -> findTestFiles(existingVersion).stream()
+                        .anyMatch(testSourceFile -> findTestFileType(testSourceFile)
+                            .flatMap(testFileType -> CheckUrlHelper.checkTestParameterFile(testSourceFile.getContent(),
+                                checkUrlLambdaUrl, testFileType, fileInputParameterNames))
+                            .orElse(Boolean.FALSE)))
+                    .orElse(null); // No input parameters, no open data
+            });
+
         existingVersion.getVersionMetadata()
             .setPublicAccessibleTestParameterFile(hasPublicData.orElse(null));
     }
