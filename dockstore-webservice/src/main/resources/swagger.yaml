@@ -1425,7 +1425,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
-        - "IPYNB"
+        - "JUPYTER"
       - name: "namespace"
         in: "query"
         description: "The Docker namespace (Tools only)"
@@ -2134,7 +2134,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
-        - "IPYNB"
+        - "JUPYTER"
       responses:
         200:
           description: "successful operation"
@@ -2326,7 +2326,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
-        - "IPYNB"
+        - "JUPYTER"
       responses:
         200:
           description: "successful operation"
@@ -5124,7 +5124,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
-        - "IPYNB"
+        - "JUPYTER"
       - name: "namespace"
         in: "query"
         description: "The Docker namespace (Tools only)"
@@ -5852,7 +5852,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
-        - "IPYNB"
+        - "JUPYTER"
       responses:
         200:
           description: "successful operation"
@@ -6017,7 +6017,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
-        - "IPYNB"
+        - "JUPYTER"
       responses:
         200:
           description: "successful operation"
@@ -6313,7 +6313,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
-        - "IPYNB"
+        - "JUPYTER"
       responses:
         200:
           description: "successful operation"
@@ -8061,7 +8061,7 @@ definitions:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
-        - "IPYNB"
+        - "JUPYTER"
       hasHTTPImports:
         type: "boolean"
       hasLocalImports:
@@ -8203,7 +8203,7 @@ definitions:
         - "GXFORMAT2_TEST_FILE"
         - "DOCKSTORE_SWL"
         - "SWL_TEST_JSON"
-        - "DOCKSTORE_IPYNB"
+        - "DOCKSTORE_JUPYTER"
         - "DOCKSTORE_NOTEBOOK_REES"
         - "DOCKSTORE_NOTEBOOK_TEST_FILE"
         - "DOCKSTORE_NOTEBOOK_OTHER"
@@ -8919,7 +8919,7 @@ definitions:
         - "GXFORMAT2_TEST_FILE"
         - "DOCKSTORE_SWL"
         - "SWL_TEST_JSON"
-        - "DOCKSTORE_IPYNB"
+        - "DOCKSTORE_JUPYTER"
         - "DOCKSTORE_NOTEBOOK_REES"
         - "DOCKSTORE_NOTEBOOK_TEST_FILE"
         - "DOCKSTORE_NOTEBOOK_OTHER"

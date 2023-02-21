@@ -134,7 +134,7 @@ class DockstoreYamlTest {
 
         final YamlNotebook notebook = notebooks.get(0);
         assertEquals("notebook0", notebook.getName());
-        assertEquals("Ipynb", notebook.getFormat());
+        assertEquals("Jupyter", notebook.getFormat());
         assertEquals("Python", notebook.getLanguage());
         assertEquals("/notebook0.ipynb", notebook.getPath());
         assertEquals(true, notebook.getPublish());
@@ -147,7 +147,7 @@ class DockstoreYamlTest {
 
         final YamlNotebook notebook1 = notebooks.get(1);
         assertEquals("notebook1", notebook1.getName());
-        assertEquals("ipynb", notebook1.getFormat());
+        assertEquals("jupyter", notebook1.getFormat());
         assertEquals("python", notebook1.getLanguage());
         assertEquals("/notebook1.ipynb", notebook1.getPath());
         assertEquals(null, notebook1.getPublish());

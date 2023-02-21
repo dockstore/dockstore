@@ -30,7 +30,7 @@ import javax.validation.constraints.NotNull;
 public class YamlNotebook implements Workflowish {
 
     private String name;
-    private String format = "ipynb";
+    private String format = "jupyter";
     private String language = "python";
     private String path;
     private Boolean publish;
@@ -50,16 +50,16 @@ public class YamlNotebook implements Workflowish {
     }
 
     /**
-     * Get the format (i.e. IPYNB) of the notebook file.
+     * Get the format (i.e. JUPYTER) of the notebook file.
      */
     @NotNull
-    @ValidDescriptorLanguage(entryType = EntryType.NOTEBOOK, message = "must be a supported notebook format (currently \"ipynb\")")
+    @ValidDescriptorLanguage(entryType = EntryType.NOTEBOOK, message = "must be a supported notebook format (currently \"jupyter\")")
     public String getFormat() {
         return format;
     }
 
     /**
-     * Set the format (i.e. IPYNB) of the notebook file.
+     * Set the format (i.e. JUPYTER) of the notebook file.
      */
     public void setFormat(String format) {
         this.format = format;

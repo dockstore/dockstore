@@ -51,11 +51,11 @@ import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
- * Tests public methods in IpynbHandler
+ * Tests public methods in JupyterHandler
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
-class IpynbHandlerTest {
+class JupyterHandlerTest {
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -66,7 +66,7 @@ class IpynbHandlerTest {
     private static final String PATH = "/hello.ipynb";
     private static final String CONTENT = read("hello.ipynb");
 
-    private IpynbHandler handler;
+    private JupyterHandler handler;
     private Notebook notebook;
     private WorkflowVersion version;
   
@@ -95,8 +95,8 @@ class IpynbHandlerTest {
         return file;
     }
 
-    private SourceFile mockIpynb(String path, String content) {
-        return mockSourceFile(path, content, DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+    private SourceFile mockJupyter(String path, String content) {
+        return mockSourceFile(path, content, DescriptorLanguage.FileType.DOCKSTORE_JUPYTER);
     }
 
     private SourceCodeRepoInterface mockRepo(Set<String> paths) {
@@ -123,7 +123,7 @@ class IpynbHandlerTest {
 
     @BeforeEach
     void reset() {
-        handler = new IpynbHandler();
+        handler = new JupyterHandler();
         notebook = new Notebook();
         version = new WorkflowVersion();
     }
@@ -152,7 +152,7 @@ class IpynbHandlerTest {
 
     @Test
     void testParseWorkflowContentExtractVersion() {
-        SourceFile file = mockSourceFile(PATH, CONTENT, DescriptorLanguage.FileType.DOCKSTORE_IPYNB);
+        SourceFile file = mockSourceFile(PATH, CONTENT, DescriptorLanguage.FileType.DOCKSTORE_JUPYTER);
         handler.parseWorkflowContent(PATH, CONTENT, Set.of(file), version);
         assertEquals("4.0", file.getMetadata().getTypeVersion());
         assertEquals(List.of("4.0"), version.getVersionMetadata().getDescriptorTypeVersions());
@@ -186,43 +186,43 @@ class IpynbHandlerTest {
 
     @Test
     void testValidateWorkflowSet() {
-        notebook.setDescriptorType(DescriptorLanguage.IPYNB);
+        notebook.setDescriptorType(DescriptorLanguage.JUPYTER);
         notebook.setDescriptorTypeSubclass(DescriptorLanguageSubclass.PYTHON);
 
         // Well-formed.
-        SourceFile file = mockIpynb(PATH, CONTENT);
+        SourceFile file = mockJupyter(PATH, CONTENT);
         assertTrue(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Empty file.
-        file = mockIpynb(PATH, "");
+        file = mockJupyter(PATH, "");
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Empty object.
-        file = mockIpynb(PATH, "{ }");
+        file = mockJupyter(PATH, "{ }");
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Invalid JSON syntax.
-        file = mockIpynb(PATH, CONTENT.replaceFirst("\\{", "["));
+        file = mockJupyter(PATH, CONTENT.replaceFirst("\\{", "["));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Valid JSON but no "metadata" field.
-        file = mockIpynb(PATH, CONTENT.replaceFirst("\"metadata\"", "\"foo\""));
+        file = mockJupyter(PATH, CONTENT.replaceFirst("\"metadata\"", "\"foo\""));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Valid JSON but no "cells" field.
-        file = mockIpynb(PATH, CONTENT.replaceFirst("\"cells\"", "\"foo\""));
+        file = mockJupyter(PATH, CONTENT.replaceFirst("\"cells\"", "\"foo\""));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Valid JSON but no "nbformat" field.
-        file = mockIpynb(PATH, CONTENT.replaceFirst("\"nbformat\"", "\"foo\""));
+        file = mockJupyter(PATH, CONTENT.replaceFirst("\"nbformat\"", "\"foo\""));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Valid JSON but non-integer "nbformat" field.
-        file = mockIpynb(PATH, CONTENT.replaceFirst("4,", "\"foo\","));
+        file = mockJupyter(PATH, CONTENT.replaceFirst("4,", "\"foo\","));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
 
         // Different programming language.
-        file = mockIpynb(PATH, CONTENT.replace("\"python\"", "\"julia\""));
+        file = mockJupyter(PATH, CONTENT.replace("\"python\"", "\"julia\""));
         assertFalse(handler.validateWorkflowSet(Set.of(file), PATH, notebook).isValid());
     }
 
@@ -233,6 +233,6 @@ class IpynbHandlerTest {
 
     @Test
     void testValidateTestParameterSet() {
-        handler.validateTestParameterSet(Set.of(mockIpynb(PATH, "")));
+        handler.validateTestParameterSet(Set.of(mockJupyter(PATH, "")));
     }
 }
