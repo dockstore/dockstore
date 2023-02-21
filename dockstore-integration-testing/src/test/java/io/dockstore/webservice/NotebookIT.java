@@ -16,12 +16,11 @@
 
 package io.dockstore.webservice;
 
+import static io.dockstore.client.cli.OrganizationIT.stubCollectionObject;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
@@ -31,7 +30,13 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.CategoriesApi;
+import io.dockstore.openapi.client.api.EntriesApi;
+import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.model.Author;
+import io.dockstore.openapi.client.model.Collection;
+import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
@@ -40,9 +45,14 @@ import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -164,12 +174,21 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testAddNotebookToCollection() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
-        workflowsApi.handleGitHubRelease("refs/heads/corrupt-ipynb", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
-        final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(openApiClient);
-        final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(openApiClient);
+        final ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        final CategoriesApi categoriesApi = new CategoriesApi(webClientUser);
+        final EntriesApi entriesApi = new EntriesApi(webClientUser);
+        final OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser);
+        Organization organization = organizationsApi.getOrganizationByName("dockstore");
+
+        Collection category = new Collection();
+        category.setName("Notebooks");
+        category.setDisplayName("Notebooks");
+        category.setDescription("A collection of notebooks");
+
+
+        organizationsApi.createCollection(category, organization.getId());
+        fail("adding a category with the same name as another category should fail");
+
     }
 
     private class CreateContent {
