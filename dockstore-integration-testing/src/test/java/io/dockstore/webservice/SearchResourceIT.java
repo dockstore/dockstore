@@ -72,10 +72,11 @@ class SearchResourceIT extends BaseIT {
      * @param hit   The amount of hits expected
      * @param extendedGa4GhApi  The api to get the elasticsearch results
      * @param counter   The amount of tries attempted
+     * @param esQuery   The ES query to run
      */
-    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter) {
+    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter, String esQuery) {
         try {
-            String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
+            String s = extendedGa4GhApi.toolsIndexSearch(esQuery);
             // There's actually two "total", one for shards and one for hits.
             // Need to only look at the hits one
             if (!s.contains("hits\":{\"total\":{\"value\":" + hit + ",")) {
@@ -84,12 +85,16 @@ class SearchResourceIT extends BaseIT {
                 } else {
                     long sleepTime = 1000 * counter;
                     Thread.sleep(sleepTime);
-                    waitForIndexRefresh(hit, extendedGa4GhApi, counter + 1);
+                    waitForIndexRefresh(hit, extendedGa4GhApi, counter + 1, esQuery);
                 }
             }
         } catch (Exception e) {
             fail("There were troubles sleeping: " + e.getMessage());
         }
+    }
+
+    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter) {
+        waitForIndexRefresh(hit, extendedGa4GhApi, counter, exampleESQuery);
     }
 
     @Test
@@ -132,7 +137,7 @@ class SearchResourceIT extends BaseIT {
 
         // wait until the notebook is indexed
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
-        waitForIndexRefresh(3, extendedGa4GhApi,  0);
+        waitForIndexRefresh(1, extendedGa4GhApi, 0, StringUtils.replace(exampleESQuery, "\"match_all\":{}", "\"match\":{\"_index\":\"notebooks\"}"));
 
         // confirm the correct format and language
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
@@ -141,15 +146,10 @@ class SearchResourceIT extends BaseIT {
         assertTrue(s.contains("\"descriptorType\":\"ipynb\""));
         assertTrue(s.contains("\"descriptorTypeSubclass\":\"Python\""));
 
-        // confirm the presence of the notebook path
+        // confirm the presence of the notebook source file
         String newQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
         String t = extendedGa4GhApi.toolsIndexSearch(newQuery);
         assertTrue(t.contains("/notebook.ipynb"));
-
-        // confirm there is one entry in the "notebooks" index
-        String hitsQuery = "{\"size\": 0, \"_source\": false, \"query\": { \"match\": { \"_index\": \"notebooks\" } }}";
-        String h = extendedGa4GhApi.toolsIndexSearch(hitsQuery);
-        assertTrue(h.contains("hits\":{\"total\":{\"value\":1,"));
     }
 
     /**
