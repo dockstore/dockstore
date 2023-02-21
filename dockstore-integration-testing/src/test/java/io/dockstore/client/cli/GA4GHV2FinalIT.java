@@ -22,11 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.TestingPostgres;
-import io.dockstore.openapi.client.ApiClient;
-import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.TRSService;
 import io.dockstore.openapi.client.model.Tool;

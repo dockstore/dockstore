@@ -2697,7 +2697,7 @@ paths:
           - GALAXY
           - SMK
           - SERVICE
-          - IPYNB
+          - JUPYTER
       - description: The image registry that contains the image.
         in: query
         name: registry
@@ -2934,13 +2934,13 @@ paths:
           - NFL
           - GALAXY
           - SMK
-          - IPYNB
+          - JUPYTER
           - PLAIN_CWL
           - PLAIN_WDL
           - PLAIN_NFL
           - PLAIN_GALAXY
           - PLAIN_SMK
-          - PLAIN_IPYNB
+          - PLAIN_JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
           \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
           \  (For example, `1.0.0` instead of `develop`)"
@@ -3005,13 +3005,13 @@ paths:
           - NFL
           - GALAXY
           - SMK
-          - IPYNB
+          - JUPYTER
           - PLAIN_CWL
           - PLAIN_WDL
           - PLAIN_NFL
           - PLAIN_GALAXY
           - PLAIN_SMK
-          - PLAIN_IPYNB
+          - PLAIN_JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
           \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
           \  (For example, `1.0.0` instead of `develop`)"
@@ -3081,7 +3081,7 @@ paths:
           - GALAXY
           - SMK
           - SERVICE
-          - IPYNB
+          - JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
           \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
           \  (For example, `1.0.0` instead of `develop`)"
@@ -3152,13 +3152,13 @@ paths:
           - NFL
           - GALAXY
           - SMK
-          - IPYNB
+          - JUPYTER
           - PLAIN_CWL
           - PLAIN_WDL
           - PLAIN_NFL
           - PLAIN_GALAXY
           - PLAIN_SMK
-          - PLAIN_IPYNB
+          - PLAIN_JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
           \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
           \  (For example, `1.0.0` instead of `develop`)"
@@ -9671,7 +9671,7 @@ components:
             - GALAXY
             - SMK
             - SERVICE
-            - IPYNB
+            - JUPYTER
         descriptor_type_version:
           type: object
           additionalProperties:
