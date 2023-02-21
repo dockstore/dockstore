@@ -18,7 +18,7 @@ public class CacheConfigManager {
 
     private static final CacheConfigManager CACHE_CONFIG_MANAGER = new CacheConfigManager();
 
-    private static LoadingCache<Long, GitHub> githubClientAPICache;
+    private static volatile LoadingCache<Long, GitHub> githubClientAPICache;
 
 
     public static CacheConfigManager getInstance() {
