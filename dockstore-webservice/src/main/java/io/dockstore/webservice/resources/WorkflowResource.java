@@ -2069,7 +2069,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
-        githubWebhookRelease(repository, username, gitReference, installationId);
+        githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId));
     }
 
     @POST
@@ -2103,13 +2103,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // make some educated guesses whether we should try to retrospectively release some old versions
         // note that for large organizations, this loop could be quite large if many repositories are added at the same time
         for (String repository: repositories.split(",")) {
-            final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
+            final Set<String> strings = identifyGitReferencesToRelease(repository, Long.parseLong(installationId));
             for (String gitReference: strings) {
                 if (LOG.isInfoEnabled()) {
                     LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
                         Utilities.cleanForLogging(username)));
                 }
-                githubWebhookRelease(repository, username, gitReference, installationId);
+                githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId));
             }
         }
         return Response.status(HttpStatus.SC_OK).build();
