@@ -143,12 +143,12 @@ class SearchResourceIT extends BaseIT {
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
         assertTrue(s.contains("\"type\":\"Notebook\""));
         assertTrue(s.contains("\"repository\":\"simple-notebook\""));
-        assertTrue(s.contains("\"descriptorType\":\"ipynb\""));
+        assertTrue(s.contains("\"descriptorType\":\"jupyter\""));
         assertTrue(s.contains("\"descriptorTypeSubclass\":\"Python\""));
 
         // confirm the presence of the notebook source file
-        String newQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
-        String t = extendedGa4GhApi.toolsIndexSearch(newQuery);
+        String fileQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
+        String t = extendedGa4GhApi.toolsIndexSearch(fileQuery);
         assertTrue(t.contains("/notebook.ipynb"));
     }
 
