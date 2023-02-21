@@ -36,6 +36,7 @@ import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Author;
 import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
@@ -114,7 +115,7 @@ class NotebookIT extends BaseIT {
         assertEquals(1, workflowDAO.findAllPublished(1, Integer.valueOf(PAGINATION_LIMIT), null, null, null).size());
         session.close();
     }
-    
+
     @Test
     void testRegisterSimpleNotebook() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -126,7 +127,7 @@ class NotebookIT extends BaseIT {
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(path, notebook.getFullWorkflowPath());
         assertTrue("notebook".equalsIgnoreCase(notebook.getType()));
-        assertEquals(Workflow.DescriptorTypeEnum.IPYNB, notebook.getDescriptorType());
+        assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
         assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
         assertEquals(1, notebook.getWorkflowVersions().size());
         WorkflowVersion version = notebook.getWorkflowVersions().get(0);
@@ -142,7 +143,7 @@ class NotebookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         // Check only the values that should differ from testRegisterSimpleNotebook()
         String path = SourceControl.GITHUB + "/" + simpleRepo + "/simple";
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
@@ -192,6 +193,26 @@ class NotebookIT extends BaseIT {
         assertEquals(0, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
         workflowsApi.handleGitHubRelease("refs/tags/simple-published-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         assertEquals(1, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
+    }
+
+    @Test
+    void testStarringNotebook() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        String path = "github.com/" + simpleRepo + "/simple";
+        Long notebookID = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions").getId();
+
+        //star notebook
+        workflowsApi.starEntry1(notebookID, new StarRequest().star(true));
+        Workflow notebook = workflowsApi.getWorkflow(notebookID, "");
+        assertEquals(1, notebook.getStarredUsers().size());
+
+        //unstar notebook
+        workflowsApi.starEntry1(notebookID, new StarRequest().star(false));
+        notebook = workflowsApi.getWorkflow(notebookID, "");
+        assertEquals(0, notebook.getStarredUsers().size());
     }
 
     private class CreateContent {

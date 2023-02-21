@@ -1,19 +1,14 @@
 package io.dockstore.webservice.helpers;
 
-import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.authorization.InstallationIDAuthorizationProvider;
+import org.kohsuke.github.extras.authorization.JWTTokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,95 +18,51 @@ public class CacheConfigManager {
 
     private static final CacheConfigManager CACHE_CONFIG_MANAGER = new CacheConfigManager();
 
-    private static LoadingCache<String, String> installationAccessTokenCache;
+    private static volatile LoadingCache<Long, GitHub> githubClientAPICache;
 
-    private static volatile String jsonWebToken;
 
     public static CacheConfigManager getInstance() {
         return CACHE_CONFIG_MANAGER;
     }
 
     /**
-     * Set the JWT
-     * @param token JWT string
-     */
-    public static void setJsonWebToken(String token) {
-        jsonWebToken = token;
-    }
-
-    /**
-     * Given a JWT for the GitHub app and an installation ID, retrieve the Installation Access Token
      * @param installationId App installation ID (per user)
-     * @return Installation Access Token
+     * @return github api client
      */
-    private String getInstallationAccessTokenFromInstallationId(String installationId) throws Exception {
-        Request request = new Request.Builder()
-                .url("https://api.github.com/app/installations/" + installationId + "/access_tokens")
-                .post(RequestBody.create(MediaType.parse(""), "")) // Empty body to appease library
-                .addHeader("Accept", "application/vnd.github.machine-man-preview+json")
-                .addHeader("Authorization", "Bearer " + jsonWebToken)
-                .build();
-
-        String errorMsg = "Unable to retrieve installation access token.";
-        try {
-            Response response = DockstoreWebserviceApplication.getOkHttpClient().newCall(request).execute();
-            JsonElement body = new JsonParser().parse(response.body().string());
-            if (body.isJsonObject()) {
-                JsonObject responseBody = body.getAsJsonObject();
-                if (response.isSuccessful()) {
-                    JsonElement token = responseBody.get("token");
-                    if (token.isJsonPrimitive()) {
-                        return token.getAsString();
-                    }
-                } else {
-                    JsonElement errorMessage = responseBody.get("message");
-                    if (errorMessage.isJsonPrimitive()) {
-                        errorMsg = errorMessage.getAsString();
-                    }
-                }
-            }
-        } catch (IOException ex) {
-            LOG.error(errorMsg, ex);
-            throw new Exception(errorMsg, ex);
-        }
-
-        LOG.error(errorMsg);
-        throw new Exception(errorMsg);
+    private static GitHub getGitHubClientFromInstallationId(String appId, String privateKeyFile, long installationId) throws GeneralSecurityException, IOException {
+        JWTTokenProvider tokenProvider = new JWTTokenProvider(appId, Path.of(privateKeyFile));
+        final InstallationIDAuthorizationProvider installationIDAuthorizationProvider = new InstallationIDAuthorizationProvider(installationId, tokenProvider);
+        return GitHubSourceCodeRepo.getBuilder(Long.toString(installationId)).withAuthorizationProvider(installationIDAuthorizationProvider).build();
     }
 
     /**
-     * Initialize the cache for installation access tokens
+     * Initialize the cache for GitHub api clients
      */
-    public void initCache() {
+    public static void initCache(String githubAppId, String gitHubPrivateKeyFile) {
+
         final int maxSize = 100;
-        // GitHub token has a 1 hour expiration; leave a generous gap
-        // so we don't fetch a token that may expire as we use it
-        final int timeOutInMinutes = 58;
-        if (installationAccessTokenCache == null) {
-            installationAccessTokenCache = Caffeine.newBuilder()
-                    .maximumSize(maxSize)
-                    .expireAfterWrite(timeOutInMinutes, TimeUnit.MINUTES)
-                    .recordStats()
-                    .build(new CacheLoader<>() {
-                        @Override
-                        public String load(String installationId) throws Exception {
-                            LOG.info("Fetching installation " + installationId + " from cache.");
-                            return getInstallationAccessTokenFromInstallationId(installationId);
-                        }
-                    });
+        //providers self-renew
+        if (githubClientAPICache == null) {
+            githubClientAPICache = Caffeine.newBuilder()
+                .maximumSize(maxSize)
+                .recordStats()
+                .build(installationId -> {
+                    LOG.info("Fetching github client for installation id %d from cache.".formatted(installationId));
+                    return getGitHubClientFromInstallationId(githubAppId, gitHubPrivateKeyFile, installationId);
+                });
         }
     }
 
     /**
-     * Load installation access token from the cache
-     * @param installationId App installation ID (per repository)
-     * @return installation access token
+     * Load github client from the cache
+     * @param installationId
+     * @return github api client
      */
-    public String getInstallationAccessTokenFromCache(String installationId) {
+    public GitHub getGitHubClientFromCache(long installationId) {
         try {
-            CacheStats cacheStats = installationAccessTokenCache.stats();
+            CacheStats cacheStats = githubClientAPICache.stats();
             LOG.info(cacheStats.toString());
-            return installationAccessTokenCache.get(installationId);
+            return githubClientAPICache.get(installationId);
         } catch (Exception ex) {
             LOG.error("Error retrieving token", ex);
         }

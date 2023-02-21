@@ -72,7 +72,7 @@ service:
 
 notebooks:
   - name: notebook0
-    format: Ipynb
+    format: Jupyter
     language: Python
     path: /notebook0.ipynb
     publish: true

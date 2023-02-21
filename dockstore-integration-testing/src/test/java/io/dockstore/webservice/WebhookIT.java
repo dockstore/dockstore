@@ -139,7 +139,7 @@ class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
         testingPostgres.runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
 
-        // used to allow us to use tokenDAO outside of the web service
+        // used to allow us to use tokenDAO outside the web service
         Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
     }

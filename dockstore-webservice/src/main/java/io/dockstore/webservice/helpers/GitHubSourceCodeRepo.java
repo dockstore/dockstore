@@ -116,19 +116,49 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public static final Pattern GIT_BRANCH_TAG_PATTERN = Pattern.compile("^refs/(tags|heads)/((?!.*//)(?!.*\\^)(?!.*:)(?!.*\\\\)(?!.*@)(?!.*\\[)(?!.*\\?)(?!.*~)(?!.*\\.\\.)[\\p{Punct}\\p{L}\\d\\-_/]+)$");
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
-    private String githubTokenUsername;
+    private final String githubTokenUsername;
+
+    public GitHubSourceCodeRepo(long installationId) {
+        this(null, null, installationId);
+    }
+
+    public GitHubSourceCodeRepo(String githubTokenUsername, String githubTokenContent) {
+        this(githubTokenUsername, githubTokenContent, null);
+    }
 
     /**
      *  @param githubTokenUsername the username for githubTokenContent
      * @param githubTokenContent authorization token
      */
-    public GitHubSourceCodeRepo(String githubTokenUsername, String githubTokenContent) {
+    private GitHubSourceCodeRepo(String githubTokenUsername, String githubTokenContent, Long installationId) {
         this.githubTokenUsername = githubTokenUsername;
+
+        try {
+            assert ((githubTokenUsername != null && githubTokenContent != null && installationId == null) || (githubTokenUsername == null && githubTokenContent == null && installationId != null));
+            if (githubTokenUsername != null) {
+                final GitHubBuilder gitHubBuilder = getBuilder(githubTokenUsername).withOAuthToken(githubTokenContent, githubTokenUsername);
+                this.github = gitHubBuilder.build();
+            } else {
+                this.github = CacheConfigManager.getInstance().getGitHubClientFromCache(installationId);
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Get a github client builder with everything configured except for auth
+     * @param cacheNamespace namespace for logging in the cache, cache miss reports, etc.
+     * @return github client builder
+     */
+    public static GitHubBuilder getBuilder(String cacheNamespace) {
         OkHttpClient.Builder builder = getOkHttpClient().newBuilder();
-        builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), githubTokenUsername));
+        builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), cacheNamespace));
+        // namespace cache if running on circle ci
         if (System.getenv("CIRCLE_SHA1") != null) {
             // namespace cache by user when testing
-            builder.cache(DockstoreWebserviceApplication.getCache(gitUsername));
+            builder.cache(DockstoreWebserviceApplication.getCache(cacheNamespace));
         } else {
             // use general cache
             builder.cache(DockstoreWebserviceApplication.getCache(null));
@@ -136,15 +166,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         OkHttpClient build = builder.build();
         // Must set the cache max age otherwise kohsuke assumes 0 which significantly slows down our GitHub requests
         OkHttpGitHubConnector okHttp3Connector = new OkHttpGitHubConnector(build, GITHUB_MAX_CACHE_AGE_SECONDS);
-        try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername)
-                    .withRateLimitChecker(new LiteralValue(SLEEP_AT_RATE_LIMIT_OR_BELOW))
-                    .withAbuseLimitHandler(new FailAbuseLimitHandler(githubTokenUsername))
-                    .withConnector(okHttp3Connector)
-                    .build();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return new GitHubBuilder()
+            .withRateLimitChecker(new LiteralValue(SLEEP_AT_RATE_LIMIT_OR_BELOW))
+            .withAbuseLimitHandler(new FailAbuseLimitHandler(cacheNamespace))
+            .withConnector(okHttp3Connector);
     }
 
     public String getTopic(String repositoryId) {
@@ -461,7 +486,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Initialize bioworkflow/apptool object for GitHub repository
      * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
-     * @param subclass Subclass of the workflow
+     * @param typeSubclass Subclass of the workflow
      * @param workflowName Name of the workflow
      * @param workflow Workflow to update
      * @return Workflow
