@@ -143,7 +143,7 @@ class NotebookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         // Check only the values that should differ from testRegisterSimpleNotebook()
         String path = SourceControl.GITHUB + "/" + simpleRepo + "/simple";
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
@@ -200,7 +200,7 @@ class NotebookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
-        workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         String path = "github.com/" + simpleRepo + "/simple";
         Long notebookID = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions").getId();
 
