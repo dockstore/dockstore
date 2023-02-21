@@ -26,6 +26,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.webservice.helpers.AppToolHelper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.ApiResponse;
@@ -120,6 +121,35 @@ class SearchResourceIT extends BaseIT {
         String newQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
         String t = extendedGa4GhApi.toolsIndexSearch(newQuery);
         assertTrue(t.contains("sourceFiles") && t.contains("\"checksum\":\"cb5d0323091b22e0a1d6f52a4930ee256b15835c968462c03cf7be2cc842a4ad\""), t + " should've contained sourcefiles");
+    }
+
+    @Test
+    void testNotebook() throws ApiException {
+        // register a simple published notebook
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.handleGitHubRelease("dockstore-testing/simple-notebook", USER_2_USERNAME, "refs/tags/simple-published-v1", AppToolHelper.INSTALLATION_ID);
+
+        // wait until the notebook is indexed
+        ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        waitForIndexRefresh(3, extendedGa4GhApi,  0);
+
+        // confirm the correct format and language
+        String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
+        assertTrue(s.contains("\"type\":\"Notebook\""));
+        assertTrue(s.contains("\"repository\":\"simple-notebook\""));
+        assertTrue(s.contains("\"descriptorType\":\"ipynb\""));
+        assertTrue(s.contains("\"descriptorTypeSubclass\":\"Python\""));
+
+        // confirm the presence of the notebook path
+        String newQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
+        String t = extendedGa4GhApi.toolsIndexSearch(newQuery);
+        assertTrue(t.contains("/notebook.ipynb"));
+
+        // confirm there is one entry in the "notebooks" index
+        String hitsQuery = "{\"size\": 0, \"_source\": false, \"query\": { \"match\": { \"_index\": \"notebooks\" } }}";
+        String h = extendedGa4GhApi.toolsIndexSearch(hitsQuery);
+        assertTrue(h.contains("hits\":{\"total\":{\"value\":1,"));
     }
 
     /**
