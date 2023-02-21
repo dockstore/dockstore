@@ -127,7 +127,7 @@ class NotebookIT extends BaseIT {
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(path, notebook.getFullWorkflowPath());
         assertTrue("notebook".equalsIgnoreCase(notebook.getType()));
-        assertEquals(Workflow.DescriptorTypeEnum.IPYNB, notebook.getDescriptorType());
+        assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
         assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
         assertEquals(1, notebook.getWorkflowVersions().size());
         WorkflowVersion version = notebook.getWorkflowVersions().get(0);
