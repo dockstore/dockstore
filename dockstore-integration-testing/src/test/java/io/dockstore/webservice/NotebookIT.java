@@ -22,7 +22,6 @@ import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
@@ -39,6 +38,7 @@ import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Author;
+import io.dockstore.openapi.client.model.Category;
 import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.SourceFile;
@@ -50,7 +50,6 @@ import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -58,6 +57,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.hibernate.jdbc.Work;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -223,22 +223,44 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
-    void testAddNotebookToCollection() {
-        final ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        final CategoriesApi categoriesApi = new CategoriesApi(webClientUser);
-        final EntriesApi entriesApi = new EntriesApi(webClientUser);
-        final OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser);
-        Organization organization = organizationsApi.getOrganizationByName("dockstore");
+    void testAddNotebookToCategory() {
+        final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final EntriesApi entriesApi = new EntriesApi(webClientAdminUser);
+        final OrganizationsApi organizationsAdminApi = new OrganizationsApi(webClientAdminUser);
+
+        //create Category
+        addAdminToOrg(ADMIN_USERNAME, "dockstore");
+        Organization organization = organizationsAdminApi.getOrganizationByName("dockstore");
 
         Collection category = new Collection();
         category.setName("Notebooks");
         category.setDisplayName("Notebooks");
         category.setDescription("A collection of notebooks");
 
+        category = organizationsAdminApi.createCollection(category, organization.getId());
 
-        organizationsApi.createCollection(category, organization.getId());
-        fail("adding a category with the same name as another category should fail");
+        //add notebook to category
+        Workflow notebook = createNotebook();
 
+        ApiClient webClientUser = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser);
+        organizationsApi.addEntryToCollection(organization.getId(), category.getId(), notebook.getId(), null);
+        List<Category> entryCategory = entriesApi.entryCategories(notebook.getId());
+        assertEquals("Notebooks",  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
+
+    }
+
+    private void addAdminToOrg(String username, String orgName) {
+        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, status, role) select (select id from organization where name = '" + orgName + "'), id, 'ACCEPTED', 'ADMIN' from enduser where username = '" + username + "'");
+    }
+
+    private Workflow createNotebook(){
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        String path = "github.com/" + simpleRepo + "/simple";
+        return workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
     }
 
     private class CreateContent {
