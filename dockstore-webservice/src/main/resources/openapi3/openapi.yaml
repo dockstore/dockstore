@@ -5549,6 +5549,35 @@ paths:
       - BEARER: []
       tags:
       - users
+  /users/{userId}/notebooks:
+    get:
+      description: List all notebooks owned by the authenticated user.
+      operationId: userNotebooks
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+          description: A list of notebooks owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/{userId}/privileges:
     put:
       description: "Updates the provided userID to admin or curator status, usable\
@@ -6124,7 +6153,7 @@ paths:
         required: true
         schema:
           type: string
-      - description: Which Workflow subclass to retrieve.
+      - description: Which Workflow subclass to retrieve actions for.
         in: query
         name: subclass
         required: true
@@ -6170,11 +6199,12 @@ paths:
           - OWNER
           - WRITER
           - READER
-      - in: query
-        name: services
+      - description: Which Workflow subclass to remove a role from.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
@@ -6197,11 +6227,12 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
-        name: services
+      - description: Which Workflow subclass to retrieve permissions for.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
@@ -6224,11 +6255,12 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
-        name: services
+      - description: Which Workflow subclass to add a permission to.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       requestBody:
         content:
           application/json:
