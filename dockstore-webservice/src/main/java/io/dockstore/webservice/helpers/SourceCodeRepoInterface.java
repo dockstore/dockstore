@@ -608,7 +608,7 @@ public abstract class SourceCodeRepoInterface {
             DescriptorLanguage.FileType workflowDescriptorType = workflow.getTestParameterType();
 
             List<SourceFile> testParameterFiles = existingVersion.getSourceFiles().stream()
-                .filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(Collectors.toList());
+                .filter((SourceFile u) -> u.getType() == workflowDescriptorType).toList();
             testParameterFiles
                 .forEach(file -> this.readFile(repositoryId, existingVersion, sourceFileSet, workflowDescriptorType, file.getPath()));
         }

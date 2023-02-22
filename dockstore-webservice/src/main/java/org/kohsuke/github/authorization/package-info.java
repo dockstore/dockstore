@@ -15,9 +15,9 @@
  */
 
 /**
- * Utility classes for swagger endpoints
+ * Utility classes for github api client.
  *
- * @since 1.8
+ * @since 1.14
  */
-package io.swagger;
+package org.kohsuke.github.authorization;
 
