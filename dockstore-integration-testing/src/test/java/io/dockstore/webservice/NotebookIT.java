@@ -49,7 +49,6 @@ import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -256,16 +255,9 @@ class NotebookIT extends BaseIT {
     }
 
     private void addAdminToOrg(String username, String orgName) {
-        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, status, role) select (select id from organization where name = '" + orgName + "'), id, 'ACCEPTED', 'ADMIN' from enduser where username = '" + username + "'");
-    }
-
-    private Workflow createNotebook() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
-        workflowsApi.handleGitHubRelease("refs/heads/less-simple", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
-        String path = "github.com/" + simpleRepo + "/simple";
-        return workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, status, role) select (select id from organization where name = '"
+                + orgName + "'), id, 'ACCEPTED', 'ADMIN' from enduser where username = '" + username + "'"
+        );
     }
 
     private class CreateContent {
