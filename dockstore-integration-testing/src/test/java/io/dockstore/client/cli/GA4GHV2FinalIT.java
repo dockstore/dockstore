@@ -29,7 +29,6 @@ import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.ToolClass;
 import io.dockstore.openapi.client.model.ToolFile;
 import io.dockstore.openapi.client.model.ToolVersion;
-import io.dockstore.webservice.helpers.AppToolHelper;
 import io.openapi.model.Service;
 import java.util.List;
 import javax.ws.rs.core.GenericType;
@@ -43,9 +42,6 @@ import org.junit.jupiter.api.Test;
  * @since 1.9
  */
 class GA4GHV2FinalIT extends GA4GHIT {
-    private final String installationId = AppToolHelper.INSTALLATION_ID;
-    private final String simpleNotebookRepo = "dockstore-testing/simple-notebook";
-
     private static final String API_VERSION = "ga4gh/trs/v2/";
 
     public String getApiVersion() {
