@@ -51,7 +51,6 @@ import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.metrics.MetricsData;
 import io.dockstore.webservice.core.metrics.MetricsDataMetadata;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
-import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -83,15 +82,17 @@ public class MetricsDataS3ClientIT extends BaseIT {
     public static final String LOCALSTACK_IMAGE_TAG = "1.3.1";
     private static final Gson GSON = new Gson();
     private static String bucketName;
+    private static String s3EndpointOverride;
     private static S3Client s3Client;
     private static MetricsDataS3Client metricsDataClient;
 
     @BeforeAll
     public static void setup() throws URISyntaxException {
         bucketName = SUPPORT.getConfiguration().getMetricsConfig().getS3BucketName();
-        s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client
-        metricsDataClient = new MetricsDataS3Client(bucketName, s3Client);
+        s3EndpointOverride = SUPPORT.getConfiguration().getMetricsConfig().getS3EndpointOverride();
+        metricsDataClient = new MetricsDataS3Client(bucketName, s3EndpointOverride);
         // Create a bucket to be used for tests
+        s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client
         CreateBucketRequest request = CreateBucketRequest.builder().bucket(bucketName).build();
         s3Client.createBucket(request);
         deleteBucketContents(); // This is here just in case a test was stopped before tearDown could clean up the bucket
@@ -101,8 +102,6 @@ public class MetricsDataS3ClientIT extends BaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        // Set the MetricsDataS3Client to use the localstack S3 client for testing
-        ToolsApiExtendedServiceImpl.setMetricsDataS3Client(new MetricsDataS3Client(SUPPORT.getConfiguration().getMetricsConfig().getS3BucketName(), s3Client));
     }
 
     @AfterEach
@@ -308,7 +307,7 @@ public class MetricsDataS3ClientIT extends BaseIT {
             execution.setExecutionStatus(Execution.ExecutionStatusEnum.SUCCESSFUL);
             execution.setExecutionTime("PT5M");
             execution.setCpuRequirements(2);
-            execution.setMemoryRequirements("2GB");
+            execution.setMemoryRequirements("2 GB");
             Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
             execution.setAdditionalProperties(additionalProperties);
             executions.add(execution);

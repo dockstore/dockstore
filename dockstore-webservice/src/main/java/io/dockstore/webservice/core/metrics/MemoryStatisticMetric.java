@@ -17,6 +17,8 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.persistence.Entity;
@@ -27,10 +29,17 @@ import javax.persistence.Table;
 @ApiModel(value = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions in GB.")
 @Schema(name = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions in GB.")
 public class MemoryStatisticMetric extends StatisticMetric {
+    public static final String UNIT = "GB";
+
     public MemoryStatisticMetric() {
     }
 
-    public MemoryStatisticMetric(String minimum, String maximum, String average, int numberOfDataPointsForAverage) {
-        super(minimum, maximum, average, numberOfDataPointsForAverage);
+    @JsonCreator
+    public MemoryStatisticMetric(
+            @JsonProperty("minimum") Double minimum,
+            @JsonProperty("maximum") Double maximum,
+            @JsonProperty("average") Double average,
+            @JsonProperty("numberOfDataPointsForAverage") int numberOfDataPointsForAverage) {
+        super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT);
     }
 }

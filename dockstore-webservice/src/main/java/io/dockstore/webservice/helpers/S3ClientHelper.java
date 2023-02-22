@@ -17,15 +17,20 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public final class S3ClientHelper {
+    private static final Logger LOG = LoggerFactory.getLogger(S3ClientHelper.class);
     private static final String KEY_DELIMITER = "/";
     private static final int MAX_TOOL_ID_STRING_SEGMENTS = 5;
     private static final int TOOL_ID_REPOSITORY_INDEX = 3;
@@ -44,6 +49,14 @@ public final class S3ClientHelper {
     public static S3Client createS3Client() {
         // TODO should not need to hardcode region since buckets are global, but http://opensourceforgeeks.blogspot.com/2018/07/how-to-fix-unable-to-find-region-via.html
         return S3Client.builder().region(Region.US_EAST_1).build();
+    }
+
+    /**
+     * This should only be used by tests so that the test can provide a localstack endpoint override
+     */
+    public static S3Client createS3Client(String endpointOverride) throws URISyntaxException {
+        LOG.info("Using endpoint override: {}", endpointOverride);
+        return S3Client.builder().endpointOverride(new URI(endpointOverride)).build();
     }
 
     /**

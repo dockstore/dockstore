@@ -39,12 +39,12 @@ public class Execution {
     private String executionTime;
 
     @JsonProperty
-    @Schema(description = "Memory requirements for the execution in GB. Provide the numerical value and the GB unit with no spaces", example = "2GB")
+    @Schema(description = "Memory requirements for the execution in GB. Provide the numerical value and the GB unit separated by a space", example = "2 GB")
     private String memoryRequirements;
 
     @JsonProperty
     @Schema(description = "CPU requirements for the execution", example = "2")
-    private int cpuRequirements;
+    private Integer cpuRequirements;
 
     @JsonProperty
     @Schema(description = "Additional properties that aren't defined. Provide a context, like one for schema.org, if you want to use a specific vocabulary",
@@ -89,11 +89,11 @@ public class Execution {
         this.memoryRequirements = memoryRequirements;
     }
 
-    public int getCpuRequirements() {
+    public Integer getCpuRequirements() {
         return cpuRequirements;
     }
 
-    public void setCpuRequirements(int cpuRequirements) {
+    public void setCpuRequirements(Integer cpuRequirements) {
         this.cpuRequirements = cpuRequirements;
     }
 

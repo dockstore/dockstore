@@ -597,6 +597,74 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/ToolV1"
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
+    put:
+      tags:
+      - "extendedGA4GH"
+      summary: "Add aggregated execution metrics for a workflow that was executed\
+        \ on a platform."
+      description: "This endpoint adds aggregated metrics for a workflow that was\
+        \ executed on a platform"
+      operationId: "aggregatedMetricsPut"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      - name: "platform"
+        in: "query"
+        description: "Platform that the tool was executed on"
+        required: true
+        type: "string"
+        enum:
+        - "GALAXY"
+        - "TERRA"
+        - "DNA_STACK"
+        - "DNA_NEXUS"
+        - "CGC"
+        - "NHLBI_BIODATA_CATALYST"
+        - "ANVIL"
+        - "CAVATICA"
+        - "NEXTFLOW_TOWER"
+        - "ELWAZI"
+        - "AGC"
+        - "OTHER"
+      - in: "body"
+        name: "body"
+        description: "Aggregated metrics to add to the version"
+        required: true
+        schema:
+          $ref: "#/definitions/Metrics"
+      responses:
+        200:
+          description: "Aggregated metrics added successfully."
+          schema:
+            type: "object"
+            additionalProperties:
+              type: "object"
+        401:
+          description: "Credentials not provided or incorrect."
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: "The tool cannot be found to add aggregated metrics."
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+      - BEARER: []
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
     post:
       tags:
@@ -5339,7 +5407,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         required: false
         type: "string"
       - name: "subclass"
@@ -5527,7 +5595,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         required: false
         type: "string"
       - name: "subclass"
@@ -5666,7 +5734,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         required: false
         type: "string"
       responses:
@@ -5846,7 +5914,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         required: false
         type: "string"
       responses:
@@ -6887,24 +6955,35 @@ definitions:
     description: "Configuration information for UI clients of the Dockstore webservice."
   CpuMetric:
     type: "object"
+    required:
+    - "average"
+    - "maximum"
+    - "minimum"
+    - "numberOfDataPointsForAverage"
     properties:
       average:
-        type: "string"
+        type: "number"
+        format: "double"
         description: "The average value from the data points"
       id:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for statistical metrics in this webservice"
       maximum:
-        type: "string"
+        type: "number"
+        format: "double"
         description: "The maximum value from the data points"
       minimum:
-        type: "string"
+        type: "number"
+        format: "double"
         description: "The minimum value from the data points"
       numberOfDataPointsForAverage:
         type: "integer"
         format: "int32"
         description: "The number of data points used to calculate the average"
+      unit:
+        type: "string"
+        description: "The unit of the data points"
     description: "This describes aggregated CPU metrics for workflow executions."
   DescriptionMetrics:
     type: "object"
@@ -7490,9 +7569,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the count metrics in this webservice"
-      numberOfExecutions:
-        type: "integer"
-        format: "int32"
       numberOfFailedExecutions:
         type: "integer"
         format: "int32"
@@ -7504,26 +7580,37 @@ definitions:
     description: "Aggregated metrics about workflow execution statuses"
   ExecutionTimeMetric:
     type: "object"
+    required:
+    - "average"
+    - "maximum"
+    - "minimum"
+    - "numberOfDataPointsForAverage"
     properties:
       average:
-        type: "string"
+        type: "number"
+        format: "double"
         description: "The average value from the data points"
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for statistical metrics in this webservice"
       maximum:
-        type: "string"
+        type: "number"
+        format: "double"
         description: "The maximum value from the data points"
       minimum:
-        type: "string"
+        type: "number"
+        format: "double"
         description: "The minimum value from the data points"
       numberOfDataPointsForAverage:
         type: "integer"
         format: "int32"
         description: "The number of data points used to calculate the average"
-    description: "This describes aggregated execution time metrics in ISO 8601 duration\
-      \ format for workflow executions."
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for statistical metrics in this webservice"
+      unit:
+        type: "string"
+        description: "The unit of the data points"
+    description: "This describes aggregated execution time metrics in seconds for\
+      \ workflow executions."
   ExtendedUserData:
     type: "object"
     properties:
@@ -7705,24 +7792,35 @@ definitions:
         format: "int32"
   MemoryMetric:
     type: "object"
+    required:
+    - "average"
+    - "maximum"
+    - "minimum"
+    - "numberOfDataPointsForAverage"
     properties:
       average:
-        type: "string"
+        type: "number"
+        format: "double"
         description: "The average value from the data points"
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for statistical metrics in this webservice"
       maximum:
-        type: "string"
+        type: "number"
+        format: "double"
         description: "The maximum value from the data points"
       minimum:
-        type: "string"
+        type: "number"
+        format: "double"
         description: "The minimum value from the data points"
       numberOfDataPointsForAverage:
         type: "integer"
         format: "int32"
         description: "The number of data points used to calculate the average"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for statistical metrics in this webservice"
+      unit:
+        type: "string"
+        description: "The unit of the data points"
     description: "This describes aggregated memory metrics for workflow executions\
       \ in GB."
   Metadata:
@@ -7760,16 +7858,12 @@ definitions:
     description: "Describes this registry to better allow for mirroring and indexing."
   Metrics:
     type: "object"
+    required:
+    - "executionStatusCount"
     properties:
       cpu:
         description: "Aggregated CPU metrics"
         $ref: "#/definitions/CpuMetric"
-      dbCreateDate:
-        type: "string"
-        format: "date-time"
-      dbUpdateDate:
-        type: "string"
-        format: "date-time"
       executionStatusCount:
         description: "A count of the different execution statuses from the workflow\
           \ executions"

@@ -33,6 +33,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.metrics.Execution;
+import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -47,6 +48,7 @@ import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -133,7 +135,17 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         ToolsApiExtendedServiceImpl.config = config;
-        ToolsApiExtendedServiceImpl.metricsDataS3Client = new MetricsDataS3Client(config.getMetricsConfig().getS3BucketName());
+
+        if (config.getMetricsConfig().getS3EndpointOverride() == null) {
+            ToolsApiExtendedServiceImpl.metricsDataS3Client = new MetricsDataS3Client(config.getMetricsConfig().getS3BucketName());
+        } else {
+            try {
+                ToolsApiExtendedServiceImpl.metricsDataS3Client = new MetricsDataS3Client(config.getMetricsConfig().getS3BucketName(), config.getMetricsConfig().getS3EndpointOverride());
+            } catch (URISyntaxException e) {
+                LOG.error("Unable to create metrics data S3 client with endpoint override {}", config.getMetricsConfig().getS3EndpointOverride(), e);
+                throw new CustomWebApplicationException("Unable to create metrics data S3 client", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+        }
 
         if (config.getEsConfiguration().getMaxConcurrentSessions() == null) {
             ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(ELASTICSEARCH_DEFAULT_LIMIT);
@@ -446,6 +458,27 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             LOG.error("Could not submit metrics data", e);
             throw new CustomWebApplicationException("Could not submit metrics data", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @Override
+    public Response setAggregatedMetrics(String id, String versionId, Partner platform, Metrics aggregatedMetrics) {
+        // Check that the entry and version exists
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.empty());
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_REGISTRY_RESPONSE;
+        }
+
+        Version<?> version = getVersion(entry, versionId).orElse(null);
+        if (entry == null) {
+            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), TOOL_NOT_FOUND_ERROR).build();
+        } else if (version == null) {
+            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), VERSION_NOT_FOUND_ERROR).build();
+        }
+
+        version.getMetricsByPlatform().put(platform, aggregatedMetrics);
+        return Response.ok().entity(version.getMetricsByPlatform()).build();
     }
 
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {

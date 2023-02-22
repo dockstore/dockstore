@@ -17,23 +17,32 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
 /**
- * Note that execution time is stored in ISO 8601 duration format like https://schema.org/totalTime
+ * Note that execution time is stored in seconds
  */
 @Entity
 @Table(name = "execution_time_metric")
-@ApiModel(value = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in ISO 8601 duration format for workflow executions.")
-@Schema(name = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in ISO 8601 duration format for workflow executions.")
+@ApiModel(value = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in seconds for workflow executions.")
+@Schema(name = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in seconds for workflow executions.")
 public class ExecutionTimeStatisticMetric extends StatisticMetric {
+    public static final String UNIT = "s"; // Store in seconds
+
     public ExecutionTimeStatisticMetric() {
     }
 
-    public ExecutionTimeStatisticMetric(String minimum, String maximum, String average, int numberOfDataPointsForAverage) {
-        super(minimum, maximum, average, numberOfDataPointsForAverage);
+    @JsonCreator
+    public ExecutionTimeStatisticMetric(
+            @JsonProperty("minimum") Double minimum,
+            @JsonProperty("maximum") Double maximum,
+            @JsonProperty("average") Double average,
+            @JsonProperty("numberOfDataPointsForAverage") int numberOfDataPointsForAverage) {
+        super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT);
     }
 }

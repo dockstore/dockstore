@@ -512,6 +512,77 @@ paths:
       summary: List workflows of an organization
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
+    put:
+      description: This endpoint adds aggregated metrics for a workflow that was executed
+        on a platform
+      operationId: aggregatedMetricsPut
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - description: Platform that the tool was executed on
+        in: query
+        name: platform
+        required: true
+        schema:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Metrics'
+        description: Aggregated metrics to add to the version
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Aggregated metrics added successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to add aggregated metrics.
+      security:
+      - BEARER: []
+      summary: Add aggregated execution metrics for a workflow that was executed on
+        a platform.
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
     post:
       description: This endpoint submits execution metrics for a workflow that was
@@ -6091,7 +6162,7 @@ paths:
         schema:
           type: string
       - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -6259,7 +6330,7 @@ paths:
         schema:
           type: string
       - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -6373,7 +6444,7 @@ paths:
           type: integer
           format: int64
       - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -6580,7 +6651,7 @@ paths:
           type: integer
           format: int64
       - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -7311,7 +7382,7 @@ paths:
           type: integer
           format: int64
       - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, authors"
+          \ images, authors, metrics"
         in: query
         name: include
         schema:
@@ -7858,7 +7929,8 @@ components:
       description: This describes aggregated CPU metrics for workflow executions.
       properties:
         average:
-          type: string
+          type: number
+          format: double
           description: The average value from the data points
         id:
           type: integer
@@ -7866,15 +7938,25 @@ components:
           description: Implementation specific ID for statistical metrics in this
             webservice
         maximum:
-          type: string
+          type: number
+          format: double
           description: The maximum value from the data points
         minimum:
-          type: string
+          type: number
+          format: double
           description: The minimum value from the data points
         numberOfDataPointsForAverage:
           type: integer
           format: int32
           description: The number of data points used to calculate the average
+        unit:
+          type: string
+          description: The unit of the data points
+      required:
+      - average
+      - maximum
+      - minimum
+      - numberOfDataPointsForAverage
     DescriptionMetrics:
       type: object
       properties:
@@ -8387,8 +8469,8 @@ components:
         memoryRequirements:
           type: string
           description: Memory requirements for the execution in GB. Provide the numerical
-            value and the GB unit with no spaces
-          example: 2GB
+            value and the GB unit separated by a space
+          example: 2 GB
       required:
       - executionStatus
     ExecutionStatusMetric:
@@ -8400,13 +8482,12 @@ components:
           additionalProperties:
             type: integer
             format: int32
+            description: A map containing the count for each key
+          description: A map containing the count for each key
         id:
           type: integer
           format: int64
           description: Implementation specific ID for the count metrics in this webservice
-        numberOfExecutions:
-          type: integer
-          format: int32
         numberOfFailedExecutions:
           type: integer
           format: int32
@@ -8418,13 +8499,18 @@ components:
           description: Number of successful executions
         valid:
           type: boolean
+      required:
+      - count
+      - numberOfFailedExecutions
+      - numberOfSuccessfulExecutions
     ExecutionTimeMetric:
       type: object
-      description: This describes aggregated execution time metrics in ISO 8601 duration
-        format for workflow executions.
+      description: This describes aggregated execution time metrics in seconds for
+        workflow executions.
       properties:
         average:
-          type: string
+          type: number
+          format: double
           description: The average value from the data points
         id:
           type: integer
@@ -8432,15 +8518,25 @@ components:
           description: Implementation specific ID for statistical metrics in this
             webservice
         maximum:
-          type: string
+          type: number
+          format: double
           description: The maximum value from the data points
         minimum:
-          type: string
+          type: number
+          format: double
           description: The minimum value from the data points
         numberOfDataPointsForAverage:
           type: integer
           format: int32
           description: The number of data points used to calculate the average
+        unit:
+          type: string
+          description: The unit of the data points
+      required:
+      - average
+      - maximum
+      - minimum
+      - numberOfDataPointsForAverage
     ExtendedUserData:
       type: object
       properties:
@@ -8726,7 +8822,8 @@ components:
         in GB.
       properties:
         average:
-          type: string
+          type: number
+          format: double
           description: The average value from the data points
         id:
           type: integer
@@ -8734,27 +8831,31 @@ components:
           description: Implementation specific ID for statistical metrics in this
             webservice
         maximum:
-          type: string
+          type: number
+          format: double
           description: The maximum value from the data points
         minimum:
-          type: string
+          type: number
+          format: double
           description: The minimum value from the data points
         numberOfDataPointsForAverage:
           type: integer
           format: int32
           description: The number of data points used to calculate the average
+        unit:
+          type: string
+          description: The unit of the data points
+      required:
+      - average
+      - maximum
+      - minimum
+      - numberOfDataPointsForAverage
     Metrics:
       type: object
       description: Aggregated metrics associated with entry versions
       properties:
         cpu:
           $ref: '#/components/schemas/CpuMetric'
-        dbCreateDate:
-          type: string
-          format: date-time
-        dbUpdateDate:
-          type: string
-          format: date-time
         executionStatusCount:
           $ref: '#/components/schemas/ExecutionStatusMetric'
         executionTime:
@@ -8765,6 +8866,8 @@ components:
           description: Implementation specific ID for the metrics in this webservice
         memory:
           $ref: '#/components/schemas/MemoryMetric'
+      required:
+      - executionStatusCount
     Notebook:
       type: object
       allOf:

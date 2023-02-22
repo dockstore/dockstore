@@ -53,6 +53,8 @@ limitConfig:
 
 metricsConfig:
   s3BucketName: local-dockstore-metrics-data
+  # Localstack is usually running at this endpoint
+  s3EndpointOverride: http://localhost:4566
 
 database:
   # the name of your JDBC driver

@@ -32,11 +32,11 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -72,7 +73,7 @@ public final class CommonTestUtilities {
             "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0");
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
-    public static final String PUBLIC_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
+    public static final String PUBLIC_CONFIG_PATH = getUniversalResourceFile("dockstore.yml").getAbsolutePath();
     /**
      * confidential testing config, includes keys
      */
@@ -84,7 +85,7 @@ public final class CommonTestUtilities {
     static {
         String confidentialConfigPath = null;
         try {
-            confidentialConfigPath = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
+            confidentialConfigPath = getUniversalResourceFile("dockstoreTest.yml").getAbsolutePath();
         } catch (Exception e) {
             LOG.error("Confidential Dropwizard configuration file not found.", e);
 
@@ -153,6 +154,12 @@ public final class CommonTestUtilities {
         dropAllAndRunMigration(listMigrations("test", "add_test_tools", "test_1.5.0"), getApplication(support, isNewApplication), dropwizardConfigurationFile);
     }
 
+    public static void dropAndCreateWithTestDataAndAdditionalToolsAndWorkflows(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
+            String dropwizardConfigurationFile) {
+        LOG.info("Dropping and Recreating the database with non-confidential test data");
+        dropAllAndRunMigration(listMigrations("test", "add_test_tools", "testworkflow", "test_1.5.0"), getApplication(support, isNewApplication), dropwizardConfigurationFile);
+    }
+
     /**
      * Shared convenience method
      * TODO: Somehow merge it with the method below, they are nearly identical
@@ -182,7 +189,7 @@ public final class CommonTestUtilities {
     }
 
     private static String getBasePath() {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
+        File configFile = getUniversalResourceFile("config2");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         return parseConfig.getString(Constants.WEBSERVICE_BASE_PATH);
     }
@@ -575,6 +582,24 @@ public final class CommonTestUtilities {
      */
     public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
         return getArbitraryURL(url, type, client, "application/zip");
+    }
+
+    /**
+     * This retrieves a resource file using getResourceAsStream, which works for retrieving resource files packaged in a jar.
+     * This allows other repos, like dockstore-support, to use utility methods that require resource files from this package.
+     * @param resourceFileName
+     * @return
+     */
+    public static File getUniversalResourceFile(String resourceFileName) {
+        File tempResourceFile;
+        try (InputStream inputStream = Objects.requireNonNull(CommonTestUtilities.class.getClassLoader().getResourceAsStream(resourceFileName))) {
+            tempResourceFile = File.createTempFile(resourceFileName, null);
+            FileUtils.copyInputStreamToFile(inputStream, tempResourceFile);
+        } catch (IOException e) {
+            LOG.error("Could not get resource file {}", resourceFileName);
+            throw new RuntimeException(e);
+        }
+        return tempResourceFile;
     }
 
     /**
