@@ -294,4 +294,60 @@
             CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 18876;
         </sql>
     </changeSet>
+    <changeSet author="ktran (generated)" id="modifyAndAddColumnsForMetrics">
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="average" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="average" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="average" tableName="memory_metric"/>
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="maximum" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="maximum" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="maximum" tableName="memory_metric"/>
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="minimum" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="minimum" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="minimum" tableName="memory_metric"/>
+        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="memory_metric"/>
+        <modifyDataType columnName="average" newDataType="float8" tableName="cpu_metric"/>
+        <modifyDataType columnName="average" newDataType="float8" tableName="execution_time_metric"/>
+        <modifyDataType columnName="average" newDataType="float8" tableName="memory_metric"/>
+        <modifyDataType columnName="maximum" newDataType="float8" tableName="cpu_metric"/>
+        <modifyDataType columnName="maximum" newDataType="float8" tableName="execution_time_metric"/>
+        <modifyDataType columnName="maximum" newDataType="float8" tableName="memory_metric"/>
+        <modifyDataType columnName="minimum" newDataType="float8" tableName="cpu_metric"/>
+        <modifyDataType columnName="minimum" newDataType="float8" tableName="execution_time_metric"/>
+        <modifyDataType columnName="minimum" newDataType="float8" tableName="memory_metric"/>
+        <addColumn tableName="cpu_metric">
+            <column name="unit" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="unit" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="memory_metric">
+            <column name="unit" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="execution_status">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cpu_metric">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="memory_metric">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="execution_status">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cpu_metric">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="memory_metric">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
