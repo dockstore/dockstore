@@ -31,7 +31,7 @@
             <column name="organization" value="fakeOrganization"/>
             <column name="sourcecontrol" value="github.com"/>
             <column name="repository" value="fakeRepository"/>
-            <column name="descriptortype" value="IPYNB"/>
+            <column name="descriptortype" value="JUPYTER"/>
             <column name="descriptortypesubclass" value="Python"/>
             <column name="lastmodified"/>
             <column name="lastupdated" valueDate="2023-02-15 12:00:00.000"/>
@@ -62,7 +62,7 @@
         </insert>
         <insert tableName="sourcefile">
             <column name="id" valueNumeric="23"/>
-            <column name="type" value="DOCKSTORE_IPYNB"/>
+            <column name="type" value="DOCKSTORE_JUPYTER"/>
             <column name="content" value="content of /notebook.ipynb"/>
             <column name="path" value="/notebook.ipynb"/>
             <column name="absolutepath" value="/notebook.ipynb"/>

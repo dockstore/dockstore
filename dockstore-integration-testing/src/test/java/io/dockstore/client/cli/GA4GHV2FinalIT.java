@@ -429,17 +429,21 @@ class GA4GHV2FinalIT extends GA4GHIT {
         // retrieve the notebook and do a cursory check of various queries.
         String trsURL = baseURL + "tools/%23notebook%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2Fnotebook0";
 
+        // confirm that we can retrieve the notebook
         Tool tool = checkedResponse(trsURL).readEntity(Tool.class);
         assertThat(toJson(tool)).contains("notebook0");
 
+        // confirm that we can retrieve the notebook's versions
         List<?> versions = checkedResponse(trsURL + "/versions").readEntity(List.class);
         assertEquals(1, versions.size());
         assertThat(toJson(versions)).contains("version0");
 
+        // confirm that we can retrieve a specified notebook version
         ToolVersion version = checkedResponse(trsURL + "/versions/version0").readEntity(ToolVersion.class);
         assertThat(toJson(version)).contains("version0");
 
-        List<?> files = checkedResponse(trsURL + "/versions/version0/IPYNB/files").readEntity(List.class);
+        // confirm that we can retrieve the files of a specified notebook version
+        List<?> files = checkedResponse(trsURL + "/versions/version0/JUPYTER/files").readEntity(List.class);
         assertEquals(1, files.size());
         assertThat(toJson(files)).contains("notebook.ipynb");
 
