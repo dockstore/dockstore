@@ -138,7 +138,7 @@ public class MetricsDataS3ClientIT extends BaseIT {
      * └── workflow
      *     └── github.com
      *         └── DockstoreTestUser2
-     *             └── dockstore_workflow_cnv
+     *             └── dockstore_workflow_cnv%2Fmy-workflow
      *                 └── master
      *                     ├── TERRA
      *                     │   └── 1673972062578.json
@@ -166,10 +166,10 @@ public class MetricsDataS3ClientIT extends BaseIT {
         final Long ownerUserId = usersApi.getUser().getId();
 
         // Register and publish a workflow
-        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
+        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/my-workflow";
         final String workflowVersionId = "master";
-        final String workflowExpectedS3KeyPrefixFormat = "workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/master/%s"; // This is the prefix without the file name
-        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
+        final String workflowExpectedS3KeyPrefixFormat = "workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv%%2Fmy-workflow/master/%s"; // This is the prefix without the file name
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "my-workflow", "cwl",
                 "/test.json");
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));

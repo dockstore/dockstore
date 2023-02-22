@@ -26,7 +26,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public final class S3ClientHelper {
@@ -46,9 +45,14 @@ public final class S3ClientHelper {
 
     private S3ClientHelper() {}
 
+    /**
+     * Creates an S3Client. Purposely not specifying a region because the <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/awscore/client/builder/AwsClientBuilder.html#region(software.amazon.awssdk.regions.Region)">docs</a>
+     * say that it will identify according to the listed logic. Since we deploy with Fargate, the AWS_REGION environment variable will automatically be set
+     * and the SDK will grab the region from that.
+     * @return
+     */
     public static S3Client createS3Client() {
-        // TODO should not need to hardcode region since buckets are global, but http://opensourceforgeeks.blogspot.com/2018/07/how-to-fix-unable-to-find-region-via.html
-        return S3Client.builder().region(Region.US_EAST_1).build();
+        return S3Client.builder().build();
     }
 
     /**
