@@ -6,8 +6,6 @@ import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.FULL;
 import static io.dockstore.webservice.core.WorkflowMode.STUB;
-import static io.dockstore.webservice.helpers.SourceFileHelper.findPrimaryDescriptor;
-import static io.dockstore.webservice.helpers.SourceFileHelper.findTestFiles;
 
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
@@ -38,8 +36,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.CheckUrlHelper;
-import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
+import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
@@ -275,30 +272,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     public static void publicAccessibleUrls(WorkflowVersion existingVersion,
         final String checkUrlLambdaUrl, final DescriptorLanguage descriptorType) {
-        final Optional<Boolean> hasPublicData = findPrimaryDescriptor(existingVersion)
-            .map(primaryDescriptor -> {
-                final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
-                return languageHandler.getFileInputParameterNames(existingVersion)
-                    .map(fileInputParameterNames -> findTestFiles(existingVersion).stream()
-                        .anyMatch(testSourceFile -> findTestFileType(testSourceFile)
-                            .flatMap(testFileType -> CheckUrlHelper.checkTestParameterFile(testSourceFile.getContent(),
-                                checkUrlLambdaUrl, testFileType, fileInputParameterNames))
-                            .orElse(Boolean.FALSE)))
-                    .orElse(null); // No input parameters, no open data
-            });
-
+        final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
+        final Optional<Boolean> hasPublicData = languageHandler.hasPublicAccessibleUrls(existingVersion, checkUrlLambdaUrl);
         existingVersion.getVersionMetadata()
             .setPublicAccessibleTestParameterFile(hasPublicData.orElse(null));
-    }
-
-    private static Optional<TestFileType> findTestFileType(SourceFile sourceFile) {
-        final String absolutePath = sourceFile.getAbsolutePath();
-        if (absolutePath.endsWith(".json")) {
-            return Optional.of(TestFileType.JSON);
-        } else if (absolutePath.endsWith(".yaml") || absolutePath.endsWith(".yml")) {
-            return Optional.of(TestFileType.YAML);
-        }
-        return Optional.empty();
     }
 
     /**

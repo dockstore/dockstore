@@ -16,6 +16,7 @@
 package io.dockstore.webservice.languages;
 
 import static io.dockstore.webservice.helpers.SourceFileHelper.findPrimaryDescriptor;
+import static io.dockstore.webservice.helpers.SourceFileHelper.findTestFiles;
 
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.github.zafarkhaja.semver.expr.LexerException;
@@ -37,7 +38,9 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.CheckUrlHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +61,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -67,6 +69,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wdl.draft3.parser.WdlParser;
@@ -689,29 +693,80 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     /**
-     * Returns the file input parameter names for a workflow version;
-     * @param workflowVersion
-     * @return
+     * Returns a map of file input names to types. For example:
+     * <pre>
+     * "checkerWorkflow.input_crai_files" -> "Array[File]?"
+     * "checkerWorkflow.referenceFilesBlob" -> "File"
+     * "checkerWorkflow.input_cram_files" -> "Array[File]"
+     * "checkerWorkflow.inputTruthVCFFile" -> "File"
+     * "checkerWorkflow.variantcaller.referenceGenomeFilesTarGz" -> "Array[File]?"
+     * </pre>
      */
+    Optional<Map<String, String>> getFileInputs(String primaryDescriptorContent, Set<SourceFile> sourceFiles) {
+        final WdlBridge wdlBridge = new WdlBridge();
+        wdlBridge.setSecondaryFiles(sourceFiles.stream().collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent)));
+        File tempMainDescriptor = null;
+        try {
+            tempMainDescriptor = java.nio.file.Files.createTempFile("main", "descriptor").toFile();
+            Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptorContent);
+            return Optional.of(wdlBridge.getInputFiles(tempMainDescriptor.getPath()));
+        } catch (SyntaxError | IOException e) {
+            LOG.error("Error parsing WDL", e);
+            return Optional.empty();
+        } finally {
+            FileUtils.deleteQuietly(tempMainDescriptor); // Works with null parameter
+        }
+    }
+
     @Override
-    public Optional<Set<String>> getFileInputParameterNames(WorkflowVersion workflowVersion) {
+    public Optional<Boolean> hasPublicAccessibleUrls(final WorkflowVersion workflowVersion, final String checkUrlLambdaUrl) {
         return findPrimaryDescriptor(workflowVersion)
             .map(primaryDescriptor -> {
-                final SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                final WdlBridge wdlBridge = new WdlBridge();
-                wdlBridge.setSecondaryFiles(sourceFiles.stream().collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent)));
-                File tempMainDescriptor = null;
-                try {
-                    tempMainDescriptor = java.nio.file.Files.createTempFile("main", "descriptor").toFile();
-                    Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptor.getContent());
-                    return wdlBridge.getInputFiles(tempMainDescriptor.getPath()).keySet();
-                } catch (SyntaxError | IOException e) {
-                    LOG.error("Error ");
-                    return null;
-                } finally {
-                    FileUtils.deleteQuietly(tempMainDescriptor); // Works with null parameter
+                final Optional<Map<String, String>> fileInputs =
+                    getFileInputs(primaryDescriptor.getContent(), workflowVersion.getSourceFiles());
+                if (fileInputs.isEmpty() || fileInputs.get().isEmpty()) {
+                    return false;
                 }
+                final List<SourceFile> testFiles = findTestFiles(workflowVersion);
+                return testFiles.stream().map(SourceFileHelper::testFileAsJsonObject).filter(Optional::isPresent).map(JSONObject.class::cast)
+                    .anyMatch(testFileAsJson -> {
+                        final Set<String> possibleUrls = fileInputValues(testFileAsJson, fileInputs.get());
+                        return CheckUrlHelper.checkUrls(possibleUrls, checkUrlLambdaUrl).orElse(false);
+                    });
             });
+    }
+
+    /**
+     * Given the known input parameter names of type file/array[file], look for the corresponding
+     * values in the test parameter file. Cannot assume the test parameter file structure matches
+     * what the WDL is expecting; they could be out of sync.
+     * @param json
+     * @param fileInputs
+     * @return
+     */
+    Set<String> fileInputValues(JSONObject json, Map<String, String> fileInputs) {
+        final Set<String> inputValues = new HashSet<>();
+        fileInputs.entrySet().stream().forEach(entry -> {
+            final String parameterName = entry.getKey();
+            final String parameterType = entry.getValue();
+            if (json.has(parameterName)) {
+                final Object fileParameterValue = json.get(parameterName);
+                if (parameterType.toLowerCase().contains("array")) { // Declared in WDL as an array of files
+                    if (fileParameterValue instanceof JSONArray jsonArray) { // Is it an array in the test file
+                        for (Object element: jsonArray) {
+                            if (element instanceof String maybeUrl) {
+                                inputValues.add(maybeUrl);
+                            }
+                        }
+                    }
+                } else {
+                    if (fileParameterValue instanceof String maybeUrl) { // Declared in WDL as a File
+                        inputValues.add(maybeUrl); // It's a string value
+                    }
+                }
+            }
+        });
+        return inputValues;
     }
 
     private static RuntimeException createStackOverflowThrowable(StackOverflowError error) {

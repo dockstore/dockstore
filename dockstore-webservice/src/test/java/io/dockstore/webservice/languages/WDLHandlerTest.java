@@ -18,6 +18,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
@@ -31,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -177,7 +179,65 @@ class WDLHandlerTest {
     }
 
     private String getGatkSvMainDescriptorContent() throws IOException {
-        final File wdlFile = new File(ResourceHelpers.resourceFilePath("gatk-sv-clinical" + MAIN_WDL));
+        return getFileContent("gatk-sv-clinical" + MAIN_WDL);
+    }
+
+    @Test
+    void testFileInputs() throws IOException {
+        final WDLHandler wdlHandler = new WDLHandler();
+        final String md5sumWdl = getFileContent("md5sum.wdl");
+
+        assertEquals(Map.of("ga4ghMd5.inputFile", "File"), wdlHandler.getFileInputs(md5sumWdl, Set.of())
+            .get());
+
+        final String metadataExample2Wdl = getFileContent("metadata_example2.wdl");
+        assertEquals(Map.of(
+            "metasoft_workflow.allpairs", "Array[File]",
+            "metasoft_workflow.signifpairs", "Array[File]"),
+            wdlHandler.getFileInputs(metadataExample2Wdl, Set.of())
+            .get());
+    }
+
+    @Test
+    void testFileInputValues() {
+        final WDLHandler wdlHandler = new WDLHandler();
+        final String wdlTestJson = """
+            {
+                "workflow.file1": "foo.cram",
+                "workflow.file2": "goo.cram",
+                "workflow.file3": "bar.cram",
+                "workflow.files": [
+                  "file1.cram",
+                  "file2.cram"
+                  ]
+            }
+            """;
+        final SourceFile sourceFile = new SourceFile();
+        sourceFile.setContent(wdlTestJson);
+        sourceFile.setAbsolutePath("/test.json");
+        final JSONObject jsonObject = SourceFileHelper.testFileAsJsonObject(sourceFile).get();
+
+        assertEquals(0, wdlHandler.fileInputValues(jsonObject, Map.of()).size(),
+            "WDL has no file inputs");
+
+        assertEquals(1, wdlHandler.fileInputValues(jsonObject, Map.of("workflow.file1", "File")).size(),
+            "Only one parameter defined in WDL");
+
+        // Handles array
+        assertEquals(2, wdlHandler.fileInputValues(jsonObject, Map.of("workflow.files", "Array[File]")).size(),
+            "Only array defined in WDL");
+
+        assertEquals(0, wdlHandler.fileInputValues(jsonObject, Map.of("workflow.files", "File")).size(),
+            "workflow.files is a single file in WDL, an array in test file");
+
+        assertEquals(3, wdlHandler.fileInputValues(jsonObject,
+                Map.of("workflow.files", "Array[File]", "workflow.file3", "File")).size(),
+            "Handle single file and array");
+
+    }
+
+    private String getFileContent(String path) throws IOException {
+        final File wdlFile = new File(ResourceHelpers.resourceFilePath(path));
         return FileUtils.readFileToString(wdlFile, StandardCharsets.UTF_8);
     }
 

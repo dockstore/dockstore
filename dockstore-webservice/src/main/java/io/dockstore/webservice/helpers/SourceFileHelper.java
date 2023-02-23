@@ -21,10 +21,18 @@ import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.WorkflowVersion;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 public final class SourceFileHelper {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SourceFileHelper.class);
 
     private SourceFileHelper() {
 
@@ -40,5 +48,42 @@ public final class SourceFileHelper {
         return workflowVersion.getSourceFiles().stream()
             .filter(sf -> sf.getType().getCategory().equals(FileTypeCategory.TEST_FILE))
             .toList();
+    }
+
+    public static Optional<JSONObject> testFileAsJsonObject(SourceFile sourceFile) {
+        final TestFileType testFileType = findTestFileType(sourceFile);
+        try {
+            switch (testFileType) {
+            case YAML -> {
+                Yaml yaml = new Yaml(new SafeConstructor());
+                Map<String, Object> map = yaml.load(sourceFile.getContent());
+                return Optional.of(new JSONObject(map));
+            }
+            case JSON -> {
+                return Optional.of(new JSONObject(sourceFile.getContent()));
+            }
+            default -> {
+                return Optional.empty();
+            }
+            }
+        } catch (Exception e) {
+            // Users can have invalid JSON/YAML, no need to log as error
+            LOGGER.info("Error loading test file", e);
+            return Optional.empty();
+        }
+    }
+
+    private static TestFileType findTestFileType(SourceFile sourceFile) {
+        final String absolutePath = sourceFile.getAbsolutePath();
+        if (absolutePath.endsWith(".json")) {
+            return TestFileType.JSON;
+        } else if (absolutePath.endsWith(".yaml") || absolutePath.endsWith(".yml")) {
+            return TestFileType.YAML;
+        }
+        return null;
+    }
+
+    public enum TestFileType {
+        YAML, JSON
     }
 }

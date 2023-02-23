@@ -957,15 +957,14 @@ public interface LanguageHandlerInterface {
         return Optional.empty();
     }
 
-
     /**
-     * Returns the names of the input parameters whose type is File or a list of Files. If unable to determine
-     * the input parameters, e.g., the primary descriptor does not exist or is not parseable,
-     * returns <code>Optional.empty()</code>.
+     * Indicates if the workflow version has a test parameter file with all file inputs values
+     * being open data.
      * @param workflowVersion
-     * @return
+     * @param checkUrlLambdaUrl
+     * @return if unable to determine, Optional.empty(), otherwise an non-empty boolean
      */
-    default Optional<Set<String>> getFileInputParameterNames(WorkflowVersion workflowVersion) {
+    default Optional<Boolean> hasPublicAccessibleUrls(WorkflowVersion workflowVersion, final String checkUrlLambdaUrl) {
         return Optional.empty();
     }
 

@@ -113,7 +113,23 @@ class CheckUrlHelperIT {
         sourceFile.setType(FileType.WDL_TEST_JSON);
         sourceFile.setContent(fileContents);
         sourceFile.setAbsolutePath("/asdf.json");
+        sourceFile.setPath("/asdf.json");
         workflowVersion.addSourceFile(sourceFile);
+        final String primaryDescriptorPath = "/Dockstore.wdl";
+        workflowVersion.setWorkflowPath(primaryDescriptorPath);
+        final SourceFile primaryDescriptor = new SourceFile();
+        primaryDescriptor.setPath(primaryDescriptorPath);
+        primaryDescriptor.setAbsolutePath(primaryDescriptorPath);
+        primaryDescriptor.setType(FileType.DOCKSTORE_WDL);
+        primaryDescriptor.setContent("""
+            version 1.0
+            workflow test {
+              input {
+                Array[File] arrayed_input
+              }
+            }
+            """);
+        workflowVersion.addSourceFile(primaryDescriptor);
         return workflowVersion;
     }
 }
