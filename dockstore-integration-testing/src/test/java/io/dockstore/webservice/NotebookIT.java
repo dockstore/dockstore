@@ -265,15 +265,7 @@ class NotebookIT extends BaseIT {
         expectedCollectionNames.add("Collection");
         organizationsApi.addEntryToCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
         List<CollectionOrganization> entryCollection = entriesApi.entryCollections(notebookID);
-        collection = organizationsApi.getCollectionById(nonCategorizerOrg.getId(), collection.getId());
         assertEquals(1,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
-
-        //remove notebook from collection
-        organizationsApi.deleteEntryFromCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
-        expectedCollectionNames.remove("Collection");
-        entryCollection = entriesApi.entryCollections(notebookID);
-        assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
-        assertEquals(0,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
 
         //remove notebook from category
         organizationsApi.deleteEntryFromCollection(categorizerOrg.getId(), category.getId(), notebookID, null);
@@ -282,6 +274,12 @@ class NotebookIT extends BaseIT {
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
         assertEquals(0,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
 
+        //remove notebook from collection
+        organizationsApi.deleteEntryFromCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
+        expectedCollectionNames.remove("Collection");
+        entryCollection = entriesApi.entryCollections(notebookID);
+        assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
+        assertEquals(0,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
     }
 
     private void addAdminToOrg(String username, String orgName) {
