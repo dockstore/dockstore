@@ -26,6 +26,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.webservice.helpers.AppToolHelper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.ApiResponse;
@@ -71,10 +72,11 @@ class SearchResourceIT extends BaseIT {
      * @param hit   The amount of hits expected
      * @param extendedGa4GhApi  The api to get the elasticsearch results
      * @param counter   The amount of tries attempted
+     * @param esQuery   The ES query to run
      */
-    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter) {
+    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter, String esQuery) {
         try {
-            String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
+            String s = extendedGa4GhApi.toolsIndexSearch(esQuery);
             // There's actually two "total", one for shards and one for hits.
             // Need to only look at the hits one
             if (!s.contains("hits\":{\"total\":{\"value\":" + hit + ",")) {
@@ -83,12 +85,16 @@ class SearchResourceIT extends BaseIT {
                 } else {
                     long sleepTime = 1000 * counter;
                     Thread.sleep(sleepTime);
-                    waitForIndexRefresh(hit, extendedGa4GhApi, counter + 1);
+                    waitForIndexRefresh(hit, extendedGa4GhApi, counter + 1, esQuery);
                 }
             }
         } catch (Exception e) {
             fail("There were troubles sleeping: " + e.getMessage());
         }
+    }
+
+    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter) {
+        waitForIndexRefresh(hit, extendedGa4GhApi, counter, exampleESQuery);
     }
 
     @Test
@@ -120,6 +126,30 @@ class SearchResourceIT extends BaseIT {
         String newQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
         String t = extendedGa4GhApi.toolsIndexSearch(newQuery);
         assertTrue(t.contains("sourceFiles") && t.contains("\"checksum\":\"cb5d0323091b22e0a1d6f52a4930ee256b15835c968462c03cf7be2cc842a4ad\""), t + " should've contained sourcefiles");
+    }
+
+    @Test
+    void testNotebook() throws ApiException {
+        // register a simple published notebook
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.handleGitHubRelease("dockstore-testing/simple-notebook", USER_2_USERNAME, "refs/tags/simple-published-v1", AppToolHelper.INSTALLATION_ID);
+
+        // wait until the notebook is indexed
+        ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        waitForIndexRefresh(1, extendedGa4GhApi, 0, StringUtils.replace(exampleESQuery, "\"match_all\":{}", "\"match\":{\"_index\":\"notebooks\"}"));
+
+        // confirm the correct format and language
+        String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
+        assertTrue(s.contains("\"type\":\"Notebook\""));
+        assertTrue(s.contains("\"repository\":\"simple-notebook\""));
+        assertTrue(s.contains("\"descriptorType\":\"jupyter\""));
+        assertTrue(s.contains("\"descriptorTypeSubclass\":\"Python\""));
+
+        // confirm the presence of the notebook source file
+        String fileQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
+        String t = extendedGa4GhApi.toolsIndexSearch(fileQuery);
+        assertTrue(t.contains("/notebook.ipynb"));
     }
 
     /**
