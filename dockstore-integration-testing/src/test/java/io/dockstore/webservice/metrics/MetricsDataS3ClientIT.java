@@ -17,7 +17,13 @@
 
 package io.dockstore.webservice.metrics;
 
-import static io.dockstore.webservice.metrics.MetricsDataS3ClientIT.LOCALSTACK_IMAGE_TAG;
+import static io.dockstore.client.cli.BaseIT.OTHER_USERNAME;
+import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
+import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
+import static io.dockstore.common.LocalStackTestUtilities.CREDENTIALS_ENV_VARS;
+import static io.dockstore.common.LocalStackTestUtilities.ENDPOINT_OVERRIDE;
+import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
+import static io.dockstore.common.LocalStackTestUtilities.LocalStackEnvironmentVariables;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_STATUS_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
@@ -29,15 +35,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import cloud.localstack.ServiceName;
 import cloud.localstack.awssdkv2.TestUtils;
 import cloud.localstack.docker.LocalstackDockerExtension;
-import cloud.localstack.docker.annotation.IEnvironmentVariableProvider;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.google.gson.Gson;
-import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LocalStackTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ContainersApi;
@@ -47,16 +52,19 @@ import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.Execution;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.metrics.MetricsData;
 import io.dockstore.webservice.core.metrics.MetricsDataMetadata;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
+import io.dropwizard.testing.ConfigOverride;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -74,23 +82,37 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
-@ExtendWith(LocalstackDockerExtension.class)
+@ExtendWith({LocalstackDockerExtension.class, SystemStubsExtension.class})
 @Tag(LocalStackTest.NAME)
-@LocalstackDockerProperties(imageTag = LOCALSTACK_IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = MetricsDataS3ClientIT.LocalStackEnvironmentVariables.class)
-public class MetricsDataS3ClientIT extends BaseIT {
-    public static final String LOCALSTACK_IMAGE_TAG = "1.3.1";
+@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = LocalStackEnvironmentVariables.class)
+public class MetricsDataS3ClientIT {
     private static final Gson GSON = new Gson();
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH, ConfigOverride.config("metricsConfig.s3EndpointOverride",
+            ENDPOINT_OVERRIDE));
+    private static TestingPostgres testingPostgres;
     private static String bucketName;
     private static String s3EndpointOverride;
     private static S3Client s3Client;
     private static MetricsDataS3Client metricsDataClient;
 
+    @SystemStub
+    private static EnvironmentVariables environmentVariables = new EnvironmentVariables(CREDENTIALS_ENV_VARS);
+
     @BeforeAll
-    public static void setup() throws URISyntaxException {
+    public static void setup() throws Exception {
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
+        SUPPORT.before();
+        testingPostgres = new TestingPostgres(SUPPORT);
+
         bucketName = SUPPORT.getConfiguration().getMetricsConfig().getS3BucketName();
         s3EndpointOverride = SUPPORT.getConfiguration().getMetricsConfig().getS3EndpointOverride();
         metricsDataClient = new MetricsDataS3Client(bucketName, s3EndpointOverride);
+
         // Create a bucket to be used for tests
         s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client
         CreateBucketRequest request = CreateBucketRequest.builder().bucket(bucketName).build();
@@ -99,7 +121,6 @@ public class MetricsDataS3ClientIT extends BaseIT {
     }
 
     @BeforeEach
-    @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
     }
@@ -155,7 +176,7 @@ public class MetricsDataS3ClientIT extends BaseIT {
     @Test
     void testSubmitMetricsData() throws IOException {
         // Admin user
-        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         final UsersApi usersApi = new UsersApi(webClient);
         final ContainersApi containersApi = new ContainersApi(webClient);
@@ -217,11 +238,11 @@ public class MetricsDataS3ClientIT extends BaseIT {
     @Test
     void testSubmitMetricsDataErrors() {
         // Admin user
-        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         // Non-admin user
-        final ApiClient otherWebClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        final ApiClient otherWebClient = getOpenAPIWebClient(true, OTHER_USERNAME, testingPostgres);
         final ExtendedGa4GhApi otherExtendedGa4GhApi = new ExtendedGa4GhApi(otherWebClient);
 
         String id = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
@@ -272,7 +293,7 @@ public class MetricsDataS3ClientIT extends BaseIT {
     @Test
     void testGetMetricsDataPagination() throws FileNotFoundException {
         // Admin user
-        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         final String platform = Partner.TERRA.name();
@@ -369,14 +390,5 @@ public class MetricsDataS3ClientIT extends BaseIT {
         ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).build();
         ListObjectsV2Response listObjectsV2Response = s3Client.listObjectsV2(request);
         return listObjectsV2Response.contents();
-    }
-
-    public static class LocalStackEnvironmentVariables implements IEnvironmentVariableProvider {
-        @Override
-        public Map<String, String> getEnvironmentVariables() {
-            // Need this so that S3 key encoding works. Remove when there's a new localstack release containing the fix
-            // https://github.com/localstack/localstack/issues/7374#issuecomment-1360950643
-            return Map.of("PROVIDER_OVERRIDE_S3", "asf");
-        }
     }
 }
