@@ -238,6 +238,7 @@ class NotebookIT extends BaseIT {
         nonCategorizerOrg = organizationsApi.approveOrganization(nonCategorizerOrg.getId());
         categorizerOrg = organizationsApi.approveOrganization(categorizerOrg.getId());
 
+        //create collection and category
         Collection collection = new Collection();
         collection.setName("Collection");
         collection.setDisplayName("Collection");
