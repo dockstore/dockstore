@@ -38,18 +38,34 @@ public final class SourceFileHelper {
 
     }
 
+    /**
+     * Finds the primary descriptor in a workflow version
+     * @param workflowVersion
+     * @return
+     */
     public static Optional<SourceFile> findPrimaryDescriptor(WorkflowVersion workflowVersion) {
         return workflowVersion.getSourceFiles().stream()
             .filter(sf -> Objects.equals(sf.getPath(), workflowVersion.getWorkflowPath()))
             .findFirst();
     }
 
+    /**
+     * Finds all test files in a workflow version
+     * @param workflowVersion
+     * @return
+     */
     public static List<SourceFile> findTestFiles(WorkflowVersion workflowVersion) {
         return workflowVersion.getSourceFiles().stream()
             .filter(sf -> sf.getType().getCategory().equals(FileTypeCategory.TEST_FILE))
             .toList();
     }
 
+    /**
+     * Converts a test source file into a <code>JSONObject</code>. Returns <code>Optional.empty()</code>
+     * if source file is not a test YAML or JSON, or if the file content has a syntax error.
+     * @param sourceFile
+     * @return
+     */
     public static Optional<JSONObject> testFileAsJsonObject(SourceFile sourceFile) {
         final TestFileType testFileType = findTestFileType(sourceFile);
         try {

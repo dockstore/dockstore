@@ -83,6 +83,14 @@ public final class CheckUrlHelper {
         });
     }
 
+    /**
+     * Checks whether all <code>possibleUrls</code> are open access urls. Returns <code>Optional.of(true)</code>
+     * if they are, <code>Optional.of(false)</code> if any are not, or <code>Optional.empty()</code>
+     * if there was an error doing the check.
+     * @param possibleUrls
+     * @param baseURL
+     * @return
+     */
     public static Optional<Boolean> checkUrls(Set<String> possibleUrls, String baseURL) {
         if (possibleUrls.isEmpty() || hasMalformedUrl(possibleUrls)) {
             // If there are no urls, or any values that aren't urls, it's not open data
