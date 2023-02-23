@@ -19,18 +19,11 @@ package io.dockstore.common;
 
 import cloud.localstack.docker.annotation.IEnvironmentVariableProvider;
 import java.util.Map;
-import software.amazon.awssdk.regions.Region;
 
 public final class LocalStackTestUtilities {
     public static final String IMAGE_TAG = "1.3.1";
     public static final String ENDPOINT_OVERRIDE = "http://localhost:4566";
     public static final String AWS_REGION_ENV_VAR = "AWS_REGION";
-
-    // Need to provide fake AWS credentials and region
-    public static final Map<String, String> CREDENTIALS_ENV_VARS = Map.of(
-            "AWS_ACCESS_KEY_ID", "foo",
-            "AWS_SECRET_KEY", "foo",
-            "AWS_REGION", Region.US_EAST_1.toString());
 
     private LocalStackTestUtilities() {}
 

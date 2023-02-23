@@ -20,7 +20,6 @@ package io.dockstore.webservice.metrics;
 import static io.dockstore.client.cli.BaseIT.OTHER_USERNAME;
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
-import static io.dockstore.common.LocalStackTestUtilities.CREDENTIALS_ENV_VARS;
 import static io.dockstore.common.LocalStackTestUtilities.ENDPOINT_OVERRIDE;
 import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static io.dockstore.common.LocalStackTestUtilities.LocalStackEnvironmentVariables;
@@ -82,11 +81,8 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
-import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
-import uk.org.webcompere.systemstubs.jupiter.SystemStub;
-import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
-@ExtendWith({LocalstackDockerExtension.class, SystemStubsExtension.class})
+@ExtendWith(LocalstackDockerExtension.class)
 @Tag(LocalStackTest.NAME)
 @LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = LocalStackEnvironmentVariables.class)
 public class MetricsDataS3ClientIT {
@@ -99,9 +95,6 @@ public class MetricsDataS3ClientIT {
     private static String s3EndpointOverride;
     private static S3Client s3Client;
     private static MetricsDataS3Client metricsDataClient;
-
-    @SystemStub
-    private static EnvironmentVariables environmentVariables = new EnvironmentVariables(CREDENTIALS_ENV_VARS);
 
     @BeforeAll
     public static void setup() throws Exception {

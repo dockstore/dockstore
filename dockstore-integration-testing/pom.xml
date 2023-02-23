@@ -249,6 +249,12 @@
                         -Xmx4g
                         @{argLine}
                     </argLine>
+                    <!-- Fake AWS credentials used for testing with localstack so that the AWS SDK can create clients properly -->
+                    <environmentVariables>
+                        <AWS_REGION>us-east-1</AWS_REGION>
+                        <AWS_ACCESS_KEY_ID>foobar</AWS_ACCESS_KEY_ID>
+                        <AWS_SECRET_ACCESS_KEY>foobar</AWS_SECRET_ACCESS_KEY>
+                    </environmentVariables>
                     <!-- seems like some form of Jackson fork issue for this module with random order -->
                     <runOrder>filesystem</runOrder>
                 </configuration>

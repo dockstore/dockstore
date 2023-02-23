@@ -18,7 +18,6 @@
 package io.dockstore.webservice.helpers;
 
 import static io.dockstore.common.LocalStackTestUtilities.AWS_REGION_ENV_VAR;
-import static io.dockstore.common.LocalStackTestUtilities.CREDENTIALS_ENV_VARS;
 import static io.dockstore.common.LocalStackTestUtilities.ENDPOINT_OVERRIDE;
 import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,7 +47,7 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 @LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = LocalStackTestUtilities.LocalStackEnvironmentVariables.class)
 public class S3ClientHelperIT {
     @SystemStub
-    private static EnvironmentVariables environmentVariables = new EnvironmentVariables(CREDENTIALS_ENV_VARS);
+    private static EnvironmentVariables environmentVariables;
 
     /**
      * Tests that the AWS SDK is able to get the region from the AWS_REGION environment variable when building the S3 client.
