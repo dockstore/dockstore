@@ -729,6 +729,9 @@ public class WDLHandler implements LanguageHandlerInterface {
                 }
                 final List<JSONObject> testFiles = findTestFiles(workflowVersion).stream().map(SourceFileHelper::testFileAsJsonObject)
                     .filter(Optional::isPresent).map(Optional::get).toList();
+                if (testFiles.isEmpty()) {
+                    return Optional.of(false);
+                }
 
                 // If the lambda fails catastrophically, e.g., it's down, no network connection, etc., we
                 // want to return Optional.empty, hence this slightly convoluted logic.

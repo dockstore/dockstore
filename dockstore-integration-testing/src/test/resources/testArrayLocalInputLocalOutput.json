@@ -1,5 +1,5 @@
 {
-  "test.arrayed_input": [
+  "arrayed_input": [
     {
       "path": "example.bedGraph",
       "class": "File"

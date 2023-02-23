@@ -48,11 +48,12 @@ class CheckUrlHelperIT {
           "test.files": [
             "https://goodurl.com",
             "https://anothergoodurl.com"
-          ]
+          ],
+          "test.file": "notaurl.file"
         }        
         """;
 
-    public static final String WDL_WITH_INPUT = """
+    public static final String WDL_WITH_FILES_INPUT = """
             version 1.0
             workflow test {
               input {
@@ -61,12 +62,20 @@ class CheckUrlHelperIT {
             }
             """;
 
+    public static final String WDL_WITH_FILE_INPUT = """
+            version 1.0
+            workflow test {
+              input {
+                File file
+              }
+            }
+        """;
+
     public static final String WDL_WITH_NO_INPUTS = """
         version 1.0
         workflow test {
         }
         """;
-
 
     @Test
     void checkUrlsFromLambdaGood(Hoverfly hoverfly) throws IOException {
@@ -74,7 +83,7 @@ class CheckUrlHelperIT {
         Map<String, String> state = new HashMap<>();
         state.put("status", "good");
         hoverfly.setState(state);
-        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_INPUT, WDL_TEST_JSON);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILES_INPUT, WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
             DescriptorLanguage.WDL);
@@ -87,7 +96,7 @@ class CheckUrlHelperIT {
         Map<String, String> state = new HashMap<>();
         state.put("status", "bad");
         hoverfly.setState(state);
-        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_INPUT, WDL_TEST_JSON);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILES_INPUT, WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
             DescriptorLanguage.WDL);
@@ -100,7 +109,8 @@ class CheckUrlHelperIT {
         Map<String, String> state = new HashMap<>();
         state.put("status", "someGoodSomeBad");
         hoverfly.setState(state);
-        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_INPUT, WDL_TEST_JSON.replace("https://goodurl.com", "https://badUrl.com"));
+        WorkflowVersion workflowVersion = setupWorkflowVersion(
+            WDL_WITH_FILES_INPUT, WDL_TEST_JSON.replace("https://goodurl.com", "https://badUrl.com"));
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
             DescriptorLanguage.WDL);
@@ -113,19 +123,29 @@ class CheckUrlHelperIT {
         Map<String, String> state = new HashMap<>();
         state.put("status", "terriblyWrong");
         hoverfly.setState(state);
-        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_INPUT, WDL_TEST_JSON);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILES_INPUT, WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
             DescriptorLanguage.WDL);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
+    @Test
+    void checkLocalFileIsAParameter() {
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILE_INPUT, WDL_TEST_JSON);
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
+            DescriptorLanguage.WDL);
+        assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+    }
+
+    @Test
     void checkDescriptorHasNoFileInputs() {
         WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_NO_INPUTS, WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
             DescriptorLanguage.WDL);
-        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+        assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
     private WorkflowVersion setupWorkflowVersion(final String descriptorContent, String jsonContent) {

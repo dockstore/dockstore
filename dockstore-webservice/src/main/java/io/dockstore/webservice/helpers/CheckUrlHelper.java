@@ -17,9 +17,11 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -47,7 +49,7 @@ public final class CheckUrlHelper {
         try {
             uri = UriBuilder.fromUri(new URI(baseURL)).queryParam("url", url).build();
         } catch (URISyntaxException e) {
-            return Optional.empty();
+            return Optional.of(false);
         }
         request = HttpRequest.newBuilder().uri(uri).GET().build();
         try {
@@ -61,6 +63,7 @@ public final class CheckUrlHelper {
             }
             return Optional.empty();
         } catch (IOException e) {
+            LOGGER.error("Error checking url", e);
             return Optional.empty();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -68,12 +71,24 @@ public final class CheckUrlHelper {
         }
     }
 
-    public static Optional<Boolean> checkUrls(Set<String> urls, String baseURL) {
-        if (urls.isEmpty()) {
-            // If there are no urls, it's not open data
+    private static boolean hasMalformedUrl(Set<String> possibleUrls) {
+        return possibleUrls.stream().anyMatch(possibleUrl -> {
+            try {
+                new URL(possibleUrl);
+            } catch (MalformedURLException e) {
+                LOGGER.debug("malformed url", e);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    public static Optional<Boolean> checkUrls(Set<String> possibleUrls, String baseURL) {
+        if (possibleUrls.isEmpty() || hasMalformedUrl(possibleUrls)) {
+            // If there are no urls, or any values that aren't urls, it's not open data
             return Optional.of(false);
         }
-        List<Optional<Boolean>> objectStream = urls.parallelStream().map(url -> checkUrl(url, baseURL))
+        List<Optional<Boolean>> objectStream = possibleUrls.parallelStream().map(url -> checkUrl(url, baseURL))
             .collect(Collectors.toCollection(ArrayList::new));
         if (objectStream.stream().anyMatch(urlStatus -> urlStatus.isPresent() && urlStatus.get().equals(false))) {
             return Optional.of(false);
