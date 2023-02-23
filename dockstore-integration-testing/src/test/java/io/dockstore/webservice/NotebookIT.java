@@ -259,6 +259,7 @@ class NotebookIT extends BaseIT {
         expectedCollectionNames.add("Collection");
         organizationsApi.addEntryToCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
         List<CollectionOrganization> entryCollection = entriesApi.entryCollections(notebookID);
+        assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
         assertEquals(1,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
 
         //remove notebook from collection
