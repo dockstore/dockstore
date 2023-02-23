@@ -27,12 +27,21 @@ import org.junit.jupiter.api.Test;
 class SourceFileHelperTest {
 
     @Test
-    void testFileAsJsonObject() {
+    void testFileAsJsonObjectInvalid() {
         final SourceFile sourceFile = new SourceFile();
         sourceFile.setType(FileType.WDL_TEST_JSON);
         sourceFile.setContent("invalid json");
         sourceFile.setAbsolutePath("/foo.json");
         final Optional<JSONObject> json = SourceFileHelper.testFileAsJsonObject(sourceFile);
         Assertions.assertTrue(json.isEmpty());
+    }
+    @Test
+    void testFileAsJsonObjectValid() {
+        final SourceFile sourceFile = new SourceFile();
+        sourceFile.setType(FileType.WDL_TEST_JSON);
+        sourceFile.setContent("{}");
+        sourceFile.setAbsolutePath("/foo.json");
+        final Optional<JSONObject> json = SourceFileHelper.testFileAsJsonObject(sourceFile);
+        Assertions.assertTrue(json.isPresent());
     }
 }
