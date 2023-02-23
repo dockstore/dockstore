@@ -203,7 +203,7 @@ class WDLHandlerTest {
         }
 
         @Override
-        public String getREADMEContent(String repositoryId, String branch) {
+        public String getREADMEContent(String repositoryId, String branch, String overrideReadMePath) {
             return null;
         }
 

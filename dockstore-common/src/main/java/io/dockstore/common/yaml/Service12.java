@@ -46,4 +46,9 @@ public class Service12 extends AbstractYamlService implements Workflowish {
     public String getPrimaryDescriptorPath() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public String getReadMePath() {
+        throw new UnsupportedOperationException();
+    }
 }

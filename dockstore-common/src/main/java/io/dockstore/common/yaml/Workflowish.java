@@ -17,4 +17,10 @@ public interface Workflowish {
     Filters getFilters();
     List<String> getTestParameterFiles();
     String getPrimaryDescriptorPath();
+
+    /**
+     * Optionl: Document a specific readme path that can override the base readme file
+     * @return
+     */
+    String getReadMePath();
 }

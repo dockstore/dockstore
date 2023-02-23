@@ -237,6 +237,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "The user-specified files for the version.")
     private List<String> userFiles = new ArrayList<>();
 
+    @Column(columnDefinition = "varchar")
+    @ApiModelProperty(value = "A custom readme for the version, if applicable.")
+    private String readMePath;
+
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
     private Set<EntryVersion> entryVersions = new HashSet<>();
@@ -306,6 +310,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         referenceType = version.getReferenceType();
         frozen = version.isFrozen();
         commitID = version.getCommitID();
+        readMePath = version.getReadMePath();
         this.setVersionMetadata(version.getVersionMetadata());
     }
 
@@ -635,6 +640,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setUserFiles(List<String> userFiles) {
         this.userFiles = userFiles;
+    }
+
+    public String getReadMePath() {
+        return readMePath;
+    }
+
+    public void setReadMePath(String readMePath) {
+        this.readMePath = readMePath;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

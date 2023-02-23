@@ -41,6 +41,8 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -75,14 +77,26 @@ public abstract class SourceCodeRepoInterface {
      * First gets all the file names, then see if any of them matches the README regex
      * @param repositoryId
      * @param branch
+     * @param overrideLocation if present, use this location instead of the root
      * @return
      */
-    public String getREADMEContent(String repositoryId, String branch) {
-        List<String> strings = this.listFiles(repositoryId, "/", branch);
-        if (strings == null) {
-            return null;
+    public String getREADMEContent(String repositoryId, String branch, String overrideLocation) {
+
+        Optional<String> first;
+        if (!Strings.isNullOrEmpty(overrideLocation)) {
+            final Path overridePath = Paths.get(overrideLocation);
+            List<String> strings = this.listFiles(repositoryId, overridePath.getParent().toString(), branch);
+            if (strings == null) {
+                return null;
+            }
+            first = strings.stream().map(f -> Paths.get(overridePath.getParent().toString(), f).toString()).filter(overrideLocation::equals).findFirst();
+        } else {
+            List<String> strings = this.listFiles(repositoryId, "/", branch);
+            if (strings == null) {
+                return null;
+            }
+            first = strings.stream().filter(SourceCodeRepoInterface::matchesREADME).findFirst();
         }
-        Optional<String> first = strings.stream().filter(SourceCodeRepoInterface::matchesREADME).findFirst();
         return first.map(s -> this.readFile(repositoryId, s, branch)).orElse(null);
     }
 
@@ -471,7 +485,7 @@ public abstract class SourceCodeRepoInterface {
                 LOG.info(message);
             }
             if (version.getReference() != null) {
-                String readmeContent = getREADMEContent(repositoryId, version.getReference());
+                String readmeContent = getREADMEContent(repositoryId, version.getReference(), version.getReadMePath());
                 if (StringUtils.isNotBlank(readmeContent)) {
                     version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
                 }
@@ -490,9 +504,9 @@ public abstract class SourceCodeRepoInterface {
             boolean oldREADMEDescription = (DescriptionSource.README == version.getDescriptionSource());
             // Checking these conditions to prevent overwriting description from descriptor
             if (noDescription || oldREADMEDescription) {
-                String readmeContent = getREADMEContent(repositoryId, version.getReference());
+                String readmeContent = getREADMEContent(repositoryId, version.getReference(), version.getReadMePath());
                 if (StringUtils.isNotBlank(readmeContent)) {
-                    version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                    version.setDescriptionAndDescriptionSource(readmeContent, Strings.isNullOrEmpty(version.getReadMePath()) ? DescriptionSource.README : DescriptionSource.CUSTOM_README);
                 }
             }
         }
