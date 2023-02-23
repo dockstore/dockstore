@@ -4,6 +4,7 @@ import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLO
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
@@ -188,32 +189,35 @@ class WDLHandlerTest {
         final String md5sumWdl = getFileContent("md5sum.wdl");
 
         assertEquals(Map.of("ga4ghMd5.inputFile", "File"), wdlHandler.getFileInputs(md5sumWdl, Set.of())
-            .get());
+            .get(), "should handle simple file input");
 
         final String metadataExample2Wdl = getFileContent("metadata_example2.wdl");
         assertEquals(Map.of(
             "metasoft_workflow.allpairs", "Array[File]",
             "metasoft_workflow.signifpairs", "Array[File]"),
             wdlHandler.getFileInputs(metadataExample2Wdl, Set.of())
-            .get());
+            .get(), "should handle array inputs");
+
+        assertTrue(wdlHandler.getFileInputs("invalid wdl", Set.of()).isEmpty(),
+            "should return Optional.empty for invalid wdl");
     }
 
     @Test
-    void testFileInputValues() {
+    void testFileInputValues() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
-        final String wdlTestJson = """
+        final SourceFile sourceFile = new SourceFile();
+        final String testJson = """
             {
-                "workflow.file1": "foo.cram",
-                "workflow.file2": "goo.cram",
-                "workflow.file3": "bar.cram",
-                "workflow.files": [
-                  "file1.cram",
-                  "file2.cram"
-                  ]
+              "workflow.file1": "foo.cram",
+              "workflow.file2": "goo.cram",
+              "workflow.file3": "bar.cram",
+              "workflow.files": [
+                "file1.cram",
+                "file2.cram"
+              ]
             }
             """;
-        final SourceFile sourceFile = new SourceFile();
-        sourceFile.setContent(wdlTestJson);
+        sourceFile.setContent(testJson);
         sourceFile.setAbsolutePath("/test.json");
         final JSONObject jsonObject = SourceFileHelper.testFileAsJsonObject(sourceFile).get();
 

@@ -721,18 +721,33 @@ public class WDLHandler implements LanguageHandlerInterface {
     @Override
     public Optional<Boolean> hasPublicAccessibleUrls(final WorkflowVersion workflowVersion, final String checkUrlLambdaUrl) {
         return findPrimaryDescriptor(workflowVersion)
-            .map(primaryDescriptor -> {
+            .flatMap(primaryDescriptor -> {
                 final Optional<Map<String, String>> fileInputs =
                     getFileInputs(primaryDescriptor.getContent(), workflowVersion.getSourceFiles());
                 if (fileInputs.isEmpty() || fileInputs.get().isEmpty()) {
-                    return false;
+                    return Optional.of(false);
                 }
-                final List<SourceFile> testFiles = findTestFiles(workflowVersion);
-                return testFiles.stream().map(SourceFileHelper::testFileAsJsonObject).filter(Optional::isPresent).map(JSONObject.class::cast)
-                    .anyMatch(testFileAsJson -> {
-                        final Set<String> possibleUrls = fileInputValues(testFileAsJson, fileInputs.get());
-                        return CheckUrlHelper.checkUrls(possibleUrls, checkUrlLambdaUrl).orElse(false);
-                    });
+                final List<JSONObject> testFiles = findTestFiles(workflowVersion).stream().map(SourceFileHelper::testFileAsJsonObject)
+                    .filter(Optional::isPresent).map(Optional::get).toList();
+
+                // If the lambda fails catastrophically, e.g., it's down, no network connection, etc., we
+                // want to return Optional.empty, hence this slightly convoluted logic.
+                boolean validResult = false;
+                for (JSONObject testFile: testFiles) {
+                    final Set<String> possibleUrls = fileInputValues(testFile, fileInputs.get());
+                    final Optional<Boolean> check =
+                        CheckUrlHelper.checkUrls(possibleUrls, checkUrlLambdaUrl);
+                    if (check.isPresent() && check.get()) {
+                        return Optional.of(true);
+                    }
+                    if (check.isPresent()) {
+                        validResult = true;
+                    }
+                }
+                if (validResult) {
+                    return Optional.of(false);
+                }
+                return Optional.empty();
             });
     }
 

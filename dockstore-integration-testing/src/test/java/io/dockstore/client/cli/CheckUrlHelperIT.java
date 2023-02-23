@@ -21,21 +21,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.AbstractWorkflowResource;
-import io.dropwizard.testing.ResourceHelpers;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.specto.hoverfly.junit5.HoverflyExtension;
 import io.specto.hoverfly.junit5.api.HoverflyConfig;
 import io.specto.hoverfly.junit5.api.HoverflyCore;
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -47,15 +43,38 @@ class CheckUrlHelperIT {
 
     public static final String FAKE_CHECK_URL_LAMBDA_BASE_URL = "http://fakecheckurllambdabaseurl:3000";
 
+    public static final String WDL_TEST_JSON = """
+        {
+          "test.files": [
+            "https://goodurl.com",
+            "https://anothergoodurl.com"
+          ]
+        }        
+        """;
+
+    public static final String WDL_WITH_INPUT = """
+            version 1.0
+            workflow test {
+              input {
+                Array[File] files
+              }
+            }
+            """;
+
+    public static final String WDL_WITH_NO_INPUTS = """
+        version 1.0
+        workflow test {
+        }
+        """;
+
+
     @Test
     void checkUrlsFromLambdaGood(Hoverfly hoverfly) throws IOException {
         hoverfly.simulate(CHECK_URL_SOURCE);
         Map<String, String> state = new HashMap<>();
         state.put("status", "good");
         hoverfly.setState(state);
-        File file = new File(ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"));
-        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
-        WorkflowVersion workflowVersion = setupWorkflowVersion(s);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_INPUT, WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
             DescriptorLanguage.WDL);
@@ -68,9 +87,7 @@ class CheckUrlHelperIT {
         Map<String, String> state = new HashMap<>();
         state.put("status", "bad");
         hoverfly.setState(state);
-        File file = new File(ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"));
-        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
-        WorkflowVersion workflowVersion = setupWorkflowVersion(s);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_INPUT, WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
             DescriptorLanguage.WDL);
@@ -83,9 +100,7 @@ class CheckUrlHelperIT {
         Map<String, String> state = new HashMap<>();
         state.put("status", "someGoodSomeBad");
         hoverfly.setState(state);
-        File file = new File(ResourceHelpers.resourceFilePath("someGoodSomeBad.json"));
-        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
-        WorkflowVersion workflowVersion = setupWorkflowVersion(s);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_INPUT, WDL_TEST_JSON.replace("https://goodurl.com", "https://badUrl.com"));
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
             DescriptorLanguage.WDL);
@@ -98,20 +113,26 @@ class CheckUrlHelperIT {
         Map<String, String> state = new HashMap<>();
         state.put("status", "terriblyWrong");
         hoverfly.setState(state);
-        File file = new File(ResourceHelpers.resourceFilePath("someGoodSomeBad.json"));
-        String s = Files.asCharSource(file, StandardCharsets.UTF_8).read();
-        WorkflowVersion workflowVersion = setupWorkflowVersion(s);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_INPUT, WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
             DescriptorLanguage.WDL);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
-    private WorkflowVersion setupWorkflowVersion(String fileContents) {
+    void checkDescriptorHasNoFileInputs() {
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_NO_INPUTS, WDL_TEST_JSON);
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, FAKE_CHECK_URL_LAMBDA_BASE_URL + "/lambda",
+            DescriptorLanguage.WDL);
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+    }
+
+    private WorkflowVersion setupWorkflowVersion(final String descriptorContent, String jsonContent) {
         WorkflowVersion workflowVersion = new WorkflowVersion();
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(FileType.WDL_TEST_JSON);
-        sourceFile.setContent(fileContents);
+        sourceFile.setContent(jsonContent);
         sourceFile.setAbsolutePath("/asdf.json");
         sourceFile.setPath("/asdf.json");
         workflowVersion.addSourceFile(sourceFile);
@@ -121,14 +142,7 @@ class CheckUrlHelperIT {
         primaryDescriptor.setPath(primaryDescriptorPath);
         primaryDescriptor.setAbsolutePath(primaryDescriptorPath);
         primaryDescriptor.setType(FileType.DOCKSTORE_WDL);
-        primaryDescriptor.setContent("""
-            version 1.0
-            workflow test {
-              input {
-                Array[File] arrayed_input
-              }
-            }
-            """);
+        primaryDescriptor.setContent(descriptorContent);
         workflowVersion.addSourceFile(primaryDescriptor);
         return workflowVersion;
     }
