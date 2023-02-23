@@ -42,7 +42,7 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
-@ExtendWith({ LocalstackDockerExtension.class, SystemStubsExtension.class})
+@ExtendWith({ LocalstackDockerExtension.class, SystemStubsExtension.class })
 @Tag(LocalStackTest.NAME)
 @LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = LocalStackTestUtilities.LocalStackEnvironmentVariables.class)
 public class S3ClientHelperIT {

@@ -20,7 +20,6 @@ package io.dockstore.webservice.metrics;
 import static io.dockstore.client.cli.BaseIT.OTHER_USERNAME;
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
-import static io.dockstore.common.LocalStackTestUtilities.ENDPOINT_OVERRIDE;
 import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static io.dockstore.common.LocalStackTestUtilities.LocalStackEnvironmentVariables;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_STATUS_ERROR;
@@ -57,7 +56,6 @@ import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.metrics.MetricsData;
 import io.dockstore.webservice.core.metrics.MetricsDataMetadata;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
-import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.BufferedReader;
@@ -88,8 +86,7 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 public class MetricsDataS3ClientIT {
     private static final Gson GSON = new Gson();
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH, ConfigOverride.config("metricsConfig.s3EndpointOverride",
-            ENDPOINT_OVERRIDE));
+            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     private static TestingPostgres testingPostgres;
     private static String bucketName;
     private static String s3EndpointOverride;
