@@ -32,6 +32,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Author;
@@ -214,7 +215,30 @@ class NotebookIT extends BaseIT {
         notebook = workflowsApi.getWorkflow(notebookID, "");
         assertEquals(0, notebook.getStarredUsers().size());
     }
+        @Test
+        void testNotebookRSSFeedAndSitemap() {
+            CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+            ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
 
+            // There should be no notebooks
+            assertEquals(0, notebookDAO.findAllPublishedPaths().size());
+            assertEquals(0, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+
+            CreateContent createContent = new CreateContent().invoke();
+            long notebookID = createContent.getNotebookID();
+
+            // There should be 1 notebook
+            assertEquals(1, notebookDAO.findAllPublishedPaths().size());
+            assertEquals(1, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+
+            final MetadataApi metadataApi = new MetadataApi(openApiClient);
+            String rssFeed = metadataApi.rssFeed();
+            System.out.println(rssFeed);
+            assertTrue(rssFeed.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "RSS feed should contain 1 notebook");
+
+            String sitemap = metadataApi.sitemap();
+            assertTrue(sitemap.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "Sitemap with testing data should have 1 notebook");
+        }
     private class CreateContent {
         private long notebookID;
 
