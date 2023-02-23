@@ -286,12 +286,6 @@ class NotebookIT extends BaseIT {
         assertEquals(0,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
     }
 
-    private void addAdminToOrg(String username, String orgName) {
-        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, status, role) select (select id from organization where name = '"
-                + orgName + "'), id, 'ACCEPTED', 'ADMIN' from enduser where username = '" + username + "'"
-        );
-    }
-
     private Organization createTestOrganization(String name, boolean categorizer) {
         final ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
