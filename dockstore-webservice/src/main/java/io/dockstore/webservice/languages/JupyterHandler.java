@@ -46,8 +46,8 @@ import org.slf4j.LoggerFactory;
  * https://nbformat.readthedocs.io/en/latest/format_description.html
  * https://repo2docker.readthedocs.io/en/latest/specification.html
  */
-public class IpynbHandler implements LanguageHandlerInterface {
-    public static final Logger LOG = LoggerFactory.getLogger(IpynbHandler.class);
+public class JupyterHandler implements LanguageHandlerInterface {
+    public static final Logger LOG = LoggerFactory.getLogger(JupyterHandler.class);
 
     public static final Set<String> REES_FILES = Set.of("environment.yml", "Pipfile", "Pipfile.lock", "requirements.txt", "setup.py", "Project.toml", "REQUIRE", "install.R", "apt.txt", "DESCRIPTION", "postBuild", "start", "runtime.txt", "default.nix", "Dockerfile");
     public static final Set<String> REES_DIRS = Set.of("/", "/binder/", "/.binder/");

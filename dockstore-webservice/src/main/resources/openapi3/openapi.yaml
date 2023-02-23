@@ -1049,7 +1049,7 @@ paths:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
       - in: query
         name: namespace
         schema:
@@ -1704,7 +1704,7 @@ paths:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
       responses:
         default:
           content:
@@ -1903,7 +1903,7 @@ paths:
             - GXFORMAT2_TEST_FILE
             - DOCKSTORE_SWL
             - SWL_TEST_JSON
-            - DOCKSTORE_IPYNB
+            - DOCKSTORE_JUPYTER
             - DOCKSTORE_NOTEBOOK_REES
             - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
@@ -1986,7 +1986,7 @@ paths:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
       responses:
         default:
           content:
@@ -2427,7 +2427,7 @@ paths:
                   - GXFORMAT2_TEST_FILE
                   - DOCKSTORE_SWL
                   - SWL_TEST_JSON
-                  - DOCKSTORE_IPYNB
+                  - DOCKSTORE_JUPYTER
                   - DOCKSTORE_NOTEBOOK_REES
                   - DOCKSTORE_NOTEBOOK_TEST_FILE
                   - DOCKSTORE_NOTEBOOK_OTHER
@@ -5894,7 +5894,7 @@ paths:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
       - in: query
         name: namespace
         schema:
@@ -6588,7 +6588,7 @@ paths:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
       responses:
         default:
           content:
@@ -6741,7 +6741,7 @@ paths:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
       responses:
         default:
           content:
@@ -6777,7 +6777,7 @@ paths:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
       responses:
         default:
           content:
@@ -7050,7 +7050,7 @@ paths:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
       responses:
         default:
           content:
@@ -7476,7 +7476,7 @@ paths:
             - GXFORMAT2_TEST_FILE
             - DOCKSTORE_SWL
             - SWL_TEST_JSON
-            - DOCKSTORE_IPYNB
+            - DOCKSTORE_JUPYTER
             - DOCKSTORE_NOTEBOOK_REES
             - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
@@ -8652,7 +8652,7 @@ components:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
         version:
           type: string
     LanguageParsingRequest:
@@ -8673,7 +8673,7 @@ components:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
         descriptorRelativePathInGit:
           type: string
           description: The relative path to the primary descriptor (relative to the
@@ -8980,7 +8980,7 @@ components:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
         hasHTTPImports:
           type: boolean
         hasLocalImports:
@@ -9155,7 +9155,7 @@ components:
           - GXFORMAT2_TEST_FILE
           - DOCKSTORE_SWL
           - SWL_TEST_JSON
-          - DOCKSTORE_IPYNB
+          - DOCKSTORE_JUPYTER
           - DOCKSTORE_NOTEBOOK_REES
           - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
@@ -9878,7 +9878,7 @@ components:
           - GXFORMAT2_TEST_FILE
           - DOCKSTORE_SWL
           - SWL_TEST_JSON
-          - DOCKSTORE_IPYNB
+          - DOCKSTORE_JUPYTER
           - DOCKSTORE_NOTEBOOK_REES
           - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
@@ -10100,7 +10100,7 @@ components:
           - SWL
           - NFL
           - service
-          - ipynb
+          - jupyter
         descriptorTypeSubclass:
           type: string
           enum:

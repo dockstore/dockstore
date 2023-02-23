@@ -81,6 +81,7 @@ POM as their parent.
         <jackson.version>2.13.4.20221013</jackson.version>
         <docker-client.version>3.2.8</docker-client.version>
         <system-stubs.version>2.0.1</system-stubs.version>
+        <jjwt.suite.version>0.11.5</jjwt.suite.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
@@ -1257,6 +1258,24 @@ POM as their parent.
                 <groupId>org.kohsuke</groupId>
                 <artifactId>github-api</artifactId>
                 <version>1.313</version>
+            </dependency>
+            <!-- used for github-api build-in handing of JWTtokens -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.suite.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.suite.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.suite.version}</version>
             </dependency>
 
             <dependency>

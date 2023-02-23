@@ -36,7 +36,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.CheckUrlHelper;
 import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -352,8 +351,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId
      * @return
      */
-    protected Set<String> identifyGitReferencesToRelease(String repository, String installationId) {
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
+    protected Set<String> identifyGitReferencesToRelease(String repository, long installationId) {
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
 
         // see if there is a .dockstore.yml on any branch that was just added
@@ -374,9 +373,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId GitHub App installation ID
      * @return List of new and updated workflows
      */
-    protected void githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
+    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId) {
         // Grab Dockstore YML from GitHub
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
 
         boolean isSuccessful = true;
@@ -504,10 +503,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param dockstoreYml
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
-    private boolean createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, String installationId, String username,
+    private boolean createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, long installationId, String username,
             final SourceFile dockstoreYml, Class<?> workflowType, PrintWriter messageWriter) {
 
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
 
         boolean isSuccessful = true;
@@ -640,7 +639,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param user User that triggered action
      * @param workflowName User that triggered action
-     * @param subclass Subclass of the workflow
      * @param gitHubSourceCodeRepo Source Code Repo
      * @return New or updated workflow
      */
@@ -956,22 +954,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 // TODO: Revisit this when support for workflows added.
                 .filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML))
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Setup tokens required for GitHub apps
-     * @param installationId App installation ID (per repository)
-     * @return Installation access token for the given repository
-     */
-    private String gitHubAppSetup(String installationId) {
-        GitHubHelper.checkJWT(gitHubAppId, gitHubPrivateKeyFile);
-        String installationAccessToken = CacheConfigManager.getInstance().getInstallationAccessTokenFromCache(installationId);
-        if (installationAccessToken == null) {
-            String msg = "Could not get an installation access token for install with id " + Utilities.cleanForLogging(installationId);
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        return installationAccessToken;
     }
 
     /**

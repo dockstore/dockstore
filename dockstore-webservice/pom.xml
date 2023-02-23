@@ -928,6 +928,20 @@
             <groupId>org.kohsuke</groupId>
             <artifactId>github-api</artifactId>
         </dependency>
+        <!-- used for github-api build-in handing of JWTtokens -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
@@ -1215,6 +1229,11 @@
                                 <usedDependency>io.swagger:swagger-core</usedDependency>
                                 <usedDependency>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer</usedDependency>
                                 <usedDependency>jakarta.activation:jakarta.activation-api</usedDependency>
+                                <!-- these are used by org.kohsuke:github-api for handling JWT tokens -->
+                                <usedDependency>com.auth0:java-jwt</usedDependency>
+                                <usedDependency>io.jsonwebtoken:jjwt-impl</usedDependency>
+                                <usedDependency>io.jsonwebtoken:jjwt-api</usedDependency>
+                                <usedDependency>io.jsonwebtoken:jjwt-jackson</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
