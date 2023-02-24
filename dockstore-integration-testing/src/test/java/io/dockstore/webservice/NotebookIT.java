@@ -233,7 +233,6 @@ class NotebookIT extends BaseIT {
 
         final MetadataApi metadataApi = new MetadataApi(openApiClient);
         String rssFeed = metadataApi.rssFeed();
-        System.out.println(rssFeed);
         assertTrue(rssFeed.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "RSS feed should contain 1 notebook");
 
         String sitemap = metadataApi.sitemap();
