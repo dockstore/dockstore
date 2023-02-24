@@ -8272,7 +8272,7 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
-      userImages:
+      userImageReferences:
         type: "array"
         description: "The user-specified image references for the version."
         items:
@@ -8973,7 +8973,7 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
-      userImages:
+      userImageReferences:
         type: "array"
         description: "The user-specified image references for the version."
         items:
@@ -9430,7 +9430,7 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
-      userImages:
+      userImageReferences:
         type: "array"
         description: "The user-specified image references for the version."
         items:

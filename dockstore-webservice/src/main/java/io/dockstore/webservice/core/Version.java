@@ -240,7 +240,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column(columnDefinition = "varchar")
     @Convert(converter = UserImagesConverter.class)
     @ApiModelProperty(value = "The user-specified image references for the version.")
-    private List<String> userImages = new ArrayList<>();
+    private List<String> userImageReferences = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
@@ -642,12 +642,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.userFiles = userFiles;
     }
 
-    public List<String> getUserImages() {
-        return userImages;
+    public List<String> getUserImageReferences() {
+        return userImageReferences;
     }
 
-    public void setUserImages(List<String> userImages) {
-        this.userImages = userImages;
+    public void setUserImageReferences(List<String> userImageReferences) {
+        this.userImageReferences = userImageReferences;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

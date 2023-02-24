@@ -9381,7 +9381,7 @@ components:
           type: array
           items:
             type: string
-        userImages:
+        userImageReferences:
           type: array
           items:
             type: string
@@ -10000,7 +10000,7 @@ components:
           type: array
           items:
             type: string
-        userImages:
+        userImageReferences:
           type: array
           items:
             type: string
@@ -10372,7 +10372,7 @@ components:
           type: array
           items:
             type: string
-        userImages:
+        userImageReferences:
           type: array
           items:
             type: string
