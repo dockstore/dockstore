@@ -294,4 +294,12 @@
             CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 18876;
         </sql>
     </changeSet>
+    <changeSet author="svonworl" id="addUserImages">
+        <addColumn tableName="tag">
+            <column name="userimages" type="varchar"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="userimages" type="varchar"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

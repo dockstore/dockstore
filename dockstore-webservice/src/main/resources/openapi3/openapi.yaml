@@ -9381,6 +9381,10 @@ components:
           type: array
           items:
             type: string
+        userImages:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:
@@ -9996,6 +10000,10 @@ components:
           type: array
           items:
             type: string
+        userImages:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:
@@ -10361,6 +10369,10 @@ components:
         synced:
           type: boolean
         userFiles:
+          type: array
+          items:
+            type: string
+        userImages:
           type: array
           items:
             type: string

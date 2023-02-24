@@ -33,6 +33,7 @@ public class YamlNotebook implements Workflowish {
     private String format = "jupyter";
     private String language = "python";
     private String path;
+    private String image;
     private Boolean publish;
     private boolean latestTagAsDefault = false;
     private Filters filters = new Filters();
@@ -98,6 +99,21 @@ public class YamlNotebook implements Workflowish {
      */
     public void setPath(final String path) {
         this.path = path;
+    }
+
+    /**
+     * Get the kernel image reference for the notebook.
+     */
+    // TODO @ImageReference
+    public String getImage() {
+        return image;
+    }
+
+    /**
+     * Set the kernel image reference for the notebook.
+     */
+    public void setImage(final String image) {
+        this.image = image;
     }
 
     public Boolean getPublish() {

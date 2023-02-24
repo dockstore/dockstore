@@ -8272,6 +8272,11 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
+      userImages:
+        type: "array"
+        description: "The user-specified image references for the version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       reference:
@@ -8968,6 +8973,11 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
+      userImages:
+        type: "array"
+        description: "The user-specified image references for the version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -9418,6 +9428,11 @@ definitions:
       userFiles:
         type: "array"
         description: "The user-specified files for the version."
+        items:
+          type: "string"
+      userImages:
+        type: "array"
+        description: "The user-specified image references for the version."
         items:
           type: "string"
       versionMetadata:
