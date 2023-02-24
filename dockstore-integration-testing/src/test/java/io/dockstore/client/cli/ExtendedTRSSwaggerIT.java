@@ -55,12 +55,14 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
  * {@link BaseIT}
  *
  * @author dyuen
+ * @deprecated uses old swagger-based clients, new tests should only use openapi
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
-class ExtendedTRSIT extends BaseIT {
+@Deprecated(since = "1.14")
+class ExtendedTRSSwaggerIT extends BaseIT {
 
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
