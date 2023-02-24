@@ -19,7 +19,7 @@ public interface Workflowish {
     String getPrimaryDescriptorPath();
 
     /**
-     * Optionl: Document a specific readme path that can override the base readme file
+     * Optional: Document a specific readme path that can override the base readme file.
      * @return
      */
     String getReadMePath();
