@@ -19,13 +19,13 @@ import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
- * Like WebhookIT but with only openapi classes to avoid having to give fully defined classes everywhere
+ * Like {@link SwaggerWebhookIT} but with only openapi classes to avoid having to give fully defined classes everywhere
  */
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
-class OpenAPIWebhookIT extends BaseIT {
+class WebhookIT extends BaseIT {
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();

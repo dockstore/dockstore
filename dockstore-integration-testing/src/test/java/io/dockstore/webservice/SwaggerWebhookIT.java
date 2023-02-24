@@ -93,12 +93,14 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * @author agduncan
+ * @deprecated uses swagger client classes, prefer {@link WebhookIT}
  */
+@Deprecated
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
-class WebhookIT extends BaseIT {
+class SwaggerWebhookIT extends BaseIT {
     private static final int LAMBDA_ERROR = 418;
     private static final String DOCKSTORE_WHALESAY_WDL = "dockstore-whalesay-wdl";
 
