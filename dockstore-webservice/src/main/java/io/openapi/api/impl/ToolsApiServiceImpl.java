@@ -20,8 +20,10 @@ import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.NOTEBOOK;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.SERVICE;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
+import static io.swagger.api.impl.ToolsImplCommon.NOTEBOOK_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
@@ -34,6 +36,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -266,6 +269,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             entry = workflowDAO.findByPath(entryPath, user.isEmpty(), BioWorkflow.class).orElse(null);
         } else if (parsedID.toolType() == ParsedRegistryID.ToolType.SERVICE) {
             entry = workflowDAO.findByPath(entryPath, user.isEmpty(), Service.class).orElse(null);
+        } else if (parsedID.toolType() == ParsedRegistryID.ToolType.NOTEBOOK) {
+            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), Notebook.class).orElse(null);
         } else {
             throw new UnsupportedOperationException("Tool type that should not be present found:" + parsedID.toolType());
         }
@@ -456,10 +461,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @SuppressWarnings("checkstyle:ParameterNumber")
     private NumberOfEntityTypes getEntries(List<Entry<?, ?>> all, String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, Optional<User> user, int actualLimit, int offset) throws UnsupportedEncodingException {
+
         long numTools = 0;
         long numWorkflows = 0;
         long numAppTools = 0;
         long numServices = 0;
+        long numNotebooks = 0;
 
         if (id != null) {
             ParsedRegistryID parsedID = new ParsedRegistryID(id);
@@ -487,23 +494,24 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 } catch (UnsupportedOperationException ex) {
                     // If unable to match descriptor language, do not return any entries.
                     LOG.info(ex.getMessage());
-                    return new NumberOfEntityTypes(numTools, numWorkflows, numAppTools, numServices);
+                    return new NumberOfEntityTypes(0, 0, 0, 0, 0);
                 }
             }
 
             // calculate whether we want a page of tools, a page of workflows, or a page that includes both
-            numTools = WORKFLOW.equalsIgnoreCase(toolClass) || SERVICE.equalsIgnoreCase(toolClass) ? 0 : toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            numWorkflows = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || SERVICE.equalsIgnoreCase(toolClass) ? 0 : bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            numAppTools = WORKFLOW.equalsIgnoreCase(toolClass) || SERVICE.equalsIgnoreCase(toolClass) ? 0 : appToolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            numServices = WORKFLOW.equalsIgnoreCase(toolClass) || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) ? 0 : serviceDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-
+            boolean allClasses = (toolClass == null);
+            numTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || allClasses ? toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numWorkflows = WORKFLOW.equalsIgnoreCase(toolClass) || allClasses ? bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numAppTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || allClasses ? appToolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numServices = SERVICE.equalsIgnoreCase(toolClass) || allClasses ? serviceDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numNotebooks = NOTEBOOK.equalsIgnoreCase(toolClass) || allClasses ? notebookDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
 
             long startIndex = offset;
             long pageRemaining = actualLimit;
             long entriesConsidered = 0;
 
             ImmutableTriple<String, EntryDAO, Long>[] typeDAOs = new ImmutableTriple[]{ImmutableTriple.of(COMMAND_LINE_TOOL, toolDAO, numTools),
-                ImmutableTriple.of(WORKFLOW, bioWorkflowDAO, numWorkflows), ImmutableTriple.of(COMMAND_LINE_TOOL, appToolDAO, numAppTools), ImmutableTriple.of(SERVICE, serviceDAO, numServices)};
+                ImmutableTriple.of(WORKFLOW, bioWorkflowDAO, numWorkflows), ImmutableTriple.of(COMMAND_LINE_TOOL, appToolDAO, numAppTools), ImmutableTriple.of(SERVICE, serviceDAO, numServices), ImmutableTriple.of(NOTEBOOK, notebookDAO, numNotebooks)};
 
             for (ImmutableTriple<String, EntryDAO, Long> typeDAO : typeDAOs) {
                 if (!all.isEmpty()) {
@@ -525,7 +533,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 entriesConsidered = typeDAO.right;
             }
         }
-        return new NumberOfEntityTypes(numTools, numWorkflows, numAppTools, numServices);
+        return new NumberOfEntityTypes(numTools, numWorkflows, numAppTools, numServices, numNotebooks);
     }
 
     private boolean isCorrectToolClass(String toolClass, String daoToolClass) {
@@ -992,7 +1000,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * and services have a "#service" prepended to it.
      */
     public static class ParsedRegistryID {
-        private enum ToolType { TOOL, SERVICE, WORKFLOW
+        private enum ToolType { TOOL, SERVICE, WORKFLOW, NOTEBOOK
         }
 
         private ToolType type = ToolType.TOOL;
@@ -1014,6 +1022,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (SERVICE_PREFIX.equalsIgnoreCase(firstTextSegment)) {
                 list.remove(0); // Remove #service from ArrayList to make parsing similar to tool
                 type = ToolType.SERVICE;
+            }
+            if (NOTEBOOK_PREFIX.equalsIgnoreCase(firstTextSegment)) {
+                list.remove(0); // Remove #notebook from ArrayList to make parsing similar to tool
+                type = ToolType.NOTEBOOK;
             }
             checkToolId(list);
             registry = list.get(0);
@@ -1075,16 +1087,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         public final long numWorkflows;
         public final long numAppTools;
         public final long numServices;
+        public final long numNotebooks;
 
-        NumberOfEntityTypes(long numTools, long numWorkflows, long numAppTools, long numServices) {
+        NumberOfEntityTypes(long numTools, long numWorkflows, long numAppTools, long numServices, long numNotebooks) {
             this.numTools = numTools;
             this.numWorkflows = numWorkflows;
             this.numAppTools = numAppTools;
             this.numServices = numServices;
+            this.numNotebooks = numNotebooks;
         }
 
         public long sum() {
-            return numTools + numWorkflows + numAppTools + numServices;
+            return numTools + numWorkflows + numAppTools + numServices + numNotebooks;
         }
     }
 

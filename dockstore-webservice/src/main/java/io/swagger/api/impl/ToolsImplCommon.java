@@ -20,6 +20,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -28,6 +29,7 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -74,6 +76,7 @@ import org.slf4j.LoggerFactory;
 public final class ToolsImplCommon {
     public static final String WORKFLOW_PREFIX = "#workflow";
     public static final String SERVICE_PREFIX = "#service";
+    public static final String NOTEBOOK_PREFIX = "#notebook";
     public static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
 
@@ -464,12 +467,14 @@ public final class ToolsImplCommon {
             return ((AppTool) container).getWorkflowPath();
         } else if (container instanceof Workflow) {
             Workflow workflow = (Workflow)container;
-            DescriptorLanguage descriptorType = workflow.getDescriptorType();
-            String workflowPath = workflow.getWorkflowPath();
-            if (descriptorType == DescriptorLanguage.SERVICE) {
-                return SERVICE_PREFIX + "/" + workflowPath;
+            String path = workflow.getWorkflowPath();
+            EntryType type = workflow.getEntryType();
+            if (type == EntryType.SERVICE) {
+                return SERVICE_PREFIX + "/" + path;
+            } else if (type == EntryType.NOTEBOOK) {
+                return NOTEBOOK_PREFIX + "/" + path;
             } else {
-                return WORKFLOW_PREFIX + "/" + workflowPath;
+                return WORKFLOW_PREFIX + "/" + path;
             }
         } else {
             LOG.error("Could not construct URL for our container with id: " + container.getId());
@@ -517,6 +522,8 @@ public final class ToolsImplCommon {
             tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getWorkflowClass());
         } else if (container instanceof Service) {
             tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getServiceClass());
+        } else if (container instanceof Notebook) {
+            tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getNotebookClass());
         } else {
             throw new UnsupportedOperationException("encountered unknown entry type in TRS");
         }
