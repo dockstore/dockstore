@@ -101,7 +101,7 @@ class GeneralRegressionIT extends BaseIT {
     }
 
     /**
-     * this method will set up the databse and select data needed
+     * this method will set up the database and select data needed
      *
      * @return cwl/wdl/dockerfile path of the tool's tag in the database
      * @throws ApiException comes back from a web service error

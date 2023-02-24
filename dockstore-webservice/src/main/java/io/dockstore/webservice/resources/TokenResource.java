@@ -462,7 +462,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
                 user = new User();
                 user.setUsername(username);
-                user.setUsernameChangeRequired(shouldRestricUser(username));
+                user.setUsernameChangeRequired(shouldRestrictUser(username));
                 userID = userDAO.create(user);
                 acceptTOSAndPrivacyPolicy(user);
             } else {
@@ -619,7 +619,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 final String username = uniqueNewUsername(githubLogin);
                 User newUser = new User();
                 newUser.setUsername(username);
-                newUser.setUsernameChangeRequired(shouldRestricUser(username));
+                newUser.setUsernameChangeRequired(shouldRestrictUser(username));
                 userID = userDAO.create(newUser);
                 user = userDAO.findById(userID);
                 acceptTOSAndPrivacyPolicy(user);
@@ -703,7 +703,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return dockstoreToken;
     }
 
-    public boolean shouldRestricUser(String username) {
+    public boolean shouldRestrictUser(String username) {
         Matcher matcher = USERNAME_CONTAINS_KEYWORD_PATTERN.matcher(username);
         return matcher.find();
     }

@@ -38,10 +38,10 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="louisecabansay (generated)" id="addUserIdStarOrgConstratint">
+    <changeSet author="louisecabansay (generated)" id="addUserIdStarOrgConstraint">
         <addForeignKeyConstraint baseColumnNames="userid" baseTableName="starred_organizations" constraintName="fk_userIdStarredOrganizations" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
-    <changeSet author="louisecabansay (generated)" id="addOrganizationIdStarOrgConstratint">
+    <changeSet author="louisecabansay (generated)" id="addOrganizationIdStarOrgConstraint">
         <addForeignKeyConstraint baseColumnNames="organizationid" baseTableName="starred_organizations" constraintName="fk_organizationIdStarredOrganizations" referencedColumnNames="id" referencedTableName="organization"/>
     </changeSet>
     <changeSet author="dyuen (generated)" id="services">
@@ -206,7 +206,7 @@
             create policy delete_frozenfiles on sourcefile for delete using (not frozen);
         </sql>
     </changeSet>
-    <changeSet author="dyuen" id="modifyable version metadata">
+    <changeSet author="dyuen" id="modifiable version metadata">
         <createTable tableName="version_metadata">
             <column defaultValue="NOT_REQUESTED" name="doistatus" type="TEXT">
                 <constraints nullable="false"/>
