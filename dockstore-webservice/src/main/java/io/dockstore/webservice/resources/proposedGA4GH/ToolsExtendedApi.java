@@ -238,6 +238,7 @@ public class ToolsExtendedApi {
     @RolesAllowed({"curator", "admin"})
     @Path("/{id}/versions/{version_id}/aggregatedMetrics")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     @ApiOperation(value = AggregatedMetricsPut.SUMMARY, notes = AggregatedMetricsPut.DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     @ApiResponses(value = {

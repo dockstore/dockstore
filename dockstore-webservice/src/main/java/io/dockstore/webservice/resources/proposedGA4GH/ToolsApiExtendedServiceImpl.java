@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 
 import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_REGISTRY_RESPONSE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -47,6 +48,7 @@ import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -77,6 +79,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
  * Implementations of methods to return responses containing organization related information
@@ -89,6 +93,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
     public static final String EXECUTION_STATUS_ERROR = "All executions must contain ExecutionStatus";
+    public static final String EXECUTION_STATUS_COUNT_ERROR = "Aggregated metrics must contain ExecutionStatusCount";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
@@ -433,7 +438,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             MetricsDataS3Client metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
             metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);
             return Response.noContent().build();
-        } catch (Exception e) {
+        } catch (AwsServiceException | SdkClientException | JsonProcessingException | URISyntaxException e) {
             LOG.error("Could not submit metrics data", e);
             throw new CustomWebApplicationException("Could not submit metrics data", HttpStatus.SC_BAD_REQUEST);
         }
@@ -449,11 +454,18 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             return BAD_DECODE_REGISTRY_RESPONSE;
         }
 
-        Version<?> version = getVersion(entry, versionId).orElse(null);
         if (entry == null) {
             return Response.status(Response.Status.NOT_FOUND.getStatusCode(), TOOL_NOT_FOUND_ERROR).build();
-        } else if (version == null) {
+        }
+
+        Version<?> version = getVersion(entry, versionId).orElse(null);
+        if (version == null) {
             return Response.status(Response.Status.NOT_FOUND.getStatusCode(), VERSION_NOT_FOUND_ERROR).build();
+        }
+
+        // Check that the aggregated metrics have at least ExecutionStatusCount
+        if (aggregatedMetrics.getExecutionStatusCount() == null) {
+            return Response.status(Response.Status.BAD_REQUEST.getStatusCode(), EXECUTION_STATUS_COUNT_ERROR).build();
         }
 
         version.getMetricsByPlatform().put(platform, aggregatedMetrics);

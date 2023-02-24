@@ -24,12 +24,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.CpuMetric;
@@ -43,6 +46,7 @@ import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import java.util.Map;
+import javax.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -159,5 +163,50 @@ public class ExtendedTRSOpenApiIT extends BaseIT {
 
         assertNotNull(workflowVersion.getMetricsByPlatform().get(platform1));
         assertNotNull(workflowVersion.getMetricsByPlatform().get(platform2));
+    }
+
+    @Test
+    void testAggregatedMetricsPutErrors() {
+        // Admin user
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        // Non-admin user
+        final ApiClient otherWebClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        final ExtendedGa4GhApi otherExtendedGa4GhApi = new ExtendedGa4GhApi(otherWebClient);
+
+        String id = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
+        String versionId = "master";
+        String platform = Partner.TERRA.name();
+
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 1));
+        Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
+        // Test malformed ID
+        ApiException exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(metrics, platform, "malformedId", "malformedVersionId"));
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getCode());
+
+        // Test ID that doesn't exist
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(metrics, platform, "github.com/nonexistent/id", "master"));
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), exception.getCode(), "Should not be able to submit metrics for non-existent id");
+
+        // Test version ID that doesn't exist
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "",
+                DescriptorLanguage.CWL.toString(), "/test.json");
+        workflow = workflowApi.refresh1(workflow.getId(), false);
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, "nonexistentVersionId"));
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), exception.getCode(), "Should not be able to put aggregated metrics for non-existent version");
+
+        // Test that a non-admin/non-curator user can't put aggregated metrics
+        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId));
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), exception.getCode(), "Non-admin and non-curator user should not be able to put aggregated metrics");
+
+        // Test that the response body must contain ExecutionStatusCount
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(new Metrics(), platform, id, versionId));
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getCode(), "Should not be able to put aggregated metrics if ExecutionStatusCount is missing");
+
+        // Verify that not providing metrics throws an exception
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(null, platform, id, versionId));
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getCode(), "Should throw if execution metrics not provided");
     }
 }
