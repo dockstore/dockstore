@@ -18,7 +18,6 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 
 import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_REGISTRY_RESPONSE;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -48,7 +47,6 @@ import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -79,8 +77,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
  * Implementations of methods to return responses containing organization related information
@@ -109,9 +105,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static AppToolDAO appToolDAO = null;
     private static NotebookDAO notebookDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
+    private static DockstoreWebserviceConfiguration.MetricsConfig metricsConfig = null;
     private static PublicStateManager publicStateManager = null;
     private static Semaphore elasticSearchConcurrencyLimit = null;
-    private static MetricsDataS3Client metricsDataS3Client = null;
 
     public static void setStateManager(PublicStateManager manager) {
         ToolsApiExtendedServiceImpl.publicStateManager = manager;
@@ -135,30 +131,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         ToolsApiExtendedServiceImpl.config = config;
-
-        if (config.getMetricsConfig().getS3EndpointOverride() == null) {
-            ToolsApiExtendedServiceImpl.metricsDataS3Client = new MetricsDataS3Client(config.getMetricsConfig().getS3BucketName());
-        } else {
-            try {
-                ToolsApiExtendedServiceImpl.metricsDataS3Client = new MetricsDataS3Client(config.getMetricsConfig().getS3BucketName(), config.getMetricsConfig().getS3EndpointOverride());
-            } catch (URISyntaxException e) {
-                LOG.error("Unable to create metrics data S3 client with endpoint override {}", config.getMetricsConfig().getS3EndpointOverride(), e);
-                throw new CustomWebApplicationException("Unable to create metrics data S3 client", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-        }
+        ToolsApiExtendedServiceImpl.metricsConfig = config.getMetricsConfig();
 
         if (config.getEsConfiguration().getMaxConcurrentSessions() == null) {
             ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(ELASTICSEARCH_DEFAULT_LIMIT);
         } else {
             ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(config.getEsConfiguration().getMaxConcurrentSessions());
         }
-    }
-
-    /**
-     * Should only be used by tests so that the ToolsExtendedApi can use a localstack S3Client
-     */
-    public static void setMetricsDataS3Client(MetricsDataS3Client metricsDataS3Client) {
-        ToolsApiExtendedServiceImpl.metricsDataS3Client = metricsDataS3Client;
     }
 
     /**
@@ -451,10 +430,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String metricsData = mapper.writeValueAsString(executions);
-            // What format should metrics data be in? String or schema?
+            MetricsDataS3Client metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
             metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);
             return Response.noContent().build();
-        } catch (AwsServiceException | SdkClientException | JsonProcessingException e) {
+        } catch (Exception e) {
             LOG.error("Could not submit metrics data", e);
             throw new CustomWebApplicationException("Could not submit metrics data", HttpStatus.SC_BAD_REQUEST);
         }

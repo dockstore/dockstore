@@ -49,14 +49,13 @@ public class MetricsDataS3Client {
     private final S3Client s3; // The S3Client is thread-safe
     private final String bucketName;
 
-    public MetricsDataS3Client(String bucketName) {
+    public MetricsDataS3Client(String bucketName, S3Client s3Client) {
         this.bucketName = bucketName;
-        this.s3 = S3ClientHelper.createS3Client();
+        this.s3 = s3Client;
     }
 
     public MetricsDataS3Client(String bucketName, String endpointOverride) throws URISyntaxException {
-        this.bucketName = bucketName;
-        this.s3 = S3ClientHelper.createS3Client(endpointOverride);
+        this(bucketName, endpointOverride == null ? S3ClientHelper.createS3Client() : S3ClientHelper.createS3Client(endpointOverride));
     }
 
     /**
