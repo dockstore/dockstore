@@ -1422,7 +1422,7 @@
                     <!-- <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
                     <!-- Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
 		    <!-- note that the version of the TRS api in our fork is badly named and is not in sync with the main repo -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.6/openapi/openapi.yaml</inputSpec>
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.7-beta.1-notebooks/openapi/openapi.yaml</inputSpec>
                     <language>jaxrs-jersey</language>
                     <configOptions>
                         <dateLibrary>java11</dateLibrary>
