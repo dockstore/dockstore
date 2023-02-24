@@ -102,7 +102,7 @@
                 <constraints nullable="false" primaryKey="true" primaryKeyName="entry_input_fileformat_pkey"/>
             </column>
         </createTable>
-        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="entry_output_fileformat" constraintName="fk_entry_output_fileformat" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
+        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="entry_output_fileformat" constraintName="fk_entry_ouput_fileformat" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
         <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="entry_input_fileformat" constraintName="fk_entry_input_fileformat" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
         <sql dbms="postgresql">
             INSERT INTO entry_input_fileformat(entryid, fileformatid)
