@@ -224,7 +224,7 @@ class NotebookIT extends BaseIT {
         assertEquals(0, notebookDAO.findAllPublishedPaths().size());
         assertEquals(0, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
 
-        CreateContent createContent = new CreateContent().invoke();
+        new CreateContent().invoke();
 
         // There should be 1 notebook
         assertEquals(1, notebookDAO.findAllPublishedPaths().size());
