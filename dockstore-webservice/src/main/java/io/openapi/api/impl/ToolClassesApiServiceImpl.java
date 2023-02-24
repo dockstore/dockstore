@@ -32,6 +32,15 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
     public static final String COMMAND_LINE_TOOL = "CommandLineTool";
     public static final String WORKFLOW = "Workflow";
     public static final String SERVICE = "Service";
+    public static final String NOTEBOOK = "Notebook";
+
+    public static ToolClass getNotebookClass() {
+        ToolClass type2 = new ToolClass();
+        type2.setName(NOTEBOOK);
+        type2.setId("3");
+        type2.setDescription(NOTEBOOK);
+        return type2;
+    }
 
     public static ToolClass getServiceClass() {
         ToolClass type2 = new ToolClass();
@@ -63,6 +72,7 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
         toolTypes.add(getCommandLineToolClass());
         toolTypes.add(getWorkflowClass());
         toolTypes.add(getServiceClass());
+        toolTypes.add(getNotebookClass());
         return Response.ok().entity(toolTypes).build();
     }
 }
