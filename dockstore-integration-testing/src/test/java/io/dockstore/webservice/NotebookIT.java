@@ -215,30 +215,30 @@ class NotebookIT extends BaseIT {
         notebook = workflowsApi.getWorkflow(notebookID, "");
         assertEquals(0, notebook.getStarredUsers().size());
     }
-        @Test
-        void testNotebookRSSFeedAndSitemap() {
-            CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-            ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+    @Test
+    void testNotebookRSSFeedAndSitemap() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
 
-            // There should be no notebooks
-            assertEquals(0, notebookDAO.findAllPublishedPaths().size());
-            assertEquals(0, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+        // There should be no notebooks
+        assertEquals(0, notebookDAO.findAllPublishedPaths().size());
+        assertEquals(0, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
 
-            CreateContent createContent = new CreateContent().invoke();
-            long notebookID = createContent.getNotebookID();
+        CreateContent createContent = new CreateContent().invoke();
+        long notebookID = createContent.getNotebookID();
 
-            // There should be 1 notebook
-            assertEquals(1, notebookDAO.findAllPublishedPaths().size());
-            assertEquals(1, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+        // There should be 1 notebook
+        assertEquals(1, notebookDAO.findAllPublishedPaths().size());
+        assertEquals(1, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
 
-            final MetadataApi metadataApi = new MetadataApi(openApiClient);
-            String rssFeed = metadataApi.rssFeed();
-            System.out.println(rssFeed);
-            assertTrue(rssFeed.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "RSS feed should contain 1 notebook");
+        final MetadataApi metadataApi = new MetadataApi(openApiClient);
+        String rssFeed = metadataApi.rssFeed();
+        System.out.println(rssFeed);
+        assertTrue(rssFeed.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "RSS feed should contain 1 notebook");
 
-            String sitemap = metadataApi.sitemap();
-            assertTrue(sitemap.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "Sitemap with testing data should have 1 notebook");
-        }
+        String sitemap = metadataApi.sitemap();
+        assertTrue(sitemap.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "Sitemap with testing data should have 1 notebook");
+    }
     private class CreateContent {
         private long notebookID;
 
