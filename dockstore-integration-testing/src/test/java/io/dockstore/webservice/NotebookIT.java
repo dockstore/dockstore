@@ -32,10 +32,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
-import io.dockstore.openapi.client.api.EntriesApi;
-import io.dockstore.openapi.client.api.OrganizationsApi;
-import io.dockstore.openapi.client.api.UsersApi;
-import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.api.*;
 import io.dockstore.openapi.client.model.Author;
 import io.dockstore.openapi.client.model.Category;
 import io.dockstore.openapi.client.model.Collection;
@@ -54,6 +51,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.dockstore.webservice.resources.CollectionResource;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -227,6 +226,7 @@ class NotebookIT extends BaseIT {
         final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final EntriesApi entriesApi = new EntriesApi(webClientAdminUser);
         final OrganizationsApi organizationsApi = new OrganizationsApi(webClientAdminUser);
+        final CategoriesApi categoriesApi = new CategoriesApi(webClientAdminUser);
 
         //create organizations
         createTestOrganization("nonCategorizer", false);
@@ -262,6 +262,8 @@ class NotebookIT extends BaseIT {
         List<CollectionOrganization> entryCollection = entriesApi.entryCollections(notebookID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
         assertEquals(1,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(1, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
+
 
         //remove notebook from collection
         organizationsApi.deleteEntryFromCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
@@ -269,6 +271,7 @@ class NotebookIT extends BaseIT {
         entryCollection = entriesApi.entryCollections(notebookID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
         assertEquals(0,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
 
         //add notebook to category
         Set<String> expectedCategoryNames = new HashSet<>();
@@ -277,6 +280,7 @@ class NotebookIT extends BaseIT {
         List<Category> entryCategory = entriesApi.entryCategories(notebookID);
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
         assertEquals(1,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
+        assertEquals(1, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
 
         //remove notebook from category
         organizationsApi.deleteEntryFromCollection(categorizerOrg.getId(), category.getId(), notebookID, null);
@@ -284,6 +288,7 @@ class NotebookIT extends BaseIT {
         entryCategory = entriesApi.entryCategories(notebookID);
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
         assertEquals(0,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
+        assertEquals(0, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
     }
 
     private Organization createTestOrganization(String name, boolean categorizer) {
