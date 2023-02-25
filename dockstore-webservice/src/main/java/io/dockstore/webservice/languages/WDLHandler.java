@@ -17,6 +17,8 @@ package io.dockstore.webservice.languages;
 
 import static io.dockstore.webservice.helpers.SourceFileHelper.findPrimaryDescriptor;
 import static io.dockstore.webservice.helpers.SourceFileHelper.findTestFiles;
+import static java.nio.file.attribute.PosixFilePermissions.asFileAttribute;
+import static java.nio.file.attribute.PosixFilePermissions.fromString;
 
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.github.zafarkhaja.semver.expr.LexerException;
@@ -47,6 +49,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,6 +72,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.http.HttpStatus;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -136,10 +141,10 @@ public class WDLHandler implements LanguageHandlerInterface {
         WdlBridge wdlBridge = new WdlBridge();
         final Map<String, String> secondaryFiles = sourceFiles.stream()
                 .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
-        wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
+        wdlBridge.setSecondaryFiles(secondaryFiles);
         File tempMainDescriptor = null;
         try {
-            tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+            tempMainDescriptor = createTempFile("main", "descriptor");
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
             try {
                 // Set language version for descriptor source files
@@ -297,7 +302,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                         secondaryDescContent.put(sourceFile.getAbsolutePath(), sourceFile.getContent());
                     }
                 }
-                tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+                tempMainDescriptor = createTempFile("main", "descriptor");
                 Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
                 String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
                 try {
@@ -318,7 +323,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 }
 
                 WdlBridge wdlBridge = new WdlBridge();
-                wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
+                wdlBridge.setSecondaryFiles(secondaryDescContent);
 
                 if (Objects.equals(type, "tool")) {
                     wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath(), primaryDescriptorFilePath);
@@ -476,7 +481,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         // Write main descriptor to file
         // The use of temporary files is not needed here and might cause new problems
         try {
-            tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+            tempMainDescriptor = createTempFile("main", "descriptor");
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
 
             WdlBridge wdlBridge = new WdlBridge();
@@ -616,13 +621,11 @@ public class WDLHandler implements LanguageHandlerInterface {
                 .forEach(descriptorSourceFile -> {
                     secondaryFiles.put(descriptorSourceFile.getAbsolutePath(), descriptorSourceFile.getContent());
                 });
-        wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
+        wdlBridge.setSecondaryFiles(secondaryFiles);
 
-        File tempDir = null;
-        File tempMainDescriptor;
+        File tempMainDescriptor = null;
         try {
-            tempDir = Files.createTempDir();
-            tempMainDescriptor = File.createTempFile("main", "descriptor", tempDir);
+            tempMainDescriptor = createTempFile("main", "descriptor");
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptorContent);
             // It's possible for isVersionValid to be false for a valid 'version' so we must double-check by trying to find a 'version' string in the content
             // Ex: Cromwell doesn't support WDL 1.1 so a 'version 1.1' workflow will return false for isVersionValid
@@ -645,7 +648,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             throw createStackOverflowThrowable(error);
         } finally {
             // Delete the temp directory and its contents
-            FileUtils.deleteQuietly(tempDir);
+            FileUtils.deleteQuietly(tempMainDescriptor);
         }
     }
 
@@ -707,7 +710,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         wdlBridge.setSecondaryFiles(sourceFiles.stream().collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent)));
         File tempMainDescriptor = null;
         try {
-            tempMainDescriptor = java.nio.file.Files.createTempFile("main", "descriptor").toFile();
+            tempMainDescriptor = createTempFile("main", "descriptor");
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptorContent);
             return Optional.of(wdlBridge.getInputFiles(tempMainDescriptor.getPath()));
         } catch (SyntaxError | IOException e) {
@@ -789,5 +792,25 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     private static RuntimeException createStackOverflowThrowable(StackOverflowError error) {
         throw new CustomWebApplicationException(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+    }
+
+    /**
+     * Securely creates a temporary file
+     * @param suffix
+     * @param prefix
+     * @return
+     * @throws IOException
+     */
+    private static File createTempFile(String prefix, String suffix) throws IOException {
+        if (SystemUtils.IS_OS_UNIX) {
+            FileAttribute<Set<PosixFilePermission>> attr = asFileAttribute(fromString("rwx------"));
+            return java.nio.file.Files.createTempFile(prefix, suffix, attr).toFile(); // Compliant
+        } else {
+            File f = java.nio.file.Files.createTempFile(prefix, suffix).toFile();  // Compliant
+            f.setReadable(true, true);
+            f.setWritable(true, true);
+            f.setExecutable(true, true);
+            return f;
+        }
     }
 }

@@ -27,6 +27,7 @@ import java.util.Optional;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -68,10 +69,13 @@ public final class SourceFileHelper {
      */
     public static Optional<JSONObject> testFileAsJsonObject(SourceFile sourceFile) {
         final TestFileType testFileType = findTestFileType(sourceFile);
+        if (testFileType == null) {
+            return Optional.empty();
+        }
         try {
             switch (testFileType) {
             case YAML -> {
-                Yaml yaml = new Yaml(new SafeConstructor());
+                Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
                 Map<String, Object> map = yaml.load(sourceFile.getContent());
                 return Optional.of(new JSONObject(map));
             }
