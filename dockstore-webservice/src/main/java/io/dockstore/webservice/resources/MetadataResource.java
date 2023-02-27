@@ -38,13 +38,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.CLIInfo;
 import io.dockstore.webservice.api.Config;
 import io.dockstore.webservice.api.HealthCheckResult;
-import io.dockstore.webservice.core.AppTool;
-import io.dockstore.webservice.core.Collection;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Notebook;
-import io.dockstore.webservice.core.Organization;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.*;
 import io.dockstore.webservice.core.database.RSSAppToolPath;
 import io.dockstore.webservice.core.database.RSSNotebookPath;
 import io.dockstore.webservice.core.database.RSSToolPath;
@@ -259,12 +253,10 @@ public class MetadataResource {
     }
 
     private String getRSS() {
-        List<Tool> tools = toolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSToolPath::getTool).collect(Collectors.toList());
-        List<Workflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).collect(
-                Collectors.toList());
-        List<AppTool> appTools = appToolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSAppToolPath::getAppTool).collect(
-                Collectors.toList());
-        List<Notebook> notebooks = notebookDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSNotebookPath::getNotebook).collect(Collectors.toList());
+        List<Tool> tools = toolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSToolPath::getTool).toList();
+        List<BioWorkflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).toList();
+        List<AppTool> appTools = appToolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSAppToolPath::getAppTool).toList();
+        List<Notebook> notebooks = notebookDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSNotebookPath::getNotebook).toList();
         List<Entry<?, ?>> dbEntries =  new ArrayList<>();
         dbEntries.addAll(tools);
         dbEntries.addAll(workflows);
