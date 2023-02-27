@@ -8506,11 +8506,11 @@ components:
           description: The total time it took for the execution to complete in ISO
             8601 duration format
           example: PT30S
-        memoryRequirements:
-          type: string
-          description: Memory requirements for the execution in GB. Provide the numerical
-            value and the GB unit separated by a space
-          example: 2 GB
+        memoryRequirementsGB:
+          type: number
+          format: double
+          description: Memory requirements for the execution in GB
+          example: 2
       required:
       - executionStatus
     ExecutionStatusMetric:

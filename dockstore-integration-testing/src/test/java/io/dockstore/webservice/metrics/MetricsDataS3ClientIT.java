@@ -312,7 +312,7 @@ public class MetricsDataS3ClientIT {
             execution.setExecutionStatus(Execution.ExecutionStatusEnum.SUCCESSFUL);
             execution.setExecutionTime("PT5M");
             execution.setCpuRequirements(2);
-            execution.setMemoryRequirements("2 GB");
+            execution.setMemoryRequirementsGB(2.0);
             Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
             execution.setAdditionalProperties(additionalProperties);
             executions.add(execution);

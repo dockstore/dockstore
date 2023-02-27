@@ -39,8 +39,8 @@ public class Execution {
     private String executionTime;
 
     @JsonProperty
-    @Schema(description = "Memory requirements for the execution in GB. Provide the numerical value and the GB unit separated by a space", example = "2 GB")
-    private String memoryRequirements;
+    @Schema(description = "Memory requirements for the execution in GB", example = "2")
+    private Double memoryRequirementsGB;
 
     @JsonProperty
     @Schema(description = "CPU requirements for the execution", example = "2")
@@ -81,12 +81,12 @@ public class Execution {
         this.executionTime = executionTime;
     }
 
-    public String getMemoryRequirements() {
-        return memoryRequirements;
+    public Double getMemoryRequirementsGB() {
+        return memoryRequirementsGB;
     }
 
-    public void setMemoryRequirements(String memoryRequirements) {
-        this.memoryRequirements = memoryRequirements;
+    public void setMemoryRequirementsGB(Double memoryRequirementsGB) {
+        this.memoryRequirementsGB = memoryRequirementsGB;
     }
 
     public Integer getCpuRequirements() {

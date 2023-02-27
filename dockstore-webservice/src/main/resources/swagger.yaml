@@ -7587,8 +7587,9 @@ definitions:
         - "FAILED_RUNTIME_INVALID"
       executionTime:
         type: "string"
-      memoryRequirements:
-        type: "string"
+      memoryRequirementsGB:
+        type: "number"
+        format: "double"
   ExecutionStatusMetric:
     type: "object"
     properties:
