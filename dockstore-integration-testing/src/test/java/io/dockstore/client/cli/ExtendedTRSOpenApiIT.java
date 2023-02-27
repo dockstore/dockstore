@@ -66,8 +66,12 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(ConfidentialTest.NAME)
 public class ExtendedTRSOpenApiIT extends BaseIT {
 
+    private static final String DOCKSTORE_WORKFLOW_CNV_REPO = "DockstoreTestUser2/dockstore_workflow_cnv";
+    private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB.name() + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
+
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
+
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
@@ -86,9 +90,9 @@ public class ExtendedTRSOpenApiIT extends BaseIT {
         final String platform2 = Partner.DNA_STACK.name();
 
         // Register and publish a workflow
-        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/my-workflow";
+        final String workflowId = String.format("#workflow/%s/my-workflow", DOCKSTORE_WORKFLOW_CNV_PATH);
         final String workflowVersionId = "master";
-        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "my-workflow", "cwl",
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_WORKFLOW_CNV_REPO, "/workflow/cnv.cwl", "my-workflow", "cwl",
                 "/test.json");
         workflow = workflowsApi.refresh1(workflow.getId(), false);
         workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
@@ -175,7 +179,7 @@ public class ExtendedTRSOpenApiIT extends BaseIT {
         final ApiClient otherWebClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final ExtendedGa4GhApi otherExtendedGa4GhApi = new ExtendedGa4GhApi(otherWebClient);
 
-        String id = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
+        String id = String.format("#workflow/%s", DOCKSTORE_WORKFLOW_CNV_PATH);
         String versionId = "master";
         String platform = Partner.TERRA.name();
 
@@ -190,7 +194,7 @@ public class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), exception.getCode(), "Should not be able to submit metrics for non-existent id");
 
         // Test version ID that doesn't exist
-        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "",
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_WORKFLOW_CNV_REPO, "/workflow/cnv.cwl", "",
                 DescriptorLanguage.CWL.toString(), "/test.json");
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
