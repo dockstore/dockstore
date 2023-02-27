@@ -7,7 +7,7 @@ import "05_06_structs.wdl"
 # -if filter_command is omitted, input files will be concatenated as
 #  usual
 # -if filter_command is passed, it must be a valid bash command,
-#  accepting the resulting file via pipe on stdin, and outputing the
+#  accepting the resulting file via pipe on stdin, and outputting the
 #  desired file on stdout
 task ZcatCompressedFiles {
   input {
@@ -69,7 +69,7 @@ task ZcatCompressedFiles {
 # -if filter_command is omitted, input files will be concatenated as
 #  usual
 # -if filter_command is passed, it must be a valid bash command,
-#  accepting the resulting file via pipe on stdin, and outputing the
+#  accepting the resulting file via pipe on stdin, and outputting the
 #  desired file on stdout
 task CatUncompressedFiles {
   input {
@@ -358,7 +358,7 @@ task PasteFiles {
 
 # Select a subset of vcf records by passing a bash filter command
 # records_filter must be a bash command accepting vcf records passed via
-# pipe, and outputing the desired records to stdout
+# pipe, and outputting the desired records to stdout
 task FilterVcf {
   input {
     File vcf

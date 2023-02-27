@@ -175,7 +175,7 @@ public final class SourceCodeRepoFactory {
         // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
         // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
         // in https://www.regular-expressions.info/catastrophic.html
-        // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
+        // So use more restrictive regex and possessive quantifiers '++' with atomic group '?>'
         // Can test regex at https://regex101.com/
         // If a caller provides sourceName the pattern matcher will expect that exact git host name in the URL,
         // otherwise it will match any valid git host name

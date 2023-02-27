@@ -147,7 +147,7 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
-     * Check if a user has adminitrative privileges.
+     * Check if a user has administrative privileges.
      * If not, throw a {@link CustomWebApplicationException}.
      * @param user user to be checked, null if the user is not logged in
      */

@@ -180,7 +180,7 @@ class CRUDClientIT extends BaseIT {
         long count = dockstoreTool.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
         assertEquals(count, dockstoreTool.getWorkflowVersions().size(), "all versions do not seem to have editors");
 
-        // ensure that we cannot retrieve files until publication, important for hosted workflows which don't exist publically
+        // ensure that we cannot retrieve files until publication, important for hosted workflows which don't exist publicly
         ContainersApi otherUserApi = new ContainersApi(getWebClient(USER_1_USERNAME, testingPostgres));
         boolean thrownException = false;
         try {
@@ -296,7 +296,7 @@ class CRUDClientIT extends BaseIT {
         long count = dockstoreWorkflow.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
         assertEquals(count, dockstoreWorkflow.getWorkflowVersions().size(), "all versions do not seem to have editors");
 
-        // ensure that we cannot retrieve files until publication, important for hosted workflows which don't exist publically
+        // ensure that we cannot retrieve files until publication, important for hosted workflows which don't exist publicly
         WorkflowsApi otherUserApi = new WorkflowsApi(getWebClient(USER_1_USERNAME, testingPostgres));
         boolean thrownException = false;
         try {
@@ -316,7 +316,7 @@ class CRUDClientIT extends BaseIT {
         file = otherUserApi.primaryDescriptor(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
         assertFalse(file.getContent().isEmpty());
 
-        // Check that absolute file gets set if not explicity set
+        // Check that absolute file gets set if not explicitly set
         SourceFile file4 = new SourceFile();
         file4.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         file4.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);

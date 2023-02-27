@@ -878,7 +878,7 @@ public interface LanguageHandlerInterface {
      * Terrible refactor in progress.
      * This code is used by both WDL and Nextflow to deal with the maps that we create for them.
      *
-     * @param mainDescName    the filename of the main desciptor, used in the DAG list to indicate which tasks live in which descriptors
+     * @param mainDescName    the filename of the main descriptor, used in the DAG list to indicate which tasks live in which descriptors
      * @param type            are we handling DAG or tools listing
      * @param dao             data access to tools
      * @param callType        ?

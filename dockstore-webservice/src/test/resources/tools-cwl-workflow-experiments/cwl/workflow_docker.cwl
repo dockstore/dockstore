@@ -3,7 +3,7 @@ class: Workflow
 
 doc: |
    [![Docker Repository on Quay](https://quay.io/repository/ratschlab/workflow-experiment/status "Docker Repository on Quay")](https://quay.io/repository/ratschlab/workflow-experiment)
-   Very simple and very artifical workflow to experiment with containers and cwl.
+   Very simple and very artificial workflow to experiment with containers and cwl.
 
 #dct:creator:
 #  foaf:name: Marc Zimmermann

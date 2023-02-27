@@ -125,6 +125,7 @@ class SwaggerWebhookIT extends BaseIT {
     private final String multiEntryRepo = "dockstore-testing/multi-entry";
     private final String unusualBranchWorkflowDockstoreYmlRepo = "DockstoreTestUser2/dockstore_workflow_cnv";
     private final String largeWorkflowDockstoreYmlRepo = "dockstore-testing/rodent-of-unusual-size";
+    private final String workflowDockstoreYmlRepo = "dockstore-testing/workflow-dockstore-yml";
     private final String whalesay2Repo = "DockstoreTestUser/dockstore-whalesay-2";
     private FileDAO fileDAO;
     private AppToolDAO appToolDAO;
@@ -1402,7 +1403,6 @@ class SwaggerWebhookIT extends BaseIT {
 
     }
 
-
     @Test
     void testDuplicatePathsAcrossTables() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -1464,6 +1464,30 @@ class SwaggerWebhookIT extends BaseIT {
         organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null);
         Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
+    }
+
+    @Test
+    void testDifferentLanguagesWithSameWorkflowName() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowClient = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+
+        // Add a WDL version of a workflow should pass.
+        workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-WDL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+
+        // Add a CWL version of a workflow with the same name should cause error.
+        try {
+            workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-CWL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+            fail("should have thrown");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+            io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
+            String message = event.getMessage().toLowerCase();
+            assertTrue(message.contains("descriptor language"));
+            assertTrue(message.contains("workflow"));
+            assertTrue(message.contains("version"));
+        }
     }
     
     private long countTools() {

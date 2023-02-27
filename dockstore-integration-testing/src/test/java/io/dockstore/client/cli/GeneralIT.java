@@ -172,7 +172,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
     }
 
     /**
-     * this method will set up the databse and select data needed
+     * this method will set up the database and select data needed
      *
      * @return cwl/wdl/dockerfile path of the tool's tag in the database
      * @throws ApiException
@@ -1164,7 +1164,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         // Check that the new imageid and checksums are grabbed on refresh. Also check the old images have been deleted.
         refreshAfterDeletedTag(toolApi, tool, tags);
 
-        // mimic getting an registry being slow/now responsding and verify we do not delete the image information we already have by going to an invalid url.
+        // mimic getting an registry being slow/now responding and verify we do not delete the image information we already have by going to an invalid url.
         testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where giturl = 'git@gitlab.com:NatalieEO/dockstore-tool-bamstats.git'");
         toolApi.refresh(tool.getId());
         List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
@@ -1558,7 +1558,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         } catch (ApiException ex) {
             failed = true;
         }
-        assertTrue(failed, "Should throw an expection when not authorized.");
+        assertTrue(failed, "Should throw an exception when not authorized.");
     }
 
     /**

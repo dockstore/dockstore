@@ -124,7 +124,7 @@ public class EventResource {
      * @param user The user we are getting events for
      * @param eventSearchType The types of events
      * @param limit Event list limit
-     * @param offset Event list offest
+     * @param offset Event list offset
      * @return A list of events
      */
     private List<Event> getEventsForUser(User user, EventSearchType eventSearchType, int limit, Integer offset) {
