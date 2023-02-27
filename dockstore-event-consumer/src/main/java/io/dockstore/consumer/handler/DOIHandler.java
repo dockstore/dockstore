@@ -105,7 +105,7 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
                 //                for (SourceFile file : tag.getSourceFiles()) {
                 //                    Path tempFile = Files.createTempFile("temp", "file");
                 //                    FileUtils.writeStringToFile(tempFile.toFile(), file.getContent(), StandardCharsets.UTF_8);
-                //                    // file name is passsed in but seems to be ignore
+                //                    // file name is passed in but seems to be ignore
                 //                    filesApi.createFile(depositionID, tempFile.toFile(), new File(file.getPath()).getName());
                 //                }
                 // TODO: this would be fleshed out to populate descriptors, secondary descriptors, test json, dockerfiles, etc.

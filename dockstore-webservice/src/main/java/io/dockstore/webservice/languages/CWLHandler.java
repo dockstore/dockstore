@@ -846,10 +846,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return hintState.getDockerPull();
     }
 
-    private String getDockerPull(RequirementOrHintState requirementState, List<Object> additonalRequirements,
+    private String getDockerPull(RequirementOrHintState requirementState, List<Object> additionalRequirements,
         RequirementOrHintState hintState, List<Object> additionalHints) {
         return getDockerPull(
-            addToRequirementOrHintState(requirementState, additonalRequirements),
+            addToRequirementOrHintState(requirementState, additionalRequirements),
             addToRequirementOrHintState(hintState, additionalHints));
     }
 
@@ -1318,8 +1318,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         /**
          * Invoked by the preprocessor when one of the "max" conditions (excessive file depth, size, or number of files expanded) is detected.
-         * This method can be overidden to implement alternative behavior, such as returning instead of throwing, allowing preprocessing to continue.
-         * @param message a message decribing which "max" condition was met
+         * This method can be overridden to implement alternative behavior, such as returning instead of throwing, allowing preprocessing to continue.
+         * @param message a message describing which "max" condition was met
          */
         public void handleMax(String message) {
             String fullMessage = "CWL might be recursive: " + message;
