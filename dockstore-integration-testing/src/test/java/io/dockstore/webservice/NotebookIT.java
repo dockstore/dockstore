@@ -32,9 +32,16 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.CategoriesApi;
+import io.dockstore.openapi.client.api.EntriesApi;
+import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Author;
+import io.dockstore.openapi.client.model.Category;
+import io.dockstore.openapi.client.model.Collection;
+import io.dockstore.openapi.client.model.CollectionOrganization;
+import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Workflow;
@@ -44,9 +51,11 @@ import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -213,6 +222,92 @@ class NotebookIT extends BaseIT {
         workflowsApi.starEntry1(notebookID, new StarRequest().star(false));
         notebook = workflowsApi.getWorkflow(notebookID, "");
         assertEquals(0, notebook.getStarredUsers().size());
+    }
+
+    @Test
+    void testNotebookToCollectionCategory() {
+        final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final EntriesApi entriesApi = new EntriesApi(webClientAdminUser);
+        final OrganizationsApi organizationsApi = new OrganizationsApi(webClientAdminUser);
+        final CategoriesApi categoriesApi = new CategoriesApi(webClientAdminUser);
+
+        //create organizations
+        createTestOrganization("nonCategorizer", false);
+        createTestOrganization("categorizer", true);
+
+        //approve organizations
+        Organization nonCategorizerOrg = organizationsApi.getOrganizationByName("nonCategorizer");
+        Organization categorizerOrg = organizationsApi.getOrganizationByName("categorizer");
+        nonCategorizerOrg = organizationsApi.approveOrganization(nonCategorizerOrg.getId());
+        categorizerOrg = organizationsApi.approveOrganization(categorizerOrg.getId());
+
+        //create collection and category
+        Collection collection = new Collection();
+        collection.setName("Collection");
+        collection.setDisplayName("Collection");
+        collection.setDescription("A collection of notebooks");
+        collection = organizationsApi.createCollection(collection, nonCategorizerOrg.getId());
+
+        Collection category = new Collection();
+        category.setName("Category");
+        category.setDisplayName("Category");
+        category.setDescription("A category of notebooks");
+        category = organizationsApi.createCollection(category, categorizerOrg.getId());
+
+        //create notebook
+        CreateContent createContent = new CreateContent().invoke();
+        long notebookID = createContent.getNotebookID();
+
+        //add notebook to collection
+        Set<String> expectedCollectionNames = new HashSet<>();
+        expectedCollectionNames.add("Collection");
+        organizationsApi.addEntryToCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
+        List<CollectionOrganization> entryCollection = entriesApi.entryCollections(notebookID);
+        assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
+        assertEquals(1,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(1, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
+
+
+        //remove notebook from collection
+        organizationsApi.deleteEntryFromCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
+        expectedCollectionNames.remove("Collection");
+        entryCollection = entriesApi.entryCollections(notebookID);
+        assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
+        assertEquals(0,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
+
+        //add notebook to category
+        Set<String> expectedCategoryNames = new HashSet<>();
+        expectedCategoryNames.add("Category");
+        organizationsApi.addEntryToCollection(categorizerOrg.getId(), category.getId(), notebookID, null);
+        List<Category> entryCategory = entriesApi.entryCategories(notebookID);
+        assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
+        assertEquals(1,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
+        assertEquals(1, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
+
+        //remove notebook from category
+        organizationsApi.deleteEntryFromCollection(categorizerOrg.getId(), category.getId(), notebookID, null);
+        expectedCategoryNames.remove("Category");
+        entryCategory = entriesApi.entryCategories(notebookID);
+        assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
+        assertEquals(0,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
+        assertEquals(0, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
+    }
+
+    private Organization createTestOrganization(String name, boolean categorizer) {
+        final ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
+
+        Organization organization = new Organization();
+        organization.setName(name);
+        organization.setDisplayName(name);
+        organization.setLocation("testlocation");
+        organization.setLink("https://www.google.com");
+        organization.setEmail("test@email.com");
+        organization.setDescription("test test test");
+        organization.setTopic("This is a short topic");
+        organization.setCategorizer(categorizer);
+        return organizationsApi.createOrganization(organization);
     }
 
     private class CreateContent {

@@ -295,7 +295,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final File cacheDir;
         try {
             // let's try using the same cache each time
-            // not sure how corruptible/non-curruptable the cache is
+            // not sure how corruptible/non-corruptible the cache is
             // namespace cache when testing on circle ci
             cacheDir = Files.createDirectories(Paths.get(DOCKSTORE_WEB_CACHE + (suffix == null ? "" : "/" + suffix))).toFile();
         } catch (IOException e) {

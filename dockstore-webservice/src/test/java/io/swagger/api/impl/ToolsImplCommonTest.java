@@ -28,6 +28,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.ToolMode;
@@ -314,7 +315,7 @@ class ToolsImplCommonTest {
         actualWorkflowVersion1.setName(reference1);
         actualWorkflowVersion1.setDirtyBit(false);
         actualWorkflowVersion1.setValid(false);
-        BioWorkflow workflow = new BioWorkflow();
+        Workflow workflow = isService ? new Service() : new BioWorkflow();
         json = mapper.writeValueAsString(actualWorkflowVersion1);
         WorkflowVersion actualWorkflowVersion2 = mapper.readValue(json, WorkflowVersion.class);
         actualWorkflowVersion2.setName(reference2);
@@ -346,11 +347,7 @@ class ToolsImplCommonTest {
         workflow.setOrganization("ICGC-TCGA-PanCancer");
         workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
         workflow.setSourceControl(SourceControl.GITHUB);
-        if (isService) {
-            workflow.setDescriptorType(DescriptorLanguage.SERVICE);
-        } else {
-            workflow.setDescriptorType(DescriptorLanguage.WDL);
-        }
+        workflow.setDescriptorType(isService ? DescriptorLanguage.SERVICE : DescriptorLanguage.WDL);
         workflow.setDefaultWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         workflow.setDefaultTestParameterFilePath(null);
         workflow.setId(950);
@@ -363,7 +360,9 @@ class ToolsImplCommonTest {
         workflow.setLastModified(null);
         workflow.setLastUpdated(null);
         workflow.setGitUrl("git@github.com:ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow.git");
-        workflow.setCheckerWorkflow(workflow);
+        if (workflow instanceof BioWorkflow bioWorkflow) {
+            bioWorkflow.setCheckerWorkflow(bioWorkflow);
+        }
         Tool actualTool = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(workflow, actualConfig));
         ToolVersion expectedToolVersion1 = new ToolVersion();
         expectedToolVersion1.setName(reference2);
@@ -467,9 +466,8 @@ class ToolsImplCommonTest {
                         + toolname);
             }
             expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow/" + toolname);
-            expectedTool.setCheckerUrl(
-                "http://localhost:8080" + GA4GH_API_PATH_V2_BETA + "/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
-                    + toolname);
+            expectedTool.setCheckerUrl(isService ? "" :
+                "http://localhost:8080" + GA4GH_API_PATH_V2_BETA + "/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F" + toolname);
         } else {
 
             if (isService) {
@@ -482,11 +480,11 @@ class ToolsImplCommonTest {
                 expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow");
             }
             expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow");
-            expectedTool.setCheckerUrl(
+            expectedTool.setCheckerUrl(isService ? "" :
                 "http://localhost:8080" + GA4GH_API_PATH_V2_BETA + "/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
         }
-        expectedTool.setHasChecker(true);
-        expectedTool.setToolclass(ToolClassesApiServiceImpl.getWorkflowClass());
+        expectedTool.setHasChecker(!isService);
+        expectedTool.setToolclass(isService ? ToolClassesApiServiceImpl.getServiceClass() : ToolClassesApiServiceImpl.getWorkflowClass());
         expectedTool.setDescription("");
         expectedTool.setAuthor("Unknown author");
         // Meta-version dates are currently dependant on the environment, disabling for now

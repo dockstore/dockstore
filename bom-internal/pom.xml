@@ -28,7 +28,7 @@ This BOM's (dependency management element) is imported into the top level dockst
 dockstore-cli pom.xml files
 
 The dependencyManagement sections are located in the top level parent POM, and the
-dependecyManagement section is inherited by the other POMs that have the top level
+dependencyManagement section is inherited by the other POMs that have the top level
 POM as their parent.
 -->
 

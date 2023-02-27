@@ -25,13 +25,13 @@ class ZipSourceFileHelperTest {
         ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH));
         try {
             ZipSourceFileHelper.validateZip(smartSeqZipFile, 1, 1);
-            fail("Exepcted validate to throw error");
+            fail("Expected validate to throw error");
         } catch (Exception ex) {
             // This is expected
         }
         try {
             ZipSourceFileHelper.validateZip(smartSeqZipFile, 1, 100);
-            fail("Exepcted validate to throw error");
+            fail("Expected validate to throw error");
         } catch (Exception ex) {
             // This is expected
         }

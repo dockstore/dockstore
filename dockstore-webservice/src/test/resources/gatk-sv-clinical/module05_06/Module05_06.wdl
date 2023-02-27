@@ -80,7 +80,7 @@ workflow Module05_06 {
     String sv_pipeline_qc_docker
 
     # overrides for local tasks
-    RuntimeAttr? runtime_overide_get_discfile_size
+    RuntimeAttr? runtime_override_get_discfile_size
     RuntimeAttr? runtime_override_update_sr_list
     RuntimeAttr? runtime_override_merge_pesr_depth
     RuntimeAttr? runtime_override_breakpoint_overlap_filter
@@ -221,7 +221,7 @@ workflow Module05_06 {
     input:
       discfile_list=discfile_list,
       sv_pipeline_docker=sv_pipeline_docker,
-      runtime_attr_override=runtime_overide_get_discfile_size
+      runtime_attr_override=runtime_override_get_discfile_size
   }
 
   #Scatter per chromosome
