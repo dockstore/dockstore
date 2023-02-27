@@ -295,18 +295,44 @@
         </sql>
     </changeSet>
     <changeSet author="ktran (generated)" id="modifyAndAddColumnsForMetrics">
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="average" tableName="cpu_metric"/>
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="average" tableName="execution_time_metric"/>
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="average" tableName="memory_metric"/>
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="maximum" tableName="cpu_metric"/>
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="maximum" tableName="execution_time_metric"/>
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="maximum" tableName="memory_metric"/>
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="minimum" tableName="cpu_metric"/>
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="minimum" tableName="execution_time_metric"/>
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="minimum" tableName="memory_metric"/>
-        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="cpu_metric"/>
-        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="execution_time_metric"/>
-        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="memory_metric"/>
+        <comment>Add dbcreatedate and dbupdatedate columns for metrics tables that are missing them</comment>
+        <addColumn tableName="execution_status">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cpu_metric">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="memory_metric">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="execution_status">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cpu_metric">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="memory_metric">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        
+        <comment>Add unit columns</comment>
+        <addColumn tableName="cpu_metric">
+            <column name="unit" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="unit" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="memory_metric">
+            <column name="unit" type="varchar(255 BYTE)"/>
+        </addColumn>
+
+        <comment>Modify the datatype of average, maximum, and minimum columns to float8</comment>
         <modifyDataType columnName="average" newDataType="float8" tableName="cpu_metric"/>
         <modifyDataType columnName="average" newDataType="float8" tableName="execution_time_metric"/>
         <modifyDataType columnName="average" newDataType="float8" tableName="memory_metric"/>
@@ -316,38 +342,19 @@
         <modifyDataType columnName="minimum" newDataType="float8" tableName="cpu_metric"/>
         <modifyDataType columnName="minimum" newDataType="float8" tableName="execution_time_metric"/>
         <modifyDataType columnName="minimum" newDataType="float8" tableName="memory_metric"/>
-        <addColumn tableName="cpu_metric">
-            <column name="unit" type="varchar(255 BYTE)"/>
-        </addColumn>
-        <addColumn tableName="execution_time_metric">
-            <column name="unit" type="varchar(255 BYTE)"/>
-        </addColumn>
-        <addColumn tableName="memory_metric">
-            <column name="unit" type="varchar(255 BYTE)"/>
-        </addColumn>
-        <addColumn tableName="execution_status">
-            <column name="dbcreatedate" type="timestamp"/>
-        </addColumn>
-        <addColumn tableName="cpu_metric">
-            <column name="dbcreatedate" type="timestamp"/>
-        </addColumn>
-        <addColumn tableName="execution_time_metric">
-            <column name="dbcreatedate" type="timestamp"/>
-        </addColumn>
-        <addColumn tableName="memory_metric">
-            <column name="dbcreatedate" type="timestamp"/>
-        </addColumn>
-        <addColumn tableName="execution_status">
-            <column name="dbupdatedate" type="timestamp"/>
-        </addColumn>
-        <addColumn tableName="cpu_metric">
-            <column name="dbupdatedate" type="timestamp"/>
-        </addColumn>
-        <addColumn tableName="execution_time_metric">
-            <column name="dbupdatedate" type="timestamp"/>
-        </addColumn>
-        <addColumn tableName="memory_metric">
-            <column name="dbupdatedate" type="timestamp"/>
-        </addColumn>
+
+        <comment>Add not null constraints for metrics columns missing them</comment>
+        <addNotNullConstraint columnDataType="float8" columnName="average" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="average" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="average" tableName="memory_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="maximum" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="maximum" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="maximum" tableName="memory_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="minimum" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="minimum" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="minimum" tableName="memory_metric"/>
+        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="memory_metric"/>
     </changeSet>
 </databaseChangeLog>
