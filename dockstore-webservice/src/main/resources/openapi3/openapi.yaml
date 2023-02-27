@@ -8478,13 +8478,13 @@ components:
           additionalProperties:
             type: object
             description: "Additional properties that aren't defined. Provide a context,\
-              \ like one for schema.org, if you want to use a specific vocabulary"
+              \ like one from schema.org, if you want to use a specific vocabulary"
             example:
               '@context':
                 schema: https://schema.org
               schema:actionStatus: CompletedActionStatus
           description: "Additional properties that aren't defined. Provide a context,\
-            \ like one for schema.org, if you want to use a specific vocabulary"
+            \ like one from schema.org, if you want to use a specific vocabulary"
           example:
             '@context':
               schema: https://schema.org
@@ -8492,7 +8492,7 @@ components:
         cpuRequirements:
           type: integer
           format: int32
-          description: CPU requirements for the execution
+          description: Number of CPUs required for the execution
           example: 2
         executionStatus:
           type: string

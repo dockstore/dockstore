@@ -43,11 +43,11 @@ public class Execution {
     private Double memoryRequirementsGB;
 
     @JsonProperty
-    @Schema(description = "CPU requirements for the execution", example = "2")
+    @Schema(description = "Number of CPUs required for the execution", example = "2")
     private Integer cpuRequirements;
 
     @JsonProperty
-    @Schema(description = "Additional properties that aren't defined. Provide a context, like one for schema.org, if you want to use a specific vocabulary",
+    @Schema(description = "Additional properties that aren't defined. Provide a context, like one from schema.org, if you want to use a specific vocabulary",
             example = """
             {
               "@context": {
