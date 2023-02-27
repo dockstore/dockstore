@@ -22,6 +22,9 @@ import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static io.dockstore.common.LocalStackTestUtilities.LocalStackEnvironmentVariables;
+import static io.dockstore.common.LocalStackTestUtilities.createBucket;
+import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
+import static io.dockstore.common.LocalStackTestUtilities.getS3ObjectsFromBucket;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_STATUS_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
@@ -67,6 +70,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.Response;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,11 +78,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.S3Object;
 
 @ExtendWith(LocalstackDockerExtension.class)
 @Tag(LocalStackTest.NAME)
@@ -105,9 +104,8 @@ public class MetricsDataS3ClientIT {
 
         // Create a bucket to be used for tests
         s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client
-        CreateBucketRequest request = CreateBucketRequest.builder().bucket(bucketName).build();
-        s3Client.createBucket(request);
-        deleteBucketContents(); // This is here just in case a test was stopped before tearDown could clean up the bucket
+        createBucket(s3Client, bucketName);
+        deleteBucketContents(s3Client, bucketName); // This is here just in case a test was stopped before tearDown could clean up the bucket
     }
 
     @BeforeEach
@@ -118,17 +116,13 @@ public class MetricsDataS3ClientIT {
     @AfterEach
     public void tearDown() {
         // Delete all objects from the S3 bucket after each test
-        deleteBucketContents();
+        deleteBucketContents(s3Client, bucketName);
     }
 
-    private static void deleteBucketContents() {
-        ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).build();
-        ListObjectsV2Response response = s3Client.listObjectsV2(request);
-        List<S3Object> contents = response.contents();
-        contents.forEach(s3Object -> {
-            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build();
-            s3Client.deleteObject(deleteObjectRequest);
-        });
+    @AfterAll
+    public static void afterClass() {
+        SUPPORT.getEnvironment().healthChecks().shutdown();
+        SUPPORT.after();
     }
 
     /**
@@ -222,7 +216,7 @@ public class MetricsDataS3ClientIT {
         metricsData = verifyMetricsDataInfo(metricsDataList, toolId, toolVersionId, platform1, String.format(toolExpectedS3KeyPrefixFormat, platform1));
         verifyMetricsDataMetadata(metricsData, ownerUserId, "");
         verifyMetricsDataContent(metricsData, executions);
-        assertEquals(3, getS3ObjectsFromBucket().size(), "There should be 3 objects, 2 for workflows and 1 for tools");
+        assertEquals(3, getS3ObjectsFromBucket(s3Client, bucketName).size(), "There should be 3 objects, 2 for workflows and 1 for tools");
     }
 
     @Test
@@ -374,11 +368,5 @@ public class MetricsDataS3ClientIT {
         for (Execution s3Execution : s3Executions) {
             assertTrue(expectedExecutions.contains(s3Execution));
         }
-    }
-
-    private List<S3Object> getS3ObjectsFromBucket() {
-        ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).build();
-        ListObjectsV2Response listObjectsV2Response = s3Client.listObjectsV2(request);
-        return listObjectsV2Response.contents();
     }
 }

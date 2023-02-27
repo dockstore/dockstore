@@ -18,7 +18,14 @@
 package io.dockstore.common;
 
 import cloud.localstack.docker.annotation.IEnvironmentVariableProvider;
+import java.util.List;
 import java.util.Map;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 public final class LocalStackTestUtilities {
     public static final String IMAGE_TAG = "1.3.1";
@@ -26,6 +33,27 @@ public final class LocalStackTestUtilities {
     public static final String AWS_REGION_ENV_VAR = "AWS_REGION";
 
     private LocalStackTestUtilities() {}
+
+    public static void createBucket(S3Client s3Client, String bucketName) {
+        CreateBucketRequest request = CreateBucketRequest.builder().bucket(bucketName).build();
+        s3Client.createBucket(request);
+    }
+
+    public static void deleteBucketContents(S3Client s3Client, String bucketName) {
+        ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).build();
+        ListObjectsV2Response response = s3Client.listObjectsV2(request);
+        List<S3Object> contents = response.contents();
+        contents.forEach(s3Object -> {
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build();
+            s3Client.deleteObject(deleteObjectRequest);
+        });
+    }
+
+    public static List<S3Object> getS3ObjectsFromBucket(S3Client s3Client, String bucketName) {
+        ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).build();
+        ListObjectsV2Response listObjectsV2Response = s3Client.listObjectsV2(request);
+        return listObjectsV2Response.contents();
+    }
 
     public static class LocalStackEnvironmentVariables implements IEnvironmentVariableProvider {
         @Override
