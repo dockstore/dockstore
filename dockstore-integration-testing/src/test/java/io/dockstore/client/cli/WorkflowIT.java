@@ -836,7 +836,7 @@ public class WorkflowIT extends BaseIT {
 
 
     /**
-     * Tests that trying to register a duplicate workflow fails, and that registering a non-existant repository fails
+     * Tests that trying to register a duplicate workflow fails, and that registering a non-existent repository fails
      *
      * @throws ApiException exception used for errors coming back from the web service
      */
@@ -1017,7 +1017,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv",
                 "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        // do targeted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
         workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
@@ -1096,8 +1096,8 @@ public class WorkflowIT extends BaseIT {
         Optional<WorkflowVersion> optionalWorkflowVersionByPublished = publishedWorkflow.getWorkflowVersions().stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByPublished.isPresent());
-        WorkflowVersion workflowVersionByPublshed = optionalWorkflowVersionByPublished.get();
-        assertNull(workflowVersionByPublshed.getAliases(), "Getting workflow version via published workflow has null alias");
+        WorkflowVersion workflowVersionByPublished = optionalWorkflowVersionByPublished.get();
+        assertNull(workflowVersionByPublished.getAliases(), "Getting workflow version via published workflow has null alias");
 
         final Workflow workflowByPath = workflowApi
                 .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, "versions");
@@ -1114,8 +1114,8 @@ public class WorkflowIT extends BaseIT {
         Optional<WorkflowVersion> optionalWorkflowVersionByPublishedByPath = publishedWorkflowByPath.getWorkflowVersions().stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByPublishedByPath.isPresent());
-        WorkflowVersion workflowVersionByPublshedByPath = optionalWorkflowVersionByPublishedByPath.get();
-        assertNull(workflowVersionByPublshedByPath.getAliases(), "Getting workflow version via published workflow has null alias");
+        WorkflowVersion workflowVersionByPublishedByPath = optionalWorkflowVersionByPublishedByPath.get();
+        assertNull(workflowVersionByPublishedByPath.getAliases(), "Getting workflow version via published workflow has null alias");
 
 
 
@@ -1132,8 +1132,8 @@ public class WorkflowIT extends BaseIT {
         Optional<WorkflowVersion> optionalWorkflowVersionByPublishedValidation = publishedWorkflowValidation.getWorkflowVersions().stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByPublishedValidation.isPresent());
-        WorkflowVersion workflowVersionByPublshedValidation = optionalWorkflowVersionByPublishedValidation.get();
-        assertFalse(MapUtils.isEmpty(workflowVersionByPublshedValidation.getAliases()), "Getting workflow version via published workflow has null or empty alias");
+        WorkflowVersion workflowVersionByPublishedValidation = optionalWorkflowVersionByPublishedValidation.get();
+        assertFalse(MapUtils.isEmpty(workflowVersionByPublishedValidation.getAliases()), "Getting workflow version via published workflow has null or empty alias");
 
         final Workflow workflowByPathValidation = workflowApi
                 .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, "aliases");
@@ -1151,8 +1151,8 @@ public class WorkflowIT extends BaseIT {
         Optional<WorkflowVersion> optionalWorkflowVersionByPublishedByPathValidation = publishedWorkflowByPathValidation.getWorkflowVersions().stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersionByPublishedByPathValidation.isPresent());
-        WorkflowVersion workflowVersionByPublshedByPathValidation = optionalWorkflowVersionByPublishedByPathValidation.get();
-        assertFalse(MapUtils.isEmpty(workflowVersionByPublshedByPathValidation.getAliases()), "Getting workflow version via published workflow has null alias");
+        WorkflowVersion workflowVersionByPublishedByPathValidation = optionalWorkflowVersionByPublishedByPathValidation.get();
+        assertFalse(MapUtils.isEmpty(workflowVersionByPublishedByPathValidation.getAliases()), "Getting workflow version via published workflow has null alias");
 
     }
 

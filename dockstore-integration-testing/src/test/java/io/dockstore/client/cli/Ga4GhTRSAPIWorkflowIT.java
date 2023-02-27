@@ -632,7 +632,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        // do targeted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
         workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
