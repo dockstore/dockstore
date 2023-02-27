@@ -106,6 +106,7 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testDAOs() {
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
         CreateContent createContent = new CreateContent().invoke();
         long notebookID = createContent.getNotebookID();
 
