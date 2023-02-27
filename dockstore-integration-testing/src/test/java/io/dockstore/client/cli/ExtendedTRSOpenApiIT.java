@@ -67,7 +67,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 public class ExtendedTRSOpenApiIT extends BaseIT {
 
     private static final String DOCKSTORE_WORKFLOW_CNV_REPO = "DockstoreTestUser2/dockstore_workflow_cnv";
-    private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB.name() + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
+    private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -157,6 +157,11 @@ public class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(average, platform1Metrics.getMemory().getAverage());
         assertEquals(numberOfDataPointsForAverage, platform1Metrics.getMemory().getNumberOfDataPointsForAverage());
         assertEquals(MemoryStatisticMetric.UNIT, platform1Metrics.getMemory().getUnit());
+
+        // Put metrics for platform1 again to verify that the old metrics are deleted from the DB and there are no orphans
+        extendedGa4GhApi.aggregatedMetricsPut(metrics, platform1, workflowId, workflowVersionId);
+        long metricsDbCount = testingPostgres.runSelectStatement("select count(*) from metrics", long.class);
+        assertEquals(1, metricsDbCount, "There should only be 1 row in the metrics table because we only have one entry version with aggregated metrics");
 
         // Put metrics for platform2
         extendedGa4GhApi.aggregatedMetricsPut(metrics, platform2, workflowId, workflowVersionId);

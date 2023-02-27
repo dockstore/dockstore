@@ -146,7 +146,7 @@ public final class CommonTestUtilities {
     /**
      * Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
      * <p>
-     * Adds 1 published workflow to the database, with one version.
+     * Adds 2 published workflows to the database.
      * @param support reference to testing instance of the dockstore web service
      * @param isNewApplication
      * @param dropwizardConfigurationFile
