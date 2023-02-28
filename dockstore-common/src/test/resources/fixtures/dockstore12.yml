@@ -90,3 +90,4 @@ notebooks:
       - /other0
   - name: notebook1
     path: /notebook1.ipynb
+    image: quay.io/seqware/seqware_full/1.1

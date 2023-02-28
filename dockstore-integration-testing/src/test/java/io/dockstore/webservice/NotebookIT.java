@@ -196,6 +196,18 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
+    void testWithImage() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/with-image", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        String path = SourceControl.GITHUB + "/" + simpleRepo;
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(1, notebook.getWorkflowVersions().size());
+        assertEquals(List.of("quay.io/seqware/seqware_full/1.1"), notebook.getWorkflowVersions().get(0).getUserImageReferences());
+    }
+
+    @Test
     void testStarringNotebook() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);

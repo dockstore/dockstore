@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 
 /**
  * A notebook as described in a .dockstore.yml
@@ -104,7 +106,8 @@ public class YamlNotebook implements Workflowish {
     /**
      * Get the kernel image reference for the notebook.
      */
-    // TODO @ImageReference
+    @Size(min = 1, message = "must not be empty")
+    @Pattern(regexp = "\\S++", message = "must not contain whitespace")
     public String getImage() {
         return image;
     }

@@ -137,6 +137,7 @@ class DockstoreYamlTest {
         assertEquals("Jupyter", notebook.getFormat());
         assertEquals("Python", notebook.getLanguage());
         assertEquals("/notebook0.ipynb", notebook.getPath());
+        assertEquals(null, notebook.getImage());
         assertEquals(true, notebook.getPublish());
         assertEquals(true, notebook.getLatestTagAsDefault());
         assertEquals(List.of("branch0"), notebook.getFilters().getBranches());
@@ -150,6 +151,7 @@ class DockstoreYamlTest {
         assertEquals("jupyter", notebook1.getFormat());
         assertEquals("python", notebook1.getLanguage());
         assertEquals("/notebook1.ipynb", notebook1.getPath());
+        assertEquals("quay.io/seqware/seqware_full/1.1", notebook1.getImage());
         assertEquals(null, notebook1.getPublish());
         assertEquals(false, notebook1.getLatestTagAsDefault());
         assertTrue(notebook1.getFilters().getBranches().isEmpty());
@@ -157,6 +159,16 @@ class DockstoreYamlTest {
         assertTrue(notebook1.getAuthors().isEmpty());
         assertTrue(notebook1.getTestParameterFiles().isEmpty());
         assertTrue(notebook1.getOtherFiles().isEmpty());
+    }
+
+    @Test
+    void testMalformedNotebookImage() {
+        // parse yaml with zero-length notebook "image" field
+        assertThrows(DockstoreYamlHelper.DockstoreYamlException.class,
+            () -> DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replaceFirst("image: \\S++", "image: ''"), true));
+        // parse yaml with notebook "image" field that contains whitespace
+        assertThrows(DockstoreYamlHelper.DockstoreYamlException.class,
+            () -> DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replaceFirst("image: \\S++", "image: 'an image'"), true));
     }
 
     @Test
@@ -445,7 +457,7 @@ class DockstoreYamlTest {
     @Test
     void testGetDockstoreYamlProperties() {
         Set<String> properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml12.class);
-        assertEquals(38, properties.size(), "Should have the correct number of unique properties for a version 1.2 .dockstore.yml");
+        assertEquals(39, properties.size(), "Should have the correct number of unique properties for a version 1.2 .dockstore.yml");
 
         properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml11.class);
         assertEquals(29, properties.size(), "Should have the correct number of unique properties for a version 1.1 .dockstore.yml");
