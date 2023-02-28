@@ -135,7 +135,7 @@ class NotebookIT extends BaseIT {
         String path = SourceControl.GITHUB + "/" + simpleRepo;
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(path, notebook.getFullWorkflowPath());
-        assertEquals(EntryType.NOTEBOOK, notebook.getType());
+        assertEquals(EntryType.NOTEBOOK, notebook.getEntryType());
         assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
         assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
         assertEquals(1, notebook.getWorkflowVersions().size());
