@@ -238,7 +238,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private List<String> userFiles = new ArrayList<>();
 
     @Column(columnDefinition = "varchar")
-    @Convert(converter = UserImagesConverter.class)
+    @Convert(converter = UserImageReferencesConverter.class)
     @ApiModelProperty(value = "The user-specified image references for the version.")
     private List<String> userImageReferences = new ArrayList<>();
 
