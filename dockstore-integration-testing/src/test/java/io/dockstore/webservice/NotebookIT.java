@@ -41,6 +41,7 @@ import io.dockstore.openapi.client.model.Author;
 import io.dockstore.openapi.client.model.Category;
 import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.CollectionOrganization;
+import io.dockstore.openapi.client.model.EntryType;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
@@ -134,7 +135,7 @@ class NotebookIT extends BaseIT {
         String path = SourceControl.GITHUB + "/" + simpleRepo;
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(path, notebook.getFullWorkflowPath());
-        assertTrue("notebook".equalsIgnoreCase(notebook.getType().toString()));
+        assertEquals(EntryType.NOTEBOOK, notebook.getType());
         assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
         assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
         assertEquals(1, notebook.getWorkflowVersions().size());
