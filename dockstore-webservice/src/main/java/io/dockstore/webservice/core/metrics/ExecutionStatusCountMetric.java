@@ -49,7 +49,13 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     @CollectionTable(name = "execution_status_count", joinColumns = @JoinColumn(name = "executionstatusid", referencedColumnName = "id"))
     @BatchSize(size = 25)
     @ApiModelProperty(value = "A map containing the count for each key")
-    @Schema(description = "A map containing the count for each key", required = true)
+    @Schema(description = "A map containing the count for each key", required = true, example = """
+            {
+                "SUCCESSFUL": 5,
+                "FAILED_RUNTIME_INVALID": 1,
+                "FAILED_SEMANTIC_INVALID": 1
+            }
+            """)
     private Map<ExecutionStatus, Integer> count = new EnumMap<>(ExecutionStatus.class);
 
     @Column(nullable = false)

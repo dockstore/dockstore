@@ -8524,6 +8524,10 @@ components:
             format: int32
             description: A map containing the count for each key
           description: A map containing the count for each key
+          example:
+            FAILED_RUNTIME_INVALID: 1
+            FAILED_SEMANTIC_INVALID: 1
+            SUCCESSFUL: 5
         id:
           type: integer
           format: int64
