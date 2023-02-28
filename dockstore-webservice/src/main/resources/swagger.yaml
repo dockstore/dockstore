@@ -2803,6 +2803,7 @@ paths:
         - "STARRED_ORGANIZATION"
         - "ALL_STARRED"
         - "PROFILE"
+        - "SELF_ORGANIZATIONS"
       - name: "limit"
         in: "query"
         required: false
@@ -2851,6 +2852,7 @@ paths:
         - "STARRED_ORGANIZATION"
         - "ALL_STARRED"
         - "PROFILE"
+        - "SELF_ORGANIZATIONS"
       - name: "limit"
         in: "query"
         required: false

@@ -58,9 +58,9 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public long countAllEventsForOrganization(long organizationId) {
-        final Query query = namedQuery("io.dockstore.webservice.core.Event.countAllForOrganization")
+        final Query<?> query = namedQuery("io.dockstore.webservice.core.Event.countAllForOrganization")
                 .setParameter("organizationId", organizationId);
-        return ((Long)query.getSingleResult()).longValue();
+        return (Long) query.getSingleResult();
     }
 
     public List<Event> findEventsByEntryIDs(Set<Long> entryIds, Integer offset, int limit) {
