@@ -36,5 +36,5 @@ public class EntryTypeMetadata {
 
     public String getTrsPrefix() {
         return type.getTrsPrefix();
-    } 
+    }
 }

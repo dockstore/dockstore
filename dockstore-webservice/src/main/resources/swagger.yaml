@@ -9189,7 +9189,7 @@ definitions:
     - "repository"
     - "sourceControl"
     - "workflow_path"
-    discriminator: "type"
+    discriminator: "class"
     properties:
       aliases:
         type: "object"
