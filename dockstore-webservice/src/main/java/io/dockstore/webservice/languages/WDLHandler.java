@@ -796,9 +796,10 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     /**
      * Securely creates a temporary file
+     *
      * @param suffix
      * @param prefix
-     * @return
+     * @return a temporary file
      * @throws IOException
      */
     private static File createTempFile(String prefix, String suffix) throws IOException {
