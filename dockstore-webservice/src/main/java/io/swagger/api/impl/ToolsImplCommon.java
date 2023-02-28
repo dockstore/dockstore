@@ -448,10 +448,8 @@ public final class ToolsImplCommon {
     private static String getCheckerWorkflowPath(DockstoreWebserviceConfiguration config, Entry<?, ?> entry) {
         if (entry.getCheckerWorkflow() == null) {
             return null;
-        } else {
-            String newID = WORKFLOW_PREFIX + "/" + entry.getCheckerWorkflow().getWorkflowPath();
-            return getUrlFromId(config, newID);
         }
+        return getUrlFromId(config, getNewId(entry.getCheckerWorkflow()));
     }
 
     /**
@@ -460,24 +458,11 @@ public final class ToolsImplCommon {
      * @param container The Dockstore Entry (Tool or Workflow)
      * @return The new ID of the Tool
      */
-    private static String getNewId(Entry<?, ?> container) {
-        if (container instanceof io.dockstore.webservice.core.Tool) {
-            return ((io.dockstore.webservice.core.Tool)container).getToolPath();
-        } else if (container instanceof AppTool) {
-            return ((AppTool) container).getWorkflowPath();
-        } else if (container instanceof Workflow) {
-            Workflow workflow = (Workflow)container;
-            String path = workflow.getWorkflowPath();
-            EntryType type = workflow.getEntryType();
-            if (type == EntryType.SERVICE) {
-                return SERVICE_PREFIX + "/" + path;
-            } else if (type == EntryType.NOTEBOOK) {
-                return NOTEBOOK_PREFIX + "/" + path;
-            } else {
-                return WORKFLOW_PREFIX + "/" + path;
-            }
+    private static String getNewId(Entry<?, ?> entry) {
+        if (entry.getEntryType().getTrsSupport()) {
+            return entry.getEntryType().getTrsPrefix() + entry.getEntryPath();
         } else {
-            LOG.error("Could not construct URL for our container with id: " + container.getId());
+            LOG.error("Could not construct URL for our container with id: " + entry.getId());
             return null;
         }
     }

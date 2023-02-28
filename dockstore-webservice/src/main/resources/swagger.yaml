@@ -7424,6 +7424,8 @@ definitions:
         type: "string"
       trsPrefix:
         type: "string"
+      trsSupport:
+        type: "boolean"
       type:
         type: "string"
         enum:

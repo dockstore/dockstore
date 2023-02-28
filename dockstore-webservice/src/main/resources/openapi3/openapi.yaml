@@ -8340,6 +8340,8 @@ components:
           type: string
         trsPrefix:
           type: string
+        trsSupport:
+          type: boolean
         type:
           $ref: '#/components/schemas/EntryType'
     EntryUpdateTime:

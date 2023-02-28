@@ -9,23 +9,25 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(enumAsRef = true)
 public enum EntryType {
-    TOOL("tool", "tools", "containers/", ""),
-    WORKFLOW("workflow", "workflows", "workflows/", "#workflow/"),
-    SERVICE("service", "services", "services/", "#service/"),
-    APPTOOL("tool", "tools", "containers/", ""),
-    NOTEBOOK("notebook", "notebooks", "notebooks/", "#notebook/");
+    TOOL("tool", "tools", "containers/", true, ""),
+    WORKFLOW("workflow", "workflows", "workflows/", true, "#workflow/"),
+    SERVICE("service", "services", "services/", true, "#service/"),
+    APPTOOL("tool", "tools", "containers/", true, ""),
+    NOTEBOOK("notebook", "notebooks", "notebooks/", true, "#notebook/");
 
     private final String term;
     private final String termPlural;
     private final String sitePath;
+    private final boolean trsSupport;
     private final String trsPrefix;
     private final EntryTypeMetadata metadata;
 
-    EntryType(String term, String termPlural, String sitePath, String trsPrefix) {
+    EntryType(String term, String termPlural, String sitePath, boolean trsSupport, String trsPrefix) {
         this.term = term;
         this.termPlural = termPlural;
         this.sitePath = sitePath;
         this.trsPrefix = trsPrefix;
+        this.trsSupport = trsSupport;
         this.metadata = new EntryTypeMetadata(this);
     }
 
@@ -39,6 +41,10 @@ public enum EntryType {
 
     public String getSitePath() {
         return sitePath;
+    }
+
+    public boolean getTrsSupport() {
+        return trsSupport;
     }
 
     public String getTrsPrefix() {
