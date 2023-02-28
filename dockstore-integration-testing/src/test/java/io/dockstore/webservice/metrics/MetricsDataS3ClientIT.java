@@ -69,7 +69,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.core.Response;
+
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -236,11 +237,11 @@ public class MetricsDataS3ClientIT {
 
         // Test malformed ID
         ApiException exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(List.of(), platform, "malformedId", "malformedVersionId", null));
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
 
         // Test ID that doesn't exist
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(List.of(), platform, "github.com/nonexistent/id", "master", null));
-        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), exception.getCode(), "Should not be able to submit metrics for non-existent id");
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to submit metrics for non-existent id");
         assertTrue(exception.getMessage().contains(TOOL_NOT_FOUND_ERROR), "Should not be able to submit metrics for non-existent id");
 
         // Test version ID that doesn't exist
@@ -249,23 +250,23 @@ public class MetricsDataS3ClientIT {
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(List.of(), platform, id, "nonexistentVersionId", null));
-        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), exception.getCode(), "Should not be able to submit metrics for non-existent version");
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to submit metrics for non-existent version");
         assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR), "Should not be able to submit metrics for non-existent version");
 
         // Test that a non-admin/non-curator user can't submit metrics
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(createExecutions(1), platform, id, versionId, description));
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), exception.getCode(), "Non-admin and non-curator user should not be able to submit metrics");
+        assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Non-admin and non-curator user should not be able to submit metrics");
 
         // Test that the response body must contain ExecutionStatus
         List<Execution> executions = createExecutions(1);
         executions.forEach(execution -> execution.setExecutionStatus(null));
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(executions, platform, id, versionId, description));
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getCode(), "Should not be able to submit metrics if ExecutionStatus is missing");
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "Should not be able to submit metrics if ExecutionStatus is missing");
         assertTrue(exception.getMessage().contains(EXECUTION_STATUS_ERROR), "Should not be able to submit metrics if ExecutionStatus is missing");
 
         // Verify that not providing metrics data throws an exception
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(List.of(), platform, id, versionId, description));
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getCode(), "Should throw if execution metrics not provided");
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "Should throw if execution metrics not provided");
         assertTrue(exception.getMessage().contains("Execution metrics data must be provided"), "Should throw if execution metrics not provided");
     }
 

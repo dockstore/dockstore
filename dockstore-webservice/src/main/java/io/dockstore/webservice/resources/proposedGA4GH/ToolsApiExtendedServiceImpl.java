@@ -419,17 +419,17 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
 
         if (entry == null) {
-            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), TOOL_NOT_FOUND_ERROR).build();
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
         Optional<? extends Version<?>> version = getVersion(entry, versionId);
         if (version.isEmpty()) {
-            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), VERSION_NOT_FOUND_ERROR).build();
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
         // Check that all executions have at least the ExecutionStatus
         if (executions.stream().anyMatch(execution -> execution.getExecutionStatus() == null)) {
-            return Response.status(Response.Status.BAD_REQUEST.getStatusCode(), EXECUTION_STATUS_ERROR).build();
+            throw new CustomWebApplicationException(EXECUTION_STATUS_ERROR, HttpStatus.SC_BAD_REQUEST);
         }
 
         try {
@@ -455,17 +455,17 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
 
         if (entry == null) {
-            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), TOOL_NOT_FOUND_ERROR).build();
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
         Version<?> version = getVersion(entry, versionId).orElse(null);
         if (version == null) {
-            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), VERSION_NOT_FOUND_ERROR).build();
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
         // Check that the aggregated metrics have at least ExecutionStatusCount
         if (aggregatedMetrics.getExecutionStatusCount() == null) {
-            return Response.status(Response.Status.BAD_REQUEST.getStatusCode(), EXECUTION_STATUS_COUNT_ERROR).build();
+            throw new CustomWebApplicationException(EXECUTION_STATUS_COUNT_ERROR, HttpStatus.SC_BAD_REQUEST);
         }
 
         version.getMetricsByPlatform().put(platform, aggregatedMetrics);
