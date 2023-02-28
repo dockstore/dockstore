@@ -445,7 +445,7 @@ public final class CommonTestUtilities {
      */
     public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres,
         boolean needBitBucketToken) {
-        LOG.info("Dropping and Recreating the database with confidential 2 test data and additonal tools");
+        LOG.info("Dropping and Recreating the database with confidential 2 test data and additional tools");
         addAdditionalToolsWithPrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         if (!needBitBucketToken) {
             deleteBitBucketToken(testingPostgres);

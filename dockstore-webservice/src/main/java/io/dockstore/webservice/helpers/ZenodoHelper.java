@@ -304,7 +304,7 @@ public final class ZenodoHelper {
     }
 
     /**
-     * Add a communites list to to the deposition metadata even if it is empty
+     * Add a communities list to the deposition metadata even if it is empty
      * @param depositMetadata Metadata for the workflow version
      */
     private static void setMetadataCommunities(DepositMetadata depositMetadata) {

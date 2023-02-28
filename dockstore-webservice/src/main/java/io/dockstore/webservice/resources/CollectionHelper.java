@@ -103,6 +103,10 @@ class CollectionHelper {
                 // we get file descriptor types like workflows, but make the UI treat these as tools (so icon and url work)
                 entry.setEntryType("tool");
                 break;
+            case "notebook":
+                entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
+                entry.setEntryType("notebook");
+                break;
             default:
                 throw new UnsupportedOperationException("unexpected entry type when constructing collection");
             }

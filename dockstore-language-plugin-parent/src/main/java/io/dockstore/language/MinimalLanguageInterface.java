@@ -27,7 +27,7 @@ import org.pf4j.ExtensionPoint;
  * <p>
  * We would also like to know the following information which is less likely to be common between types of workflow languages
  * a) A logo for your language
- * b) Launch instructions for your language (i.e. given all the desciptors for a workflow locally, how would I run a workflow on the command-line?)
+ * b) Launch instructions for your language (i.e. given all the descriptors for a workflow locally, how would I run a workflow on the command-line?)
  * c) What language is your description in (Markdown, HTML, etc.)?
  * d) A short (acronym like CWl, WDL) name for your language and a longer more descriptive name (like "Common Workflow Language")
  */

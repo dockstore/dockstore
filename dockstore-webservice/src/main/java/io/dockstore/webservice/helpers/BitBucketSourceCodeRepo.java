@@ -271,7 +271,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * determine whether a request is rate-limited, output logging mesages, and potentially sleep past rate-limiting
+     * determine whether a request is rate-limited, output logging messages, and potentially sleep past rate-limiting
      * @param rateLimited
      * @param e
      * @param message
