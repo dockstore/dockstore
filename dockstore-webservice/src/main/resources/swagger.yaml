@@ -7026,6 +7026,18 @@ definitions:
         enum:
         - "AUTOMATIC"
         - "MANUAL"
+      type:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      typeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       userIdToOrcidPutCode:
         type: "object"
         description: "The presence of the put code for a userid indicates the entry\
@@ -7283,6 +7295,18 @@ definitions:
         enum:
         - "AUTOMATIC"
         - "MANUAL"
+      type:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      typeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       userIdToOrcidPutCode:
         type: "object"
         description: "The presence of the put code for a userid indicates the entry\
@@ -7389,6 +7413,25 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+  EntryTypeMetadata:
+    type: "object"
+    properties:
+      sitePath:
+        type: "string"
+      term:
+        type: "string"
+      termPlural:
+        type: "string"
+      trsPrefix:
+        type: "string"
+      type:
+        type: "string"
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
   EntryUpdateTime:
     type: "object"
     properties:
@@ -9194,6 +9237,18 @@ definitions:
         enum:
         - "AUTOMATIC"
         - "MANUAL"
+      type:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      typeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       userIdToOrcidPutCode:
         type: "object"
         description: "The presence of the put code for a userid indicates the entry\

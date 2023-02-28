@@ -92,7 +92,7 @@ import org.hibernate.annotations.Filter;
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
 @JsonPropertyOrder("descriptorType")
 @SuppressWarnings("checkstyle:magicnumber")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "class", visible = true)
 @JsonSubTypes({@JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
     @JsonSubTypes.Type(value = Service.class, name = "Service"),
     @JsonSubTypes.Type(value = AppTool.class, name = "AppTool"),

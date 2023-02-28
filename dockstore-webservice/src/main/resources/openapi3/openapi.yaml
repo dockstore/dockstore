@@ -8086,6 +8086,10 @@ components:
           enum:
           - AUTOMATIC
           - MANUAL
+        type:
+          $ref: '#/components/schemas/EntryType'
+        typeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -8189,6 +8193,10 @@ components:
           enum:
           - AUTOMATIC
           - MANUAL
+        type:
+          $ref: '#/components/schemas/EntryType'
+        typeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -8293,6 +8301,10 @@ components:
           enum:
           - AUTOMATIC
           - MANUAL
+        type:
+          $ref: '#/components/schemas/EntryType'
+        typeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -8309,17 +8321,32 @@ components:
           items:
             type: object
           uniqueItems: true
+    EntryType:
+      type: string
+      enum:
+      - TOOL
+      - WORKFLOW
+      - SERVICE
+      - APPTOOL
+      - NOTEBOOK
+    EntryTypeMetadata:
+      type: object
+      properties:
+        sitePath:
+          type: string
+        term:
+          type: string
+        termPlural:
+          type: string
+        trsPrefix:
+          type: string
+        type:
+          $ref: '#/components/schemas/EntryType'
     EntryUpdateTime:
       type: object
       properties:
         entryType:
-          type: string
-          enum:
-          - TOOL
-          - WORKFLOW
-          - SERVICE
-          - APPTOOL
-          - NOTEBOOK
+          $ref: '#/components/schemas/EntryType'
         lastUpdateDate:
           type: integer
           format: int64
@@ -10074,7 +10101,7 @@ components:
     Workflow:
       type: object
       discriminator:
-        propertyName: type
+        propertyName: class
       properties:
         aliases:
           type: object
@@ -10085,6 +10112,8 @@ components:
         checker_id:
           type: integer
           format: int64
+        class:
+          type: string
         conceptDoi:
           type: string
         dbCreateDate:
@@ -10220,7 +10249,9 @@ components:
           - AUTOMATIC
           - MANUAL
         type:
-          type: string
+          $ref: '#/components/schemas/EntryType'
+        typeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -10244,7 +10275,7 @@ components:
         workflow_path:
           type: string
       required:
-      - type
+      - class
     WorkflowSubClass:
       type: string
       enum:
