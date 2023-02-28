@@ -94,7 +94,6 @@ public class MetricsDataS3ClientIT {
 
     @BeforeAll
     public static void setup() throws Exception {
-        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
         testingPostgres = new TestingPostgres(SUPPORT);
 

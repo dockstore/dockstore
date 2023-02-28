@@ -591,15 +591,12 @@ public final class CommonTestUtilities {
         File tempResourceFile = null;
         try (InputStream inputStream = Objects.requireNonNull(CommonTestUtilities.class.getClassLoader().getResourceAsStream(resourceFileName))) {
             tempResourceFile = File.createTempFile(resourceFileName, null);
+            tempResourceFile.deleteOnExit();
             FileUtils.copyInputStreamToFile(inputStream, tempResourceFile);
             return Optional.of(tempResourceFile);
         } catch (Exception e) {
             LOG.error("Could not get resource file {}", resourceFileName, e);
             return Optional.empty();
-        } finally {
-            if (tempResourceFile != null) {
-                tempResourceFile.deleteOnExit();
-            }
         }
     }
 
