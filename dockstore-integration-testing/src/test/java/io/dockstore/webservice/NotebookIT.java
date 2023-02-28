@@ -145,8 +145,9 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         // Check only the values that should differ from testRegisterSimpleNotebook()
-        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
-        assertEquals(simpleRepoPath, notebook.getFullWorkflowPath());
+        String path = simpleRepoPath + "/simple";
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(path, notebook.getFullWorkflowPath());
         WorkflowVersion version = notebook.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
         assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml", "/info.txt", "/data/a.txt", "/data/b.txt", "/requirements.txt", "/.binder/runtime.txt"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
@@ -210,7 +211,7 @@ class NotebookIT extends BaseIT {
         ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
         workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
-        Long notebookID = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions").getId();
+        Long notebookID = workflowsApi.getWorkflowByPath(simpleRepoPath + "/simple", WorkflowSubClass.NOTEBOOK, "versions").getId();
 
         //star notebook
         workflowsApi.starEntry1(notebookID, new StarRequest().star(true));
