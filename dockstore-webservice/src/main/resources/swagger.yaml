@@ -9581,15 +9581,6 @@ definitions:
         position: 102
         description: "Remote: Last time version on GitHub repo was changed. Hosted:\
           \ time version created."
-      subClass:
-        type: "string"
-        position: 103
-        description: "The subclass of this for services."
-        enum:
-        - "DOCKER_COMPOSE"
-        - "SWARM"
-        - "KUBERNETES"
-        - "HELM"
       synced:
         type: "boolean"
         position: 105

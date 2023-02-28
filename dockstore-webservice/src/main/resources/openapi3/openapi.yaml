@@ -10359,13 +10359,6 @@ components:
           - BRANCH
           - NOT_APPLICABLE
           - UNSET
-        subClass:
-          type: string
-          enum:
-          - DOCKER_COMPOSE
-          - SWARM
-          - KUBERNETES
-          - HELM
         synced:
           type: boolean
         userFiles:

@@ -779,7 +779,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
                 existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
                 existingWorkflowVersion.setAliases(remoteWorkflowVersion.getAliases());
-                existingWorkflowVersion.setSubClass(remoteWorkflowVersion.getSubClass());
                 existingWorkflowVersion.setCommitID(remoteWorkflowVersion.getCommitID());
                 existingWorkflowVersion.setDagJson(null);
                 existingWorkflowVersion.setToolTableJson(null);

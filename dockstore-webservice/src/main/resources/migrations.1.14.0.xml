@@ -302,4 +302,7 @@
             <column name="userimagereferences" type="varchar"/>
         </addColumn>
     </changeSet>
+    <changeSet author="svonworl" id="dropSubclassFromWorkflowVersion">
+        <dropColumn columnName="subclass" tableName="workflowversion"/>
+    </changeSet>
 </databaseChangeLog>

@@ -83,13 +83,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Whether or not the version has been refreshed since its last edit on Dockstore.", position = 105)
     private boolean synced = false;
 
-    /**
-     * In theory, this should be in a ServiceVersion.
-     * In practice, our use of generics caused this to mess up bigtype, so we'll prototype with this for now.
-     */
-    @ApiModelProperty(value = "The subclass of this for services.", position = 103)
-    private Service.SubClass subClass = null;
-
     @JsonIgnore
     @Column(columnDefinition = "TEXT")
     private String dagJson;
@@ -182,14 +175,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this).add("id", id).add("name", this.getName()).add("reference", this.getReference()).toString();
-    }
-
-    public Service.SubClass getSubClass() {
-        return subClass;
-    }
-
-    public void setSubClass(Service.SubClass subClass) {
-        this.subClass = subClass;
     }
 
     public Date getLastModified() {
