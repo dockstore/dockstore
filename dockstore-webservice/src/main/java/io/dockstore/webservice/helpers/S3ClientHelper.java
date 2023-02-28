@@ -26,7 +26,9 @@ import java.time.Instant;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ClientBuilder;
 
 public final class S3ClientHelper {
     private static final Logger LOG = LoggerFactory.getLogger(S3ClientHelper.class);
@@ -52,7 +54,7 @@ public final class S3ClientHelper {
      * @return
      */
     public static S3Client createS3Client() {
-        return S3Client.builder().build();
+        return initS3ClientBuilder().build();
     }
 
     /**
@@ -60,7 +62,11 @@ public final class S3ClientHelper {
      */
     public static S3Client createS3Client(String endpointOverride) throws URISyntaxException {
         LOG.info("Using endpoint override: {}", endpointOverride);
-        return S3Client.builder().endpointOverride(new URI(endpointOverride)).build();
+        return initS3ClientBuilder().endpointOverride(new URI(endpointOverride)).build();
+    }
+
+    private static S3ClientBuilder initS3ClientBuilder() {
+        return S3Client.builder().credentialsProvider(DefaultCredentialsProvider.create());
     }
 
     /**
