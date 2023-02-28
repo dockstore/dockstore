@@ -6988,6 +6988,18 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       forumUrl:
         type: "string"
         description: "This is a link to a forum or discussion board"
@@ -7026,18 +7038,6 @@ definitions:
         enum:
         - "AUTOMATIC"
         - "MANUAL"
-      type:
-        type: "string"
-        readOnly: true
-        enum:
-        - "TOOL"
-        - "WORKFLOW"
-        - "SERVICE"
-        - "APPTOOL"
-        - "NOTEBOOK"
-      typeMetadata:
-        readOnly: true
-        $ref: "#/definitions/EntryTypeMetadata"
       userIdToOrcidPutCode:
         type: "object"
         description: "The presence of the put code for a userid indicates the entry\
@@ -7267,6 +7267,18 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7295,18 +7307,6 @@ definitions:
         enum:
         - "AUTOMATIC"
         - "MANUAL"
-      type:
-        type: "string"
-        readOnly: true
-        enum:
-        - "TOOL"
-        - "WORKFLOW"
-        - "SERVICE"
-        - "APPTOOL"
-        - "NOTEBOOK"
-      typeMetadata:
-        readOnly: true
-        $ref: "#/definitions/EntryTypeMetadata"
       userIdToOrcidPutCode:
         type: "object"
         description: "The presence of the put code for a userid indicates the entry\
@@ -9189,7 +9189,7 @@ definitions:
     - "repository"
     - "sourceControl"
     - "workflow_path"
-    discriminator: "class"
+    discriminator: "type"
     properties:
       aliases:
         type: "object"
@@ -9202,6 +9202,18 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       forumUrl:
         type: "string"
         description: "This is a link to a forum or discussion board"
@@ -9239,18 +9251,6 @@ definitions:
         enum:
         - "AUTOMATIC"
         - "MANUAL"
-      type:
-        type: "string"
-        readOnly: true
-        enum:
-        - "TOOL"
-        - "WORKFLOW"
-        - "SERVICE"
-        - "APPTOOL"
-        - "NOTEBOOK"
-      typeMetadata:
-        readOnly: true
-        $ref: "#/definitions/EntryTypeMetadata"
       userIdToOrcidPutCode:
         type: "object"
         description: "The presence of the put code for a userid indicates the entry\

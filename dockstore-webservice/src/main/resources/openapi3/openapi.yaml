@@ -7979,6 +7979,10 @@ components:
             type: string
         email:
           type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         forumUrl:
           type: string
           maxLength: 256
@@ -8086,10 +8090,6 @@ components:
           enum:
           - AUTOMATIC
           - MANUAL
-        type:
-          $ref: '#/components/schemas/EntryType'
-        typeMetadata:
-          $ref: '#/components/schemas/EntryTypeMetadata'
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -8132,6 +8132,10 @@ components:
           type: string
         email:
           type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         gitUrl:
           type: string
         has_checker:
@@ -8193,10 +8197,6 @@ components:
           enum:
           - AUTOMATIC
           - MANUAL
-        type:
-          $ref: '#/components/schemas/EntryType'
-        typeMetadata:
-          $ref: '#/components/schemas/EntryTypeMetadata'
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -8239,6 +8239,10 @@ components:
           type: string
         email:
           type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         gitUrl:
           type: string
         has_checker:
@@ -8301,10 +8305,6 @@ components:
           enum:
           - AUTOMATIC
           - MANUAL
-        type:
-          $ref: '#/components/schemas/EntryType'
-        typeMetadata:
-          $ref: '#/components/schemas/EntryTypeMetadata'
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -10103,7 +10103,7 @@ components:
     Workflow:
       type: object
       discriminator:
-        propertyName: class
+        propertyName: type
       properties:
         aliases:
           type: object
@@ -10114,8 +10114,6 @@ components:
         checker_id:
           type: integer
           format: int64
-        class:
-          type: string
         conceptDoi:
           type: string
         dbCreateDate:
@@ -10157,6 +10155,10 @@ components:
           - n/a
         email:
           type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         forumUrl:
           type: string
           maxLength: 256
@@ -10251,9 +10253,7 @@ components:
           - AUTOMATIC
           - MANUAL
         type:
-          $ref: '#/components/schemas/EntryType'
-        typeMetadata:
-          $ref: '#/components/schemas/EntryTypeMetadata'
+          type: string
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -10277,7 +10277,7 @@ components:
         workflow_path:
           type: string
       required:
-      - class
+      - type
     WorkflowSubClass:
       type: string
       enum:

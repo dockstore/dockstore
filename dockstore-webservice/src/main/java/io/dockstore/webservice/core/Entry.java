@@ -299,10 +299,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     public abstract String getEntryPath();
 
-    @JsonProperty(value = "type", access = JsonProperty.Access.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public abstract EntryType getEntryType();
 
-    @JsonProperty(value = "typeMetadata", access = JsonProperty.Access.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public EntryTypeMetadata getEntryTypeMetadata() {
         return getEntryType().getMetadata();
     }
