@@ -73,6 +73,7 @@ class NotebookIT extends BaseIT {
 
     private final String installationId = AppToolHelper.INSTALLATION_ID;
     private final String simpleRepo = "dockstore-testing/simple-notebook";
+    private final String simpleRepoPath = SourceControl.GITHUB + "/" + simpleRepo;
 
     private NotebookDAO notebookDAO;
     private WorkflowDAO workflowDAO;
@@ -123,9 +124,8 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
 
-        String path = SourceControl.GITHUB + "/" + simpleRepo;
-        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
-        assertEquals(path, notebook.getFullWorkflowPath());
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(simpleRepoPath, notebook.getFullWorkflowPath());
         assertTrue("notebook".equalsIgnoreCase(notebook.getType()));
         assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
         assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
@@ -145,9 +145,8 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         // Check only the values that should differ from testRegisterSimpleNotebook()
-        String path = SourceControl.GITHUB + "/" + simpleRepo + "/simple";
-        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
-        assertEquals(path, notebook.getFullWorkflowPath());
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(simpleRepoPath, notebook.getFullWorkflowPath());
         WorkflowVersion version = notebook.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
         assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml", "/info.txt", "/data/a.txt", "/data/b.txt", "/requirements.txt", "/.binder/runtime.txt"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
@@ -160,8 +159,7 @@ class NotebookIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/corrupt-ipynb-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         // The update should be "successful" but there should be a negative validation on the notebook file.
-        String path = SourceControl.GITHUB + "/" + simpleRepo;
-        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertFalse(notebook.getWorkflowVersions().get(0).isValid());
     }
@@ -201,8 +199,7 @@ class NotebookIT extends BaseIT {
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/with-image-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
-        String path = SourceControl.GITHUB + "/" + simpleRepo;
-        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertEquals(List.of("quay.io/seqware/seqware_full/1.1"), notebook.getWorkflowVersions().get(0).getUserImageReferences());
     }
@@ -213,8 +210,7 @@ class NotebookIT extends BaseIT {
         ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
         workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
-        String path = "github.com/" + simpleRepo + "/simple";
-        Long notebookID = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions").getId();
+        Long notebookID = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions").getId();
 
         //star notebook
         workflowsApi.starEntry1(notebookID, new StarRequest().star(true));
