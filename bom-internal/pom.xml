@@ -51,8 +51,8 @@ POM as their parent.
         <revision>1.14</revision>
         <changelist>.0-SNAPSHOT</changelist>
 
-        <dropwizard.version>2.1.4</dropwizard.version>
-        <dropwizard-annotations.version>4.2.12</dropwizard-annotations.version>
+        <dropwizard.version>2.1.5</dropwizard.version>
+        <dropwizard-annotations.version>4.2.17</dropwizard-annotations.version>
         <elasticsearch-version>7.10.2</elasticsearch-version>
         <swagger-annotations-version>1.6.8</swagger-annotations-version>
         <openapi-annotations-version>2.2.4</openapi-annotations-version>
@@ -68,17 +68,17 @@ POM as their parent.
         <cwlavro.version>2.0.4.7</cwlavro.version>
         <okhttp.version>4.10.0</okhttp.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <httpcomponents.version>4.5.13</httpcomponents.version>
-        <httpcore.version>4.4.15</httpcore.version>
+        <httpcomponents.version>4.5.14</httpcomponents.version>
+        <httpcore.version>4.4.16</httpcore.version>
         <httpasyncclient.version>4.1.4</httpasyncclient.version>
-        <jetty-servlet.version>9.4.49.v20220914</jetty-servlet.version>
-        <jersey.version>2.37</jersey.version>
+        <jetty-servlet.version>9.4.50.v20221201</jetty-servlet.version>
+        <jersey.version>2.39</jersey.version>
         <netty.version>4.1.72.Final</netty.version>
         <scala.version>2.13.9</scala.version>
-        <bytebuddy.version>1.12.18</bytebuddy.version>
+        <bytebuddy.version>1.14.0</bytebuddy.version>
 <!--        Cromwell versions can be found at https://broadinstitute.jfrog.io/ui/native/libs-release-local/org/broadinstitute/-->
         <cromwell.version>84</cromwell.version>
-        <jackson.version>2.13.4.20221013</jackson.version>
+        <jackson.version>2.14.1</jackson.version>
         <docker-client.version>3.2.8</docker-client.version>
         <system-stubs.version>2.0.1</system-stubs.version>
         <jjwt.suite.version>0.11.5</jjwt.suite.version>
@@ -409,7 +409,7 @@ POM as their parent.
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.12.0</version>
+                <version>2.12.2</version>
             </dependency>
 
             <dependency>
@@ -509,7 +509,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
-                <version>4.7.1</version>
+                <version>4.7.3</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jaxb</groupId>
@@ -529,7 +529,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.25.0</version>
+                <version>3.31.0</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.annotation</groupId>
@@ -756,6 +756,11 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest</artifactId>
+                <version>2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>1.3</version>
             </dependency>
@@ -836,7 +841,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.jvnet.mimepull</groupId>
                 <artifactId>mimepull</artifactId>
-                <version>1.9.13</version>
+                <version>1.9.15</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
