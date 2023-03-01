@@ -272,7 +272,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     public static void publicAccessibleUrls(WorkflowVersion existingVersion,
         final String checkUrlLambdaUrl, final DescriptorLanguage descriptorType) {
         final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
-        final Optional<Boolean> hasPublicData = languageHandler.hasPublicAccessibleUrls(existingVersion, checkUrlLambdaUrl);
+        final Optional<Boolean> hasPublicData = languageHandler.isOpenData(existingVersion, checkUrlLambdaUrl);
         existingVersion.getVersionMetadata()
             .setPublicAccessibleTestParameterFile(hasPublicData.orElse(null));
     }

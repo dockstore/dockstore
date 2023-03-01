@@ -958,13 +958,18 @@ public interface LanguageHandlerInterface {
     }
 
     /**
-     * Indicates if the workflow version has a test parameter file with all file inputs values
-     * being open data.
+     * Indicates if the workflow version can be run without access controlled data. This includes
+     * <ul>
+     *     <li>A workflow with no input parameters</li>
+     *     <li>A workflow with input parameters, but none of them are file parameters</li>
+     *     <li>A workflow with file input parameters, and at least one test parameter file that has
+     *     publicly accessible urls for every file input parameter</li>
+     * </ul>
      * @param workflowVersion
      * @param checkUrlLambdaUrl
      * @return if unable to determine, Optional.empty(), otherwise an non-empty boolean
      */
-    default Optional<Boolean> hasPublicAccessibleUrls(WorkflowVersion workflowVersion, final String checkUrlLambdaUrl) {
+    default Optional<Boolean> isOpenData(WorkflowVersion workflowVersion, final String checkUrlLambdaUrl) {
         return Optional.empty();
     }
 

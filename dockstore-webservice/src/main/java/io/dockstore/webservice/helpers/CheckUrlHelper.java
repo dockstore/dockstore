@@ -92,8 +92,10 @@ public final class CheckUrlHelper {
      * @return
      */
     public static Optional<Boolean> checkUrls(Set<String> possibleUrls, String baseURL) {
-        if (possibleUrls.isEmpty() || hasMalformedUrl(possibleUrls)) {
-            // If there are no urls, or any values that aren't urls, it's not open data
+        if (possibleUrls.isEmpty()) {
+            return Optional.of(true);
+        }
+        if (hasMalformedUrl(possibleUrls)) {
             return Optional.of(false);
         }
         List<Optional<Boolean>> objectStream = possibleUrls.parallelStream().map(url -> checkUrl(url, baseURL))

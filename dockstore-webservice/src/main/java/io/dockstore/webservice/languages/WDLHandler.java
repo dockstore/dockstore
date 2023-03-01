@@ -722,73 +722,97 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Optional<Boolean> hasPublicAccessibleUrls(final WorkflowVersion workflowVersion, final String checkUrlLambdaUrl) {
-        return findPrimaryDescriptor(workflowVersion)
-            .flatMap(primaryDescriptor -> {
-                final Optional<Map<String, String>> fileInputs =
-                    getFileInputs(primaryDescriptor.getContent(), workflowVersion.getSourceFiles());
-                if (fileInputs.isEmpty() || fileInputs.get().isEmpty()) {
-                    return Optional.of(false);
-                }
-                final List<JSONObject> testFiles = findTestFiles(workflowVersion).stream().map(SourceFileHelper::testFileAsJsonObject)
-                    .filter(Optional::isPresent).map(Optional::get).toList();
-                if (testFiles.isEmpty()) {
-                    return Optional.of(false);
-                }
+    public Optional<Boolean> isOpenData(final WorkflowVersion workflowVersion, final String checkUrlLambdaUrl) {
+        final Optional<SourceFile> maybeDescriptor = findPrimaryDescriptor(workflowVersion);
+        if (maybeDescriptor.isEmpty()) {
+            return Optional.empty();
+        }
+        final SourceFile primaryDescriptor = maybeDescriptor.get();
+        final Optional<Map<String, String>> fileInputMap =
+            getFileInputs(primaryDescriptor.getContent(), workflowVersion.getSourceFiles());
+        if (fileInputMap.isEmpty()) { // Primary descriptor does not exist or is not well-formed
+            return Optional.empty();
+        }
+        if (fileInputMap.get().isEmpty()) {
+            // Has no file inputs, consider it open.
+            // https://github.com/dockstore/dockstore/pull/5347#discussion_r1117213315
+            return Optional.of(true);
+        }
+        final List<JSONObject> testFiles = findTestFiles(workflowVersion).stream().map(SourceFileHelper::testFileAsJsonObject)
+            .filter(Optional::isPresent).map(Optional::get).toList();
+        if (testFiles.isEmpty()) {
+            // Has file inputs, but no test parameter files; not open data.
+            return Optional.of(false);
+        }
 
-                // If the lambda fails catastrophically, e.g., it's down, no network connection, etc., we
-                // want to return Optional.empty, hence this slightly convoluted logic.
-                boolean validResult = false;
-                for (JSONObject testFile: testFiles) {
-                    final Set<String> possibleUrls = fileInputValues(testFile, fileInputs.get());
-                    final Optional<Boolean> check =
-                        CheckUrlHelper.checkUrls(possibleUrls, checkUrlLambdaUrl);
-                    if (check.isPresent() && check.get()) {
-                        return Optional.of(true);
-                    }
-                    if (check.isPresent()) {
-                        validResult = true;
-                    }
+        return anyTestFileHasAllOpenData(checkUrlLambdaUrl, fileInputMap.get(), testFiles);
+    }
+
+    private Optional<Boolean> anyTestFileHasAllOpenData(final String checkUrlLambdaUrl,
+        final Map<String, String> fileInputMap, final List<JSONObject> testFiles) {
+        for (JSONObject testFile: testFiles) {
+            final List<FileInputs> testFileInputs = fileInputValues(testFile, fileInputMap);
+            if (everyFileInputHasValue(testFileInputs)) {
+                final Set<String> possibleUrls =
+                    testFileInputs.stream().map(p -> p.values()).flatMap(Set::stream).collect(
+                        Collectors.toSet());
+                final Optional<Boolean> check =
+                    CheckUrlHelper.checkUrls(possibleUrls, checkUrlLambdaUrl);
+                if (check.isPresent() && check.get()) {
+                    return Optional.of(true);
                 }
-                if (validResult) {
-                    return Optional.of(false);
+                if (!check.isPresent()) {
+                    // Something funny is going on with the lambda
+                    return Optional.empty();
                 }
-                return Optional.empty();
-            });
+            }
+        }
+        return Optional.of(false);
+    }
+
+    private static boolean everyFileInputHasValue(final List<FileInputs> fileInputs) {
+        return fileInputs.stream().noneMatch(fileInput -> fileInput.values.isEmpty());
     }
 
     /**
      * Given the known input parameter names of type file/array[file], look for the corresponding
      * values in the test parameter file. Cannot assume the test parameter file structure matches
      * what the WDL is expecting; they could be out of sync.
+     *
      * @param json
      * @param fileInputs
      * @return
      */
-    Set<String> fileInputValues(JSONObject json, Map<String, String> fileInputs) {
-        final Set<String> inputValues = new HashSet<>();
-        fileInputs.entrySet().stream().forEach(entry -> {
+    List<FileInputs> fileInputValues(JSONObject json, Map<String, String> fileInputs) {
+        return fileInputs.entrySet().stream().map(entry -> {
             final String parameterName = entry.getKey();
             final String parameterType = entry.getValue();
-            if (json.has(parameterName)) {
-                final Object fileParameterValue = json.get(parameterName);
-                if (parameterType.toLowerCase().contains("array")) { // Declared in WDL as an array of files
-                    if (fileParameterValue instanceof JSONArray jsonArray) { // Is it an array in the test file
-                        for (Object element: jsonArray) {
-                            if (element instanceof String maybeUrl) {
-                                inputValues.add(maybeUrl);
-                            }
+            return new FileInputs(parameterName, parameterType, fileInputValues(json, parameterName, parameterType));
+        }).toList();
+    }
+
+    private Set<String> fileInputValues(JSONObject json, String parameterName, String parameterType) {
+        if (json.has(parameterName)) {
+            final Object fileParameterValue = json.get(parameterName);
+            if (parameterType.toLowerCase().contains("array")) { // Declared in WDL as an array of files
+                if (fileParameterValue instanceof JSONArray jsonArray) { // Is it an array in the test file
+                    final Set<String> values = new HashSet<>();
+                    for (Object element: jsonArray) {
+                        if (element instanceof String maybeUrl) {
+                            values.add(maybeUrl);
                         }
                     }
-                } else {
-                    if (fileParameterValue instanceof String maybeUrl) { // Declared in WDL as a File
-                        inputValues.add(maybeUrl); // It's a string value
-                    }
+                    return values;
+                }
+            } else {
+                if (fileParameterValue instanceof String maybeUrl) { // Declared in WDL as a File
+                    return Set.of(maybeUrl);
                 }
             }
-        });
-        return inputValues;
+        }
+        return Set.of();
     }
+
 
     private static RuntimeException createStackOverflowThrowable(StackOverflowError error) {
         throw new CustomWebApplicationException(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, HttpStatus.SC_UNPROCESSABLE_ENTITY);
@@ -814,4 +838,6 @@ public class WDLHandler implements LanguageHandlerInterface {
             return f;
         }
     }
+    private record FileInputs(String name, String type, Set<String> values) {};
+
 }

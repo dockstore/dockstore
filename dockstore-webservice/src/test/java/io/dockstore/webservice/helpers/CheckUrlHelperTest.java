@@ -16,9 +16,12 @@
 
 package io.dockstore.webservice.helpers;
 
+import static io.dockstore.webservice.helpers.CheckUrlHelper.checkUrls;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.dockstore.common.MuteForSuccessfulTests;
 import java.util.Set;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -29,8 +32,12 @@ class CheckUrlHelperTest {
 
     @Test
     void testCheckUrls() {
-        // A lame test, but CheckUrlHelper, which used to process the test parameter files, now just
-        // essentially invokes the lambda.
-        Assertions.assertFalse(CheckUrlHelper.checkUrls(Set.of(), "https://whatever.com").get());
+        final String fakeUnusedLambdaUrl = "https://fakeunusedLambdaUrl.com"; // Tests don't invoke this endpoint
+        assertTrue(checkUrls(Set.of(), fakeUnusedLambdaUrl).get(),
+            "If there are no urls, should return true");
+        assertFalse(checkUrls(Set.of("localfile.cram"), fakeUnusedLambdaUrl).get(),
+            "A local file is a malformed url");
+        assertFalse(checkUrls(Set.of("s3://human-pangenomics/working/HPRC_PLUS/HG005/raw_data/Illumina/child/5A1-24481579/5A1_S5_L001_R1_001.fastq.gz"),
+            fakeUnusedLambdaUrl).get(), "s3 protocol not recognized by Java");
     }
 }
