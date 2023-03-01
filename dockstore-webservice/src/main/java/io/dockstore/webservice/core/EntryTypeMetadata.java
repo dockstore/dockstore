@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * A container for information about each type of entry, including the singular and plural "terms" used to
- * refer to instances of the type, the path from the root of the site to where entries of the type are displayed, etc.
+ * refer to instances of the type, the path from the site root to where that type of entry is displayed, etc.
  * Intended to provide information about the type of entry, rather than the entry itself.
  * Useful for parameterizing code by entry type.
  */
@@ -26,15 +26,15 @@ public class EntryTypeMetadata {
     private final String term;
     private final String termPlural;
     private final String sitePath;
-    private final boolean trsSupport;
+    private final boolean trsSupported;
     private final String trsPrefix;
 
-    protected EntryTypeMetadata(EntryType type, String term, String termPlural, String sitePath, boolean trsSupport, String trsPrefix) {
+    protected EntryTypeMetadata(EntryType type, String term, String termPlural, String sitePath, boolean trsSupported, String trsPrefix) {
         this.type = type;
         this.term = term;
         this.termPlural = termPlural;
         this.sitePath = sitePath;
-        this.trsSupport = trsSupport;
+        this.trsSupported = trsSupported;
         this.trsPrefix = trsPrefix;
     }
 
@@ -72,8 +72,8 @@ public class EntryTypeMetadata {
     /**
      * Does TRS support this entry type?
      */
-    public boolean getTrsSupport() {
-        return trsSupport;
+    public boolean isTrsSupported() {
+        return trsSupported;
     }
 
     /**

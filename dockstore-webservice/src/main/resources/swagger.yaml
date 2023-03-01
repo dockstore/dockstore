@@ -7424,7 +7424,7 @@ definitions:
         type: "string"
       trsPrefix:
         type: "string"
-      trsSupport:
+      trsSupported:
         type: "boolean"
       type:
         type: "string"

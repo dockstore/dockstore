@@ -27,6 +27,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
@@ -458,10 +459,11 @@ public final class ToolsImplCommon {
      * @return The new ID of the Tool
      */
     private static String getNewId(Entry<?, ?> entry) {
-        if (entry.getEntryTypeMetadata().getTrsSupport()) {
-            return entry.getEntryTypeMetadata().getTrsPrefix() + entry.getEntryPath();
+        EntryTypeMetadata metadata = entry.getEntryTypeMetadata();
+        if (metadata.isTrsSupported()) {
+            return metadata.getTrsPrefix() + entry.getEntryPath();
         } else {
-            LOG.error("Could not construct URL for our container with id: " + entry.getId());
+            LOG.error("TRS is not supported for {}, id: {}", metadata.getTermPlural(), entry.getId());
             return null;
         }
     }

@@ -8340,7 +8340,7 @@ components:
           type: string
         trsPrefix:
           type: string
-        trsSupport:
+        trsSupported:
           type: boolean
         type:
           $ref: '#/components/schemas/EntryType'
