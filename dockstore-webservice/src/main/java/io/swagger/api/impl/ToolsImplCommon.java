@@ -458,8 +458,8 @@ public final class ToolsImplCommon {
      * @return The new ID of the Tool
      */
     private static String getNewId(Entry<?, ?> entry) {
-        if (entry.getEntryType().getTrsSupport()) {
-            return entry.getEntryType().getTrsPrefix() + entry.getEntryPath();
+        if (entry.getEntryTypeMetadata().getTrsSupport()) {
+            return entry.getEntryTypeMetadata().getTrsPrefix() + entry.getEntryPath();
         } else {
             LOG.error("Could not construct URL for our container with id: " + entry.getId());
             return null;

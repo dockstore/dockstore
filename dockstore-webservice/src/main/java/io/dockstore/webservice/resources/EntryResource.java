@@ -570,7 +570,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         // Create title and link to entry
         final String entryPath = entry.getEntryPath();
         final String title = isProduction ? entryPath : (baseUrl + " " + entryPath);
-        final String entryLink = baseUrl + "/" + entry.getEntryType().getSitePath() + entryPath;
+        final String entryLink = baseUrl + "/" + entry.getEntryTypeMetadata().getSitePath() + "/" + entryPath;
 
         // Create description
         String description = StringUtils.defaultString(entry.getDescription());

@@ -23,7 +23,6 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
-import io.dockstore.common.EntryTypeMetadata;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
@@ -303,9 +302,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public abstract EntryType getEntryType();
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    public EntryTypeMetadata getEntryTypeMetadata() {
-        return getEntryType().getMetadata();
-    }
+    public abstract EntryTypeMetadata getEntryTypeMetadata();
 
     @JsonIgnore
     public abstract boolean isHosted();
