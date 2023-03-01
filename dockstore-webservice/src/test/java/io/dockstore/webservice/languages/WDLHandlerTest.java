@@ -21,6 +21,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.languages.WDLHandler.FileInputs;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
@@ -228,16 +229,23 @@ class WDLHandlerTest {
             "Only one parameter defined in WDL");
 
         // Handles array
-        assertEquals(2, wdlHandler.fileInputValues(jsonObject, Map.of("workflow.files", "Array[File]")).size(),
-            "Only array defined in WDL");
+        final List<FileInputs> arrayFileInputs =
+            wdlHandler.fileInputValues(jsonObject, Map.of("workflow.files", "Array[File]"));
+        assertEquals(1, arrayFileInputs.size(), "There should be one file input");
+        assertEquals(2, arrayFileInputs.get(0).values().size(),
+            "The file input array should have two values");
 
-        assertEquals(0, wdlHandler.fileInputValues(jsonObject, Map.of("workflow.files", "File")).size(),
+        assertEquals(0, wdlHandler.fileInputValues(jsonObject, Map.of("workflow.files", "File")).get(0).values().size(),
             "workflow.files is a single file in WDL, an array in test file");
 
-        assertEquals(3, wdlHandler.fileInputValues(jsonObject,
-                Map.of("workflow.files", "Array[File]", "workflow.file3", "File")).size(),
-            "Handle single file and array");
-
+        final List<FileInputs> twoInputs = wdlHandler.fileInputValues(jsonObject,
+            Map.of("workflow.files", "Array[File]", "workflow.file3", "File"));
+        assertEquals(2, twoInputs.size(), "Handle single file and array");
+        // Can't do get(0), order is not deterministic
+        final FileInputs arrayInputWithTwoUrls = twoInputs.stream().filter(input -> input.type().equals("Array[File]")).findFirst().get();
+        assertEquals(2, arrayInputWithTwoUrls.values().size(), "workflow.files array has 2 possible urls");
+        final FileInputs fileInput = twoInputs.stream().filter(input -> input.type().equals("File")).findFirst().get();
+        assertEquals(1, fileInput.values().size(), "workfile.file3 has one possible url");
     }
 
     private String getFileContent(String path) throws IOException {

@@ -838,6 +838,6 @@ public class WDLHandler implements LanguageHandlerInterface {
             return f;
         }
     }
-    private record FileInputs(String name, String type, Set<String> values) {};
+    record FileInputs(String name, String type, Set<String> values) {};
 
 }
