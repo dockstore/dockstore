@@ -40,7 +40,8 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.CheckUrlHelper;
+import io.dockstore.webservice.helpers.CheckUrlInterface;
+import io.dockstore.webservice.helpers.CheckUrlInterface.UrlStatus;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -722,7 +723,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Optional<Boolean> isOpenData(final WorkflowVersion workflowVersion, final String checkUrlLambdaUrl) {
+    public Optional<Boolean> isOpenData(final WorkflowVersion workflowVersion, final CheckUrlInterface checkUrlInterface) {
         final Optional<SourceFile> maybeDescriptor = findPrimaryDescriptor(workflowVersion);
         if (maybeDescriptor.isEmpty()) {
             return Optional.empty();
@@ -745,29 +746,30 @@ public class WDLHandler implements LanguageHandlerInterface {
             return Optional.of(false);
         }
 
-        return anyTestFileHasAllOpenData(checkUrlLambdaUrl, fileInputMap.get(), testFiles);
+        final UrlStatus urlStatus =
+            anyTestFileHasAllOpenData(fileInputMap.get(), testFiles, checkUrlInterface);
+        if (urlStatus == UrlStatus.UNKNOWN) {
+            return Optional.empty();
+        } else {
+            return Optional.of(urlStatus == UrlStatus.ALL_OPEN);
+        }
     }
 
-    private Optional<Boolean> anyTestFileHasAllOpenData(final String checkUrlLambdaUrl,
-        final Map<String, String> fileInputMap, final List<JSONObject> testFiles) {
+    private UrlStatus anyTestFileHasAllOpenData(final Map<String, String> fileInputMap,
+        final List<JSONObject> testFiles, CheckUrlInterface checkUrlInterface) {
         for (JSONObject testFile: testFiles) {
             final List<FileInputs> testFileInputs = fileInputValues(testFile, fileInputMap);
             if (everyFileInputHasValue(testFileInputs)) {
                 final Set<String> possibleUrls =
                     testFileInputs.stream().map(p -> p.values()).flatMap(Set::stream).collect(
                         Collectors.toSet());
-                final Optional<Boolean> check =
-                    CheckUrlHelper.checkUrls(possibleUrls, checkUrlLambdaUrl);
-                if (check.isPresent() && check.get()) {
-                    return Optional.of(true);
-                }
-                if (!check.isPresent()) {
-                    // Something funny is going on with the lambda
-                    return Optional.empty();
+                final UrlStatus urlStatus = checkUrlInterface.checkUrls(possibleUrls);
+                if (urlStatus == UrlStatus.ALL_OPEN || urlStatus == UrlStatus.UNKNOWN) {
+                    return urlStatus;
                 }
             }
         }
-        return Optional.of(false);
+        return UrlStatus.NOT_ALL_OPEN;
     }
 
     private static boolean everyFileInputHasValue(final List<FileInputs> fileInputs) {

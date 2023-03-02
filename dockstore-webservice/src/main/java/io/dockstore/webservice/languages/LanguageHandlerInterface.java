@@ -35,6 +35,7 @@ import io.dockstore.webservice.core.dockerhub.DockerHubImage;
 import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
+import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.DockerRegistryAPIHelper;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
@@ -966,10 +967,10 @@ public interface LanguageHandlerInterface {
      *     publicly accessible urls for every file input parameter</li>
      * </ul>
      * @param workflowVersion
-     * @param checkUrlLambdaUrl
+     * @param checkUrlInterface
      * @return if unable to determine, Optional.empty(), otherwise an non-empty boolean
      */
-    default Optional<Boolean> isOpenData(WorkflowVersion workflowVersion, final String checkUrlLambdaUrl) {
+    default Optional<Boolean> isOpenData(WorkflowVersion workflowVersion, final CheckUrlInterface checkUrlInterface) {
         return Optional.empty();
     }
 

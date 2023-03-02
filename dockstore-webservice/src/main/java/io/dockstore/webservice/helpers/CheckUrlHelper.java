@@ -34,20 +34,20 @@ import javax.ws.rs.core.UriBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class CheckUrlHelper {
+public final class CheckUrlHelper implements CheckUrlInterface {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckUrlHelper.class);
+    private String checkUrlLambdaUrl;
 
-    private CheckUrlHelper() {
-
+    public CheckUrlHelper(String checkUrlLambdaUrl) {
+        this.checkUrlLambdaUrl = checkUrlLambdaUrl;
     }
 
-
-    private static Optional<Boolean> checkUrl(String url, String baseURL) {
+    private Optional<Boolean> checkUrl(String url) {
         HttpRequest request;
         URI uri;
         try {
-            uri = UriBuilder.fromUri(new URI(baseURL)).queryParam("url", url).build();
+            uri = UriBuilder.fromUri(new URI(checkUrlLambdaUrl)).queryParam("url", url).build();
         } catch (URISyntaxException e) {
             return Optional.of(false);
         }
@@ -71,10 +71,13 @@ public final class CheckUrlHelper {
         }
     }
 
-    private static boolean hasMalformedUrl(Set<String> possibleUrls) {
+    private static boolean hasMalformedOrFileProtocolUrl(Set<String> possibleUrls) {
         return possibleUrls.stream().anyMatch(possibleUrl -> {
             try {
-                new URL(possibleUrl);
+                final URL url = new URL(possibleUrl);
+                if ("file".equals(url.getProtocol())) {
+                    return false;
+                }
             } catch (MalformedURLException e) {
                 LOGGER.debug("malformed url", e);
                 return true;
@@ -83,29 +86,22 @@ public final class CheckUrlHelper {
         });
     }
 
-    /**
-     * Checks whether all <code>possibleUrls</code> are open access urls. Returns <code>Optional.of(true)</code>
-     * if they are, <code>Optional.of(false)</code> if any are not, or <code>Optional.empty()</code>
-     * if there was an error doing the check.
-     * @param possibleUrls
-     * @param baseURL
-     * @return
-     */
-    public static Optional<Boolean> checkUrls(Set<String> possibleUrls, String baseURL) {
+    @Override
+    public UrlStatus checkUrls(final Set<String> possibleUrls) {
         if (possibleUrls.isEmpty()) {
-            return Optional.of(true);
+            return UrlStatus.ALL_OPEN;
         }
-        if (hasMalformedUrl(possibleUrls)) {
-            return Optional.of(false);
+        if (hasMalformedOrFileProtocolUrl(possibleUrls)) {
+            return UrlStatus.NOT_ALL_OPEN;
         }
-        List<Optional<Boolean>> objectStream = possibleUrls.parallelStream().map(url -> checkUrl(url, baseURL))
+        List<Optional<Boolean>> objectStream = possibleUrls.parallelStream().map(url -> checkUrl(url))
             .collect(Collectors.toCollection(ArrayList::new));
         if (objectStream.stream().anyMatch(urlStatus -> urlStatus.isPresent() && urlStatus.get().equals(false))) {
-            return Optional.of(false);
+            return UrlStatus.NOT_ALL_OPEN;
         }
         if (objectStream.stream().anyMatch(Optional::isEmpty)) {
-            return Optional.empty();
+            return UrlStatus.UNKNOWN;
         }
-        return Optional.of(true);
+        return UrlStatus.ALL_OPEN;
     }
 }

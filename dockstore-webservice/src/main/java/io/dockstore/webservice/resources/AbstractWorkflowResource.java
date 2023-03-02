@@ -36,6 +36,8 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.CheckUrlHelper;
+import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
@@ -114,7 +116,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     protected final String bitbucketClientSecret;
     protected final String bitbucketClientID;
-    protected final String checkUrlLambdaUrl;
+    private CheckUrlInterface checkUrlInterface = null;
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, EntryResource entryResource,
             DockstoreWebserviceConfiguration configuration) {
@@ -135,8 +137,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
         gitHubAppId = configuration.getGitHubAppId();
-        this.checkUrlLambdaUrl = configuration.getCheckUrlLambdaUrl();
-
+        final String lambdaUrl = configuration.getCheckUrlLambdaUrl();
+        if (lambdaUrl != null) {
+            this.checkUrlInterface = new CheckUrlHelper(lambdaUrl);
+        }
     }
 
     protected SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
@@ -252,8 +256,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         // Setup CheckUrl
-        if (checkUrlLambdaUrl != null) {
-            publicAccessibleUrls(existingVersion, checkUrlLambdaUrl, descriptorType);
+        if (checkUrlInterface != null) {
+            publicAccessibleUrls(existingVersion, checkUrlInterface, descriptorType);
         }
 
         return existingVersion;
@@ -266,13 +270,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * that is false, then version metadata is false
      *
      * @param existingVersion   Hibernate initialized version
-     * @param checkUrlLambdaUrl URL of the checkUrl lambda
+     * @param checkUrlInterface URL of the checkUrl lambda
      * @param descriptorType
      */
     public static void publicAccessibleUrls(WorkflowVersion existingVersion,
-        final String checkUrlLambdaUrl, final DescriptorLanguage descriptorType) {
+        final CheckUrlInterface checkUrlInterface, final DescriptorLanguage descriptorType) {
         final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
-        final Optional<Boolean> hasPublicData = languageHandler.isOpenData(existingVersion, checkUrlLambdaUrl);
+        final Optional<Boolean> hasPublicData = languageHandler.isOpenData(existingVersion, checkUrlInterface);
         existingVersion.getVersionMetadata()
             .setPublicAccessibleTestParameterFile(hasPublicData.orElse(null));
     }
@@ -773,8 +777,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     workflow.getDescriptorType());
                 updatedWorkflowVersion = existingWorkflowVersion;
             } else {
-                if (checkUrlLambdaUrl != null) {
-                    publicAccessibleUrls(remoteWorkflowVersion, checkUrlLambdaUrl, workflow.getDescriptorType());
+                if (checkUrlInterface != null) {
+                    publicAccessibleUrls(remoteWorkflowVersion, checkUrlInterface, workflow.getDescriptorType());
                 }
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
                 updatedWorkflowVersion = remoteWorkflowVersion;
