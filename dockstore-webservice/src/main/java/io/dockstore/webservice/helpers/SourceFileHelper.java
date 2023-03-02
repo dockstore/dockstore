@@ -40,7 +40,7 @@ public final class SourceFileHelper {
     }
 
     /**
-     * Finds the primary descriptor in a workflow version
+     * Finds the primary descriptor in a workflow version.
      * @param workflowVersion
      * @return
      */

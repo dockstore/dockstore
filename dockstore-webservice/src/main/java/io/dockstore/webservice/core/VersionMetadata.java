@@ -54,6 +54,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "version_metadata")
 public class VersionMetadata {
+
+    private static final String PUBLIC_ACCESSIBLE_DESCRIPTION = "Whether the version has everything needed to run without private access permissions";
+
     @Column(columnDefinition =  "boolean default false")
     protected boolean verified;
 
@@ -126,7 +129,8 @@ public class VersionMetadata {
     private Timestamp dbUpdateDate;
 
     @Column()
-    @ApiModelProperty()
+    @ApiModelProperty(value = PUBLIC_ACCESSIBLE_DESCRIPTION)
+    @Schema(description = PUBLIC_ACCESSIBLE_DESCRIPTION)
     private Boolean publicAccessibleTestParameterFile;
 
     @Column(columnDefinition = "varchar")

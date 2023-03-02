@@ -45,15 +45,15 @@ public interface CheckUrlInterface {
      */
     enum UrlStatus {
         /**
-         * All urls are open access
+         * All urls are open access.
          */
         ALL_OPEN,
         /**
-         * At least one of the urls is not open access
+         * At least one of the urls is not open access.
          */
         NOT_ALL_OPEN,
         /**
-         * There was an error determining the status of urls
+         * There was an error determining the status of urls.
          */
         UNKNOWN,
     }
