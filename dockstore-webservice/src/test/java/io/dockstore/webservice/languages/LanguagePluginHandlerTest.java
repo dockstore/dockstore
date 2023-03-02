@@ -278,7 +278,7 @@ class LanguagePluginHandlerTest {
         }
 
         @Override
-        public String getREADMEContent(String repositoryId, String branch, String overrideReadMePath) {
+        public String getReadMeContent(String repositoryId, String branch, String overrideReadMePath) {
             return null;
         }
 

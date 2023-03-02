@@ -413,11 +413,11 @@ class ValidationIT extends BaseIT {
     }
 
     @Test
-    void readmePathTest() {
-        final List<String> readmePaths = new ArrayList<>(
+    void readMePathTest() {
+        final List<String> readMePaths = new ArrayList<>(
                 Arrays.asList("README.md", "readme.md", "/README.md", "/readme.md", "README", "readme", "/README", "/readme"));
-        readmePaths.forEach(readmePath -> {
-            assertTrue(SourceCodeRepoInterface.matchesREADME(readmePath), readmePath);
+        readMePaths.forEach(readMePath -> {
+            assertTrue(SourceCodeRepoInterface.matchesREADME(readMePath), readMePath);
         });
     }
 }

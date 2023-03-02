@@ -73,14 +73,14 @@ public abstract class SourceCodeRepoInterface {
     String gitUsername;
 
     /**
-     * Tries to get the README contents
+     * Tries to get the ReadMe contents
      * First gets all the file names, then see if any of them matches the README regex
      * @param repositoryId
      * @param branch
      * @param overrideLocation if present, use this location instead of the root
      * @return
      */
-    public String getREADMEContent(String repositoryId, String branch, String overrideLocation) {
+    public String getReadMeContent(String repositoryId, String branch, String overrideLocation) {
 
         Optional<String> first;
         if (!Strings.isNullOrEmpty(overrideLocation)) {
@@ -485,9 +485,9 @@ public abstract class SourceCodeRepoInterface {
                 LOG.info(message);
             }
             if (version.getReference() != null) {
-                String readmeContent = getREADMEContent(repositoryId, version.getReference(), version.getReadMePath());
-                if (StringUtils.isNotBlank(readmeContent)) {
-                    version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                String reaMeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
+                if (StringUtils.isNotBlank(reaMeContent)) {
+                    version.setDescriptionAndDescriptionSource(reaMeContent, DescriptionSource.README);
                 }
             }
             return;
@@ -501,10 +501,10 @@ public abstract class SourceCodeRepoInterface {
             // Previously, version has no description
             boolean noDescription = (version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null;
             // Previously, version has a README description
-            boolean oldREADMEDescription = (DescriptionSource.README == version.getDescriptionSource());
+            boolean oldReadMeDescription = (DescriptionSource.README == version.getDescriptionSource());
             // Checking these conditions to prevent overwriting description from descriptor
-            if (noDescription || oldREADMEDescription) {
-                String readmeContent = getREADMEContent(repositoryId, version.getReference(), version.getReadMePath());
+            if (noDescription || oldReadMeDescription) {
+                String readmeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
                 if (StringUtils.isNotBlank(readmeContent)) {
                     version.setDescriptionAndDescriptionSource(readmeContent, Strings.isNullOrEmpty(version.getReadMePath()) ? DescriptionSource.README : DescriptionSource.CUSTOM_README);
                 }
