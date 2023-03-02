@@ -20,10 +20,12 @@ package io.dockstore.webservice.resources;
  * STARRED_ORGANIZATION return events related to starred organization (i.e. what organizations has the user starred and finds interesting?)
  * STARRED returns events related to both starred entries AND starred organizations
  * PROFILE returns events about the user that others would be interested in (i.e. what has the user done that is interesting to others?)
+ * SELF_ORGANIZATIONS returns events that occurred in organizations that the user is a part of
  */
 public enum EventSearchType  {
     STARRED_ENTRIES,
     STARRED_ORGANIZATION,
     ALL_STARRED,
-    PROFILE
+    PROFILE,
+    SELF_ORGANIZATIONS
 }

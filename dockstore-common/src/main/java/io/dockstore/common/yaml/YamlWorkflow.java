@@ -39,6 +39,7 @@ public class YamlWorkflow implements Workflowish {
     private String name;
     private String subclass;
     private String primaryDescriptorPath;
+    private String readMePath;
 
     /**
      * Change the workflow's publish-state, if set.
@@ -126,5 +127,14 @@ public class YamlWorkflow implements Workflowish {
 
     public void setLatestTagAsDefault(boolean latestTagAsDefault) {
         this.latestTagAsDefault = latestTagAsDefault;
+    }
+
+    @Override
+    public String getReadMePath() {
+        return readMePath;
+    }
+
+    public void setReadMePath(String readMePath) {
+        this.readMePath = readMePath;
     }
 }
