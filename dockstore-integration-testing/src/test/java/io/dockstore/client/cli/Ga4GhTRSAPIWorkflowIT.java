@@ -159,6 +159,12 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
                 + "/files?format=zip", new GenericType<>() {
                 }, ownerWebClient);
         checkOnZipFile(arbitraryURL, DescriptorLanguage.WDL);
+
+        // test openapi relative path endpoint via TRS2.0
+        final io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("#workflow/" + refresh.getFullWorkflowPath(),
+            DescriptorTypeWithPlain.WDL.toString(), GATK_SV_TAG, "module00a/Module00a.wdl");
+        assertFalse(fileWrapper.getContent().isEmpty() && fileWrapper.getContent().contains("ENTER HASH HERE IN FIRECLOUD"));
+        assertFalse(fileWrapper.getUrl().isEmpty());
     }
 
     private static void checkOnJsonFile(byte[] arbitraryURL) {
