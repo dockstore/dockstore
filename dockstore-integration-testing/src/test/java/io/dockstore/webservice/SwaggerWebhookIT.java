@@ -1192,7 +1192,7 @@ class SwaggerWebhookIT extends BaseIT {
         assertEquals(2, workflow.getWorkflowVersions().size());
 
         WorkflowVersion invalidVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.isValid()).findFirst().get();
-        invalidVersion.getValidations();
+        assertFalse(invalidVersion.getValidations().isEmpty());
         Validation workflowValidation = invalidVersion.getValidations().stream().filter(validation -> validation.getType().equals(Validation.TypeEnum.DOCKSTORE_CWL)).findFirst().get();
         assertFalse(workflowValidation.isValid());
         assertTrue(workflowValidation.getMessage().contains("Did you mean to register a tool"));

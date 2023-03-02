@@ -8269,6 +8269,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      readMePath:
+        type: "string"
+        description: "A custom readme for the version, if applicable."
       userFiles:
         type: "array"
         description: "The user-specified files for the version."
@@ -8400,6 +8403,7 @@ definitions:
         position: 23
         enum:
         - "README"
+        - "CUSTOM_README"
         - "DESCRIPTOR"
       email:
         type: "string"
@@ -8965,6 +8969,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      readMePath:
+        type: "string"
+        description: "A custom readme for the version, if applicable."
       userFiles:
         type: "array"
         description: "The user-specified files for the version."
@@ -9095,6 +9102,7 @@ definitions:
         position: 23
         enum:
         - "README"
+        - "CUSTOM_README"
         - "DESCRIPTOR"
       email:
         type: "string"
@@ -9417,6 +9425,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      readMePath:
+        type: "string"
+        description: "A custom readme for the version, if applicable."
       userFiles:
         type: "array"
         description: "The user-specified files for the version."
@@ -9547,6 +9558,7 @@ definitions:
         position: 23
         enum:
         - "README"
+        - "CUSTOM_README"
         - "DESCRIPTOR"
       email:
         type: "string"

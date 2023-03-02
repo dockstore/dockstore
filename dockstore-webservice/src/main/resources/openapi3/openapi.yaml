@@ -9300,6 +9300,7 @@ components:
           type: string
           enum:
           - README
+          - CUSTOM_README
           - DESCRIPTOR
         descriptorTypeVersionsFromSourceFiles:
           type: array
@@ -9364,6 +9365,8 @@ components:
           uniqueItems: true
         parent:
           $ref: '#/components/schemas/EntryObjectObject'
+        readMePath:
+          type: string
         reference:
           type: string
           description: git commit/tag/branch
@@ -9925,6 +9928,7 @@ components:
           type: string
           enum:
           - README
+          - CUSTOM_README
           - DESCRIPTOR
         descriptorTypeVersionsFromSourceFiles:
           type: array
@@ -9982,6 +9986,8 @@ components:
           uniqueItems: true
         parent:
           $ref: '#/components/schemas/EntryObjectObject'
+        readMePath:
+          type: string
         reference:
           type: string
           description: git commit/tag/branch
@@ -10279,6 +10285,7 @@ components:
           type: string
           enum:
           - README
+          - CUSTOM_README
           - DESCRIPTOR
         descriptorTypeVersionsFromSourceFiles:
           type: array
@@ -10341,6 +10348,8 @@ components:
           uniqueItems: true
         parent:
           $ref: '#/components/schemas/EntryObjectObject'
+        readMePath:
+          type: string
         reference:
           type: string
           description: git commit/tag/branch
