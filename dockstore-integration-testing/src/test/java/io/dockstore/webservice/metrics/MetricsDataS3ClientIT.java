@@ -26,6 +26,7 @@ import static io.dockstore.common.LocalStackTestUtilities.createBucket;
 import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
 import static io.dockstore.common.LocalStackTestUtilities.getS3ObjectsFromBucket;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_STATUS_ERROR;
+import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_TIME_FORMAT_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -262,6 +263,16 @@ public class MetricsDataS3ClientIT {
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(executions, platform, id, versionId, description));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "Should not be able to submit metrics if ExecutionStatus is missing");
         assertTrue(exception.getMessage().contains(EXECUTION_STATUS_ERROR), "Should not be able to submit metrics if ExecutionStatus is missing");
+
+        // Test that malformed ExecutionTimes throw an exception
+        List<Execution> malformedExecutionTimes = List.of(
+                new Execution().executionStatus(Execution.ExecutionStatusEnum.SUCCESSFUL).executionTime("1 second"),
+                new Execution().executionStatus(Execution.ExecutionStatusEnum.SUCCESSFUL).executionTime("PT 1S") // Should not have space
+        );
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(malformedExecutionTimes, platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "Should not be able to submit metrics if ExecutionTime is malformed");
+        assertTrue(exception.getMessage().contains(EXECUTION_TIME_FORMAT_ERROR) && exception.getMessage().contains("1 second")
+                && exception.getMessage().contains("PT 1S"), "Should not be able to submit metrics if ExecutionTime is malformed");
 
         // Verify that not providing metrics data throws an exception
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(List.of(), platform, id, versionId, description));
