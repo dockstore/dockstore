@@ -41,8 +41,8 @@
         in the Dockstore projects BOM, unless specifically overridden
         in the dependency section
         -->
-        <swagger-annotations-version>1.6.5</swagger-annotations-version>
-        <openapi-annotations-version>2.1.13</openapi-annotations-version>
+        <swagger-annotations-version>1.6.8</swagger-annotations-version>
+        <openapi-annotations-version>2.2.6</openapi-annotations-version>
         <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
         <postgresql.version>42.2.23</postgresql.version>
         <maven-surefire.version>3.0.0-M5</maven-surefire.version>
