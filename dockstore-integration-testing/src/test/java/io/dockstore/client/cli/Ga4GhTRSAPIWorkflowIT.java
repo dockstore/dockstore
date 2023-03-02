@@ -159,12 +159,6 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
                 + "/files?format=zip", new GenericType<>() {
                 }, ownerWebClient);
         checkOnZipFile(arbitraryURL, DescriptorLanguage.WDL);
-
-        // test openapi relative path endpoint via TRS2.0
-        final io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("#workflow/" + refresh.getFullWorkflowPath(),
-            DescriptorTypeWithPlain.WDL.toString(), GATK_SV_TAG, "module00a/Module00a.wdl");
-        assertFalse(fileWrapper.getContent().isEmpty() && fileWrapper.getContent().contains("ENTER HASH HERE IN FIRECLOUD"));
-        assertFalse(fileWrapper.getUrl().isEmpty());
     }
 
     private static void checkOnJsonFile(byte[] arbitraryURL) {
@@ -298,17 +292,30 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
 
         // check on URLs for workflows via ga4gh calls
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
+        final String reference = "0.4.0";
         FileWrapper toolDescriptor = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0");
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, reference);
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         assertFalse(content.isEmpty());
         // check slashed paths
-        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0",
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, reference,
             "toolkit/if_input_is_bz2_convert_to_gz_else_just_rename.cwl");
-        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0",
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, reference,
             "toolkit/if_file_name_is_bz2_then_return_null_else_return_in_json_to_output.cwl");
-        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0",
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, reference,
             "../examples/chksum_seqval_wf_interleaved_fq.json");
+
+        // test openapi relative path endpoint via TRS2.0
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+        final io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE,
+            DescriptorTypeWithPlain.WDL.toString(), reference, "../examples/chksum_seqval_wf_interleaved_fq.json");
+        assertFalse(fileWrapper.getContent().isEmpty() && fileWrapper.getContent().contains("ftp.sanger.ac.uk/pub/cancer/dockstore/examples/tiny_interleaved.fq.gz"));
+        assertFalse(fileWrapper.getUrl().isEmpty());
+        // we need some way to get a text type or String here, but it does not seem like swagger-codegen understands that
+        ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE,
+            DescriptorTypeWithPlain.PLAIN_WDL.toString(), reference, "../examples/chksum_seqval_wf_interleaved_fq.json");
+        assertFalse(fileWrapper.getContent().isEmpty() && fileWrapper.getContent().contains("ftp.sanger.ac.uk/pub/cancer/dockstore/examples/tiny_interleaved.fq.gz"));
+        assertFalse(fileWrapper.getUrl().isEmpty());
     }
 
     // working on https://github.com/dockstore/dockstore/issues/3335

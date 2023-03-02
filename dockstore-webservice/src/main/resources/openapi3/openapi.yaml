@@ -2784,16 +2784,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Tool'
           description: A tool.
         "404":
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
           description: The tool can not be found.
@@ -2957,16 +2951,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/FileWrapper'
           description: The tool descriptor.
         "404":
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
           description: The tool descriptor can not be found.
@@ -3038,16 +3026,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/FileWrapper'
           description: The tool descriptor.
         "404":
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
           description: The tool can not be output in the specified type.
@@ -3107,18 +3089,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolFile'
-            application/zip:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolFile'
           description: The array of File JSON responses.
         "404":
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            application/zip:
               schema:
                 $ref: '#/components/schemas/Error'
           description: The tool can not be output in the specified type.
@@ -3177,18 +3151,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
           description: The tool test JSON response.
         "404":
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
           description: The tool can not be output in the specified type.
