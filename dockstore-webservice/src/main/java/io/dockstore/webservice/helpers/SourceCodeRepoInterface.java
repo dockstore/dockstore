@@ -84,12 +84,10 @@ public abstract class SourceCodeRepoInterface {
 
         Optional<String> first;
         if (!Strings.isNullOrEmpty(overrideLocation)) {
-            final Path overridePath = Paths.get(overrideLocation);
-            List<String> strings = this.listFiles(repositoryId, overridePath.getParent().toString(), branch);
-            if (strings == null) {
+            first = checkForReadMeInDirectory(repositoryId, branch, overrideLocation);
+            if (first.isEmpty()) {
                 return null;
             }
-            first = strings.stream().map(f -> Paths.get(overridePath.getParent().toString(), f).toString()).filter(overrideLocation::equals).findFirst();
         } else {
             List<String> strings = this.listFiles(repositoryId, "/", branch);
             if (strings == null) {
@@ -98,6 +96,22 @@ public abstract class SourceCodeRepoInterface {
             first = strings.stream().filter(SourceCodeRepoInterface::matchesREADME).findFirst();
         }
         return first.map(s -> this.readFile(repositoryId, s, branch)).orElse(null);
+    }
+
+    /**
+     * Look for a readme file in a potentially cached directory/overrideLocation
+     * @param repositoryId
+     * @param branch
+     * @param overrideLocation
+     * @return
+     */
+    private Optional<String> checkForReadMeInDirectory(String repositoryId, String branch, String overrideLocation) {
+        final Path overridePath = Paths.get(overrideLocation);
+        List<String> strings = this.listFiles(repositoryId, overridePath.getParent().toString(), branch);
+        if (strings == null) {
+            return Optional.empty();
+        }
+        return strings.stream().map(f -> Paths.get(overridePath.getParent().toString(), f).toString()).filter(overrideLocation::equals).findFirst();
     }
 
     public static boolean matchesREADME(String filename) {
