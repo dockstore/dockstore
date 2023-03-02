@@ -78,7 +78,7 @@ POM as their parent.
         <bytebuddy.version>1.14.0</bytebuddy.version>
 <!--        Cromwell versions can be found at https://broadinstitute.jfrog.io/ui/native/libs-release-local/org/broadinstitute/-->
         <cromwell.version>84</cromwell.version>
-        <jackson.version>2.14.1</jackson.version>
+        <jackson.version>2.13.5</jackson.version>
         <docker-client.version>3.2.8</docker-client.version>
         <system-stubs.version>2.0.1</system-stubs.version>
         <jjwt.suite.version>0.11.5</jjwt.suite.version>
