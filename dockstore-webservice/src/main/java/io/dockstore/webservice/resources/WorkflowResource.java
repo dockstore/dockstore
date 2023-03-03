@@ -1831,6 +1831,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         if (checkIncludes(include, IMAGES)) {
             workflow.getWorkflowVersions().stream().filter(Version::isFrozen).forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getImages()));
+            workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getImageReferences()));
         }
         if (checkIncludes(include, VERSIONS)) {
             Hibernate.initialize(workflow.getWorkflowVersions());

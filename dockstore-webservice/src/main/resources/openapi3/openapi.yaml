@@ -8611,6 +8611,14 @@ components:
         updated:
           type: string
           description: Last time the container was updated.
+    ImageReference:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        reference:
+          type: string
     Label:
       type: object
       properties:
@@ -9326,6 +9334,11 @@ components:
         id:
           type: integer
           format: int64
+        imageReferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageReference'
+          uniqueItems: true
         image_id:
           type: string
         images:
@@ -9378,10 +9391,6 @@ components:
           type: integer
           format: int64
         userFiles:
-          type: array
-          items:
-            type: string
-        userImageReferences:
           type: array
           items:
             type: string
@@ -9953,6 +9962,11 @@ components:
         id:
           type: integer
           format: int64
+        imageReferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageReference'
+          uniqueItems: true
         images:
           type: array
           items:
@@ -9997,10 +10011,6 @@ components:
           - NOT_APPLICABLE
           - UNSET
         userFiles:
-          type: array
-          items:
-            type: string
-        userImageReferences:
           type: array
           items:
             type: string
@@ -10311,6 +10321,11 @@ components:
         id:
           type: integer
           format: int64
+        imageReferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageReference'
+          uniqueItems: true
         images:
           type: array
           items:
@@ -10362,10 +10377,6 @@ components:
         synced:
           type: boolean
         userFiles:
-          type: array
-          items:
-            type: string
-        userImageReferences:
           type: array
           items:
             type: string

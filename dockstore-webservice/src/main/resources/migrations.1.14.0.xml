@@ -294,13 +294,33 @@
             CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 18876;
         </sql>
     </changeSet>
-    <changeSet author="svonworl" id="addUserImageReferences">
-        <addColumn tableName="tag">
-            <column name="userimagereferences" type="varchar"/>
-        </addColumn>
-        <addColumn tableName="workflowversion">
-            <column name="userimagereferences" type="varchar"/>
-        </addColumn>
+    <changeSet author="svonworl" id="addImageReferences">
+        <!-- create table to store image references -->
+        <createTable tableName="image_reference">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="image_reference_pkey"/>
+            </column>
+            <column name="reference" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <!-- create table to join image references to versions -->
+        <createTable tableName="version_image_reference">
+            <column name="versionid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_image_reference_pkey"/>
+            </column>
+            <column name="referenceid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_image_reference_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="referenceid" constraintName="uk_referenced_version_image_reference" tableName="version_image_reference"/>
+        <addForeignKeyConstraint baseColumnNames="referenceid" baseTableName="version_image_reference" constraintName="fk_referenceid_version_image_reference" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image_reference"/>
     </changeSet>
     <changeSet author="svonworl" id="dropSubclassFromWorkflowVersion">
         <dropColumn columnName="subclass" tableName="workflowversion"/>

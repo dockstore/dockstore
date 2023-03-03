@@ -7657,6 +7657,18 @@ definitions:
         description: "Stores the OS and, if available the OS version. Separated by\
           \ a / and only applicable to Docker Hub"
     description: "Image(s) associated with tags and workflow versions"
+  ImageReference:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the image in this webservice"
+      reference:
+        type: "string"
+        position: 1
+        description: "Image reference"
+    description: "An image reference associated with a version"
   Label:
     type: "object"
     required:
@@ -8272,11 +8284,6 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
-      userImageReferences:
-        type: "array"
-        description: "The user-specified image references for the version."
-        items:
-          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       reference:
@@ -8354,7 +8361,7 @@ definitions:
       images:
         type: "array"
         position: 15
-        description: "The images that belong to this version"
+        description: "Snapshots of the images that belong to this version"
         uniqueItems: true
         items:
           $ref: "#/definitions/Image"
@@ -8414,6 +8421,14 @@ definitions:
           \ by platform"
         additionalProperties:
           $ref: "#/definitions/Metrics"
+      imageReferences:
+        type: "array"
+        position: 27
+        description: "References to images, in addition to references in sourcefiles,\
+          \ that belong to this version"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/ImageReference"
       last_built:
         type: "integer"
         format: "int64"
@@ -8973,11 +8988,6 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
-      userImageReferences:
-        type: "array"
-        description: "The user-specified image references for the version."
-        items:
-          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -9057,7 +9067,7 @@ definitions:
       images:
         type: "array"
         position: 15
-        description: "The images that belong to this version"
+        description: "Snapshots of the images that belong to this version"
         uniqueItems: true
         items:
           $ref: "#/definitions/Image"
@@ -9114,6 +9124,14 @@ definitions:
           \ by platform"
         additionalProperties:
           $ref: "#/definitions/Metrics"
+      imageReferences:
+        type: "array"
+        position: 27
+        description: "References to images, in addition to references in sourcefiles,\
+          \ that belong to this version"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/ImageReference"
     description: "Base class for versions of entries in the Dockstore"
   VersionMetadata:
     type: "object"
@@ -9430,11 +9448,6 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
-      userImageReferences:
-        type: "array"
-        description: "The user-specified image references for the version."
-        items:
-          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -9514,7 +9527,7 @@ definitions:
       images:
         type: "array"
         position: 15
-        description: "The images that belong to this version"
+        description: "Snapshots of the images that belong to this version"
         uniqueItems: true
         items:
           $ref: "#/definitions/Image"
@@ -9571,6 +9584,14 @@ definitions:
           \ by platform"
         additionalProperties:
           $ref: "#/definitions/Metrics"
+      imageReferences:
+        type: "array"
+        position: 27
+        description: "References to images, in addition to references in sourcefiles,\
+          \ that belong to this version"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/ImageReference"
       workflow_path:
         type: "string"
         position: 101

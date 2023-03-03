@@ -221,9 +221,15 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id", columnDefinition = "bigint"))
-    @ApiModelProperty(value = "The images that belong to this version", position = 15)
+    @ApiModelProperty(value = "Snapshots of the images that belong to this version", position = 15)
     @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
+
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JoinTable(name = "version_image_reference", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "referenceid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @ApiModelProperty(value = "References to images, in addition to references in sourcefiles, that belong to this version", position = 27)
+    @BatchSize(size = 25)
+    private Set<ImageReference> imageReferences = new HashSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_metrics", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "metricsid", referencedColumnName = "id", columnDefinition = "bigint"))
@@ -236,11 +242,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Convert(converter = UserFilesConverter.class)
     @ApiModelProperty(value = "The user-specified files for the version.")
     private List<String> userFiles = new ArrayList<>();
-
-    @Column(columnDefinition = "varchar")
-    @Convert(converter = UserImageReferencesConverter.class)
-    @ApiModelProperty(value = "The user-specified image references for the version.")
-    private List<String> userImageReferences = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
@@ -393,6 +394,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setImages(Set<Image> images) {
         this.images = images;
+    }
+
+    public Set<ImageReference> getImageReferences() {
+        return imageReferences;
+    }
+
+    public void setImageReferences(Set<ImageReference> imageReferences) {
+        this.imageReferences = imageReferences;
     }
 
     public void updateVerified() {
@@ -640,14 +649,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setUserFiles(List<String> userFiles) {
         this.userFiles = userFiles;
-    }
-
-    public List<String> getUserImageReferences() {
-        return userImageReferences;
-    }
-
-    public void setUserImageReferences(List<String> userImageReferences) {
-        this.userImageReferences = userImageReferences;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

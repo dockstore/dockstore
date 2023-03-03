@@ -43,6 +43,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.ImageReference;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
@@ -904,7 +905,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // If this is a notebook, set the version's user-specified files and image.
         if (theWf instanceof YamlNotebook yamlNotebook) {
             version.setUserFiles(yamlNotebook.getOtherFiles());
-            version.setUserImageReferences(yamlNotebook.getImage() != null ? List.of(yamlNotebook.getImage()) : List.of());
+            if (yamlNotebook.getImage() != null) {
+                ImageReference reference = new ImageReference();
+                reference.setReference(yamlNotebook.getImage());
+                version.getImageReferences().add(reference);
+            }
         }
 
         // No need to check for null, has been validated

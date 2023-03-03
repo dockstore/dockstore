@@ -35,6 +35,7 @@ import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Author;
+import io.dockstore.openapi.client.model.ImageReference;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Workflow;
@@ -200,9 +201,12 @@ class NotebookIT extends BaseIT {
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/with-image-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
-        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions,images");
         assertEquals(1, notebook.getWorkflowVersions().size());
-        assertEquals(List.of("quay.io/seqware/seqware_full/1.1"), notebook.getWorkflowVersions().get(0).getUserImageReferences());
+        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        assertEquals(1, version.getImageReferences().size());
+        ImageReference reference = version.getImageReferences().get(0);
+        assertEquals("quay.io/seqware/seqware_full/1.1", reference.getReference());
     }
 
     @Test
