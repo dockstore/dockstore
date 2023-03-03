@@ -55,7 +55,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "version_metadata")
 public class VersionMetadata {
 
-    private static final String PUBLIC_ACCESSIBLE_DESCRIPTION = "Whether the version has everything needed to run without private access permissions";
+    private static final String PUBLIC_ACCESSIBLE_DESCRIPTION = "Whether the version has everything needed to run without restricted access permissions";
 
     @Column(columnDefinition =  "boolean default false")
     protected boolean verified;

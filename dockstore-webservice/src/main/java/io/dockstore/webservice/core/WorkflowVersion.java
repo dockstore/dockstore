@@ -106,7 +106,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     }
 
     /**
-     * Finds the primary descriptor
+     * Finds the primary descriptor.
      * @return
      */
     public Optional<SourceFile> findPrimaryDescriptor() {

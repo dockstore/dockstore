@@ -31,7 +31,7 @@ class LambdaUrlCheckerTest {
 
     /**
      * Tests the LambdaUrlChecker for cases where it does not actually invoke the lambda, due to
-     * validation it performs before invoking said lambda
+     * validation it performs before invoking said lambda.
      */
     @Test
     void testCheckUrls() {
