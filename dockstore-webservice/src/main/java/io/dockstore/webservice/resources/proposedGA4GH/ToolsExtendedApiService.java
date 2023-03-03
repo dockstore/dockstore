@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.metrics.Execution;
+import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.api.NotFoundException;
 import java.util.List;
 import javax.ws.rs.core.MultivaluedMap;
@@ -43,4 +44,5 @@ public abstract class ToolsExtendedApiService {
 
     public abstract Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, List<Execution> executions);
 
+    public abstract Response setAggregatedMetrics(String id, String versionId, Partner platform, Metrics aggregatedMetrics);
 }

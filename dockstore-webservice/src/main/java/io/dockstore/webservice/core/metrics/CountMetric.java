@@ -17,9 +17,12 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.sql.Timestamp;
 import java.util.Map;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -27,6 +30,8 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.SequenceGenerator;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
@@ -38,6 +43,17 @@ public abstract class CountMetric<T> {
     @ApiModelProperty(value = "Implementation specific ID for the count metrics in this webservice")
     @Schema(description = "Implementation specific ID for the count metrics in this webservice")
     private long id;
+
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    @JsonIgnore
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    @JsonIgnore
+    private Timestamp dbUpdateDate;
 
     public abstract Map<T, Integer> getCount();
 
@@ -54,5 +70,21 @@ public abstract class CountMetric<T> {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    public void setDbCreateDate(Timestamp dbCreateDate) {
+        this.dbCreateDate = dbCreateDate;
+    }
+
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
+    }
+
+    public void setDbUpdateDate(Timestamp dbUpdateDate) {
+        this.dbUpdateDate = dbUpdateDate;
     }
 }

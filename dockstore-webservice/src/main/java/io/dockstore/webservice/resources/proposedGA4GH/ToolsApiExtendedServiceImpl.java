@@ -33,6 +33,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.metrics.Execution;
+import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -47,6 +48,7 @@ import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -91,6 +93,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
     public static final String EXECUTION_STATUS_ERROR = "All executions must contain ExecutionStatus";
+    public static final String EXECUTION_TIME_FORMAT_ERROR = "Execution time must be in ISO 8601 format";
+    public static final String EXECUTION_STATUS_COUNT_ERROR = "Aggregated metrics must contain ExecutionStatusCount";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
@@ -107,9 +111,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static AppToolDAO appToolDAO = null;
     private static NotebookDAO notebookDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
+    private static DockstoreWebserviceConfiguration.MetricsConfig metricsConfig = null;
     private static PublicStateManager publicStateManager = null;
     private static Semaphore elasticSearchConcurrencyLimit = null;
-    private static MetricsDataS3Client metricsDataS3Client = null;
 
     public static void setStateManager(PublicStateManager manager) {
         ToolsApiExtendedServiceImpl.publicStateManager = manager;
@@ -133,20 +137,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         ToolsApiExtendedServiceImpl.config = config;
-        ToolsApiExtendedServiceImpl.metricsDataS3Client = new MetricsDataS3Client(config.getMetricsConfig().getS3BucketName());
+        ToolsApiExtendedServiceImpl.metricsConfig = config.getMetricsConfig();
 
         if (config.getEsConfiguration().getMaxConcurrentSessions() == null) {
             ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(ELASTICSEARCH_DEFAULT_LIMIT);
         } else {
             ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(config.getEsConfiguration().getMaxConcurrentSessions());
         }
-    }
-
-    /**
-     * Should only be used by tests so that the ToolsExtendedApi can use a localstack S3Client
-     */
-    public static void setMetricsDataS3Client(MetricsDataS3Client metricsDataS3Client) {
-        ToolsApiExtendedServiceImpl.metricsDataS3Client = metricsDataS3Client;
     }
 
     /**
@@ -423,29 +420,66 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
 
         if (entry == null) {
-            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), TOOL_NOT_FOUND_ERROR).build();
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
         Optional<? extends Version<?>> version = getVersion(entry, versionId);
         if (version.isEmpty()) {
-            return Response.status(Response.Status.NOT_FOUND.getStatusCode(), VERSION_NOT_FOUND_ERROR).build();
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
         // Check that all executions have at least the ExecutionStatus
         if (executions.stream().anyMatch(execution -> execution.getExecutionStatus() == null)) {
-            return Response.status(Response.Status.BAD_REQUEST.getStatusCode(), EXECUTION_STATUS_ERROR).build();
+            throw new CustomWebApplicationException(EXECUTION_STATUS_ERROR, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        List<String> malformedExecutionTimes = executions.stream()
+                .map(Execution::getExecutionTime)
+                .filter(executionTime -> executionTime != null && Execution.checkExecutionTimeISO8601Format(executionTime).isEmpty())
+                .toList();
+        if (!malformedExecutionTimes.isEmpty()) {
+            throw new CustomWebApplicationException(String.format("%s. Found the following malformed execution times: %s.",
+                    EXECUTION_TIME_FORMAT_ERROR, String.join(", ", malformedExecutionTimes)), HttpStatus.SC_BAD_REQUEST);
         }
 
         try {
             ObjectMapper mapper = new ObjectMapper();
             String metricsData = mapper.writeValueAsString(executions);
-            // What format should metrics data be in? String or schema?
+            MetricsDataS3Client metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
             metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);
             return Response.noContent().build();
-        } catch (AwsServiceException | SdkClientException | JsonProcessingException e) {
+        } catch (AwsServiceException | SdkClientException | JsonProcessingException | URISyntaxException e) {
             LOG.error("Could not submit metrics data", e);
             throw new CustomWebApplicationException("Could not submit metrics data", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @Override
+    public Response setAggregatedMetrics(String id, String versionId, Partner platform, Metrics aggregatedMetrics) {
+        // Check that the entry and version exists
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.empty());
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_REGISTRY_RESPONSE;
+        }
+
+        if (entry == null) {
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Version<?> version = getVersion(entry, versionId).orElse(null);
+        if (version == null) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        // Check that the aggregated metrics have at least ExecutionStatusCount
+        if (aggregatedMetrics.getExecutionStatusCount() == null) {
+            throw new CustomWebApplicationException(EXECUTION_STATUS_COUNT_ERROR, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        version.getMetricsByPlatform().put(platform, aggregatedMetrics);
+        return Response.ok().entity(version.getMetricsByPlatform()).build();
     }
 
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
