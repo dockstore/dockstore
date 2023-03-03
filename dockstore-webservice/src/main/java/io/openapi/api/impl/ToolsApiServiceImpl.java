@@ -95,7 +95,6 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -510,10 +509,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             long pageRemaining = actualLimit;
             long entriesConsidered = 0;
 
-            ImmutableTriple<String, EntryDAO, Long>[] typeDAOs = new ImmutableTriple[]{ImmutableTriple.of(COMMAND_LINE_TOOL, toolDAO, numTools),
-                ImmutableTriple.of(WORKFLOW, bioWorkflowDAO, numWorkflows), ImmutableTriple.of(COMMAND_LINE_TOOL, appToolDAO, numAppTools), ImmutableTriple.of(SERVICE, serviceDAO, numServices), ImmutableTriple.of(NOTEBOOK, notebookDAO, numNotebooks)};
+            EntryTypeDAOAndStats[] typeDAOs = new EntryTypeDAOAndStats[]{new EntryTypeDAOAndStats(COMMAND_LINE_TOOL, toolDAO, numTools),
+                new EntryTypeDAOAndStats(WORKFLOW, bioWorkflowDAO, numWorkflows), new EntryTypeDAOAndStats(COMMAND_LINE_TOOL, appToolDAO, numAppTools), new EntryTypeDAOAndStats(SERVICE, serviceDAO, numServices), new EntryTypeDAOAndStats(NOTEBOOK, notebookDAO, numNotebooks)};
 
-            for (ImmutableTriple<String, EntryDAO, Long> typeDAO : typeDAOs) {
+            for (EntryTypeDAOAndStats typeDAO : typeDAOs) {
                 if (!all.isEmpty()) {
                     // if we got any tools, overflow into the very start of the next type of stuff
                     startIndex = 0;
@@ -524,13 +523,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     startIndex = startIndex - entriesConsidered;
                 }
 
-                if (startIndex < typeDAO.right && isCorrectToolClass(toolClass, typeDAO.left)) {
+                if (startIndex < typeDAO.numEntries() && isCorrectToolClass(toolClass, typeDAO.trsClassName())) {
                     // then we want at least some of whatever this DAO returns
                     // TODO we used to handle languages for tools here, test this
-                    all.addAll(typeDAO.middle
+                    all.addAll(typeDAO.dao()
                         .filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, Math.toIntExact(startIndex), Math.toIntExact(pageRemaining)));
                 }
-                entriesConsidered = typeDAO.right;
+                entriesConsidered = typeDAO.numEntries();
             }
         }
         return new NumberOfEntityTypes(numTools, numWorkflows, numAppTools, numServices, numNotebooks);
@@ -1110,4 +1109,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @JsonInclude(Include.NON_EMPTY)
     public static class EmptyImageType implements OneOfFileWrapperImageType {
     }
+
+    public record EntryTypeDAOAndStats (String trsClassName, EntryDAO dao, Long numEntries) {}
 }
