@@ -95,6 +95,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     private static final String LATEST_SUPPORTED_WDL_VERSION = "1.0";
+    private static final String DESCRIPTOR_SUFFIX = "descriptor";
 
     public static void checkForRecursiveLocalImports(String content, Set<SourceFile> sourceFiles, Set<String> absolutePaths, String parent)
             throws ParseException {
@@ -145,7 +146,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         wdlBridge.setSecondaryFiles(secondaryFiles);
         File tempMainDescriptor = null;
         try {
-            tempMainDescriptor = createTempFile("main", "descriptor");
+            tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
             try {
                 // Set language version for descriptor source files
@@ -303,7 +304,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                         secondaryDescContent.put(sourceFile.getAbsolutePath(), sourceFile.getContent());
                     }
                 }
-                tempMainDescriptor = createTempFile("main", "descriptor");
+                tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
                 Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
                 String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
                 try {
@@ -482,7 +483,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         // Write main descriptor to file
         // The use of temporary files is not needed here and might cause new problems
         try {
-            tempMainDescriptor = createTempFile("main", "descriptor");
+            tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
 
             WdlBridge wdlBridge = new WdlBridge();
@@ -626,7 +627,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
         File tempMainDescriptor = null;
         try {
-            tempMainDescriptor = createTempFile("main", "descriptor");
+            tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptorContent);
             // It's possible for isVersionValid to be false for a valid 'version' so we must double-check by trying to find a 'version' string in the content
             // Ex: Cromwell doesn't support WDL 1.1 so a 'version 1.1' workflow will return false for isVersionValid
@@ -711,7 +712,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         wdlBridge.setSecondaryFiles(sourceFiles.stream().collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent)));
         File tempMainDescriptor = null;
         try {
-            tempMainDescriptor = createTempFile("main", "descriptor");
+            tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptorContent);
             return Optional.of(wdlBridge.getInputFiles(tempMainDescriptor.getPath()));
         } catch (SyntaxError | IOException e) {
@@ -797,22 +798,30 @@ public class WDLHandler implements LanguageHandlerInterface {
         if (json.has(parameterName)) {
             final Object fileParameterValue = json.get(parameterName);
             if (parameterType.toLowerCase().contains("array")) { // Declared in WDL as an array of files
-                if (fileParameterValue instanceof JSONArray jsonArray) { // Is it an array in the test file
-                    final Set<String> values = new HashSet<>();
-                    for (Object element: jsonArray) {
-                        if (element instanceof String maybeUrl) {
-                            values.add(maybeUrl);
-                        }
-                    }
-                    return values;
-                }
-            } else {
-                if (fileParameterValue instanceof String maybeUrl) { // Declared in WDL as a File
-                    return Set.of(maybeUrl);
-                }
+                return getStringsFromMaybeArray(fileParameterValue);
+            } else if (fileParameterValue instanceof String maybeUrl) { // Declared in WDL as a single File
+                return Set.of(maybeUrl);
             }
         }
         return Set.of();
+    }
+
+    /**
+     * The input parameter is defined as an array of files in WDL; if the parameter is also an array
+     * in the test parameter file, return all string elements of the array.
+     * @param parameterValue
+     * @return
+     */
+    private Set<String> getStringsFromMaybeArray(Object parameterValue) {
+        final Set<String> values = new HashSet<>();
+        if (parameterValue instanceof JSONArray jsonArray) {
+            for (Object element : jsonArray) {
+                if (element instanceof String maybeUrl) {
+                    values.add(maybeUrl);
+                }
+            }
+        }
+        return values;
     }
 
 
@@ -831,15 +840,17 @@ public class WDLHandler implements LanguageHandlerInterface {
     private static File createTempFile(String prefix, String suffix) throws IOException {
         if (SystemUtils.IS_OS_UNIX) {
             FileAttribute<Set<PosixFilePermission>> attr = asFileAttribute(fromString("rwx------"));
-            return java.nio.file.Files.createTempFile(prefix, suffix, attr).toFile(); // Compliant
+            return java.nio.file.Files.createTempFile(prefix, suffix, attr).toFile();
         } else {
-            File f = java.nio.file.Files.createTempFile(prefix, suffix).toFile();  // Compliant
-            f.setReadable(true, true);
-            f.setWritable(true, true);
-            f.setExecutable(true, true);
+            //NOSONAR - The subsequent line addresses the security issue by limiting file permissions to this user
+            File f = java.nio.file.Files.createTempFile(prefix, suffix).toFile();
+            if (!f.setReadable(true, true) || !f.setWritable(true, true)
+                || !f.setExecutable(true, true)) {
+                throw new IOException("Error limiting permissions for temporary file");
+            }
             return f;
         }
     }
-    record FileInputs(String name, String type, Set<String> values) {};
+    record FileInputs(String name, String type, Set<String> values) {}
 
 }

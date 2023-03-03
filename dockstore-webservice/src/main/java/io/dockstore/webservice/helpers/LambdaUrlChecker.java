@@ -94,7 +94,7 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
         if (hasMalformedOrFileProtocolUrl(possibleUrls)) {
             return UrlStatus.NOT_ALL_OPEN;
         }
-        List<Optional<Boolean>> objectStream = possibleUrls.parallelStream().map(url -> checkUrl(url))
+        List<Optional<Boolean>> objectStream = possibleUrls.parallelStream().map(this::checkUrl)
             .collect(Collectors.toCollection(ArrayList::new));
         if (objectStream.stream().anyMatch(urlStatus -> urlStatus.isPresent() && urlStatus.get().equals(false))) {
             return UrlStatus.NOT_ALL_OPEN;
