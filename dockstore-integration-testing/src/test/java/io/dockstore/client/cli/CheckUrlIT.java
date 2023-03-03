@@ -24,14 +24,14 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.CheckUrlHelper;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.CheckUrlInterface.UrlStatus;
+import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.resources.AbstractWorkflowResource;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-class CheckUrlHelperIT {
+class CheckUrlIT {
 
     private static final String WDL_TEST_JSON = """
         {
@@ -66,8 +66,8 @@ class CheckUrlHelperIT {
         workflow test {
         }
         """;
-    private static final CheckUrlHelper CHECK_URL_HELPER =
-        new CheckUrlHelper("https://url.doesnot.matter");
+    private static final LambdaUrlChecker CHECK_URL_HELPER =
+        new LambdaUrlChecker("https://url.doesnot.matter");
 
     @Test
     void checkUrlsFromLambdaGood() {

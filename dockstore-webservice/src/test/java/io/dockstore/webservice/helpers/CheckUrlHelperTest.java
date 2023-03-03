@@ -31,12 +31,12 @@ class CheckUrlHelperTest {
 
     @Test
     void testCheckUrls() {
-        final CheckUrlHelper checkUrlHelper =
-            new CheckUrlHelper("https://this.url.is.unused.in.these.tests");
-        assertEquals(UrlStatus.ALL_OPEN, checkUrlHelper.checkUrls(Set.of()),
+        final LambdaUrlChecker lambdaUrlChecker =
+            new LambdaUrlChecker("https://this.url.is.unused.in.these.tests");
+        assertEquals(UrlStatus.ALL_OPEN, lambdaUrlChecker.checkUrls(Set.of()),
             "No urls should return all open");
-        assertEquals(UrlStatus.NOT_ALL_OPEN, checkUrlHelper.checkUrls(Set.of("localfile.cram")), "A local file is a malformed url");
-        assertEquals(UrlStatus.NOT_ALL_OPEN, checkUrlHelper.checkUrls(Set.of("s3://human-pangenomics/working/HPRC_PLUS/HG005/raw_data/Illumina/child/5A1-24481579/5A1_S5_L001_R1_001.fastq.gz")),
+        assertEquals(UrlStatus.NOT_ALL_OPEN, lambdaUrlChecker.checkUrls(Set.of("localfile.cram")), "A local file is a malformed url");
+        assertEquals(UrlStatus.NOT_ALL_OPEN, lambdaUrlChecker.checkUrls(Set.of("s3://human-pangenomics/working/HPRC_PLUS/HG005/raw_data/Illumina/child/5A1-24481579/5A1_S5_L001_R1_001.fastq.gz")),
             "s3 protocol not recognized by Java");
     }
 }

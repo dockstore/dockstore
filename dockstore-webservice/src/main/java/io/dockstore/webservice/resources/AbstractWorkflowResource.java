@@ -36,12 +36,12 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.CheckUrlHelper;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -139,7 +139,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         gitHubAppId = configuration.getGitHubAppId();
         final String lambdaUrl = configuration.getCheckUrlLambdaUrl();
         if (lambdaUrl != null) {
-            this.checkUrlInterface = new CheckUrlHelper(lambdaUrl);
+            this.checkUrlInterface = new LambdaUrlChecker(lambdaUrl);
         }
     }
 

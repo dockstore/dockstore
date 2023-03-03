@@ -34,12 +34,12 @@ import javax.ws.rs.core.UriBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class CheckUrlHelper implements CheckUrlInterface {
+public final class LambdaUrlChecker implements CheckUrlInterface {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CheckUrlHelper.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LambdaUrlChecker.class);
     private String checkUrlLambdaUrl;
 
-    public CheckUrlHelper(String checkUrlLambdaUrl) {
+    public LambdaUrlChecker(String checkUrlLambdaUrl) {
         this.checkUrlLambdaUrl = checkUrlLambdaUrl;
     }
 
