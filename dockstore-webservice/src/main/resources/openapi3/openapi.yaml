@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.14.0-SNAPSHOT
+  version: 1.14.0-alpha.9
 servers:
 - description: Current server when hosted on AWS
   url: /api
