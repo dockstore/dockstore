@@ -41,6 +41,7 @@ import io.dockstore.webservice.api.HealthCheckResult;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
@@ -402,6 +403,19 @@ public class MetadataResource {
             !lang.isPluginLanguage() || LanguageHandlerFactory.getPluginMap().containsKey(lang))
             .forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
         return descriptorLanguageList;
+    }
+
+    @GET
+    @Timed
+    @Path("/entryTypeMetadataList")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get the metadata for each entry type", description = "Get the metadata for each entry type")
+    @ApiResponse(description = "List of entry type metadata", content = @Content(
+        mediaType = "application/json",
+        array = @ArraySchema(schema = @Schema(implementation = EntryTypeMetadata.class))))
+    @ApiOperation(value = "Get the metadata for each entry type", response = EntryTypeMetadata.class, responseContainer = "List")
+    public List<EntryTypeMetadata> getEntryTypeMetadataList() {
+        return EntryTypeMetadata.values();
     }
 
     @GET

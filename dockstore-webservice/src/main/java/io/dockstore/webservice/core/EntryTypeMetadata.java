@@ -1,26 +1,29 @@
 package io.dockstore.webservice.core;
 
 import io.dockstore.common.EntryType;
+import io.swagger.api.impl.ToolsImplCommon;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
  * A container for information about each type of entry, including the singular and plural "terms" used to
- * refer to instances of the type, the path from the site root to where that type of entry is displayed, etc.
- * Intended to provide information about the type of entry, rather than the entry itself.
+ * refer to the entry type, the path from the site root to the directory where that entry type is displayed, etc.
+ * Intended to provide information about an entry type, rather than a particular instance of the entry type.
  * Useful for parameterizing code by entry type.
  */
+@Schema(description = "Information about an entry type")
 public class EntryTypeMetadata {
 
     public static final EntryTypeMetadata TOOL =
         new EntryTypeMetadata(EntryType.TOOL, "tool", "tools", "containers", true, "");
     public static final EntryTypeMetadata WORKFLOW =
-        new EntryTypeMetadata(EntryType.WORKFLOW, "workflow", "workflows", "workflows", true, "#workflow/");
+        new EntryTypeMetadata(EntryType.WORKFLOW, "workflow", "workflows", "workflows", true, ToolsImplCommon.WORKFLOW_PREFIX + "/");
     public static final EntryTypeMetadata SERVICE =
-        new EntryTypeMetadata(EntryType.SERVICE, "service", "services", "services", true, "#service/");
+        new EntryTypeMetadata(EntryType.SERVICE, "service", "services", "services", true, ToolsImplCommon.SERVICE_PREFIX + "/");
     public static final EntryTypeMetadata APPTOOL =
         new EntryTypeMetadata(EntryType.APPTOOL, "tool", "tools", "containers", true, "");
     public static final EntryTypeMetadata NOTEBOOK =
-        new EntryTypeMetadata(EntryType.NOTEBOOK, "notebook", "notebooks", "notebooks", true, "#notebook/");
+        new EntryTypeMetadata(EntryType.NOTEBOOK, "notebook", "notebooks", "notebooks", true, ToolsImplCommon.NOTEBOOK_PREFIX + "/");
 
     private final EntryType type;
     private final String term;
@@ -41,6 +44,7 @@ public class EntryTypeMetadata {
     /**
      * Get the entry type.
      */
+    @Schema(description = "Entry type")
     public EntryType getType() {
         return type;
     }
@@ -49,6 +53,7 @@ public class EntryTypeMetadata {
      * Get the singular term used to refer to an instance of this entry type.
      * For example: "workflow"
      */
+    @Schema(description = "Singular term used to refer to an instance of this entry type")
     public String getTerm() {
         return term;
     }
@@ -57,14 +62,16 @@ public class EntryTypeMetadata {
      * Get the plural term used to refer to instances of this entry type.
      * For example: "workflows"
      */
+    @Schema(description = "Plural term used to refer to instances of this entry type")
     public String getTermPlural() {
         return termPlural;
     }
 
     /**
-     * Get the relative path from the root of the site to the "pages" where entries of this type are displayed.
+     * Get the relative path from the root of the site to the 'pages' where entries of this type are displayed.
      * If this method returns X, the URL to a given entry of this type can be formed as "[baseUrl]/X/[entryPath]"
      */
+    @Schema(description = "Relative path from the root of the site to the 'pages' where entries of this type are displayed")
     public String getSitePath() {
         return sitePath;
     }
@@ -72,6 +79,7 @@ public class EntryTypeMetadata {
     /**
      * Does TRS support this entry type?
      */
+    @Schema(description = "TRS support for this entry type")
     public boolean isTrsSupported() {
         return trsSupported;
     }
@@ -80,6 +88,7 @@ public class EntryTypeMetadata {
      * Get the prefix of the TRS ID for this entry type, including any trailing slash.
      * For example: "#workflows/"
      */
+    @Schema(description = "TRS ID prefix for this entry type")
     public String getTrsPrefix() {
         return trsPrefix;
     }

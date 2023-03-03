@@ -2990,6 +2990,23 @@ paths:
       responses:
         default:
           description: "successful operation"
+  /metadata/entryTypeMetadataList:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get the metadata for each entry type"
+      description: ""
+      operationId: "getEntryTypeMetadataList"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/EntryTypeMetadata"
   /metadata/health:
     get:
       tags:

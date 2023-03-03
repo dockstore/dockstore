@@ -3303,6 +3303,22 @@ paths:
       summary: Successful response if elastic search is up and running
       tags:
       - metadata
+  /metadata/entryTypeMetadataList:
+    get:
+      description: Get the metadata for each entry type
+      operationId: getEntryTypeMetadataList
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryTypeMetadata'
+          description: List of entry type metadata
+      summary: Get the metadata for each entry type
+      tags:
+      - metadata
   /metadata/health:
     get:
       description: "Successful response if the health checks succeed, NO authentication"
@@ -8323,6 +8339,7 @@ components:
           uniqueItems: true
     EntryType:
       type: string
+      description: Entry type
       enum:
       - TOOL
       - WORKFLOW
@@ -8331,17 +8348,24 @@ components:
       - NOTEBOOK
     EntryTypeMetadata:
       type: object
+      description: Information about an entry type
       properties:
         sitePath:
           type: string
+          description: Relative path from the root of the site to the 'pages' where
+            entries of this type are displayed
         term:
           type: string
+          description: Singular term used to refer to an instance of this entry type
         termPlural:
           type: string
+          description: Plural term used to refer to instances of this entry type
         trsPrefix:
           type: string
+          description: TRS ID prefix for this entry type
         trsSupported:
           type: boolean
+          description: TRS support for this entry type
         type:
           $ref: '#/components/schemas/EntryType'
     EntryUpdateTime:
