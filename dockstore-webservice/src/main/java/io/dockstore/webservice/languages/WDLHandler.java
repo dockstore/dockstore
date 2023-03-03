@@ -15,8 +15,6 @@
  */
 package io.dockstore.webservice.languages;
 
-import static io.dockstore.webservice.helpers.SourceFileHelper.findPrimaryDescriptor;
-import static io.dockstore.webservice.helpers.SourceFileHelper.findTestFiles;
 import static java.nio.file.attribute.PosixFilePermissions.asFileAttribute;
 import static java.nio.file.attribute.PosixFilePermissions.fromString;
 
@@ -725,7 +723,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public Optional<Boolean> isOpenData(final WorkflowVersion workflowVersion, final CheckUrlInterface checkUrlInterface) {
-        final Optional<SourceFile> maybeDescriptor = findPrimaryDescriptor(workflowVersion);
+        final Optional<SourceFile> maybeDescriptor = workflowVersion.findPrimaryDescriptor();
         if (maybeDescriptor.isEmpty()) {
             return Optional.empty();
         }
@@ -740,7 +738,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             // https://github.com/dockstore/dockstore/pull/5347#discussion_r1117213315
             return Optional.of(true);
         }
-        final List<JSONObject> testFiles = findTestFiles(workflowVersion).stream().map(SourceFileHelper::testFileAsJsonObject)
+        final List<JSONObject> testFiles = workflowVersion.findTestFiles().stream().map(SourceFileHelper::testFileAsJsonObject)
             .filter(Optional::isPresent).map(Optional::get).toList();
         if (testFiles.isEmpty()) {
             // Has file inputs, but no test parameter files; not open data.
@@ -830,7 +828,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     /**
-     * Securely creates a temporary file
+     * Securely creates a temporary file, using pattern recommended by SonarCloud
      *
      * @param suffix
      * @param prefix
@@ -842,8 +840,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             FileAttribute<Set<PosixFilePermission>> attr = asFileAttribute(fromString("rwx------"));
             return java.nio.file.Files.createTempFile(prefix, suffix, attr).toFile();
         } else {
-            //NOSONAR - The subsequent line addresses the security issue by limiting file permissions to this user
-            File f = java.nio.file.Files.createTempFile(prefix, suffix).toFile();
+            File f = java.nio.file.Files.createTempFile(prefix, suffix).toFile(); //NOSONAR - Next line addresses the security issue by limiting file permissions to this user
             if (!f.setReadable(true, true) || !f.setWritable(true, true)
                 || !f.setExecutable(true, true)) {
                 throw new IOException("Error limiting permissions for temporary file");

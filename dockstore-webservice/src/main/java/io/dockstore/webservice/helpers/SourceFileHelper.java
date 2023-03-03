@@ -17,12 +17,8 @@
 
 package io.dockstore.webservice.helpers;
 
-import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.WorkflowVersion;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -37,28 +33,6 @@ public final class SourceFileHelper {
 
     private SourceFileHelper() {
 
-    }
-
-    /**
-     * Finds the primary descriptor in a workflow version.
-     * @param workflowVersion
-     * @return
-     */
-    public static Optional<SourceFile> findPrimaryDescriptor(WorkflowVersion workflowVersion) {
-        return workflowVersion.getSourceFiles().stream()
-            .filter(sf -> Objects.equals(sf.getPath(), workflowVersion.getWorkflowPath()))
-            .findFirst();
-    }
-
-    /**
-     * Finds all test files in a workflow version
-     * @param workflowVersion
-     * @return
-     */
-    public static List<SourceFile> findTestFiles(WorkflowVersion workflowVersion) {
-        return workflowVersion.getSourceFiles().stream()
-            .filter(sf -> sf.getType().getCategory().equals(FileTypeCategory.TEST_FILE))
-            .toList();
     }
 
     /**
@@ -103,7 +77,7 @@ public final class SourceFileHelper {
         return null;
     }
 
-    public enum TestFileType {
+    private enum TestFileType {
         YAML, JSON
     }
 }
