@@ -7663,12 +7663,12 @@ definitions:
       id:
         type: "integer"
         format: "int64"
-        description: "Implementation specific ID for the image in this webservice"
+        description: "ID of the image reference"
       reference:
         type: "string"
         position: 1
-        description: "Image reference"
-    description: "An image reference associated with a version"
+        description: "Reference to an image"
+    description: "A container image reference"
   Label:
     type: "object"
     required:

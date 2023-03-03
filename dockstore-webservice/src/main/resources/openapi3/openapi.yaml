@@ -8613,12 +8613,15 @@ components:
           description: Last time the container was updated.
     ImageReference:
       type: object
+      description: A container image reference
       properties:
         id:
           type: integer
           format: int64
+          description: ID of the image reference
         reference:
           type: string
+          description: Reference to an image
     Label:
       type: object
       properties:

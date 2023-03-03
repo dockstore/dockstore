@@ -319,7 +319,7 @@
                 <constraints nullable="false" primaryKey="true" primaryKeyName="version_image_reference_pkey"/>
             </column>
         </createTable>
-        <addUniqueConstraint columnNames="referenceid" constraintName="uk_referenced_version_image_reference" tableName="version_image_reference"/>
+        <addUniqueConstraint columnNames="referenceid" constraintName="uk_referenceid_version_image_reference" tableName="version_image_reference"/>
         <addForeignKeyConstraint baseColumnNames="referenceid" baseTableName="version_image_reference" constraintName="fk_referenceid_version_image_reference" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image_reference"/>
     </changeSet>
     <changeSet author="svonworl" id="dropSubclassFromWorkflowVersion">
