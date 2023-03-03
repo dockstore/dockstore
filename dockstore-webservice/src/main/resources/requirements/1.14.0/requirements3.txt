@@ -10,7 +10,7 @@ cwl-utils==0.23
 cwl-upgrader==1.2.4
 cwltool==3.1.20230201224320
 decorator==5.1.1
-future==0.18.2
+future==0.18.3
 humanfriendly==10.0
 idna==3.4
 isodate==0.6.1
