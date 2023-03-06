@@ -78,7 +78,7 @@ public final class JsonLdRetriever {
     /**
      * Add @context to json-ld map and leaves out any schema properties which do not have a class
      * @param schemaMap json-ld map
-     * @param schemaVariable string which refers to http://schema.org/
+     * @param schemaVariable string which refers to <a href="http://schema.org/">...</a>
      * @return a map that has been properly annotated with @context
      */
     private static Map<String, Object> addContext(final Map<String, Object> schemaMap, final String schemaVariable) {
@@ -118,7 +118,7 @@ public final class JsonLdRetriever {
     /**
      * Return a map with correct types for json-ld parsing
      * @param schemaMap map of json data
-     * @param schemaVariable string which refers to http://schema.org/
+     * @param schemaVariable string which refers to <a href="http://schema.org/">...</a>
      * @return map of json data which correctly adds @type annotations
      */
     private static Map<String, Object> addType(final Map<String, Object> schemaMap, final String schemaVariable) {
@@ -155,7 +155,7 @@ public final class JsonLdRetriever {
     /**
      * Return a map ready for integration with front-end json-ld script
      * @param schemaMap map of json-ld data
-     * @param schemaVariable string which refers to http://schema.org/
+     * @param schemaVariable string which refers to <a href="http://schema.org/">...</a>
      * @return map of json-ld data with variable name stripped
      */
     private static Map<String, Object> stripNamespace(final Map<String, Object> schemaMap, final String schemaVariable) {
@@ -194,7 +194,7 @@ public final class JsonLdRetriever {
     /**
      * Return map of json-ld info retrieved from json
      * @param cwljson json converted from cwl document
-     * @param schemaVariable string which refers to http://schema.org/
+     * @param schemaVariable string which refers to <a href="http://schema.org/">...</a>
      * @return map of json-ld info
      */
     private static Map<String, Object> cwlJson2Map(final String cwljson, final String schemaVariable) {
@@ -241,9 +241,9 @@ public final class JsonLdRetriever {
     }
 
     /**
-     * Returns the variable which refers to http://schema.org/
+     * Returns the variable which refers to <a href="http://schema.org/">...</a>
      * @param cwljson json converted from cwl document
-     * @return string which refers to http://schema.org/
+     * @return string which refers to <a href="http://schema.org/">...</a>
      */
     private static String getSchemaVariable(String cwljson) {
         try {

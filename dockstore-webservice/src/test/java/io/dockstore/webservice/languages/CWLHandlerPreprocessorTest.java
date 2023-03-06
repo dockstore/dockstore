@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -37,7 +38,7 @@ class CWLHandlerPreprocessorTest {
     }
 
     private Object parse(String yaml) {
-        new Yaml(new SafeConstructor()).load(yaml);
+        new Yaml(new SafeConstructor(new LoaderOptions())).load(yaml);
         return new Yaml().load(yaml);
     }
 

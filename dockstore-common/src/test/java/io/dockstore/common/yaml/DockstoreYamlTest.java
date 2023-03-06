@@ -243,7 +243,7 @@ class DockstoreYamlTest {
             fail("Dockstore yaml breaking entities should fail");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
             // This message is emitted when SafeConstructor is used
-            assertTrue(e.getMessage().contains("could not determine a constructor for the tag"));
+            assertTrue(e.getMessage().contains("Global tag is not allowed"));
         }
     }
 

@@ -16,8 +16,8 @@
 package io.dockstore.webservice.helpers;
 
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -26,7 +26,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
-import org.junit.jupiter.api.Assertions;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -40,7 +40,7 @@ class JsonLdRetrieverTest {
 
         File cwlFile = new File(ResourceHelpers.resourceFilePath(cwl));
 
-        String cwlContent = Files.asCharSource(cwlFile, Charsets.UTF_8).read();
+        String cwlContent = Files.asCharSource(cwlFile, StandardCharsets.UTF_8).read();
 
         file.setContent(cwlContent);
         file.setType(DOCKSTORE_CWL);
@@ -56,9 +56,9 @@ class JsonLdRetrieverTest {
         String schemaJson = gson.toJson(JsonLdRetriever.getSchema(tool));
 
         File expected = new File(ResourceHelpers.resourceFilePath(json));
-        String expectedJson = Files.asCharSource(expected, Charsets.UTF_8).read();
+        String expectedJson = Files.asCharSource(expected, StandardCharsets.UTF_8).read();
 
-        Assertions.assertEquals(expectedJson, schemaJson);
+        assertEquals(expectedJson, schemaJson);
     }
 
     @Test
