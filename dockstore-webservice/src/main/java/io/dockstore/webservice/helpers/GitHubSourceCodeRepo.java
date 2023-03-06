@@ -559,17 +559,15 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             refs = getBranchesAndTags(repository);
             for (GHRef ref : refs) {
                 GitReferenceInfo gitReferenceInfo = getRef(ref, repository);
-                if (gitReferenceInfo != null) {
-                    if (versionName.isEmpty() || Objects.equals(versionName.get(), gitReferenceInfo.refName())) {
-                        references.add(gitReferenceInfo);
-                    }
+                if (gitReferenceInfo != null && ((versionName.isEmpty() || Objects.equals(versionName.get(), gitReferenceInfo.refName())))) {
+                    references.add(gitReferenceInfo);
                 }
             }
         } catch (GHFileNotFoundException e) {
             // seems to legitimately do this when the repo has no tags or releases
             LOG.debug("repo had no releases or tags: " + repositoryId, e);
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", e);
+            LOG.info("%s: Cannot get branches or tags for workflow {}".formatted(gitUsername), e);
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
@@ -588,7 +586,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 } else {
                     // Version didn't change, but we don't want to delete
                     // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
-                    LOG.info(gitUsername + ": Skipping GitHub reference: " + ref);
+                    LOG.info("%s: Skipping GitHub reference: %s".formatted(gitUsername, ref));
                     WorkflowVersion version = new WorkflowVersion();
                     version.setName(branchName);
                     version.setReference(branchName);

@@ -1110,5 +1110,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public static class EmptyImageType implements OneOfFileWrapperImageType {
     }
 
-    public record EntryTypeDAOAndStats (String trsClassName, EntryDAO dao, Long numEntries) {}
+    public record EntryTypeDAOAndStats(String trsClassName, EntryDAO<? extends Entry<?, ?>> dao, Long numEntries) {
+
+    }
 }
