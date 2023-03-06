@@ -1,6 +1,8 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.dockstore.common.EntryType;
+import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -14,16 +16,18 @@ import java.util.List;
 @Schema(description = "Information about an entry type")
 public class EntryTypeMetadata {
 
+    private static final String NONE = "";
+
     public static final EntryTypeMetadata TOOL =
-        new EntryTypeMetadata(EntryType.TOOL, "tool", "tools", "containers", true, "");
+        new EntryTypeMetadata(EntryType.TOOL, "tool", "tools", "containers", true, "", true, "tools", true, ElasticListener.TOOLS_INDEX);
     public static final EntryTypeMetadata WORKFLOW =
-        new EntryTypeMetadata(EntryType.WORKFLOW, "workflow", "workflows", "workflows", true, ToolsImplCommon.WORKFLOW_PREFIX + "/");
+        new EntryTypeMetadata(EntryType.WORKFLOW, "workflow", "workflows", "workflows", true, ToolsImplCommon.WORKFLOW_PREFIX + "/", true, "workflows", true, ElasticListener.WORKFLOWS_INDEX);
     public static final EntryTypeMetadata SERVICE =
-        new EntryTypeMetadata(EntryType.SERVICE, "service", "services", "services", true, ToolsImplCommon.SERVICE_PREFIX + "/");
+        new EntryTypeMetadata(EntryType.SERVICE, "service", "services", "services", true, ToolsImplCommon.SERVICE_PREFIX + "/", false, NONE, false, NONE);
     public static final EntryTypeMetadata APPTOOL =
-        new EntryTypeMetadata(EntryType.APPTOOL, "tool", "tools", "containers", true, "");
+        new EntryTypeMetadata(EntryType.APPTOOL, "tool", "tools", "containers", true, "", true, "tools", true, ElasticListener.TOOLS_INDEX);
     public static final EntryTypeMetadata NOTEBOOK =
-        new EntryTypeMetadata(EntryType.NOTEBOOK, "notebook", "notebooks", "notebooks", true, ToolsImplCommon.NOTEBOOK_PREFIX + "/");
+        new EntryTypeMetadata(EntryType.NOTEBOOK, "notebook", "notebooks", "notebooks", true, ToolsImplCommon.NOTEBOOK_PREFIX + "/", false, NONE, true, ElasticListener.NOTEBOOKS_INDEX);
 
     private final EntryType type;
     private final String term;
@@ -31,14 +35,23 @@ public class EntryTypeMetadata {
     private final String sitePath;
     private final boolean trsSupported;
     private final String trsPrefix;
+    private final boolean searchSupported;
+    private final String searchEntryType;
+    private final boolean esSupported;
+    private final String esIndex;
 
-    protected EntryTypeMetadata(EntryType type, String term, String termPlural, String sitePath, boolean trsSupported, String trsPrefix) {
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    protected EntryTypeMetadata(EntryType type, String term, String termPlural, String sitePath, boolean trsSupported, String trsPrefix, boolean searchSupported, String searchEntryType, boolean esSupported, String esIndex) {
         this.type = type;
         this.term = term;
         this.termPlural = termPlural;
         this.sitePath = sitePath;
         this.trsSupported = trsSupported;
         this.trsPrefix = trsPrefix;
+        this.searchSupported = searchSupported;
+        this.searchEntryType = searchEntryType;
+        this.esSupported = esSupported;
+        this.esIndex = esIndex;
     }
 
     /**
@@ -91,6 +104,38 @@ public class EntryTypeMetadata {
     @Schema(description = "TRS ID prefix for this entry type")
     public String getTrsPrefix() {
         return trsPrefix;
+    }
+
+    /**
+     * Is search supported in the UI for this entry type?
+     */
+    @Schema(description = "Search support for this entry type")
+    public boolean isSearchSupported() {
+        return searchSupported;
+    }
+
+    /**
+     * Get the search 'entryType' parameter value for this entry type.
+     */
+    @Schema(description = "Search 'entryType' parameter value for this entry type")
+    public String getSearchEntryType() {
+        return searchEntryType;
+    }
+
+    /**
+     * Is ES indexing supported for this entry type?
+     */
+    @JsonIgnore
+    public boolean isEsSupported() {
+        return esSupported;
+    }
+
+    /**
+     * Get the ElasticSearch index for the entry type.
+     */
+    @JsonIgnore
+    public String getEsIndex() {
+        return esIndex;
     }
 
     /**

@@ -8350,6 +8350,12 @@ components:
       type: object
       description: Information about an entry type
       properties:
+        searchEntryType:
+          type: string
+          description: Search 'entryType' parameter value for this entry type
+        searchSupported:
+          type: boolean
+          description: Search support for this entry type
         sitePath:
           type: string
           description: Relative path from the root of the site to the 'pages' where

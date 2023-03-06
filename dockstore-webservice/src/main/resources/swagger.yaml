@@ -7433,6 +7433,10 @@ definitions:
   EntryTypeMetadata:
     type: "object"
     properties:
+      searchEntryType:
+        type: "string"
+      searchSupported:
+        type: "boolean"
       sitePath:
         type: "string"
       term:
