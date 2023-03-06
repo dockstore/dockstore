@@ -34,6 +34,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.CategoriesApi;
 import io.dockstore.openapi.client.api.EntriesApi;
+import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
@@ -107,8 +108,15 @@ class NotebookIT extends BaseIT {
         ManagedSessionContext.bind(session);
     }
 
+    @BeforeEach
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+    }
+
     @Test
     void testDAOs() {
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
         CreateContent createContent = new CreateContent().invoke();
         long notebookID = createContent.getNotebookID();
 
@@ -128,7 +136,6 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testRegisterSimpleNotebook() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
@@ -150,7 +157,6 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testRegisterLessSimpleNotebook() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
@@ -165,7 +171,6 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testRegisterCorruptNotebook() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/corrupt-ipynb-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
@@ -178,7 +183,6 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testUserNotebooks() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
@@ -197,7 +201,6 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testPublishInDockstoreYml() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         assertEquals(0, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
@@ -207,7 +210,6 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testMetadata() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
@@ -227,7 +229,6 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testStarringNotebook() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
         workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
@@ -244,7 +245,27 @@ class NotebookIT extends BaseIT {
         notebook = workflowsApi.getWorkflow(notebookID, "");
         assertEquals(0, notebook.getStarredUsers().size());
     }
+    @Test
+    void testNotebookRSSFeedAndSitemap() {
+        ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
 
+        // There should be no notebooks
+        assertEquals(0, notebookDAO.findAllPublishedPaths().size());
+        assertEquals(0, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+
+        new CreateContent().invoke();
+
+        // There should be 1 notebook
+        assertEquals(1, notebookDAO.findAllPublishedPaths().size());
+        assertEquals(1, notebookDAO.findAllPublishedPathsOrderByDbupdatedate().size());
+
+        final MetadataApi metadataApi = new MetadataApi(openApiClient);
+        String rssFeed = metadataApi.rssFeed();
+        assertTrue(rssFeed.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "RSS feed should contain 1 notebook");
+
+        String sitemap = metadataApi.sitemap();
+        assertTrue(sitemap.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "Sitemap with testing data should have 1 notebook");
+    }
     @Test
     void testNotebookToCollectionCategory() {
         final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);

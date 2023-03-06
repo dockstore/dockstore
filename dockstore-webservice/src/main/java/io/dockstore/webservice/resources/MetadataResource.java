@@ -39,13 +39,16 @@ import io.dockstore.webservice.api.CLIInfo;
 import io.dockstore.webservice.api.Config;
 import io.dockstore.webservice.api.HealthCheckResult;
 import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryTypeMetadata;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.RSSAppToolPath;
+import io.dockstore.webservice.core.database.RSSNotebookPath;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
@@ -258,15 +261,15 @@ public class MetadataResource {
     }
 
     private String getRSS() {
-        List<Tool> tools = toolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSToolPath::getTool).collect(Collectors.toList());
-        List<Workflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).collect(
-                Collectors.toList());
-        List<AppTool> appTools = appToolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSAppToolPath::getAppTool).collect(
-                Collectors.toList());
+        List<Tool> tools = toolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSToolPath::getTool).toList();
+        List<BioWorkflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).toList();
+        List<AppTool> appTools = appToolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSAppToolPath::getAppTool).toList();
+        List<Notebook> notebooks = notebookDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSNotebookPath::getNotebook).toList();
         List<Entry<?, ?>> dbEntries =  new ArrayList<>();
         dbEntries.addAll(tools);
         dbEntries.addAll(workflows);
         dbEntries.addAll(appTools);
+        dbEntries.addAll(notebooks);
         dbEntries.sort(Comparator.comparingLong(entry -> entry.getLastUpdated().getTime()));
 
         // TODO: after seeing if this works, make this more efficient than just returning everything
@@ -285,7 +288,7 @@ public class MetadataResource {
         List<RSSEntry> entries = new ArrayList<>();
         for (Entry<?, ?> dbEntry : dbEntries) {
             RSSEntry entry = new RSSEntry();
-            // AppTools, BioWorkflows, and Services are all subclasses of Workflows
+            // AppTools, BioWorkflows, Services, and Notebooks are all subclasses of Workflows
             if (dbEntry instanceof Workflow) {
                 Workflow workflow = (Workflow)dbEntry;
                 entry.setTitle(workflow.getWorkflowPath());
