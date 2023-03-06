@@ -502,7 +502,15 @@
                                         <exclude>io.dockstore:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                                <requireUpperBoundDeps />
+                                <requireUpperBoundDeps>
+                                    <excludes>
+                                        <!-- inconsistent in dropwizard 2.1.5 list of transient dependencies and causes this to break, nonetheless the actual versions end up being consistent as checked by
+                                         keysmap.list and mvn dependency:tree. Weird -->
+                                        <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</exclude>
+                                        <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
+                                        <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                                    </excludes>
+                                </requireUpperBoundDeps>
                                 <requireMavenVersion>
                                     <version>3.8.1</version>
 			            <!-- flip this when there is something newer than https://discuss.circleci.com/t/linux-machine-executor-images-2021-july-q3-update/40772

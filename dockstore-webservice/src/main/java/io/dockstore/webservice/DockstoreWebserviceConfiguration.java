@@ -736,12 +736,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     public static class MetricsConfig {
         private String s3BucketName;
 
+        private String s3EndpointOverride;
+
         public String getS3BucketName() {
             return s3BucketName;
         }
 
         public void setS3BucketName(String s3BucketName) {
             this.s3BucketName = s3BucketName;
+        }
+
+        public String getS3EndpointOverride() {
+            return s3EndpointOverride;
+        }
+
+        public void setS3EndpointOverride(String s3EndpointOverride) {
+            this.s3EndpointOverride = s3EndpointOverride;
         }
     }
 

@@ -20,6 +20,10 @@ package io.dockstore.webservice.core;
  * @since 2019-11-11
  */
 public enum DescriptionSource {
+    // as auto-detected at the root of the repository
     README,
+    // as overridden by a user in a .dockstore.yml
+    CUSTOM_README,
+    //  as harvested from the workflow files themselves
     DESCRIPTOR
 }

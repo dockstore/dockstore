@@ -21,11 +21,13 @@ workflows:
      subclass: cwl
      publish: no
      primaryDescriptorPath: /Dockstore.cwl
+     readMePath: /foobar2/readme.md
      testParameterFiles:
        - /dockstore.cwl.json
   -  subclass: CWL
      name: bloop
      primaryDescriptorPath: /Dockstore.cwl
+     readMePath: /other-readme.md
      testParameterFiles:
        - /dockstore.cwl.json
 service:

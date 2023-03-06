@@ -88,7 +88,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Base class for ServiceResource and WorkflowResource.
- *
+ * <p>
  * Mainly has GitHub app logic, although there is also some BitBucket refresh
  * token logic that was easier to move in here than refactor out.
  *

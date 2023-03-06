@@ -17,15 +17,21 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
-import software.amazon.awssdk.regions.Region;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ClientBuilder;
 
 public final class S3ClientHelper {
+    private static final Logger LOG = LoggerFactory.getLogger(S3ClientHelper.class);
     private static final String KEY_DELIMITER = "/";
     private static final int MAX_TOOL_ID_STRING_SEGMENTS = 5;
     private static final int TOOL_ID_REPOSITORY_INDEX = 3;
@@ -41,9 +47,26 @@ public final class S3ClientHelper {
 
     private S3ClientHelper() {}
 
+    /**
+     * Creates an S3Client. Purposely not specifying a region because the <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/awscore/client/builder/AwsClientBuilder.html#region(software.amazon.awssdk.regions.Region)">docs</a>
+     * say that it will identify according to the listed logic. Since we deploy with Fargate, the AWS_REGION environment variable will automatically be set
+     * and the SDK will grab the region from that.
+     * @return
+     */
     public static S3Client createS3Client() {
-        // TODO should not need to hardcode region since buckets are global, but http://opensourceforgeeks.blogspot.com/2018/07/how-to-fix-unable-to-find-region-via.html
-        return S3Client.builder().region(Region.US_EAST_1).build();
+        return initS3ClientBuilder().build();
+    }
+
+    /**
+     * This should only be used by tests so that the test can provide a localstack endpoint override
+     */
+    public static S3Client createS3Client(String endpointOverride) throws URISyntaxException {
+        LOG.info("Using endpoint override: {}", endpointOverride);
+        return initS3ClientBuilder().endpointOverride(new URI(endpointOverride)).build();
+    }
+
+    private static S3ClientBuilder initS3ClientBuilder() {
+        return S3Client.builder().credentialsProvider(DefaultCredentialsProvider.create());
     }
 
     /**

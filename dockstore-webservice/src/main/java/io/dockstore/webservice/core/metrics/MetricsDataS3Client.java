@@ -18,8 +18,10 @@
 package io.dockstore.webservice.core.metrics;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.helpers.S3ClientHelper;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -47,18 +49,13 @@ public class MetricsDataS3Client {
     private final S3Client s3; // The S3Client is thread-safe
     private final String bucketName;
 
-    public MetricsDataS3Client(String bucketName) {
-        this(bucketName, S3ClientHelper.createS3Client());
-    }
-
-    /**
-     * This constructor should only be used by tests so that the test can provide a localstack S3Client
-     * @param bucketName
-     * @param s3Client
-     */
     public MetricsDataS3Client(String bucketName, S3Client s3Client) {
         this.bucketName = bucketName;
         this.s3 = s3Client;
+    }
+
+    public MetricsDataS3Client(String bucketName, String endpointOverride) throws URISyntaxException {
+        this(bucketName, endpointOverride == null ? S3ClientHelper.createS3Client() : S3ClientHelper.createS3Client(endpointOverride));
     }
 
     /**
@@ -116,14 +113,25 @@ public class MetricsDataS3Client {
      * @return A list of MetricsData
      */
     public List<MetricsData> getMetricsData(String toolId, String toolVersionName) {
-        String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
+        String keyPrefix = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
+        return getMetricsData(keyPrefix);
+    }
+
+    public List<MetricsData> getMetricsData(String toolId, String toolVersionName, Partner platform) {
+        final String toolIdComponent = S3ClientHelper.convertToolIdToPartialKey(toolId);
+        final String versionNameComponent = URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
+        String keyPrefix = String.join("/", toolIdComponent, versionNameComponent, platform.name());
+        return getMetricsData(keyPrefix);
+    }
+
+    private List<MetricsData> getMetricsData(String keyPrefix) {
         List<MetricsData> metricsData = new ArrayList<>();
         boolean isTruncated = true;
         // ContinuationToken indicates to S3 that the list is being continued on this bucket with a token. This is present if the response was paginated
         String continuationToken = null;
 
         while (isTruncated) {
-            ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).continuationToken(continuationToken).build();
+            ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(keyPrefix).continuationToken(continuationToken).build();
             ListObjectsV2Response listObjectsV2Response = s3.listObjectsV2(request);
             List<S3Object> contents = listObjectsV2Response.contents();
             metricsData.addAll(contents.stream().map(s3Object -> convertS3KeyToMetricsData(s3Object.key())).toList());

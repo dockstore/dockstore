@@ -166,10 +166,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String VERSIONS = "versions";
     private static final String AUTHORS = "authors";
     private static final String ORCID_PUT_CODES = "orcidputcodes";
-    private static final String VERSION_INCLUDE = VALIDATIONS + ", " + ALIASES + ", " + IMAGES + ", " + AUTHORS;
+    private static final String METRICS = "metrics";
+    private static final String VERSION_INCLUDE = VALIDATIONS + ", " + ALIASES + ", " + IMAGES + ", " + AUTHORS + ", " + METRICS;
+    private static final List<String> VERSION_INCLUDE_LIST = List.of(VERSION_INCLUDE.split(", "));
     private static final String WORKFLOW_INCLUDE = VERSIONS + ", " + ORCID_PUT_CODES + ", " + VERSION_INCLUDE;
     private static final String VERSION_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VERSION_INCLUDE;
-    private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE + ", " + VERSION_INCLUDE;
+    private static final String WORKFLOW_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + WORKFLOW_INCLUDE;
     public static final String A_WORKFLOW_MUST_BE_UNPUBLISHED_TO_RESTUB = "A workflow must be unpublished to restub.";
     public static final String A_WORKFLOW_MUST_HAVE_NO_DOI_TO_RESTUB = "A workflow must have no issued DOIs to restub";
     public static final String A_WORKFLOW_MUST_HAVE_NO_SNAPSHOT_TO_RESTUB = "A workflow must have no snapshots to restub, you may consider unpublishing";
@@ -1823,20 +1825,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param workflow
      */
     private void initializeAdditionalFields(String include, Workflow workflow) {
-        if (checkIncludes(include, VALIDATIONS)) {
-            workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
+        final boolean containsVersionIncludes = VERSION_INCLUDE_LIST.stream().anyMatch(versionInclude -> checkIncludes(include, versionInclude));
+        if (containsVersionIncludes) {
+            workflow.getWorkflowVersions().forEach(workflowVersion -> initializeAdditionalFields(include, workflowVersion));
         }
-        if (checkIncludes(include, ALIASES)) {
-            workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getAliases()));
-        }
-        if (checkIncludes(include, IMAGES)) {
-            workflow.getWorkflowVersions().stream().filter(Version::isFrozen).forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getImages()));
-        }
+
         if (checkIncludes(include, VERSIONS)) {
             Hibernate.initialize(workflow.getWorkflowVersions());
-        }
-        if (checkIncludes(include, AUTHORS)) {
-            workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getOrcidAuthors()));
         }
         if (checkIncludes(include, ORCID_PUT_CODES)) {
             Hibernate.initialize(workflow.getUserIdToOrcidPutCode());
@@ -1862,6 +1857,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         if (checkIncludes(include, AUTHORS)) {
             Hibernate.initialize(workflowVersion.getOrcidAuthors());
+        }
+        if (checkIncludes(include, METRICS)) {
+            Hibernate.initialize(workflowVersion.getMetricsByPlatform());
         }
     }
 
