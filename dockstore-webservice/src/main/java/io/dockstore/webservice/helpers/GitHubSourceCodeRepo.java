@@ -559,7 +559,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             refs = getBranchesAndTags(repository);
             for (GHRef ref : refs) {
                 GitReferenceInfo gitReferenceInfo = getRef(ref, repository);
-                if (gitReferenceInfo != null && ((versionName.isEmpty() || Objects.equals(versionName.get(), gitReferenceInfo.refName())))) {
+                if (gitReferenceInfo != null && (versionName.isEmpty() || Objects.equals(versionName.get(), gitReferenceInfo.refName()))) {
                     references.add(gitReferenceInfo);
                 }
             }
