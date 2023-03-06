@@ -23,7 +23,7 @@
             <column name="versionid" type="int8"/>
         </addColumn>
     </changeSet>
-    <changeSet id="removeVersionEventsWithoutVersions" author="">
+    <changeSet id="removeVersionEventsWithoutVersions" author="gluu">
         <delete tableName="event">
             <where>type='ADD_VERSION_TO_ENTRY' and versionid is null</where>
         </delete>
