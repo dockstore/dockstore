@@ -1373,5 +1373,5 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
-    public record GitReferenceInfo (String refName, Date branchDate, String sha) {}
+    private record GitReferenceInfo (String refName, Date branchDate, String sha) {}
 }
