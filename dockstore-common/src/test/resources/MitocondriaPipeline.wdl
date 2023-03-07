@@ -21,7 +21,7 @@ workflow MitochondriaPipeline {
     # affected by this number. Default is 151.
     Int? max_read_length
 
-    # Full reference is only requred if starting with a CRAM (BAM doesn't need these files)
+    # Full reference is only required if starting with a CRAM (BAM doesn't need these files)
     File? ref_fasta
     File? ref_fasta_index
     File? ref_dict

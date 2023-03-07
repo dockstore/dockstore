@@ -41,6 +41,8 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -71,19 +73,45 @@ public abstract class SourceCodeRepoInterface {
     String gitUsername;
 
     /**
-     * Tries to get the README contents
+     * Tries to get the ReadMe contents
      * First gets all the file names, then see if any of them matches the README regex
      * @param repositoryId
      * @param branch
+     * @param overrideLocation if present, use this location instead of the root
      * @return
      */
-    public String getREADMEContent(String repositoryId, String branch) {
-        List<String> strings = this.listFiles(repositoryId, "/", branch);
-        if (strings == null) {
-            return null;
+    public String getReadMeContent(String repositoryId, String branch, String overrideLocation) {
+
+        Optional<String> first;
+        if (!Strings.isNullOrEmpty(overrideLocation)) {
+            first = checkForReadMeInDirectory(repositoryId, branch, overrideLocation);
+            if (first.isEmpty()) {
+                return null;
+            }
+        } else {
+            List<String> strings = this.listFiles(repositoryId, "/", branch);
+            if (strings == null) {
+                return null;
+            }
+            first = strings.stream().filter(SourceCodeRepoInterface::matchesREADME).findFirst();
         }
-        Optional<String> first = strings.stream().filter(SourceCodeRepoInterface::matchesREADME).findFirst();
         return first.map(s -> this.readFile(repositoryId, s, branch)).orElse(null);
+    }
+
+    /**
+     * Look for a readme file in a potentially cached directory/overrideLocation
+     * @param repositoryId
+     * @param branch
+     * @param overrideLocation
+     * @return
+     */
+    private Optional<String> checkForReadMeInDirectory(String repositoryId, String branch, String overrideLocation) {
+        final Path overridePath = Paths.get(overrideLocation);
+        List<String> strings = this.listFiles(repositoryId, overridePath.getParent().toString(), branch);
+        if (strings == null) {
+            return Optional.empty();
+        }
+        return strings.stream().map(f -> Paths.get(overridePath.getParent().toString(), f).toString()).filter(overrideLocation::equals).findFirst();
     }
 
     public static boolean matchesREADME(String filename) {
@@ -471,9 +499,9 @@ public abstract class SourceCodeRepoInterface {
                 LOG.info(message);
             }
             if (version.getReference() != null) {
-                String readmeContent = getREADMEContent(repositoryId, version.getReference());
-                if (StringUtils.isNotBlank(readmeContent)) {
-                    version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                String reaMeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
+                if (StringUtils.isNotBlank(reaMeContent)) {
+                    version.setDescriptionAndDescriptionSource(reaMeContent, DescriptionSource.README);
                 }
             }
             return;
@@ -487,12 +515,12 @@ public abstract class SourceCodeRepoInterface {
             // Previously, version has no description
             boolean noDescription = (version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null;
             // Previously, version has a README description
-            boolean oldREADMEDescription = (DescriptionSource.README == version.getDescriptionSource());
+            boolean oldReadMeDescription = (DescriptionSource.README == version.getDescriptionSource());
             // Checking these conditions to prevent overwriting description from descriptor
-            if (noDescription || oldREADMEDescription) {
-                String readmeContent = getREADMEContent(repositoryId, version.getReference());
+            if (noDescription || oldReadMeDescription) {
+                String readmeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
                 if (StringUtils.isNotBlank(readmeContent)) {
-                    version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                    version.setDescriptionAndDescriptionSource(readmeContent, Strings.isNullOrEmpty(version.getReadMePath()) ? DescriptionSource.README : DescriptionSource.CUSTOM_README);
                 }
             }
         }

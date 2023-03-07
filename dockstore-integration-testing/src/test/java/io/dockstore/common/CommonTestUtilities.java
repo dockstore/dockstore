@@ -32,11 +32,11 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,30 +68,19 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonTestUtilities {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
     public static final String OLD_DOCKSTORE_VERSION = "1.12.0";
     public static final List<String> COMMON_MIGRATIONS = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "1.7.0",
             "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0");
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
-    public static final String PUBLIC_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
+    public static final String PUBLIC_CONFIG_PATH = getUniversalResourceFileAbsolutePath("dockstore.yml").orElse(null);
     /**
      * confidential testing config, includes keys
      */
-    public static final String CONFIDENTIAL_CONFIG_PATH;
+    public static final String CONFIDENTIAL_CONFIG_PATH = getUniversalResourceFileAbsolutePath("dockstoreTest.yml").orElse(null);
     static final String DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
-    private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
     public static final String BITBUCKET_TOKEN_CACHE = "/tmp/dockstore-bitbucket-token-cache/";
-
-    static {
-        String confidentialConfigPath = null;
-        try {
-            confidentialConfigPath = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
-        } catch (Exception e) {
-            LOG.error("Confidential Dropwizard configuration file not found.", e);
-
-        }
-        CONFIDENTIAL_CONFIG_PATH = confidentialConfigPath;
-    }
 
     private CommonTestUtilities() {
 
@@ -154,6 +144,20 @@ public final class CommonTestUtilities {
     }
 
     /**
+     * Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
+     * <p>
+     * Adds 2 published workflows to the database.
+     * @param support reference to testing instance of the dockstore web service
+     * @param isNewApplication
+     * @param dropwizardConfigurationFile
+     */
+    public static void dropAndCreateWithTestDataAndAdditionalToolsAndWorkflows(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
+            String dropwizardConfigurationFile) {
+        LOG.info("Dropping and Recreating the database with non-confidential test data");
+        dropAllAndRunMigration(listMigrations("test", "add_test_tools", "testworkflow", "test_1.5.0"), getApplication(support, isNewApplication), dropwizardConfigurationFile);
+    }
+
+    /**
      * Shared convenience method
      * TODO: Somehow merge it with the method below, they are nearly identical
      * @return
@@ -182,8 +186,8 @@ public final class CommonTestUtilities {
     }
 
     private static String getBasePath() {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        String configFileAbsolutePath = getUniversalResourceFileAbsolutePath("config2").orElse(null);
+        INIConfiguration parseConfig = Utilities.parseConfig(configFileAbsolutePath);
         return parseConfig.getString(Constants.WEBSERVICE_BASE_PATH);
     }
 
@@ -441,7 +445,7 @@ public final class CommonTestUtilities {
      */
     public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres,
         boolean needBitBucketToken) {
-        LOG.info("Dropping and Recreating the database with confidential 2 test data and additonal tools");
+        LOG.info("Dropping and Recreating the database with confidential 2 test data and additional tools");
         addAdditionalToolsWithPrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         if (!needBitBucketToken) {
             deleteBitBucketToken(testingPostgres);
@@ -575,6 +579,42 @@ public final class CommonTestUtilities {
      */
     public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
         return getArbitraryURL(url, type, client, "application/zip");
+    }
+
+    /**
+     * This retrieves a resource file using getResourceAsStream, which works for retrieving resource files packaged in a jar.
+     * This allows other repos, like dockstore-support, to use utility methods that require resource files from this package.
+     * @param resourceFileName
+     * @return
+     */
+    public static Optional<File> getUniversalResourceFile(String resourceFileName) {
+        File tempResourceFile = null;
+        try (InputStream inputStream = Objects.requireNonNull(CommonTestUtilities.class.getClassLoader().getResourceAsStream(resourceFileName))) {
+            tempResourceFile = File.createTempFile(resourceFileName, null);
+            tempResourceFile.deleteOnExit();
+            FileUtils.copyInputStreamToFile(inputStream, tempResourceFile);
+            return Optional.of(tempResourceFile);
+        } catch (Exception e) {
+            LOG.error("Could not get resource file {}", resourceFileName, e);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Get the absolute path of a resource file. The resource file is retrieved using getResourceAsStream, which works for retrieving resource files packaged in a jar.
+     * @param resourceFileName
+     * @return
+     */
+    public static Optional<String> getUniversalResourceFileAbsolutePath(String resourceFileName) {
+        Optional<File> resourceFile = getUniversalResourceFile(resourceFileName);
+        if (resourceFile.isPresent()) {
+            try {
+                return Optional.of(resourceFile.get().getAbsolutePath());
+            } catch (SecurityException e) {
+                LOG.error("Could not get absolute path of resource file {}", resourceFile, e);
+            }
+        }
+        return Optional.empty();
     }
 
     /**

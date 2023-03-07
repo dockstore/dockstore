@@ -147,7 +147,7 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
 
 
     @Test
-    void testTargettedRefresh() throws ApiException, URISyntaxException, IOException {
+    void testTargetedRefresh() throws ApiException, URISyntaxException, IOException {
 
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
@@ -168,7 +168,7 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
             assertNotSame("", workflow.getWorkflowName());
         }
 
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        // do targeted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
         final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);

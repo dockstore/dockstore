@@ -159,17 +159,17 @@ class MetricsIT extends BaseIT {
 
         // Add aggregated information about execution time for the workflow runs.
         // The minimum execution time was 1 minute, the maximum was 5 minutes, and the average was 3 minutes. 10 data points were used to calculate the average
-        ExecutionTimeStatisticMetric executionTimeStatisticMetric = new ExecutionTimeStatisticMetric("PT1M", "PT5M", "PT3M", 10);
+        ExecutionTimeStatisticMetric executionTimeStatisticMetric = new ExecutionTimeStatisticMetric(60.0, 300.0, 180.12, 10);
         metrics.setExecutionTime(executionTimeStatisticMetric);
 
         // Add aggregated information about the CPU used for the workflow runs.
         // The minimum CPU used was 1, the maximum was 4, and the average was 2. 10 data points were used to calculate the average
-        CpuStatisticMetric cpuStatisticMetric = new CpuStatisticMetric("1", "4", "2", 10);
+        CpuStatisticMetric cpuStatisticMetric = new CpuStatisticMetric(1.0, 4.0, 2.0, 10);
         metrics.setCpu(cpuStatisticMetric);
 
         // Add aggregated information about the memory used for the workflow runs.
         // The minimum CPU used was 1GB, the maximum was 4GB, and the average was 2G. 10 data points were used to calculate the average
-        MemoryStatisticMetric memoryStatisticMetric = new MemoryStatisticMetric("1GB", "4GB", "2GB", 10);
+        MemoryStatisticMetric memoryStatisticMetric = new MemoryStatisticMetric(1.0, 4.0, 2.5, 10);
         metrics.setMemory(memoryStatisticMetric);
 
         return metrics;

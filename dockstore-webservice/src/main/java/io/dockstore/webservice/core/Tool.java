@@ -220,6 +220,10 @@ public class Tool extends Entry<Tool, Tag> {
         return EntryType.TOOL;
     }
 
+    public EntryTypeMetadata getEntryTypeMetadata() {
+        return EntryTypeMetadata.TOOL;
+    }
+
     // compromise: this sucks, but setting the json property to tags allows for backwards compatibility of existing clients
     // the method name being standardized allows for simpler coding going forward
     @Override

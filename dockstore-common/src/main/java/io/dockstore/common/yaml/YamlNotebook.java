@@ -36,6 +36,7 @@ public class YamlNotebook implements Workflowish {
     private String language = "python";
     private String path;
     private String kernel;
+    private String readMePath;
     private Boolean publish;
     private boolean latestTagAsDefault = false;
     private Filters filters = new Filters();
@@ -180,5 +181,14 @@ public class YamlNotebook implements Workflowish {
 
     public String getPrimaryDescriptorPath() {
         return getPath();
+    }
+
+    @Override
+    public String getReadMePath() {
+        return readMePath;
+    }
+
+    public void setReadMePath(String readMePath) {
+        this.readMePath = readMePath;
     }
 }

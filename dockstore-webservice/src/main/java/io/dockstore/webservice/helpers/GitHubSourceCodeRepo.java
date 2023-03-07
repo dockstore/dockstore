@@ -909,8 +909,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // No need to check for null, has been validated
         String primaryDescriptorPath = theWf.getPrimaryDescriptorPath();
-
         version.setWorkflowPath(primaryDescriptorPath);
+        String readMePath = theWf.getReadMePath();
+        version.setReadMePath(readMePath);
 
         String validationMessage = "";
         String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);

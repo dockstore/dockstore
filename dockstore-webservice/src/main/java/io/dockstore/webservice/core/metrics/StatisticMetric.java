@@ -17,8 +17,10 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.sql.Timestamp;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -27,6 +29,8 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.SequenceGenerator;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
@@ -39,34 +43,55 @@ public abstract class StatisticMetric {
     @Schema(description = "Implementation specific ID for statistical metrics in this webservice")
     private long id;
 
-    @Column
-    @ApiModelProperty(value = "The minimum value from the data points")
-    @Schema(description = "The minimum value from the data points")
-    private String minimum;
+    @Column(nullable = false)
+    @ApiModelProperty(value = "The minimum value from the data points", required = true)
+    @Schema(description = "The minimum value from the data points", required = true)
+    private Double minimum;
+
+    @Column(nullable = false)
+    @ApiModelProperty(value = "The maximum value from the data points", required = true)
+    @Schema(description = "The maximum value from the data points", required = true)
+    private Double maximum;
+
+    @Column(nullable = false)
+    @ApiModelProperty(value = "The average value from the data points", required = true)
+    @Schema(description = "The average value from the data points", required = true)
+    private Double average;
+
+    @Column(nullable = false)
+    @ApiModelProperty(value = "The number of data points used to calculate the average", required = true)
+    @Schema(description = "The number of data points used to calculate the average", required = true)
+    private Integer numberOfDataPointsForAverage;
 
     @Column
-    @ApiModelProperty(value = "The maximum value from the data points")
-    @Schema(description = "The maximum value from the data points")
-    private String maximum;
+    @ApiModelProperty(value = "The unit of the data points")
+    @Schema(description = "The unit of the data points")
+    private String unit;
 
-    @Column
-    @ApiModelProperty(value = "The average value from the data points")
-    @Schema(description = "The average value from the data points")
-    private String average;
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    @JsonIgnore
+    private Timestamp dbCreateDate;
 
-    @Column
-    @ApiModelProperty(value = "The number of data points used to calculate the average")
-    @Schema(description = "The number of data points used to calculate the average")
-    private int numberOfDataPointsForAverage;
+    @Column()
+    @UpdateTimestamp
+    @JsonIgnore
+    private Timestamp dbUpdateDate;
 
     protected StatisticMetric() {
     }
 
-    protected StatisticMetric(String minimum, String maximum, String average, int numberOfDataPointsForAverage) {
+    protected StatisticMetric(Double minimum, Double maximum, Double average, Integer numberOfDataPointsForAverage) {
+        this(minimum, maximum, average, numberOfDataPointsForAverage, null);
+    }
+
+    protected StatisticMetric(Double minimum, Double maximum, Double average, Integer numberOfDataPointsForAverage, String unit) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.average = average;
         this.numberOfDataPointsForAverage = numberOfDataPointsForAverage;
+        this.unit = unit;
     }
 
     public long getId() {
@@ -77,27 +102,27 @@ public abstract class StatisticMetric {
         this.id = id;
     }
 
-    public String getMinimum() {
+    public Double getMinimum() {
         return minimum;
     }
 
-    public void setMinimum(String minimum) {
+    public void setMinimum(Double minimum) {
         this.minimum = minimum;
     }
 
-    public String getMaximum() {
+    public Double getMaximum() {
         return maximum;
     }
 
-    public void setMaximum(String maximum) {
+    public void setMaximum(Double maximum) {
         this.maximum = maximum;
     }
 
-    public String getAverage() {
+    public Double getAverage() {
         return average;
     }
 
-    public void setAverage(String average) {
+    public void setAverage(Double average) {
         this.average = average;
     }
 
@@ -107,5 +132,29 @@ public abstract class StatisticMetric {
 
     public void setNumberOfDataPointsForAverage(int numberOfDataPointsForAverage) {
         this.numberOfDataPointsForAverage = numberOfDataPointsForAverage;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    public void setDbCreateDate(Timestamp dbCreateDate) {
+        this.dbCreateDate = dbCreateDate;
+    }
+
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
+    }
+
+    public void setDbUpdateDate(Timestamp dbUpdateDate) {
+        this.dbUpdateDate = dbUpdateDate;
     }
 }

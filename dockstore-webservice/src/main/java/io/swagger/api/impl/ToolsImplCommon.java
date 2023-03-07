@@ -20,7 +20,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
-import io.dockstore.common.EntryType;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -28,6 +27,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
@@ -448,10 +448,8 @@ public final class ToolsImplCommon {
     private static String getCheckerWorkflowPath(DockstoreWebserviceConfiguration config, Entry<?, ?> entry) {
         if (entry.getCheckerWorkflow() == null) {
             return null;
-        } else {
-            String newID = WORKFLOW_PREFIX + "/" + entry.getCheckerWorkflow().getWorkflowPath();
-            return getUrlFromId(config, newID);
         }
+        return getUrlFromId(config, getNewId(entry.getCheckerWorkflow()));
     }
 
     /**
@@ -460,24 +458,12 @@ public final class ToolsImplCommon {
      * @param container The Dockstore Entry (Tool or Workflow)
      * @return The new ID of the Tool
      */
-    private static String getNewId(Entry<?, ?> container) {
-        if (container instanceof io.dockstore.webservice.core.Tool) {
-            return ((io.dockstore.webservice.core.Tool)container).getToolPath();
-        } else if (container instanceof AppTool) {
-            return ((AppTool) container).getWorkflowPath();
-        } else if (container instanceof Workflow) {
-            Workflow workflow = (Workflow)container;
-            String path = workflow.getWorkflowPath();
-            EntryType type = workflow.getEntryType();
-            if (type == EntryType.SERVICE) {
-                return SERVICE_PREFIX + "/" + path;
-            } else if (type == EntryType.NOTEBOOK) {
-                return NOTEBOOK_PREFIX + "/" + path;
-            } else {
-                return WORKFLOW_PREFIX + "/" + path;
-            }
+    private static String getNewId(Entry<?, ?> entry) {
+        EntryTypeMetadata metadata = entry.getEntryTypeMetadata();
+        if (metadata.isTrsSupported()) {
+            return metadata.getTrsPrefix() + entry.getEntryPath();
         } else {
-            LOG.error("Could not construct URL for our container with id: " + container.getId());
+            LOG.error("TRS is not supported for {}, id: {}", metadata.getTermPlural(), entry.getId());
             return null;
         }
     }

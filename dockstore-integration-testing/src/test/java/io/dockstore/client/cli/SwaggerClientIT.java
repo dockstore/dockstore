@@ -263,7 +263,7 @@ class SwaggerClientIT extends BaseIT {
 
     @Test
     void testGA4GHPath() throws IOException {
-        // we need to explictly test the path rather than use the swagger generated client classes to enforce the path
+        // we need to explicitly test the path rather than use the swagger generated client classes to enforce the path
         ApiClient client = getAdminWebClient();
         final String basePath = client.getBasePath();
         URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/tools");

@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,7 +25,6 @@ import java.sql.Timestamp;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -45,25 +45,25 @@ public class Metrics {
     @Schema(description = "Implementation specific ID for the metrics in this webservice")
     private long id;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "executionstatuscount", referencedColumnName = "id")
-    @ApiModelProperty(value = "A count of the different execution statuses from the workflow executions")
-    @Schema(description = "A count of the different execution statuses from the workflow executions")
+    @ApiModelProperty(value = "A count of the different execution statuses from the workflow executions", required = true)
+    @Schema(description = "A count of the different execution statuses from the workflow executions", required = true)
     private ExecutionStatusCountMetric executionStatusCount;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "executiontime", referencedColumnName = "id")
     @ApiModelProperty(value = "Aggregated execution time metrics in ISO 8601 duration format")
     @Schema(description = "Aggregated execution time metrics in ISO 8601 duration format")
     private ExecutionTimeStatisticMetric executionTime;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "memory", referencedColumnName = "id")
     @ApiModelProperty(value = "Aggregated memory metrics")
     @Schema(description = "Aggregated memory metrics")
     private MemoryStatisticMetric memory;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "cpu", referencedColumnName = "id")
     @ApiModelProperty(value = "Aggregated CPU metrics")
     @Schema(description = "Aggregated CPU metrics")
@@ -72,9 +72,12 @@ public class Metrics {
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
+    @JsonIgnore
     private Timestamp dbCreateDate;
+
     @Column()
     @UpdateTimestamp
+    @JsonIgnore
     private Timestamp dbUpdateDate;
 
     public Metrics() {

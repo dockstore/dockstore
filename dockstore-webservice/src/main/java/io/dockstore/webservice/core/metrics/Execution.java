@@ -21,7 +21,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is an object to encapsulate execution metrics data in an entity. Does not need to be stored in the database.
@@ -29,6 +34,7 @@ import java.util.Map;
 @Schema(name = "Execution", description = "Metrics of a workflow execution on a platform")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class Execution {
+    private static final Logger LOG = LoggerFactory.getLogger(Execution.class);
 
     @JsonProperty(required = true)
     @Schema(description = "The status of the execution", required = true)
@@ -39,15 +45,15 @@ public class Execution {
     private String executionTime;
 
     @JsonProperty
-    @Schema(description = "Memory requirements for the execution in GB. Provide the numerical value and the GB unit with no spaces", example = "2GB")
-    private String memoryRequirements;
+    @Schema(description = "Memory requirements for the execution in GB", example = "2")
+    private Double memoryRequirementsGB;
 
     @JsonProperty
-    @Schema(description = "CPU requirements for the execution", example = "2")
-    private int cpuRequirements;
+    @Schema(description = "Number of CPUs required for the execution", example = "2")
+    private Integer cpuRequirements;
 
     @JsonProperty
-    @Schema(description = "Additional properties that aren't defined. Provide a context, like one for schema.org, if you want to use a specific vocabulary",
+    @Schema(description = "Additional properties that aren't defined. Provide a context, like one from schema.org, if you want to use a specific vocabulary",
             example = """
             {
               "@context": {
@@ -81,19 +87,19 @@ public class Execution {
         this.executionTime = executionTime;
     }
 
-    public String getMemoryRequirements() {
-        return memoryRequirements;
+    public Double getMemoryRequirementsGB() {
+        return memoryRequirementsGB;
     }
 
-    public void setMemoryRequirements(String memoryRequirements) {
-        this.memoryRequirements = memoryRequirements;
+    public void setMemoryRequirementsGB(Double memoryRequirementsGB) {
+        this.memoryRequirementsGB = memoryRequirementsGB;
     }
 
-    public int getCpuRequirements() {
+    public Integer getCpuRequirements() {
         return cpuRequirements;
     }
 
-    public void setCpuRequirements(int cpuRequirements) {
+    public void setCpuRequirements(Integer cpuRequirements) {
         this.cpuRequirements = cpuRequirements;
     }
 
@@ -103,5 +109,19 @@ public class Execution {
 
     public void setAdditionalProperties(Map<String, Object> additionalProperties) {
         this.additionalProperties = additionalProperties;
+    }
+
+    /**
+     * Check that the execution time is in ISO-8601 format by parsing it into a Duration.
+     * @param executionTime ISO 8601 execution time
+     * @return Duration parsed from the ISO 8601 execution time
+     */
+    public static Optional<Duration> checkExecutionTimeISO8601Format(String executionTime) {
+        try {
+            return Optional.of(Duration.parse(executionTime));
+        } catch (DateTimeParseException e) {
+            LOG.error("Execution time {} is not in ISO 8601 format and could not be parsed to a Duration", executionTime, e);
+            return Optional.empty();
+        }
     }
 }
