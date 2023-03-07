@@ -8272,11 +8272,6 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
-      userImageReferences:
-        type: "array"
-        description: "The user-specified image references for the version."
-        items:
-          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       reference:
@@ -8973,11 +8968,6 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
-      userImageReferences:
-        type: "array"
-        description: "The user-specified image references for the version."
-        items:
-          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -9430,11 +9420,6 @@ definitions:
         description: "The user-specified files for the version."
         items:
           type: "string"
-      userImageReferences:
-        type: "array"
-        description: "The user-specified image references for the version."
-        items:
-          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -9586,6 +9571,10 @@ definitions:
         position: 105
         description: "Whether or not the version has been refreshed since its last\
           \ edit on Dockstore."
+      kernelImagePath:
+        type: "string"
+        position: 106
+        description: "User-specified notebook kernel image reference"
     description: "This describes one workflow version associated with a workflow."
   WorkflowVersionPathInfo:
     type: "object"

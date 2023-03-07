@@ -202,7 +202,7 @@ class NotebookIT extends BaseIT {
         workflowsApi.handleGitHubRelease("refs/tags/with-image-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
-        assertEquals(List.of("quay.io/seqware/seqware_full/1.1"), notebook.getWorkflowVersions().get(0).getUserImageReferences());
+        assertEquals(List.of("quay.io/seqware/seqware_full/1.1"), notebook.getWorkflowVersions().get(0).getKernelImagePath());
     }
 
     @Test

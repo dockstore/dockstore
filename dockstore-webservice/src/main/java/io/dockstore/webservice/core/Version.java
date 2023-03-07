@@ -237,11 +237,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "The user-specified files for the version.")
     private List<String> userFiles = new ArrayList<>();
 
-    @Column(columnDefinition = "varchar")
-    @Convert(converter = UserImageReferencesConverter.class)
-    @ApiModelProperty(value = "The user-specified image references for the version.")
-    private List<String> userImageReferences = new ArrayList<>();
-
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
     private Set<EntryVersion> entryVersions = new HashSet<>();
@@ -640,14 +635,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setUserFiles(List<String> userFiles) {
         this.userFiles = userFiles;
-    }
-
-    public List<String> getUserImageReferences() {
-        return userImageReferences;
-    }
-
-    public void setUserImageReferences(List<String> userImageReferences) {
-        this.userImageReferences = userImageReferences;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

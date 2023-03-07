@@ -9381,10 +9381,6 @@ components:
           type: array
           items:
             type: string
-        userImageReferences:
-          type: array
-          items:
-            type: string
         valid:
           type: boolean
         validations:
@@ -10000,10 +9996,6 @@ components:
           type: array
           items:
             type: string
-        userImageReferences:
-          type: array
-          items:
-            type: string
         valid:
           type: boolean
         validations:
@@ -10321,6 +10313,9 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
+        kernelImagePath:
+          type: string
+          description: User-specified notebook kernel image reference
         last_modified:
           type: integer
           format: int64
@@ -10362,10 +10357,6 @@ components:
         synced:
           type: boolean
         userFiles:
-          type: array
-          items:
-            type: string
-        userImageReferences:
           type: array
           items:
             type: string

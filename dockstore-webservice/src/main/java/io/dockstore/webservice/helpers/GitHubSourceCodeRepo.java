@@ -904,7 +904,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // If this is a notebook, set the version's user-specified files and image.
         if (theWf instanceof YamlNotebook yamlNotebook) {
             version.setUserFiles(yamlNotebook.getOtherFiles());
-            version.setUserImageReferences(yamlNotebook.getImage() != null ? List.of(yamlNotebook.getImage()) : List.of());
+            version.setKernelImagePath(yamlNotebook.getImage());
         }
 
         // No need to check for null, has been validated

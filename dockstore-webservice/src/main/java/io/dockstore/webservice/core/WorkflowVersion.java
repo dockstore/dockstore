@@ -83,6 +83,11 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Whether or not the version has been refreshed since its last edit on Dockstore.", position = 105)
     private boolean synced = false;
 
+    @Column(columnDefinition = "text")
+    @ApiModelProperty(value = "User-specified notebook kernel image reference", position = 106)
+    @Schema(description = "User-specified notebook kernel image reference")
+    private String kernelImagePath;
+
     @JsonIgnore
     @Column(columnDefinition = "TEXT")
     private String dagJson;
@@ -223,6 +228,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setSynced(boolean synced) {
         this.synced = synced;
+    }
+
+    public String getKernelImagePath() {
+        return kernelImagePath;
+    }
+
+    public void setKernelImagePath(String kernelImagePath) {
+        this.kernelImagePath = kernelImagePath;
     }
 
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "
