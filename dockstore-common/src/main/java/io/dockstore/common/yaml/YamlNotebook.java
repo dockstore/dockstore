@@ -35,7 +35,7 @@ public class YamlNotebook implements Workflowish {
     private String format = "jupyter";
     private String language = "python";
     private String path;
-    private String image;
+    private String kernel;
     private Boolean publish;
     private boolean latestTagAsDefault = false;
     private Filters filters = new Filters();
@@ -108,15 +108,15 @@ public class YamlNotebook implements Workflowish {
      */
     @Size(min = 1, message = "must not be empty")
     @Pattern(regexp = "\\S++", message = "must not contain whitespace")
-    public String getImage() {
-        return image;
+    public String getKernel() {
+        return kernel;
     }
 
     /**
      * Set the kernel image reference for the notebook.
      */
-    public void setImage(final String image) {
-        this.image = image;
+    public void setKernel(final String kernel) {
+        this.kernel = kernel;
     }
 
     public Boolean getPublish() {

@@ -137,7 +137,7 @@ class DockstoreYamlTest {
         assertEquals("Jupyter", notebook.getFormat());
         assertEquals("Python", notebook.getLanguage());
         assertEquals("/notebook0.ipynb", notebook.getPath());
-        assertEquals(null, notebook.getImage());
+        assertEquals(null, notebook.getKernel());
         assertEquals(true, notebook.getPublish());
         assertEquals(true, notebook.getLatestTagAsDefault());
         assertEquals(List.of("branch0"), notebook.getFilters().getBranches());
@@ -151,7 +151,7 @@ class DockstoreYamlTest {
         assertEquals("jupyter", notebook1.getFormat());
         assertEquals("python", notebook1.getLanguage());
         assertEquals("/notebook1.ipynb", notebook1.getPath());
-        assertEquals("quay.io/seqware/seqware_full/1.1", notebook1.getImage());
+        assertEquals("quay.io/seqware/seqware_full/1.1", notebook1.getKernel());
         assertEquals(null, notebook1.getPublish());
         assertEquals(false, notebook1.getLatestTagAsDefault());
         assertTrue(notebook1.getFilters().getBranches().isEmpty());
