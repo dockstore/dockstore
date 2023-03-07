@@ -58,8 +58,14 @@ public class BioWorkflow extends Workflow {
     @Column(columnDefinition = "boolean default false")
     private boolean isChecker = false;
 
+    @Override
     public EntryType getEntryType() {
         return EntryType.WORKFLOW;
+    }
+
+    @Override
+    public EntryTypeMetadata getEntryTypeMetadata() {
+        return EntryTypeMetadata.WORKFLOW;
     }
 
     @Override

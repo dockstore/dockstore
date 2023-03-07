@@ -42,6 +42,8 @@ import io.dockstore.openapi.client.model.Author;
 import io.dockstore.openapi.client.model.Category;
 import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.CollectionOrganization;
+import io.dockstore.openapi.client.model.EntryType;
+import io.dockstore.openapi.client.model.EntryTypeMetadata;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
@@ -141,7 +143,7 @@ class NotebookIT extends BaseIT {
         String path = SourceControl.GITHUB + "/" + simpleRepo;
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(path, notebook.getFullWorkflowPath());
-        assertTrue("notebook".equalsIgnoreCase(notebook.getType()));
+        assertEquals(EntryType.NOTEBOOK, notebook.getEntryType());
         assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
         assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
         assertEquals(1, notebook.getWorkflowVersions().size());
@@ -198,12 +200,31 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
-    void testPublishInYml() {
+    void testPublishInDockstoreYml() {
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         assertEquals(0, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
         workflowsApi.handleGitHubRelease("refs/tags/simple-published-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         assertEquals(1, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
+    }
+
+    @Test
+    void testMetadata() {
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+
+        String path = SourceControl.GITHUB + "/" + simpleRepo;
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+
+        assertEquals(EntryType.NOTEBOOK, notebook.getEntryType());
+        EntryTypeMetadata metadata = notebook.getEntryTypeMetadata();
+        assertEquals(EntryType.NOTEBOOK, metadata.getType());
+        assertEquals("notebook", metadata.getTerm());
+        assertEquals("notebooks", metadata.getTermPlural());
+        assertEquals("notebooks", metadata.getSitePath());
+        assertEquals(true, metadata.isTrsSupported());
+        assertEquals("#notebook/", metadata.getTrsPrefix());
     }
 
     @Test

@@ -3059,6 +3059,23 @@ paths:
       responses:
         default:
           description: "successful operation"
+  /metadata/entryTypeMetadataList:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get the metadata for each entry type"
+      description: ""
+      operationId: "getEntryTypeMetadataList"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/EntryTypeMetadata"
   /metadata/health:
     get:
       tags:
@@ -7068,6 +7085,18 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       forumUrl:
         type: "string"
         description: "This is a link to a forum or discussion board"
@@ -7335,6 +7364,18 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7469,6 +7510,31 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+  EntryTypeMetadata:
+    type: "object"
+    properties:
+      searchEntryType:
+        type: "string"
+      searchSupported:
+        type: "boolean"
+      sitePath:
+        type: "string"
+      term:
+        type: "string"
+      termPlural:
+        type: "string"
+      trsPrefix:
+        type: "string"
+      trsSupported:
+        type: "boolean"
+      type:
+        type: "string"
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
   EntryUpdateTime:
     type: "object"
     properties:
@@ -9261,6 +9327,18 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       forumUrl:
         type: "string"
         description: "This is a link to a forum or discussion board"

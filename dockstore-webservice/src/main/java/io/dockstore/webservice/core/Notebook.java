@@ -46,8 +46,14 @@ public class Notebook extends Workflow {
         return null;
     }
 
+    @Override
     public EntryType getEntryType() {
         return EntryType.NOTEBOOK;
+    }
+
+    @Override
+    public EntryTypeMetadata getEntryTypeMetadata() {
+        return EntryTypeMetadata.NOTEBOOK;
     }
 
     @Override
