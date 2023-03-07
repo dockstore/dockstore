@@ -4378,6 +4378,25 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Repository"
+  /users/starredNotebooks:
+    get:
+      tags:
+      - "users"
+      summary: "Get the authenticated user's starred notebooks."
+      description: ""
+      operationId: "getStarredNotebooks"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
   /users/starredOrganizations:
     get:
       tags:

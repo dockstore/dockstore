@@ -44,6 +44,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -857,6 +858,21 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
         return u.getStarredEntries().stream().filter(element -> element instanceof BioWorkflow)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/starredNotebooks")
+    @Operation(operationId = "getStarredNotebooks", description = "Get the authenticated user's starred notebooks.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = "A list of the authenticated user's starred notebooks", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Entry.class))))
+    @ApiOperation(value = "Get the authenticated user's starred notebooks.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
+    public Set<Entry> getStarredNotebooks(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        User u = userDAO.findById(user.getId());
+        checkNotNullUser(u);
+        return u.getStarredEntries().stream().filter(element -> element instanceof Notebook)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
