@@ -11,6 +11,7 @@ import io.swagger.annotations.ApiModel;
 public class PrivilegeRequest {
     private boolean admin;
     private boolean curator;
+    private boolean platformPartner;
 
     @JsonProperty
     public boolean isAdmin() {
@@ -28,5 +29,14 @@ public class PrivilegeRequest {
 
     public void setCurator(boolean curator) {
         this.curator = curator;
+    }
+
+    @JsonProperty
+    public boolean isPlatformPartner() {
+        return platformPartner;
+    }
+
+    public void setPlatformPartner(boolean platformPartner) {
+        this.platformPartner = platformPartner;
     }
 }

@@ -365,4 +365,10 @@
         <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="execution_time_metric"/>
         <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="memory_metric"/>
     </changeSet>
+
+    <changeSet author="dyuen (generated)" id="add_platform_partner">
+        <addColumn tableName="enduser">
+            <column defaultValueBoolean="false" name="platformpartner" type="bool"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

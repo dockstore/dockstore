@@ -8982,6 +8982,7 @@ definitions:
     required:
     - "curator"
     - "isAdmin"
+    - "platformPartner"
     - "setupComplete"
     properties:
       id:
@@ -9049,6 +9050,10 @@ definitions:
         position: 17
         description: "Indicates whether the user is required to change their username\
           \ before being allowed to do various operations on Dockstore."
+      platformPartner:
+        type: "boolean"
+        position: 18
+        description: "Indicates whether this account corresponds to a platform partner"
     description: "End users for the dockstore"
   Validation:
     type: "object"

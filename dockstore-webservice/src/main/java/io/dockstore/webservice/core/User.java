@@ -156,6 +156,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     private boolean curator;
 
     @Column(columnDefinition = "boolean default 'false'")
+    @ApiModelProperty(value = "Indicates whether this account corresponds to a platform partner", required = true, position = 18)
+    private boolean platformPartner;
+
+    @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
     private boolean setupComplete = false;
 
@@ -556,6 +560,14 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public void setUsernameChangeRequired(boolean usernameChangeRequired) {
         this.usernameChangeRequired = usernameChangeRequired;
+    }
+
+    public boolean isPlatformPartner() {
+        return platformPartner;
+    }
+
+    public void setPlatformPartner(boolean platformPartner) {
+        this.platformPartner = platformPartner;
     }
 
     /**

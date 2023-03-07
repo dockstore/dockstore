@@ -1164,9 +1164,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         // Set the new privileges.
         targetUser.setIsAdmin(privilegeRequest.isAdmin());
         targetUser.setCurator(privilegeRequest.isCurator());
+        targetUser.setPlatformPartner(privilegeRequest.isPlatformPartner());
 
         // Invalidate any tokens corresponding to the target user.
-        tokenDAO.findByUserId(targetUser.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+        tokenDAO.findByUserId(targetUser.getId()).forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
 
         return targetUser;
     }

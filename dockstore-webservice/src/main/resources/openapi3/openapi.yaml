@@ -9179,6 +9179,8 @@ components:
           type: boolean
         curator:
           type: boolean
+        platformPartner:
+          type: boolean
     Profile:
       type: object
       properties:
@@ -9985,6 +9987,8 @@ components:
           type: string
         orcid:
           type: string
+        platformPartner:
+          type: boolean
         privacyPolicyVersion:
           type: string
           enum:

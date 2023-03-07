@@ -45,7 +45,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
 
     /**
      * Authenticates the credentials.
-     *
+     * <p>
      * Valid credentials can either be a Dockstore token or a Google token, if the Google token
      * is issued against a whitelisted Google client id.
      *
