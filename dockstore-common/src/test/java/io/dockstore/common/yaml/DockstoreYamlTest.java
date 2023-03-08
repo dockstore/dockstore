@@ -168,10 +168,10 @@ class DockstoreYamlTest {
     void testMalformedNotebookImage() {
         // parse yaml with zero-length notebook "image" field
         assertThrows(DockstoreYamlHelper.DockstoreYamlException.class,
-            () -> DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replaceFirst("image: \\S++", "image: ''"), true));
+            () -> DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replaceFirst("kernel: \\S++", "kernel: ''"), true));
         // parse yaml with notebook "image" field that contains whitespace
         assertThrows(DockstoreYamlHelper.DockstoreYamlException.class,
-            () -> DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replaceFirst("image: \\S++", "image: 'an image'"), true));
+            () -> DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replaceFirst("kernel: \\S++", "kernel: 'an image'"), true));
     }
 
     @Test
