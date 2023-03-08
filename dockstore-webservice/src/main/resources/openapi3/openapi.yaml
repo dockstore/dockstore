@@ -9978,6 +9978,7 @@ components:
           type: string
         curator:
           type: boolean
+          description: Indicates whether this user is a curator
         id:
           type: integer
           format: int64
@@ -9989,6 +9990,7 @@ components:
           type: string
         platformPartner:
           type: boolean
+          description: Indicates whether this account corresponds to a platform partner
         privacyPolicyVersion:
           type: string
           enum:
