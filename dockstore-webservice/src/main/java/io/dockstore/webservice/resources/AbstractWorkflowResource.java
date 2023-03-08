@@ -264,10 +264,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Sets the publicly accessible URL version metadata. If at least one test parameter file is
-     * publicly accessible, then version metadata is true If there's 1+ test parameter file that is
-     * null but there's no false, then version metadata is null If there's 1+ test parameter file
-     * that is false, then version metadata is false
+     * Sets the publicly accessible URL version metadata.
+     * <ul>
+     *     <li>If at least one test parameter file is publicly accessible, then version metadata is true</li>
+     *     <li>If there's 1+ test parameter file that is null but there's no false, then version metadata is null</li>
+     *     <li>If there's 1+ test parameter file that is false, then version metadata is false</li>
+     * </ul>
      *
      * @param existingVersion   Hibernate initialized version
      * @param checkUrlInterface URL of the checkUrl lambda
