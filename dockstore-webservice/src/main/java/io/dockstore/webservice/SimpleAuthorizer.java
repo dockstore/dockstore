@@ -32,13 +32,15 @@ public class SimpleAuthorizer implements Authorizer<User> {
     @Override
     public boolean authorize(User principal, String role) {
         if (principal.isBanned()) {
-            LOG.error("Denying access to " + principal.toString());
+            LOG.error("Denying access to %s".formatted(principal));
             return false;
         }
         if (ADMIN.equalsIgnoreCase(role)) {
             return principal.getIsAdmin();
         } else if  ("curator".equalsIgnoreCase(role)) {
             return principal.isCurator();
+        } else if ("platformPartner".equalsIgnoreCase(role)) {
+            return principal.isPlatformPartner();
         } else {
             return true;
         }

@@ -9179,6 +9179,8 @@ components:
           type: boolean
         curator:
           type: boolean
+        platformPartner:
+          type: boolean
     Profile:
       type: object
       properties:
@@ -9976,6 +9978,7 @@ components:
           type: string
         curator:
           type: boolean
+          description: Indicates whether this user is a curator
         id:
           type: integer
           format: int64
@@ -9985,6 +9988,9 @@ components:
           type: string
         orcid:
           type: string
+        platformPartner:
+          type: boolean
+          description: Indicates whether this account corresponds to a platform partner
         privacyPolicyVersion:
           type: string
           enum:
