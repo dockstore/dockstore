@@ -361,9 +361,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param username Username of GitHub user that triggered action
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId GitHub App installation ID
+     * @param throwIfNotSuccessful throw if the release was not entirely successful
      * @return List of new and updated workflows
      */
-    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId) {
+    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, boolean throwIfNotSuccessful) {
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
@@ -414,7 +415,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
         }
 
-        if (!isSuccessful) {
+        if (!isSuccessful && throwIfNotSuccessful) {
             throw new CustomWebApplicationException("At least one entry in .dockstore.yml could not be processed.", LAMBDA_FAILURE);
         }
     }
