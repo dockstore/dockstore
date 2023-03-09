@@ -328,7 +328,7 @@
         <addColumn tableName="memory_metric">
             <column name="dbupdatedate" type="timestamp"/>
         </addColumn>
-        
+
         <comment>Add unit columns</comment>
         <addColumn tableName="cpu_metric">
             <column name="unit" type="varchar(255 BYTE)"/>
@@ -364,6 +364,12 @@
         <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="cpu_metric"/>
         <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="execution_time_metric"/>
         <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="memory_metric"/>
+    </changeSet>
+    <changeSet id="reset open data" author="coverbeck">
+        <update tableName="version_metadata">
+            <!--  Not explicitly specifying a value sets it to null-->
+            <column name="publicaccessibletestparameterfile"></column>
+        </update>
     </changeSet>
     <changeSet author="svonworl" id="addKernelImagePathToWorkflowVersion">
         <addColumn tableName="workflowversion">

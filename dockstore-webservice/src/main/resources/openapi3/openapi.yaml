@@ -10214,6 +10214,8 @@ components:
             $ref: '#/components/schemas/ParsedInformation'
         publicAccessibleTestParameterFile:
           type: boolean
+          description: Whether the version has everything needed to run without restricted
+            access permissions
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
