@@ -1138,8 +1138,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Detect branches that include a .dockstore.yml using a variety of heuristics.
-     * Heuristics include the default branch, commonly-active branches, and branches with recent pushes.
-     * The code tries to avoid an unbounded number of calls based on factors that can change between repos (number of tags, branches, etc.)
+     * Heuristics include the default branch, branches that are likely active or important, and branches with recent pushes.
+     * Tries to avoid an unbounded number of calls based on factors that can change between repos (number of tags, branches, etc.)
      */
     public Set<String> detectDockstoreYml(String repositoryId) {
         final int maxResults = 5;
@@ -1174,20 +1174,27 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    /**
+     * Retrieve the list of branches by examining the repo refs and events.
+     * Attempt to order the list so that the most-recently-pushed-to branches appear first.
+     * This method caps the number of refs and events retrieved, so that we don't chew up our rate limit on
+     * a repo with a large number of either.
+     */
     private List<String> getBranchesWithRecentPushesFirst(GHRepository repository) throws IOException {
+        final int maxRefs = 120;
         final int maxEvents = 30;
 
         // Create a linked set to store the results.
         // It's important that we use a Linked set, because it preserves the order in which elements are added.
         Set<String> branches = new LinkedHashSet<>();
 
-        // Get a list of the most recent pushes.
+        // Get a list of the most recent pushes, which should be ordered by increasing age.
         List<GHEventInfo> pushes = streamIterable(repository.listEvents())
             .limit(maxEvents)
             .filter(event -> event.getType().equals(GHEvent.PUSH))
             .toList();
 
-        // For each push to a branch, add the branch name to the "end" of the set.
+        // For each push to a branch, add the branch name to the "end" of the linked set.
         // The code within can throw a checked IOException, so it's clumsy to combine with the previous stream expression.
         for (GHEventInfo push: pushes) {
             String ref = push.getPayload(GHEventPayload.Push.class).getRef();
@@ -1196,16 +1203,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
         }
 
-        // Add the rest of the branch names to the "end" of the set.
-        branches.addAll(getBranches(repository));
+        // Add the rest of the branch names to the "end" of the linked set.
+        branches.addAll(getBranches(repository, maxRefs));
 
         // Convert to a list and return.
         return new ArrayList<>(branches);
     }
 
-    private List<String> getBranches(GHRepository repository) throws IOException {
-        final int maxRefs = 1000;
-
+    private List<String> getBranches(GHRepository repository, int maxRefs) throws IOException {
         return streamIterable(repository.listRefs())
             .limit(maxRefs)
             .map(ref -> ref.getRef())
