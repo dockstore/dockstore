@@ -78,7 +78,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
@@ -208,7 +207,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repo = github.getRepository(repositoryId);
             List<GHContent> directoryContent = repo.getDirectoryContent(pathToDirectory, reference);
-            return directoryContent.stream().map(GHContent::getName).collect(Collectors.toList());
+            return directoryContent.stream().map(GHContent::getName).toList();
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
             return null;
@@ -553,33 +552,31 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRepository repository = getRepository(repositoryId);
 
         // when getting a full workflow, look for versions and check each version for valid workflows
-        List<Triple<String, Date, String>> references = new ArrayList<>();
+        List<GitReferenceInfo> references = new ArrayList<>();
 
         GHRef[] refs = {};
         try {
             refs = getBranchesAndTags(repository);
             for (GHRef ref : refs) {
-                Triple<String, Date, String> referenceTriple = getRef(ref, repository);
-                if (referenceTriple != null) {
-                    if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
-                        references.add(referenceTriple);
-                    }
+                GitReferenceInfo gitReferenceInfo = getRef(ref, repository);
+                if (gitReferenceInfo != null && (versionName.isEmpty() || Objects.equals(versionName.get(), gitReferenceInfo.refName()))) {
+                    references.add(gitReferenceInfo);
                 }
             }
         } catch (GHFileNotFoundException e) {
             // seems to legitimately do this when the repo has no tags or releases
             LOG.debug("repo had no releases or tags: " + repositoryId, e);
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", e);
+            LOG.info("%s: Cannot get branches or tags for workflow {}".formatted(gitUsername), e);
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
-        for (Triple<String, Date, String> ref : references) {
+        for (GitReferenceInfo ref : references) {
             if (ref != null) {
-                final String branchName = ref.getLeft();
-                final Date lastModified = ref.getMiddle();
-                final String commitId = ref.getRight();
+                final String branchName = ref.refName();
+                final Date lastModified = ref.branchDate();
+                final String commitId = ref.sha();
                 if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
                     WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
                             repository, null, versionName);
@@ -589,7 +586,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 } else {
                     // Version didn't change, but we don't want to delete
                     // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
-                    LOG.info(gitUsername + ": Skipping GitHub reference: " + ref.toString());
+                    LOG.info("%s: Skipping GitHub reference: %s".formatted(gitUsername, ref));
                     WorkflowVersion version = new WorkflowVersion();
                     version.setName(branchName);
                     version.setReference(branchName);
@@ -628,9 +625,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * Retrieve important information related to a reference
      * @param ref GitHub reference object
      * @param repository GitHub repository object
-     * @return Triple containing reference name, branch date, and SHA
+     * @return Record containing reference name, branch date, and SHA
      */
-    private Triple<String, Date, String> getRef(GHRef ref, GHRepository repository) {
+    private GitReferenceInfo getRef(GHRef ref, GHRepository repository) {
         final Date epochStart = new Date(0);
         Date branchDate = new Date(0);
         String refName = ref.getRef();
@@ -657,7 +654,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             } catch (IOException e) {
                 LOG.error("unable to retrieve commit date for branch " + refName, e);
             }
-            return Triple.of(refName, branchDate, sha);
+            return new GitReferenceInfo(refName, branchDate, sha);
         } else {
             return null;
         }
@@ -688,7 +685,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Creates a workflow version for a specific branch/tag on GitHub
      * @param workflow Workflow object
-     * @param ref Triple containing reference name, branch date, and SHA
+     * @param ref record containing reference name, branch date, and SHA
      * @param existingWorkflow Optional existing workflow
      * @param existingDefaults Optional mapping of existing versions
      * @param repository GitHub repository object
@@ -696,13 +693,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param versionName Optional version name to refresh
      * @return WorkflowVersion for the given reference
      */
-    private WorkflowVersion setupWorkflowVersionsHelper(Workflow workflow, Triple<String, Date, String> ref, Optional<Workflow> existingWorkflow,
+    private WorkflowVersion setupWorkflowVersionsHelper(Workflow workflow, GitReferenceInfo ref, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults, GHRepository repository, SourceFile dockstoreYml, Optional<String> versionName) {
         LOG.info(gitUsername + ": Looking at GitHub reference: " + ref.toString());
         // Initialize the workflow version
-        WorkflowVersion version = initializeWorkflowVersion(ref.getLeft(), existingWorkflow, existingDefaults);
-        version.setLastModified(ref.getMiddle());
-        version.setCommitID(ref.getRight());
+        WorkflowVersion version = initializeWorkflowVersion(ref.refName(), existingWorkflow, existingDefaults);
+        version.setLastModified(ref.branchDate());
+        version.setCommitID(ref.sha());
         String calculatedPath = version.getWorkflowPath();
 
         DescriptorLanguage.FileType identifiedType = workflow.getFileType();
@@ -732,7 +729,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Grab files for workflow version based on the entry type
-     * @param ref Triple containing reference name, branch date, and SHA
+     * @param ref record containing reference name, branch date, and SHA
      * @param repository GitHub repository object
      * @param version Version to add source files to
      * @param workflow Workflow object
@@ -740,7 +737,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param dockstoreYml Dockstore YML sourcefile
      * @return Updated workflow version
      */
-    private WorkflowVersion setupEntryFilesForGitHubVersion(Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
+    private WorkflowVersion setupEntryFilesForGitHubVersion(GitReferenceInfo ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
         // Add Dockstore.yml to version
         SourceFile dockstoreYmlClone = new SourceFile();
         dockstoreYmlClone.setAbsolutePath(dockstoreYml.getAbsolutePath());
@@ -764,7 +761,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Download workflow files for a given workflow version
      * @param calculatedPath Path to primary descriptor
-     * @param ref Triple containing reference name, branch date, and SHA
+     * @param ref record containing reference name, branch date, and SHA
      * @param repository GitHub repository object
      * @param version Version to update
      * @param identifiedType Descriptor type of file
@@ -773,11 +770,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @return Version with updated sourcefiles
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private WorkflowVersion setupWorkflowFilesForVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, DescriptorLanguage.FileType identifiedType, Workflow workflow, Map<String, WorkflowVersion> existingDefaults) {
+    private WorkflowVersion setupWorkflowFilesForVersion(String calculatedPath, GitReferenceInfo ref, GHRepository repository, WorkflowVersion version, DescriptorLanguage.FileType identifiedType, Workflow workflow, Map<String, WorkflowVersion> existingDefaults) {
         // Grab workflow file from github
         try {
             // Get contents of descriptor file and store
-            String decodedContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
+            String decodedContent = this.readFileFromRepo(calculatedPath, ref.refName(), repository);
             if (decodedContent != null) {
                 SourceFile file = new SourceFile();
                 file.setContent(decodedContent);
@@ -789,7 +786,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // Use default test parameter file if either new version or existing version that hasn't been edited
                 // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
                 if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                    String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.getLeft(), repository);
+                    String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.refName(), repository);
                     if (testJsonContent != null) {
                         SourceFile testJson = new SourceFile();
                         testJson.setType(workflow.getDescriptorType().getTestParamType());
@@ -815,13 +812,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Pull descriptor files for the given service version and add to version
-     * @param ref Triple containing reference name, branch date, and SHA
+     * @param ref record containing reference name, branch date, and SHA
      * @param repository GitHub repository object
      * @param version Version to update
      * @param dockstoreYml Dockstore YML sourcefile
      * @return Version with updated sourcefiles
      */
-    private WorkflowVersion setupServiceFilesForGitHubVersion(Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, SourceFile dockstoreYml) {
+    private WorkflowVersion setupServiceFilesForGitHubVersion(GitReferenceInfo ref, GHRepository repository, WorkflowVersion version, SourceFile dockstoreYml) {
         // Grab all files from files array
         List<String> files;
         try {
@@ -840,7 +837,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             return null;
         }
         for (String filePath: files) {
-            String fileContent = this.readFileFromRepo(filePath, ref.getLeft(), repository);
+            String fileContent = this.readFileFromRepo(filePath, ref.refName(), repository);
             if (fileContent != null) {
                 SourceFile file = new SourceFile();
                 file.setAbsolutePath(filePath);
@@ -859,7 +856,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Pull descriptor files for the given workflow version and add to version
-     * @param ref Triple containing reference name, branch date, and SHA
+     * @param ref record containing reference name, branch date, and SHA
      * @param repository GitHub repository object
      * @param version Version to update
      * @param workflow Workflow to add version to
@@ -867,7 +864,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param dockstoreYml Dockstore YML sourcefile
      * @return Version with updated sourcefiles
      */
-    private WorkflowVersion setupWorkflowFilesForGitHubVersion(Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
+    private WorkflowVersion setupWorkflowFilesForGitHubVersion(GitReferenceInfo ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
         // Determine version information from dockstore.yml
         Workflowish theWf = null;
         List<String> testParameterPaths = null;
@@ -890,7 +887,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                 return (Objects.equals(dockstoreWorkflowPath, workflow.getEntryPath()));
             }).findFirst();
-            if (!maybeWorkflow.isPresent()) {
+            if (maybeWorkflow.isEmpty()) {
                 return null;
             }
             theWf = maybeWorkflow.get();
@@ -913,7 +910,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         version.setReadMePath(readMePath);
 
         String validationMessage = "";
-        String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);
+        String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.refName(), repository);
         if (fileContent != null) {
             // Add primary descriptor file and resolve imports
             SourceFile primaryDescriptorFile = new SourceFile();
@@ -933,7 +930,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     if (hasDuplicate) {
                         continue;
                     }
-                    String testFileContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
+                    String testFileContent = this.readFileFromRepo(testParameterPath, ref.refName(), repository);
                     if (testFileContent != null) {
                         SourceFile testFile = new SourceFile();
                         // find type from file type
@@ -1339,7 +1336,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public WorkflowVersion createVersionForWorkflow(String repository, String gitReference, Workflow workflow, SourceFile dockstoreYml) throws IOException {
         GHRepository ghRepository = getRepository(repository);
 
-        // Match the github reference (ex. refs/heads/feature/foobar or refs/tags/1.0)
+        // Match the GitHub reference (ex. refs/heads/feature/foobar or refs/tags/1.0)
         Matcher matcher = GIT_BRANCH_TAG_PATTERN.matcher(gitReference);
 
         if (!matcher.find()) {
@@ -1350,7 +1347,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         GHRef ghRef = ghRepository.getRef(gitBranchType + "/" + gitBranchName);
 
-        Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
+        GitReferenceInfo ref = getRef(ghRef, ghRepository);
         if (ref == null) {
             throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.",
                     LAMBDA_FAILURE);
@@ -1375,4 +1372,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             throw new CustomWebApplicationException(GITHUB_ABUSE_LIMIT_REACHED, HttpStatus.SC_BAD_REQUEST);
         }
     }
+
+    private record GitReferenceInfo (String refName, Date branchDate, String sha) {}
 }

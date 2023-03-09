@@ -9301,6 +9301,8 @@ definitions:
           $ref: "#/definitions/ParsedInformation"
       publicAccessibleTestParameterFile:
         type: "boolean"
+        description: "Whether the version has everything needed to run without restricted\
+          \ access permissions"
       userIdToOrcidPutCode:
         type: "object"
         description: "The presence of the put code for a userid indicates the version\
