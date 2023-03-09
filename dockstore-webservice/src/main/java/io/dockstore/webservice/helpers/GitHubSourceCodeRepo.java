@@ -64,15 +64,20 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -83,6 +88,10 @@ import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHEmail;
+import org.kohsuke.github.GHEvent;
+import org.kohsuke.github.GHEventInfo;
+import org.kohsuke.github.GHEventPayload;
+import org.kohsuke.github.GHException;
 import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHMyself.RepositoryListFilter;
@@ -109,6 +118,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     public static final String GITHUB_ABUSE_LIMIT_REACHED = "GitHub abuse limit reached";
     public static final int GITHUB_MAX_CACHE_AGE_SECONDS = 30; // GitHub's default max-cache age is 60 seconds
+
+    public static final String REFS_HEADS = "refs/heads/";
     /**
      * each section that starts with (?!.* is excluding a specific character
      */
@@ -1127,55 +1138,99 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Detect branches that include a .dockstore.yml using a variety of heuristics.
-     * <p>
-     * Heuristics include looking at the default branch, commits that just touched a .dockstore.yml at the end of a branch, etc. while trying to avoid too many
-     * API calls, particularly an unbounded number of calls based on factors that can change between repos (number of tags, branches, etc.)
-     *
-     * @param repositoryId
-     * @return
+     * Heuristics include the default branch, commonly-active branches, and branches with recent pushes.
+     * The code tries to avoid an unbounded number of calls based on factors that can change between repos (number of tags, branches, etc.)
      */
     public Set<String> detectDockstoreYml(String repositoryId) {
-        Set<String> candidateBranches = new HashSet<>();
-        if (repositoryId != null) {
-            try {
-                GHRepository repository = getRepository(repositoryId);
-                // see if there is a .dockstore.yml on any path that was just added to a branch/the HEAD
-                // unfortunately, there is no nice way to map this to a specific tag or branch, arbitrarily pick 2 to try
-                final int arbitraryNumberOfGuesses = 2;
-                final List<GHCommit> ghCommits = new ArrayList<>(repository.queryCommits().path(DOCKSTORE_YML_PATH).pageSize(arbitraryNumberOfGuesses).list().toList());
-                ghCommits.addAll(repository.queryCommits().path(DOCKSTORE_ALTERNATE_YML_PATH).pageSize(arbitraryNumberOfGuesses).list().toList());
-                for (GHCommit ghCommit : ghCommits) {
-                    try {
-                        // this will only resolve if a .dockstore.yml was in the last commit to be touched (is not eligible for cache since it uses JWT)
-                        ghCommit.listBranchesWhereHead().toList().forEach(branch -> candidateBranches.add("refs/heads/" + branch.getName()));
-                    } catch (IOException e) {
-                        // do nothing and proceed to next commit
-                        LOG.info("had issue processing branch for .dockstore.yml", e);
-                    }
-                }
-                // examine the default branch, good chance it will have it
-                String defaultBranch = "refs/heads/" + getDefaultBranch(repositoryId);
-                examineBranchForDockstoreYml(repositoryId, candidateBranches, defaultBranch);
-                // if we still don't have a candidate try guessing at some arbitrary (but a constant number of) branches. Hopefully this does not trigger too often
-                if (candidateBranches.isEmpty()) {
-                    String[] totalGuesses = {"master", "main", "develop"};
-                    Arrays.stream(totalGuesses).toList().stream().map(guess -> "refs/heads/" + guess).forEach(guess -> {
-                        examineBranchForDockstoreYml(repositoryId, candidateBranches, guess);
-                    });
-                }
-            } catch (IOException e) {
-                LOG.error("Unable to retrieve analyze branch candidates for repository " + repositoryId, e);
-                return candidateBranches;
+        final int maxResults = 5;
+        final Set<String> likelies = Set.of("master", "main", "develop");
+
+        try {
+            if (repositoryId == null) {
+                return Set.of();
             }
+            // Get repository and default branch.
+            GHRepository repository = getRepository(repositoryId);
+            String defaultBranch = repository.getDefaultBranch();
+
+            // Get the branch names, ordered so that branches with recent pushes are first.
+            List<String> branches = getBranchesWithRecentPushesFirst(repository);
+
+            // Reorder the branch names so the default branch comes first, followed by any "likely" branches, then the rest.
+            // Do so by first moving the likelies to the front, and then moving the default branch to the front.
+            branches = listTrueFirst(branches, likelies::contains);
+            branches = listTrueFirst(branches, branch -> Objects.equals(defaultBranch, branch));
+
+            // For a subset of branches at the front of the list, return a set of the corresponding refs that contain a .dockstore.yml.
+            return branches.stream()
+                .limit(maxResults)
+                .map(branch -> REFS_HEADS + branch)
+                .filter(ref -> hasDockstoreYml(repository, ref))
+                .collect(Collectors.toSet());
+
+        } catch (IOException | GHException e) {
+            LOG.error("Unable to retrieve/analyze branch candidates for repository " + repositoryId, e);
+            return Set.of();
         }
-        return candidateBranches;
     }
 
-    private void examineBranchForDockstoreYml(String repositoryId, Set<String> candidateBranches, String branch) {
-        String defaultFileContent = readFile(repositoryId, DOCKSTORE_YML_PATH, branch);
-        defaultFileContent = StringUtils.isNotEmpty(defaultFileContent) ? defaultFileContent : readFile(repositoryId, DOCKSTORE_ALTERNATE_YML_PATH, branch);
-        if (StringUtils.isNotEmpty(defaultFileContent)) {
-            candidateBranches.add(branch);
+    private List<String> getBranchesWithRecentPushesFirst(GHRepository repository) throws IOException {
+        final int maxEvents = 30;
+
+        // Create a linked set to store the results.
+        // It's important that we use a Linked set, because it preserves the order in which elements are added.
+        Set<String> branches = new LinkedHashSet<>();
+
+        // Get a list of the most recent pushes.
+        List<GHEventInfo> pushes = streamIterable(repository.listEvents())
+            .limit(maxEvents)
+            .filter(event -> event.getType().equals(GHEvent.PUSH))
+            .toList();
+
+        // For each push to a branch, add the branch name to the "end" of the set.
+        // The code within can throw a checked IOException, so it's clumsy to combine with the previous stream expression.
+        for (GHEventInfo push: pushes) {
+            String ref = push.getPayload(GHEventPayload.Push.class).getRef();
+            if (ref.startsWith(REFS_HEADS)) {
+                branches.add(ref.substring(REFS_HEADS.length()));
+            }
+        }
+
+        // Add the rest of the branch names to the "end" of the set.
+        branches.addAll(getBranches(repository));
+
+        // Convert to a list and return.
+        return new ArrayList<>(branches);
+    }
+
+    private List<String> getBranches(GHRepository repository) throws IOException {
+        final int maxRefs = 1000;
+
+        return streamIterable(repository.listRefs())
+            .limit(maxRefs)
+            .map(ref -> ref.getRef())
+            .filter(ref -> ref.startsWith(REFS_HEADS))
+            .map(ref -> ref.substring(REFS_HEADS.length()))
+            .toList();
+    }
+
+    private <T> Stream<T> streamIterable(Iterable<T> iterable) {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterable.iterator(), Spliterator.ORDERED), false);
+    }
+
+    private <T> List<T> listTrueFirst(List<T> src, Predicate<T> predicate) {
+        return Stream.concat(src.stream().filter(predicate), src.stream().filter(Predicate.not(predicate))).toList();
+    }
+
+    private boolean hasDockstoreYml(GHRepository repository, String ref) {
+        return hasPath(repository, ref, DOCKSTORE_YML_PATH) || hasPath(repository, ref, DOCKSTORE_ALTERNATE_YML_PATH);
+    }
+
+    private boolean hasPath(GHRepository repository, String ref, String path) {
+        try {
+            return repository.queryCommits().path(path).from(ref).pageSize(1).list().iterator().hasNext();
+        } catch (GHException e) {
+            return false;
         }
     }
 
