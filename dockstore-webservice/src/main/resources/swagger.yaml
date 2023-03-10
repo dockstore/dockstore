@@ -9759,20 +9759,15 @@ definitions:
         position: 102
         description: "Remote: Last time version on GitHub repo was changed. Hosted:\
           \ time version created."
-      subClass:
-        type: "string"
-        position: 103
-        description: "The subclass of this for services."
-        enum:
-        - "DOCKER_COMPOSE"
-        - "SWARM"
-        - "KUBERNETES"
-        - "HELM"
       synced:
         type: "boolean"
         position: 105
         description: "Whether or not the version has been refreshed since its last\
           \ edit on Dockstore."
+      kernelImagePath:
+        type: "string"
+        position: 106
+        description: "User-specified notebook kernel image reference"
     description: "This describes one workflow version associated with a workflow."
   WorkflowVersionPathInfo:
     type: "object"

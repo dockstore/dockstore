@@ -86,12 +86,10 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Whether or not the version has been refreshed since its last edit on Dockstore.", position = 105)
     private boolean synced = false;
 
-    /**
-     * In theory, this should be in a ServiceVersion.
-     * In practice, our use of generics caused this to mess up bigtype, so we'll prototype with this for now.
-     */
-    @ApiModelProperty(value = "The subclass of this for services.", position = 103)
-    private Service.SubClass subClass = null;
+    @Column
+    @ApiModelProperty(value = "User-specified notebook kernel image reference", position = 106)
+    @Schema(description = "User-specified notebook kernel image reference")
+    private String kernelImagePath;
 
     @JsonIgnore
     @Column(columnDefinition = "TEXT")
@@ -207,14 +205,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         return MoreObjects.toStringHelper(this).add("id", id).add("name", this.getName()).add("reference", this.getReference()).toString();
     }
 
-    public Service.SubClass getSubClass() {
-        return subClass;
-    }
-
-    public void setSubClass(Service.SubClass subClass) {
-        this.subClass = subClass;
-    }
-
     public Date getLastModified() {
         return lastModified;
     }
@@ -261,6 +251,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setSynced(boolean synced) {
         this.synced = synced;
+    }
+
+    public String getKernelImagePath() {
+        return kernelImagePath;
+    }
+
+    public void setKernelImagePath(String kernelImagePath) {
+        this.kernelImagePath = kernelImagePath;
     }
 
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "

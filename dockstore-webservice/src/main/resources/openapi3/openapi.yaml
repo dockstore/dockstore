@@ -10500,6 +10500,9 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
+        kernelImagePath:
+          type: string
+          description: User-specified notebook kernel image reference
         last_modified:
           type: integer
           format: int64
@@ -10540,13 +10543,6 @@ components:
           - BRANCH
           - NOT_APPLICABLE
           - UNSET
-        subClass:
-          type: string
-          enum:
-          - DOCKER_COMPOSE
-          - SWARM
-          - KUBERNETES
-          - HELM
         synced:
           type: boolean
         userFiles:

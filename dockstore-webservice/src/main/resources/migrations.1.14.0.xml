@@ -376,4 +376,12 @@
             <column name="publicaccessibletestparameterfile"></column>
         </update>
     </changeSet>
+    <changeSet author="svonworl" id="addKernelImagePathToWorkflowVersion">
+        <addColumn tableName="workflowversion">
+            <column name="kernelimagepath" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="svonworl" id="dropSubclassFromWorkflowVersion">
+        <dropColumn columnName="subclass" tableName="workflowversion"/>
+    </changeSet>
 </databaseChangeLog>
