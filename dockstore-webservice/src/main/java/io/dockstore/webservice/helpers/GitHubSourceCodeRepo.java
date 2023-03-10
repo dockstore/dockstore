@@ -1197,6 +1197,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // For each push to a branch, add the branch name to the "end" of the linked set.
         // The code within can throw a checked IOException, so it's clumsy to combine with the previous stream expression.
         for (GHEventInfo push: pushes) {
+            // Get the ref of the pushed-to branch, typically a value like 'refs/heads/master'
             String ref = push.getPayload(GHEventPayload.Push.class).getRef();
             if (ref.startsWith(REFS_HEADS)) {
                 branches.add(ref.substring(REFS_HEADS.length()));
