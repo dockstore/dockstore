@@ -42,7 +42,10 @@ import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,6 +67,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpStatus;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -117,14 +121,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
-                // Parse the file content
-                Map<String, Object> map = parseAsMap(content);
-
-                // Expand $import, $include, etc
-                map = preprocess(map, filePath, new Preprocessor(sourceFiles));
-
-                // Retarget to the main process, if necessary
-                map = findMainProcess(map);
+                final Map<String, Object> map = parseSourceFiles(filePath, content, sourceFiles);
 
                 // Extract various fields
                 String description = null;
@@ -191,6 +188,19 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         }
         return version;
+    }
+
+    Map<String, Object> parseSourceFiles(final String filePath, final String content,
+        final Set<SourceFile> sourceFiles) {
+        // Parse the file content
+        Map<String, Object> map = parseAsMap(content);
+
+        // Expand $import, $include, etc
+        map = preprocess(map, filePath, new Preprocessor(sourceFiles));
+
+        // Retarget to the main process, if necessary
+        map = findMainProcess(map);
+        return map;
     }
 
     /**
@@ -958,6 +968,76 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.CWL_TEST_JSON);
     }
 
+    @Override
+    public Optional<Boolean> isOpenData(final WorkflowVersion workflowVersion, final CheckUrlInterface checkUrlInterface) {
+        final Optional<List<Input>> fileInputs = getFileInputs(workflowVersion);
+        if (fileInputs.isEmpty()) { // Error reading primary descriptor/workflow
+            return Optional.empty();
+        }
+        if (fileInputs.get().isEmpty()) { // There are no file inputs, consider it open
+            return Optional.of(true);
+        }
+        final List<SourceFile> testFiles = workflowVersion.findTestFiles();
+        if (testFiles.isEmpty()) {
+            return Optional.of(false); // There are file inputs, but no test parameter files provided
+        }
+        return Optional.of(testFiles.stream().anyMatch(testFile -> {
+            final Optional<JSONObject> jsonObject = SourceFileHelper.testFileAsJsonObject(testFile);
+            if (jsonObject.isEmpty()) {
+                return false;
+            }
+            return false;
+        }));
+    }
+
+    /**
+     * Returns an Optional list of the workflow version's file inputs. If the primary descriptor
+     * does not exist or there is an error parsing the version's descriptors, returns an
+     * <code>Optional.empty()</code>.
+     * @param workflowVersion
+     * @return
+     */
+    Optional<List<Input>> getFileInputs(WorkflowVersion workflowVersion) {
+        final Optional<SourceFile> primaryDescriptor1 = workflowVersion.findPrimaryDescriptor();
+        if (primaryDescriptor1.isEmpty()) {
+            return Optional.empty();
+        }
+        final SourceFile sourceFile = primaryDescriptor1.get();
+        try {
+            final Map<String, Object> cwlMap =
+                parseSourceFiles(workflowVersion.getWorkflowPath(), sourceFile.getContent(),
+                    workflowVersion.getSourceFiles());
+            return Optional.of(getInputs(cwlMap).stream()
+                .filter(input -> input.type().contains("File")).toList());
+        } catch (ClassCastException | YAMLException | JsonParseException ex) {
+            LOG.error("Error determining file inputs", ex);
+            return Optional.empty();
+        }
+    }
+
+    private List<Input> getInputs(Map<String, Object> cwlDoc) {
+        final Object inputs = cwlDoc.get("inputs");
+        if (inputs instanceof Map inputsMap) {
+            final Set<Map.Entry> set = inputsMap.entrySet();
+            return set.stream().map(entry -> {
+                final Object key = entry.getKey();
+                if (key instanceof String keyString) {
+                    final Object value = entry.getValue();
+                    if (value instanceof Map valueMap) {
+                        System.out.println("valueMap = " + valueMap);
+                        Object type = valueMap.get("type");
+                        Object secondaryFiles = valueMap.get("secondaryFiles");
+                        if (type instanceof String typeString) {
+                            return new Input(keyString, typeString);
+                        }
+                    }
+                }
+                return null;
+            }).filter(Objects::nonNull).toList();
+        }
+        return List.of();
+    }
+
     private Map<String, Object> findMainProcess(Map<String, Object> mapping) {
 
         // If the CWL is packed using the "$graph" syntax, the root is the process with id "#main":
@@ -1327,4 +1407,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             throw new CustomWebApplicationException(fullMessage, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
+    public record Input(String name, String type) {}
+
 }

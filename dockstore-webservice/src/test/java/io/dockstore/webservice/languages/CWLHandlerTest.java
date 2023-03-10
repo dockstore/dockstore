@@ -23,6 +23,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.languages.CWLHandler.Input;
 import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
@@ -31,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
@@ -425,7 +427,7 @@ class CWLHandlerTest {
      * Test that language versions are extracted from SourceFiles and set properly.
      */
     @Test
-    public void testLanguageVersionExtraction() throws IOException {
+    void testLanguageVersionExtraction() throws IOException {
         CWLHandler cwlHandler = new CWLHandler();
 
         final String resourceRoot = "multi-version-cwl";
@@ -448,5 +450,18 @@ class CWLHandlerTest {
         cwlHandler.parseWorkflowContent(noFile.getPath(), noFile.getContent(), Set.of(noFile), version);
         assertEquals(null, noFile.getMetadata().getTypeVersion());
         assertEquals(List.of(), version.getVersionMetadata().getDescriptorTypeVersions());
+    }
+
+    @Test
+    void testFileInputs() throws IOException {
+        final CWLHandler cwlHandler = new CWLHandler();
+        final String sourceFilePath = "metadata_example0.cwl";
+        final SourceFile sourceFile = createSourceFile("", sourceFilePath);
+        final WorkflowVersion workflowVersion = new WorkflowVersion();
+        workflowVersion.addSourceFile(sourceFile);
+        workflowVersion.setWorkflowPath(sourceFilePath);
+        workflowVersion.setValid(true);
+        final Optional<List<Input>> fileInputs = cwlHandler.getFileInputs(workflowVersion);
+        assertEquals(4, fileInputs.get().size());
     }
 }
