@@ -42,7 +42,7 @@ import scala.util.Try
   * Note: For simplicity, uses draft-3/v1.0 for throwing syntax errors from any language
   */
 class WdlBridge {
-  var secondaryWdlFiles = new util.HashMap[String, String]()
+  var secondaryWdlFiles: util.Map[String, String] = new util.HashMap[String, String]()
 
   def main(args: Array[String]): Unit = {
     println("WdlBridge")
@@ -52,7 +52,7 @@ class WdlBridge {
     * Set the secondary files (imports)
     * @param secondaryFiles
     */
-  def setSecondaryFiles(secondaryFiles: util.HashMap[String, String]): Unit = {
+  def setSecondaryFiles(secondaryFiles: util.Map[String, String]): Unit = {
     secondaryWdlFiles = secondaryFiles
   }
 
@@ -129,8 +129,16 @@ class WdlBridge {
   }
 
   /**
-    * Create a map of file inputs names to paths
-    * @param filePath absolute path to file
+    * Create a map of file input names to types. For example:
+   * <pre>
+   * "checkerWorkflow.input_crai_files" -> "Array[File]?"
+   * "checkerWorkflow.referenceFilesBlob" -> "File"
+   * "checkerWorkflow.input_cram_files" -> "Array[File]"
+   * "checkerWorkflow.inputTruthVCFFile" -> "File"
+   * "checkerWorkflow.variantcaller.referenceGenomeFilesTarGz" -> "Array[File]?"
+   * </pre>
+   *
+   * @param filePath absolute path to file
     * @throws wdl.draft3.parser.WdlParser.SyntaxError
     * @return mapping of file input name to type
     */
@@ -461,9 +469,9 @@ object WdlBridge {
   * Class for resolving imports defined in memory (mapping of path to content)
   */
 case class MapResolver(filePath: String) extends ImportResolver {
-  var secondaryWdlFiles = new util.HashMap[String, String]()
+  var secondaryWdlFiles: util.Map[String, String] = new util.HashMap[String, String]()
 
-  def setSecondaryFiles(secondaryFiles: util.HashMap[String, String]): Unit = {
+  def setSecondaryFiles(secondaryFiles: util.Map[String, String]): Unit = {
     secondaryWdlFiles = secondaryFiles
   }
 

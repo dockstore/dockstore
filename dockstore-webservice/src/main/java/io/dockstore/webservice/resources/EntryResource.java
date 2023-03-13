@@ -22,15 +22,11 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.AppTool;
-import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidPutCode;
-import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenScope;
@@ -97,6 +93,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
@@ -571,38 +568,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
 
         // Create title and link to entry
-
-        final String entryPath;
-        final String sitePath;
-        if (entry instanceof BioWorkflow bioWorkflow) {
-            entryPath = bioWorkflow.getWorkflowPath();
-            sitePath = "workflows/" + entryPath;
-        } else if (entry instanceof Notebook notebook) {
-            entryPath = notebook.getWorkflowPath();
-            sitePath = "notebooks/" + entryPath;
-        } else if (entry instanceof Service service) {
-            entryPath = service.getWorkflowPath();
-            sitePath = "services/" + entryPath;
-        } else if (entry instanceof AppTool appTool) {
-            entryPath = appTool.getWorkflowPath();
-            sitePath = "tools/" + entryPath;
-        } else if (entry instanceof Tool tool) {
-            entryPath = tool.getToolPath();
-            sitePath = "tools/" + entryPath;
-        } else {
-            LOG.error("Unknown entry type: {}", entry);
-            throw new CustomWebApplicationException("Unknown entry type", HttpStatus.SC_BAD_REQUEST);
-        }
-
+        final String entryPath = entry.getEntryPath();
         final String title = isProduction ? entryPath : (baseUrl + " " + entryPath);
-        final String entryLink = baseUrl + "/" + sitePath;
+        final String entryLink = baseUrl + "/" + entry.getEntryTypeMetadata().getSitePath() + "/" + entryPath;
 
         // Create description
-        String description = "";
-        if (entry.getDescription() != null) {
-            description = entry.getDescription() != null ? entry.getDescription().substring(0, Math.min(entry.getDescription().length(), maxDescriptionLength)) : "";
-        }
-
+        String description = StringUtils.defaultString(entry.getDescription());
+        description = StringUtils.truncate(description, maxDescriptionLength);
         description += "\n<hr>\n<small>This is a companion discussion topic for the original entry at <a href='" + entryLink + "'>" + title + "</a></small>\n";
 
         // Check that discourse is reachable

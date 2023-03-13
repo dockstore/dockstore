@@ -44,8 +44,14 @@ public class Service extends Workflow {
         return null;
     }
 
+    @Override
     public EntryType getEntryType() {
         return EntryType.SERVICE;
+    }
+
+    @Override
+    public EntryTypeMetadata getEntryTypeMetadata() {
+        return EntryTypeMetadata.SERVICE;
     }
 
     @Override

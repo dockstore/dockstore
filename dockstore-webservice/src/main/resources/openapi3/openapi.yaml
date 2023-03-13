@@ -3376,6 +3376,22 @@ paths:
       summary: Successful response if elastic search is up and running
       tags:
       - metadata
+  /metadata/entryTypeMetadataList:
+    get:
+      description: Get the metadata for each entry type
+      operationId: getEntryTypeMetadataList
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryTypeMetadata'
+          description: List of entry type metadata
+      summary: Get the metadata for each entry type
+      tags:
+      - metadata
   /metadata/health:
     get:
       description: "Successful response if the health checks succeed, NO authentication"
@@ -8063,6 +8079,10 @@ components:
             type: string
         email:
           type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         forumUrl:
           type: string
           maxLength: 256
@@ -8212,6 +8232,10 @@ components:
           type: string
         email:
           type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         gitUrl:
           type: string
         has_checker:
@@ -8315,6 +8339,10 @@ components:
           type: string
         email:
           type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         gitUrl:
           type: string
         has_checker:
@@ -8393,17 +8421,48 @@ components:
           items:
             type: object
           uniqueItems: true
+    EntryType:
+      type: string
+      description: Entry type
+      enum:
+      - TOOL
+      - WORKFLOW
+      - SERVICE
+      - APPTOOL
+      - NOTEBOOK
+    EntryTypeMetadata:
+      type: object
+      description: Information about an entry type
+      properties:
+        searchEntryType:
+          type: string
+          description: Search 'entryType' parameter value for this entry type
+        searchSupported:
+          type: boolean
+          description: Search support for this entry type
+        sitePath:
+          type: string
+          description: Relative path from the root of the site to the 'pages' where
+            entries of this type are displayed
+        term:
+          type: string
+          description: Singular term used to refer to an instance of this entry type
+        termPlural:
+          type: string
+          description: Plural term used to refer to instances of this entry type
+        trsPrefix:
+          type: string
+          description: TRS ID prefix for this entry type
+        trsSupported:
+          type: boolean
+          description: TRS support for this entry type
+        type:
+          $ref: '#/components/schemas/EntryType'
     EntryUpdateTime:
       type: object
       properties:
         entryType:
-          type: string
-          enum:
-          - TOOL
-          - WORKFLOW
-          - SERVICE
-          - APPTOOL
-          - NOTEBOOK
+          $ref: '#/components/schemas/EntryType'
         lastUpdateDate:
           type: integer
           format: int64
@@ -9119,6 +9178,8 @@ components:
         admin:
           type: boolean
         curator:
+          type: boolean
+        platformPartner:
           type: boolean
     Profile:
       type: object
@@ -9917,6 +9978,7 @@ components:
           type: string
         curator:
           type: boolean
+          description: Indicates whether this user is a curator
         id:
           type: integer
           format: int64
@@ -9926,6 +9988,9 @@ components:
           type: string
         orcid:
           type: string
+        platformPartner:
+          type: boolean
+          description: Indicates whether this account corresponds to a platform partner
         privacyPolicyVersion:
           type: string
           enum:
@@ -10155,6 +10220,8 @@ components:
             $ref: '#/components/schemas/ParsedInformation'
         publicAccessibleTestParameterFile:
           type: boolean
+          description: Whether the version has everything needed to run without restricted
+            access permissions
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -10241,6 +10308,10 @@ components:
           - n/a
         email:
           type: string
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         forumUrl:
           type: string
           maxLength: 256
@@ -10429,6 +10500,9 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
+        kernelImagePath:
+          type: string
+          description: User-specified notebook kernel image reference
         last_modified:
           type: integer
           format: int64
@@ -10469,13 +10543,6 @@ components:
           - BRANCH
           - NOT_APPLICABLE
           - UNSET
-        subClass:
-          type: string
-          enum:
-          - DOCKER_COMPOSE
-          - SWARM
-          - KUBERNETES
-          - HELM
         synced:
           type: boolean
         userFiles:

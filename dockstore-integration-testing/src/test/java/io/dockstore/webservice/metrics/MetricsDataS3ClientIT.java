@@ -315,7 +315,7 @@ public class MetricsDataS3ClientIT {
         assertEquals(1001, metricsDataList.size());
     }
 
-    private List<Execution> createExecutions(int numberOfExecutions) {
+    public static List<Execution> createExecutions(int numberOfExecutions) {
         List<Execution> executions = new ArrayList<>();
         for (int i = 0; i < numberOfExecutions; ++i) {
             // A successful execution that ran for 5 minutes, requires 2 CPUs and 2 GBs of memory

@@ -105,6 +105,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static final int SEARCH_TERM_LIMIT = 256;
     private static final int TOO_MANY_REQUESTS_429 = 429;
     private static final int ELASTICSEARCH_DEFAULT_LIMIT = 15;
+    public static final String COULD_NOT_SUBMIT_METRICS_DATA = "Could not submit metrics data";
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -449,8 +450,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);
             return Response.noContent().build();
         } catch (AwsServiceException | SdkClientException | JsonProcessingException | URISyntaxException e) {
-            LOG.error("Could not submit metrics data", e);
-            throw new CustomWebApplicationException("Could not submit metrics data", HttpStatus.SC_BAD_REQUEST);
+            LOG.error(COULD_NOT_SUBMIT_METRICS_DATA, e);
+            throw new CustomWebApplicationException(COULD_NOT_SUBMIT_METRICS_DATA, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
