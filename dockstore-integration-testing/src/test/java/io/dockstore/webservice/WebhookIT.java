@@ -1,6 +1,7 @@
 
 package io.dockstore.webservice;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -120,6 +121,23 @@ class WebhookIT extends BaseIT {
             assertTrue(message.contains("workflow"));
             assertTrue(message.contains("version"));
         }
+    }
+
+    @Test
+    void testWackyBranchCreationAndDeletion() {
+        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowClient = new WorkflowsApi(webClient);
+
+        // needs to be a branch to match branch deletion below
+        workflowClient.handleGitHubRelease("refs/heads/孤独のグルメ", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+
+        Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
+        assertEquals(1, foobar.getWorkflowVersions().size());
+
+        workflowClient.handleGitHubBranchDeletion(workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME, "refs/heads/孤独のグルメ", installationId);
+
+        foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
+        assertEquals(0, foobar.getWorkflowVersions().size());
     }
 
     @Test
