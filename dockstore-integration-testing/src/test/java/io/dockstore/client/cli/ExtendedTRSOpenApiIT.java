@@ -40,6 +40,7 @@ import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.CpuMetric;
+import io.dockstore.openapi.client.model.Execution;
 import io.dockstore.openapi.client.model.ExecutionStatusMetric;
 import io.dockstore.openapi.client.model.ExecutionTimeMetric;
 import io.dockstore.openapi.client.model.MemoryMetric;
@@ -49,6 +50,9 @@ import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
+import io.dockstore.webservice.metrics.MetricsDataS3ClientIT;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
+import java.util.List;
 import java.util.Map;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -178,6 +182,42 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertNotNull(workflowVersion.getMetricsByPlatform().get(platform2));
     }
 
+    @Test
+    void testPartnerPermissions() {
+        // Admin user
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        // Non-admin user
+        final ApiClient otherWebClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        final ExtendedGa4GhApi otherExtendedGa4GhApi = new ExtendedGa4GhApi(otherWebClient);
+
+        String id = String.format("#workflow/%s", DOCKSTORE_WORKFLOW_CNV_PATH);
+        String versionId = "master";
+        String platform = Partner.TERRA.name();
+
+        // setup and publish the workflow
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_WORKFLOW_CNV_REPO, "/workflow/cnv.cwl", null, "cwl",
+            "/test.json");
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        ExecutionStatusMetric executionStatusMetric = new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 1));
+        Metrics metrics = new Metrics().executionStatusCount(executionStatusMetric);
+
+        // Test that a non-admin/non-curator user can't put aggregated metrics
+        ApiException exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId));
+        assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Non-admin and non-curator user should not be able to put aggregated metrics");
+
+        // convert the user role and test that a platform partner can put aggregated metrics
+        testingPostgres.runUpdateStatement("update enduser set platformpartner = 't' where username = '" + OTHER_USERNAME + "'");
+        otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId);
+
+        // Add execution metrics for a workflow version for one platform
+        List<Execution> executions = MetricsDataS3ClientIT.createExecutions(1);
+        ApiException exception2 = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(executions, platform, id, versionId, "foo"));
+        // we were denied because S3 is not up and running in this class, not because of permissions issues
+        assertTrue(exception2.getMessage().contains(ToolsApiExtendedServiceImpl.COULD_NOT_SUBMIT_METRICS_DATA) && exception2.getCode() == HttpStatus.SC_BAD_REQUEST);
+    }
     @Test
     void testAggregatedMetricsPutErrors() {
         // Admin user

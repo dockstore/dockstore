@@ -24,6 +24,7 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.SourceFile;
@@ -82,7 +83,7 @@ public class ElasticListener implements StateListenerInterface {
     public static final String TOOLS_INDEX = "tools";
     public static final String WORKFLOWS_INDEX = "workflows";
     public static final String NOTEBOOKS_INDEX = "notebooks";
-    public static final List<String> INDEXES = List.of(TOOLS_INDEX, WORKFLOWS_INDEX, NOTEBOOKS_INDEX);
+    public static final List<String> INDEXES = EntryTypeMetadata.values().stream().filter(EntryTypeMetadata::isEsSupported).map(EntryTypeMetadata::getEsIndex).toList();
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
@@ -102,17 +103,11 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private String determineIndex(Entry entry) {
-        if (entry instanceof Tool || entry instanceof AppTool) {
-            return TOOLS_INDEX;
+        if (entry.getEntryTypeMetadata().isEsSupported()) {
+            return entry.getEntryTypeMetadata().getEsIndex();
+        } else {
+            return null;
         }
-        if (entry instanceof Notebook) {
-            return NOTEBOOKS_INDEX;
-        }
-        if (entry instanceof BioWorkflow) {
-            return WORKFLOWS_INDEX;
-        }
-        // Services are not currently indexed, see #2771
-        return null;
     }
 
     private List<Entry> filterEntriesByIndex(List<Entry> entries, String index) {

@@ -60,7 +60,7 @@ jobs:
           SNAPSHOT_DEPLOY_TOKEN: ${{ secrets.SNAPSHOT_DEPLOY_TOKEN }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: docker_checksum_upload_from_github

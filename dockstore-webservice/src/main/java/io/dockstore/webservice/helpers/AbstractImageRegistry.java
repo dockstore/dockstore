@@ -174,7 +174,7 @@ public abstract class AbstractImageRegistry {
         //  - belongs to user
         //  - correct registry
         //  - correct organization/namespace
-        List<Tool> manualTools = userTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).collect(Collectors.toList());
+        List<Tool> manualTools = userTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).toList();
         // notManualTools is similar except it's not manualMode
         List<Tool> notManualTools = userTools.stream().filter(tool -> !ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).collect(Collectors.toList());
         apiTools.addAll(manualTools);
@@ -224,8 +224,7 @@ public abstract class AbstractImageRegistry {
         List<Tool> userRegistryNamespaceRepositoryTools = toolDAO
                 .findByUserRegistryNamespaceRepository(userId, registryString, organization, repository);
         List<Tool> manualTools = userRegistryNamespaceRepositoryTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH
-                .equals(tool.getMode())).collect(
-                Collectors.toList());
+                .equals(tool.getMode())).toList();
         List<Tool> notManualTools = userRegistryNamespaceRepositoryTools.stream().filter(tool -> !ToolMode.MANUAL_IMAGE_PATH
                 .equals(tool.getMode())).collect(
                 Collectors.toList());

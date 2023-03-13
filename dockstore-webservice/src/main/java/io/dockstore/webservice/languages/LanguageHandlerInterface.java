@@ -30,18 +30,18 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.dockerhub.DockerHubImage;
 import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
+import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.DockerRegistryAPIHelper;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import io.swagger.quay.client.ApiClient;
 import io.swagger.quay.client.ApiException;
-import io.swagger.quay.client.Configuration;
 import io.swagger.quay.client.model.QuayTag;
 import java.io.IOException;
 import java.net.URL;
@@ -74,11 +74,9 @@ import org.yaml.snakeyaml.error.YAMLException;
  * This interface will be the future home of all methods that will need to be added to support a new workflow language
  */
 public interface LanguageHandlerInterface {
-    String QUAY_URL = "https://quay.io/api/v1/";
     String DOCKERHUB_URL = AbstractImageRegistry.DOCKERHUB_URL;
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
     Gson GSON = new Gson();
-    ApiClient API_CLIENT = Configuration.getDefaultApiClient();
     // public.ecr.aws/<registry_alias>/<repository_name>:<image_tag> -> public.ecr.aws/ubuntu/ubuntu:18.04
     // public.ecr.aws/<registry_alias>/<repository_name>@sha256:<image_digest>
     Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)([a-z0-9._-]++)/([a-z0-9._/-]++)(:|@sha256:)(.++)");
@@ -957,6 +955,22 @@ public interface LanguageHandlerInterface {
             return Optional.of(getJSONTableToolContent(nodeDockerInfo));
         }
 
+        return Optional.empty();
+    }
+
+    /**
+     * Indicates if the workflow version can be run without access controlled data. This includes
+     * <ul>
+     *     <li>A workflow with no input parameters</li>
+     *     <li>A workflow with input parameters, but none of them are file parameters</li>
+     *     <li>A workflow with file input parameters, and at least one test parameter file that has
+     *     publicly accessible urls for every file input parameter</li>
+     * </ul>
+     * @param workflowVersion
+     * @param checkUrlInterface
+     * @return if unable to determine, Optional.empty(), otherwise an non-empty boolean
+     */
+    default Optional<Boolean> isOpenData(WorkflowVersion workflowVersion, final CheckUrlInterface checkUrlInterface) {
         return Optional.empty();
     }
 

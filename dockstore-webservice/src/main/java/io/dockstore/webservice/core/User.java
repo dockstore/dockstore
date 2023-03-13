@@ -97,6 +97,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User>, Serializable {
+
+    public static final String INDICATES_WHETHER_THIS_USER_IS_A_CURATOR = "Indicates whether this user is a curator";
+    public static final String INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER = "Indicates whether this account corresponds to a platform partner";
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "enduser_id_seq")
     @SequenceGenerator(name = "enduser_id_seq", sequenceName = "enduser_id_seq", allocationSize = 1)
@@ -152,8 +155,14 @@ public class User implements Principal, Comparable<User>, Serializable {
     private final SortedSet<Entry> starredEntries;
 
     @Column(columnDefinition = "boolean default 'false'")
-    @ApiModelProperty(value = "Indicates whether this user is a curator", required = true, position = 11)
+    @ApiModelProperty(value = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR, required = true, position = 11)
+    @Schema(description = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR)
     private boolean curator;
+
+    @Column(columnDefinition = "boolean default 'false'")
+    @ApiModelProperty(value = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER, required = true, position = 18)
+    @Schema(description = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER)
+    private boolean platformPartner;
 
     @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
@@ -556,6 +565,14 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public void setUsernameChangeRequired(boolean usernameChangeRequired) {
         this.usernameChangeRequired = usernameChangeRequired;
+    }
+
+    public boolean isPlatformPartner() {
+        return platformPartner;
+    }
+
+    public void setPlatformPartner(boolean platformPartner) {
+        this.platformPartner = platformPartner;
     }
 
     /**

@@ -96,4 +96,11 @@ class MetadataResourceIT extends BaseIT {
 
         Assert.assertThrows(ApiException.class, () -> metadataApi.checkHealth(List.of("foobar")));
     }
+
+    @Test
+    void testEntryTypeMetadataList() {
+        ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();
+        MetadataApi metadataApi = new MetadataApi(anonymousApiClient);
+        assertEquals(io.dockstore.webservice.core.EntryTypeMetadata.values().size(), metadataApi.getEntryTypeMetadataList().size());
+    }
 }

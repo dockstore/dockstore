@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 
 /**
  * A notebook as described in a .dockstore.yml
@@ -33,8 +35,8 @@ public class YamlNotebook implements Workflowish {
     private String format = "jupyter";
     private String language = "python";
     private String path;
+    private String kernel;
     private String readMePath;
-
     private Boolean publish;
     private boolean latestTagAsDefault = false;
     private Filters filters = new Filters();
@@ -100,6 +102,22 @@ public class YamlNotebook implements Workflowish {
      */
     public void setPath(final String path) {
         this.path = path;
+    }
+
+    /**
+     * Get the kernel image reference for the notebook.
+     */
+    @Size(min = 1, message = "must not be empty")
+    @Pattern(regexp = "\\S++", message = "must not contain whitespace")
+    public String getKernel() {
+        return kernel;
+    }
+
+    /**
+     * Set the kernel image reference for the notebook.
+     */
+    public void setKernel(final String kernel) {
+        this.kernel = kernel;
     }
 
     public Boolean getPublish() {

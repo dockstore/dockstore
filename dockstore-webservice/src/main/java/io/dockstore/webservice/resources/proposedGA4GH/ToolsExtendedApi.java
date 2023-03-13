@@ -206,7 +206,7 @@ public class ToolsExtendedApi {
 
     @POST
     @UnitOfWork
-    @RolesAllowed({"curator", "admin"})
+    @RolesAllowed({"curator", "admin", "platformPartner"})
     @Path("/{id}/versions/{version_id}/executions")
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiOperation(value = ExecutionMetricsPost.SUMMARY, notes = ExecutionMetricsPost.DESCRIPTION, authorizations = {
@@ -235,7 +235,7 @@ public class ToolsExtendedApi {
 
     @PUT
     @UnitOfWork
-    @RolesAllowed({"curator", "admin"})
+    @RolesAllowed({"curator", "admin", "platformPartner"})
     @Path("/{id}/versions/{version_id}/aggregatedMetrics")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON})

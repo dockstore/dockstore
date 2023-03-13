@@ -3059,6 +3059,23 @@ paths:
       responses:
         default:
           description: "successful operation"
+  /metadata/entryTypeMetadataList:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get the metadata for each entry type"
+      description: ""
+      operationId: "getEntryTypeMetadataList"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/EntryTypeMetadata"
   /metadata/health:
     get:
       tags:
@@ -7087,6 +7104,18 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       forumUrl:
         type: "string"
         description: "This is a link to a forum or discussion board"
@@ -7354,6 +7383,18 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7488,6 +7529,31 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+  EntryTypeMetadata:
+    type: "object"
+    properties:
+      searchEntryType:
+        type: "string"
+      searchSupported:
+        type: "boolean"
+      sitePath:
+        type: "string"
+      term:
+        type: "string"
+      termPlural:
+        type: "string"
+      trsPrefix:
+        type: "string"
+      trsSupported:
+        type: "boolean"
+      type:
+        type: "string"
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
   EntryUpdateTime:
     type: "object"
     properties:
@@ -8935,6 +9001,7 @@ definitions:
     required:
     - "curator"
     - "isAdmin"
+    - "platformPartner"
     - "setupComplete"
     properties:
       id:
@@ -9002,6 +9069,10 @@ definitions:
         position: 17
         description: "Indicates whether the user is required to change their username\
           \ before being allowed to do various operations on Dockstore."
+      platformPartner:
+        type: "boolean"
+        position: 18
+        description: "Indicates whether this account corresponds to a platform partner"
     description: "End users for the dockstore"
   Validation:
     type: "object"
@@ -9249,6 +9320,8 @@ definitions:
           $ref: "#/definitions/ParsedInformation"
       publicAccessibleTestParameterFile:
         type: "boolean"
+        description: "Whether the version has everything needed to run without restricted\
+          \ access permissions"
       userIdToOrcidPutCode:
         type: "object"
         description: "The presence of the put code for a userid indicates the version\
@@ -9280,6 +9353,18 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       forumUrl:
         type: "string"
         description: "This is a link to a forum or discussion board"
@@ -9693,20 +9778,15 @@ definitions:
         position: 102
         description: "Remote: Last time version on GitHub repo was changed. Hosted:\
           \ time version created."
-      subClass:
-        type: "string"
-        position: 103
-        description: "The subclass of this for services."
-        enum:
-        - "DOCKER_COMPOSE"
-        - "SWARM"
-        - "KUBERNETES"
-        - "HELM"
       synced:
         type: "boolean"
         position: 105
         description: "Whether or not the version has been refreshed since its last\
           \ edit on Dockstore."
+      kernelImagePath:
+        type: "string"
+        position: 106
+        description: "User-specified notebook kernel image reference"
     description: "This describes one workflow version associated with a workflow."
   WorkflowVersionPathInfo:
     type: "object"

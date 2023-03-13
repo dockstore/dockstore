@@ -496,39 +496,39 @@ class SwaggerWebhookIT extends BaseIT {
             "Should not have a 0.2 version.");
 
         // Add version that doesn't exist
+        long failedCount = usersApi.getUserGitHubEvents("0", 10).stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count();
         try {
             client.handleGitHubRelease("refs/heads/idonotexist", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
             fail("Should fail and not reach this point");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            List<io.dockstore.openapi.client.model.LambdaEvent> failureEvents = usersApi.getUserGitHubEvents("0", 10);
-            assertEquals(1, failureEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be 1 unsuccessful event");
+            assertEquals(failedCount + 1, usersApi.getUserGitHubEvents("0", 10).stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be one more unsuccessful event than before");
         }
 
-        // There should be 5 successful lambda events
+        // There should be 7 successful lambda events
         List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
-        assertEquals(6, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be 5 successful events");
+        assertEquals(7, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be 7 successful events");
 
         // Test pagination for user github events
         events = usersApi.getUserGitHubEvents("2", 2);
-        assertEquals(2, events.size(), "There should be 2 events (id 3 and 4)");
-        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())), "Should have event with ID 4");
-        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(5L, lambdaEvent.getId())), "Should have event with ID 5");
+        assertEquals(2, events.size(), "There should be 2 events (id 8 and 9)");
+        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(8L, lambdaEvent.getId())), "Should have event with ID 8");
+        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(9L, lambdaEvent.getId())), "Should have event with ID 9");
 
         // Test the organization events endpoint
         List<io.dockstore.openapi.client.model.LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
-        assertEquals(7, orgEvents.size(), "There should be 7 events");
+        assertEquals(10, orgEvents.size(), "There should be 10 events");
 
         // Test pagination
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "2", 2);
-        assertEquals(2, orgEvents.size(), "There should be 2 events (id 3 and 4)");
-        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())), "Should have event with ID 4");
-        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(5L, lambdaEvent.getId())), "Should have event with ID 5");
+        assertEquals(2, orgEvents.size(), "There should be 2 events (id 8 and 9)");
+        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(8L, lambdaEvent.getId())), "Should have event with ID 8");
+        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(9L, lambdaEvent.getId())), "Should have event with ID 9");
 
         // Change organization to test filter
         testingPostgres.runUpdateStatement("UPDATE lambdaevent SET repository = 'workflow-dockstore-yml', organization = 'DockstoreTestUser3' WHERE id = '1'");
 
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
-        assertEquals(6, orgEvents.size(), "There should now be 6 events");
+        assertEquals(10, orgEvents.size(), "There should now be 10 events");
 
         try {
             lambdaEventsApi.getLambdaEventsByOrganization("IAmMadeUp", "0", 10);

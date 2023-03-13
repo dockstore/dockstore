@@ -49,6 +49,11 @@ public class AppTool extends Workflow {
     }
 
     @Override
+    public EntryTypeMetadata getEntryTypeMetadata() {
+        return EntryTypeMetadata.APPTOOL;
+    }
+
+    @Override
     public Entry getParentEntry() {
         return null;
     }

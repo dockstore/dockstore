@@ -36,12 +36,12 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.CheckUrlHelper;
-import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
+import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -58,6 +58,8 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.swagger.annotations.Api;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -69,7 +71,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -115,7 +116,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     protected final String bitbucketClientSecret;
     protected final String bitbucketClientID;
-    protected final String checkUrlLambdaUrl;
+    private CheckUrlInterface checkUrlInterface = null;
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, EntryResource entryResource,
             DockstoreWebserviceConfiguration configuration) {
@@ -136,8 +137,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
         gitHubAppId = configuration.getGitHubAppId();
-        this.checkUrlLambdaUrl = configuration.getCheckUrlLambdaUrl();
-
+        final String lambdaUrl = configuration.getCheckUrlLambdaUrl();
+        if (lambdaUrl != null) {
+            this.checkUrlInterface = new LambdaUrlChecker(lambdaUrl);
+        }
     }
 
     protected SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
@@ -203,17 +206,20 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     workflowVersionFromDB.setToolTableJson(null);
                     workflowVersionFromDB.setDagJson(null);
 
-                    updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
+                    updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version, newWorkflow.getDescriptorType());
                 });
     }
 
     /**
      * Updates the sourcefiles in the database to match the sourcefiles on the remote
+     *
      * @param existingVersion
      * @param remoteVersion
+     * @param descriptorType
      * @return WorkflowVersion with updated sourcefiles
      */
-    private WorkflowVersion updateDBVersionSourceFilesWithRemoteVersionSourceFiles(WorkflowVersion existingVersion, WorkflowVersion remoteVersion) {
+    private WorkflowVersion updateDBVersionSourceFilesWithRemoteVersionSourceFiles(WorkflowVersion existingVersion, WorkflowVersion remoteVersion,
+        final DescriptorLanguage descriptorType) {
         // Update source files for each version
         Map<String, SourceFile> existingFileMap = new HashMap<>();
         existingVersion.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getAbsolutePath(), file));
@@ -250,8 +256,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         // Setup CheckUrl
-        if (checkUrlLambdaUrl != null) {
-            publicAccessibleUrls(existingVersion, checkUrlLambdaUrl);
+        if (checkUrlInterface != null) {
+            publicAccessibleUrls(existingVersion, checkUrlInterface, descriptorType);
         }
 
         return existingVersion;
@@ -259,38 +265,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Sets the publicly accessible URL version metadata.
-     * If at least one test parameter file is publicly accessible, then version metadata is true
-     * If there's 1+ test parameter file that is null but there's no false, then version metadata is null
-     * If there's 1+ test parameter file that is false, then version metadata is false
+     * <ul>
+     *     <li>If at least one test parameter file is publicly accessible, then version metadata is true</li>
+     *     <li>If there's 1+ test parameter file that is null but there's no false, then version metadata is null</li>
+     *     <li>If there's 1+ test parameter file that is false, then version metadata is false</li>
+     * </ul>
      *
      * @param existingVersion   Hibernate initialized version
-     * @param checkUrlLambdaUrl URL of the checkUrl lambda
+     * @param checkUrlInterface URL of the checkUrl lambda
+     * @param descriptorType
      */
-    public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl) {
-        Boolean publicAccessibleTestParameterFile = null;
-        Iterator<SourceFile> sourceFileIterator = existingVersion.getSourceFiles().stream().filter(sourceFile -> sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)).iterator();
-        while (sourceFileIterator.hasNext()) {
-            SourceFile sourceFile = sourceFileIterator.next();
-            Optional<Boolean> publicAccessibleUrls = Optional.empty();
-            if (sourceFile.getAbsolutePath().endsWith(".json")) {
-                publicAccessibleUrls =
-                    CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl, TestFileType.JSON);
-            } else {
-                if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
-                    publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
-                        TestFileType.YAML);
-                }
-            }
-            // Do not care about null, it will never override a true/false
-            if (publicAccessibleUrls.isPresent()) {
-                publicAccessibleTestParameterFile = publicAccessibleUrls.get();
-                if (Boolean.TRUE.equals(publicAccessibleUrls.get())) {
-                    // If the current test parameter file is publicly accessible, then all previous and future ones don't matter
-                    break;
-                }
-            }
-        }
-        existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleTestParameterFile);
+    public static void publicAccessibleUrls(WorkflowVersion existingVersion,
+        final CheckUrlInterface checkUrlInterface, final DescriptorLanguage descriptorType) {
+        final LanguageHandlerInterface languageHandler = LanguageHandlerFactory.getInterface(descriptorType);
+        final Optional<Boolean> hasPublicData = languageHandler.isOpenData(existingVersion, checkUrlInterface);
+        existingVersion.getVersionMetadata()
+            .setPublicAccessibleTestParameterFile(hasPublicData.orElse(null));
     }
 
     /**
@@ -371,9 +361,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param username Username of GitHub user that triggered action
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId GitHub App installation ID
+     * @param throwIfNotSuccessful throw if the release was not entirely successful
      * @return List of new and updated workflows
      */
-    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId) {
+    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, boolean throwIfNotSuccessful) {
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
@@ -424,7 +415,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
         }
 
-        if (!isSuccessful) {
+        if (!isSuccessful && throwIfNotSuccessful) {
             throw new CustomWebApplicationException("At least one entry in .dockstore.yml could not be processed.", LAMBDA_FAILURE);
         }
     }
@@ -499,7 +490,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId Installation id needed to setup GitHub apps
-     * @param username Name of user that triggered action
+     * @param username       Name of user that triggered action
      * @param dockstoreYml
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
@@ -779,17 +770,18 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
                 existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
                 existingWorkflowVersion.setAliases(remoteWorkflowVersion.getAliases());
-                existingWorkflowVersion.setSubClass(remoteWorkflowVersion.getSubClass());
                 existingWorkflowVersion.setCommitID(remoteWorkflowVersion.getCommitID());
                 existingWorkflowVersion.setDagJson(null);
                 existingWorkflowVersion.setToolTableJson(null);
                 existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
-                updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
+                existingWorkflowVersion.setKernelImagePath(remoteWorkflowVersion.getKernelImagePath());
+                updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion,
+                    workflow.getDescriptorType());
                 updatedWorkflowVersion = existingWorkflowVersion;
             } else {
-                if (checkUrlLambdaUrl != null) {
-                    publicAccessibleUrls(remoteWorkflowVersion, checkUrlLambdaUrl);
+                if (checkUrlInterface != null) {
+                    publicAccessibleUrls(remoteWorkflowVersion, checkUrlInterface, workflow.getDescriptorType());
                 }
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
                 updatedWorkflowVersion = remoteWorkflowVersion;

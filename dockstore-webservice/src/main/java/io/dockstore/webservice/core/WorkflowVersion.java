@@ -21,13 +21,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -83,12 +86,10 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Whether or not the version has been refreshed since its last edit on Dockstore.", position = 105)
     private boolean synced = false;
 
-    /**
-     * In theory, this should be in a ServiceVersion.
-     * In practice, our use of generics caused this to mess up bigtype, so we'll prototype with this for now.
-     */
-    @ApiModelProperty(value = "The subclass of this for services.", position = 103)
-    private Service.SubClass subClass = null;
+    @Column
+    @ApiModelProperty(value = "User-specified notebook kernel image reference", position = 106)
+    @Schema(description = "User-specified notebook kernel image reference")
+    private String kernelImagePath;
 
     @JsonIgnore
     @Column(columnDefinition = "TEXT")
@@ -100,6 +101,26 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public WorkflowVersion() {
         super();
+    }
+
+    /**
+     * Finds the primary descriptor.
+     * @return
+     */
+    public Optional<SourceFile> findPrimaryDescriptor() {
+        return getSourceFiles().stream()
+            .filter(sf -> Objects.equals(sf.getPath(), getWorkflowPath()))
+            .findFirst();
+    }
+
+    /**
+     * Finds all test files in a workflow version
+     * @return
+     */
+    public List<SourceFile> findTestFiles() {
+        return getSourceFiles().stream()
+            .filter(sf -> sf.getType().getCategory().equals(FileTypeCategory.TEST_FILE))
+            .toList();
     }
 
     @Override
@@ -184,14 +205,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         return MoreObjects.toStringHelper(this).add("id", id).add("name", this.getName()).add("reference", this.getReference()).toString();
     }
 
-    public Service.SubClass getSubClass() {
-        return subClass;
-    }
-
-    public void setSubClass(Service.SubClass subClass) {
-        this.subClass = subClass;
-    }
-
     public Date getLastModified() {
         return lastModified;
     }
@@ -240,6 +253,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         this.synced = synced;
     }
 
+    public String getKernelImagePath() {
+        return kernelImagePath;
+    }
+
+    public void setKernelImagePath(String kernelImagePath) {
+        this.kernelImagePath = kernelImagePath;
+    }
+
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "
             + "contains the Dockstore path to the workflow and the version tag name.")
     public static final class WorkflowVersionPathInfo {
@@ -261,4 +282,5 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
             return tagName;
         }
     }
+
 }
