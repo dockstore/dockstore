@@ -295,6 +295,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         }
     }
 
+    /**
+     * Use this sparingly. Generally, we want the application under test to be as similar to production as possible.
+     * However, sometimes it is necessary to trigger different behaviour due to test limitations/edge cases.
+     * @return true if we're running on CircleCI
+     */
     public static boolean runningOnCircleCI() {
         return System.getenv(CIRCLE_SHA_1) != null;
     }    
