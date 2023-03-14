@@ -868,7 +868,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "getStarredNotebooks", description = "Get the authenticated user's starred notebooks.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "A list of the authenticated user's starred notebooks", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Entry.class))))
-    @ApiOperation(value = "Get the authenticated user's starred notebooks.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
+    @ApiOperation(value = "Get the authenticated user's starred notebooks.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredNotebooks(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
