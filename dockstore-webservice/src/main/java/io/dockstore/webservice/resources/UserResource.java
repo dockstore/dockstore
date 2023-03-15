@@ -26,6 +26,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
@@ -842,8 +843,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return u.getStarredEntries().stream().filter(element -> element instanceof Tool || element instanceof AppTool)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return this.getStarredEntries(u, EntryType.TOOL); //This includes AppTools since it runs the else case in helper function
     }
 
     @GET
@@ -857,8 +857,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return u.getStarredEntries().stream().filter(element -> element instanceof BioWorkflow)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return this.getStarredEntries(u, EntryType.WORKFLOW);
     }
 
     @GET
@@ -873,8 +872,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredNotebooks(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return u.getStarredEntries().stream().filter(element -> element instanceof Notebook)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return this.getStarredEntries(u, EntryType.NOTEBOOK);
     }
 
     @GET
@@ -888,8 +886,24 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return u.getStarredEntries().stream().filter(element -> element instanceof Service)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return this.getStarredEntries(u, EntryType.SERVICE);
+    }
+
+    //helper for getStarred endpoints
+    public Set<Entry> getStarredEntries(User user, EntryType entryType) {
+        if (entryType == EntryType.WORKFLOW) {
+            return user.getStarredEntries().stream().filter(element -> element instanceof BioWorkflow)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        } else if (entryType == EntryType.SERVICE) {
+            return user.getStarredEntries().stream().filter(element -> element instanceof Service)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        } else if (entryType == EntryType.NOTEBOOK) {
+            return user.getStarredEntries().stream().filter(element -> element instanceof Notebook)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        } else { // else would either be Tool or AppTool
+            return user.getStarredEntries().stream().filter(element -> element instanceof Tool || element instanceof AppTool)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        }
     }
 
     @GET
