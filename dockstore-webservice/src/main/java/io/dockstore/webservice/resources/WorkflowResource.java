@@ -1367,10 +1367,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     }
 
                     if (toolsJSONTable.isPresent()) {
-                        // Check that a snapshot can occur (all images are referenced by tag or digest)
+                        // TODO code to refactor
                         lInterface.checkSnapshotImages(existingTag.getName(), toolsJSONTable.get());
 
                         Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable.get());
+                        existingTag.getImages().addAll(images);
+                    }
+
+                    // If there is a notebook kernel image, attempt to snapshot it.
+                    if (version.getKernelPath() != null) {
+                        // TODO code to refactor
+                        String kernelToolsJson = convertImageToToolsJson(version.getKernelPath());
+                        lInterface.checkSnapshotImages(existingTag.getName(), kernelToolsJson);
+
+                        Set<Image> images = lInterface.getImagesFromRegistry(kernelToolsJson);
                         existingTag.getImages().addAll(images);
                     }
 
@@ -1390,6 +1400,24 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
+    }
+
+    // TODO refactor duplicate code above to checkAndAddImages(...?
+
+    private void checkAndAddImages(WorkflowVersion version, String toolsJson, LanguageHandlerInterface languageHandler) {
+         // Check that a snapshot can occur (all images are referenced by tag or digest)
+         languageHandler.checkSnapshotImages(version.getName(), toolsJson);
+         // Retrieve the images
+         Set<Image> images = languageHandler.getImagesFromRegistry(toolsJson);
+         // Add them to the version
+         version.getImages().addAll(images);
+    }
+
+    private String convertImageToToolsJson(String image, LanguageHandlerInterface languageHandler) {
+        // TODO
+        // see CWLHandler
+        // need to create DockerInfo
+        // use methods getURLFromEntry and determineImageSpecifier
     }
 
     @GET
