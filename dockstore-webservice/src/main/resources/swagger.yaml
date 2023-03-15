@@ -8778,12 +8778,13 @@ definitions:
       type:
         type: "string"
         enum:
-        - "SMK"
         - "CWL"
         - "WDL"
         - "NFL"
+        - "GALAXY"
+        - "SMK"
         - "SERVICE"
-        - "GXFORMAT2"
+        - "JUPYTER"
       url:
         type: "string"
         example: "https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl"
