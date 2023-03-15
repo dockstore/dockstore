@@ -44,8 +44,8 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
+import io.dockstore.webservice.helpers.CheckUrlInterface.UrlStatus;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,6 +54,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpStatus;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -978,17 +980,55 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return Optional.of(true);
         }
         final List<SourceFile> testFiles = workflowVersion.findTestFiles();
-        if (testFiles.isEmpty()) {
-            return Optional.of(false); // There are file inputs, but no test parameter files provided
+        final UrlStatus urlStatus = UrlStatus.UNKNOWN; //anyTestFileHasAllOpenData(fileInputs.get(), testFiles, checkUrlInterface);
+        if (UrlStatus.UNKNOWN == urlStatus) {
+            return Optional.empty();
         }
-        return Optional.of(testFiles.stream().anyMatch(testFile -> {
-            final Optional<JSONObject> jsonObject = SourceFileHelper.testFileAsJsonObject(testFile);
-            if (jsonObject.isEmpty()) {
-                return false;
-            }
-            return false;
-        }));
+        return Optional.of(urlStatus == UrlStatus.ALL_OPEN);
     }
+
+    List<String> possibleUrlsFromTestParameterFile(JSONObject testParameterFile, List<String> fileInputNames) {
+        for (Iterator<String> it = testParameterFile.keys(); it.hasNext(); ) {
+            final String key = it.next();
+            if (fileInputNames.contains(key)) {
+                final Object object = testParameterFile.get(key);
+                if (isFileParameter(object)) {
+                    System.out.println("((JSONObject)object).get(\"path\") = " + ((JSONObject)object).get("path"));
+                } else if (object instanceof JSONArray jsonArray) {
+                    System.out.println("jsonArray = " + jsonArray);
+                }
+            }
+        }
+        return List.of();
+    }
+
+    private boolean isFileParameter(Object obj) {
+        if (obj instanceof JSONObject jsonObject) {
+            return jsonObject.has("class") && jsonObject.get("class").toString().contains("File")
+                && jsonObject.has("path") && jsonObject.get("path") instanceof String;
+        }
+        return false;
+    }
+
+    //    private UrlStatus anyTestFileHasAllOpenData(List<Input> fileInputs, List<SourceFile> testFiles, CheckUrlInterface checkUrlInterface) {
+    //        final List<JSONObject> jsonObjects = testFiles.stream()
+    //            .map(SourceFileHelper::testFileAsJsonObject)
+    //            .filter(Optional::isPresent)
+    //            .map(Optional::get).toList();
+    //        for (JSONObject jsonObject: jsonObjects) {
+    //            fileInputs.forEach(fileInput -> {
+    //                if (jsonObject.has(fileInput.name())) {
+    //                    final Object obj = jsonObject.get(fileInput.name());
+    //                    if (obj instanceof JSONObject fileObj) {
+    //
+    //                    } else if (obj instanceof JSONArray fileArray) {
+    //
+    //                    }
+    //                }
+    //            });
+    //        }
+    //        return UrlStatus.NOT_ALL_OPEN;
+    //    }
 
     /**
      * Returns an Optional list of the workflow version's file inputs. If the primary descriptor
@@ -998,11 +1038,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      * @return
      */
     Optional<List<Input>> getFileInputs(WorkflowVersion workflowVersion) {
-        final Optional<SourceFile> primaryDescriptor1 = workflowVersion.findPrimaryDescriptor();
-        if (primaryDescriptor1.isEmpty()) {
+        final Optional<SourceFile> primaryDescriptor = workflowVersion.findPrimaryDescriptor();
+        if (primaryDescriptor.isEmpty()) {
             return Optional.empty();
         }
-        final SourceFile sourceFile = primaryDescriptor1.get();
+        final SourceFile sourceFile = primaryDescriptor.get();
         try {
             final Map<String, Object> cwlMap =
                 parseSourceFiles(workflowVersion.getWorkflowPath(), sourceFile.getContent(),
@@ -1020,15 +1060,17 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         if (inputs instanceof Map inputsMap) {
             final Set<Map.Entry> set = inputsMap.entrySet();
             return set.stream().map(entry -> {
-                final Object key = entry.getKey();
-                if (key instanceof String keyString) {
-                    final Object value = entry.getValue();
-                    if (value instanceof Map valueMap) {
-                        System.out.println("valueMap = " + valueMap);
-                        Object type = valueMap.get("type");
-                        Object secondaryFiles = valueMap.get("secondaryFiles");
-                        if (type instanceof String typeString) {
-                            return new Input(keyString, typeString);
+                if (entry.getKey() instanceof String inputName) {
+                    if (entry.getValue() instanceof Map valueMap) {
+                        if (valueMap.get("type") instanceof String typeString) {
+                            return new Input(inputName, typeString);
+                        } else if (valueMap.get("type") instanceof Map typeMap) {
+                            if (typeMap.containsKey("type") && typeMap.containsKey("items")) {
+                                if ("array".equals(typeMap.get("type"))) {
+                                    final Object itemsStr = typeMap.get("items");
+                                    return  new Input(inputName, itemsStr + "[]");
+                                }
+                            }
                         }
                     }
                 }

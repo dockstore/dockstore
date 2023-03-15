@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
-import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
@@ -22,6 +22,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.CWLHandler.Input;
 import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
@@ -37,6 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -368,11 +370,11 @@ class CWLHandlerTest {
 
         // create and mock parameters for getContent()
         final String resourceRoot = "requirements-and-hints";
-        final SourceFile parentFile = createSourceFile(resourceRoot, "/parent.cwl");
+        final SourceFile parentFile = createSourceFile(resourceRoot, "/parent.cwl", FileType.DOCKSTORE_CWL);
         final Set<SourceFile> secondarySourceFiles = Set.of(
-            createSourceFile(resourceRoot, "/requirement.cwl"),
-            createSourceFile(resourceRoot, "/hint.cwl"),
-            createSourceFile(resourceRoot, "/none.cwl"));
+            createSourceFile(resourceRoot, "/requirement.cwl", FileType.DOCKSTORE_CWL),
+            createSourceFile(resourceRoot, "/hint.cwl", FileType.DOCKSTORE_CWL),
+            createSourceFile(resourceRoot, "/none.cwl", FileType.DOCKSTORE_CWL));
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
 
         // determine the tool information from the "repo"
@@ -394,13 +396,13 @@ class CWLHandlerTest {
         assertEquals(3 * 3 - 1, tools.size(), "there should be a dockerPull for all workflow steps except the one with no requirements/hints");
     }
 
-    private SourceFile createSourceFile(String resourceRoot, String sourceFilePath) throws IOException {
+    private SourceFile createSourceFile(String resourceRoot, String sourceFilePath, FileType fileType) throws IOException {
         String content = FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath(resourceRoot + sourceFilePath)), StandardCharsets.UTF_8);
         final SourceFile sourceFile = new SourceFile();
         sourceFile.setPath(sourceFilePath);
         sourceFile.setAbsolutePath(sourceFilePath);
         sourceFile.setContent(content);
-        sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        sourceFile.setType(fileType);
         return sourceFile;
     }
 
@@ -412,11 +414,11 @@ class CWLHandlerTest {
         CWLHandler cwlHandler = new CWLHandler();
 
         final String resourceRoot = "workflow-id-slashes";
-        final SourceFile primaryFile = createSourceFile(resourceRoot, "/main.cwl");
+        final SourceFile primaryFile = createSourceFile(resourceRoot, "/main.cwl", FileType.DOCKSTORE_CWL);
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
 
         String toolTableContent = cwlHandler.getContent(primaryFile.getAbsolutePath(), primaryFile.getContent(), Set.of(
-            createSourceFile(resourceRoot, "/tool.cwl")), LanguageHandlerInterface.Type.TOOLS, toolDAO).get();
+            createSourceFile(resourceRoot, "/tool.cwl", FileType.DOCKSTORE_CWL)), LanguageHandlerInterface.Type.TOOLS, toolDAO).get();
         assertTrue(toolTableContent.contains("step_name"), "step id should be part of tool table content");
 
         String dagContent = cwlHandler.getContent(primaryFile.getAbsolutePath(), primaryFile.getContent(), Set.of(), LanguageHandlerInterface.Type.DAG, toolDAO).get();
@@ -431,9 +433,9 @@ class CWLHandlerTest {
         CWLHandler cwlHandler = new CWLHandler();
 
         final String resourceRoot = "multi-version-cwl";
-        final SourceFile manyFile = createSourceFile(resourceRoot, "/many-version.cwl");
-        final SourceFile oneFile = createSourceFile(resourceRoot, "/one-version.cwl");
-        final SourceFile noFile = createSourceFile(resourceRoot, "/no-version.cwl");
+        final SourceFile manyFile = createSourceFile(resourceRoot, "/many-version.cwl", FileType.DOCKSTORE_CWL);
+        final SourceFile oneFile = createSourceFile(resourceRoot, "/one-version.cwl", FileType.DOCKSTORE_CWL);
+        final SourceFile noFile = createSourceFile(resourceRoot, "/no-version.cwl", FileType.DOCKSTORE_CWL);
 
         // Test multiple files containing many versions.
         final Version version = new WorkflowVersion();
@@ -456,12 +458,36 @@ class CWLHandlerTest {
     void testFileInputs() throws IOException {
         final CWLHandler cwlHandler = new CWLHandler();
         final String sourceFilePath = "metadata_example0.cwl";
-        final SourceFile sourceFile = createSourceFile("", sourceFilePath);
+        final SourceFile sourceFile = createSourceFile("", sourceFilePath, FileType.DOCKSTORE_CWL);
         final WorkflowVersion workflowVersion = new WorkflowVersion();
         workflowVersion.addSourceFile(sourceFile);
         workflowVersion.setWorkflowPath(sourceFilePath);
         workflowVersion.setValid(true);
-        final Optional<List<Input>> fileInputs = cwlHandler.getFileInputs(workflowVersion);
-        assertEquals(4, fileInputs.get().size());
+        final List<Input> fileInputs = cwlHandler.getFileInputs(workflowVersion).get();
+        assertEquals(List.of("tumor", "refFrom", "bbFrom", "normal"), fileInputs.stream().map(Input::name).toList());
+    }
+
+    @Test
+    void testArrayFileInputs() throws IOException {
+        final CWLHandler cwlHandler = new CWLHandler();
+        final String sourceFilePath = "array-inputs.cwl";
+        final SourceFile sourceFile = createSourceFile("", sourceFilePath, FileType.DOCKSTORE_CWL);
+        final WorkflowVersion workflowVersion = new WorkflowVersion();
+        workflowVersion.addSourceFile(sourceFile);
+        workflowVersion.setWorkflowPath(sourceFilePath);
+        workflowVersion.setValid(true);
+        final List<Input> fileInputs = cwlHandler.getFileInputs(workflowVersion).get();
+        assertEquals(List.of("filesA", "filesB", "filesC"), fileInputs.stream().map(Input::name).toList());
+    }
+
+    @Test
+    void testHasOpenData() throws IOException {
+        final CWLHandler cwlHandler = new CWLHandler();
+        final SourceFile testSourceFile =
+            createSourceFile("", "topmed_freeze_calling.json", FileType.CWL_TEST_JSON);
+        final WorkflowVersion workflowVersion = new WorkflowVersion();
+        final Optional<JSONObject> jsonObject =
+            SourceFileHelper.testFileAsJsonObject(testSourceFile);
+        cwlHandler.possibleUrlsFromTestParameterFile(jsonObject.get(), List.of("reads", "bam_cram_file"));
     }
 }
