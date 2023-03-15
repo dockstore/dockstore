@@ -39,7 +39,13 @@
     {
       "path": "https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/data_for_testing/hg19.chr22.5x.normal2.bam",
       "basename": "hg19.chr22.5x.normal2.bam",
-      "class": "File"
+      "class": "File",
+      "secondaryFiles": [
+        {
+          "class": "File",
+          "path": "gs://bcbiodata/wes_agha_test/NA12878-ready_exome21.bam.bai"
+        }
+      ]
     }
   ]
 }
