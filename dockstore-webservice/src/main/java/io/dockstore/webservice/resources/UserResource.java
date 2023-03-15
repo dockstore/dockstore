@@ -889,7 +889,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return this.getStarredEntries(u, EntryType.SERVICE);
     }
 
-    //helper for getStarred endpoints
+    /**
+     * Helper function for getStarred endpoints
+     *
+     * @param user
+     * @param entryType
+     * @return a user's starredEntries for desired entryType
+     */
     public Set<Entry> getStarredEntries(User user, EntryType entryType) {
         if (entryType == EntryType.WORKFLOW) {
             return user.getStarredEntries().stream().filter(element -> element instanceof BioWorkflow)
