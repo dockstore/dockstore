@@ -898,13 +898,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      */
     public Set<Entry> getStarredEntries(User user, EntryType entryType) {
         if (entryType == EntryType.WORKFLOW) {
-            return user.getStarredEntries().stream().filter(element -> element instanceof BioWorkflow)
+            return user.getStarredEntries().stream().filter(BioWorkflow.class::isInstance)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
         } else if (entryType == EntryType.SERVICE) {
-            return user.getStarredEntries().stream().filter(element -> element instanceof Service)
+            return user.getStarredEntries().stream().filter(Service.class::isInstance)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
         } else if (entryType == EntryType.NOTEBOOK) {
-            return user.getStarredEntries().stream().filter(element -> element instanceof Notebook)
+            return user.getStarredEntries().stream().filter(Notebook.class::isInstance)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
         } else { // else would either be Tool or AppTool
             return user.getStarredEntries().stream().filter(element -> element instanceof Tool || element instanceof AppTool)
