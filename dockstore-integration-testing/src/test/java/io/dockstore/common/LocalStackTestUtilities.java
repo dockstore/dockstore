@@ -20,11 +20,14 @@ package io.dockstore.common;
 import cloud.localstack.docker.annotation.IEnvironmentVariableProvider;
 import java.util.List;
 import java.util.Map;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 public final class LocalStackTestUtilities {
@@ -53,6 +56,16 @@ public final class LocalStackTestUtilities {
         ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).build();
         ListObjectsV2Response listObjectsV2Response = s3Client.listObjectsV2(request);
         return listObjectsV2Response.contents();
+    }
+
+    public static PutObjectResponse putObject(S3Client s3Client, String bucketName, String key, Map<String, String> metadata, String content) {
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .metadata(metadata)
+                .build();
+        RequestBody requestBody = RequestBody.fromString(content);
+        return s3Client.putObject(request, requestBody);
     }
 
     public static class LocalStackEnvironmentVariables implements IEnvironmentVariableProvider {
