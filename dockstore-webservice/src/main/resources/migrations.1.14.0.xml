@@ -384,4 +384,14 @@
     <changeSet author="svonworl" id="dropSubclassFromWorkflowVersion">
         <dropColumn columnName="subclass" tableName="workflowversion"/>
     </changeSet>
+    <changeSet author="dyuen (generated)" id="default_jointable_timestamps">
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="collection_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="entry_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="organization_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="workflowversion_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="entry_orcidputcode"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="sourcefile_verified"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="user_profile"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="version_metadata_orcidputcode"/>
+    </changeSet>
 </databaseChangeLog>
