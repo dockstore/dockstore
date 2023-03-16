@@ -1080,26 +1080,33 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      */
     private List<DescriptorInput> getInputs(Map<String, Object> cwlDoc) {
         if (cwlDoc.get(INPUTS_PROPERTY) instanceof Map inputsMap) {
-            return ((Set<Entry>) inputsMap.entrySet()).stream().map(entry -> {
-                if (entry.getKey() instanceof String inputName) {
+            return ((Set<Entry>) inputsMap.entrySet()).stream()
+                .filter(entry -> entry.getKey() instanceof String)
+                .map(entry -> {
+                    final String inputName = (String) entry.getKey();
                     if (entry.getValue() instanceof String valueString) { // Case 1 from JavaDoc
                         return new DescriptorInput(inputName, valueString);
                     } else if (entry.getValue() instanceof Map valueMap) { // Case 2 and 3 from JavaDoc
-                        if (valueMap.get(TYPE_PROPERTY) instanceof String typeString) { // Case 2
-                            return new DescriptorInput(inputName, typeString);
-                        } else if (valueMap.get(TYPE_PROPERTY) instanceof Map typeMap && isArrayType(typeMap)) { // Case 3
-                            final Object itemsStr = typeMap.get(ITEMS_PROPERTY);
-                            return  new DescriptorInput(inputName, itemsStr + "[]");
-                        }
+                        return getDescriptorInputFromMap(inputName, valueMap);
                     }
-                }
-                return null;
-            }).filter(Objects::nonNull).toList();
+                    return null;
+                })
+                .filter(Objects::nonNull).toList();
         }
         return List.of();
     }
 
-    private boolean isArrayType(Map typeMap) {
+    private DescriptorInput getDescriptorInputFromMap(final String inputName, final Map<Object, Object> valueMap) {
+        if (valueMap.get(TYPE_PROPERTY) instanceof String typeString) { // Case 2
+            return new DescriptorInput(inputName, typeString);
+        } else if (valueMap.get(TYPE_PROPERTY) instanceof Map typeMap && isArrayType(typeMap)) { // Case 3
+            final Object itemsStr = typeMap.get(ITEMS_PROPERTY);
+            return new DescriptorInput(inputName, itemsStr + "[]");
+        }
+        return null;
+    }
+
+    private boolean isArrayType(Map<Object, Object> typeMap) {
         return typeMap.get(ITEMS_PROPERTY) instanceof String
             && ARRAY_PROPERTY.equals(typeMap.get(TYPE_PROPERTY));
     }
