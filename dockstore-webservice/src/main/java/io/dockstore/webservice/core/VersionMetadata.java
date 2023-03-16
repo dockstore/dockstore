@@ -138,6 +138,11 @@ public class VersionMetadata {
     @ApiModelProperty(value = "The language versions for the version's descriptor files")
     private List<String> descriptorTypeVersions = new ArrayList<>();
 
+    @Column(columnDefinition = "varchar")
+    @Convert(converter = EngineVersionConverter.class)
+    @ApiModelProperty(value = "The engine versions this workflow version can run on")
+    private List<String> engineVersions = new ArrayList<>();
+
     public long getId() {
         return id;
     }
