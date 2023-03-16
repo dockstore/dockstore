@@ -59,6 +59,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -97,6 +98,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static final String WORKFLOW = "Workflow";
     private static final String EXPRESSION_TOOL = "ExpressionTool";
     private static final String OPERATION = "Operation";
+    private static final String INPUTS_PROPERTY = "inputs";
+    private static final String ITEMS_PROPERTY = "items";
+    private static final String TYPE_PROPERTY = "type";
+    private static final String ARRAY_PROPERTY = "array";
 
     /**
      * A regular expression that matches all CWL version strings that we want to register as language versions.
@@ -483,7 +488,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         workflow.put("cwlVersion", "v1.2");
         workflow.put("id", "_dockstore_wrapper");
         workflow.put("class", WORKFLOW);
-        workflow.put("inputs", Map.of());
+        workflow.put(INPUTS_PROPERTY, Map.of());
         workflow.put("outputs", Map.of());
         workflow.put("steps", Map.of("tool", Map.of("run", tool, "in", List.of(), "out", List.of())));
         return workflow;
@@ -1049,31 +1054,53 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
     }
 
+    /**
+     * Gets inputs from a CWL descriptor. The type of an input can be declared in 3 ways:
+     * <ol>
+     *     <li><pre>
+     *         file1: File
+     *     </pre></li>
+     *     <li><pre>
+     *         file1:
+     *           type: File
+     *           </pre></li>
+     *           <li><pre>
+     *        files:
+     *          type:
+     *            type: array
+     *            items: File
+     *           </pre></li>
+     * </ol>
+     *
+     * For cases 1 and 2, the File have brackets appended to it for an array, e.g., <pre>files: File[]</pre>
+     *
+     * @param cwlDoc
+     * @return
+     */
     private List<DescriptorInput> getInputs(Map<String, Object> cwlDoc) {
-        final Object inputs = cwlDoc.get("inputs");
-        if (inputs instanceof Map inputsMap) {
-            final Set<Map.Entry> set = inputsMap.entrySet();
-            return set.stream().map(entry -> {
+        if (cwlDoc.get(INPUTS_PROPERTY) instanceof Map inputsMap) {
+            return ((Set<Entry>) inputsMap.entrySet()).stream().map(entry -> {
                 if (entry.getKey() instanceof String inputName) {
-                    if (entry.getValue() instanceof Map valueMap) {
-                        if (valueMap.get("type") instanceof String typeString) {
-                            return new DescriptorInput(inputName, typeString);
-                        } else if (valueMap.get("type") instanceof Map typeMap) {
-                            if (typeMap.containsKey("type") && typeMap.containsKey("items")) {
-                                if ("array".equals(typeMap.get("type"))) {
-                                    final Object itemsStr = typeMap.get("items");
-                                    return  new DescriptorInput(inputName, itemsStr + "[]");
-                                }
-                            }
-                        }
-                    } else if (entry.getValue() instanceof String valueString) {
+                    if (entry.getValue() instanceof String valueString) { // Case 1 from JavaDoc
                         return new DescriptorInput(inputName, valueString);
+                    } else if (entry.getValue() instanceof Map valueMap) { // Case 2 and 3 from JavaDoc
+                        if (valueMap.get(TYPE_PROPERTY) instanceof String typeString) { // Case 2
+                            return new DescriptorInput(inputName, typeString);
+                        } else if (valueMap.get(TYPE_PROPERTY) instanceof Map typeMap && isArrayType(typeMap)) { // Case 3
+                            final Object itemsStr = typeMap.get(ITEMS_PROPERTY);
+                            return  new DescriptorInput(inputName, itemsStr + "[]");
+                        }
                     }
                 }
                 return null;
             }).filter(Objects::nonNull).toList();
         }
         return List.of();
+    }
+
+    private boolean isArrayType(Map typeMap) {
+        return typeMap.get(ITEMS_PROPERTY) instanceof String
+            && ARRAY_PROPERTY.equals(typeMap.get(TYPE_PROPERTY));
     }
 
     private Map<String, Object> findMainProcess(Map<String, Object> mapping) {

@@ -74,6 +74,11 @@ public class CWLTestParameterFileHelper {
     private static final String FILE = "File";
     private static final String SECONDARY_FILES = "secondaryFiles";
 
+    /**
+     * Gets the inputs from a test parameter file that are of the type file
+     * @param parameterFile jsonified test parameter file
+     * @return
+     */
     public List<FileInput> fileInputs(JSONObject parameterFile) {
         final List<FileInput> fileInputs = new ArrayList<>();
         for (Iterator<String> it = parameterFile.keys(); it.hasNext();) {

@@ -519,13 +519,13 @@ class CWLHandlerTest {
     }
 
     @Test
-    void testHasOpenData() throws IOException {
+    void testPossibleUrls() throws IOException {
         final CWLHandler cwlHandler = new CWLHandler();
         final SourceFile testSourceFile =
             createSourceFile("", "topmed_freeze_calling.json", FileType.CWL_TEST_JSON);
-        final WorkflowVersion workflowVersion = new WorkflowVersion();
         final Optional<JSONObject> jsonObject =
             SourceFileHelper.testFileAsJsonObject(testSourceFile);
-        cwlHandler.possibleUrlsFromTestParameterFile(jsonObject.get());
+        final List<String> possibleUrls = cwlHandler.possibleUrlsFromTestParameterFile(jsonObject.get());
+        assertEquals(8, possibleUrls.size());
     }
 }
