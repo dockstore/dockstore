@@ -15,7 +15,7 @@
  *
  */
 
-package io.dockstore.webservice.languages;
+package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -134,6 +134,6 @@ public class CWLTestParameterFileHelper {
      * @param parameterName
      * @param paths
      */
-    record FileInput(String parameterName, List<String> paths) {}
+    public record FileInput(String parameterName, List<String> paths) {}
 }
 

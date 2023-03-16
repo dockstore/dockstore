@@ -15,14 +15,13 @@
  *
  */
 
-package io.dockstore.webservice.languages;
+package io.dockstore.webservice.helpers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.helpers.SourceFileHelper;
-import io.dockstore.webservice.languages.CWLTestParameterFileHelper.FileInput;
+import io.dockstore.webservice.helpers.CWLTestParameterFileHelper.FileInput;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
