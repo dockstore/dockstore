@@ -45,7 +45,6 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
-import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -111,7 +110,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -844,7 +842,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, EntryType.TOOL); //This includes AppTools since it runs the else case in helper function
+        return this.getStarredEntries(u, Set.of(EntryType.TOOL, EntryType.APPTOOL));
     }
 
     @GET
@@ -858,7 +856,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, EntryType.WORKFLOW);
+        return this.getStarredEntries(u, Set.of(EntryType.WORKFLOW));
     }
 
     @GET
@@ -873,7 +871,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredNotebooks(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, EntryType.NOTEBOOK);
+        return this.getStarredEntries(u, Set.of(EntryType.NOTEBOOK));
     }
 
     @GET
@@ -887,30 +885,18 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return this.getStarredEntries(u, EntryType.SERVICE);
+        return this.getStarredEntries(u, Set.of(EntryType.SERVICE));
     }
 
     /**
      * Helper function for getStarred endpoints
      *
      * @param user
-     * @param entryType
-     * @return a user's starredEntries for desired entryType
+     * @param desiredTypes
+     * @return a user's starredEntries for desired entryTypes
      */
-    public Set<Entry> getStarredEntries(User user, EntryType entryType) {
-        Predicate<Entry> checkInstance;
-
-        if (entryType == EntryType.WORKFLOW) {
-            checkInstance = BioWorkflow.class::isInstance;
-        } else if (entryType == EntryType.SERVICE) {
-            checkInstance = Service.class::isInstance;
-        } else if (entryType == EntryType.NOTEBOOK) {
-            checkInstance = Notebook.class::isInstance;
-        } else { // else would either be Tool or AppTool
-            checkInstance = element -> (element instanceof Tool || element instanceof AppTool);
-        }
-
-        return user.getStarredEntries().stream().filter(checkInstance::test)
+    public Set<Entry> getStarredEntries(User user, Set<EntryType> desiredTypes) {
+        return user.getStarredEntries().stream().filter(entry -> desiredTypes.contains(entry.getEntryType()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
