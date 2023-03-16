@@ -24,7 +24,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.languages.CWLHandler.Input;
+import io.dockstore.webservice.languages.CWLHandler.DescriptorInput;
 import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
@@ -463,8 +463,9 @@ class CWLHandlerTest {
         workflowVersion.addSourceFile(sourceFile);
         workflowVersion.setWorkflowPath(sourceFilePath);
         workflowVersion.setValid(true);
-        final List<Input> fileInputs = cwlHandler.getFileInputs(workflowVersion).get();
-        assertEquals(List.of("tumor", "refFrom", "bbFrom", "normal"), fileInputs.stream().map(Input::name).toList());
+        final List<DescriptorInput> fileInputs = cwlHandler.getFileInputs(workflowVersion).get();
+        assertEquals(List.of("tumor", "refFrom", "bbFrom", "normal"), fileInputs.stream().map(
+            DescriptorInput::name).toList());
     }
 
     @Test
@@ -476,8 +477,45 @@ class CWLHandlerTest {
         workflowVersion.addSourceFile(sourceFile);
         workflowVersion.setWorkflowPath(sourceFilePath);
         workflowVersion.setValid(true);
-        final List<Input> fileInputs = cwlHandler.getFileInputs(workflowVersion).get();
-        assertEquals(List.of("filesA", "filesB", "filesC"), fileInputs.stream().map(Input::name).toList());
+        final List<DescriptorInput> fileInputs = cwlHandler.getFileInputs(workflowVersion).get();
+        assertEquals(List.of("filesA", "filesB", "filesC"), fileInputs.stream().map(
+            DescriptorInput::name).toList());
+    }
+
+    @Test
+    void testFileInputWithoutType() {
+        final String cwl = """
+        cwlVersion: v1.0
+        class: Workflow
+                
+        inputs:
+          bam_cram_file: File
+                
+        outputs:
+          output_file:
+            type: File
+            outputSource: hello-world/output
+                
+        steps:
+          hello-world:
+            run: dockstore-tool-helloworld.cwl
+            in:
+              input_file: bam_cram_file
+            out: [output]
+
+            """;
+        final CWLHandler cwlHandler = new CWLHandler();
+        final SourceFile sourceFile = new SourceFile();
+        final String sourceFilePath = "/Dockstore.cwl";
+        sourceFile.setPath(sourceFilePath);
+        sourceFile.setAbsolutePath(sourceFilePath);
+        sourceFile.setContent(cwl);
+        final WorkflowVersion workflowVersion = new WorkflowVersion();
+        workflowVersion.addSourceFile(sourceFile);
+        workflowVersion.setWorkflowPath(sourceFilePath);
+        workflowVersion.setValid(true);
+        final List<DescriptorInput> fileInputs = cwlHandler.getFileInputs(workflowVersion).get();
+        assertEquals("bam_cram_file", fileInputs.get(0).name());
     }
 
     @Test
@@ -488,6 +526,6 @@ class CWLHandlerTest {
         final WorkflowVersion workflowVersion = new WorkflowVersion();
         final Optional<JSONObject> jsonObject =
             SourceFileHelper.testFileAsJsonObject(testSourceFile);
-        cwlHandler.possibleUrlsFromTestParameterFile(jsonObject.get(), List.of("reads", "bam_cram_file"));
+        cwlHandler.possibleUrlsFromTestParameterFile(jsonObject.get());
     }
 }

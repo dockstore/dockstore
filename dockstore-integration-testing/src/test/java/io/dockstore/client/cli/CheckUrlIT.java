@@ -43,6 +43,61 @@ class CheckUrlIT {
         }        
         """;
 
+    private static final String CWL_TEST_JSON = """
+        {
+          "bam_cram_file": {
+                "class": "File",
+                "path": "https://goodurl.com",
+                "secondaryFiles": [
+                  {
+                    "class": "File",
+                    "path": "https://anothergoodur.com"
+                  }
+                ]
+              }
+        }
+        """;
+
+    private static final String CWL_WITH_FILE_INPUT = """
+        cwlVersion: v1.0
+        class: Workflow
+                
+        inputs:
+          bam_cram_file: File
+                
+        outputs:
+          output_file:
+            type: File
+            outputSource: hello-world/output
+                
+        steps:
+          hello-world:
+            run: dockstore-tool-helloworld.cwl
+            in:
+              input_file: input_file
+            out: [output]
+        """;
+
+    private static final String CWL_WITH_NO_FILE_INPUT = """
+        cwlVersion: v1.0
+        class: Workflow
+                
+        inputs:
+          input_file: string
+                
+        outputs:
+          output_file:
+            type: File
+            outputSource: hello-world/output
+                
+        steps:
+          hello-world:
+            run: dockstore-tool-helloworld.cwl
+            in:
+              input_file: input_file
+            out: [output]
+        """;
+
     private static final String WDL_WITH_FILES_INPUT = """
             version 1.0
             workflow test {
@@ -66,12 +121,15 @@ class CheckUrlIT {
         workflow test {
         }
         """;
+
     private static final LambdaUrlChecker CHECK_URL_HELPER =
         new LambdaUrlChecker("https://url.doesnot.matter");
 
     @Test
     void checkUrlsFromLambdaGood() {
-        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILES_INPUT, WDL_TEST_JSON);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILES_INPUT,
+            FileType.DOCKSTORE_WDL, WDL_TEST_JSON,
+            FileType.WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(UrlStatus.ALL_OPEN),
             DescriptorLanguage.WDL);
@@ -80,7 +138,9 @@ class CheckUrlIT {
 
     @Test
     void checkUrlsFromLambdaBad() {
-        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILES_INPUT, WDL_TEST_JSON);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILES_INPUT,
+            FileType.DOCKSTORE_WDL, WDL_TEST_JSON,
+            FileType.WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(UrlStatus.NOT_ALL_OPEN),
             DescriptorLanguage.WDL);
@@ -90,7 +150,9 @@ class CheckUrlIT {
     @Test
     void checkUrlsFromLambdaSomeBad() {
         WorkflowVersion workflowVersion = setupWorkflowVersion(
-            WDL_WITH_FILES_INPUT, WDL_TEST_JSON.replace("https://goodurl.com", "https://badUrl.com"));
+            WDL_WITH_FILES_INPUT, FileType.DOCKSTORE_WDL,
+            WDL_TEST_JSON.replace("https://goodurl.com", "https://badUrl.com"),
+            FileType.WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(UrlStatus.NOT_ALL_OPEN),
             DescriptorLanguage.WDL);
@@ -99,7 +161,9 @@ class CheckUrlIT {
 
     @Test
     void checkUrlsFromLambdaTerriblyWrong() {
-        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILES_INPUT, WDL_TEST_JSON);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILES_INPUT,
+            FileType.DOCKSTORE_WDL, WDL_TEST_JSON,
+            FileType.WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(UrlStatus.UNKNOWN),
             DescriptorLanguage.WDL);
@@ -108,7 +172,9 @@ class CheckUrlIT {
 
     @Test
     void checkLocalFileIsAParameter() {
-        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILE_INPUT, WDL_TEST_JSON);
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_FILE_INPUT,
+            FileType.DOCKSTORE_WDL, WDL_TEST_JSON,
+            FileType.WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         // Even though lambda doesn't exist, CHECK_URL_HELPER should catch an invalid URL
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, CHECK_URL_HELPER,
@@ -117,13 +183,52 @@ class CheckUrlIT {
     }
 
     @Test
-    void checkDescriptorHasNoFileInputs() {
-        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_NO_INPUTS, WDL_TEST_JSON);
+    void checkWdlDescriptorHasNoFileInputs() {
+        WorkflowVersion workflowVersion = setupWorkflowVersion(WDL_WITH_NO_INPUTS,
+            FileType.DOCKSTORE_WDL, WDL_TEST_JSON,
+            FileType.WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
         // Even though lambda doesn't exist, code should fail before hand
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, CHECK_URL_HELPER,
             DescriptorLanguage.WDL);
         assertTrue(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+    }
+
+    @Test
+    void checkCwlDescriptorHasNoFileInputs() {
+        final WorkflowVersion workflowVersion =
+            setupWorkflowVersion(CWL_WITH_NO_FILE_INPUT, FileType.DOCKSTORE_CWL, CWL_TEST_JSON,
+                FileType.CWL_TEST_JSON);
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
+        // Even though lambda doesn't exist, code should fail before hand
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, CHECK_URL_HELPER,
+            DescriptorLanguage.CWL);
+        assertTrue(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+    }
+
+    @Test
+    void checkCwlDescriptorWithFileInput() {
+        final WorkflowVersion workflowVersion =
+            setupWorkflowVersion(CWL_WITH_FILE_INPUT, FileType.DOCKSTORE_CWL, CWL_TEST_JSON,
+                FileType.CWL_TEST_JSON);
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
+        // Even though lambda doesn't exist, code should fail before hand
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(UrlStatus.ALL_OPEN),
+            DescriptorLanguage.CWL);
+        assertTrue(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+    }
+
+    @Test
+    void checkCwlDescriptorWithFileInputButNotInTestParam() {
+        final String cwlTestJson = CWL_TEST_JSON.replace("bam_cram_file", "another_name");
+        final WorkflowVersion workflowVersion =
+            setupWorkflowVersion(CWL_WITH_FILE_INPUT, FileType.DOCKSTORE_CWL, cwlTestJson,
+                FileType.CWL_TEST_JSON);
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
+        // Even though lambda doesn't exist, code should fail before hand
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(UrlStatus.ALL_OPEN),
+            DescriptorLanguage.CWL);
+        assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "there is no corresponding test parameter for the file input");
     }
 
     private CheckUrlInterface createCheckUrlInterface(final UrlStatus urlStatus) {
@@ -135,20 +240,22 @@ class CheckUrlIT {
         };
     }
 
-    private WorkflowVersion setupWorkflowVersion(final String descriptorContent, String jsonContent) {
+    private WorkflowVersion setupWorkflowVersion(final String descriptorContent,
+        final FileType descriptorFileType, String jsonContent, final FileType testFileType) {
         WorkflowVersion workflowVersion = new WorkflowVersion();
         SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(FileType.WDL_TEST_JSON);
+        sourceFile.setType(testFileType);
         sourceFile.setContent(jsonContent);
         sourceFile.setAbsolutePath("/asdf.json");
         sourceFile.setPath("/asdf.json");
         workflowVersion.addSourceFile(sourceFile);
-        final String primaryDescriptorPath = "/Dockstore.wdl";
+        String extension = descriptorFileType == FileType.DOCKSTORE_WDL ? "wdl" : "cwl";
+        final String primaryDescriptorPath = "/Dockstore." + extension;
         workflowVersion.setWorkflowPath(primaryDescriptorPath);
         final SourceFile primaryDescriptor = new SourceFile();
         primaryDescriptor.setPath(primaryDescriptorPath);
         primaryDescriptor.setAbsolutePath(primaryDescriptorPath);
-        primaryDescriptor.setType(FileType.DOCKSTORE_WDL);
+        primaryDescriptor.setType(descriptorFileType);
         primaryDescriptor.setContent(descriptorContent);
         workflowVersion.addSourceFile(primaryDescriptor);
         return workflowVersion;

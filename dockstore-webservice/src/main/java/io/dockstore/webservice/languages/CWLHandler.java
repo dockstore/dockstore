@@ -46,7 +46,9 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.CheckUrlInterface.UrlStatus;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.languages.CWLTestParameterFileHelper.FileInput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,7 +56,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +69,6 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpStatus;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -972,63 +972,57 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     @Override
     public Optional<Boolean> isOpenData(final WorkflowVersion workflowVersion, final CheckUrlInterface checkUrlInterface) {
-        final Optional<List<Input>> fileInputs = getFileInputs(workflowVersion);
-        if (fileInputs.isEmpty()) { // Error reading primary descriptor/workflow
+        final Optional<List<DescriptorInput>> descriptorInputs = getFileInputs(workflowVersion);
+        if (descriptorInputs.isEmpty()) { // Error reading primary descriptor/workflow
             return Optional.empty();
         }
-        if (fileInputs.get().isEmpty()) { // There are no file inputs, consider it open
+        if (descriptorInputs.get().isEmpty()) { // There are no file input parameters in the workflow, consider it open
             return Optional.of(true);
         }
         final List<SourceFile> testFiles = workflowVersion.findTestFiles();
-        final UrlStatus urlStatus = UrlStatus.UNKNOWN; //anyTestFileHasAllOpenData(fileInputs.get(), testFiles, checkUrlInterface);
+        final UrlStatus urlStatus = anyTestFileHasAllOpenData(descriptorInputs.get(), testFiles, checkUrlInterface);
         if (UrlStatus.UNKNOWN == urlStatus) {
             return Optional.empty();
         }
         return Optional.of(urlStatus == UrlStatus.ALL_OPEN);
     }
 
-    List<String> possibleUrlsFromTestParameterFile(JSONObject testParameterFile, List<String> fileInputNames) {
-        for (Iterator<String> it = testParameterFile.keys(); it.hasNext(); ) {
-            final String key = it.next();
-            if (fileInputNames.contains(key)) {
-                final Object object = testParameterFile.get(key);
-                if (isFileParameter(object)) {
-                    System.out.println("((JSONObject)object).get(\"path\") = " + ((JSONObject)object).get("path"));
-                } else if (object instanceof JSONArray jsonArray) {
-                    System.out.println("jsonArray = " + jsonArray);
+    List<String> possibleUrlsFromTestParameterFile(JSONObject testParameterFile) {
+        final CWLTestParameterFileHelper cwlTestParameterFileHelper =
+            new CWLTestParameterFileHelper();
+        final List<FileInput> fileInputs = cwlTestParameterFileHelper.fileInputs(testParameterFile);
+        return fileInputs.stream().map(FileInput::paths).flatMap(Collection::stream).toList();
+    }
+
+    private UrlStatus anyTestFileHasAllOpenData(List<DescriptorInput> fileInputs, List<SourceFile> testFiles, CheckUrlInterface checkUrlInterface) {
+        final CWLTestParameterFileHelper cwlTestParameterFileHelper =
+            new CWLTestParameterFileHelper();
+        final List<JSONObject> testFilesAsJson = testFiles.stream()
+            .map(SourceFileHelper::testFileAsJsonObject)
+            .filter(Optional::isPresent)
+            .map(Optional::get).toList();
+        for (JSONObject testFileAsJson: testFilesAsJson) {
+            final List<FileInput> fileInputValues = cwlTestParameterFileHelper.fileInputs(testFileAsJson);
+            if (hasValueForEveryFileInput(fileInputs, fileInputValues)) {
+                final Set<String> possibleUrls = fileInputValues.stream().map(FileInput::paths).flatMap(Collection::stream).collect(
+                    Collectors.toSet());
+                final UrlStatus urlStatus = checkUrlInterface.checkUrls(possibleUrls);
+                if (urlStatus != UrlStatus.NOT_ALL_OPEN) {
+                    // If the urls are all open or there was an error determining their status, return that.
+                    //  If they're not all open, keep going in hopes of finding a test param file that's all open.
+                    return urlStatus;
                 }
             }
         }
-        return List.of();
+        return UrlStatus.NOT_ALL_OPEN;
     }
 
-    private boolean isFileParameter(Object obj) {
-        if (obj instanceof JSONObject jsonObject) {
-            return jsonObject.has("class") && jsonObject.get("class").toString().contains("File")
-                && jsonObject.has("path") && jsonObject.get("path") instanceof String;
-        }
-        return false;
+    private boolean hasValueForEveryFileInput(List<DescriptorInput> descriptorInputs, List<FileInput> testParameterInputs) {
+        final List<String> descriptorNames = descriptorInputs.stream().map(DescriptorInput::name).toList();
+        final List<String> paramNames =
+            testParameterInputs.stream().map(FileInput::parameterName).toList();
+        return descriptorNames.size() == paramNames.size() && descriptorNames.containsAll(paramNames);
     }
-
-    //    private UrlStatus anyTestFileHasAllOpenData(List<Input> fileInputs, List<SourceFile> testFiles, CheckUrlInterface checkUrlInterface) {
-    //        final List<JSONObject> jsonObjects = testFiles.stream()
-    //            .map(SourceFileHelper::testFileAsJsonObject)
-    //            .filter(Optional::isPresent)
-    //            .map(Optional::get).toList();
-    //        for (JSONObject jsonObject: jsonObjects) {
-    //            fileInputs.forEach(fileInput -> {
-    //                if (jsonObject.has(fileInput.name())) {
-    //                    final Object obj = jsonObject.get(fileInput.name());
-    //                    if (obj instanceof JSONObject fileObj) {
-    //
-    //                    } else if (obj instanceof JSONArray fileArray) {
-    //
-    //                    }
-    //                }
-    //            });
-    //        }
-    //        return UrlStatus.NOT_ALL_OPEN;
-    //    }
 
     /**
      * Returns an Optional list of the workflow version's file inputs. If the primary descriptor
@@ -1037,7 +1031,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      * @param workflowVersion
      * @return
      */
-    Optional<List<Input>> getFileInputs(WorkflowVersion workflowVersion) {
+    Optional<List<DescriptorInput>> getFileInputs(WorkflowVersion workflowVersion) {
         final Optional<SourceFile> primaryDescriptor = workflowVersion.findPrimaryDescriptor();
         if (primaryDescriptor.isEmpty()) {
             return Optional.empty();
@@ -1055,7 +1049,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
     }
 
-    private List<Input> getInputs(Map<String, Object> cwlDoc) {
+    private List<DescriptorInput> getInputs(Map<String, Object> cwlDoc) {
         final Object inputs = cwlDoc.get("inputs");
         if (inputs instanceof Map inputsMap) {
             final Set<Map.Entry> set = inputsMap.entrySet();
@@ -1063,15 +1057,17 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (entry.getKey() instanceof String inputName) {
                     if (entry.getValue() instanceof Map valueMap) {
                         if (valueMap.get("type") instanceof String typeString) {
-                            return new Input(inputName, typeString);
+                            return new DescriptorInput(inputName, typeString);
                         } else if (valueMap.get("type") instanceof Map typeMap) {
                             if (typeMap.containsKey("type") && typeMap.containsKey("items")) {
                                 if ("array".equals(typeMap.get("type"))) {
                                     final Object itemsStr = typeMap.get("items");
-                                    return  new Input(inputName, itemsStr + "[]");
+                                    return  new DescriptorInput(inputName, itemsStr + "[]");
                                 }
                             }
                         }
+                    } else if (entry.getValue() instanceof String valueString) {
+                        return new DescriptorInput(inputName, valueString);
                     }
                 }
                 return null;
@@ -1449,6 +1445,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             throw new CustomWebApplicationException(fullMessage, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
-    public record Input(String name, String type) {}
+
+    /**
+     * An input parameter as defined in a CWL descriptor
+     * @param name
+     * @param type
+     */
+    public record DescriptorInput(String name, String type) {}
 
 }

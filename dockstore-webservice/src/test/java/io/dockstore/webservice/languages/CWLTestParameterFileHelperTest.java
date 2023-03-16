@@ -51,5 +51,9 @@ class CWLTestParameterFileHelperTest {
         final List<String> paths = bamCramFile.paths();
         assertEquals(2, paths.size());
         assertEquals("gs://topmed_workflow_testing/topmed_variant_caller/input_files/NWD176325.recab.cram", paths.get(0));
+
+        final FileInput reads =
+            fileInputs.stream().filter(fi -> fi.parameterName().equals("reads")).findFirst().get();
+        assertEquals(3, reads.paths().size(), "There should be 3 paths, one of them a secondary file");
     }
 }
