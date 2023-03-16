@@ -105,7 +105,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             } else {
                 createValidationForMissingMainScript(version, filepath, mainScriptPath);
             }
-            updateDescriptorTypeVersion(sourceFiles, version, configuration, potentialScript);
+            updateDescriptorTypeAndEngineVersion(sourceFiles, version, configuration, potentialScript);
         } catch (NextflowUtilities.NextflowParsingException e) {
             createValidationForGeneralFailure(version, filepath);
         }
@@ -120,7 +120,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      * @param configuration
      * @param mainScript
      */
-    private void updateDescriptorTypeVersion(final Set<SourceFile> sourceFiles, final Version version,
+    private void updateDescriptorTypeAndEngineVersion(final Set<SourceFile> sourceFiles, final Version version,
             final Configuration configuration, final Optional<SourceFile> mainScript) {
         final String dslVersion = this.calculateDslVersion(configuration, mainScript).orElse(null);
         sourceFiles.stream()
@@ -128,6 +128,8 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             .filter(sourceFile -> sourceFile.getType() == FileType.NEXTFLOW)
             .forEach(sourceFile -> sourceFile.getMetadata().setTypeVersion(dslVersion));
         version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
+        final String engineVersion = configuration.getString("nextflowVersion");
+        version.getVersionMetadata().setEngineVersions(engineVersion == null ? List.of() : List.of(engineVersion));
     }
 
     @Override

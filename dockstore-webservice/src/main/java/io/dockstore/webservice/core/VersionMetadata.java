@@ -192,4 +192,12 @@ public class VersionMetadata {
     public void setDescriptorTypeVersions(final List<String> descriptorTypeVersions) {
         this.descriptorTypeVersions = descriptorTypeVersions;
     }
+
+    public List<String> getEngineVersions() {
+        return engineVersions;
+    }
+
+    public void setEngineVersions(final List<String> engineVersions) {
+        this.engineVersions = engineVersions;
+    }
 }

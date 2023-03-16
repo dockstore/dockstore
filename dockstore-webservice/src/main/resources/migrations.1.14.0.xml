@@ -394,4 +394,9 @@
         <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="user_profile"/>
         <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="version_metadata_orcidputcode"/>
     </changeSet>
+    <changeSet id="add engine versions" author="coverbeck">
+        <addColumn tableName="version_metadata">
+            <column name="engineversions" type="varchar"></column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
