@@ -45,7 +45,6 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
-import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -111,6 +110,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -897,19 +897,16 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      * @return a user's starredEntries for desired entryType
      */
     public Set<Entry> getStarredEntries(User user, EntryType entryType) {
-        if (entryType == EntryType.WORKFLOW) {
-            return user.getStarredEntries().stream().filter(BioWorkflow.class::isInstance)
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-        } else if (entryType == EntryType.SERVICE) {
-            return user.getStarredEntries().stream().filter(Service.class::isInstance)
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-        } else if (entryType == EntryType.NOTEBOOK) {
-            return user.getStarredEntries().stream().filter(Notebook.class::isInstance)
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        Predicate<Entry> isInstance;
+        List<EntryType> list = Arrays.asList(EntryType.WORKFLOW, EntryType.SERVICE, EntryType.NOTEBOOK);
+
+        if (list.contains(entryType)) {
+            isInstance = entryType.getClass()::isInstance;
         } else { // else would either be Tool or AppTool
-            return user.getStarredEntries().stream().filter(element -> element instanceof Tool || element instanceof AppTool)
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            isInstance = element -> (element instanceof Tool || element instanceof AppTool);
         }
+        return user.getStarredEntries().stream().filter(isInstance::test)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @GET
