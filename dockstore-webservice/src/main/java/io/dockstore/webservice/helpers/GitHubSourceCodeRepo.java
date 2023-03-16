@@ -102,6 +102,7 @@ import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubAbuseLimitHandler;
 import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.GitHubRateLimitHandler;
 import org.kohsuke.github.RateLimitChecker.LiteralValue;
 import org.kohsuke.github.connector.GitHubConnectorResponse;
 import org.kohsuke.github.extras.okhttp3.OkHttpGitHubConnector;
@@ -181,6 +182,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             .withConnector(okHttp3Connector);
         if (DockstoreWebserviceApplication.runningOnCircleCI()) {
             gitHubBuilder = gitHubBuilder.withRateLimitChecker(new LiteralValue(SLEEP_AT_RATE_LIMIT_OR_BELOW));
+        } else {
+            gitHubBuilder = gitHubBuilder.withRateLimitHandler(new FailRateLimitHandler(cacheNamespace));
         }
         return gitHubBuilder;
     }
@@ -1435,6 +1438,25 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         public void onError(GitHubConnectorResponse connectorResponse) {
             LOG.error(GITHUB_ABUSE_LIMIT_REACHED + " for " + username);
             throw new CustomWebApplicationException(GITHUB_ABUSE_LIMIT_REACHED, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * 1. This logs username
+     * 2. We control the string in the error message
+     */
+    private static final class FailRateLimitHandler extends GitHubRateLimitHandler {
+
+        private final String username;
+
+        private FailRateLimitHandler(String username) {
+            this.username = username;
+        }
+
+        @Override
+        public void onError(GitHubConnectorResponse connectorResponse) {
+            LOG.error(OUT_OF_GIT_HUB_RATE_LIMIT + " for " + username);
+            throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
