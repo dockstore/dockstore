@@ -45,6 +45,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -897,15 +898,19 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      * @return a user's starredEntries for desired entryType
      */
     public Set<Entry> getStarredEntries(User user, EntryType entryType) {
-        Predicate<Entry> isInstance;
-        List<EntryType> list = Arrays.asList(EntryType.WORKFLOW, EntryType.SERVICE, EntryType.NOTEBOOK);
+        Predicate<Entry> checkInstance;
 
-        if (list.contains(entryType)) {
-            isInstance = entryType.getClass()::isInstance;
+        if (entryType == EntryType.WORKFLOW) {
+            checkInstance = BioWorkflow.class::isInstance;
+        } else if (entryType == EntryType.SERVICE) {
+            checkInstance = Service.class::isInstance;
+        } else if (entryType == EntryType.NOTEBOOK) {
+            checkInstance = Notebook.class::isInstance;
         } else { // else would either be Tool or AppTool
-            isInstance = element -> (element instanceof Tool || element instanceof AppTool);
+            checkInstance = element -> (element instanceof Tool || element instanceof AppTool);
         }
-        return user.getStarredEntries().stream().filter(isInstance::test)
+
+        return user.getStarredEntries().stream().filter(checkInstance::test)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
