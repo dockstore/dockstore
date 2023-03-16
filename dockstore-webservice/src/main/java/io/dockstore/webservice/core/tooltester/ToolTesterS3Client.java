@@ -95,7 +95,7 @@ public class ToolTesterS3Client {
 
     }
 
-    public List<ToolTesterLog> getToolTesterLogs(String toolId, String toolVersionName) throws UnsupportedEncodingException {
+    public List<ToolTesterLog> getToolTesterLogs(String toolId, String toolVersionName) {
         String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
         ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).build();
         ListObjectsV2Response listObjectsV2Response = s3.listObjectsV2(request);
