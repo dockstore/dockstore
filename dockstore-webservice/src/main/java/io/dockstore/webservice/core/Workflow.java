@@ -86,7 +86,7 @@ import org.hibernate.annotations.Filter;
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedOrganizations", query = "SELECT distinct lower(organization) FROM Workflow w WHERE w.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllWorkflows", query = "SELECT w FROM Workflow w order by w.id")
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllWorkflows", query = "SELECT w FROM Workflow w where w.descriptorType = io.dockstore.common.DescriptorLanguage.NEXTFLOW order by w.id")
 })
 
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")

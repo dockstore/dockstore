@@ -19,7 +19,7 @@ package io.dockstore.webservice.core;
 
 public class EngineVersionConverter extends DelimitedValuesConverter {
 
-    protected EngineVersionConverter(final String delimiter) {
+    protected EngineVersionConverter() {
         super("\t");
     }
 

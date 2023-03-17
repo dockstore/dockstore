@@ -128,8 +128,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             .filter(sourceFile -> sourceFile.getType() == FileType.NEXTFLOW)
             .forEach(sourceFile -> sourceFile.getMetadata().setTypeVersion(dslVersion));
         version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
-        final String engineVersion = configuration.getString("nextflowVersion");
-        version.getVersionMetadata().setEngineVersions(engineVersion == null ? List.of() : List.of(engineVersion));
+        version.getVersionMetadata().setEngineVersions(getEngineVersions(configuration));
     }
 
     @Override
@@ -484,6 +483,14 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         } else {
             return "main.nf";
         }
+    }
+
+    private List<String> getEngineVersions(Configuration configuration) {
+        final String nextflowVersion = "manifest.nextflowVersion";
+        if (configuration.containsKey(nextflowVersion)) {
+            return List.of(configuration.getString(nextflowVersion));
+        }
+        return List.of();
     }
 
     private Optional<SourceFile> findSourceFileByPath(Set<SourceFile> sourceFiles, String path) {
