@@ -36,8 +36,8 @@ class CheckUrlIT {
     private static final String WDL_TEST_JSON = """
         {
           "test.files": [
-            "https://goodurl.com",
-            "https://anothergoodurl.com"
+            "https://open.dockstore.org",
+            "https://anotheropen.dockstore.org"
           ],
           "test.file": "notaurl.file"
         }        
@@ -47,11 +47,11 @@ class CheckUrlIT {
         {
           "bam_cram_file": {
                 "class": "File",
-                "path": "https://goodurl.com",
+                "path": "https://open.dockstore.org",
                 "secondaryFiles": [
                   {
                     "class": "File",
-                    "path": "https://anothergoodur.com"
+                    "path": "https://anotheropen.dockstore.org"
                   }
                 ]
               }
@@ -122,8 +122,26 @@ class CheckUrlIT {
         }
         """;
 
+    /**
+     * Instance of LambdaUrlChecker that doesn't have a lambda to invoke; used for testing
+     * conditions where the checker should correctly fail before even invoking the lambda.
+     */
     private static final LambdaUrlChecker CHECK_URL_HELPER =
         new LambdaUrlChecker("https://url.doesnot.matter");
+
+    /**
+     * Psuedo open url 1 -- never hit in the tests
+     */
+    private static final String OPEN_URL_1 = "https://open.dockstore.org";
+    /**
+     * Psuedo open url 2 -- never hit in the tests
+     */
+    private static final String OPEN_URL_2 = "https://anotheropen.dockstore.org";
+    private static final Set<String> OPEN_URLS = Set.of(OPEN_URL_1, OPEN_URL_2);
+    /**
+     * Pseudo non-open url -- never hit in the tests.
+     */
+    private static final String NON_OPEN_URL = "https://notopen.dockstore.org";
 
     @Test
     void checkUrlsFromLambdaGood() {
@@ -149,12 +167,13 @@ class CheckUrlIT {
 
     @Test
     void checkUrlsFromLambdaSomeBad() {
+        // These urls are never hit in the tests
         WorkflowVersion workflowVersion = setupWorkflowVersion(
             WDL_WITH_FILES_INPUT, FileType.DOCKSTORE_WDL,
-            WDL_TEST_JSON.replace("https://goodurl.com", "https://badUrl.com"),
+            WDL_TEST_JSON.replace(OPEN_URL_1, NON_OPEN_URL),
             FileType.WDL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(UrlStatus.NOT_ALL_OPEN),
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(OPEN_URLS),
             DescriptorLanguage.WDL);
         assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
@@ -212,7 +231,6 @@ class CheckUrlIT {
             setupWorkflowVersion(CWL_WITH_FILE_INPUT, FileType.DOCKSTORE_CWL, CWL_TEST_JSON,
                 FileType.CWL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
-        // Even though lambda doesn't exist, code should fail before hand
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(UrlStatus.ALL_OPEN),
             DescriptorLanguage.CWL);
         assertTrue(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
@@ -225,7 +243,6 @@ class CheckUrlIT {
             setupWorkflowVersion(CWL_WITH_FILE_INPUT, FileType.DOCKSTORE_CWL, cwlTestJson,
                 FileType.CWL_TEST_JSON);
         assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
-        // Even though lambda doesn't exist, code should fail before hand
         AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(UrlStatus.ALL_OPEN),
             DescriptorLanguage.CWL);
         assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "there is no corresponding test parameter for the file input");
@@ -236,6 +253,18 @@ class CheckUrlIT {
             @Override
             public UrlStatus checkUrls(final Set<String> possibleUrls) {
                 return urlStatus;
+            }
+        };
+    }
+
+    private CheckUrlInterface createCheckUrlInterface(Set<String> openUrls) {
+        return new CheckUrlInterface() {
+            @Override
+            public UrlStatus checkUrls(final Set<String> possibleUrls) {
+                if (possibleUrls.containsAll(openUrls)) {
+                    return UrlStatus.ALL_OPEN;
+                }
+                return UrlStatus.NOT_ALL_OPEN;
             }
         };
     }
