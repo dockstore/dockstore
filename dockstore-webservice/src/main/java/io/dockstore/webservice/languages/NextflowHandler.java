@@ -488,7 +488,10 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     private List<String> getEngineVersions(Configuration configuration) {
         final String nextflowVersion = "manifest.nextflowVersion";
         if (configuration.containsKey(nextflowVersion)) {
-            return List.of(configuration.getString(nextflowVersion));
+            // A language can be run in several engines, e.g., Cromwell and Miniwdl can run WDL.
+            // So, unlike language versions, store the engine name as well, even though for Nextflow
+            // there's currently only one known engine.
+            return List.of("Nextflow " + configuration.getString(nextflowVersion));
         }
         return List.of();
     }
