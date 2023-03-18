@@ -9720,12 +9720,13 @@ components:
         type:
           type: string
           enum:
-          - SMK
           - CWL
           - WDL
           - NFL
+          - GALAXY
+          - SMK
           - SERVICE
-          - GXFORMAT2
+          - JUPYTER
         url:
           type: string
       required:
