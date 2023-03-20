@@ -242,6 +242,8 @@ class NotebookIT extends BaseIT {
     void testStarringNotebook() {
         ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
+        UsersApi usersApi = new UsersApi(openApiClient);
+
         workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         Long notebookID = workflowsApi.getWorkflowByPath(simpleRepoPath + "/simple", WorkflowSubClass.NOTEBOOK, "versions").getId();
 
@@ -249,11 +251,13 @@ class NotebookIT extends BaseIT {
         workflowsApi.starEntry1(notebookID, new StarRequest().star(true));
         Workflow notebook = workflowsApi.getWorkflow(notebookID, "");
         assertEquals(1, notebook.getStarredUsers().size());
+        assertEquals(1, usersApi.getStarredNotebooks().size());
 
         //unstar notebook
         workflowsApi.starEntry1(notebookID, new StarRequest().star(false));
         notebook = workflowsApi.getWorkflow(notebookID, "");
         assertEquals(0, notebook.getStarredUsers().size());
+        assertEquals(0, usersApi.getStarredNotebooks().size());
     }
     @Test
     void testNotebookRSSFeedAndSitemap() {

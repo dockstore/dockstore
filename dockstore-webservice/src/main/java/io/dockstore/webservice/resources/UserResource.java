@@ -26,6 +26,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
@@ -841,8 +842,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return u.getStarredEntries().stream().filter(element -> element instanceof Tool || element instanceof AppTool)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return this.getStarredEntries(u, Set.of(EntryType.TOOL, EntryType.APPTOOL));
     }
 
     @GET
@@ -856,8 +856,22 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return u.getStarredEntries().stream().filter(element -> element instanceof BioWorkflow)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return this.getStarredEntries(u, Set.of(EntryType.WORKFLOW));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/starredNotebooks")
+    @Operation(operationId = "getStarredNotebooks", description = "Get the authenticated user's starred notebooks.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = "A list of the authenticated user's starred notebooks", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Entry.class))))
+    @ApiOperation(value = "Get the authenticated user's starred notebooks.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = Entry.class, responseContainer = "List")
+    public Set<Entry> getStarredNotebooks(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        User u = userDAO.findById(user.getId());
+        checkNotNullUser(u);
+        return this.getStarredEntries(u, Set.of(EntryType.NOTEBOOK));
     }
 
     @GET
@@ -871,7 +885,18 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return u.getStarredEntries().stream().filter(element -> element instanceof Service)
+        return this.getStarredEntries(u, Set.of(EntryType.SERVICE));
+    }
+
+    /**
+     * Helper function for getStarred endpoints
+     *
+     * @param user
+     * @param desiredTypes
+     * @return a user's starredEntries for desired entryTypes
+     */
+    public Set<Entry> getStarredEntries(User user, Set<EntryType> desiredTypes) {
+        return user.getStarredEntries().stream().filter(entry -> desiredTypes.contains(entry.getEntryType()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

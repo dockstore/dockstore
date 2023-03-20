@@ -37,13 +37,14 @@ public final class S3ClientHelper {
     private static final int TOOL_ID_REPOSITORY_INDEX = 3;
     private static final int TOOL_ID_TOOLNAME_INDEX = 4;
 
-    // Constants for S3 key indices
+    // Universal constants for Metrics and ToolTester S3 key indices
     private static final int ENTRY_TYPE_INDEX = 0;
     private static final int START_OF_TOOL_ID_INDEX = 1;
     private static final int END_OF_TOOL_ID_INDEX = 3;
     private static final int VERSION_NAME_INDEX = 4;
-    private static final int PLATFORM_INDEX = 5;
-    private static final int FILE_NAME_INDEX = 6;
+
+    // Constants for Metrics S3 key indices
+    private static final int METRICS_PLATFORM_INDEX = 5;
 
     private S3ClientHelper() {}
 
@@ -116,14 +117,24 @@ public final class S3ClientHelper {
         return keyComponents[VERSION_NAME_INDEX];
     }
 
-    public static String getPlatform(String key) {
+    /**
+     * Get the platform from the Metrics object S3 key
+     * @param key
+     * @return
+     */
+    public static String getMetricsPlatform(String key) {
         final String[] keyComponents = splitKey(key);
-        return keyComponents[PLATFORM_INDEX];
+        return keyComponents[METRICS_PLATFORM_INDEX];
     }
 
+    /**
+     * Get the file name from the S3 key. The file name is the last component of the '/' delimited key
+     * @param key
+     * @return
+     */
     public static String getFileName(String key) {
         final String[] keyComponents = splitKey(key);
-        return keyComponents[FILE_NAME_INDEX];
+        return keyComponents[keyComponents.length - 1];
     }
 
     public static String[] splitKey(String key) {

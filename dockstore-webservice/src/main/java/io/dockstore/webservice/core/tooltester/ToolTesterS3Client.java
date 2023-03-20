@@ -50,6 +50,11 @@ public class ToolTesterS3Client {
         this.s3 = S3ClientHelper.createS3Client();
     }
 
+    public ToolTesterS3Client(String bucketName, S3Client s3Client) {
+        this.bucketName = bucketName;
+        this.s3 = s3Client;
+    }
+
     /**
      * This essentially generates the s3 key of the log that is already be stored on S3.
      * Different from the ToolTester function of the same name, as that takes different parameters.
@@ -62,12 +67,11 @@ public class ToolTesterS3Client {
      * @return S3 key (file path)
      * @throws UnsupportedEncodingException Could not endpoint string
      */
-    private static String generateKey(String toolId, String versionName, String testFilePath, String runner, String filename)
-            throws UnsupportedEncodingException {
+    public static String generateKey(String toolId, String versionName, String testFilePath, String runner, String filename) {
         List<String> pathList = new ArrayList<>();
         pathList.add(S3ClientHelper.convertToolIdToPartialKey(toolId));
-        pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8.name()));
-        pathList.add(URLEncoder.encode(testFilePath, StandardCharsets.UTF_8.name()));
+        pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8));
+        pathList.add(URLEncoder.encode(testFilePath, StandardCharsets.UTF_8));
         pathList.add(runner);
         pathList.add(filename);
         return String.join("/", pathList);
@@ -91,15 +95,15 @@ public class ToolTesterS3Client {
 
     }
 
-    public List<ToolTesterLog> getToolTesterLogs(String toolId, String toolVersionName) throws UnsupportedEncodingException {
-        String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8.name());
+    public List<ToolTesterLog> getToolTesterLogs(String toolId, String toolVersionName) {
+        String key = S3ClientHelper.convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8);
         ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).build();
         ListObjectsV2Response listObjectsV2Response = s3.listObjectsV2(request);
         List<S3Object> contents = listObjectsV2Response.contents();
         return contents.stream().map(s3Object -> {
             HeadObjectRequest build = HeadObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build();
             Map<String, String> metadata = s3.headObject(build).metadata();
-            return convertUserMetadataToToolTesterLog(metadata, s3Object.key());
+            return convertUserMetadataToToolTesterLog(metadata, S3ClientHelper.getFileName(s3Object.key()));
         }).collect(Collectors.toList());
     }
 }

@@ -16,7 +16,7 @@ public class OrcidPutCode implements Serializable {
     public String orcidPutCode;
 
     // database timestamps
-    @Column(updatable = false)
+    @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
     @CreationTimestamp
     private Timestamp dbCreateDate;
 

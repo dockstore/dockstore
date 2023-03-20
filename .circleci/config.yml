@@ -524,7 +524,7 @@ commands:
             python3 -V
       - run:
           name: Docker-Compose
-          command: docker-compose up -d
+          command: docker compose up -d
   setup_test:
     steps:
       - attach_workspace:
