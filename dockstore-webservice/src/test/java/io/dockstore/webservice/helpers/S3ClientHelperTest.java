@@ -77,33 +77,37 @@ class S3ClientHelperTest {
     void testGetPlatform() {
         // Key of workflow with no workflow name
         String s3Key = "workflow/github.com/ENCODE-DCC/pipeline-container/1.0/terra/foo.json";
-        assertEquals("terra", S3ClientHelper.getPlatform(s3Key));
+        assertEquals("terra", S3ClientHelper.getMetricsPlatform(s3Key));
         // Key of workflow with workflow name
         s3Key = "workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/terra/foo.json";
-        assertEquals("terra", S3ClientHelper.getPlatform(s3Key));
+        assertEquals("terra", S3ClientHelper.getMetricsPlatform(s3Key));
 
         // Key of tool with no tool name
         s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow/1.0/agc/foo.json";
-        assertEquals("agc", S3ClientHelper.getPlatform(s3Key));
+        assertEquals("agc", S3ClientHelper.getMetricsPlatform(s3Key));
         // Key of tool with tool name
         s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow%2Fthing/1.0/agc/foo.json";
-        assertEquals("agc", S3ClientHelper.getPlatform(s3Key));
+        assertEquals("agc", S3ClientHelper.getMetricsPlatform(s3Key));
     }
 
     @Test
     void testGetFileName() {
+        // Metrics keys
         // Key of workflow with no workflow name
         String s3Key = "workflow/github.com/ENCODE-DCC/pipeline-container/1.0/terra/foo.json";
         assertEquals("foo.json", S3ClientHelper.getFileName(s3Key));
         // Key of workflow with workflow name
         s3Key = "workflow/github.com/ENCODE-DCC/pipeline-container%2Fencode-mapping-cwl/1.0/terra/foo.json";
         assertEquals("foo.json", S3ClientHelper.getFileName(s3Key));
-
         // Key of tool with no tool name
         s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow/1.0/agc/foo.json";
         assertEquals("foo.json", S3ClientHelper.getFileName(s3Key));
         // Key of tool with tool name
         s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow%2Fthing/1.0/agc/foo.json";
+        assertEquals("foo.json", S3ClientHelper.getFileName(s3Key));
+
+        // ToolTester keys
+        s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow/2.7.0/test1.json/cwltool/foo.json";
         assertEquals("foo.json", S3ClientHelper.getFileName(s3Key));
     }
 }

@@ -173,6 +173,6 @@ public class MetricsDataS3Client {
     }
 
     static MetricsData convertS3KeyToMetricsData(String key) {
-        return new MetricsData(S3ClientHelper.getToolId(key), S3ClientHelper.getVersionName(key), S3ClientHelper.getPlatform(key), S3ClientHelper.getFileName(key), key);
+        return new MetricsData(S3ClientHelper.getToolId(key), S3ClientHelper.getVersionName(key), S3ClientHelper.getMetricsPlatform(key), S3ClientHelper.getFileName(key), key);
     }
 }
