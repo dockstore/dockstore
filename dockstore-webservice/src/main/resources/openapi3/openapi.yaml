@@ -4940,6 +4940,23 @@ paths:
       - BEARER: []
       tags:
       - users
+  /users/starredNotebooks:
+    get:
+      description: Get the authenticated user's starred notebooks.
+      operationId: getStarredNotebooks
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+          description: A list of the authenticated user's starred notebooks
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/starredOrganizations:
     get:
       description: Get the authenticated user's starred organizations.
