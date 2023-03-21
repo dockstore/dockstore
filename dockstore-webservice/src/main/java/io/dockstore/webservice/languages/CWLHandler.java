@@ -42,7 +42,13 @@ import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.CWLTestParameterFileHelper;
+import io.dockstore.webservice.helpers.CWLTestParameterFileHelper.FileInput;
+import io.dockstore.webservice.helpers.CheckUrlInterface;
+import io.dockstore.webservice.helpers.CheckUrlInterface.UrlStatus;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,6 +60,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -64,6 +71,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpStatus;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -91,6 +99,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     private static final String WORKFLOW = "Workflow";
     private static final String EXPRESSION_TOOL = "ExpressionTool";
     private static final String OPERATION = "Operation";
+    private static final String INPUTS_PROPERTY = "inputs";
+    private static final String ITEMS_PROPERTY = "items";
+    private static final String TYPE_PROPERTY = "type";
+    private static final String ARRAY_PROPERTY = "array";
 
     /**
      * A regular expression that matches all CWL version strings that we want to register as language versions.
@@ -117,14 +129,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
-                // Parse the file content
-                Map<String, Object> map = parseAsMap(content);
-
-                // Expand $import, $include, etc
-                map = preprocess(map, filePath, new Preprocessor(sourceFiles));
-
-                // Retarget to the main process, if necessary
-                map = findMainProcess(map);
+                final Map<String, Object> map = parseSourceFiles(filePath, content, sourceFiles);
 
                 // Extract various fields
                 String description = null;
@@ -191,6 +196,19 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         }
         return version;
+    }
+
+    Map<String, Object> parseSourceFiles(final String filePath, final String content,
+        final Set<SourceFile> sourceFiles) {
+        // Parse the file content
+        Map<String, Object> map = parseAsMap(content);
+
+        // Expand $import, $include, etc
+        map = preprocess(map, filePath, new Preprocessor(sourceFiles));
+
+        // Retarget to the main process, if necessary
+        map = findMainProcess(map);
+        return map;
     }
 
     /**
@@ -471,7 +489,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         workflow.put("cwlVersion", "v1.2");
         workflow.put("id", "_dockstore_wrapper");
         workflow.put("class", WORKFLOW);
-        workflow.put("inputs", Map.of());
+        workflow.put(INPUTS_PROPERTY, Map.of());
         workflow.put("outputs", Map.of());
         workflow.put("steps", Map.of("tool", Map.of("run", tool, "in", List.of(), "out", List.of())));
         return workflow;
@@ -958,6 +976,141 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.CWL_TEST_JSON);
     }
 
+    @Override
+    public Optional<Boolean> isOpenData(final WorkflowVersion workflowVersion, final CheckUrlInterface checkUrlInterface) {
+        final Optional<List<DescriptorInput>> descriptorInputs = getFileInputs(workflowVersion);
+        if (descriptorInputs.isEmpty()) { // Error reading primary descriptor/workflow
+            return Optional.empty();
+        }
+        if (descriptorInputs.get().isEmpty()) { // There are no file input parameters in the workflow, consider it open
+            return Optional.of(true);
+        }
+        final List<SourceFile> testFiles = workflowVersion.findTestFiles();
+        final UrlStatus urlStatus = anyTestFileHasAllOpenData(descriptorInputs.get(), testFiles, checkUrlInterface);
+        if (UrlStatus.UNKNOWN == urlStatus) {
+            return Optional.empty();
+        }
+        return Optional.of(urlStatus == UrlStatus.ALL_OPEN);
+    }
+
+    List<String> possibleUrlsFromTestParameterFile(JSONObject testParameterFile) {
+        final CWLTestParameterFileHelper cwlTestParameterFileHelper =
+            new CWLTestParameterFileHelper();
+        final List<FileInput> fileInputs = cwlTestParameterFileHelper.fileInputs(testParameterFile);
+        return fileInputs.stream().map(FileInput::paths).flatMap(Collection::stream).toList();
+    }
+
+    private UrlStatus anyTestFileHasAllOpenData(List<DescriptorInput> fileInputs, List<SourceFile> testFiles, CheckUrlInterface checkUrlInterface) {
+        final CWLTestParameterFileHelper cwlTestParameterFileHelper =
+            new CWLTestParameterFileHelper();
+        final List<JSONObject> testFilesAsJson = testFiles.stream()
+            .map(SourceFileHelper::testFileAsJsonObject)
+            .filter(Optional::isPresent)
+            .map(Optional::get).toList();
+        for (JSONObject testFileAsJson: testFilesAsJson) {
+            final List<FileInput> fileInputValues = cwlTestParameterFileHelper.fileInputs(testFileAsJson);
+            if (hasValueForEveryFileInput(fileInputs, fileInputValues)) {
+                final Set<String> possibleUrls = fileInputValues.stream().map(FileInput::paths).flatMap(Collection::stream).collect(
+                    Collectors.toSet());
+                final UrlStatus urlStatus = checkUrlInterface.checkUrls(possibleUrls);
+                if (urlStatus != UrlStatus.NOT_ALL_OPEN) {
+                    // If the urls are all open or there was an error determining their status, return that.
+                    //  If they're not all open, keep going in hopes of finding a test param file that's all open.
+                    return urlStatus;
+                }
+            }
+        }
+        return UrlStatus.NOT_ALL_OPEN;
+    }
+
+    private boolean hasValueForEveryFileInput(List<DescriptorInput> descriptorInputs, List<FileInput> testParameterInputs) {
+        final List<String> descriptorNames = descriptorInputs.stream().map(DescriptorInput::name).toList();
+        final List<String> paramNames =
+            testParameterInputs.stream().map(FileInput::parameterName).toList();
+        return descriptorNames.size() == paramNames.size() && descriptorNames.containsAll(paramNames);
+    }
+
+    /**
+     * Returns an Optional list of the workflow version's file inputs. If the primary descriptor
+     * does not exist or there is an error parsing the version's descriptors, returns an
+     * <code>Optional.empty()</code>.
+     * @param workflowVersion
+     * @return
+     */
+    Optional<List<DescriptorInput>> getFileInputs(WorkflowVersion workflowVersion) {
+        final Optional<SourceFile> primaryDescriptor = workflowVersion.findPrimaryDescriptor();
+        if (primaryDescriptor.isEmpty()) {
+            return Optional.empty();
+        }
+        final SourceFile sourceFile = primaryDescriptor.get();
+        try {
+            final Map<String, Object> cwlMap =
+                parseSourceFiles(workflowVersion.getWorkflowPath(), sourceFile.getContent(),
+                    workflowVersion.getSourceFiles());
+            return Optional.of(getInputs(cwlMap).stream()
+                .filter(input -> input.type().contains("File")).toList());
+        } catch (ClassCastException | YAMLException | JsonParseException ex) {
+            LOG.error("Error determining file inputs", ex);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Gets inputs from a CWL descriptor. The type of an input can be declared in 3 ways:
+     * <ol>
+     *     <li><pre>
+     *         file1: File
+     *     </pre></li>
+     *     <li><pre>
+     *         file1:
+     *           type: File
+     *           </pre></li>
+     *           <li><pre>
+     *        files:
+     *          type:
+     *            type: array
+     *            items: File
+     *           </pre></li>
+     * </ol>
+     *
+     * For cases 1 and 2, the File have brackets appended to it for an array, e.g., <pre>files: File[]</pre>
+     *
+     * @param cwlDoc
+     * @return
+     */
+    private List<DescriptorInput> getInputs(Map<String, Object> cwlDoc) {
+        if (cwlDoc.get(INPUTS_PROPERTY) instanceof Map inputsMap) {
+            return ((Set<Entry>) inputsMap.entrySet()).stream()
+                .filter(entry -> entry.getKey() instanceof String)
+                .map(entry -> {
+                    final String inputName = (String) entry.getKey();
+                    if (entry.getValue() instanceof String valueString) { // Case 1 from JavaDoc
+                        return new DescriptorInput(inputName, valueString);
+                    } else if (entry.getValue() instanceof Map valueMap) { // Case 2 and 3 from JavaDoc
+                        return getDescriptorInputFromMap(inputName, valueMap);
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull).toList();
+        }
+        return List.of();
+    }
+
+    private DescriptorInput getDescriptorInputFromMap(final String inputName, final Map<Object, Object> valueMap) {
+        if (valueMap.get(TYPE_PROPERTY) instanceof String typeString) { // Case 2
+            return new DescriptorInput(inputName, typeString);
+        } else if (valueMap.get(TYPE_PROPERTY) instanceof Map typeMap && isArrayType(typeMap)) { // Case 3
+            final Object itemsStr = typeMap.get(ITEMS_PROPERTY);
+            return new DescriptorInput(inputName, itemsStr + "[]");
+        }
+        return null;
+    }
+
+    private boolean isArrayType(Map<Object, Object> typeMap) {
+        return typeMap.get(ITEMS_PROPERTY) instanceof String
+            && ARRAY_PROPERTY.equals(typeMap.get(TYPE_PROPERTY));
+    }
+
     private Map<String, Object> findMainProcess(Map<String, Object> mapping) {
 
         // If the CWL is packed using the "$graph" syntax, the root is the process with id "#main":
@@ -1327,4 +1480,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             throw new CustomWebApplicationException(fullMessage, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
+
+    /**
+     * An input parameter as defined in a CWL descriptor
+     * @param name
+     * @param type
+     */
+    public record DescriptorInput(String name, String type) {}
+
 }
