@@ -334,17 +334,21 @@ public class ElasticListener implements StateListenerInterface {
             .anyMatch(Boolean::booleanValue);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
         List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
+        List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
         Entry detachedEntry = removeIrrelevantProperties(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
-        ((ObjectNode)jsonNode).put("stars_count", (long) entry.getStarredUsers().size());
-        ((ObjectNode)jsonNode).put("verified", verified);
-        ((ObjectNode)jsonNode).put("openData", openData);
-        ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
-        ((ObjectNode)jsonNode).put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
+        final ObjectNode objectNode = (ObjectNode) jsonNode;
+        objectNode.put("stars_count", (long) entry.getStarredUsers().size());
+        objectNode.put("verified", verified);
+        objectNode.put("openData", openData);
+        objectNode.put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        objectNode.put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
+        objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
         addCategoriesJson(jsonNode, entry);
         return jsonNode;
     }
+
 
     private static void addCategoriesJson(JsonNode node, Entry<?, ?> entry) {
 
@@ -523,6 +527,15 @@ public class ElasticListener implements StateListenerInterface {
                 .map(descriptorTypeVersion -> String.join(" ", language, descriptorTypeVersion))
                 .toList();
     }
+
+    private static List<String> getDistinctEngineVersions(final Set<Version> workflowVersions) {
+        return workflowVersions.stream()
+            .map(workflowVersion -> workflowVersion.getVersionMetadata().getEngineVersions())
+            .flatMap(List::stream)
+            .distinct()
+            .toList();
+    }
+
 
     /**
      * If entry is a checker workflow, return null.  Otherwise, return entry

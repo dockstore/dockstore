@@ -47,6 +47,7 @@ class ElasticListenerTest {
     private static final String SECOND_VERSION_NAME = "Second";
     private static final int FIRST_VERSION_ID = 1;
     private static final int SECOND_VERSION_ID = 2;
+    private static final String NEXTFLOW_22_10_1 = "Nextflow !>=22.10.1";
     private WorkflowVersion firstWorkflowVersion;
     private WorkflowVersion secondWorkflowVersion;
     private Tag firstTag;
@@ -54,6 +55,8 @@ class ElasticListenerTest {
     private WorkflowVersion firstAppToolVersion;
     private WorkflowVersion secondAppToolVersion;
     private BioWorkflow bioWorkflow;
+    private BioWorkflow nextflowWorkflow;
+    private WorkflowVersion nextflowVersion;
     private Tool tool;
     private AppTool appTool;
 
@@ -70,6 +73,14 @@ class ElasticListenerTest {
             SECOND_VERSION_ID, List.of("1.1"));
         bioWorkflow.getWorkflowVersions().addAll(List.of(firstWorkflowVersion,
             secondWorkflowVersion));
+
+        nextflowWorkflow = new BioWorkflow();
+        initEntry(nextflowWorkflow);
+        nextflowWorkflow.setDescriptorType(DescriptorLanguage.NEXTFLOW);
+        nextflowVersion = new WorkflowVersion();
+        nextflowVersion.getVersionMetadata().setEngineVersions(List.of(NEXTFLOW_22_10_1));
+        nextflowWorkflow.getWorkflowVersions().add(nextflowVersion);
+
 
         tool = new Tool();
         initEntry(tool);
@@ -211,6 +222,20 @@ class ElasticListenerTest {
     }
 
     @Test
+    void testEngineVersions() throws IOException {
+        final JsonNode nfJsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(nextflowWorkflow);
+        final String engineVersionsKey = "engine_versions";
+        final JsonNode nfEngineVersions = nfJsonNode.get(engineVersionsKey);
+        assertEquals(1, nfEngineVersions.size());
+        assertEquals(NEXTFLOW_22_10_1, nfEngineVersions.get(0).textValue());
+
+        // Test no engine version
+        final JsonNode jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
+        final JsonNode engineVersions = jsonNode.get(engineVersionsKey);
+        assertEquals(0, engineVersions.size());
+    }
+
+    @Test
     void testOpenData() throws IOException {
         // Test null getPublicAccessibleTestParameterFile
         assertNull(firstWorkflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
@@ -230,6 +255,7 @@ class ElasticListenerTest {
         openDataNode = entry.get("openData");
         assertTrue(openDataNode.asBoolean());
     }
+
 
     private List<String> getDescriptorTypeVersionsFromJsonNode(JsonNode descriptorTypeVersionsJsonNode) {
         List<String> descriptorTypeVersions = new ArrayList<>();
