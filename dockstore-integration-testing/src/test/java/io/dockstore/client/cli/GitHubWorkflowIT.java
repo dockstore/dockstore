@@ -40,6 +40,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dropwizard.client.JerseyClientBuilder;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -51,6 +52,7 @@ import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
 import java.util.List;
 import java.util.Optional;
+import javax.ws.rs.client.Client;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -184,6 +186,10 @@ class GitHubWorkflowIT extends BaseIT {
         workflowApi.publish(appTool.getId(), publishRequest);
         assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
             WorkflowSubClass.APPTOOL.getValue()).size(), "There should be 1 app tool published");
+        // there should be one app tool account to header count too
+        Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
+        CommonTestUtilities.testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published?subclass=APPTOOL", SUPPORT.getLocalPort()), 1);
+
         assertEquals(publishedWorkflowsCount, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
             WorkflowSubClass.BIOWORKFLOW.getValue()).size(), "Published workflow count should be unchanged");
     }

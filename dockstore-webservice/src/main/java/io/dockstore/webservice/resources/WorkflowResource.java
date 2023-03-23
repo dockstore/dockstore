@@ -808,12 +808,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Context HttpServletResponse response) {
         // delete the next line if GUI pagination is not working by 1.5.0 release
         int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
+        final Class<Workflow> workflowClass = (Class<Workflow>) workflowSubClass(services, subclass);
         List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder,
-            (Class<Workflow>) workflowSubClass(services, subclass));
+            workflowClass);
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
         EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
-        response.addHeader("X-total-count", String.valueOf(entryDAO.countAllPublished(Optional.of(filter))));
+        response.addHeader("X-total-count", String.valueOf(entryDAO.countAllPublished(Optional.of(filter), workflowClass)));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
         return workflows;
     }

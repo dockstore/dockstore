@@ -290,12 +290,17 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public long countAllPublished(Optional<String> filter) {
+        return countAllPublished(filter, null);
+    }
+
+
+    public long countAllPublished(Optional<String> filter, Class<T> classType) {
         if (filter.isEmpty()) {
             return countAllPublished();
         }
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
-        Root<T> entry = query.from(typeOfT);
+        Root<T> entry = query.from(classType != null ? classType : typeOfT);
         processQuery(filter.get(), "", "", cb, query, entry);
         query.select(cb.count(entry));
         return currentSession().createQuery(query).getSingleResult();
