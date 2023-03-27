@@ -291,7 +291,7 @@
             CREATE UNIQUE INDEX case_insensitive_apptool_toolname on apptool using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
             CREATE UNIQUE INDEX case_insensitive_notebook_workflowname on notebook using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
             -- see https://github.com/dockstore/dockstore/issues/5287, the id may need to be incremented depending on how often people stumble into this
-            CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 18876;
+            CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 21207;
         </sql>
     </changeSet>
     <changeSet author="dyuen (generated)" id="per_version_readme_path">
@@ -393,5 +393,10 @@
         <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="sourcefile_verified"/>
         <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="user_profile"/>
         <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="version_metadata_orcidputcode"/>
+    </changeSet>
+    <changeSet id="add engine versions" author="coverbeck">
+        <addColumn tableName="version_metadata">
+            <column name="engineversions" type="varchar"></column>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

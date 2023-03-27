@@ -16,6 +16,8 @@
 
 package io.dockstore.common;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -48,14 +50,19 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.ws.rs.client.Client;
 import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.http.HttpStatus;
 import org.assertj.core.util.Files;
+import org.glassfish.jersey.client.ClientProperties;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -615,6 +622,14 @@ public final class CommonTestUtilities {
             }
         }
         return Optional.empty();
+    }
+
+    public static void testXTotalCount(Client jerseyClient, String path, int expectedValue) {
+        Response response = jerseyClient.target(path).request().property(ClientProperties.READ_TIMEOUT, 0).get();
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
+        MultivaluedMap<String, Object> headers = response.getHeaders();
+        Object xTotalCount = headers.getFirst("X-total-count");
+        assertEquals(String.valueOf(expectedValue), xTotalCount);
     }
 
     /**
