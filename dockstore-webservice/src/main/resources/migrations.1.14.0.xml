@@ -286,6 +286,8 @@
         </sql>
     </changeSet>
     <changeSet id="tighten constraint for names" author="dyuen">
+        <validCheckSum>8:c3f62dac8fdb39029443416261f10a9b</validCheckSum>
+        <validCheckSum>8:dc78648569654a8993edb1619c02cb78</validCheckSum>
         <sql dbms="postgresql">
             CREATE UNIQUE INDEX case_insensitive_toolname on tool using btree (registry, namespace, name, lower(toolname)) where toolname is not null;
             CREATE UNIQUE INDEX case_insensitive_apptool_toolname on apptool using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
