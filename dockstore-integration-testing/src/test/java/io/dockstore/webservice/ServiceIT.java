@@ -55,10 +55,7 @@ import io.swagger.client.model.Tool;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
-import org.glassfish.jersey.client.ClientProperties;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -158,8 +155,8 @@ class ServiceIT extends BaseIT {
         assertTrue(workflows.size() >= 2 && workflows.stream()
             .noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
         Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
-        testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published", SUPPORT.getLocalPort()));
-        testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published?services=true", SUPPORT.getLocalPort()));
+        CommonTestUtilities.testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published", SUPPORT.getLocalPort()), 2);
+        CommonTestUtilities.testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published?services=true", SUPPORT.getLocalPort()), 2);
         assertTrue(services.size() >= 1 && services.stream()
             .allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
 
@@ -171,20 +168,6 @@ class ServiceIT extends BaseIT {
         final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
         assertFalse(workflow.getStarredUsers().isEmpty());
         assertTrue(workflow.getLabels().stream().anyMatch(label -> "batman".equals(label.getValue())));
-    }
-
-    /**
-     * Test X-total-count.  It so happens there's two services and two bioworkflows
-     *
-     * @param jerseyClient Jersey Client to test endpoint
-     * @param path         Path of endpoint
-     */
-    private void testXTotalCount(Client jerseyClient, String path) {
-        Response response = jerseyClient.target(path).request().property(ClientProperties.READ_TIMEOUT, 0).get();
-        assertEquals(HttpStatus.SC_OK, response.getStatus());
-        MultivaluedMap<String, Object> headers = response.getHeaders();
-        Object xTotalCount = headers.getFirst("X-total-count");
-        assertEquals("2", xTotalCount);
     }
 
     @Test
