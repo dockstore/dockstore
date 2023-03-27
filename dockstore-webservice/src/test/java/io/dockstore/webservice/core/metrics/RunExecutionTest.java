@@ -21,16 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-class ExecutionTest {
+class RunExecutionTest {
 
     @Test
     void testCheckExecutionTimeISO8601Format() {
-        assertTrue(Execution.checkExecutionTimeISO8601Format("PT5M").isPresent());
-        assertTrue(Execution.checkExecutionTimeISO8601Format("pt5m").isPresent());
-        assertTrue(Execution.checkExecutionTimeISO8601Format("PT5M30S").isPresent());
-        assertTrue(Execution.checkExecutionTimeISO8601Format("PT90S").isPresent());
+        assertTrue(RunExecution.checkExecutionTimeISO8601Format("PT5M").isPresent());
+        assertTrue(RunExecution.checkExecutionTimeISO8601Format("pt5m").isPresent());
+        assertTrue(RunExecution.checkExecutionTimeISO8601Format("PT5M30S").isPresent());
+        assertTrue(RunExecution.checkExecutionTimeISO8601Format("PT90S").isPresent());
 
-        assertTrue(Execution.checkExecutionTimeISO8601Format("5 seconds").isEmpty());
-        assertTrue(Execution.checkExecutionTimeISO8601Format("PT 5M").isEmpty());
+        assertTrue(RunExecution.checkExecutionTimeISO8601Format("5 seconds").isEmpty());
+        assertTrue(RunExecution.checkExecutionTimeISO8601Format("PT 5M").isEmpty());
     }
 }

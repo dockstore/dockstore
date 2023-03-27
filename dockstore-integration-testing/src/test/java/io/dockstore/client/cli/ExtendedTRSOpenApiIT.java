@@ -40,11 +40,12 @@ import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.CpuMetric;
-import io.dockstore.openapi.client.model.Execution;
 import io.dockstore.openapi.client.model.ExecutionStatusMetric;
 import io.dockstore.openapi.client.model.ExecutionTimeMetric;
+import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
+import io.dockstore.openapi.client.model.RunExecution;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.Partner;
@@ -213,11 +214,12 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId);
 
         // Add execution metrics for a workflow version for one platform
-        List<Execution> executions = MetricsDataS3ClientIT.createExecutions(1);
-        ApiException exception2 = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(executions, platform, id, versionId, "foo"));
+        List<RunExecution> executions = MetricsDataS3ClientIT.createRunExecutions(1);
+        ApiException exception2 = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), platform, id, versionId, "foo"));
         // we were denied because S3 is not up and running in this class, not because of permissions issues
         assertTrue(exception2.getMessage().contains(ToolsApiExtendedServiceImpl.COULD_NOT_SUBMIT_METRICS_DATA) && exception2.getCode() == HttpStatus.SC_BAD_REQUEST);
     }
+
     @Test
     void testAggregatedMetricsPutErrors() {
         // Admin user

@@ -718,9 +718,7 @@ paths:
         description: "Execution metrics to submit"
         required: true
         schema:
-          type: "array"
-          items:
-            $ref: "#/definitions/Execution"
+          $ref: "#/definitions/ExecutionsRequestBody"
       responses:
         204:
           description: "Execution metrics submitted successfully."
@@ -7654,29 +7652,6 @@ definitions:
         description: "(github) apps tool that the event is acting on."
         $ref: "#/definitions/AppTool"
     description: "This describes events that occur on the Dockstore site."
-  Execution:
-    type: "object"
-    required:
-    - "executionStatus"
-    properties:
-      additionalProperties:
-        type: "object"
-        additionalProperties:
-          type: "object"
-      cpuRequirements:
-        type: "integer"
-        format: "int32"
-      executionStatus:
-        type: "string"
-        enum:
-        - "SUCCESSFUL"
-        - "FAILED_SEMANTIC_INVALID"
-        - "FAILED_RUNTIME_INVALID"
-      executionTime:
-        type: "string"
-      memoryRequirementsGB:
-        type: "number"
-        format: "double"
   ExecutionStatusMetric:
     type: "object"
     properties:
@@ -7732,6 +7707,20 @@ definitions:
         description: "The unit of the data points"
     description: "This describes aggregated execution time metrics in seconds for\
       \ workflow executions."
+  ExecutionsRequestBody:
+    type: "object"
+    required:
+    - "runExecutions"
+    - "validationExecutions"
+    properties:
+      runExecutions:
+        type: "array"
+        items:
+          $ref: "#/definitions/RunExecution"
+      validationExecutions:
+        type: "array"
+        items:
+          $ref: "#/definitions/ValidationExecution"
   ExtendedUserData:
     type: "object"
     properties:
@@ -8315,6 +8304,29 @@ definitions:
         type: "boolean"
       repositoryName:
         type: "string"
+  RunExecution:
+    type: "object"
+    required:
+    - "executionStatus"
+    properties:
+      additionalProperties:
+        type: "object"
+        additionalProperties:
+          type: "object"
+      cpuRequirements:
+        type: "integer"
+        format: "int32"
+      executionStatus:
+        type: "string"
+        enum:
+        - "SUCCESSFUL"
+        - "FAILED_SEMANTIC_INVALID"
+        - "FAILED_RUNTIME_INVALID"
+      executionTime:
+        type: "string"
+      memoryRequirementsGB:
+        type: "number"
+        format: "double"
   Service:
     allOf:
     - $ref: "#/definitions/Workflow"
@@ -9122,6 +9134,20 @@ definitions:
         type: "string"
         position: 3
         description: "Mapping of filepath to validation message"
+  ValidationExecution:
+    type: "object"
+    required:
+    - "valid"
+    - "validatorTool"
+    properties:
+      additionalProperties:
+        type: "object"
+        additionalProperties:
+          type: "object"
+      valid:
+        type: "boolean"
+      validatorTool:
+        type: "string"
   VerificationInformation:
     type: "object"
     properties:

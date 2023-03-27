@@ -631,9 +631,7 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/Execution'
+              $ref: '#/components/schemas/ExecutionsRequestBody'
         description: Execution metrics to submit
         required: true
       responses:
@@ -8567,30 +8565,6 @@ components:
             '@context':
               schema: https://schema.org
             schema:actionStatus: CompletedActionStatus
-        cpuRequirements:
-          type: integer
-          format: int32
-          description: Number of CPUs required for the execution
-          example: 2
-        executionStatus:
-          type: string
-          description: The status of the execution
-          enum:
-          - SUCCESSFUL
-          - FAILED_SEMANTIC_INVALID
-          - FAILED_RUNTIME_INVALID
-        executionTime:
-          type: string
-          description: The total time it took for the execution to complete in ISO
-            8601 duration format
-          example: PT30S
-        memoryRequirementsGB:
-          type: number
-          format: double
-          description: Memory requirements for the execution in GB
-          example: 2
-      required:
-      - executionStatus
     ExecutionStatusMetric:
       type: object
       description: Aggregated metrics about workflow execution statuses
@@ -8659,6 +8633,23 @@ components:
       - maximum
       - minimum
       - numberOfDataPointsForAverage
+    ExecutionsRequestBody:
+      type: object
+      description: Request body model for executionMetricsPost
+      properties:
+        runExecutions:
+          type: array
+          description: List of workflow run executions to submit
+          items:
+            $ref: '#/components/schemas/RunExecution'
+        validationExecutions:
+          type: array
+          description: List of workflow validation executions to submit
+          items:
+            $ref: '#/components/schemas/ValidationExecution'
+      required:
+      - runExecutions
+      - validationExecutions
     ExtendedUserData:
       type: object
       properties:
@@ -9255,6 +9246,37 @@ components:
           type: boolean
         repositoryName:
           type: string
+    RunExecution:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Execution'
+      - type: object
+        properties:
+          cpuRequirements:
+            type: integer
+            format: int32
+            description: Number of CPUs required for the execution
+            example: 2
+          executionStatus:
+            type: string
+            description: The status of the execution
+            enum:
+            - SUCCESSFUL
+            - FAILED_SEMANTIC_INVALID
+            - FAILED_RUNTIME_INVALID
+          executionTime:
+            type: string
+            description: The total time it took for the execution to complete in ISO
+              8601 duration format
+            example: PT30S
+          memoryRequirementsGB:
+            type: number
+            format: double
+            description: Memory requirements for the execution in GB
+            example: 2
+      description: Metrics of a workflow execution on a platform
+      required:
+      - executionStatus
     Service:
       type: object
       allOf:
@@ -10088,6 +10110,24 @@ components:
           - DOCKSTORE_NOTEBOOK_OTHER
         valid:
           type: boolean
+    ValidationExecution:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Execution'
+      - type: object
+        properties:
+          valid:
+            type: boolean
+            description: Boolean indicating if the workflow was validated successfully
+            example: true
+          validatorTool:
+            type: string
+            description: The validator tool used to validate the workflow
+            example: miniwdl
+      description: Metrics of a workflow validated on a platform
+      required:
+      - valid
+      - validatorTool
     VerificationInformation:
       type: object
       properties:
