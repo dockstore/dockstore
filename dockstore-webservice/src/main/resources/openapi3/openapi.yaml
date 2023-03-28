@@ -10123,6 +10123,10 @@ components:
           validatorTool:
             type: string
             description: The validator tool used to validate the workflow
+            enum:
+            - MINIWDL
+            - WOMTOOL
+            - OTHER
             example: miniwdl
       description: Metrics of a workflow validated on a platform
       required:

@@ -9148,6 +9148,10 @@ definitions:
         type: "boolean"
       validatorTool:
         type: "string"
+        enum:
+        - "MINIWDL"
+        - "WOMTOOL"
+        - "OTHER"
   VerificationInformation:
     type: "object"
     properties:

@@ -30,7 +30,7 @@ public class ValidationExecution extends Execution {
     @NotNull
     @JsonProperty(required = true)
     @Schema(description = "The validator tool used to validate the workflow", required = true, example = "miniwdl")
-    String validatorTool;
+    ValidatorTool validatorTool;
 
     @NotNull
     @JsonProperty(required = true)
@@ -40,16 +40,16 @@ public class ValidationExecution extends Execution {
     public ValidationExecution() {
     }
 
-    public ValidationExecution(String validatorTool, Boolean isValid) {
+    public ValidationExecution(ValidatorTool validatorTool, Boolean isValid) {
         this.validatorTool = validatorTool;
         this.valid = isValid;
     }
 
-    public String getValidatorTool() {
+    public ValidatorTool getValidatorTool() {
         return validatorTool;
     }
 
-    public void setValidatorTool(String validatorTool) {
+    public void setValidatorTool(ValidatorTool validatorTool) {
         this.validatorTool = validatorTool;
     }
 
@@ -59,5 +59,14 @@ public class ValidationExecution extends Execution {
 
     public void setValid(Boolean valid) {
         this.valid = valid;
+    }
+
+    /**
+     * Enums for tools that can validate a workflow.
+     */
+    public enum ValidatorTool {
+        MINIWDL,
+        WOMTOOL,
+        OTHER // This is meant for validator tools that we may not know about yet, but can add in the future
     }
 }

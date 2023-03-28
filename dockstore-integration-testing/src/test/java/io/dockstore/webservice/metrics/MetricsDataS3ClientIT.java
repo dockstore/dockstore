@@ -190,7 +190,8 @@ public class MetricsDataS3ClientIT {
         verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
 
         // Send validation metrics data to S3 for the same workflow version, but different platform
-        List<ValidationExecution> validationExecutions = List.of(new ValidationExecution().valid(true).validatorTool("miniwdl")); // This workflow version successfully validated with miniwdl
+        List<ValidationExecution> validationExecutions = List.of(new ValidationExecution().valid(true).validatorTool(
+                ValidationExecution.ValidatorToolEnum.MINIWDL)); // This workflow version successfully validated with miniwdl
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform2, workflowId, workflowVersionId, description);
         metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
         metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform2, String.format(workflowExpectedS3KeyPrefixFormat, platform2));
