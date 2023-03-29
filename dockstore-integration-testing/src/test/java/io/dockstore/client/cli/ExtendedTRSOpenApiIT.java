@@ -25,7 +25,6 @@ import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedSe
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -184,8 +183,8 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         String platform1JsonMetrics = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId, platform1);
         String platform2JsonMetrics = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId, platform2);
 
-        assert(platform1JsonMetrics.contains("{\"cpu\":{\"average\":" + average));
-        assert(platform2JsonMetrics.contains("{\"cpu\":{\"average\":" + average));
+        assertTrue(platform1JsonMetrics.contains("{\"cpu\":{\"average\":" + average));
+        assertTrue(platform2JsonMetrics.contains("{\"cpu\":{\"average\":" + average));
     }
 
     @Test
