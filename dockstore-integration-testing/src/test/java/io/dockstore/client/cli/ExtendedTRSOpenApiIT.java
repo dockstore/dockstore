@@ -20,7 +20,8 @@ package io.dockstore.client.cli;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
-import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.EXECUTION_STATUS_COUNT_ERROR;
+import static io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool.MINIWDL;
+import static io.dockstore.webservice.core.metrics.constraints.HasMetrics.MUST_CONTAIN_METRICS;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,6 +47,7 @@ import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.RunExecution;
+import io.dockstore.openapi.client.model.ValidationStatusMetric;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.Partner;
@@ -134,7 +136,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
                 .cpu(cpuMetric)
                 .memory(memoryMetric);
 
-        // Put metrics for platform 1
+        // Put run metrics for platform 1
         extendedGa4GhApi.aggregatedMetricsPut(metrics, platform1, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
         WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
@@ -172,7 +174,10 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         long metricsDbCount = testingPostgres.runSelectStatement("select count(*) from metrics", long.class);
         assertEquals(1, metricsDbCount, "There should only be 1 row in the metrics table because we only have one entry version with aggregated metrics");
 
-        // Put metrics for platform2
+        // Put validation metrics for platform2
+        ValidationStatusMetric  validationStatusMetric = new ValidationStatusMetric()
+                .validatorToolToIsValid(Map.of(MINIWDL.toString(), true));
+        metrics = new Metrics().validationStatus(validationStatusMetric);
         extendedGa4GhApi.aggregatedMetricsPut(metrics, platform2, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
         workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
@@ -181,6 +186,11 @@ class ExtendedTRSOpenApiIT extends BaseIT {
 
         assertNotNull(workflowVersion.getMetricsByPlatform().get(platform1));
         assertNotNull(workflowVersion.getMetricsByPlatform().get(platform2));
+
+        // Verify validation status
+        Metrics platform2Metrics = workflowVersion.getMetricsByPlatform().get(platform2);
+        assertTrue(platform2Metrics.getValidationStatus().getValidatorToolToIsValid().containsKey(MINIWDL.toString()));
+        assertTrue(platform2Metrics.getValidationStatus().getValidatorToolToIsValid().get(MINIWDL.toString()));
     }
 
     @Test
@@ -259,10 +269,10 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Non-admin and non-curator user should not be able to put aggregated metrics");
 
         Metrics emptyMetrics = new Metrics();
-        // Test that the response body must contain ExecutionStatusCount
+        // Test that the response body must contain ExecutionStatusCount or ValidationStatus
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(emptyMetrics, platform, id, versionId));
-        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "Should not be able to put aggregated metrics if ExecutionStatusCount is missing");
-        assertTrue(exception.getMessage().contains(EXECUTION_STATUS_COUNT_ERROR));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "Should not be able to put aggregated metrics if ExecutionStatusCount and ValidationStatus is missing");
+        assertTrue(exception.getMessage().contains(MUST_CONTAIN_METRICS));
 
         // Verify that not providing metrics throws an exception
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(null, platform, id, versionId));

@@ -8979,6 +8979,8 @@ components:
           description: Implementation specific ID for the metrics in this webservice
         memory:
           $ref: '#/components/schemas/MemoryMetric'
+        validationStatus:
+          $ref: '#/components/schemas/ValidationStatusMetric'
       required:
       - executionStatusCount
     Notebook:
@@ -10132,6 +10134,18 @@ components:
       required:
       - valid
       - validatorTool
+    ValidationStatusMetric:
+      type: object
+      description: Aggregated metrics about workflow validation statuses
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the count metrics in this webservice
+        validatorToolToIsValid:
+          type: object
+          additionalProperties:
+            type: boolean
     VerificationInformation:
       type: object
       properties:

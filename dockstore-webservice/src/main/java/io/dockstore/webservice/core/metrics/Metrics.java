@@ -18,6 +18,7 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.dockstore.webservice.core.metrics.constraints.HasMetrics;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,6 +35,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+@HasMetrics
 @Entity
 @Table(name = "metrics")
 @ApiModel(value = "Metrics", description = "Aggregated metrics associated with entry versions")
@@ -68,6 +70,12 @@ public class Metrics {
     @ApiModelProperty(value = "Aggregated CPU metrics")
     @Schema(description = "Aggregated CPU metrics")
     private CpuStatisticMetric cpu;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "validationstatus", referencedColumnName = "id")
+    @ApiModelProperty(value = "Aggregated validation metrics")
+    @Schema(description = "Aggregated validation metrics")
+    private ValidationStatusCountMetric validationStatus;
 
     // database timestamps
     @Column(updatable = false)
@@ -125,6 +133,14 @@ public class Metrics {
 
     public void setCpu(CpuStatisticMetric cpu) {
         this.cpu = cpu;
+    }
+
+    public ValidationStatusCountMetric getValidationStatus() {
+        return validationStatus;
+    }
+
+    public void setValidationStatus(ValidationStatusCountMetric validationStatus) {
+        this.validationStatus = validationStatus;
     }
 
     public Timestamp getDbCreateDate() {

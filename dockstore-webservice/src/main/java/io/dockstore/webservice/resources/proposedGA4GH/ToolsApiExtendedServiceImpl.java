@@ -92,7 +92,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static final int ES_BATCH_INSERT_SIZE = 500;
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
-    public static final String EXECUTION_STATUS_COUNT_ERROR = "Aggregated metrics must contain ExecutionStatusCount";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
@@ -456,11 +455,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         Version<?> version = getVersion(entry, versionId).orElse(null);
         if (version == null) {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
-        }
-
-        // Check that the aggregated metrics have at least ExecutionStatusCount
-        if (aggregatedMetrics.getExecutionStatusCount() == null) {
-            throw new CustomWebApplicationException(EXECUTION_STATUS_COUNT_ERROR, HttpStatus.SC_BAD_REQUEST);
         }
 
         version.getMetricsByPlatform().put(platform, aggregatedMetrics);

@@ -35,7 +35,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public abstract class CountMetric<T> {
+public abstract class CountMetric<K, V> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "countmetric_id_seq")
@@ -55,11 +55,7 @@ public abstract class CountMetric<T> {
     @JsonIgnore
     private Timestamp dbUpdateDate;
 
-    public abstract Map<T, Integer> getCount();
-
-    public void addCount(T key, int count) {
-        getCount().put(key, getCount().getOrDefault(key, 0) + count);
-    }
+    public abstract Map<K, V> getCount();
 
     protected CountMetric() {
     }
