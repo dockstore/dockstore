@@ -286,11 +286,14 @@
         </sql>
     </changeSet>
     <changeSet id="tighten constraint for names" author="dyuen">
+        <validCheckSum>8:c3f62dac8fdb39029443416261f10a9b</validCheckSum>
+        <validCheckSum>8:dc78648569654a8993edb1619c02cb78</validCheckSum>
         <sql dbms="postgresql">
             CREATE UNIQUE INDEX case_insensitive_toolname on tool using btree (registry, namespace, name, lower(toolname)) where toolname is not null;
             CREATE UNIQUE INDEX case_insensitive_apptool_toolname on apptool using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
             CREATE UNIQUE INDEX case_insensitive_notebook_workflowname on notebook using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
             -- see https://github.com/dockstore/dockstore/issues/5287, the id may need to be incremented depending on how often people stumble into this
+            -- remember to add new valid checksum values above when changing this limit to avoid a migration failure
             CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 21207;
         </sql>
     </changeSet>
