@@ -263,6 +263,33 @@ public class ToolsExtendedApi {
         return delegate.setAggregatedMetrics(id, versionId, platform, aggregatedMetrics);
     }
 
+    @GET
+    @UnitOfWork(readOnly = true)
+    @RolesAllowed({"curator", "admin", "platformPartner"})
+    @Path("/{id}/versions/{version_id}/aggregatedMetrics")
+    @Produces({MediaType.APPLICATION_JSON})
+    @ApiOperation(value = AggregatedMetricsGet.SUMMARY, notes = AggregatedMetricsGet.DESCRIPTION, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    @ApiResponses(value = {
+        @ApiResponse(code = HttpStatus.SC_OK, message = AggregatedMetricsGet.OK_RESPONSE, response = Map.class),
+        @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = AggregatedMetricsGet.NOT_FOUND_RESPONSE, response = Error.class),
+        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = AggregatedMetricsGet.UNAUTHORIZED_RESPONSE, response = Error.class)})
+    @Operation(operationId = "aggregatedMetricsGet", summary = AggregatedMetricsGet.SUMMARY, description = AggregatedMetricsGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+                + "", description = AggregatedMetricsGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = AggregatedMetricsGet.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+                + "", description = AggregatedMetricsGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+    })
+    public Response aggregatedMetricsGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
+        @ApiParam(value = AggregatedMetricsGet.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+        @ApiParam(value = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+        @ApiParam(value = AggregatedMetricsGet.PLATFORM_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
+        @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
+        return delegate.getAggregatedMetrics(id, versionId, platform);
+    }
+
     private static final class AggregatedMetricsPut {
         public static final String SUMMARY = "Add aggregated execution metrics for a workflow that was executed on a platform.";
         public static final String DESCRIPTION = "This endpoint adds aggregated metrics for a workflow that was executed on a platform";
@@ -272,6 +299,17 @@ public class ToolsExtendedApi {
         public static final String AGGREGATED_METRICS_DESCRIPTION = "Aggregated metrics to add to the version";
         public static final String OK_RESPONSE = "Aggregated metrics added successfully.";
         public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to add aggregated metrics.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
+    }
+
+    private static final class AggregatedMetricsGet {
+        public static final String SUMMARY = "Get aggregated execution metrics for a workflow that was executed on a platform.";
+        public static final String DESCRIPTION = "This endpoint retrieves aggregated metrics for a workflow that was executed on a platform";
+        public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
+        public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
+        public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
+        public static final String OK_RESPONSE = "Aggregated metrics retrieved successfully.";
+        public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to get aggregated metrics.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 

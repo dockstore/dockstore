@@ -483,6 +483,25 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         return Response.ok().entity(version.getMetricsByPlatform()).build();
     }
 
+    @Override
+    public Response getAggregatedMetrics(String id, String versionId, Partner platform) {
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.empty());
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_REGISTRY_RESPONSE;
+        }
+        if (entry == null) {
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Version<?> version = getVersion(entry, versionId).orElse(null);
+        if (version == null) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+        return Response.ok().entity(version.getMetricsByPlatform().get(platform)).build();
+    }
+
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
         ToolsApiServiceImpl.ParsedRegistryID parsedID =  new ToolsApiServiceImpl.ParsedRegistryID(id);
         return TOOLS_API_SERVICE_IMPL.getEntry(parsedID, user);
