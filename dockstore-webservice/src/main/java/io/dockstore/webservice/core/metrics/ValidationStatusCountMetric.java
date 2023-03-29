@@ -50,7 +50,11 @@ public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, Bool
     @CollectionTable(name = "validator_tool_validation_status", joinColumns = @JoinColumn(name = "validationstatusid", referencedColumnName = "id"))
     @BatchSize(size = 25)
     @ApiModelProperty(value = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true)
-    @Schema(description = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true)
+    @Schema(description = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true, example = """
+            {
+                "MINIWDL": true
+            }
+            """)
     private Map<ValidatorTool, Boolean> validatorToolToIsValid = new HashMap<>();
 
     public ValidationStatusCountMetric() {

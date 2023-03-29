@@ -271,7 +271,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         Metrics emptyMetrics = new Metrics();
         // Test that the response body must contain ExecutionStatusCount or ValidationStatus
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(emptyMetrics, platform, id, versionId));
-        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "Should not be able to put aggregated metrics if ExecutionStatusCount and ValidationStatus is missing");
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to put aggregated metrics if ExecutionStatusCount and ValidationStatus is missing");
         assertTrue(exception.getMessage().contains(MUST_CONTAIN_METRICS));
 
         // Verify that not providing metrics throws an exception

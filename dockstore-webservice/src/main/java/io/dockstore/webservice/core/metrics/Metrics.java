@@ -73,8 +73,8 @@ public class Metrics {
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "validationstatus", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated validation metrics")
-    @Schema(description = "Aggregated validation metrics")
+    @ApiModelProperty(value = "Aggregated validation status metrics")
+    @Schema(description = "Aggregated validation status metrics")
     private ValidationStatusCountMetric validationStatus;
 
     // database timestamps

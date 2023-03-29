@@ -258,7 +258,7 @@ public class ToolsExtendedApi {
         @ApiParam(value = AggregatedMetricsPut.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
         @ApiParam(value = AggregatedMetricsPut.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
         @ApiParam(value = AggregatedMetricsPut.PLATFORM_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
-        @ApiParam(value = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = Metrics.class))) Metrics aggregatedMetrics,
+        @ApiParam(value = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = Metrics.class))) @Valid Metrics aggregatedMetrics,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.setAggregatedMetrics(id, versionId, platform, aggregatedMetrics);
     }

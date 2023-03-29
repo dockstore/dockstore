@@ -7989,7 +7989,7 @@ definitions:
         description: "Aggregated memory metrics"
         $ref: "#/definitions/MemoryMetric"
       validationStatus:
-        description: "Aggregated validation metrics"
+        description: "Aggregated validation status metrics"
         $ref: "#/definitions/ValidationStatusMetric"
     description: "Aggregated metrics associated with entry versions"
   Notebook:
