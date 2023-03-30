@@ -491,6 +491,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_REGISTRY_RESPONSE;
         }
+
         if (entry == null) {
             throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
