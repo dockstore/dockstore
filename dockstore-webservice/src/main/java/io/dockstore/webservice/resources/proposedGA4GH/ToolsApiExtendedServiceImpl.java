@@ -499,6 +499,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         if (version == null) {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
+
         return Response.ok().entity(version.getMetricsByPlatform().get(platform)).build();
     }
 

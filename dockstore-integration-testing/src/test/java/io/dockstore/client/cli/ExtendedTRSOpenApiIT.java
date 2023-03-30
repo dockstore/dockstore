@@ -90,7 +90,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
     }
 
     @Test
-    void testAggregatedMetricsPut() {
+    void testAggregatedMetrics() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
