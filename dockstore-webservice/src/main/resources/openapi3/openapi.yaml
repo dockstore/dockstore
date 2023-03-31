@@ -10118,7 +10118,12 @@ components:
       - $ref: '#/components/schemas/Execution'
       - type: object
         properties:
-          valid:
+          dateExecuted:
+            type: string
+            description: The date and time that the validator tool was executed in
+              ISO 8601 UTC date format
+            example: 2023-03-31T15:06:49.888745366Z
+          isValid:
             type: boolean
             description: Boolean indicating if the workflow was validated successfully
             example: true
@@ -10128,12 +10133,31 @@ components:
             enum:
             - MINIWDL
             - WOMTOOL
+            - CWLTOOL
+            - NF_VALIDATION
             - OTHER
             example: miniwdl
+          validatorToolVersion:
+            type: string
+            description: The version of the validator tool
       description: Metrics of a workflow validated on a platform
       required:
-      - valid
+      - dateExecuted
+      - isValid
       - validatorTool
+    ValidationInfo:
+      type: object
+      description: Aggregated validation information
+      properties:
+        latestIsValid:
+          type: boolean
+          description: The boolean isValid value from the newest validation run
+        numberOfRuns:
+          type: integer
+          format: int32
+        passingRate:
+          type: integer
+          format: int64
     ValidationStatusMetric:
       type: object
       description: Aggregated metrics about workflow validation statuses
@@ -10145,7 +10169,7 @@ components:
         validatorToolToIsValid:
           type: object
           additionalProperties:
-            type: boolean
+            $ref: '#/components/schemas/ValidationInfo'
     VerificationInformation:
       type: object
       properties:

@@ -25,7 +25,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.HashMap;
 import java.util.Map;
 import javax.persistence.CollectionTable;
-import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -41,13 +40,12 @@ import org.hibernate.annotations.BatchSize;
 @ApiModel(value = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses")
 @Schema(name = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses")
 @SuppressWarnings("checkstyle:magicnumber")
-public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, Boolean> {
+public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, ValidationInfo> {
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(targetClass = ValidationInfo.class, fetch = FetchType.EAGER)
     @MapKeyColumn(name = "validatortool")
     @MapKeyEnumerated(EnumType.STRING)
-    @Column(name = "isvalid", nullable = false)
-    @CollectionTable(name = "validator_tool_validation_status", joinColumns = @JoinColumn(name = "validationstatusid", referencedColumnName = "id"))
+    @CollectionTable(name = "validator_tool_validation_info", joinColumns = @JoinColumn(name = "validationstatusid", referencedColumnName = "id"))
     @BatchSize(size = 25)
     @ApiModelProperty(value = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true)
     @Schema(description = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true, example = """
@@ -55,22 +53,22 @@ public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, Bool
                 "MINIWDL": true
             }
             """)
-    private Map<ValidatorTool, Boolean> validatorToolToIsValid = new HashMap<>();
+    private Map<ValidatorTool, ValidationInfo> validatorToolToIsValid = new HashMap<>();
 
     public ValidationStatusCountMetric() {
     }
 
-    public ValidationStatusCountMetric(Map<ValidatorTool, Boolean> validatorToolToIsValid) {
+    public ValidationStatusCountMetric(Map<ValidatorTool, ValidationInfo> validatorToolToIsValid) {
         this.validatorToolToIsValid = validatorToolToIsValid;
     }
 
     @Override
     @JsonProperty("validatorToolToIsValid")
-    public Map<ValidatorTool, Boolean> getCount() {
+    public Map<ValidatorTool, ValidationInfo> getCount() {
         return validatorToolToIsValid;
     }
 
-    public void setValidatorToolToIsValid(Map<ValidatorTool, Boolean> validatorToolToIsValid) {
+    public void setValidatorToolToIsValid(Map<ValidatorTool, ValidationInfo> validatorToolToIsValid) {
         this.validatorToolToIsValid = validatorToolToIsValid;
     }
 }

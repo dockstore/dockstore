@@ -25,16 +25,16 @@ import javax.validation.Constraint;
 import javax.validation.Payload;
 
 /**
- * Defines the `ISO1806ExecutionTime` constraint annotation, which
- * checks that the execution time is in ISO 1806 format.
+ * Defines the `ISO8601ExecutionTime` constraint annotation, which
+ * checks that the execution time is in ISO 1806 date format.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ISO8601ExecutionTimeValidator.class)
-public @interface ISO1806ExecutionTime {
-    String EXECUTION_TIME_FORMAT_ERROR = "must be in ISO 1806 format";
+@Constraint(validatedBy = ISO8601ExecutionDateValidator.class)
+public @interface ISO8601ExecutionDate {
+    String EXECUTION_DATE_FORMAT_ERROR = "must be in ISO 8601 UTC date format";
 
-    String message() default "'${validatedValue}' " + EXECUTION_TIME_FORMAT_ERROR;
+    String message() default "'${validatedValue}' " + EXECUTION_DATE_FORMAT_ERROR;
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }

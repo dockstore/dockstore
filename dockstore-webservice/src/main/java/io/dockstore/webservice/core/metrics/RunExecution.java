@@ -20,7 +20,7 @@ package io.dockstore.webservice.core.metrics;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus;
-import io.dockstore.webservice.core.metrics.constraints.ISO1806ExecutionTime;
+import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
@@ -42,7 +42,7 @@ public class RunExecution extends Execution {
     @Schema(description = "The status of the execution", required = true)
     private ExecutionStatus executionStatus;
 
-    @ISO1806ExecutionTime
+    @ISO8601ExecutionTime
     @JsonProperty
     @Schema(description = "The total time it took for the execution to complete in ISO 8601 duration format", example = "PT30S")
     private String executionTime;
@@ -93,8 +93,6 @@ public class RunExecution extends Execution {
     public void setCpuRequirements(Integer cpuRequirements) {
         this.cpuRequirements = cpuRequirements;
     }
-
-
 
     /**
      * Check that the execution time is in ISO-8601 format by parsing it into a Duration.

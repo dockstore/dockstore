@@ -47,6 +47,7 @@ import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.RunExecution;
+import io.dockstore.openapi.client.model.ValidationInfo;
 import io.dockstore.openapi.client.model.ValidationStatusMetric;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
@@ -176,7 +177,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
 
         // Put validation metrics for platform2
         ValidationStatusMetric  validationStatusMetric = new ValidationStatusMetric()
-                .validatorToolToIsValid(Map.of(MINIWDL.toString(), true));
+                .validatorToolToIsValid(Map.of(MINIWDL.toString(), new ValidationInfo().latestIsValid(true).passingRate(100L).numberOfRuns(1)));
         metrics = new Metrics().validationStatus(validationStatusMetric);
         extendedGa4GhApi.aggregatedMetricsPut(metrics, platform2, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
@@ -190,7 +191,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         // Verify validation status
         Metrics platform2Metrics = workflowVersion.getMetricsByPlatform().get(platform2);
         assertTrue(platform2Metrics.getValidationStatus().getValidatorToolToIsValid().containsKey(MINIWDL.toString()));
-        assertTrue(platform2Metrics.getValidationStatus().getValidatorToolToIsValid().get(MINIWDL.toString()));
+        assertTrue(platform2Metrics.getValidationStatus().getValidatorToolToIsValid().get(MINIWDL.toString()).isLatestIsValid());
     }
 
     @Test

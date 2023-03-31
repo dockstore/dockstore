@@ -17,21 +17,20 @@
 
 package io.dockstore.webservice.core.metrics.constraints;
 
-import io.dockstore.webservice.core.metrics.RunExecution;
+import io.dockstore.webservice.core.metrics.ValidationExecution;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
- * Validates that execution time is in ISO 8601 duration format
+ * Validates that execution time is in ISO 8601 UTC date format
  */
-public class ISO8601ExecutionTimeValidator implements ConstraintValidator<ISO8601ExecutionTime, String> {
+public class ISO8601ExecutionDateValidator implements ConstraintValidator<ISO8601ExecutionDate, String> {
 
     @Override
     public boolean isValid(final String executionTime, final ConstraintValidatorContext context) {
-        // nulls are valid because execution time is optional.
         if (executionTime == null) {
-            return true;
+            return false;
         }
-        return RunExecution.checkExecutionTimeISO8601Format(executionTime).isPresent();
+        return ValidationExecution.checkExecutionDateISO8601Format(executionTime).isPresent();
     }
 }

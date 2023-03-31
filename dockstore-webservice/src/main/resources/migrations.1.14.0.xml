@@ -400,6 +400,25 @@
         </addColumn>
     </changeSet>
     <changeSet author="ktran (generated)" id="addValidationMetrics">
+        <createTable tableName="validator_tool_validation_info">
+            <column name="validationstatusid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_info_pkey"/>
+            </column>
+            <column defaultValueComputed="now()" name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="latestisvalid" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberofruns" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="passingrate" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="validatortool" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_info_pkey"/>
+            </column>
+        </createTable>
         <createTable tableName="validation_status">
             <column name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="validation_status_pkey"/>
@@ -407,21 +426,11 @@
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
         </createTable>
-        <createTable tableName="validator_tool_validation_status">
-            <column name="validationstatusid" type="BIGINT">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_status_pkey"/>
-            </column>
-            <column name="isvalid" type="BOOLEAN">
-                <constraints nullable="false"/>
-            </column>
-            <column name="validatortool" type="VARCHAR(255)">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_status_pkey"/>
-            </column>
-        </createTable>
+
         <addColumn tableName="metrics">
             <column name="validationstatus" type="int8"/>
         </addColumn>
-        <addForeignKeyConstraint baseColumnNames="validationstatus" baseTableName="metrics" constraintName="fk_validation_count_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
-        <addForeignKeyConstraint baseColumnNames="validationstatusid" baseTableName="validator_tool_validation_status" constraintName="fk_validationstatusid_validator_tool_validation_status" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
+        <addForeignKeyConstraint baseColumnNames="validationstatus" baseTableName="metrics" constraintName="fk_validationstatus_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
+        <addForeignKeyConstraint baseColumnNames="validationstatusid" baseTableName="validator_tool_validation_info" constraintName="fk_validationstatusid_validator_tool_validation_info" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
     </changeSet>
 </databaseChangeLog>

@@ -25,8 +25,10 @@ import static io.dockstore.common.LocalStackTestUtilities.LocalStackEnvironmentV
 import static io.dockstore.common.LocalStackTestUtilities.createBucket;
 import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
 import static io.dockstore.common.LocalStackTestUtilities.getS3ObjectsFromBucket;
+import static io.dockstore.openapi.client.model.ValidationExecution.ValidatorToolEnum.MINIWDL;
 import static io.dockstore.webservice.core.metrics.constraints.HasExecutions.MUST_CONTAIN_EXECUTIONS;
-import static io.dockstore.webservice.core.metrics.constraints.ISO1806ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
+import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
+import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -68,6 +70,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -190,8 +193,8 @@ public class MetricsDataS3ClientIT {
         verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
 
         // Send validation metrics data to S3 for the same workflow version, but different platform
-        List<ValidationExecution> validationExecutions = List.of(new ValidationExecution().valid(true).validatorTool(
-                ValidationExecution.ValidatorToolEnum.MINIWDL)); // This workflow version successfully validated with miniwdl
+        List<ValidationExecution> validationExecutions = List.of(new ValidationExecution().isValid(true).validatorTool(MINIWDL).dateExecuted(
+                Instant.now().toString())); // This workflow version successfully validated with miniwdl
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform2, workflowId, workflowVersionId, description);
         metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
         metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform2, String.format(workflowExpectedS3KeyPrefixFormat, platform2));
@@ -283,6 +286,13 @@ public class MetricsDataS3ClientIT {
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if required fields for ValidationExecution are missing");
         assertTrue(exception.getMessage().contains("valid") && exception.getMessage().contains("validatorTool") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if required fields for ValidationExecution are missing");
+
+        // Test that malformed dateExecuteds for ValidationExecution throw an exception
+        List<ValidationExecution> malformedDateExecuteds = List.of(new ValidationExecution().dateExecuted("March 23, 2023").isValid(true).validatorTool(MINIWDL));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(malformedDateExecuteds), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if dateExecuted is malformed");
+        assertTrue(exception.getMessage().contains(EXECUTION_DATE_FORMAT_ERROR));
+        assertTrue(exception.getMessage().contains("March 23, 2023"), "Should not be able to submit metrics if dateExecuted is malformed");
 
         // Verify that not providing metrics data throws an exception
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody(), platform, id, versionId, description));

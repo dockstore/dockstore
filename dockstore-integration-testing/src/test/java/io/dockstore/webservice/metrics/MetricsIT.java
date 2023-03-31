@@ -40,6 +40,7 @@ import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import io.dockstore.webservice.core.metrics.Metrics;
+import io.dockstore.webservice.core.metrics.ValidationInfo;
 import io.dockstore.webservice.core.metrics.ValidationStatusCountMetric;
 import io.dockstore.webservice.jdbi.MetricsDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -187,7 +188,7 @@ class MetricsIT extends BaseIT {
 
         // Add aggregated information about validation
         // Add a successful miniwdl validation
-        ValidationStatusCountMetric validationStatusCountMetric = new ValidationStatusCountMetric(Map.of(MINIWDL, true));
+        ValidationStatusCountMetric validationStatusCountMetric = new ValidationStatusCountMetric(Map.of(MINIWDL, new ValidationInfo(true, 100L, 1)));
         metrics.setValidationStatus(validationStatusCountMetric);
 
         return metrics;

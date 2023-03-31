@@ -9140,21 +9140,39 @@ definitions:
   ValidationExecution:
     type: "object"
     required:
-    - "valid"
+    - "dateExecuted"
+    - "isValid"
     - "validatorTool"
     properties:
       additionalProperties:
         type: "object"
         additionalProperties:
           type: "object"
-      valid:
+      dateExecuted:
+        type: "string"
+      isValid:
         type: "boolean"
       validatorTool:
         type: "string"
         enum:
         - "MINIWDL"
         - "WOMTOOL"
+        - "CWLTOOL"
+        - "NF_VALIDATION"
         - "OTHER"
+      validatorToolVersion:
+        type: "string"
+  ValidationInfo:
+    type: "object"
+    properties:
+      latestIsValid:
+        type: "boolean"
+      numberOfRuns:
+        type: "integer"
+        format: "int32"
+      passingRate:
+        type: "integer"
+        format: "int64"
   ValidationStatusMetric:
     type: "object"
     properties:
@@ -9165,7 +9183,7 @@ definitions:
       validatorToolToIsValid:
         type: "object"
         additionalProperties:
-          type: "boolean"
+          $ref: "#/definitions/ValidationInfo"
     description: "Aggregated metrics about workflow validation statuses"
   VerificationInformation:
     type: "object"
