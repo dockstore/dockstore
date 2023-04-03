@@ -91,7 +91,7 @@ public class JupyterHandler implements LanguageHandlerInterface {
     private void processAuthors(Nbformat notebook, Version version) {
         List<Nbformat.Metadata.Author> authors = notebook.getMetadata().getAuthors();
         if (authors != null) {
-            version.setAuthors(authors.stream()
+            version.setAuthorsFromDescriptor(authors.stream()
                 .map(Nbformat.Metadata.Author::getName)
                 .filter(StringUtils::isNotEmpty)
                 .map(name -> {

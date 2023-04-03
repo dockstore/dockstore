@@ -507,6 +507,16 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
+    /**
+     * Clears .dockstore.yml authors and sets authors from the descriptor
+     * @param authors
+     */
+    public void setAuthorsFromDescriptor(Set<Author> authors) {
+        // Clear ORCID authors from the .dockstore.yml
+        this.getOrcidAuthors().clear();
+        this.setAuthors(authors);
+    }
+
     public void setAuthors(final Set<Author> authors) {
         this.authors.clear();
         if (authors != null) {

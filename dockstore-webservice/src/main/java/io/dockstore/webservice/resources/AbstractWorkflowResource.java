@@ -520,7 +520,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
-                        workflow.syncMetadataWithDefault();
 
                         addValidationsToMessage(workflow, version, messageWriter);
                         publishWorkflowAndLog(workflow, publish, user, repository, gitReference);
@@ -809,6 +808,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Update index if default version was updated
             // verified and verified platforms are the only versions-level properties unrelated to default version that affect the index but GitHub Apps do not update it
             if (workflow.getActualDefaultVersion() != null && updatedWorkflowVersion.getName() != null && workflow.getActualDefaultVersion().getName().equals(updatedWorkflowVersion.getName())) {
+                workflow.syncMetadataWithDefault();
                 PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
             }
 

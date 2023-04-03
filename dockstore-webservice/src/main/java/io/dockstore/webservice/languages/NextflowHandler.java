@@ -85,10 +85,12 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             // Add authors from descriptor
             if (configuration.containsKey("manifest.author")) {
                 String[] authors = configuration.getString("manifest.author").split(",");
+                Set<Author> newAuthors = new HashSet<>();
                 for (String author : authors) {
                     Author newAuthor = new Author(author.trim());
-                    version.addAuthor(newAuthor);
+                    newAuthors.add(newAuthor);
                 }
+                version.setAuthorsFromDescriptor(newAuthors);
             }
             // look for extended help message from nf-core workflows when it is available
             final String mainScriptPath = getMainScriptPath(configuration);
