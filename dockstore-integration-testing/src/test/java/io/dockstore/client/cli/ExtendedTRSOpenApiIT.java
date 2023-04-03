@@ -176,8 +176,14 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(1, metricsDbCount, "There should only be 1 row in the metrics table because we only have one entry version with aggregated metrics");
 
         // Put validation metrics for platform2
-        ValidationStatusMetric  validationStatusMetric = new ValidationStatusMetric()
-                .validatorToolToIsValid(Map.of(MINIWDL.toString(), new ValidationInfo().latestIsValid(true).passingRate(100L).numberOfRuns(1)));
+        ValidationStatusMetric validationStatusMetric = new ValidationStatusMetric().validatorToolToIsValid(Map.of(
+                MINIWDL.toString(),
+                new ValidationInfo()
+                        .mostRecentIsValid(true)
+                        .mostRecentVersion("1.0")
+                        .passingRate(100d)
+                        .numberOfRuns(1)
+                        .successfulValidationVersions(List.of("1.0"))));
         metrics = new Metrics().validationStatus(validationStatusMetric);
         extendedGa4GhApi.aggregatedMetricsPut(metrics, platform2, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
@@ -190,8 +196,14 @@ class ExtendedTRSOpenApiIT extends BaseIT {
 
         // Verify validation status
         Metrics platform2Metrics = workflowVersion.getMetricsByPlatform().get(platform2);
-        assertTrue(platform2Metrics.getValidationStatus().getValidatorToolToIsValid().containsKey(MINIWDL.toString()));
-        assertTrue(platform2Metrics.getValidationStatus().getValidatorToolToIsValid().get(MINIWDL.toString()).isLatestIsValid());
+        ValidationInfo validationInfo = platform2Metrics.getValidationStatus().getValidatorToolToIsValid().get(MINIWDL.toString());
+        assertNotNull(validationInfo);
+        assertTrue(validationInfo.isMostRecentIsValid());
+        assertEquals("1.0", validationInfo.getMostRecentVersion());
+        assertEquals(List.of("1.0"), validationInfo.getSuccessfulValidationVersions());
+        assertTrue(validationInfo.getFailedValidationVersions().isEmpty());
+        assertEquals(100d, validationInfo.getPassingRate());
+        assertEquals(1, validationInfo.getNumberOfRuns());
     }
 
     @Test

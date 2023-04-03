@@ -193,7 +193,7 @@ public class MetricsDataS3ClientIT {
         verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
 
         // Send validation metrics data to S3 for the same workflow version, but different platform
-        List<ValidationExecution> validationExecutions = List.of(new ValidationExecution().isValid(true).validatorTool(MINIWDL).dateExecuted(
+        List<ValidationExecution> validationExecutions = List.of(new ValidationExecution().isValid(true).validatorTool(MINIWDL).validatorToolVersion("v1.9.1").dateExecuted(
                 Instant.now().toString())); // This workflow version successfully validated with miniwdl
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform2, workflowId, workflowVersionId, description);
         metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
@@ -285,7 +285,7 @@ public class MetricsDataS3ClientIT {
         List<ValidationExecution> validationExecutions = List.of(new ValidationExecution());
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if required fields for ValidationExecution are missing");
-        assertTrue(exception.getMessage().contains("valid") && exception.getMessage().contains("validatorTool") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if required fields for ValidationExecution are missing");
+        assertTrue(exception.getMessage().contains("isValid") && exception.getMessage().contains("validatorTool") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if required fields for ValidationExecution are missing");
 
         // Test that malformed dateExecuteds for ValidationExecution throw an exception
         List<ValidationExecution> malformedDateExecuteds = List.of(new ValidationExecution().dateExecuted("March 23, 2023").isValid(true).validatorTool(MINIWDL));

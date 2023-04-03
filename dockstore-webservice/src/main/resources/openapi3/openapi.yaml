@@ -10145,19 +10145,49 @@ components:
       - dateExecuted
       - isValid
       - validatorTool
+      - validatorToolVersion
     ValidationInfo:
       type: object
       description: Aggregated validation information
       properties:
-        latestIsValid:
+        failedValidationVersions:
+          type: array
+          description: A set of validator tool versions that unsuccessfully validated
+            the workflow in its most recent run
+          items:
+            type: string
+            description: A set of validator tool versions that unsuccessfully validated
+              the workflow in its most recent run
+        mostRecentIsValid:
           type: boolean
-          description: The boolean isValid value from the newest validation run
+          description: The boolean isValid value from the most recent validation run
+        mostRecentVersion:
+          type: string
+          description: The version of the validator tool that was most recently executed
         numberOfRuns:
           type: integer
           format: int32
+          description: The number of times the validator was executed on the workflow
         passingRate:
-          type: integer
-          format: int64
+          type: number
+          format: double
+          description: A percentage representing how often the validator successfully
+            validates the workflow
+        successfulValidationVersions:
+          type: array
+          description: A set of validator tool versions that successfully validated
+            the workflow in its most recent run
+          items:
+            type: string
+            description: A set of validator tool versions that successfully validated
+              the workflow in its most recent run
+      required:
+      - failedValidationVersions
+      - mostRecentIsValid
+      - mostRecentVersion
+      - numberOfRuns
+      - passingRate
+      - successfulValidationVersions
     ValidationStatusMetric:
       type: object
       description: Aggregated metrics about workflow validation statuses

@@ -22,7 +22,7 @@ import io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import javax.persistence.CollectionTable;
 import javax.persistence.ElementCollection;
@@ -53,7 +53,8 @@ public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, Vali
                 "MINIWDL": true
             }
             """)
-    private Map<ValidatorTool, ValidationInfo> validatorToolToIsValid = new HashMap<>();
+    private Map<ValidatorTool, ValidationInfo> validatorToolToIsValid = new EnumMap<>(ValidatorTool.class);
+
 
     public ValidationStatusCountMetric() {
     }

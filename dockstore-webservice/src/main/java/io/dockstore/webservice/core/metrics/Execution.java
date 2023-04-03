@@ -27,7 +27,7 @@ import java.util.Map;
 @Schema(name = "Execution", description = "Metrics of a workflow execution on a platform", subTypes = { RunExecution.class, ValidationExecution.class })
 public abstract class Execution {
 
-    public Execution() {
+    protected Execution() {
     }
 
     @JsonProperty

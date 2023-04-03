@@ -39,7 +39,9 @@ public class ValidationExecution extends Execution {
     @Schema(description = "The validator tool used to validate the workflow", required = true, example = "miniwdl")
     ValidatorTool validatorTool;
 
-    @Schema(description = "The version of the validator tool")
+    @NotNull
+    @JsonProperty(required = true)
+    @Schema(description = "The version of the validator tool", required = true)
     String validatorToolVersion;
 
     @NotNull

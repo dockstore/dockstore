@@ -9143,6 +9143,7 @@ definitions:
     - "dateExecuted"
     - "isValid"
     - "validatorTool"
+    - "validatorToolVersion"
     properties:
       additionalProperties:
         type: "object"
@@ -9165,14 +9166,24 @@ definitions:
   ValidationInfo:
     type: "object"
     properties:
-      latestIsValid:
+      failedValidationVersions:
+        type: "array"
+        items:
+          type: "string"
+      mostRecentIsValid:
         type: "boolean"
+      mostRecentVersion:
+        type: "string"
       numberOfRuns:
         type: "integer"
         format: "int32"
       passingRate:
-        type: "integer"
-        format: "int64"
+        type: "number"
+        format: "double"
+      successfulValidationVersions:
+        type: "array"
+        items:
+          type: "string"
   ValidationStatusMetric:
     type: "object"
     properties:

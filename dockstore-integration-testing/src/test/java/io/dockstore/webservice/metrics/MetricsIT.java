@@ -46,6 +46,7 @@ import io.dockstore.webservice.jdbi.MetricsDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -188,7 +189,14 @@ class MetricsIT extends BaseIT {
 
         // Add aggregated information about validation
         // Add a successful miniwdl validation
-        ValidationStatusCountMetric validationStatusCountMetric = new ValidationStatusCountMetric(Map.of(MINIWDL, new ValidationInfo(true, 100L, 1)));
+        ValidationInfo miniwdlValidationInfo = new ValidationInfo();
+        miniwdlValidationInfo.setMostRecentIsValid(true);
+        miniwdlValidationInfo.setMostRecentVersion("1.0");
+        miniwdlValidationInfo.setSuccessfulValidationVersions(List.of("1.0"));
+        miniwdlValidationInfo.setFailedValidationVersions(List.of());
+        miniwdlValidationInfo.setNumberOfRuns(1);
+        miniwdlValidationInfo.setPassingRate(100d);
+        ValidationStatusCountMetric validationStatusCountMetric = new ValidationStatusCountMetric(Map.of(MINIWDL, miniwdlValidationInfo));
         metrics.setValidationStatus(validationStatusCountMetric);
 
         return metrics;
