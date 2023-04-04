@@ -601,10 +601,9 @@ paths:
     get:
       tags:
       - "extendedGA4GH"
-      summary: "Get aggregated execution metrics for a workflow that was executed\
-        \ on a platform."
-      description: "This endpoint retrieves aggregated metrics for a workflow that\
-        \ was executed on a platform"
+      summary: "Get aggregated execution metrics for a tool from all platforms"
+      description: "This endpoint retrieves aggregated metrics for a tool from all\
+        \ platforms"
       operationId: "aggregatedMetricsGet"
       produces:
       - "application/json"
@@ -621,24 +620,6 @@ paths:
           \ for example `v1`"
         required: true
         type: "string"
-      - name: "platform"
-        in: "query"
-        description: "Platform that the tool was executed on"
-        required: true
-        type: "string"
-        enum:
-        - "GALAXY"
-        - "TERRA"
-        - "DNA_STACK"
-        - "DNA_NEXUS"
-        - "CGC"
-        - "NHLBI_BIODATA_CATALYST"
-        - "ANVIL"
-        - "CAVATICA"
-        - "NEXTFLOW_TOWER"
-        - "ELWAZI"
-        - "AGC"
-        - "OTHER"
       responses:
         200:
           description: "Aggregated metrics retrieved successfully."

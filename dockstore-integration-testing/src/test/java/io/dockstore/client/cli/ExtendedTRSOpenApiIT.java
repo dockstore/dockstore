@@ -177,14 +177,11 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
         assertNotNull(workflowVersion);
         assertEquals(2, workflowVersion.getMetricsByPlatform().size(), "Version should have metrics for 2 platforms");
-        Metrics platform2Metrics = workflowVersion.getMetricsByPlatform().get(platform2);
 
-        // Get metrics for both platforms
-        String platform1JsonMetrics = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId, platform1);
-        String platform2JsonMetrics = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId, platform2);
+        String metricsGet = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId);
 
-        assertTrue(platform1JsonMetrics.contains("{\"cpu\":{\"average\":" + average));
-        assertTrue(platform2JsonMetrics.contains("{\"cpu\":{\"average\":" + average));
+        assertTrue(metricsGet.contains(platform1 + "\":{\"cpu\":{\"average\":" + average), "Should contain metrics for platform1");
+        assertTrue(metricsGet.contains(platform2 + "\":{\"cpu\":{\"average\":" + average), "Should contain metrics for platform2");
     }
 
     @Test

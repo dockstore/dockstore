@@ -484,12 +484,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Response getAggregatedMetrics(String id, String versionId, Partner platform) {
+    public Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId) {
         Entry<?, ?> entry;
         try {
             entry = getEntry(id, Optional.empty());
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            return BAD_DECODE_REGISTRY_RESPONSE;
+            throw new CustomWebApplicationException("Could not decode registry id", HttpStatus.SC_BAD_REQUEST);
         }
 
         if (entry == null) {
@@ -501,7 +501,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
-        return Response.ok().entity(version.getMetricsByPlatform().get(platform)).build();
+        return version.getMetricsByPlatform();
     }
 
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {

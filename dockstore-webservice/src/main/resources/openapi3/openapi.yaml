@@ -514,8 +514,8 @@ paths:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
     get:
-      description: This endpoint retrieves aggregated metrics for a workflow that
-        was executed on a platform
+      description: This endpoint retrieves aggregated metrics for a tool from all
+        platforms
       operationId: aggregatedMetricsGet
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -532,25 +532,6 @@ paths:
         required: true
         schema:
           type: string
-      - description: Platform that the tool was executed on
-        in: query
-        name: platform
-        required: true
-        schema:
-          type: string
-          enum:
-          - GALAXY
-          - TERRA
-          - DNA_STACK
-          - DNA_NEXUS
-          - CGC
-          - NHLBI_BIODATA_CATALYST
-          - ANVIL
-          - CAVATICA
-          - NEXTFLOW_TOWER
-          - ELWAZI
-          - AGC
-          - OTHER
       responses:
         "200":
           content:
@@ -572,8 +553,7 @@ paths:
           description: The tool cannot be found to get aggregated metrics.
       security:
       - BEARER: []
-      summary: Get aggregated execution metrics for a workflow that was executed on
-        a platform.
+      summary: Get aggregated execution metrics for a tool from all platforms
       tags:
       - extendedGA4GH
     put:
