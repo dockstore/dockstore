@@ -285,7 +285,8 @@ public class ToolsExtendedApi {
     public Map<Partner, Metrics> aggregatedMetricsGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
         @ApiParam(value = AggregatedMetricsGet.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.ID_DESCRIPTION,
                 in = ParameterIn.PATH) @PathParam("id") String id,
-        @ApiParam(value = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+        @ApiParam(value = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, required = true) @Parameter(
+                description = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
         return delegate.getAggregatedMetrics(id, versionId);
     }
