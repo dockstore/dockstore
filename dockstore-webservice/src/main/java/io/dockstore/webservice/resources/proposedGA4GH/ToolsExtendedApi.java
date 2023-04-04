@@ -273,7 +273,8 @@ public class ToolsExtendedApi {
         @ApiResponse(code = HttpStatus.SC_OK, message = AggregatedMetricsGet.OK_RESPONSE, response = Map.class),
         @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = AggregatedMetricsGet.NOT_FOUND_RESPONSE, response = Error.class),
         @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = AggregatedMetricsGet.UNAUTHORIZED_RESPONSE, response = Error.class)})
-    @Operation(operationId = "aggregatedMetricsGet", summary = AggregatedMetricsGet.SUMMARY, description = AggregatedMetricsGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+    @Operation(operationId = "aggregatedMetricsGet", summary = AggregatedMetricsGet.SUMMARY, description = AggregatedMetricsGet.DESCRIPTION,
+            security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
                 + "", description = AggregatedMetricsGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
@@ -282,7 +283,8 @@ public class ToolsExtendedApi {
                 + "", description = AggregatedMetricsGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
     })
     public Map<Partner, Metrics> aggregatedMetricsGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
-        @ApiParam(value = AggregatedMetricsGet.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+        @ApiParam(value = AggregatedMetricsGet.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.ID_DESCRIPTION,
+                in = ParameterIn.PATH) @PathParam("id") String id,
         @ApiParam(value = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
         return delegate.getAggregatedMetrics(id, versionId);
