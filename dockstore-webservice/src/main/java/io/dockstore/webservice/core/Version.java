@@ -490,16 +490,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().descriptionSource = newDescriptionSource;
     }
 
-    // remove this method when author is removed from VersionMetadata
-    public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;
-    }
-
-    // remove this method when author is removed from VersionMetadata
-    public void setEmail(String newEmail) {
-        this.getVersionMetadata().email = newEmail;
-    }
-
     public void addAuthor(final Author author) {
         boolean isNewAuthor = this.authors.stream().noneMatch(existingAuthor -> existingAuthor.getName().equals(author.getName()));
         if (isNewAuthor) {
@@ -616,8 +606,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
      * @param newVersionMetadata    Newest metadata from source control
      */
     public void setVersionMetadata(VersionMetadata newVersionMetadata) {
-        this.setAuthor(newVersionMetadata.author);
-        this.setEmail(newVersionMetadata.email);
         this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
         this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }

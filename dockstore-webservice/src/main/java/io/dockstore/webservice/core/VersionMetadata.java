@@ -74,10 +74,6 @@ public class VersionMetadata {
     @Enumerated(EnumType.STRING)
     protected Version.DOIStatus doiStatus;
 
-    @Column
-    @ApiModelProperty(value = "This is the name of the author stated in the descriptor")
-    protected String author;
-
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     @Schema(description = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
@@ -86,10 +82,6 @@ public class VersionMetadata {
     @Column(name = "description_source")
     @Enumerated(EnumType.STRING)
     protected DescriptionSource descriptionSource;
-
-    @Column
-    @ApiModelProperty(value = "This is the email of the author stated in the descriptor")
-    protected String email;
 
     @MapsId
     @OneToOne

@@ -402,4 +402,8 @@
             <column name="engineversions" type="varchar"></column>
         </addColumn>
     </changeSet>
+    <changeSet author="ktran (generated)" id="dropVersionMetadataAuthorAndEmail">
+        <dropColumn columnName="author" tableName="version_metadata"/>
+        <dropColumn columnName="email" tableName="version_metadata"/>
+    </changeSet>
 </databaseChangeLog>
