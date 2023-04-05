@@ -484,12 +484,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId) {
+    public Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId, Optional<User> user) {
         Entry<?, ?> entry;
         try {
-            entry = getEntry(id, Optional.empty());
+            entry = getEntry(id, user);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            throw new CustomWebApplicationException("Could not decode registry id", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Invalid entry ID", HttpStatus.SC_BAD_REQUEST);
         }
 
         if (entry == null) {

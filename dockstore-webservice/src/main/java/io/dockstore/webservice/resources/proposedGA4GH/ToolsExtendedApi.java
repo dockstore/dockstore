@@ -45,6 +45,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -274,13 +275,13 @@ public class ToolsExtendedApi {
         @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = AggregatedMetricsGet.NOT_FOUND_RESPONSE, response = Error.class),
         @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = AggregatedMetricsGet.UNAUTHORIZED_RESPONSE, response = Error.class)})
     @Operation(operationId = "aggregatedMetricsGet", summary = AggregatedMetricsGet.SUMMARY, description = AggregatedMetricsGet.DESCRIPTION)
-    public Map<Partner, Metrics> aggregatedMetricsGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
+    public Map<Partner, Metrics> aggregatedMetricsGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = AggregatedMetricsGet.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.ID_DESCRIPTION,
                 in = ParameterIn.PATH) @PathParam("id") String id,
         @ApiParam(value = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, required = true) @Parameter(
                 description = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
-        return delegate.getAggregatedMetrics(id, versionId);
+        return delegate.getAggregatedMetrics(id, versionId, user);
     }
 
     private static final class AggregatedMetricsPut {

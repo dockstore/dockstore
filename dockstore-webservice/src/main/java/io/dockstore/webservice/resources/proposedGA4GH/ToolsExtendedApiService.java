@@ -22,6 +22,7 @@ import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.api.NotFoundException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -46,5 +47,5 @@ public abstract class ToolsExtendedApiService {
     public abstract Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, List<Execution> executions);
 
     public abstract Response setAggregatedMetrics(String id, String versionId, Partner platform, Metrics aggregatedMetrics);
-    public abstract Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId) throws NotFoundException;
+    public abstract Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId, Optional<User> user) throws NotFoundException;
 }
