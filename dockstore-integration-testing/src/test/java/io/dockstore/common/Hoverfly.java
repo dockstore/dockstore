@@ -176,7 +176,11 @@ public final class Hoverfly {
                     .get("/v3.0/0000-0000-0000-0000").anyBody().willReturn(notFound())
                     .get("/v3.0/1111-1111-1111-1111").anyBody().willReturn(notFound())
                     .get("/v3.0/0000-1234-5678-0000").anyBody().willReturn(notFound()),
-
+            service("https://pub.orcid.org")
+                    // Since it's repetitive to mock all the responses needed to create an OrcidAuthor for these IDs, simulate that the ORCID IDs don't exist.
+                    .get("/v3.0/0000-0000-0000-0000").anyBody().willReturn(notFound())
+                    .get("/v3.0/1111-1111-1111-1111").anyBody().willReturn(notFound())
+                    .get("/v3.0/0000-1234-5678-0000").anyBody().willReturn(notFound()),
             service("https://sandbox.orcid.org")
                     .post("/oauth/token").anyBody().willReturn(success(GSON.toJson(getFakeTokenResponse("")), MediaType.APPLICATION_JSON))
     );
