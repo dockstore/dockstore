@@ -156,6 +156,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
     public static final String NO_ZENDO_USER_TOKEN = "Could not get Zenodo token for user";
     public static final String SC_REGISTRY_ACCESS_MESSAGE = "User does not have access to the given source control registry.";
+    public static final String WORKFLOW_VERSION_HAS_NO_AUTHOR = "There must be at least one author for the workflow version.";
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
@@ -620,6 +621,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (!workflowVersion.isFrozen()) {
             LOG.error(user.getUsername() + ": Could not generate DOI for " + workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED);
             throw new CustomWebApplicationException("Could not generate DOI for " + workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED + ". ", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (workflowVersion.getAuthors().isEmpty() && workflowVersion.getOrcidAuthors().isEmpty()) {
+            throw new CustomWebApplicationException(WORKFLOW_VERSION_HAS_NO_AUTHOR, HttpStatus.SC_BAD_REQUEST);
         }
 
         List<Token> tokens = checkOnZenodoToken(user);
