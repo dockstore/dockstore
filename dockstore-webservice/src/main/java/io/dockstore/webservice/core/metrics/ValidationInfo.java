@@ -41,13 +41,19 @@ public class ValidationInfo implements Serializable {
     @Schema(description = "The boolean isValid value from the most recent validation run", required = true)
     private Boolean mostRecentIsValid;
 
+    @Column(columnDefinition = "TEXT")
+    @Schema(description = "The error message of the most recent validation run if it failed")
+    private String mostRecentErrorMessage;
+
+    @Column(columnDefinition = "TEXT")
     @Convert(converter = ValidatorToolVersionConverter.class)
     @Schema(description = "A set of validator tool versions that successfully validated the workflow in its most recent run", required = true)
-    List<String> successfulValidationVersions = new ArrayList<>();
+    private List<String> successfulValidationVersions = new ArrayList<>();
 
+    @Column(columnDefinition = "TEXT")
     @Convert(converter = ValidatorToolVersionConverter.class)
     @Schema(description = "A set of validator tool versions that unsuccessfully validated the workflow in its most recent run", required = true)
-    List<String> failedValidationVersions = new ArrayList<>();
+    private List<String> failedValidationVersions = new ArrayList<>();
 
     @Column(nullable = false)
     @Schema(description = "A percentage representing how often the validator successfully validates the workflow", required = true)
@@ -83,6 +89,14 @@ public class ValidationInfo implements Serializable {
 
     public void setMostRecentIsValid(Boolean mostRecentIsValid) {
         this.mostRecentIsValid = mostRecentIsValid;
+    }
+
+    public String getMostRecentErrorMessage() {
+        return mostRecentErrorMessage;
+    }
+
+    public void setMostRecentErrorMessage(String mostRecentErrorMessage) {
+        this.mostRecentErrorMessage = mostRecentErrorMessage;
     }
 
     public Double getPassingRate() {

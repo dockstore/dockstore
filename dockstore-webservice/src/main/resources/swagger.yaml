@@ -9151,6 +9151,8 @@ definitions:
           type: "object"
       dateExecuted:
         type: "string"
+      errorMessage:
+        type: "string"
       isValid:
         type: "boolean"
       validatorTool:
@@ -9170,6 +9172,8 @@ definitions:
         type: "array"
         items:
           type: "string"
+      mostRecentErrorMessage:
+        type: "string"
       mostRecentIsValid:
         type: "boolean"
       mostRecentVersion:

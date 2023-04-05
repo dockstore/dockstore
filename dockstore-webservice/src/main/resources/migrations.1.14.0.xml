@@ -415,14 +415,15 @@
             <column name="mostrecentversion" type="varchar(255 BYTE)">
                 <constraints nullable="false"/>
             </column>
+            <column name="mostrecenterrormessage" type="TEXT"/>
             <column name="numberofruns" type="INTEGER">
                 <constraints nullable="false"/>
             </column>
             <column name="passingrate" type="float8">
                 <constraints nullable="false"/>
             </column>
-            <column name="failedvalidationversions" type="varchar(255 BYTE)"/>
-            <column name="successfulvalidationversions" type="varchar(255 BYTE)"/>
+            <column name="failedvalidationversions" type="TEXT"/>
+            <column name="successfulvalidationversions" type="TEXT"/>
             <column name="validatortool" type="VARCHAR(255)">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_info_pkey"/>
             </column>

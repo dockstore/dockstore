@@ -37,23 +37,26 @@ public class ValidationExecution extends Execution {
     @NotNull
     @JsonProperty(required = true)
     @Schema(description = "The validator tool used to validate the workflow", required = true, example = "miniwdl")
-    ValidatorTool validatorTool;
+    private ValidatorTool validatorTool;
 
     @NotNull
     @JsonProperty(required = true)
     @Schema(description = "The version of the validator tool", required = true)
-    String validatorToolVersion;
+    private String validatorToolVersion;
 
     @NotNull
     @JsonProperty(required = true)
     @Schema(description = "Boolean indicating if the workflow was validated successfully", required = true, example = "true")
-    Boolean isValid;
+    private Boolean isValid;
+
+    @Schema(description = "The error message for a failed validation by the validator tool")
+    private String errorMessage;
 
     @NotNull
     @ISO8601ExecutionDate
     @JsonProperty(required = true)
     @Schema(description = "The date and time that the validator tool was executed in ISO 8601 UTC date format", required = true, example = "2023-03-31T15:06:49.888745366Z")
-    String dateExecuted;
+    private String dateExecuted;
 
     public ValidationExecution() {
     }
@@ -85,6 +88,14 @@ public class ValidationExecution extends Execution {
 
     public void setIsValid(Boolean isValid) {
         this.isValid = isValid;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 
     public String getDateExecuted() {

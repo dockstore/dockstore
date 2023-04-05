@@ -10123,6 +10123,10 @@ components:
             description: The date and time that the validator tool was executed in
               ISO 8601 UTC date format
             example: 2023-03-31T15:06:49.888745366Z
+          errorMessage:
+            type: string
+            description: The error message for a failed validation by the validator
+              tool
           isValid:
             type: boolean
             description: Boolean indicating if the workflow was validated successfully
@@ -10158,6 +10162,9 @@ components:
             type: string
             description: A set of validator tool versions that unsuccessfully validated
               the workflow in its most recent run
+        mostRecentErrorMessage:
+          type: string
+          description: The error message of the most recent validation run if it failed
         mostRecentIsValid:
           type: boolean
           description: The boolean isValid value from the most recent validation run
