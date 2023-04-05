@@ -88,7 +88,8 @@ public final class ORCIDHelper {
             baseUrl = orcidAuthUrl.getProtocol() + "://" + orcidAuthUrl.getHost() + "/";
             // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/"
             baseApiUrl = orcidAuthUrl.getProtocol() + "://api." + orcidAuthUrl.getHost() + "/v3.0/";
-            basePublicUrl = orcidAuthUrl.getProtocol() + "://pub." + orcidAuthUrl.getHost() + "/v3.0/";
+            // if hitting the public API, no point in using the sandbox public API
+            basePublicUrl = orcidAuthUrl.getProtocol() + "://pub." + orcidAuthUrl.getHost().replaceFirst("^sandbox.", "") + "/v3.0/";
         } catch (MalformedURLException e) {
             LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
             throw new CustomWebApplicationException("The ORCID Auth URL in the dropwizard configuration file is malformed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
