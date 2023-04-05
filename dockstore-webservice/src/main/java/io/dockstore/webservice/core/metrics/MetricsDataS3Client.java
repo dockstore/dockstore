@@ -70,7 +70,7 @@ public class MetricsDataS3Client {
      * @param metricsData The metrics data in JSON format
      */
     public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData) {
-        if (StringUtils.isBlank(metricsData) || "[]".equals(metricsData)) {
+        if (StringUtils.isBlank(metricsData)) {
             throw new CustomWebApplicationException("Execution metrics data must be provided", HttpStatus.SC_BAD_REQUEST);
         }
 

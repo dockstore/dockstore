@@ -20,7 +20,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_D
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.metrics.Execution;
+import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.resources.ResourceConstants;
 import io.dropwizard.auth.Auth;
@@ -43,9 +43,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.security.RolesAllowed;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -228,7 +228,7 @@ public class ToolsExtendedApi {
         @ApiParam(value = ExecutionMetricsPost.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsPost.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
         @ApiParam(value = ExecutionMetricsPost.PLATFORM_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsPost.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
         @ApiParam(value = ExecutionMetricsPost.DESCRIPTION_DESCRIPTION) @Parameter(description = ExecutionMetricsPost.DESCRIPTION_DESCRIPTION, in = ParameterIn.QUERY) @QueryParam("description") String description,
-        @ApiParam(value = ExecutionMetricsPost.EXECUTIONS_DESCRIPTION, required = true) @RequestBody(description = ExecutionMetricsPost.EXECUTIONS_DESCRIPTION, required = true, content = @Content(array = @ArraySchema(schema = @Schema(implementation = Execution.class)))) List<Execution> executions,
+        @ApiParam(value = ExecutionMetricsPost.EXECUTIONS_DESCRIPTION, required = true) @RequestBody(description = ExecutionMetricsPost.EXECUTIONS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = ExecutionsRequestBody.class))) @Valid ExecutionsRequestBody executions,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.submitMetricsData(id, versionId, platform, user, description, executions);
     }
@@ -258,7 +258,7 @@ public class ToolsExtendedApi {
         @ApiParam(value = AggregatedMetricsPut.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
         @ApiParam(value = AggregatedMetricsPut.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
         @ApiParam(value = AggregatedMetricsPut.PLATFORM_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
-        @ApiParam(value = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = Metrics.class))) Metrics aggregatedMetrics,
+        @ApiParam(value = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = Metrics.class))) @Valid Metrics aggregatedMetrics,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.setAggregatedMetrics(id, versionId, platform, aggregatedMetrics);
     }

@@ -17,20 +17,17 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-class ExecutionTest {
+class ValidationExecutionTest {
 
     @Test
-    void testCheckExecutionTimeISO8601Format() {
-        assertTrue(Execution.checkExecutionTimeISO8601Format("PT5M").isPresent());
-        assertTrue(Execution.checkExecutionTimeISO8601Format("pt5m").isPresent());
-        assertTrue(Execution.checkExecutionTimeISO8601Format("PT5M30S").isPresent());
-        assertTrue(Execution.checkExecutionTimeISO8601Format("PT90S").isPresent());
-
-        assertTrue(Execution.checkExecutionTimeISO8601Format("5 seconds").isEmpty());
-        assertTrue(Execution.checkExecutionTimeISO8601Format("PT 5M").isEmpty());
+    void testCheckExecutionDateISO8601Format() {
+        assertTrue(ValidationExecution.checkExecutionDateISO8601Format("2023-03-31T15:06:49.888745366Z").isPresent());
+        assertTrue(ValidationExecution.checkExecutionDateISO8601Format("2023-03-31T15:06:49Z").isPresent());
+        assertFalse(ValidationExecution.checkExecutionDateISO8601Format("2023-03-31T15:06:49").isPresent(), "Should fail because it's not in UTC");
     }
 }
