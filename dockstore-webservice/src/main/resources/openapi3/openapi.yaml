@@ -533,26 +533,14 @@ paths:
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
             application/json:
               schema:
-                type: string
-          description: Aggregated metrics retrieved successfully.
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: Credentials not provided or incorrect.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: The tool cannot be found to get aggregated metrics.
-      security:
-      - BEARER: []
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/Metrics'
+          description: default response
       summary: Get aggregated execution metrics for a tool from all platforms
       tags:
       - extendedGA4GH

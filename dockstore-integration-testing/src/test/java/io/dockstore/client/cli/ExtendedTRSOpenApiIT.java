@@ -141,6 +141,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(1, workflowVersion.getMetricsByPlatform().size());
 
         Metrics platform1Metrics = workflowVersion.getMetricsByPlatform().get(platform1);
+        System.out.println(platform1Metrics.getId());
         assertNotNull(platform1Metrics);
         // Verify execution status
         assertFalse(platform1Metrics.getExecutionStatusCount().isValid());
@@ -175,13 +176,16 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         extendedGa4GhApi.aggregatedMetricsPut(metrics, platform2, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
         workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
+
         assertNotNull(workflowVersion);
         assertEquals(2, workflowVersion.getMetricsByPlatform().size(), "Version should have metrics for 2 platforms");
 
-        String metricsGet = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId);
+        platform1Metrics = workflowVersion.getMetricsByPlatform().get(platform1);
+        Metrics platform2Metrics = workflowVersion.getMetricsByPlatform().get(platform2);
 
-        assertTrue(metricsGet.contains(platform1 + "\":{\"cpu\":{\"average\":" + average), "Should contain metrics for platform1");
-        assertTrue(metricsGet.contains(platform2 + "\":{\"cpu\":{\"average\":" + average), "Should contain metrics for platform2");
+        Map<String, Metrics> metricsGet = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId);
+        assertEquals(metricsGet.get(platform1), platform1Metrics);
+        assertEquals(metricsGet.get(platform2), platform2Metrics);
     }
 
     @Test
@@ -221,7 +225,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertTrue(exception2.getMessage().contains(ToolsApiExtendedServiceImpl.COULD_NOT_SUBMIT_METRICS_DATA) && exception2.getCode() == HttpStatus.SC_BAD_REQUEST);
     }
     @Test
-    void testAggregatedMetricsPutErrors() {
+    void testAggregatedMetricsErrors() {
         // Admin user
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -245,6 +249,10 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to submit metrics for non-existent id");
         assertTrue(exception.getMessage().contains(TOOL_NOT_FOUND_ERROR));
 
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsGet("github.com/nonexistent/id", "master"));
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to submit metrics for non-existent id");
+        assertTrue(exception.getMessage().contains(TOOL_NOT_FOUND_ERROR));
+
         // Test version ID that doesn't exist
         Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_WORKFLOW_CNV_REPO, "/workflow/cnv.cwl", "",
                 DescriptorLanguage.CWL.toString(), "/test.json");
@@ -254,6 +262,10 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to put aggregated metrics for non-existent version");
         assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR));
 
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsGet(id, "nonexistentVersionId"));
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to put aggregated metrics for non-existent version");
+        assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR));
+        
         // Test that a non-admin/non-curator user can't put aggregated metrics
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Non-admin and non-curator user should not be able to put aggregated metrics");
