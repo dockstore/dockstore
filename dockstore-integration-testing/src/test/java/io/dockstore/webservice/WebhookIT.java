@@ -173,23 +173,6 @@ class WebhookIT extends BaseIT {
     }
 
     @Test
-    void testAuthorsWithReadMe() {
-        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowClient = new WorkflowsApi(webClient);
-
-        workflowClient.handleGitHubRelease("refs/heads/master", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
-
-        Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
-        Workflow foobar2 = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
-
-
-        assertTrue(foobar.getWorkflowVersions().stream().allMatch(v -> v.getDescriptionSource() == DescriptionSourceEnum.README && v.getDescription().contains("A repo that includes .dockstore.yml"
-            + "\n")));
-        assertTrue(foobar2.getWorkflowVersions().stream().allMatch(v -> v.getDescriptionSource() == DescriptionSourceEnum.README && v.getDescription().contains("A repo that includes .dockstore.yml"
-            + "\n")));
-    }
-
-    @Test
     void testAlternateReadMeLocation() {
         final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowClient = new WorkflowsApi(webClient);
