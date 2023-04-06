@@ -22,7 +22,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -43,7 +42,6 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.http.HttpStatus;
 
 /**
  * This implements version for a Workflow.
@@ -142,9 +140,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         if (!this.isFrozen()) {
             workflowPath = workflowVersion.workflowPath;
             lastModified = workflowVersion.lastModified;
-        }
-        if (workflowVersion.isFrozen() && getOrcidAuthors().isEmpty() && getAuthors().isEmpty()) {
-            throw new CustomWebApplicationException("Before freezing a version, an author must be set", HttpStatus.SC_BAD_REQUEST);
         }
         // this is a bit confusing, but we need to call the super method last since it will set frozen
         // skipping the above even if we are only freezing it "now"

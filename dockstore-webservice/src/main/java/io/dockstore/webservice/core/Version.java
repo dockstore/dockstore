@@ -294,8 +294,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.setDoiStatus(version.getDoiStatus());
         this.setDoiURL(version.getDoiURL());
         if (!this.isFrozen()) {
-            if (version.frozen && this.sourceFiles.isEmpty()) {
-                throw new CustomWebApplicationException(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES, HttpStatus.SC_BAD_REQUEST);
+            if (version.frozen) {
+                if (this.sourceFiles.isEmpty()) {
+                    throw new CustomWebApplicationException(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES, HttpStatus.SC_BAD_REQUEST);
+                }
+                if (getOrcidAuthors().isEmpty() && getAuthors().isEmpty()) {
+                    throw new CustomWebApplicationException("Before snapshotting a version, at least one author must be set", HttpStatus.SC_BAD_REQUEST);
+                }
             }
             this.setFrozen(version.frozen);
             reference = version.reference;
