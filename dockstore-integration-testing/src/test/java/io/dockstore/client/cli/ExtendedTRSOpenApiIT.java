@@ -184,8 +184,10 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         Metrics platform2Metrics = workflowVersion.getMetricsByPlatform().get(platform2);
 
         Map<String, Metrics> metricsGet = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId);
-        assertEquals(metricsGet.get(platform1), platform1Metrics);
-        assertEquals(metricsGet.get(platform2), platform2Metrics);
+        assertNotNull(metricsGet.get(platform1));
+        assertNotNull(metricsGet.get(platform2));
+        assertEquals(platform1Metrics, metricsGet.get(platform1));
+        assertEquals(platform2Metrics, metricsGet.get(platform2));
     }
 
     @Test
@@ -250,7 +252,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertTrue(exception.getMessage().contains(TOOL_NOT_FOUND_ERROR));
 
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsGet("github.com/nonexistent/id", "master"));
-        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to submit metrics for non-existent id");
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to get metrics for non-existent id");
         assertTrue(exception.getMessage().contains(TOOL_NOT_FOUND_ERROR));
 
         // Test version ID that doesn't exist
@@ -263,7 +265,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR));
 
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsGet(id, "nonexistentVersionId"));
-        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to put aggregated metrics for non-existent version");
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to get aggregated metrics for non-existent version");
         assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR));
         
         // Test that a non-admin/non-curator user can't put aggregated metrics
