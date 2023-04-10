@@ -94,7 +94,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
     }
 
     @Test
-    void testAggregatedMetricsPut() {
+    void testAggregatedMetrics() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -188,6 +188,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         extendedGa4GhApi.aggregatedMetricsPut(metrics, platform2, workflowId, workflowVersionId);
         workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
         workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
+
         assertNotNull(workflowVersion);
         assertEquals(2, workflowVersion.getMetricsByPlatform().size(), "Version should have metrics for 2 platforms");
 
@@ -204,6 +205,13 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertTrue(validationInfo.getFailedValidationVersions().isEmpty());
         assertEquals(100d, validationInfo.getPassingRate());
         assertEquals(1, validationInfo.getNumberOfRuns());
+        platform1Metrics = workflowVersion.getMetricsByPlatform().get(platform1);
+
+        Map<String, Metrics> metricsGet = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId);
+        assertNotNull(metricsGet.get(platform1));
+        assertNotNull(metricsGet.get(platform2));
+        assertEquals(platform1Metrics, metricsGet.get(platform1));
+        assertEquals(platform2Metrics, metricsGet.get(platform2));
     }
 
     @Test
@@ -244,7 +252,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
     }
 
     @Test
-    void testAggregatedMetricsPutErrors() {
+    void testAggregatedMetricsErrors() {
         // Admin user
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -268,6 +276,10 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to submit metrics for non-existent id");
         assertTrue(exception.getMessage().contains(TOOL_NOT_FOUND_ERROR));
 
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsGet("github.com/nonexistent/id", "master"));
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to get metrics for non-existent id");
+        assertTrue(exception.getMessage().contains(TOOL_NOT_FOUND_ERROR));
+
         // Test version ID that doesn't exist
         Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_WORKFLOW_CNV_REPO, "/workflow/cnv.cwl", "",
                 DescriptorLanguage.CWL.toString(), "/test.json");
@@ -275,6 +287,10 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, "nonexistentVersionId"));
         assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to put aggregated metrics for non-existent version");
+        assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR));
+
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsGet(id, "nonexistentVersionId"));
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to get aggregated metrics for non-existent version");
         assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR));
 
         // Test that a non-admin/non-curator user can't put aggregated metrics
