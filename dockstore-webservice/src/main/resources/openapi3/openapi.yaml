@@ -662,9 +662,7 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/Execution'
+              $ref: '#/components/schemas/ExecutionsRequestBody'
         description: Execution metrics to submit
         required: true
       responses:
@@ -8598,30 +8596,6 @@ components:
             '@context':
               schema: https://schema.org
             schema:actionStatus: CompletedActionStatus
-        cpuRequirements:
-          type: integer
-          format: int32
-          description: Number of CPUs required for the execution
-          example: 2
-        executionStatus:
-          type: string
-          description: The status of the execution
-          enum:
-          - SUCCESSFUL
-          - FAILED_SEMANTIC_INVALID
-          - FAILED_RUNTIME_INVALID
-        executionTime:
-          type: string
-          description: The total time it took for the execution to complete in ISO
-            8601 duration format
-          example: PT30S
-        memoryRequirementsGB:
-          type: number
-          format: double
-          description: Memory requirements for the execution in GB
-          example: 2
-      required:
-      - executionStatus
     ExecutionStatusMetric:
       type: object
       description: Aggregated metrics about workflow execution statuses
@@ -8690,6 +8664,23 @@ components:
       - maximum
       - minimum
       - numberOfDataPointsForAverage
+    ExecutionsRequestBody:
+      type: object
+      description: Request body model for executionMetricsPost
+      properties:
+        runExecutions:
+          type: array
+          description: List of workflow run executions to submit
+          items:
+            $ref: '#/components/schemas/RunExecution'
+        validationExecutions:
+          type: array
+          description: List of workflow validation executions to submit
+          items:
+            $ref: '#/components/schemas/ValidationExecution'
+      required:
+      - runExecutions
+      - validationExecutions
     ExtendedUserData:
       type: object
       properties:
@@ -9019,6 +9010,8 @@ components:
           description: Implementation specific ID for the metrics in this webservice
         memory:
           $ref: '#/components/schemas/MemoryMetric'
+        validationStatus:
+          $ref: '#/components/schemas/ValidationStatusMetric'
       required:
       - executionStatusCount
     Notebook:
@@ -9286,6 +9279,37 @@ components:
           type: boolean
         repositoryName:
           type: string
+    RunExecution:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Execution'
+      - type: object
+        properties:
+          cpuRequirements:
+            type: integer
+            format: int32
+            description: Number of CPUs required for the execution
+            example: 2
+          executionStatus:
+            type: string
+            description: The status of the execution
+            enum:
+            - SUCCESSFUL
+            - FAILED_SEMANTIC_INVALID
+            - FAILED_RUNTIME_INVALID
+          executionTime:
+            type: string
+            description: The total time it took for the execution to complete in ISO
+              8601 duration format
+            example: PT30S
+          memoryRequirementsGB:
+            type: number
+            format: double
+            description: Memory requirements for the execution in GB
+            example: 2
+      description: Metrics of a workflow execution on a platform
+      required:
+      - executionStatus
     Service:
       type: object
       allOf:
@@ -10119,6 +10143,101 @@ components:
           - DOCKSTORE_NOTEBOOK_OTHER
         valid:
           type: boolean
+    ValidationExecution:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Execution'
+      - type: object
+        properties:
+          dateExecuted:
+            type: string
+            description: The date and time that the validator tool was executed in
+              ISO 8601 UTC date format
+            example: 2023-03-31T15:06:49.888745366Z
+          errorMessage:
+            type: string
+            description: The error message for a failed validation by the validator
+              tool
+          isValid:
+            type: boolean
+            description: Boolean indicating if the workflow was validated successfully
+            example: true
+          validatorTool:
+            type: string
+            description: The validator tool used to validate the workflow
+            enum:
+            - MINIWDL
+            - WOMTOOL
+            - CWLTOOL
+            - NF_VALIDATION
+            - OTHER
+            example: miniwdl
+          validatorToolVersion:
+            type: string
+            description: The version of the validator tool
+      description: Metrics of a workflow validated on a platform
+      required:
+      - dateExecuted
+      - isValid
+      - validatorTool
+      - validatorToolVersion
+    ValidationInfo:
+      type: object
+      description: Aggregated validation information
+      properties:
+        failedValidationVersions:
+          type: array
+          description: A set of validator tool versions that unsuccessfully validated
+            the workflow in its most recent run
+          items:
+            type: string
+            description: A set of validator tool versions that unsuccessfully validated
+              the workflow in its most recent run
+        mostRecentErrorMessage:
+          type: string
+          description: The error message of the most recent validation run if it failed
+        mostRecentIsValid:
+          type: boolean
+          description: The boolean isValid value from the most recent validation run
+        mostRecentVersion:
+          type: string
+          description: The version of the validator tool that was most recently executed
+        numberOfRuns:
+          type: integer
+          format: int32
+          description: The number of times the validator was executed on the workflow
+        passingRate:
+          type: number
+          format: double
+          description: A percentage representing how often the validator successfully
+            validates the workflow
+        successfulValidationVersions:
+          type: array
+          description: A set of validator tool versions that successfully validated
+            the workflow in its most recent run
+          items:
+            type: string
+            description: A set of validator tool versions that successfully validated
+              the workflow in its most recent run
+      required:
+      - failedValidationVersions
+      - mostRecentIsValid
+      - mostRecentVersion
+      - numberOfRuns
+      - passingRate
+      - successfulValidationVersions
+    ValidationStatusMetric:
+      type: object
+      description: Aggregated metrics about workflow validation statuses
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the count metrics in this webservice
+        validatorToolToIsValid:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ValidationInfo'
     VerificationInformation:
       type: object
       properties:
