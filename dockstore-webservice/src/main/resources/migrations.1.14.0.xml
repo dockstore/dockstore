@@ -402,6 +402,46 @@
             <column name="engineversions" type="varchar"></column>
         </addColumn>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addValidationMetrics">
+        <createTable tableName="validator_tool_validation_info">
+            <column name="validationstatusid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_info_pkey"/>
+            </column>
+            <column defaultValueComputed="now()" name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="mostrecentisvalid" type="bool">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mostrecentversion" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mostrecenterrormessage" type="TEXT"/>
+            <column name="numberofruns" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="passingrate" type="float8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="failedvalidationversions" type="TEXT"/>
+            <column name="successfulvalidationversions" type="TEXT"/>
+            <column name="validatortool" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_info_pkey"/>
+            </column>
+        </createTable>
+        <createTable tableName="validation_status">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validation_status_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </createTable>
+
+        <addColumn tableName="metrics">
+            <column name="validationstatus" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="validationstatus" baseTableName="metrics" constraintName="fk_validationstatus_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
+        <addForeignKeyConstraint baseColumnNames="validationstatusid" baseTableName="validator_tool_validation_info" constraintName="fk_validationstatusid_validator_tool_validation_info" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
+    </changeSet>
     <changeSet author="ktran (generated)" id="dropVersionMetadataAuthorAndEmail">
         <dropColumn columnName="author" tableName="version_metadata"/>
         <dropColumn columnName="email" tableName="version_metadata"/>

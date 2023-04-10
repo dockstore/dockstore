@@ -40,7 +40,7 @@ import org.hibernate.annotations.BatchSize;
 @ApiModel(value = "ExecutionStatusMetric", description = "Aggregated metrics about workflow execution statuses")
 @Schema(name = "ExecutionStatusMetric", description = "Aggregated metrics about workflow execution statuses")
 @SuppressWarnings("checkstyle:magicnumber")
-public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCountMetric.ExecutionStatus> {
+public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCountMetric.ExecutionStatus, Integer> {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyEnumerated(EnumType.STRING)
@@ -85,12 +85,6 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     @Override
     public Map<ExecutionStatus, Integer> getCount() {
         return count;
-    }
-
-    @Override
-    public void addCount(ExecutionStatus key, int countToAdd) {
-        super.addCount(key, countToAdd);
-        calculateValidAndNumberOfExecutions();
     }
 
     public void calculateValidAndNumberOfExecutions() {
