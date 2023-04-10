@@ -71,7 +71,7 @@ public final class ORCIDHelper {
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
 
     private static String baseApiUrl; // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/"
-    private static String basePublicUrl; // basePublicUrl should result in something like "https://pub.sandbox.orcid.org/v3.0/" or "https://pub.orcid.org/v3.0/"
+    private static String basePublicUrl; // basePublicUrl should result in something like "https://pub.orcid.org/v3.0/"
 
     private static String baseUrl; // baseUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
     private static String orcidClientId;
