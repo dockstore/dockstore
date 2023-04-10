@@ -220,7 +220,7 @@ public final class ORCIDHelper {
     }
 
     /**
-     * This updates an existing ORCID work
+     * This updates an existing ORCID work.
      * @return
      */
     public static HttpResponse<String> putWorkString(String id, String workString, String token, String putCode)
@@ -232,7 +232,7 @@ public final class ORCIDHelper {
 
 
     /**
-     * Get the ORCID put code from the response
+     * Get the ORCID put code from the response.
      *
      * @param httpResponse
      * @return
