@@ -141,7 +141,6 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(1, workflowVersion.getMetricsByPlatform().size());
 
         Metrics platform1Metrics = workflowVersion.getMetricsByPlatform().get(platform1);
-        System.out.println(platform1Metrics.getId());
         assertNotNull(platform1Metrics);
         // Verify execution status
         assertFalse(platform1Metrics.getExecutionStatusCount().isValid());
