@@ -360,8 +360,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonProperty
     @Deprecated(since = "1.14.0")
     public String getAuthor() {
-        Optional<Author> author = this.authors.stream().findFirst();
-        return author.map(Author::getName).orElse(null);
+        Optional<Author> firstAuthor = this.authors.stream().findFirst();
+        return firstAuthor.map(Author::getName).orElse(null);
     }
 
     @JsonProperty
