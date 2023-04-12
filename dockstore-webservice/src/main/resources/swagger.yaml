@@ -598,6 +598,45 @@ paths:
             items:
               $ref: "#/definitions/ToolV1"
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
+    get:
+      tags:
+      - "extendedGA4GH"
+      summary: "Get aggregated execution metrics for a tool from all platforms"
+      description: "This endpoint retrieves aggregated metrics for a tool from all\
+        \ platforms"
+      operationId: "aggregatedMetricsGet"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Aggregated metrics retrieved successfully."
+          schema:
+            type: "object"
+            additionalProperties:
+              type: "object"
+        401:
+          description: "Credentials not provided or incorrect."
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: "The tool cannot be found to get aggregated metrics."
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+      - BEARER: []
     put:
       tags:
       - "extendedGA4GH"

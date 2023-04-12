@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/dockstore/dockstore/branch/develop/graph/badge.svg)](https://codecov.io/gh/dockstore/dockstore)
 [![Website](https://img.shields.io/website/https/dockstore.org.svg)](https://dockstore.org)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5781764.svg)](https://doi.org/10.5281/zenodo.5781764)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7259426.svg)](https://doi.org/10.5281/zenodo.7259426)
 [![Uptime Robot status](https://img.shields.io/uptimerobot/status/m779655940-a297af07d1cac2d6ad40c491.svg)]()
 [![license](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](LICENSE)
 [![Documentation Status](https://readthedocs.org/projects/dockstore/badge/?version=stable)](https://dockstore.readthedocs.io/en/stable/?badge=stable)

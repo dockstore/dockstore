@@ -513,6 +513,37 @@ paths:
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
+    get:
+      description: This endpoint retrieves aggregated metrics for a tool from all
+        platforms
+      operationId: aggregatedMetricsGet
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/Metrics'
+          description: default response
+      summary: Get aggregated execution metrics for a tool from all platforms
+      tags:
+      - extendedGA4GH
     put:
       description: This endpoint adds aggregated metrics for a workflow that was executed
         on a platform
