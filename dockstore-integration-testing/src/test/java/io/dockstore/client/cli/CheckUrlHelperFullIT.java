@@ -18,54 +18,45 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.client.cli.BaseIT.BIOWORKFLOW;
 import static io.dockstore.client.cli.BaseIT.getWebClient;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ConfigOverride;
-import io.dropwizard.testing.junit.DropwizardAppRule;
+import io.dropwizard.testing.junit5.DropwizardAppExtension;
+import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import java.util.Optional;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@Category(ConfidentialTest.class)
 @Tag(ConfidentialTest.NAME)
+@ExtendWith(DropwizardExtensionsSupport.class)
 public class CheckUrlHelperFullIT {
 
     public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
 
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE =
-        new DropwizardAppRule<>(DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH, ConfigOverride.config("checkUrlLambdaUrl", fakeCheckUrlLambdaBaseURL),
-            ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "create"));
+    private static final DropwizardAppExtension EXT = new DropwizardAppExtension<>(
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH,
+        ConfigOverride.config("checkUrlLambdaUrl", fakeCheckUrlLambdaBaseURL),
+        ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "create"));
+
 
     protected static TestingPostgres testingPostgres;
-    @Rule
-    public final TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
 
-    @BeforeClass
+    @BeforeAll
     public static void dropAndRecreateDB() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestData(RULE.getTestSupport(), true);
-        testingPostgres = new TestingPostgres(RULE.getTestSupport());
+        CommonTestUtilities.dropAndCreateWithTestData(EXT.getTestSupport(), true);
+        testingPostgres = new TestingPostgres(EXT.getTestSupport());
     }
 
     /**
@@ -74,7 +65,7 @@ public class CheckUrlHelperFullIT {
      */
     @Test
     public void settingVersionMetadata() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(RULE.getTestSupport(), false, testingPostgres);
+        CommonTestUtilities.cleanStatePrivate2(EXT.getTestSupport(), false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         final String installationId = "1179416";
@@ -83,16 +74,16 @@ public class CheckUrlHelperFullIT {
         client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(client);
-        Assert.assertTrue("Should be set to true since there's no inaccessible URL in the JSON", workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile());
+        assertTrue(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be set to true since there's no inaccessible URL in the JSON");
 
         testingPostgres.runUpdateStatement("update version_metadata set publicaccessibletestparameterfile = null");
         workflowVersion = getWorkflowVersion(client);
-        Assert.assertNull("Database should've reverted it to null", workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile());
+        Assertions.assertNull(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Database should've reverted it to null");
 
         // Test updating existing version
         client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
         workflowVersion = getWorkflowVersion(client);
-        Assert.assertTrue("Should be set to true since there's no inaccessible URL in the JSON", workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile());
+        assertTrue(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be set to true since there's no inaccessible URL in the JSON");
     }
 
     private Workflow getFoobar1Workflow(WorkflowsApi client) {
