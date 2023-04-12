@@ -101,12 +101,9 @@ public class CheckUrlHelperFullIT {
         final ApiClient
             webClient = CommonTestUtilities.getOpenAPIWebClient(true, BasicIT.USER_2_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
-        final io.dockstore.openapi.client.api.WorkflowsApi
-            workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.model.Workflow hostedWorkflow =
-            CommonTestUtilities.createHostedWorkflowWithVersion(hostedApi);
-        final io.dockstore.openapi.client.model.WorkflowVersion
-            workflowVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final Workflow hostedWorkflow = CommonTestUtilities.createHostedWorkflowWithVersion(hostedApi);
+        final WorkflowVersion workflowVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
         assertTrue(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be public because the descriptor has no parameters at all");
     }
 
