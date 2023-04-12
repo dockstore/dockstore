@@ -16,6 +16,7 @@
 
 package io.dockstore.common;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.github.dockerjava.api.DockerClient;
@@ -25,9 +26,13 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
@@ -630,6 +635,19 @@ public final class CommonTestUtilities {
         MultivaluedMap<String, Object> headers = response.getHeaders();
         Object xTotalCount = headers.getFirst("X-total-count");
         assertEquals(String.valueOf(expectedValue), xTotalCount);
+    }
+
+    public static Workflow createHostedWorkflowWithVersion(final HostedApi hostedApi) {
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "awesomeTool", CWL.getShortName(), null, null);
+        SourceFile file = new SourceFile();
+        file.setContent("cwlVersion: v1.0\n" + "class: Workflow");
+        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        file.setPath("/Dockstore.cwl");
+        file.setAbsolutePath("/Dockstore.cwl");
+        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
+        file.setContent("cwlVersion: v1.1\n" + "class: Workflow");
+        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
+        return hostedWorkflow;
     }
 
     /**

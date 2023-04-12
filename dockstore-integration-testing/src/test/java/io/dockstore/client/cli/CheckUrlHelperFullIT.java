@@ -16,21 +16,23 @@
 
 package io.dockstore.client.cli;
 
-import static io.dockstore.client.cli.BaseIT.BIOWORKFLOW;
-import static io.dockstore.client.cli.BaseIT.getWebClient;
+import static io.dockstore.client.cli.BaseIT.getOpenAPIWebClient;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.TestingPostgres;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
-import io.swagger.client.ApiClient;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,30 +66,52 @@ public class CheckUrlHelperFullIT {
      * parameter file had no URL to check
      */
     @Test
-    public void settingVersionMetadata() throws Exception {
+    void settingVersionMetadata() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(EXT.getTestSupport(), false, testingPostgres);
-        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         final String installationId = "1179416";
 
         // Test creating new version
-        client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        final String dockstoreTestUser2 = "DockstoreTestUser2";
+        final String gitReference = "refs/tags/0.1";
+        client.handleGitHubRelease(gitReference, installationId, workflowRepo, dockstoreTestUser2);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(client);
-        assertTrue(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be set to true since there's no inaccessible URL in the JSON");
+        assertFalse(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be set to true since there's no inaccessible URL in the JSON");
 
         testingPostgres.runUpdateStatement("update version_metadata set publicaccessibletestparameterfile = null");
         workflowVersion = getWorkflowVersion(client);
         Assertions.assertNull(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Database should've reverted it to null");
 
         // Test updating existing version
-        client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        client.handleGitHubRelease(gitReference, installationId, workflowRepo, dockstoreTestUser2);
         workflowVersion = getWorkflowVersion(client);
-        assertTrue(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be set to true since there's no inaccessible URL in the JSON");
+        assertFalse(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be set to false since the workflow has a file input parameter, and the JSON has no files");
+    }
+
+    /**
+     * We don't have the checkurl lambda running in our integration tests, so the tests can only verify
+     * code up until the lambda invocation. In this case, the hosted workflow has no file input parameters,
+     * so the lambda doesn't need to get invoked, and the version should be marked open.
+     */
+    @Test
+    void openDataCheckedForHostedWorkflow() {
+        CommonTestUtilities.cleanStatePrivate2(EXT.getTestSupport(), false, testingPostgres);
+        final ApiClient
+            webClient = CommonTestUtilities.getOpenAPIWebClient(true, BasicIT.USER_2_USERNAME, testingPostgres);
+        final HostedApi hostedApi = new HostedApi(webClient);
+        final io.dockstore.openapi.client.api.WorkflowsApi
+            workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.model.Workflow hostedWorkflow =
+            CommonTestUtilities.createHostedWorkflowWithVersion(hostedApi);
+        final io.dockstore.openapi.client.model.WorkflowVersion
+            workflowVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
+        assertTrue(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be public because the descriptor has no parameters at all");
     }
 
     private Workflow getFoobar1Workflow(WorkflowsApi client) {
-        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "versions");
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
     }
 
     private WorkflowVersion getWorkflowVersion(WorkflowsApi client) {

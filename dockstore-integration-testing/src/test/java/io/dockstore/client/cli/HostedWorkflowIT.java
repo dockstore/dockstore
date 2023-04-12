@@ -16,11 +16,9 @@
 
 package io.dockstore.client.cli;
 
-import static io.dockstore.common.DescriptorLanguage.CWL;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -34,7 +32,6 @@ import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.Entry;
-import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -88,15 +85,7 @@ class HostedWorkflowIT extends BaseIT {
         final WorkflowsApi workflowsApi = new WorkflowsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
 
         // Test same for hosted workflows
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "awesomeTool", CWL.getShortName(), null, null);
-        SourceFile file = new SourceFile();
-        file.setContent("cwlVersion: v1.0\n" + "class: Workflow");
-        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        file.setPath("/Dockstore.cwl");
-        file.setAbsolutePath("/Dockstore.cwl");
-        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
-        file.setContent("cwlVersion: v1.1\n" + "class: Workflow");
-        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
+        Workflow hostedWorkflow = CommonTestUtilities.createHostedWorkflowWithVersion(hostedApi);
         WorkflowVersion hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
 
         // delete default version via DB
