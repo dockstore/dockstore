@@ -11,6 +11,7 @@ import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -80,11 +81,13 @@ class WDLHandlerTest {
     void getWorkflowContentOfTool() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Tool tool = new Tool();
-        tool.setAuthor("Jane Doe");
+        final Author author = new Author("Jane Doe");
+        tool.setAuthors(Set.of(author));
         tool.setDescription("A good description");
         tool.setEmail("janedoe@example.org");
 
-        assertEquals("Jane Doe", tool.getAuthor());
+        assertEquals(1, tool.getAuthors().size());
+        assertTrue(tool.getAuthors().contains(author));
         assertEquals("A good description", tool.getDescription());
         assertEquals("janedoe@example.org", tool.getEmail());
 
@@ -92,8 +95,9 @@ class WDLHandlerTest {
         final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
         wdlHandler.parseWorkflowContent(invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
 
-        // Check that parsing an invalid WDL workflow does not corrupt the CWL metadata
-        assertEquals("Jane Doe", tool.getAuthor());
+        // Check that parsing an invalid WDL workflow does not corrupt the WDL metadata
+        assertEquals(1, tool.getAuthors().size());
+        assertTrue(tool.getAuthors().contains(author));
         assertEquals("A good description", tool.getDescription());
         assertEquals("janedoe@example.org", tool.getEmail());
     }

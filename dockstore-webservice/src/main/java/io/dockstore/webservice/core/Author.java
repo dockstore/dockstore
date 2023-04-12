@@ -18,7 +18,9 @@ package io.dockstore.webservice.core;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -31,7 +33,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @ApiModel(value = "Author", description = "This describes a non-ORCID author of a version in Dockstore")
 @Entity
 @Table(name = "author")
-public class Author {
+public class Author implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -100,5 +102,23 @@ public class Author {
 
     public void setEmail(final String email) {
         this.email = email;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Author)) {
+            return false;
+        }
+
+        final Author that = (Author)o;
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(affiliation, that.affiliation) && Objects.equals(role, that.role) && Objects.equals(email, that.email);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, affiliation, role, email);
     }
 }

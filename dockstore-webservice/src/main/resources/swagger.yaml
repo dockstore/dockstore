@@ -7093,6 +7093,12 @@ definitions:
         description: "aliases can be used as an alternate unique id for entries"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       custom_docker_registry_path:
         type: "string"
         readOnly: true
@@ -7132,6 +7138,12 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidAuthors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       tags:
         type: "array"
         uniqueItems: true
@@ -7375,6 +7387,12 @@ definitions:
         description: "aliases can be used as an alternate unique id for entries"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       dbCreateDate:
         type: "integer"
         format: "int64"
@@ -7406,6 +7424,12 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidAuthors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       topic:
         type: "string"
       topicAutomatic:
@@ -9431,6 +9455,12 @@ definitions:
         description: "aliases can be used as an alternate unique id for entries"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       dbCreateDate:
         type: "integer"
         format: "int64"
@@ -9469,6 +9499,12 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidAuthors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       parentEntry:
         $ref: "#/definitions/Entry"
       topic:

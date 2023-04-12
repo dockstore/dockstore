@@ -25,6 +25,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Image;
@@ -122,7 +123,6 @@ class ToolsImplCommonTest {
         tool.setToolname(toolname);
         tool.setNamespace("test_org");
         tool.setRegistry(Registry.QUAY_IO.getDockerPath());
-        tool.setAuthor("sampleAuthor");
         tool.setGitUrl("git@github.com:test_org/test6.git");
         Tag tag = new Tag();
         tag.setImageId("sampleImageId");
@@ -133,6 +133,7 @@ class ToolsImplCommonTest {
         tag.setAutomated(true);
         tag.setReference("sampleReference");
         tag.setValid(true);
+        tag.setAuthors(Set.of(new Author("sampleAuthor")));
         List<Checksum> checksums = Collections.singletonList(new Checksum("SHA-1", "fakeChecksum"));
         Set<Image> image = Collections.singleton(new Image(checksums, "test_org/test6", "sampleTag", "SampleImageId", Registry.QUAY_IO, null, null));
         tag.setImages(image);
@@ -165,6 +166,7 @@ class ToolsImplCommonTest {
         hiddenTag.addSourceFile(sourceFile2);
         tag.updateVerified();
         tool.addWorkflowVersion(tag);
+        tool.setActualDefaultVersion(tag);
         tool.addWorkflowVersion(hiddenTag);
         tool.setCheckerWorkflow(null);
         Tool expectedTool = new Tool();
@@ -351,7 +353,7 @@ class ToolsImplCommonTest {
         workflow.setDefaultWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         workflow.setDefaultTestParameterFilePath(null);
         workflow.setId(950);
-        workflow.setAuthor(null);
+        workflow.setAuthors(Collections.emptySet());
         workflow.setDescription(null);
         workflow.setLabels(Collections.emptySortedSet());
         workflow.setUsers(Collections.emptySortedSet());

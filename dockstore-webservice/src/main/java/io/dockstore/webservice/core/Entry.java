@@ -32,10 +32,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -131,8 +133,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private long id;
 
     @Column
+    @Deprecated(since = "1.14.0")
     @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl", position = 1)
+    @Schema(description = "This is the name of the author stated in the Dockstore.cwl", deprecated = true)
     private String author;
+
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH", position = 2)
     private String description;
@@ -280,6 +285,16 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Schema(description = "Which topic to display to the public users")
     private TopicSelection topicSelection = TopicSelection.AUTOMATIC;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "Non-ORCID authors for the entry, retrieved from the default version")
+    @Transient
+    private Set<Author> authors = new HashSet<>();
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "ORCID authors for the entry, retrieved from the default version")
+    @Transient
+    private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
+
     public enum TopicSelection {
         AUTOMATIC, MANUAL
     }
@@ -343,8 +358,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonProperty
+    @Deprecated(since = "1.14.0")
     public String getAuthor() {
-        return author;
+        Optional<Author> author = this.authors.stream().findFirst();
+        return author.map(Author::getName).orElse(null);
     }
 
     @JsonProperty
@@ -394,7 +411,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.licenseInformation = licenseInformation;
     }
 
-
+    @Deprecated(since = "1.14.0")
     public void setAuthor(String newAuthor) {
         this.author = newAuthor;
     }
@@ -533,14 +550,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setMetadataFromEntry(S entry) {
-        this.author = entry.getAuthor();
         this.description = entry.getDescription();
         this.email = entry.getEmail();
         setTopicAutomatic(entry.getTopicAutomatic());
     }
 
     public void setMetadataFromVersion(Version version) {
-        this.author = version.getAuthor();
         this.description = version.getDescription();
         this.email = version.getEmail();
     }
@@ -738,5 +753,30 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setTopicSelection(TopicSelection topicSelection) {
         this.topicSelection = topicSelection;
+    }
+
+    public Set<Author> getAuthors() {
+        T realDefaultVersion = this.getActualDefaultVersion();
+        if (realDefaultVersion != null) {
+            return realDefaultVersion.getAuthors();
+        }
+        return Set.of();
+    }
+
+    public void setAuthors(Set<Author> authors) {
+        this.authors.clear();
+        this.authors.addAll(authors);
+    }
+
+    public Set<OrcidAuthor> getOrcidAuthors() {
+        T realDefaultVersion = this.getActualDefaultVersion();
+        if (realDefaultVersion != null) {
+            return realDefaultVersion.getOrcidAuthors();
+        }
+        return Set.of();
+    }
+
+    public void setOrcidAuthors(Set<OrcidAuthor> orcidAuthors) {
+        this.orcidAuthors = orcidAuthors;
     }
 }
