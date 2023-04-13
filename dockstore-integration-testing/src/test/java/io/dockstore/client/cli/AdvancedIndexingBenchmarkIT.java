@@ -242,7 +242,9 @@ class AdvancedIndexingBenchmarkIT extends BaseIT {
     }
 
     private Set<Author> randomAuthor() {
-        return Set.of(new Author(fixedAuthors.get(RAND.nextInt(fixedAuthors.size()))));
+        Author randomAuthor = new Author(fixedAuthors.get(RAND.nextInt(fixedAuthors.size())));
+        randomAuthor.setEmail(randomIdentifier());
+        return Set.of(randomAuthor);
     }
 
     private String randomOrganization() {
@@ -253,7 +255,6 @@ class AdvancedIndexingBenchmarkIT extends BaseIT {
         Tool tool = new Tool();
         tool.setAuthors(randomAuthor());
         tool.setDescription((randomIdentifier()));
-        tool.setEmail(randomIdentifier());
         tool.setLastUpdated(new Date());
         tool.setGitUrl("https://github.com/" + randomIdentifier() + "/" + randomIdentifier());
         tool.setMode(ToolMode.MANUAL_IMAGE_PATH);

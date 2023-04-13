@@ -165,6 +165,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private SortedSet<User> starredUsers;
 
     @Column
+    @Deprecated(since = "1.14.0")
     @ApiModelProperty(value = "This is the email of the git organization", position = 6)
     private String email;
 
@@ -441,10 +442,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonProperty
+    @Deprecated(since = "1.14.0")
     public String getEmail() {
-        return email;
+        Optional<Author> firstAuthor = this.getAuthors().stream().findFirst();
+        return firstAuthor.map(Author::getEmail).orElse(null);
     }
 
+    @Deprecated(since = "1.14.0")
     public void setEmail(String newEmail) {
         this.email = newEmail;
     }
@@ -551,13 +555,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setMetadataFromEntry(S entry) {
         this.description = entry.getDescription();
-        this.email = entry.getEmail();
         setTopicAutomatic(entry.getTopicAutomatic());
     }
 
     public void setMetadataFromVersion(Version version) {
         this.description = version.getDescription();
-        this.email = version.getEmail();
     }
 
     public SortedSet<FileFormat> getInputFileFormats() {

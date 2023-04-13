@@ -199,7 +199,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setWorkflowName(getWorkflowName());
         targetWorkflow.setAuthors(getAuthors());
         targetWorkflow.setOrcidAuthors(getOrcidAuthors());
-        targetWorkflow.setEmail(getEmail());
         targetWorkflow.setDescription(getDescription());
         targetWorkflow.setLastModified(getLastModifiedDate());
         targetWorkflow.setForumUrl(getForumUrl());
