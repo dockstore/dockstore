@@ -20,8 +20,10 @@ import static io.dockstore.client.cli.BaseIT.getOpenAPIWebClient;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.HostedApi;
@@ -42,6 +44,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag(ConfidentialTest.NAME)
 @ExtendWith(DropwizardExtensionsSupport.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+@ExtendWith(TestStatus.class)
 public class CheckUrlHelperFullIT {
 
     public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";

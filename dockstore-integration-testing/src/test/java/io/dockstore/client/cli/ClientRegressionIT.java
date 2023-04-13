@@ -40,7 +40,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
@@ -62,7 +61,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(RegressionTest.NAME)
 class ClientRegressionIT extends BaseIT {
     @TempDir
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    public static File temporaryFolder;
     private static File dockstore;
     private static File testJson;
 
@@ -77,11 +76,11 @@ class ClientRegressionIT extends BaseIT {
     public static void getOldDockstoreClient() throws IOException {
         TestUtility.createFakeDockstoreConfigFile();
         URL url = new URL("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
-        dockstore = temporaryFolder.newFile("dockstore");
+        dockstore = new File(temporaryFolder, "dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         assertTrue(dockstore.setExecutable(true));
         url = new URL("https://raw.githubusercontent.com/DockstoreTestUser/dockstore_parameter_test/master/test.cwl.json");
-        testJson = temporaryFolder.newFile("test.cwl.json");
+        testJson = new File(temporaryFolder, "test.cwl.json");
         FileUtils.copyURLToFile(url, testJson);
     }
 

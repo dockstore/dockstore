@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import org.apache.commons.io.FileUtils;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +32,6 @@ import org.slf4j.LoggerFactory;
 public final class TestUtility {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestUtility.class);
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
 
     private TestUtility() {
         // utility class

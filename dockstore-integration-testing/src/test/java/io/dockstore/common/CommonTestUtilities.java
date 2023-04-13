@@ -18,6 +18,8 @@ package io.dockstore.common;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
@@ -71,7 +73,6 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -360,7 +361,7 @@ public final class CommonTestUtilities {
         try {
             application.run("db", "migrate", configPath, "--include", String.join(",", migrations));
         } catch (Exception e) {
-            Assert.fail("database migration failed");
+            fail("database migration failed");
         }
     }
 
@@ -368,7 +369,7 @@ public final class CommonTestUtilities {
         try {
             application.run("db", "drop-all", "--confirm-delete-everything", configPath);
         } catch (Exception e) {
-            Assert.fail("database drop-all failed");
+            fail("database drop-all failed");
         }
     }
 
@@ -533,9 +534,9 @@ public final class CommonTestUtilities {
     }
 
     public static void checkToolList(String log) {
-        Assert.assertTrue(log.contains("NAME"));
-        Assert.assertTrue(log.contains("DESCRIPTION"));
-        Assert.assertTrue(log.toLowerCase().contains("git repo"));
+        assertTrue(log.contains("NAME"));
+        assertTrue(log.contains("DESCRIPTION"));
+        assertTrue(log.toLowerCase().contains("git repo"));
     }
 
     public static void restartElasticsearch() throws IOException {
