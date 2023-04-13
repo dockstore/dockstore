@@ -1191,7 +1191,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         toolsApi.refresh(toolTest.getId());
 
         DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId(), null);
-        assertNotNull(refreshedTool.getAuthor(), "Author should be set, even if tag name and tag reference are mismatched.");
+        assertFalse(refreshedTool.getAuthors().isEmpty(), "Author should be set, even if tag name and tag reference are mismatched.");
     }
 
     /**

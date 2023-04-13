@@ -485,13 +485,15 @@ class GitHubWorkflowIT extends BaseIT {
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId(), true);
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
             assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
-            assertEquals("Peter Amstutz", workflow.getAuthor());
+            assertEquals(1, workflow.getAuthors().size());
+            assertEquals("Peter Amstutz", workflow.getAuthors().get(0).getName());
             assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         });
         assertEquals("master", workflow.getDefaultVersion(), "Default branch should've been set to get metadata");
         assertEquals("peter.amstutz@curoverse.com", workflow.getEmail());
         assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
-        assertEquals("Peter Amstutz", workflow.getAuthor());
+        assertEquals(1, workflow.getAuthors().size());
+        assertEquals("Peter Amstutz", workflow.getAuthors().get(0).getName());
         assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         assertEquals("master", workflow.getDefaultVersion(), "Default version should've been set to get metadata");
         Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()

@@ -737,8 +737,8 @@ class GeneralWorkflowIT extends BaseIT {
         assertEquals(1, count2, "The given workflow shouldn't have any contact info");
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals("testWDL", workflow.getDefaultVersion());
-        assertNull(workflow.getAuthor());
-        assertNull(workflow.getEmail());
+        assertTrue(workflow.getAuthors().isEmpty());
+
         // Update workflow with version with metadata
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
         workflow = workflowsApi.refresh(workflow.getId(), false);
@@ -748,14 +748,11 @@ class GeneralWorkflowIT extends BaseIT {
         defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
         assertEquals("testBoth", defaultVersionName, "the default version should be for the testBoth branch, but is for the branch " + defaultVersionName);
 
-        final long count3 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and author = 'testAuthor' and email = 'testEmail'",
-            long.class);
-        assertEquals(1, count3, "The given workflow should have contact info");
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals("testBoth", workflow.getDefaultVersion());
-        assertEquals("testAuthor", workflow.getAuthor());
-        assertEquals("testEmail", workflow.getEmail());
+        assertEquals(1, workflow.getAuthors().size());
+        assertEquals("testAuthor", workflow.getAuthors().get(0).getName());
+        assertEquals("testEmail", workflow.getAuthors().get(0).getEmail());
         // Unpublish
         workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
 

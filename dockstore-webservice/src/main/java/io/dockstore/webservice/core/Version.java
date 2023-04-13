@@ -311,6 +311,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         frozen = version.isFrozen();
         commitID = version.getCommitID();
         readMePath = version.getReadMePath();
+        this.setAuthors(version.getAuthors());
+        this.setOrcidAuthors(version.getOrcidAuthors());
         this.setVersionMetadata(version.getVersionMetadata());
     }
 
