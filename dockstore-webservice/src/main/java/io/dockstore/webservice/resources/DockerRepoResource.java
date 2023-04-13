@@ -357,7 +357,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("Private tools require a tool maintainer email.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        List<String> authorEmails = tool.getAuthors().stream().map(Author::getEmail).toList();
+        List<String> authorEmails = foundTool.getAuthors().stream().map(Author::getEmail).toList();
         if (!foundTool.isPrivateAccess() && tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail()) && authorEmails.isEmpty()) {
             throw new CustomWebApplicationException("A published, private tool must have either an tool author email or tool maintainer email set up.", HttpStatus.SC_BAD_REQUEST);
         }
