@@ -132,6 +132,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
+    /**
+     * @deprecated since 1.14.0. Use authors instead.
+     */
     @Column
     @Deprecated(since = "1.14.0")
     @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl", position = 1)
@@ -164,6 +167,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @BatchSize(size = 25)
     private SortedSet<User> starredUsers;
 
+    /**
+     * @deprecated since 1.14.0. Use authors instead, which can contain an email for each Author.
+     */
     @Column
     @Deprecated(since = "1.14.0")
     @ApiModelProperty(value = "This is the email of the git organization", position = 6)
@@ -358,6 +364,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.checkerWorkflow = checkerWorkflow;
     }
 
+    /**
+     * @deprecated since 1.14.0. Use getAuthors instead.
+     */
     @JsonProperty
     @Deprecated(since = "1.14.0")
     public String getAuthor() {
@@ -412,6 +421,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.licenseInformation = licenseInformation;
     }
 
+    /**
+     * @deprecated since 1.14.0. Use setAuthors instead.
+     */
     @Deprecated(since = "1.14.0")
     public void setAuthor(String newAuthor) {
         this.author = newAuthor;
@@ -441,6 +453,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return users.remove(user);
     }
 
+    /**
+     * @deprecated since 1.14.0. Use getAuthors instead. Each Author may contain an email.
+     */
     @JsonProperty
     @Deprecated(since = "1.14.0")
     public String getEmail() {
@@ -448,6 +463,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return firstAuthor.map(Author::getEmail).orElse(null);
     }
 
+    /**
+     * @deprecated since 1.14.0. Use setAuthors instead to set an Author with an email.
+     */
     @Deprecated(since = "1.14.0")
     public void setEmail(String newEmail) {
         this.email = newEmail;
