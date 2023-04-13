@@ -554,11 +554,17 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setMetadataFromEntry(S entry) {
+        // TODO: remove the setting of author and email when those two fields are removed from this class
+        this.author = entry.getAuthor();
+        this.email = entry.getEmail();
         this.description = entry.getDescription();
         setTopicAutomatic(entry.getTopicAutomatic());
     }
 
     public void setMetadataFromVersion(Version version) {
+        // TODO: remove the setting of author and email when those two fields are removed from this class
+        this.author = version.getAuthor();
+        this.email = version.getEmail();
         this.description = version.getDescription();
     }
 
