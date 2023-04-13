@@ -500,14 +500,19 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     /**
-     * Clears .dockstore.yml authors and sets authors from the descriptor
+     * Sets the versions authors using authors from the descriptor.
      * @param newAuthors
      */
     @JsonIgnore
     public void setAuthorsFromDescriptor(Set<Author> newAuthors) {
-        // Clear ORCID authors from the .dockstore.yml
-        this.getOrcidAuthors().clear();
-        this.setAuthors(newAuthors);
+        // If it's a .dockstore.yml workflow, clear authors because it may be from the .dockstore.yml
+        if (this.parent instanceof Workflow workflow && workflow.getMode() == WorkflowMode.DOCKSTORE_YML) {
+            this.getOrcidAuthors().clear();
+            this.setAuthors(newAuthors);
+        } else {
+            // Don't need to worry about existing authors if it's not a .dockstore.yml because the authors are always from the descriptor
+            this.authors.addAll(newAuthors);
+        }
     }
 
     public void setAuthors(final Set<Author> authors) {
