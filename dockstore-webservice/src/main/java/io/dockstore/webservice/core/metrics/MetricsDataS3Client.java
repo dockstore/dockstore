@@ -96,7 +96,7 @@ public class MetricsDataS3Client {
      * @param fileName     The file name to use. Should be the time that the data was submitted in milliseconds since epoch appended with '.json'
      * @return S3 key (file path)
      */
-    static String generateKey(String toolId, String versionName, String platform, String fileName) {
+    public static String generateKey(String toolId, String versionName, String platform, String fileName) {
         List<String> pathList = new ArrayList<>();
         pathList.add(S3ClientHelper.convertToolIdToPartialKey(toolId));
         pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8));
