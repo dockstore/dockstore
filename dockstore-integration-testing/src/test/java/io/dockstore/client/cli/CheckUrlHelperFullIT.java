@@ -82,7 +82,8 @@ public class CheckUrlHelperFullIT {
         client.handleGitHubRelease(gitReference, installationId, workflowRepo, dockstoreTestUser2);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(client);
-        assertFalse(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be set to true since there's no inaccessible URL in the JSON");
+        final String noFilesInJsonForInputParameters = "Should be set to false since the workflow has a file input parameter, and the JSON has no files";
+        assertFalse(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), noFilesInJsonForInputParameters);
 
         testingPostgres.runUpdateStatement("update version_metadata set publicaccessibletestparameterfile = null");
         workflowVersion = getWorkflowVersion(client);
@@ -91,7 +92,7 @@ public class CheckUrlHelperFullIT {
         // Test updating existing version
         client.handleGitHubRelease(gitReference, installationId, workflowRepo, dockstoreTestUser2);
         workflowVersion = getWorkflowVersion(client);
-        assertFalse(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be set to false since the workflow has a file input parameter, and the JSON has no files");
+        assertFalse(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), noFilesInJsonForInputParameters);
     }
 
     /**
