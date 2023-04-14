@@ -261,7 +261,7 @@ Lists of 376 third-party dependencies.
      (Apache License, Version 2.0) JJWT :: Impl (io.jsonwebtoken:jjwt-impl:0.11.5 - https://github.com/jwtk/jjwt/jjwt-impl)
      (The BSD License) JLine Bundle (org.jline:jline:3.21.0 - http://nexus.sonatype.org/oss-repository-hosting.html/jline-parent/jline)
      (Apache License, Version 2.0) Joda-Time (joda-time:joda-time:2.12.2 - https://www.joda.org/joda-time/)
-     (Public Domain) JSON in Java (org.json:json:20220924 - https://github.com/douglascrockford/JSON-java)
+     (Public Domain) JSON in Java (org.json:json:20230227 - https://github.com/douglascrockford/JSON-java)
      (Revised BSD License) JSONLD Java :: Core (com.github.jsonld-java:jsonld-java:0.8.3 - http://github.com/jsonld-java/jsonld-java/jsonld-java/)
      (MIT License) JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.36 - http://www.slf4j.org)
      (Eclipse Public License v2.0) JUnit Jupiter (Aggregator) (org.junit.jupiter:junit-jupiter:5.9.2 - https://junit.org/junit5/)
