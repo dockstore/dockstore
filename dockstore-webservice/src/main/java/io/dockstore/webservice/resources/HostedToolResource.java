@@ -82,7 +82,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     private final TagDAO tagDAO;
     private final SessionFactory sessionFactory;
 
-    public HostedToolResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
+    public HostedToolResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration limitConfig) {
         super(sessionFactory, permissionsInterface, limitConfig);
         this.tagDAO = new TagDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);

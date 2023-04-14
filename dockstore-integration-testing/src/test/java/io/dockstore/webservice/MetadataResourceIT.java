@@ -17,6 +17,7 @@
 package io.dockstore.webservice;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -29,7 +30,6 @@ import io.dockstore.openapi.client.model.HealthCheckResult;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -94,7 +94,7 @@ class MetadataResourceIT extends BaseIT {
             fail("Hibernate and connection pool health checks should not fail");
         }
 
-        Assert.assertThrows(ApiException.class, () -> metadataApi.checkHealth(List.of("foobar")));
+        assertThrows(ApiException.class, () -> metadataApi.checkHealth(List.of("foobar")));
     }
 
     @Test
