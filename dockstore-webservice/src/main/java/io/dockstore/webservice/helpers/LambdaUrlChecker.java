@@ -26,7 +26,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,9 +40,12 @@ import org.slf4j.LoggerFactory;
 public final class LambdaUrlChecker implements CheckUrlInterface {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LambdaUrlChecker.class);
+    private static final int LRU_CACHE_SIZE = 50;
     private static final String S3_PROTOCOL = "s3://";
     private static final String GS_PROTOCOL = "gs://";
     private String checkUrlLambdaUrl;
+
+    private Map<String, Boolean> checkedUrlsMap = Collections.synchronizedMap(new HashMap<>(LRU_CACHE_SIZE));
 
     public LambdaUrlChecker(String checkUrlLambdaUrl) {
         this.checkUrlLambdaUrl = checkUrlLambdaUrl;
@@ -53,17 +59,17 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
         } catch (URISyntaxException e) {
             return Optional.of(false);
         }
+        final Boolean check = checkedUrlsMap.get(url);
+        if (check != null) {
+            return Optional.of(check);
+        }
         request = HttpRequest.newBuilder().uri(uri).GET().build();
         try {
-            String s = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
+            String body = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString()).body();
-            if ("{\"message\":true}".equals(s)) {
-                return Optional.of(true);
-            }
-            if ("{\"message\":false}".equals(s)) {
-                return Optional.of(false);
-            }
-            return Optional.empty();
+            final Optional<Boolean> checkStatus = checkStatus(body);
+            checkStatus.ifPresent(b -> checkedUrlsMap.put(url, b));
+            return checkStatus;
         } catch (IOException e) {
             LOGGER.error("Error checking url", e);
             return Optional.empty();
@@ -71,6 +77,16 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
             Thread.currentThread().interrupt();
             return Optional.empty();
         }
+    }
+
+    private Optional<Boolean> checkStatus(String body) {
+        if ("{\"message\":true}".equals(body)) {
+            return Optional.of(true);
+        }
+        if ("{\"message\":false}".equals(body)) {
+            return Optional.of(false);
+        }
+        return Optional.empty();
     }
 
     private static boolean hasMalformedOrFileProtocolUrl(Set<String> possibleUrls) {
