@@ -137,8 +137,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     @Column
     @Deprecated(since = "1.14.0")
-    @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl", position = 1)
-    @Schema(description = "This is the name of the author stated in the Dockstore.cwl", deprecated = true)
+    @ApiModelProperty(value = "This is the name of the author, retrieved from the default version", position = 1)
+    @Schema(description = "This is the name of the author, retrieved from the default version", deprecated = true)
     private String author;
 
     @Column(columnDefinition = "TEXT")
@@ -172,7 +172,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     @Column
     @Deprecated(since = "1.14.0")
-    @ApiModelProperty(value = "This is the email of the git organization", position = 6)
+    @ApiModelProperty(value = "This is the email of the author, retrieved from the default version", position = 6)
+    @Schema(description = "This is the email of the author, retrieved from the default version", deprecated = true)
     private String email;
 
     @Column

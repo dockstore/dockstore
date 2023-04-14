@@ -583,7 +583,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (description != null && (tool.getDescription() == null || !tool.getDescription().contains(description))) {
                 return null;
             }
-            if (author != null && (tool.getAuthors().isEmpty() || tool.getAuthors().stream().map(Author::getName).noneMatch(author::equals))) {
+            if (author != null && (tool.getAuthors().isEmpty() || tool.getAuthors().stream().map(Author::getName).noneMatch(authorName -> authorName.contains(author)))) {
                 return null;
             }
         }

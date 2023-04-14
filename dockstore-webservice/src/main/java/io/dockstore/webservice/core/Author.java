@@ -109,11 +109,10 @@ public class Author implements Serializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Author)) {
+        if (!(o instanceof Author that)) {
             return false;
         }
 
-        final Author that = (Author)o;
         return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(affiliation, that.affiliation) && Objects.equals(role, that.role) && Objects.equals(email, that.email);
     }
 

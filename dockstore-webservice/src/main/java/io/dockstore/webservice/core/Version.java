@@ -493,10 +493,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void addAuthor(final Author author) {
-        boolean isNewAuthor = this.authors.stream().noneMatch(existingAuthor -> existingAuthor.getName().equals(author.getName()));
-        if (isNewAuthor) {
-            this.authors.add(author);
-        }
+        this.authors.add(author);
     }
 
     /**

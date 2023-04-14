@@ -70,7 +70,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
         if (workflowMetadata.getAuthor() != null && version.getAuthors().isEmpty()) {
             Author author = new Author(workflowMetadata.getAuthor());
             author.setEmail(workflowMetadata.getEmail());
-            version.setAuthorsFromDescriptor(Set.of(author));
+            version.addAuthor(author);
         }
 
         // TODO: this can probably be removed after EntryResource.updateLanguageVersions is removed since this should only happen with previously imported data

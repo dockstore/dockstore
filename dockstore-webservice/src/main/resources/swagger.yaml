@@ -7212,7 +7212,7 @@ definitions:
       author:
         type: "string"
         position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
+        description: "This is the name of the author, retrieved from the default version"
       description:
         type: "string"
         position: 2
@@ -7245,7 +7245,8 @@ definitions:
       email:
         type: "string"
         position: 6
-        description: "This is the email of the git organization"
+        description: "This is the email of the author, retrieved from the default\
+          \ version"
       defaultVersion:
         type: "string"
         position: 7
@@ -7498,7 +7499,7 @@ definitions:
       author:
         type: "string"
         position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
+        description: "This is the name of the author, retrieved from the default version"
       description:
         type: "string"
         position: 2
@@ -7531,7 +7532,8 @@ definitions:
       email:
         type: "string"
         position: 6
-        description: "This is the email of the git organization"
+        description: "This is the email of the author, retrieved from the default\
+          \ version"
       defaultVersion:
         type: "string"
         position: 7
@@ -9570,7 +9572,7 @@ definitions:
       author:
         type: "string"
         position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
+        description: "This is the name of the author, retrieved from the default version"
       description:
         type: "string"
         position: 2
@@ -9603,7 +9605,8 @@ definitions:
       email:
         type: "string"
         position: 6
-        description: "This is the email of the git organization"
+        description: "This is the email of the author, retrieved from the default\
+          \ version"
       defaultVersion:
         type: "string"
         position: 7

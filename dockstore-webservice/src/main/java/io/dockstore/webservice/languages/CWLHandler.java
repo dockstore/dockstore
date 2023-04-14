@@ -314,7 +314,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             if (!Strings.isNullOrEmpty(email)) {
                 newAuthor.setEmail(email.replaceFirst("^mailto:", ""));
             }
-            version.setAuthorsFromDescriptor(Set.of(newAuthor));
+            version.addAuthor(newAuthor);
         } else {
             LOG.info(errorMessage);
         }
