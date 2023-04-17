@@ -58,6 +58,21 @@ class CheckUrlIT {
         }
         """;
 
+    private static final String CWL_TEST_JSON_WITH_LOCATION = """
+        {
+          "bam_cram_file": {
+                "class": "File",
+                "location": "https://open.dockstore.org",
+                "secondaryFiles": [
+                  {
+                    "class": "File",
+                    "path": "https://anotheropen.dockstore.org"
+                  }
+                ]
+              }
+        }
+        """;
+
     private static final String CWL_WITH_FILE_INPUT = """
         cwlVersion: v1.0
         class: Workflow
@@ -237,6 +252,18 @@ class CheckUrlIT {
     }
 
     @Test
+    void checkCwlDescriptorWithLocationInput() {
+        final WorkflowVersion workflowVersion =
+            setupWorkflowVersion(CWL_WITH_FILE_INPUT, FileType.DOCKSTORE_CWL, CWL_TEST_JSON_WITH_LOCATION,
+                FileType.CWL_TEST_JSON);
+        assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile(), "Double-check that it's not originally true/false");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, createCheckUrlInterface(UrlStatus.ALL_OPEN),
+            DescriptorLanguage.CWL);
+        // allow location as a synonym for PATH
+        assertTrue(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
+    }
+
+    @Test
     void checkCwlDescriptorWithFileInputButNotInTestParam() {
         final String cwlTestJson = CWL_TEST_JSON.replace("bam_cram_file", "another_name");
         final WorkflowVersion workflowVersion =
@@ -249,23 +276,15 @@ class CheckUrlIT {
     }
 
     private CheckUrlInterface createCheckUrlInterface(final UrlStatus urlStatus) {
-        return new CheckUrlInterface() {
-            @Override
-            public UrlStatus checkUrls(final Set<String> possibleUrls) {
-                return urlStatus;
-            }
-        };
+        return possibleUrls -> urlStatus;
     }
 
     private CheckUrlInterface createCheckUrlInterface(Set<String> openUrls) {
-        return new CheckUrlInterface() {
-            @Override
-            public UrlStatus checkUrls(final Set<String> possibleUrls) {
-                if (possibleUrls.containsAll(openUrls)) {
-                    return UrlStatus.ALL_OPEN;
-                }
-                return UrlStatus.NOT_ALL_OPEN;
+        return possibleUrls -> {
+            if (possibleUrls.containsAll(openUrls)) {
+                return UrlStatus.ALL_OPEN;
             }
+            return UrlStatus.NOT_ALL_OPEN;
         };
     }
 
