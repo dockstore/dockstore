@@ -40,8 +40,9 @@ import org.hibernate.annotations.BatchSize;
 @ApiModel(value = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses")
 @Schema(name = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses")
 @SuppressWarnings("checkstyle:magicnumber")
-public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, ValidationInfo> {
+public class    ValidationStatusCountMetric extends CountMetric<ValidatorTool, ValidationInfo> {
 
+    @JsonProperty("validatorToolToValidationInfo")
     @ElementCollection(targetClass = ValidationInfo.class, fetch = FetchType.EAGER)
     @MapKeyColumn(name = "validatortool")
     @MapKeyEnumerated(EnumType.STRING)
@@ -50,26 +51,32 @@ public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, Vali
     @ApiModelProperty(value = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true)
     @Schema(description = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true, example = """
             {
-                "MINIWDL": true
+                "MINIWDL": {
+                    "mostRecentVersion": "1.0",
+                    "mostRecentIsValid": true,
+                    "successfulValidationVersions": ["1.0"],
+                    "failedValidationVersions": [],
+                    "passingRate", 100.0,
+                    "numberOfRuns": 1
+                }
             }
             """)
-    private Map<ValidatorTool, ValidationInfo> validatorToolToIsValid = new EnumMap<>(ValidatorTool.class);
+    private Map<ValidatorTool, ValidationInfo> count = new EnumMap<>(ValidatorTool.class);
 
 
     public ValidationStatusCountMetric() {
     }
 
     public ValidationStatusCountMetric(Map<ValidatorTool, ValidationInfo> validatorToolToIsValid) {
-        this.validatorToolToIsValid = validatorToolToIsValid;
+        this.count = validatorToolToIsValid;
     }
 
     @Override
-    @JsonProperty("validatorToolToIsValid")
     public Map<ValidatorTool, ValidationInfo> getCount() {
-        return validatorToolToIsValid;
+        return count;
     }
 
-    public void setValidatorToolToIsValid(Map<ValidatorTool, ValidationInfo> validatorToolToIsValid) {
-        this.validatorToolToIsValid = validatorToolToIsValid;
+    public void setCount(Map<ValidatorTool, ValidationInfo> count) {
+        this.count = count;
     }
 }

@@ -23,6 +23,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
+import java.util.Map;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,6 +33,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -76,6 +78,10 @@ public class Metrics {
     @ApiModelProperty(value = "Aggregated validation status metrics")
     @Schema(description = "Aggregated validation status metrics")
     private ValidationStatusCountMetric validationStatus;
+
+    // Don't persist to the database. This is meant to be used by platforms to submit additional aggregated metrics to Dockstore that aren't defined above.
+    @Transient
+    private Map<String, Object> additionalAggregatedMetrics;
 
     // database timestamps
     @Column(updatable = false)
@@ -141,6 +147,14 @@ public class Metrics {
 
     public void setValidationStatus(ValidationStatusCountMetric validationStatus) {
         this.validationStatus = validationStatus;
+    }
+
+    public Map<String, Object> getAdditionalAggregatedMetrics() {
+        return additionalAggregatedMetrics;
+    }
+
+    public void setAdditionalAggregatedMetrics(Map<String, Object> additionalAggregatedMetrics) {
+        this.additionalAggregatedMetrics = additionalAggregatedMetrics;
     }
 
     public Timestamp getDbCreateDate() {

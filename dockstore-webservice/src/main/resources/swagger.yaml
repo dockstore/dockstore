@@ -637,6 +637,77 @@ paths:
             $ref: "#/definitions/Error"
       security:
       - BEARER: []
+    post:
+      tags:
+      - "extendedGA4GH"
+      summary: "Submit aggregated execution metrics for a tool that was executed on\
+        \ a platform."
+      description: "This endpoint submits aggregated execution metrics for a tool\
+        \ that was executed on a platform"
+      operationId: "aggregatedMetricsPost"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      - name: "platform"
+        in: "query"
+        description: "Platform that the tool was executed on"
+        required: true
+        type: "string"
+        enum:
+        - "GALAXY"
+        - "TERRA"
+        - "DNA_STACK"
+        - "DNA_NEXUS"
+        - "CGC"
+        - "NHLBI_BIODATA_CATALYST"
+        - "ANVIL"
+        - "CAVATICA"
+        - "NEXTFLOW_TOWER"
+        - "ELWAZI"
+        - "AGC"
+        - "OTHER"
+      - name: "description"
+        in: "query"
+        description: "Optional description about the execution metrics"
+        required: false
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "Aggregated execution metrics to submit"
+        required: true
+        schema:
+          $ref: "#/definitions/Metrics"
+      responses:
+        204:
+          description: "Aggregated execution metrics submitted successfully."
+          schema:
+            type: "object"
+            additionalProperties:
+              type: "object"
+        401:
+          description: "Credentials not provided or incorrect."
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: "The tool cannot be found to submit aggregated execution metrics."
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+      - BEARER: []
     put:
       tags:
       - "extendedGA4GH"
@@ -707,9 +778,9 @@ paths:
     post:
       tags:
       - "extendedGA4GH"
-      summary: "Submit execution metrics for a workflow that was executed on a platform."
-      description: "This endpoint submits execution metrics for a workflow that was\
-        \ executed on a platform"
+      summary: "Submit execution metrics for a tool that was executed on a platform."
+      description: "This endpoint submits execution metrics for a tool that was executed\
+        \ on a platform"
       operationId: "executionMetricsPost"
       consumes:
       - "application/json"
@@ -8036,6 +8107,10 @@ definitions:
     required:
     - "executionStatusCount"
     properties:
+      additionalAggregatedMetrics:
+        type: "object"
+        additionalProperties:
+          type: "object"
       cpu:
         description: "Aggregated CPU metrics"
         $ref: "#/definitions/CpuMetric"
@@ -9255,13 +9330,17 @@ definitions:
           type: "string"
   ValidationStatusMetric:
     type: "object"
+    required:
+    - "validatorToolToValidationInfo"
     properties:
       id:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the count metrics in this webservice"
-      validatorToolToIsValid:
+      validatorToolToValidationInfo:
         type: "object"
+        description: "A map containing key-value pairs indicating whether the validator\
+          \ tool successfully validated the workflow"
         additionalProperties:
           $ref: "#/definitions/ValidationInfo"
     description: "Aggregated metrics about workflow validation statuses"

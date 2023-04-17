@@ -176,7 +176,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(1, metricsDbCount, "There should only be 1 row in the metrics table because we only have one entry version with aggregated metrics");
 
         // Put validation metrics for platform2
-        ValidationStatusMetric validationStatusMetric = new ValidationStatusMetric().validatorToolToIsValid(Map.of(
+        ValidationStatusMetric validationStatusMetric = new ValidationStatusMetric().validatorToolToValidationInfo(Map.of(
                 MINIWDL.toString(),
                 new ValidationInfo()
                         .mostRecentIsValid(true)
@@ -197,7 +197,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
 
         // Verify validation status
         Metrics platform2Metrics = workflowVersion.getMetricsByPlatform().get(platform2);
-        ValidationInfo validationInfo = platform2Metrics.getValidationStatus().getValidatorToolToIsValid().get(MINIWDL.toString());
+        ValidationInfo validationInfo = platform2Metrics.getValidationStatus().getValidatorToolToValidationInfo().get(MINIWDL.toString());
         assertNotNull(validationInfo);
         assertTrue(validationInfo.isMostRecentIsValid());
         assertEquals("1.0", validationInfo.getMostRecentVersion());
@@ -240,15 +240,22 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         ApiException exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Non-admin and non-curator user should not be able to put aggregated metrics");
 
-        // convert the user role and test that a platform partner can put aggregated metrics
+        // convert the user role and test that a platform partner can't put aggregated metrics (which adds metrics to the database)
         testingPostgres.runUpdateStatement("update enduser set platformpartner = 't' where username = '" + OTHER_USERNAME + "'");
-        otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId);
+        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId));
+        assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Platform partner should not be able to put aggregated metrics");
 
         // Add execution metrics for a workflow version for one platform
         List<RunExecution> executions = MetricsDataS3ClientIT.createRunExecutions(1);
-        ApiException exception2 = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), platform, id, versionId, "foo"));
+        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), platform, id, versionId, "foo"));
         // we were denied because S3 is not up and running in this class, not because of permissions issues
-        assertTrue(exception2.getMessage().contains(ToolsApiExtendedServiceImpl.COULD_NOT_SUBMIT_METRICS_DATA) && exception2.getCode() == HttpStatus.SC_BAD_REQUEST);
+        assertTrue(exception.getMessage().contains(ToolsApiExtendedServiceImpl.COULD_NOT_SUBMIT_METRICS_DATA) && exception.getCode() == HttpStatus.SC_BAD_REQUEST);
+
+        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPost(
+                new Metrics().executionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 2))), platform, id,
+                versionId, "foo"));
+        // we were denied because S3 is not up and running in this class, not because of permissions issues
+        assertTrue(exception.getMessage().contains(ToolsApiExtendedServiceImpl.COULD_NOT_SUBMIT_METRICS_DATA) && exception.getCode() == HttpStatus.SC_BAD_REQUEST);
     }
 
     @Test

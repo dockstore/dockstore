@@ -439,6 +439,37 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
+    public Response submitAggregatedMetricsData(String id, String versionId, Partner platform, User owner, String description, Metrics aggregatedMetrics) {
+        // Check that the entry and version exists
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.of(owner));
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_REGISTRY_RESPONSE;
+        }
+
+        if (entry == null) {
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Optional<? extends Version<?>> version = getVersion(entry, versionId);
+        if (version.isEmpty()) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String metricsData = mapper.writeValueAsString(aggregatedMetrics);
+            MetricsDataS3Client metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
+            metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);
+            return Response.noContent().build();
+        } catch (AwsServiceException | SdkClientException | JsonProcessingException | URISyntaxException e) {
+            LOG.error(COULD_NOT_SUBMIT_METRICS_DATA, e);
+            throw new CustomWebApplicationException(COULD_NOT_SUBMIT_METRICS_DATA, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    @Override
     public Response setAggregatedMetrics(String id, String versionId, Partner platform, Metrics aggregatedMetrics) {
         // Check that the entry and version exists
         Entry<?, ?> entry;

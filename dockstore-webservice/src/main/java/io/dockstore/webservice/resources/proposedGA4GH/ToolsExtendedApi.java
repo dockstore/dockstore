@@ -234,9 +234,40 @@ public class ToolsExtendedApi {
         return delegate.submitMetricsData(id, versionId, platform, user, description, executions);
     }
 
-    @PUT
+    @POST
     @UnitOfWork
     @RolesAllowed({"curator", "admin", "platformPartner"})
+    @Path("/{id}/versions/{version_id}/aggregatedMetrics")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
+    @ApiOperation(value = AggregatedExecutionMetricsPost.SUMMARY, notes = AggregatedExecutionMetricsPost.DESCRIPTION, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    @ApiResponses(value = {
+        @ApiResponse(code = HttpStatus.SC_NO_CONTENT, message = AggregatedExecutionMetricsPost.OK_RESPONSE, response = Map.class),
+        @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = AggregatedExecutionMetricsPost.NOT_FOUND_RESPONSE, response = Error.class),
+        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = AggregatedExecutionMetricsPost.UNAUTHORIZED_RESPONSE, response = Error.class)})
+    @Operation(operationId = "aggregatedMetricsPost", summary = AggregatedExecutionMetricsPost.SUMMARY, description = AggregatedExecutionMetricsPost.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT
+                + "", description = AggregatedExecutionMetricsPost.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = AggregatedExecutionMetricsPost.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+                + "", description = AggregatedExecutionMetricsPost.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+    })
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public Response aggregatedMetricsPost(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
+        @ApiParam(value = AggregatedExecutionMetricsPost.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedExecutionMetricsPost.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+        @ApiParam(value = AggregatedExecutionMetricsPost.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = AggregatedExecutionMetricsPost.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+        @ApiParam(value = AggregatedExecutionMetricsPost.PLATFORM_DESCRIPTION, required = true) @Parameter(description = AggregatedExecutionMetricsPost.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
+        @ApiParam(value = AggregatedExecutionMetricsPost.DESCRIPTION_DESCRIPTION) @Parameter(description = AggregatedExecutionMetricsPost.DESCRIPTION_DESCRIPTION, in = ParameterIn.QUERY) @QueryParam("description") String description,
+        @ApiParam(value = AggregatedExecutionMetricsPost.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedExecutionMetricsPost.AGGREGATED_METRICS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = Metrics.class))) @Valid Metrics aggregatedMetrics,
+        @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        return delegate.submitAggregatedMetricsData(id, versionId, platform, user, description, aggregatedMetrics);
+    }
+
+    @PUT
+    @UnitOfWork
+    @RolesAllowed({"curator", "admin"})
     @Path("/{id}/versions/{version_id}/aggregatedMetrics")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON})
@@ -307,8 +338,8 @@ public class ToolsExtendedApi {
     }
 
     private static final class ExecutionMetricsPost {
-        public static final String SUMMARY = "Submit execution metrics for a workflow that was executed on a platform.";
-        public static final String DESCRIPTION = "This endpoint submits execution metrics for a workflow that was executed on a platform";
+        public static final String SUMMARY = "Submit execution metrics for a tool that was executed on a platform.";
+        public static final String DESCRIPTION = "This endpoint submits execution metrics for a tool that was executed on a platform";
         public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
         public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
         public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
@@ -316,6 +347,19 @@ public class ToolsExtendedApi {
         public static final String EXECUTIONS_DESCRIPTION = "Execution metrics to submit";
         public static final String OK_RESPONSE = "Execution metrics submitted successfully.";
         public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to submit execution metrics.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
+    }
+
+    private static final class AggregatedExecutionMetricsPost {
+        public static final String SUMMARY = "Submit aggregated execution metrics for a tool that was executed on a platform.";
+        public static final String DESCRIPTION = "This endpoint submits aggregated execution metrics for a tool that was executed on a platform";
+        public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
+        public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
+        public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
+        public static final String DESCRIPTION_DESCRIPTION = "Optional description about the execution metrics";
+        public static final String AGGREGATED_METRICS_DESCRIPTION = "Aggregated execution metrics to submit";
+        public static final String OK_RESPONSE = "Aggregated execution metrics submitted successfully.";
+        public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to submit aggregated execution metrics.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 
