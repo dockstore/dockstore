@@ -96,13 +96,8 @@ public class CWLTestParameterFileHelper {
     }
 
     private List<String> getPaths(JSONObject fileJsonObject) {
-        if (fileJsonObject.has(PATH) || fileJsonObject.has(LOCATION)) {
-            final String path;
-            if (fileJsonObject.has(PATH)) {
-                path = fileJsonObject.getString(PATH);
-            } else {
-                path = fileJsonObject.getString(LOCATION);
-            }
+        String path = fileJsonObject.optString(PATH, fileJsonObject.optString(LOCATION, null));
+        if (path != null) {
             final List<String> secondaryFiles = getSecondaryFiles(fileJsonObject);
             return Stream.concat(Stream.of(path), secondaryFiles.stream()).toList();
         }
