@@ -58,8 +58,16 @@ class NFLParseTest {
     void testNFLNotCoreExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-ampa/nextflow.config");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
+        String content = FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8);
         Version entry = sInterface
-            .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new WorkflowVersion());
+            .parseWorkflowContent(filePath, content, new HashSet<>(), new WorkflowVersion());
         assertEquals("Fast automated prediction of protein antimicrobial regions", entry.getDescription(), "incorrect description");
+
+        // Test that a version that no longer has a descriptor description has its version description and description source set to null
+        content = content.replace("description = 'Fast automated prediction of protein antimicrobial regions'", ""); // Remove the description from the descriptor
+        entry = sInterface
+                .parseWorkflowContent(filePath, content, new HashSet<>(), entry);
+        assertNull(entry.getDescription());
+        assertNull(entry.getDescriptionSource());
     }
 }

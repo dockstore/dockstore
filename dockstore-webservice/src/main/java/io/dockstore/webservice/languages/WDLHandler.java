@@ -209,6 +209,8 @@ public class WDLHandler implements LanguageHandlerInterface {
 
                 if (!Strings.isNullOrEmpty(mainDescription[0])) {
                     version.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
+                } else {
+                    version.setDescriptionAndDescriptionSource(null, null);
                 }
             } catch (WdlParser.SyntaxError ex) {
                 LOG.error("Unable to parse WDL file " + filepath, ex);

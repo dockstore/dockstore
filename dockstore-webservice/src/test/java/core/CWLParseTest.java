@@ -17,6 +17,7 @@ package core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.DescriptorLanguage;
@@ -78,10 +79,17 @@ class CWLParseTest {
     void testcwlVersion11doc1() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example1.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        String content = FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8);
+        Version entry = sInterface.parseWorkflowContent(filePath, content, new HashSet<>(), new Tag());
         assertEquals("Peter Amstutz", entry.getAuthor(), "incorrect author");
         assertEquals("peter.amstutz@curoverse.com", entry.getEmail(), "incorrect email");
         assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription(), "incorrect description");
+
+        // Test that a version that no longer has a descriptor description has its version description and description source set to null
+        content = content.replace("doc: \"Print the contents of a file to stdout using 'cat' running in a docker container.\"", ""); // Remove the description from the descriptor
+        entry = sInterface.parseWorkflowContent(filePath, content, new HashSet<>(), entry);
+        assertNull(entry.getDescription());
+        assertNull(entry.getDescriptionSource());
     }
 
     /**
@@ -92,10 +100,17 @@ class CWLParseTest {
     void testcwlVersion11doc2() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example2.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        String content = FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8);
+        Version entry = sInterface.parseWorkflowContent(filePath, content, new HashSet<>(), new Tag());
         assertEquals("Peter Amstutz", entry.getAuthor(), "incorrect author");
         assertEquals("peter.amstutz@curoverse.com", entry.getEmail(), "incorrect email");
         assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription(), "incorrect description");
+
+        // Test that a version that no longer has a descriptor description has its version description and description source set to null
+        content = content.replace("doc: [\"Print the contents of a file to stdout using 'cat' running in a docker container.\"]", ""); // Remove the description from the descriptor
+        entry = sInterface.parseWorkflowContent(filePath, content, new HashSet<>(), entry);
+        assertNull(entry.getDescription());
+        assertNull(entry.getDescriptionSource());
     }
 
     /**
@@ -106,10 +121,18 @@ class CWLParseTest {
     void testcwlVersion11doc3() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example3.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        String content = FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8);
+        final String expectedDescription = "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.";
+        Version entry = sInterface.parseWorkflowContent(filePath, content, new HashSet<>(), new Tag());
         assertEquals("Peter Amstutz", entry.getAuthor(), "incorrect author");
         assertEquals("peter.amstutz@curoverse.com", entry.getEmail(), "incorrect email");
-        assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.", entry.getDescription(), "incorrect description");
+        assertEquals(expectedDescription, entry.getDescription(), "incorrect description");
+
+        // Test that a version that no longer has a descriptor description has its version description and description source set to null
+        content = content.replace("doc: [\"Print the contents of a file to stdout using 'cat' running in a docker container.\", \"New line doc.\"]", ""); // Remove the description from the descriptor
+        entry = sInterface.parseWorkflowContent(filePath, content, new HashSet<>(), entry);
+        assertNull(entry.getDescription());
+        assertNull(entry.getDescriptionSource());
     }
 
     /**

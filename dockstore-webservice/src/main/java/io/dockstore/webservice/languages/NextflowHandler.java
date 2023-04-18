@@ -81,6 +81,8 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             if (configuration.containsKey("manifest.description")) {
                 version.setDescriptionAndDescriptionSource(configuration.getString("manifest.description"), DescriptionSource.DESCRIPTOR);
                 descriptionInProgress = version.getDescription();
+            } else {
+                version.setDescriptionAndDescriptionSource(null, null);
             }
             // Add authors from descriptor
             if (configuration.containsKey("manifest.author")) {
@@ -101,7 +103,9 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                 }
                 String builder = Stream.of(descriptionInProgress, helpMessage).filter(s -> s != null && !s.isEmpty())
                     .collect(Collectors.joining(""));
-                version.setDescriptionAndDescriptionSource(builder, DescriptionSource.DESCRIPTOR);
+                if (StringUtils.isNotBlank(builder)) {
+                    version.setDescriptionAndDescriptionSource(builder, DescriptionSource.DESCRIPTOR);
+                }
             } else {
                 createValidationForMissingMainScript(version, filepath, mainScriptPath);
             }
