@@ -113,11 +113,11 @@ public class Author implements Serializable {
             return false;
         }
 
-        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(affiliation, that.affiliation) && Objects.equals(role, that.role) && Objects.equals(email, that.email);
+        return Objects.equals(name, that.name) && Objects.equals(affiliation, that.affiliation) && Objects.equals(role, that.role) && Objects.equals(email, that.email);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, affiliation, role, email);
+        return Objects.hash(name, affiliation, role, email);
     }
 }
