@@ -47,7 +47,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.rules.TemporaryFolder;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -71,7 +70,7 @@ class GeneralWorkflowRegressionIT extends BaseIT {
     public static final String KNOWN_BREAKAGE_MOVING_TO_1_9_0 = "Known breakage moving to 1.9.0";
 
     @TempDir
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    public static File temporaryFolder;
     static URL url;
     static File dockstore;
     private static File md5sumJson;
@@ -84,14 +83,14 @@ class GeneralWorkflowRegressionIT extends BaseIT {
     public static void getOldDockstoreClient() throws IOException {
         TestUtility.createFakeDockstoreConfigFile();
         url = new URL("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
-        dockstore = temporaryFolder.newFile("dockstore");
+        dockstore = new File(temporaryFolder, "dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         assertTrue(dockstore.setExecutable(true));
         url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/1.6.0/checker-input-cwl.json");
-        md5sumJson = temporaryFolder.newFile("md5sum-wrapper-tool.json");
+        md5sumJson = new File(temporaryFolder, "md5sum-wrapper-tool.json");
         FileUtils.copyURLToFile(url, md5sumJson);
         url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/1.6.0/md5sum.input");
-        File md5sumInput = temporaryFolder.newFile("md5sum.input");
+        File md5sumInput = new File(temporaryFolder, "md5sum.input");
         FileUtils.copyURLToFile(url, md5sumInput);
     }
 
