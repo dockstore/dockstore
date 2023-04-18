@@ -70,6 +70,7 @@ import org.json.JSONObject;
 public class CWLTestParameterFileHelper {
 
     private static final String PATH = "path";
+    private static final String LOCATION = "location";
     private static final String CLASS = "class";
     private static final String FILE = "File";
     private static final String SECONDARY_FILES = "secondaryFiles";
@@ -95,9 +96,12 @@ public class CWLTestParameterFileHelper {
     }
 
     private List<String> getPaths(JSONObject fileJsonObject) {
-        final String path = fileJsonObject.getString(PATH);
-        final List<String> secondaryFiles = getSecondaryFiles(fileJsonObject);
-        return Stream.concat(Stream.of(path), secondaryFiles.stream()).toList();
+        String path = fileJsonObject.optString(PATH, fileJsonObject.optString(LOCATION, null));
+        if (path != null) {
+            final List<String> secondaryFiles = getSecondaryFiles(fileJsonObject);
+            return Stream.concat(Stream.of(path), secondaryFiles.stream()).toList();
+        }
+        return List.of();
     }
 
     private List<String> getSecondaryFiles(JSONObject jsonObject) {
