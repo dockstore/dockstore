@@ -27,13 +27,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.UriBuilder;
+import org.apache.commons.collections4.map.LRUMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,7 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
     private static final String GS_PROTOCOL = "gs://";
     private String checkUrlLambdaUrl;
 
-    private Map<String, Boolean> checkedUrlsMap = Collections.synchronizedMap(new HashMap<>(LRU_CACHE_SIZE));
+    private Map<String, Boolean> checkedUrlsMap = Collections.synchronizedMap(new LRUMap<>(LRU_CACHE_SIZE));
 
     public LambdaUrlChecker(String checkUrlLambdaUrl) {
         this.checkUrlLambdaUrl = checkUrlLambdaUrl;

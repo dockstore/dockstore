@@ -356,36 +356,6 @@ class EntryResourceIT extends BaseIT {
         assertEquals(7, rowsWithDescriptorTypeVersions());
     }
 
-    @Test
-    void testUpdateOpenData() {
-        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        EntriesApi entriesApi = new EntriesApi(client);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        assertEquals(0, rowsWithDescriptorTypeVersions());
-        Workflow wdlWorkflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "",
-            DescriptorLanguage.WDL.getShortName(), "");
-        wdlWorkflow = workflowsApi.refresh1(wdlWorkflow.getId(), true);
-        final List<WorkflowVersion> wdlWorkflowVersions = wdlWorkflow.getWorkflowVersions();
-        Workflow cwlWorkflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "cwlworkflow",
-            DescriptorLanguage.CWL.getShortName(), "");
-        cwlWorkflow = workflowsApi.refresh1(cwlWorkflow.getId(), true);
-        final List<WorkflowVersion> cwlWorkflowVersions = cwlWorkflow.getWorkflowVersions();
-
-        // Clear descriptor language versions
-        testingPostgres.runUpdateStatement("update version_metadata set publicaccessibletestparameterfile = null");
-        // Confirm the above worked cleared out the language versions
-        wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
-        wdlWorkflow.getWorkflowVersions().forEach(wv -> assertNull(wv.getVersionMetadata().isPublicAccessibleTestParameterFile()));
-        cwlWorkflow = workflowsApi.getWorkflow(cwlWorkflow.getId(), null);
-        cwlWorkflow.getWorkflowVersions().forEach(wv -> assertNull(wv.getVersionMetadata().isPublicAccessibleTestParameterFile()));
-
-        final Integer processed = entriesApi.updateOpenData(Boolean.TRUE);
-
-        // Running the endpoint should have restored the language versions to what they were
-        // before wiping the DB rows.
-        wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
-    }
-
     private boolean languageVersionsMatch(WorkflowVersion updatedVersion, List<WorkflowVersion> oldVersions) {
         return oldVersions.stream().filter(oldVersion -> oldVersion.getName().equals(updatedVersion.getName()))
             .findFirst()

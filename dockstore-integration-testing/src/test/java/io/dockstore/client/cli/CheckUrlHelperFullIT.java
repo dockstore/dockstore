@@ -16,14 +16,19 @@
 
 package io.dockstore.client.cli;
 
+import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.client.cli.BaseIT.getOpenAPIWebClient;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.HostedApi;
@@ -35,6 +40,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -72,7 +78,7 @@ public class CheckUrlHelperFullIT {
     @Test
     void settingVersionMetadata() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(EXT.getTestSupport(), false, testingPostgres);
-        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         final String installationId = "1179416";
 
@@ -104,12 +110,46 @@ public class CheckUrlHelperFullIT {
     void openDataCheckedForHostedWorkflow() {
         CommonTestUtilities.cleanStatePrivate2(EXT.getTestSupport(), false, testingPostgres);
         final ApiClient
-            webClient = CommonTestUtilities.getOpenAPIWebClient(true, BasicIT.USER_2_USERNAME, testingPostgres);
+            webClient = CommonTestUtilities.getOpenAPIWebClient(true, USER_2_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final Workflow hostedWorkflow = CommonTestUtilities.createHostedWorkflowWithVersion(hostedApi);
         final WorkflowVersion workflowVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
         assertTrue(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be public because the descriptor has no parameters at all");
+    }
+
+    @Test
+    void testUpdateOpenData() {
+        CommonTestUtilities.cleanStatePrivate2(EXT.getTestSupport(), false, testingPostgres);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.EntriesApi
+            entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        assertEquals(0, rowsWithPublicAccessibleData());
+        Workflow wdlWorkflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "",
+            DescriptorLanguage.WDL.getShortName(), "");
+        wdlWorkflow = workflowsApi.refresh1(wdlWorkflow.getId(), true);
+        final List<WorkflowVersion> wdlWorkflowVersions = wdlWorkflow.getWorkflowVersions();
+        Workflow cwlWorkflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "cwlworkflow",
+            DescriptorLanguage.CWL.getShortName(), "");
+        cwlWorkflow = workflowsApi.refresh1(cwlWorkflow.getId(), true);
+        final List<WorkflowVersion> cwlWorkflowVersions = cwlWorkflow.getWorkflowVersions();
+
+        // Clear publicaccessibletestparameterfile
+        testingPostgres.runUpdateStatement("update version_metadata set publicaccessibletestparameterfile = null");
+        // Confirm the above worked cleared out the language versions
+        wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
+        wdlWorkflow.getWorkflowVersions().forEach(wv -> assertNull(wv.getVersionMetadata().isPublicAccessibleTestParameterFile()));
+        cwlWorkflow = workflowsApi.getWorkflow(cwlWorkflow.getId(), null);
+        cwlWorkflow.getWorkflowVersions().forEach(wv -> assertNull(wv.getVersionMetadata().isPublicAccessibleTestParameterFile()));
+
+        final Integer processed = entriesApi.updateOpenData(Boolean.TRUE);
+        assertEquals(2, processed);
+
+        // Running the endpoint should have restored the language versions to what they were
+        // before wiping the DB rows.
+        wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
+        System.out.println("wdlWorkflow = " + wdlWorkflow);
     }
 
     private Workflow getFoobar1Workflow(WorkflowsApi client) {
@@ -121,5 +161,11 @@ public class CheckUrlHelperFullIT {
         Optional<WorkflowVersion> first = workflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("0.1")).findFirst();
         return first.get();
     }
+    private Long rowsWithPublicAccessibleData() {
+        return testingPostgres.runSelectStatement(
+            "select count(*) from version_metadata where publicaccessibletestparameterfile is not null",
+            Long.class);
+    }
+
 
 }
