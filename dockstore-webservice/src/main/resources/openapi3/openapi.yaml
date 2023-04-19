@@ -7676,6 +7676,7 @@ components:
       - $ref: '#/components/schemas/Workflow'
     Author:
       type: object
+      description: "Non-ORCID authors for the entry, retrieved from the default version"
       properties:
         affiliation:
           type: string
@@ -8089,6 +8090,17 @@ components:
             $ref: '#/components/schemas/Alias'
         author:
           type: string
+          deprecated: true
+          description: "This is the name of the author, retrieved from the default\
+            \ version"
+        authors:
+          type: array
+          description: "Non-ORCID authors for the entry, retrieved from the default\
+            \ version"
+          items:
+            $ref: '#/components/schemas/Author'
+          readOnly: true
+          uniqueItems: true
         checker_id:
           type: integer
           format: int64
@@ -8125,6 +8137,9 @@ components:
             type: string
         email:
           type: string
+          deprecated: true
+          description: "This is the email of the author, retrieved from the default\
+            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -8181,6 +8196,13 @@ components:
           type: string
         namespace:
           type: string
+        orcidAuthors:
+          type: array
+          description: "ORCID authors for the entry, retrieved from the default version"
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          readOnly: true
+          uniqueItems: true
         output_file_formats:
           type: array
           items:
@@ -8261,6 +8283,17 @@ components:
             $ref: '#/components/schemas/Alias'
         author:
           type: string
+          deprecated: true
+          description: "This is the name of the author, retrieved from the default\
+            \ version"
+        authors:
+          type: array
+          description: "Non-ORCID authors for the entry, retrieved from the default\
+            \ version"
+          items:
+            $ref: '#/components/schemas/Author'
+          readOnly: true
+          uniqueItems: true
         checker_id:
           type: integer
           format: int64
@@ -8278,6 +8311,9 @@ components:
           type: string
         email:
           type: string
+          deprecated: true
+          description: "This is the email of the author, retrieved from the default\
+            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -8316,6 +8352,13 @@ components:
           $ref: '#/components/schemas/Entry'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        orcidAuthors:
+          type: array
+          description: "ORCID authors for the entry, retrieved from the default version"
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          readOnly: true
+          uniqueItems: true
         output_file_formats:
           type: array
           items:
@@ -8368,6 +8411,17 @@ components:
             $ref: '#/components/schemas/Alias'
         author:
           type: string
+          deprecated: true
+          description: "This is the name of the author, retrieved from the default\
+            \ version"
+        authors:
+          type: array
+          description: "Non-ORCID authors for the entry, retrieved from the default\
+            \ version"
+          items:
+            $ref: '#/components/schemas/Author'
+          readOnly: true
+          uniqueItems: true
         checker_id:
           type: integer
           format: int64
@@ -8385,6 +8439,9 @@ components:
           type: string
         email:
           type: string
+          deprecated: true
+          description: "This is the email of the author, retrieved from the default\
+            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -8424,6 +8481,13 @@ components:
           writeOnly: true
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        orcidAuthors:
+          type: array
+          description: "ORCID authors for the entry, retrieved from the default version"
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          readOnly: true
+          uniqueItems: true
         output_file_formats:
           type: array
           items:
@@ -9054,6 +9118,7 @@ components:
         is
     OrcidAuthor:
       type: object
+      description: "ORCID authors for the entry, retrieved from the default version"
       properties:
         id:
           type: integer
@@ -10436,6 +10501,17 @@ components:
             $ref: '#/components/schemas/Alias'
         author:
           type: string
+          deprecated: true
+          description: "This is the name of the author, retrieved from the default\
+            \ version"
+        authors:
+          type: array
+          description: "Non-ORCID authors for the entry, retrieved from the default\
+            \ version"
+          items:
+            $ref: '#/components/schemas/Author'
+          readOnly: true
+          uniqueItems: true
         checker_id:
           type: integer
           format: int64
@@ -10480,6 +10556,9 @@ components:
           - n/a
         email:
           type: string
+          deprecated: true
+          description: "This is the email of the author, retrieved from the default\
+            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -10533,6 +10612,13 @@ components:
           - STUB
           - HOSTED
           - DOCKSTORE_YML
+        orcidAuthors:
+          type: array
+          description: "ORCID authors for the entry, retrieved from the default version"
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          readOnly: true
+          uniqueItems: true
         organization:
           type: string
         output_file_formats:

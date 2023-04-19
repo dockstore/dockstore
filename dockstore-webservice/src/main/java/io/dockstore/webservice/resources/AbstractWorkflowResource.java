@@ -520,7 +520,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
-                        workflow.syncMetadataWithDefault();
 
                         addValidationsToMessage(workflow, version, messageWriter);
                         publishWorkflowAndLog(workflow, publish, user, repository, gitReference);
@@ -758,6 +757,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             WorkflowVersion remoteWorkflowVersion = gitHubSourceCodeRepo
                     .createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
             remoteWorkflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
+            // Update the version metadata of the remoteWorkflowVersion. This will also set authors found in the descriptor.
+            gitHubSourceCodeRepo.updateVersionMetadata(remoteWorkflowVersion.getWorkflowPath(), remoteWorkflowVersion, workflow.getDescriptorType(), repository);
+            // Set .dockstore.yml authors if they exist, which will override the descriptor authors that were set by updateVersionMetadata.
+            if (!yamlAuthors.isEmpty()) {
+                setDockstoreYmlAuthorsForVersion(yamlAuthors, remoteWorkflowVersion);
+            }
 
             // So we have workflowversion which is the new version, we want to update the version and associated source files
             WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
@@ -765,7 +770,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
             if (existingWorkflowVersion != null) {
                 // Copy over workflow version level information.
-                // Don't copy over non-ORCID and ORCID authors because they are not added to remoteWorkflowVersion. They will be added to the updated workflow version
                 existingWorkflowVersion.setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
                 existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
                 existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
@@ -775,6 +779,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setToolTableJson(null);
                 existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
+                existingWorkflowVersion.setAuthors(remoteWorkflowVersion.getAuthors());
+                existingWorkflowVersion.setOrcidAuthors(remoteWorkflowVersion.getOrcidAuthors());
                 existingWorkflowVersion.setKernelImagePath(remoteWorkflowVersion.getKernelImagePath());
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion,
                     workflow.getDescriptorType());
@@ -786,12 +792,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
                 updatedWorkflowVersion = remoteWorkflowVersion;
             }
-            gitHubSourceCodeRepo.updateVersionMetadata(updatedWorkflowVersion.getWorkflowPath(), updatedWorkflowVersion, workflow.getDescriptorType(), repository);
-            // Add .dockstore.yml authors to updatedWorkflowVersion. We're adding .dockstore.yml authors to updatedWorkflowVersion instead of remoteWorkflowVersion because
-            // updatedWorkflowVersion may contain descriptor authors and we want to overwrite them if .dockstore.yml authors are present.
-            if (!yamlAuthors.isEmpty()) {
-                setDockstoreYmlAuthorsForVersion(yamlAuthors, updatedWorkflowVersion);
-            }
+
             if (workflow.getLastModified() == null || (updatedWorkflowVersion.getLastModified() != null && workflow.getLastModifiedDate().before(updatedWorkflowVersion.getLastModified()))) {
                 workflow.setLastModified(updatedWorkflowVersion.getLastModified());
             }
@@ -809,6 +810,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Update index if default version was updated
             // verified and verified platforms are the only versions-level properties unrelated to default version that affect the index but GitHub Apps do not update it
             if (workflow.getActualDefaultVersion() != null && updatedWorkflowVersion.getName() != null && workflow.getActualDefaultVersion().getName().equals(updatedWorkflowVersion.getName())) {
+                workflow.syncMetadataWithDefault();
                 PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
             }
 

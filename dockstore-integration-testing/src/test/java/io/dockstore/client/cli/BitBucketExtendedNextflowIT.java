@@ -116,8 +116,8 @@ class BitBucketExtendedNextflowIT extends BaseIT {
         testWorkflowVersionMetadata(bitbucketWorkflow);
         testWorkflowVersionMetadata(byPathWorkflow);
         // Purposely mess up the metadata to test if it can be updated through refresh
-        testingPostgres.runUpdateStatement("update version_metadata set email='bad_potato'");
-        testingPostgres.runUpdateStatement("update version_metadata set author='bad_potato'");
+        testingPostgres.runUpdateStatement("update author set email='bad_potato'");
+        testingPostgres.runUpdateStatement("update author set name='bad_potato'");
         testingPostgres.runUpdateStatement("update version_metadata set description='bad_potato'");
         final Workflow refreshedBitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId(), true);
         byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, BIOWORKFLOW, "versions");

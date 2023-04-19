@@ -296,6 +296,7 @@ public final class ZenodoHelper {
      * @param workflow    workflow for which DOI is registered
      */
     private static void setMetadataCreator(DepositMetadata depositMetadata, Workflow workflow) {
+        // TODO: remove usage of getAuthor() below in https://github.com/dockstore/dockstore/issues/5437
         String wfAuthor = workflow.getAuthor();
         String authorStr = (wfAuthor == null || wfAuthor.isEmpty()) ? "Author not specified" : workflow.getAuthor();
         Author author = new Author();

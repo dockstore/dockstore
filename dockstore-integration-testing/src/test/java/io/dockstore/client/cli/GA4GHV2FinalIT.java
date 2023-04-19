@@ -380,16 +380,16 @@ class GA4GHV2FinalIT extends GA4GHIT {
         // Check responses
         Response response = checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
         Tool responseObject = response.readEntity(Tool.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author1");
+        assertEquals("#workflow/github.com/fakeOrganization/fakeRepository", responseObject.getId());
         response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository");
         responseObject = response.readEntity(Tool.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author2");
+        assertEquals("#workflow/bitbucket.org/fakeOrganization/fakeRepository", responseObject.getId());
         response = checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(Tool.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author3");
+        assertEquals("#workflow/github.com/fakeOrganization/fakeRepository/Potato", responseObject.getId());
         response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(Tool.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author4");
+        assertEquals("#workflow/bitbucket.org/fakeOrganization/fakeRepository/Potato", responseObject.getId());
 
         // test garbage source control value
         response = checkedResponse(baseURL + "tools/%23workflow%2Fgarbagio%2FfakeOrganization%2FfakeRepository%2FPotato", HttpStatus.SC_NOT_FOUND);

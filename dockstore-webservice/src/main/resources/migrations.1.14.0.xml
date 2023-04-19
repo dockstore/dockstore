@@ -442,4 +442,8 @@
         <addForeignKeyConstraint baseColumnNames="validationstatus" baseTableName="metrics" constraintName="fk_validationstatus_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
         <addForeignKeyConstraint baseColumnNames="validationstatusid" baseTableName="validator_tool_validation_info" constraintName="fk_validationstatusid_validator_tool_validation_info" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
     </changeSet>
+    <changeSet author="ktran (generated)" id="dropVersionMetadataAuthorAndEmail">
+        <dropColumn columnName="author" tableName="version_metadata"/>
+        <dropColumn columnName="email" tableName="version_metadata"/>
+    </changeSet>
 </databaseChangeLog>

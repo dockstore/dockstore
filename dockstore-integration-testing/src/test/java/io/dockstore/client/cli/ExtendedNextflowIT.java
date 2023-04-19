@@ -105,7 +105,8 @@ class ExtendedNextflowIT extends BaseIT {
             .anyMatch(file -> file.getPath().equals("bin/multi-AMPA-BIGTABLE.pl")), "files are not what we expected");
 
         // check that metadata made it through properly
-        assertEquals("test.user@test.com", refreshGithub.getAuthor());
+        assertEquals(1, refreshGithub.getAuthors().size());
+        assertEquals("test.user@test.com", refreshGithub.getAuthors().get(0).getName());
         assertEquals("Fast automated prediction of protein antimicrobial regions", refreshGithub.getDescription());
     }
 
