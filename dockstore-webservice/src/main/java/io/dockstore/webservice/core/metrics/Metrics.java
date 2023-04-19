@@ -19,6 +19,7 @@ package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.webservice.core.metrics.constraints.HasMetrics;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -81,6 +82,7 @@ public class Metrics {
     private ValidationStatusCountMetric validationStatus;
 
     @Transient // Don't persist to the database. This is meant to be used by platforms to submit additional aggregated metrics to Dockstore that aren't defined above.
+    @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @ApiModelProperty(value = "Additional aggregated metrics")
     @Schema(description = "Additional aggregated metrics")
