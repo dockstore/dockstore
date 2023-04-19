@@ -20,11 +20,15 @@ package io.dockstore.client.cli;
 import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
 import static io.dockstore.common.LocalStackTestUtilities.createBucket;
 import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
+import static io.dockstore.common.LocalStackTestUtilities.getS3ObjectsFromBucket;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
 import static io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool.MINIWDL;
+import static io.dockstore.webservice.core.metrics.constraints.HasExecutions.MUST_CONTAIN_EXECUTIONS;
 import static io.dockstore.webservice.core.metrics.constraints.HasMetrics.MUST_CONTAIN_METRICS;
+import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
+import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,6 +49,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LocalStackTest;
 import io.dockstore.common.LocalStackTestUtilities;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
@@ -57,6 +62,7 @@ import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.RunExecution;
+import io.dockstore.openapi.client.model.ValidationExecution;
 import io.dockstore.openapi.client.model.ValidationInfo;
 import io.dockstore.openapi.client.model.ValidationStatusMetric;
 import io.dockstore.openapi.client.model.Workflow;
@@ -67,8 +73,9 @@ import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import io.dockstore.webservice.core.metrics.MetricsData;
 import io.dockstore.webservice.core.metrics.MetricsDataMetadata;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
-import io.dockstore.webservice.metrics.MetricsDataS3ClientIT;
 import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.http.HttpStatus;
@@ -130,6 +137,178 @@ class ExtendedTRSOpenApiIT extends BaseIT {
     public void tearDown() {
         // Delete all objects from the S3 bucket after each test
         deleteBucketContents(s3Client, bucketName);
+    }
+
+    /**
+     * Test submitting metrics data using the Extended GA4GH endpoint.
+     *
+     * At the end of this test, the S3 folder structure should look like the following. Note that OBJECT METADATA is the S3 object metadata and is not part of the folder structure
+     * local-dockstore-metrics-data
+     * ├── tool
+     * │   └── quay.io
+     * │       └── dockstoretestuser2
+     * │           └── dockstore-cgpmap
+     * │               └── symbolic.v1
+     * │                   └── TERRA
+     * │                       └── 1673972062578.json
+     * │                           └── OBJECT METADATA
+     * │                               └── owner: 1
+     * │                               └── description:
+     * └── workflow
+     *     └── github.com
+     *         └── DockstoreTestUser2
+     *             └── dockstore_workflow_cnv%2Fmy-workflow
+     *                 └── master
+     *                     ├── TERRA
+     *                     │   └── 1673972062578.json
+     *                     │       └── OBJECT METADATA
+     *                     │           └── owner: 1
+     *                     │           └── description: A single execution
+     *                     └── DNA_STACK
+     *                         └── 1673972062578.json
+     *                             └── OBJECT METADATA
+     *                                 └── owner: 1
+     *                                 └── description: A single execution
+     * @throws IOException
+     */
+    @Test
+    void testSubmitMetricsData() throws IOException {
+        // Admin user
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        final io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        final String platform1 = Partner.TERRA.name();
+        final String platform2 = Partner.DNA_STACK.name();
+        final String description = "A single execution";
+        final Long ownerUserId = usersApi.getUser().getId();
+
+        // Register and publish a workflow
+        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/my-workflow";
+        final String workflowVersionId = "master";
+        final String workflowExpectedS3KeyPrefixFormat = "workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv%%2Fmy-workflow/master/%s"; // This is the prefix without the file name
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "my-workflow", "cwl",
+                "/test.json");
+        workflow = workflowApi.refresh1(workflow.getId(), false);
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // Add execution metrics for a workflow version for one platform
+        List<RunExecution> runExecutions = createRunExecutions(1);
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, workflowVersionId, description);
+        List<MetricsData> metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 1);
+        MetricsData metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
+        verifyMetricsDataMetadata(metricsData, ownerUserId, description);
+        verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
+
+        // Send validation metrics data to S3 for the same workflow version, but different platform
+        List<io.dockstore.openapi.client.model.ValidationExecution> validationExecutions = List.of(new io.dockstore.openapi.client.model.ValidationExecution().isValid(true).validatorTool(
+                ValidationExecution.ValidatorToolEnum.MINIWDL).validatorToolVersion("v1.9.1").dateExecuted(
+                Instant.now().toString())); // This workflow version successfully validated with miniwdl
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform2, workflowId, workflowVersionId, description);
+        metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
+        metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform2, String.format(workflowExpectedS3KeyPrefixFormat, platform2));
+        verifyMetricsDataMetadata(metricsData, ownerUserId, description);
+        verifyValidationExecutionMetricsDataContent(metricsData, validationExecutions);
+
+        // Register and publish a tool
+        io.dockstore.openapi.client.model.DockstoreTool tool = new io.dockstore.openapi.client.model.DockstoreTool();
+        tool.setDefaultCwlPath("/cwls/cgpmap-bamOut.cwl");
+        tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
+        tool.setNamespace("dockstoretestuser2");
+        tool.setName("dockstore-cgpmap");
+        tool.setRegistryString(Registry.QUAY_IO.getDockerPath());
+        tool.setDefaultVersion("symbolic.v1");
+        tool.setDefaultCWLTestParameterFile("/examples/cgpmap/bamOut/bam_input.json");
+        io.dockstore.openapi.client.model.DockstoreTool registeredTool = containersApi.registerManual(tool);
+        registeredTool = containersApi.refresh(registeredTool.getId());
+        containersApi.publish(registeredTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        final String toolId = "quay.io/dockstoretestuser2/dockstore-cgpmap";
+        final String toolVersionId = "symbolic.v1";
+        final String toolExpectedS3KeyPrefixFormat = "tool/quay.io/dockstoretestuser2/dockstore-cgpmap/symbolic.v1/%s"; // This is the prefix without the file name. Format by providing the platform
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, toolId, toolVersionId, null);
+        metricsDataList = verifyMetricsDataList(toolId, toolVersionId, 1);
+        metricsData = verifyMetricsDataInfo(metricsDataList, toolId, toolVersionId, platform1, String.format(toolExpectedS3KeyPrefixFormat, platform1));
+        verifyMetricsDataMetadata(metricsData, ownerUserId, "");
+        verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
+        assertEquals(3, getS3ObjectsFromBucket(s3Client, bucketName).size(), "There should be 3 objects, 2 for workflows and 1 for tools");
+    }
+
+    @Test
+    void testSubmitMetricsDataErrors() {
+        // Admin user
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        // Non-admin user
+        final ApiClient otherWebClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        final ExtendedGa4GhApi otherExtendedGa4GhApi = new ExtendedGa4GhApi(otherWebClient);
+
+        String id = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
+        String versionId = "master";
+        String platform = Partner.TERRA.name();
+        String description = "A single execution";
+        ExecutionsRequestBody goodExecutionsRequestBody = new ExecutionsRequestBody().runExecutions(createRunExecutions(1));
+
+        // Test malformed ID
+        ApiException exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(goodExecutionsRequestBody, platform, "malformedId", "malformedVersionId", null));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
+
+        // Test ID that doesn't exist
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(goodExecutionsRequestBody, platform, "github.com/nonexistent/id", "master", null));
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to submit metrics for non-existent id");
+        assertTrue(exception.getMessage().contains(TOOL_NOT_FOUND_ERROR), "Should not be able to submit metrics for non-existent id");
+
+        // Test version ID that doesn't exist
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "",
+                DescriptorLanguage.CWL.toString(), "/test.json");
+        workflow = workflowApi.refresh1(workflow.getId(), false);
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(goodExecutionsRequestBody, platform, id, "nonexistentVersionId", null));
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode(), "Should not be able to submit metrics for non-existent version");
+        assertTrue(exception.getMessage().contains(VERSION_NOT_FOUND_ERROR), "Should not be able to submit metrics for non-existent version");
+
+        // Test that a non-admin/non-curator user can't submit metrics
+        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(goodExecutionsRequestBody, platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Non-admin and non-curator user should not be able to submit metrics");
+
+        // Test that the response body must contain ExecutionStatus for RunExecution
+        List<RunExecution> runExecutions = createRunExecutions(1);
+        runExecutions.forEach(execution -> execution.setExecutionStatus(null));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if ExecutionStatus is missing");
+        assertTrue(exception.getMessage().contains("executionStatus") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if ExecutionStatus is missing");
+
+        // Test that malformed ExecutionTimes for RunExecution throw an exception
+        List<RunExecution> malformedExecutionTimes = List.of(
+                new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("1 second"),
+                new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("PT 1S") // Should not have space
+        );
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(malformedExecutionTimes), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if ExecutionTime is malformed");
+        assertTrue(exception.getMessage().contains(EXECUTION_TIME_FORMAT_ERROR));
+        assertTrue(exception.getMessage().contains("1 second")
+                && exception.getMessage().contains("PT 1S"), "Should not be able to submit metrics if ExecutionTime is malformed");
+
+        // Test that the response body must contain the required fields for ValidationExecution
+        List<ValidationExecution> validationExecutions = List.of(new ValidationExecution());
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if required fields for ValidationExecution are missing");
+        assertTrue(exception.getMessage().contains("isValid") && exception.getMessage().contains("validatorTool") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if required fields for ValidationExecution are missing");
+
+        // Test that malformed dateExecuteds for ValidationExecution throw an exception
+        List<ValidationExecution> malformedDateExecuteds = List.of(new ValidationExecution().dateExecuted("March 23, 2023").isValid(true).validatorTool(
+                ValidationExecution.ValidatorToolEnum.MINIWDL));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(malformedDateExecuteds), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if dateExecuted is malformed");
+        assertTrue(exception.getMessage().contains(EXECUTION_DATE_FORMAT_ERROR));
+        assertTrue(exception.getMessage().contains("March 23, 2023"), "Should not be able to submit metrics if dateExecuted is malformed");
+
+        // Verify that not providing metrics data throws an exception
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody(), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should throw if execution metrics not provided");
+        assertTrue(exception.getMessage().contains(MUST_CONTAIN_EXECUTIONS), "Should throw if execution metrics not provided");
     }
 
     @Test
@@ -285,7 +464,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Platform partner should not be able to put aggregated metrics");
 
         // Test that a platform partner can post run executions
-        List<RunExecution> executions = MetricsDataS3ClientIT.createRunExecutions(1);
+        List<RunExecution> executions = createRunExecutions(1);
         otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), platform, id, versionId, "foo");
         verifyMetricsDataList(id, versionId, 1);
 
@@ -425,5 +604,43 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         MetricsDataMetadata metricsDataMetadata = metricsDataClient.getMetricsDataMetadata(metricsData);
         assertEquals(ownerUserId, metricsDataMetadata.owner());
         assertEquals(description, metricsDataMetadata.description());
+    }
+
+    private void verifyRunExecutionMetricsDataContent(MetricsData metricsData, List<RunExecution> expectedRunExecutions)
+            throws IOException {
+        String metricsDataContent = metricsDataClient.getMetricsDataFileContent(metricsData.toolId(), metricsData.toolVersionName(), metricsData.platform(), metricsData.fileName());
+        ExecutionsRequestBody executionsRequestBody = GSON.fromJson(metricsDataContent, ExecutionsRequestBody.class);
+        List<RunExecution> s3RunExecutions = executionsRequestBody.getRunExecutions();
+        assertEquals(expectedRunExecutions.size(), s3RunExecutions.size());
+        for (RunExecution s3RunExecution : s3RunExecutions) {
+            assertTrue(expectedRunExecutions.contains(s3RunExecution));
+        }
+    }
+
+    private void verifyValidationExecutionMetricsDataContent(MetricsData metricsData, List<ValidationExecution> expectedValidationExecutions)
+            throws IOException {
+        String metricsDataContent = metricsDataClient.getMetricsDataFileContent(metricsData.toolId(), metricsData.toolVersionName(), metricsData.platform(), metricsData.fileName());
+        ExecutionsRequestBody executionsRequestBody = GSON.fromJson(metricsDataContent, ExecutionsRequestBody.class);
+        List<ValidationExecution> s3ValidationExecutions = executionsRequestBody.getValidationExecutions();
+        assertEquals(expectedValidationExecutions.size(), s3ValidationExecutions.size());
+        for (ValidationExecution s3RunExecution : s3ValidationExecutions) {
+            assertTrue(expectedValidationExecutions.contains(s3RunExecution));
+        }
+    }
+
+    public static List<RunExecution> createRunExecutions(int numberOfExecutions) {
+        List<RunExecution> executions = new ArrayList<>();
+        for (int i = 0; i < numberOfExecutions; ++i) {
+            // A successful execution that ran for 5 minutes, requires 2 CPUs and 2 GBs of memory
+            RunExecution execution = new RunExecution();
+            execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
+            execution.setExecutionTime("PT5M");
+            execution.setCpuRequirements(2);
+            execution.setMemoryRequirementsGB(2.0);
+            Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
+            execution.setAdditionalProperties(additionalProperties);
+            executions.add(execution);
+        }
+        return executions;
     }
 }
