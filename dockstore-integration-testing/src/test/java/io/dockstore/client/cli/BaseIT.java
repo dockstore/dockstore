@@ -37,7 +37,6 @@ import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.resources.WorkflowSubClass;
-import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.ContainersApi;
@@ -83,9 +82,8 @@ public class BaseIT {
     public static final String USER_2_USERNAME = TestUser.TEST_USER2.dockstoreUserName;
     // This is also an admin
     public static final String USER_4_USERNAME = TestUser.TEST_USER4.dockstoreUserName;
-    public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH, ConfigOverride.config("checkUrlLambdaUrl", fakeCheckUrlLambdaBaseURL));
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     protected static TestingPostgres testingPostgres;
     // This is not an admin
     public static final String OTHER_USERNAME = "OtherUser";

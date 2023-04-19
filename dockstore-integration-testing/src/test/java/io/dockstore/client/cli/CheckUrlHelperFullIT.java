@@ -118,6 +118,19 @@ public class CheckUrlHelperFullIT {
         assertTrue(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Should be public because the descriptor has no parameters at all");
     }
 
+    /**
+     * Tests the updateOpenData endpoint. It's not easy to simulate the LambdaUrlChecker -- the
+     * Dockstore config file just takes the lambda checker url. So this test currently
+     * gets around that by:
+     * <ul>
+     *     <li>Workflows that have no file inputs are open</li>
+     *     <li>Workflows that file inputs and no test parameter files are closed</li>
+     *     <li>Invalid, e.g., missing the primary descriptor, are unknown</li>
+     * </ul>
+     *
+     * TODO: Run the lambda checker with AWS SAM, mock the responses, or make the lambda checker
+     * injectable via the dockstore.yml (there's already an interface).
+     */
     @Test
     void testUpdateOpenData() {
         CommonTestUtilities.cleanStatePrivate2(EXT.getTestSupport(), false, testingPostgres);
@@ -129,11 +142,9 @@ public class CheckUrlHelperFullIT {
         Workflow wdlWorkflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "",
             DescriptorLanguage.WDL.getShortName(), "");
         wdlWorkflow = workflowsApi.refresh1(wdlWorkflow.getId(), true);
-        final List<WorkflowVersion> wdlWorkflowVersions = wdlWorkflow.getWorkflowVersions();
         Workflow cwlWorkflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "cwlworkflow",
             DescriptorLanguage.CWL.getShortName(), "");
         cwlWorkflow = workflowsApi.refresh1(cwlWorkflow.getId(), true);
-        final List<WorkflowVersion> cwlWorkflowVersions = cwlWorkflow.getWorkflowVersions();
 
         // Clear publicaccessibletestparameterfile
         testingPostgres.runUpdateStatement("update version_metadata set publicaccessibletestparameterfile = null");
@@ -146,10 +157,18 @@ public class CheckUrlHelperFullIT {
         final Integer processed = entriesApi.updateOpenData(Boolean.TRUE);
         assertEquals(2, processed);
 
-        // Running the endpoint should have restored the language versions to what they were
-        // before wiping the DB rows.
         wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
-        System.out.println("wdlWorkflow = " + wdlWorkflow);
+        wdlWorkflow.getWorkflowVersions().forEach(wv -> assertTrue(!wv.isValid() || wv.getVersionMetadata().isPublicAccessibleTestParameterFile(),
+            "No valid versions have file inputs, should be open"));
+
+        cwlWorkflow = workflowsApi.getWorkflow(cwlWorkflow.getId(), null);
+        final List<WorkflowVersion> validVersions =
+            cwlWorkflow.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).toList();
+        assertEquals(2, validVersions.size());
+        assertTrue(validVersions.stream().anyMatch(wv -> wv.getVersionMetadata().isPublicAccessibleTestParameterFile()),
+            "One valid version has no file inputs, should be open");
+        assertTrue(validVersions.stream().anyMatch(wv -> !wv.getVersionMetadata().isPublicAccessibleTestParameterFile()),
+            "One valid version has file inputs and no test parameter file, should not be open");
     }
 
     private Workflow getFoobar1Workflow(WorkflowsApi client) {

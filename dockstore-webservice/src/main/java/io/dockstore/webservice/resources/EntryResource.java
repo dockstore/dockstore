@@ -468,9 +468,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @Parameter(description = "Whether to process all versions or only versions without open data already set", in = ParameterIn.QUERY, required = false)
         @QueryParam("allVersions") @DefaultValue("false") boolean allVersions) {
         if (lambdaUrlChecker == null) {
-            throw new CustomWebApplicationException("The url checker is not configured this request cannot be processed.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("The url checker is not configured; this request cannot be processed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        LOG.info("");
+        LOG.info("Processing workflows for open data");
         final int processedEntries = loadAndProcessEntries(getWorkflows, processWorkflowsForOpenData, allVersions);
         LOG.info("Completed processing {} entries for open data", processedEntries);
         return processedEntries;
