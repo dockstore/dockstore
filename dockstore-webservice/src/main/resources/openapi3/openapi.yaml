@@ -9141,6 +9141,8 @@ components:
           type: object
           additionalProperties:
             type: object
+            description: Additional aggregated metrics
+          description: Additional aggregated metrics
         cpu:
           $ref: '#/components/schemas/CpuMetric'
         executionStatusCount:

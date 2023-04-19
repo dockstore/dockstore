@@ -17,6 +17,9 @@
 
 package io.dockstore.client.cli;
 
+import static io.dockstore.common.LocalStackTestUtilities.IMAGE_TAG;
+import static io.dockstore.common.LocalStackTestUtilities.createBucket;
+import static io.dockstore.common.LocalStackTestUtilities.deleteBucketContents;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID;
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
@@ -31,9 +34,16 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import cloud.localstack.ServiceName;
+import cloud.localstack.awssdkv2.TestUtils;
+import cloud.localstack.docker.LocalstackDockerExtension;
+import cloud.localstack.docker.annotation.LocalstackDockerProperties;
+import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.LocalStackTest;
+import io.dockstore.common.LocalStackTestUtilities;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
@@ -54,15 +64,21 @@ import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
+import io.dockstore.webservice.core.metrics.MetricsData;
+import io.dockstore.webservice.core.metrics.MetricsDataMetadata;
+import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
 import io.dockstore.webservice.metrics.MetricsDataS3ClientIT;
-import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import software.amazon.awssdk.services.s3.S3Client;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -72,14 +88,20 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
  * Extra confidential integration tests, focuses on proposed GA4GH extensions
  * {@link BaseIT}
  */
-@ExtendWith(SystemStubsExtension.class)
-@ExtendWith(MuteForSuccessfulTests.class)
-@ExtendWith(BaseIT.TestStatus.class)
+@LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = LocalStackTestUtilities.LocalStackEnvironmentVariables.class)
+@ExtendWith({ SystemStubsExtension.class, MuteForSuccessfulTests.class, BaseIT.TestStatus.class, LocalstackDockerExtension.class })
 @Tag(ConfidentialTest.NAME)
+@Tag(LocalStackTest.NAME)
 class ExtendedTRSOpenApiIT extends BaseIT {
 
     private static final String DOCKSTORE_WORKFLOW_CNV_REPO = "DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
+    private static final Gson GSON = new Gson();
+
+    private static String bucketName;
+    private static String s3EndpointOverride;
+    private static MetricsDataS3Client metricsDataClient;
+    private static S3Client s3Client;
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -87,10 +109,27 @@ class ExtendedTRSOpenApiIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
+    @BeforeAll
+    public static void setup() throws Exception {
+        bucketName = SUPPORT.getConfiguration().getMetricsConfig().getS3BucketName();
+        s3EndpointOverride = SUPPORT.getConfiguration().getMetricsConfig().getS3EndpointOverride();
+        metricsDataClient = new MetricsDataS3Client(bucketName, s3EndpointOverride);
+        // Create a bucket to be used for tests
+        s3Client = TestUtils.getClientS3V2(); // Use localstack S3Client
+        createBucket(s3Client, bucketName);
+        deleteBucketContents(s3Client, bucketName); // This is here just in case a test was stopped before tearDown could clean up the bucket
+    }
+
     @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        // Delete all objects from the S3 bucket after each test
+        deleteBucketContents(s3Client, bucketName);
     }
 
     @Test
@@ -245,17 +284,15 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPut(metrics, platform, id, versionId));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Platform partner should not be able to put aggregated metrics");
 
-        // Add execution metrics for a workflow version for one platform
+        // Test that a platform partner can post run executions
         List<RunExecution> executions = MetricsDataS3ClientIT.createRunExecutions(1);
-        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), platform, id, versionId, "foo"));
-        // we were denied because S3 is not up and running in this class, not because of permissions issues
-        assertTrue(exception.getMessage().contains(ToolsApiExtendedServiceImpl.COULD_NOT_SUBMIT_METRICS_DATA) && exception.getCode() == HttpStatus.SC_BAD_REQUEST);
+        otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), platform, id, versionId, "foo");
+        verifyMetricsDataList(id, versionId, 1);
 
-        exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.aggregatedMetricsPost(
-                new Metrics().executionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 2))), platform, id,
-                versionId, "foo"));
-        // we were denied because S3 is not up and running in this class, not because of permissions issues
-        assertTrue(exception.getMessage().contains(ToolsApiExtendedServiceImpl.COULD_NOT_SUBMIT_METRICS_DATA) && exception.getCode() == HttpStatus.SC_BAD_REQUEST);
+        // Test that a platform partner can post aggregated metrics
+        Metrics aggregatedMetrics = new Metrics().executionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 5)));
+        otherExtendedGa4GhApi.aggregatedMetricsPost(aggregatedMetrics, platform, id, versionId, "foo");
+        verifyMetricsDataList(id, versionId, 2);
     }
 
     @Test
@@ -313,5 +350,80 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         // Verify that not providing metrics throws an exception
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.aggregatedMetricsPut(null, platform, id, versionId));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "Should throw if execution metrics not provided");
+    }
+
+    @Test
+    void testSubmitAggregatedMetricsData() throws IOException {
+        // Admin user
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        final String platform1 = Partner.TERRA.name();
+        final String description = "Aggregated metrics";
+        final Long ownerUserId = usersApi.getUser().getId();
+
+        // Register and publish a workflow
+        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/my-workflow";
+        final String workflowVersionId = "master";
+        final String workflowExpectedS3KeyPrefixFormat = "workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv%%2Fmy-workflow/master/%s"; // This is the prefix without the file name
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "my-workflow", "cwl",
+                "/test.json");
+        workflow = workflowApi.refresh1(workflow.getId(), false);
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // Add execution metrics for a workflow version for one platform
+        Metrics expectedAggregatedMetrics = new Metrics()
+                .executionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 5)))
+                .additionalAggregatedMetrics(Map.of("cpu_utilization", 50.0));
+        extendedGa4GhApi.aggregatedMetricsPost(expectedAggregatedMetrics, platform1, workflowId, workflowVersionId, description);
+        List<MetricsData> metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 1);
+        MetricsData metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
+        verifyMetricsDataMetadata(metricsData, ownerUserId, description);
+        String metricsDataContent = metricsDataClient.getMetricsDataFileContent(metricsData.toolId(), metricsData.toolVersionName(), metricsData.platform(), metricsData.fileName());
+        Metrics aggregatedMetrics = GSON.fromJson(metricsDataContent, Metrics.class);
+        assertEquals(5, aggregatedMetrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
+        assertEquals(0, aggregatedMetrics.getExecutionStatusCount().getNumberOfFailedExecutions());
+        assertEquals(50.0, aggregatedMetrics.getAdditionalAggregatedMetrics().get("cpu_utilization"), "Should be able to submit additional aggregated metrics");
+    }
+
+    /**
+     * Checks the number of MetricsData that a version has then return the list
+     * @param id
+     * @param versionId
+     * @param expectedSize
+     * @return List of MetricsData
+     */
+    private List<MetricsData> verifyMetricsDataList(String id, String versionId, int expectedSize) {
+        List<MetricsData> metricsDataList = metricsDataClient.getMetricsData(id, versionId);
+        assertEquals(expectedSize, metricsDataList.size());
+        return metricsDataList;
+    }
+
+    /**
+     * Verifies the MetricsData info then returns it
+     * @param metricsDataList
+     * @param id
+     * @param versionId
+     * @param platform
+     * @param s3KeyPrefix
+     * @return
+     */
+    private MetricsData verifyMetricsDataInfo(List<MetricsData> metricsDataList, String id, String versionId, String platform, String s3KeyPrefix) {
+        MetricsData metricsData = metricsDataList.stream().filter(data -> data.s3Key().startsWith(s3KeyPrefix)).findFirst().orElse(null);
+        assertNotNull(metricsData);
+        assertEquals(id, metricsData.toolId());
+        assertEquals(versionId, metricsData.toolVersionName());
+        assertEquals(platform, metricsData.platform());
+        // The full file name and S3 key are not checked because it depends on the time the data was submitted which is unknown
+        assertTrue(metricsData.fileName().endsWith(".json"));
+        assertTrue(metricsData.s3Key().startsWith(s3KeyPrefix));
+        return metricsData;
+    }
+
+    private void verifyMetricsDataMetadata(MetricsData metricsData, long ownerUserId, String description) {
+        MetricsDataMetadata metricsDataMetadata = metricsDataClient.getMetricsDataMetadata(metricsData);
+        assertEquals(ownerUserId, metricsDataMetadata.owner());
+        assertEquals(description, metricsDataMetadata.description());
     }
 }

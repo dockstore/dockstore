@@ -8109,6 +8109,7 @@ definitions:
     properties:
       additionalAggregatedMetrics:
         type: "object"
+        description: "Additional aggregated metrics"
         additionalProperties:
           type: "object"
       cpu:
