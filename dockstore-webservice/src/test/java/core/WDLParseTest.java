@@ -92,9 +92,8 @@ class WDLParseTest {
     void testWDLMetadataExampleWithWorkflowMeta() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        String content = FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8);
         Version entry = sInterface
-            .parseWorkflowContent(filePath, content, new HashSet<>(), new Tag());
+            .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         Set<Author> authors = entry.getAuthors();
         assertEquals(3, authors.size());
         Optional<Author> authorWithEmail = authors.stream().filter(author -> author.getName().equals("Mr. Foo")).findFirst();
@@ -102,13 +101,6 @@ class WDLParseTest {
         assertEquals("foo@foo.com", authorWithEmail.get().getEmail());
         authors.stream().filter(author -> !author.getName().equals("Mr. Foo")).forEach(authorWithoutEmail -> assertNull(authorWithoutEmail.getEmail()));
         assertEquals("This is a cool workflow", entry.getDescription(), "incorrect description");
-
-        // Test that a version that no longer has a descriptor description has its version description and description source set to null
-        content = content.replace("description: \"This is a cool workflow\"", ""); // Remove description from descriptor
-        entry = sInterface
-                .parseWorkflowContent(filePath, content, new HashSet<>(), entry);
-        assertNull(entry.getDescription());
-        assertNull(entry.getDescriptionSource());
     }
 
     @Test

@@ -499,9 +499,9 @@ public abstract class SourceCodeRepoInterface {
                 LOG.info(message);
             }
             if (version.getReference() != null) {
-                String readMeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
-                if (StringUtils.isNotBlank(readMeContent)) {
-                    version.setDescriptionAndDescriptionSource(readMeContent, DescriptionSource.README);
+                String reaMeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
+                if (StringUtils.isNotBlank(reaMeContent)) {
+                    version.setDescriptionAndDescriptionSource(reaMeContent, DescriptionSource.README);
                 }
             }
             return;

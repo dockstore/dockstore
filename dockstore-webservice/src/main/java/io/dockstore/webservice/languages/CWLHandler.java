@@ -164,7 +164,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     version.setDescriptionAndDescriptionSource(finalChoiceForDescription, DescriptionSource.DESCRIPTOR);
                 } else {
                     LOG.info("Description not found!");
-                    version.setDescriptionAndDescriptionSource(null, null);
                 }
 
                 // Add authors from descriptor
