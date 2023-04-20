@@ -34,6 +34,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Notebook;
@@ -582,7 +583,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (description != null && (tool.getDescription() == null || !tool.getDescription().contains(description))) {
                 return null;
             }
-            if (author != null && (tool.getAuthor() == null || !tool.getAuthor().contains(author))) {
+            if (author != null && (tool.getAuthors().isEmpty() || tool.getAuthors().stream().map(Author::getName).noneMatch(authorName -> authorName.contains(author)))) {
                 return null;
             }
         }

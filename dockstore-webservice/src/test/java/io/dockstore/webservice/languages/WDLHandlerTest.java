@@ -11,9 +11,11 @@ import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -80,22 +82,32 @@ class WDLHandlerTest {
     void getWorkflowContentOfTool() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Tool tool = new Tool();
-        tool.setAuthor("Jane Doe");
+        final Tag tag = new Tag();
+        final Author author = new Author("Jane Doe");
+        author.setEmail("janedoe@example.org");
+        tag.setAuthors(Set.of(author));
+        // Need to set default version because tool.getAuthors retrieves the default version's authors
+        tool.setActualDefaultVersion(tag);
         tool.setDescription("A good description");
-        tool.setEmail("janedoe@example.org");
 
-        assertEquals("Jane Doe", tool.getAuthor());
+        assertEquals(1, tool.getAuthors().size());
+        assertTrue(tool.getAuthors().contains(author));
         assertEquals("A good description", tool.getDescription());
-        assertEquals("janedoe@example.org", tool.getEmail());
+        Author actualAuthor = tool.getAuthors().stream().findFirst().get();
+        assertEquals("Jane Doe", actualAuthor.getName());
+        assertEquals("janedoe@example.org", actualAuthor.getEmail());
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
         final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
         wdlHandler.parseWorkflowContent(invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
 
-        // Check that parsing an invalid WDL workflow does not corrupt the CWL metadata
-        assertEquals("Jane Doe", tool.getAuthor());
+        // Check that parsing an invalid WDL workflow does not corrupt the WDL metadata
+        assertEquals(1, tool.getAuthors().size());
+        assertTrue(tool.getAuthors().contains(author));
         assertEquals("A good description", tool.getDescription());
-        assertEquals("janedoe@example.org", tool.getEmail());
+        actualAuthor = tool.getAuthors().stream().findFirst().get();
+        assertEquals("Jane Doe", actualAuthor.getName());
+        assertEquals("janedoe@example.org", actualAuthor.getEmail());
     }
 
     @Test

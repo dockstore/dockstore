@@ -484,16 +484,18 @@ class GitHubWorkflowIT extends BaseIT {
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", BIOWORKFLOW, null);
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId(), true);
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
-            assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
-            assertEquals("Peter Amstutz", workflow.getAuthor());
-            assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+            assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflowVersion.getDescription());
+            assertEquals(1, workflowVersion.getAuthors().size());
+            assertEquals("Peter Amstutz", workflowVersion.getAuthors().get(0).getName());
+            assertEquals("peter.amstutz@curoverse.com", workflowVersion.getAuthors().get(0).getEmail());
         });
-        assertEquals("master", workflow.getDefaultVersion(), "Default branch should've been set to get metadata");
-        assertEquals("peter.amstutz@curoverse.com", workflow.getEmail());
-        assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
-        assertEquals("Peter Amstutz", workflow.getAuthor());
         assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         assertEquals("master", workflow.getDefaultVersion(), "Default version should've been set to get metadata");
+        assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
+        assertEquals(1, workflow.getAuthors().size());
+        assertEquals("Peter Amstutz", workflow.getAuthors().get(0).getName());
+        assertEquals("peter.amstutz@curoverse.com", workflow.getAuthors().get(0).getEmail());
+
         Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersion.isPresent());

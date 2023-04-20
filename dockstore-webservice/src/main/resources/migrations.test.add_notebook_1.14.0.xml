@@ -54,7 +54,6 @@
         </insert>
         <insert tableName="version_metadata">
             <column name="id" valueNumeric="23"/>
-            <column name="author" value="Author0"/>
             <column name="hidden" value="false"/>
             <column name="verified" value="false"/>
             <column name="dbcreatedate" valueDate="2023-02-15T12:00:00.000"/>

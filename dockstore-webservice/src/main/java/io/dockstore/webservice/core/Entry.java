@@ -32,10 +32,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -130,9 +132,15 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
+    /**
+     * @deprecated since 1.14.0. Use authors instead.
+     */
     @Column
-    @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl", position = 1)
+    @Deprecated(since = "1.14.0")
+    @ApiModelProperty(value = "This is the name of the author, retrieved from the default version", position = 1)
+    @Schema(description = "This is the name of the author, retrieved from the default version", deprecated = true)
     private String author;
+
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH", position = 2)
     private String description;
@@ -159,8 +167,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @BatchSize(size = 25)
     private SortedSet<User> starredUsers;
 
+    /**
+     * @deprecated since 1.14.0. Use authors instead, which can contain an email for each Author.
+     */
     @Column
-    @ApiModelProperty(value = "This is the email of the git organization", position = 6)
+    @Deprecated(since = "1.14.0")
+    @ApiModelProperty(value = "This is the email of the author, retrieved from the default version", position = 6)
+    @Schema(description = "This is the email of the author, retrieved from the default version", deprecated = true)
     private String email;
 
     @Column
@@ -280,6 +293,16 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Schema(description = "Which topic to display to the public users")
     private TopicSelection topicSelection = TopicSelection.AUTOMATIC;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "Non-ORCID authors for the entry, retrieved from the default version")
+    @Transient
+    private Set<Author> authors = new HashSet<>();
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "ORCID authors for the entry, retrieved from the default version")
+    @Transient
+    private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
+
     public enum TopicSelection {
         AUTOMATIC, MANUAL
     }
@@ -342,9 +365,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.checkerWorkflow = checkerWorkflow;
     }
 
+    /**
+     * @deprecated since 1.14.0. Use getAuthors instead.
+     */
     @JsonProperty
+    @Deprecated(since = "1.14.0")
     public String getAuthor() {
-        return author;
+        Optional<Author> firstAuthor = this.getAuthors().stream().findFirst();
+        return firstAuthor.map(Author::getName).orElse(null);
     }
 
     @JsonProperty
@@ -394,7 +422,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.licenseInformation = licenseInformation;
     }
 
-
+    /**
+     * @deprecated since 1.14.0. Use setAuthors instead.
+     */
+    @Deprecated(since = "1.14.0")
     public void setAuthor(String newAuthor) {
         this.author = newAuthor;
     }
@@ -423,11 +454,20 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return users.remove(user);
     }
 
+    /**
+     * @deprecated since 1.14.0. Use getAuthors instead. Each Author may contain an email.
+     */
     @JsonProperty
+    @Deprecated(since = "1.14.0")
     public String getEmail() {
-        return email;
+        Optional<Author> firstAuthor = this.getAuthors().stream().findFirst();
+        return firstAuthor.map(Author::getEmail).orElse(null);
     }
 
+    /**
+     * @deprecated since 1.14.0. Use setAuthors instead to set an Author with an email.
+     */
+    @Deprecated(since = "1.14.0")
     public void setEmail(String newEmail) {
         this.email = newEmail;
     }
@@ -533,16 +573,18 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setMetadataFromEntry(S entry) {
+        // TODO: remove the setting of author and email when those two fields are removed from this class
         this.author = entry.getAuthor();
-        this.description = entry.getDescription();
         this.email = entry.getEmail();
+        this.description = entry.getDescription();
         setTopicAutomatic(entry.getTopicAutomatic());
     }
 
     public void setMetadataFromVersion(Version version) {
+        // TODO: remove the setting of author and email when those two fields are removed from this class
         this.author = version.getAuthor();
-        this.description = version.getDescription();
         this.email = version.getEmail();
+        this.description = version.getDescription();
     }
 
     public SortedSet<FileFormat> getInputFileFormats() {
@@ -738,5 +780,30 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setTopicSelection(TopicSelection topicSelection) {
         this.topicSelection = topicSelection;
+    }
+
+    public Set<Author> getAuthors() {
+        T realDefaultVersion = this.getActualDefaultVersion();
+        if (realDefaultVersion != null) {
+            return realDefaultVersion.getAuthors();
+        }
+        return Set.of();
+    }
+
+    public void setAuthors(Set<Author> authors) {
+        this.authors.clear();
+        this.authors.addAll(authors);
+    }
+
+    public Set<OrcidAuthor> getOrcidAuthors() {
+        T realDefaultVersion = this.getActualDefaultVersion();
+        if (realDefaultVersion != null) {
+            return realDefaultVersion.getOrcidAuthors();
+        }
+        return Set.of();
+    }
+
+    public void setOrcidAuthors(Set<OrcidAuthor> orcidAuthors) {
+        this.orcidAuthors = orcidAuthors;
     }
 }

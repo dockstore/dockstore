@@ -25,6 +25,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryTypeMetadata;
@@ -64,7 +65,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,9 +172,11 @@ public final class ToolsImplCommon {
             toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
 
             toolVersion.setSigned(false);
-            final String author = ObjectUtils.firstNonNull(version.getAuthor(), container.getAuthor());
-            if (author != null) {
-                toolVersion.getAuthor().add(author);
+
+            if (!version.getAuthors().isEmpty()) {
+                toolVersion.setAuthor(version.getAuthors().stream().map(Author::getName).toList());
+            } else if (!container.getAuthors().isEmpty()) {
+                toolVersion.setAuthor(container.getAuthors().stream().map(Author::getName).toList());
             }
 
             toolVersion.setImages(MoreObjects.firstNonNull(toolVersion.getImages(), Lists.newArrayList()));
@@ -517,11 +519,6 @@ public final class ToolsImplCommon {
         // Set description
         tool.setDescription(container.getDescription() != null ? container.getDescription() : "");
 
-        // edge case: in Dockstore, a tool with no versions can still have an author but V2 final moved authors to versions of a tool
-        // append it to description
-        if (container.getWorkflowVersions().isEmpty() && container.getAuthor() != null) {
-            tool.setDescription(tool.getDescription() + '\n' + "Author: " + container.getAuthor());
-        }
         return tool;
     }
 

@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -368,7 +369,9 @@ class CRUDClientIT extends BaseIT {
         file.setAbsolutePath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
         // Workflow only has one author (who also has an email)
-        assertTrue(!dockstoreWorkflow.getAuthor().isEmpty() && !dockstoreWorkflow.getEmail().isEmpty());
+        assertEquals(1, dockstoreWorkflow.getAuthors().size());
+        io.swagger.client.model.Author author = dockstoreWorkflow.getAuthors().get(0);
+        assertTrue(!author.getName().isEmpty() && !author.getEmail().isEmpty());
     }
 
     @Test
@@ -383,8 +386,11 @@ class CRUDClientIT extends BaseIT {
         file.setPath("/Dockstore.wdl");
         file.setAbsolutePath("/Dockstore.wdl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
-        // Workflow has multiple authors, but only one author has an email. The author returned may be one of the authors without an email.
-        assertFalse(dockstoreWorkflow.getAuthor().isEmpty());
+        assertEquals(3, dockstoreWorkflow.getAuthors().size());
+        // Workflow has multiple authors, but only one author has an email
+        Optional<String> authorEmail = dockstoreWorkflow.getAuthors().stream().map(author -> author.getEmail()).filter(Objects::nonNull).findFirst();
+        assertTrue(authorEmail.isPresent());
+        assertEquals("foo@foo.com", authorEmail.get());
     }
 
     @Test

@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class OrcidAuthorInformation extends Author implements Serializable {
 
@@ -28,5 +29,22 @@ public class OrcidAuthorInformation extends Author implements Serializable {
 
     public String getOrcid() {
         return this.orcid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof OrcidAuthorInformation that)) {
+            return false;
+        }
+
+        return Objects.equals(orcid, that.orcid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(orcid);
     }
 }
