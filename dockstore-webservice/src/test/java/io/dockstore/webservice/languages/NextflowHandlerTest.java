@@ -8,9 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.DockerParameter;
+import io.dockstore.common.FixtureUtility;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dropwizard.testing.FixtureHelpers;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,7 +50,7 @@ class NextflowHandlerTest {
     @Test
     void testDockerImageReference() {
         NextflowHandler nextflowHandler = new NextflowHandler();
-        final String dockerImagesNextflow = FixtureHelpers.fixture("fixtures/dockerImages.nf");
+        final String dockerImagesNextflow = FixtureUtility.fixture("fixtures/dockerImages.nf");
         final Map<String, DockerParameter> callsToDockerMap = nextflowHandler.getCallsToDockerMap(dockerImagesNextflow, "");
 
         callsToDockerMap.entrySet().stream().forEach(entry -> {
@@ -94,9 +94,9 @@ class NextflowHandlerTest {
     @Test
     void testParseWorkflowContent() {
         final NextflowHandler nextflowHandler = new NextflowHandler();
-        final String config = FixtureHelpers.fixture("fixtures/nextflow.config");
+        final String config = FixtureUtility.fixture("fixtures/nextflow.config");
         final WorkflowVersion version = new WorkflowVersion();
-        final String mainContent = FixtureHelpers.fixture("fixtures/main.nf");
+        final String mainContent = FixtureUtility.fixture("fixtures/main.nf");
         final SourceFile mainSourceFile = new SourceFile();
         mainSourceFile.setContent(mainContent);
         mainSourceFile.setPath("main.nf");

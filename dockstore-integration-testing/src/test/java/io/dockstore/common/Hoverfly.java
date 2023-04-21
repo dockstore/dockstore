@@ -16,7 +16,7 @@
 
 package io.dockstore.common;
 
-import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static io.dockstore.common.FixtureUtility.fixture;
 import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
 import static io.specto.hoverfly.junit.dsl.HoverflyDsl.response;
 import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
