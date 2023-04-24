@@ -2714,11 +2714,6 @@ paths:
           type: integer
           format: int32
           default: 0
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         "200":
           content:
