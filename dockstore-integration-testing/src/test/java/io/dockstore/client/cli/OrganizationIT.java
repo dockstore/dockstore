@@ -2823,6 +2823,11 @@ public class OrganizationIT extends BaseIT {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
 
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        EventsApi eventsApi = new EventsApi(webClientUser);
+
+        final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final EventsApi eventsApiAdmin = new EventsApi(webClientAdminUser);
+
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
 
@@ -2849,13 +2854,19 @@ public class OrganizationIT extends BaseIT {
         // Create workflow.
         Workflow workflow = createWorkflow1();
 
+        // Check original number of events for each profile
+        Integer originalEventCount = eventsApi.getEvents(EventSearchType.PROFILE.toString(), null, null).size();
+        Integer originalAdminEventCount = eventsApiAdmin.getEvents(EventSearchType.PROFILE.toString(), null, null).size();
+
         // Add workflow to each category and check category names.
         expectedNames = new HashSet<>();
         for (String name: categoryNames) {
-            addToCollection(name, "dockstore", workflow);
+            addToCollection(name, "dockstore", workflow); //this creates an event that only admin and curator accounts should see
             expectedNames.add(name);
             assertEquals(expectedNames, extractNames(entriesApi.entryCategories(workflow.getId())));
         }
+        assertEquals(originalEventCount, eventsApi.getEvents(EventSearchType.PROFILE.toString(), null, null).size()); //all events regarding categories should be hidden from regular users
+        assertEquals(expectedNames.size() + originalAdminEventCount, eventsApiAdmin.getEvents(EventSearchType.PROFILE.toString(), null, null).size()); //admin accounts should see category events
 
         // Remove workflow from each category and check category names.
         for (String name: categoryNames) {

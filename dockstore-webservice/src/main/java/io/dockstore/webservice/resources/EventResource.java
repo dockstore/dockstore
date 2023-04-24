@@ -41,8 +41,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.Max;
@@ -72,7 +74,7 @@ import org.hibernate.Hibernate;
 public class EventResource {
     private static final String PAGINATION_DEFAULT_STRING = "10";
     private static final String SUMMARY = "Get events based on filters.";
-    private static final String DESCRIPTION = "Optional authentication.";
+    private static final String DESCRIPTION = "Requires authentication.";
     private final EventDAO eventDAO;
     private final UserDAO userDAO;
 
@@ -99,24 +101,47 @@ public class EventResource {
         @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") Integer limit,
         @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User userWithSession = this.userDAO.findById(user.getId());
-        return getEventsForUser(userWithSession, eventSearchType, limit, offset);
+        if (user.getIsAdmin() || user.isCurator()) {
+            return getEventsForUser(userWithSession, eventSearchType, limit, offset);
+        } else {
+            return filterCategoryEvents(getEventsForUser(userWithSession, eventSearchType, limit, offset));
+        }
+
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}")
-    @Operation(description = "No authentication.", summary = "Get events based on filter and user id.")
+    @Operation(description = "Optional authentication.", summary = "Get events based on filter and user id.")
     @ApiOperation(value = "List recent events for a user.", notes = "No authentication.", response = Event.class, responseContainer = "List")
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of events", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Event.class))))
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
-    public List<Event> getUserEvents(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
-        @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
-        @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") Integer limit,
-        @QueryParam("offset") @DefaultValue("0") Integer offset) {
+    public List<Event> getUserEvents(@ApiParam(hidden = true)  @Auth Optional<User> loggedInUser, @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+                                     @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
+                                     @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") Integer limit,
+                                     @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User user = this.userDAO.findById(userId);
         checkUserExists(user);
-        return getEventsForUser(user, eventSearchType, limit, offset);
+        if (loggedInUser.isPresent()) {
+            if (loggedInUser.get().getIsAdmin() || loggedInUser.get().isCurator()) {
+                return getEventsForUser(user, eventSearchType, limit, offset);
+            } else {
+                return filterCategoryEvents(getEventsForUser(user, eventSearchType, limit, offset));
+            }
+        } else {
+            return filterCategoryEvents(getEventsForUser(user, eventSearchType, limit, offset));
+        }
+    }
+
+    private List<Event> filterCategoryEvents(List<Event> events) {
+        List<Event> filteredEvents = new ArrayList<>();
+        events.forEach((event) -> {
+            if (!event.getOrganization().isCategorizer()) {
+                filteredEvents.add(event);
+            }
+        });
+        return filteredEvents;
     }
 
     /**

@@ -2893,7 +2893,7 @@ paths:
       tags:
       - "events"
       summary: "Get events based on filters."
-      description: "Optional authentication."
+      description: "Requires authentication."
       operationId: "getEvents"
       produces:
       - "application/json"
