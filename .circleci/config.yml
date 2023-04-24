@@ -242,13 +242,6 @@ jobs:
             # java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
             java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
       - run:
-          name: copy m2 manually
-          command: cp -r ~/.m2 .
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
-      - run:
           name: check generated flattened POMs match checked-in files.
           command: |
             # need better solution, but leaving this as-is fouls up the release since the Maven release plugin doesn't know about the flattened poms
@@ -275,8 +268,6 @@ jobs:
           POSTGRES_PASSWORD: postgres
     parallelism: 2
     steps: # a collection of executable commands
-      - attach_workspace:
-          at: .
       - restore_cache:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
@@ -514,8 +505,6 @@ commands:
             docker exec -it -u postgres postgres1 psql -c "create database webservice_test with owner = dockstore;"
   setup_machine:
     steps:
-      - attach_workspace:
-          at: .
       - run: # Useful for verifying default versions on machine image
           name: Java/Maven/Python versions
           command: |
@@ -527,8 +516,6 @@ commands:
           command: docker compose up -d
   setup_test:
     steps:
-      - attach_workspace:
-          at: .
       - restore_cache:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
