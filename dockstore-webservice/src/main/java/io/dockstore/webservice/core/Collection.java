@@ -255,6 +255,7 @@ public class Collection implements Serializable, Aliasable {
         this.workflowsLength = pworkflowsLength;
     }
 
+    @JsonProperty
     public long getWorkflowsLength() {
         return this.workflowsLength;
     }
@@ -263,6 +264,7 @@ public class Collection implements Serializable, Aliasable {
         this.toolsLength = ptoolsLength;
     }
 
+    @JsonProperty
     public long getToolsLength() {
         return this.toolsLength;
     }
