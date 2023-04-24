@@ -75,7 +75,14 @@ public final class ResourceUtilities {
         return httpPost;
     }
 
-    // Todo: Implement a backoff algorithm for below HTTP calls
+
+    /**
+     * Execute a request and return the result as a String while waiting a minute in case of problems.
+     * Todo: Implement a backoff algorithm for below HTTP calls
+     * @param httpRequest
+     * @param client
+     * @return
+     */
     public static Optional<String> getResponseAsString(HttpUriRequestBase httpRequest, HttpClient client) {
         Optional<String> result = Optional.empty();
         final int waitTime = 60000;
