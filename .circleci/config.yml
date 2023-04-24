@@ -275,9 +275,6 @@ jobs:
             - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
             - dockstore-java-
-      - run:
-          name: manually copy back .m2
-          command: cp -r .m2 ~/.m2
       - checkout
       - install-postgres
       - install-git-secrets
@@ -505,6 +502,7 @@ commands:
             docker exec -it -u postgres postgres1 psql -c "create database webservice_test with owner = dockstore;"
   setup_machine:
     steps:
+      - checkout
       - run: # Useful for verifying default versions on machine image
           name: Java/Maven/Python versions
           command: |
@@ -516,6 +514,7 @@ commands:
           command: docker compose up -d
   setup_test:
     steps:
+      - checkout
       - restore_cache:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
@@ -523,9 +522,6 @@ commands:
             - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
             - dockstore-java-
-      - run:
-          name: manually copy back .m2
-          command: cp -r .m2 ~/.m2
       - run:
           name: split up tests and create a file for cache checksum
           command: |
