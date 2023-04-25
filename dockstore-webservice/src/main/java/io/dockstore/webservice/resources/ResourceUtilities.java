@@ -19,7 +19,6 @@ package io.dockstore.webservice.resources;
 import static org.apache.hc.core5.http.ContentType.APPLICATION_FORM_URLENCODED;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.hc.client5.http.classic.HttpClient;
@@ -50,7 +49,7 @@ public final class ResourceUtilities {
     }
 
     public static Optional<String> refreshPost(String input, String token, HttpClient client,
-            String payload) throws UnsupportedEncodingException {
+            String payload) {
         return getResponseAsString(buildHttpPost(input, token, payload), client);
     }
 

@@ -25,6 +25,8 @@ import org.eclipse.jetty.server.HttpConnectionFactory;
 
 @JsonTypeName("custom-http")
 public class CustomHttpConnectorFactory extends HttpConnectorFactory {
+
+    @Override
     protected HttpConnectionFactory buildHttpConnectionFactory(HttpConfiguration httpConfig) {
         UriCompliance custom = UriCompliance.DEFAULT.with("custom", Violation.AMBIGUOUS_EMPTY_SEGMENT);
         httpConfig.setUriCompliance(custom);
