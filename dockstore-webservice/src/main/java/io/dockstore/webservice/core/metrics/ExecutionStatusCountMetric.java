@@ -33,6 +33,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.MapKeyEnumerated;
 import javax.persistence.Table;
+import javax.validation.constraints.NotEmpty;
 import org.hibernate.annotations.BatchSize;
 
 @Entity
@@ -42,6 +43,7 @@ import org.hibernate.annotations.BatchSize;
 @SuppressWarnings("checkstyle:magicnumber")
 public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCountMetric.ExecutionStatus, Integer> {
 
+    @NotEmpty
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyEnumerated(EnumType.STRING)
     @MapKeyColumn(name = "executionstatus")

@@ -24,15 +24,17 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.EnumMap;
 import java.util.Map;
-import javax.persistence.CollectionTable;
-import javax.persistence.ElementCollection;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.MapKeyEnumerated;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.NotEmpty;
 import org.hibernate.annotations.BatchSize;
 
 @Entity
@@ -40,27 +42,17 @@ import org.hibernate.annotations.BatchSize;
 @ApiModel(value = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses")
 @Schema(name = "ValidationStatusMetric", description = "Aggregated metrics about workflow validation statuses")
 @SuppressWarnings("checkstyle:magicnumber")
-public class    ValidationStatusCountMetric extends CountMetric<ValidatorTool, ValidationInfo> {
+public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, ValidationInfo> {
 
+    @NotEmpty
     @JsonProperty("validatorToolToValidationInfo")
-    @ElementCollection(targetClass = ValidationInfo.class, fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JoinTable(name = "validator_tool_validation_info", joinColumns = @JoinColumn(name = "validationstatusid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationinfoid", referencedColumnName = "id", columnDefinition = "bigint"))
     @MapKeyColumn(name = "validatortool")
     @MapKeyEnumerated(EnumType.STRING)
-    @CollectionTable(name = "validator_tool_validation_info", joinColumns = @JoinColumn(name = "validationstatusid", referencedColumnName = "id"))
     @BatchSize(size = 25)
     @ApiModelProperty(value = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true)
-    @Schema(description = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true, example = """
-            {
-                "MINIWDL": {
-                    "mostRecentVersion": "1.0",
-                    "mostRecentIsValid": true,
-                    "successfulValidationVersions": ["1.0"],
-                    "failedValidationVersions": [],
-                    "passingRate", 100.0,
-                    "numberOfRuns": 1
-                }
-            }
-            """)
+    @Schema(description = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true)
     private Map<ValidatorTool, ValidationInfo> count = new EnumMap<>(ValidatorTool.class);
 
 

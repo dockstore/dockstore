@@ -17,52 +17,62 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
+import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "validation_info")
-@Schema(description = "Aggregated validation information")
-@SuppressWarnings("checkstyle:magicnumber")
-public class ValidationInfo {
+@Table(name = "validation_version_info")
+@Schema(description = "Validation information for a validator tool version")
+public class ValidationVersionInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the validation info in this web service", required = true, position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the validation version info in this web service", required = true, position = 0)
     private long id;
 
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
-    @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
-    @JoinTable(name = "validation_versions", joinColumns = @JoinColumn(name = "validationinfoid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationversioninfoid", referencedColumnName = "id", columnDefinition = "bigint"))
-    @ApiModelProperty(value = "A list containing validation info for the most recent execution of the validator tool versions")
-    private List<ValidationVersionInfo> validationVersions = new ArrayList<>();
-
+    @NotNull
     @Column(nullable = false)
-    @Schema(description = "The version of the validator tool that was most recently executed", required = true)
-    private String mostRecentVersionName;
+    @JsonProperty(required = true)
+    @Schema(description = "The version name of the validator tool", required = true)
+    private String name;
 
+    @NotNull
     @Column(nullable = false)
+    @JsonProperty(required = true)
+    @Schema(description = "Boolean indicating if the workflow was validated successfully", required = true, example = "true")
+    private Boolean isValid;
+
+    @Schema(description = "The error message for a failed validation by the validator tool")
+    private String errorMessage;
+
+    @NotNull
+    @Column(nullable = false)
+    @ISO8601ExecutionDate
+    @JsonProperty(required = true)
+    @Schema(description = "The date and time that the validator tool was executed in ISO 8601 UTC date format", required = true, example = "2023-03-31T15:06:49.888745366Z")
+    private String dateExecuted;
+
+    @NotNull
+    @Column(nullable = false)
+    @JsonProperty(required = true)
     @Schema(description = "A percentage representing how often the validator successfully validates the workflow", required = true, example = "100.0")
     private Double passingRate;
 
+    @NotNull
     @Column(nullable = false)
+    @JsonProperty(required = true)
     @Schema(description = "The number of times the validator was executed on the workflow", required = true, example = "1")
     private Integer numberOfRuns;
 
@@ -75,7 +85,7 @@ public class ValidationInfo {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    public ValidationInfo() {
+    public ValidationVersionInfo() {
     }
 
     public long getId() {
@@ -86,12 +96,36 @@ public class ValidationInfo {
         this.id = id;
     }
 
-    public String getMostRecentVersionName() {
-        return mostRecentVersionName;
+    public String getName() {
+        return name;
     }
 
-    public void setMostRecentVersionName(String mostRecentVersionName) {
-        this.mostRecentVersionName = mostRecentVersionName;
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Boolean getIsValid() {
+        return isValid;
+    }
+
+    public void setIsValid(Boolean valid) {
+        isValid = valid;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public String getDateExecuted() {
+        return dateExecuted;
+    }
+
+    public void setDateExecuted(String dateExecuted) {
+        this.dateExecuted = dateExecuted;
     }
 
     public Double getPassingRate() {
@@ -108,13 +142,5 @@ public class ValidationInfo {
 
     public void setNumberOfRuns(Integer numberOfRuns) {
         this.numberOfRuns = numberOfRuns;
-    }
-
-    public List<ValidationVersionInfo> getValidationVersions() {
-        return validationVersions;
-    }
-
-    public void setValidationVersions(List<ValidationVersionInfo> validationVersions) {
-        this.validationVersions = validationVersions;
     }
 }

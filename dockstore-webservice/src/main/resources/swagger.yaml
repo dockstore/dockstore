@@ -637,77 +637,6 @@ paths:
             $ref: "#/definitions/Error"
       security:
       - BEARER: []
-    post:
-      tags:
-      - "extendedGA4GH"
-      summary: "Submit aggregated execution metrics for a tool that was executed on\
-        \ a platform."
-      description: "This endpoint submits aggregated execution metrics for a tool\
-        \ that was executed on a platform"
-      operationId: "aggregatedMetricsPost"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "A unique identifier of the tool, scoped to this registry, for\
-          \ example `123456`"
-        required: true
-        type: "string"
-      - name: "version_id"
-        in: "path"
-        description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`"
-        required: true
-        type: "string"
-      - name: "platform"
-        in: "query"
-        description: "Platform that the tool was executed on"
-        required: true
-        type: "string"
-        enum:
-        - "GALAXY"
-        - "TERRA"
-        - "DNA_STACK"
-        - "DNA_NEXUS"
-        - "CGC"
-        - "NHLBI_BIODATA_CATALYST"
-        - "ANVIL"
-        - "CAVATICA"
-        - "NEXTFLOW_TOWER"
-        - "ELWAZI"
-        - "AGC"
-        - "OTHER"
-      - name: "description"
-        in: "query"
-        description: "Optional description about the execution metrics"
-        required: false
-        type: "string"
-      - in: "body"
-        name: "body"
-        description: "Aggregated execution metrics to submit"
-        required: true
-        schema:
-          $ref: "#/definitions/Metrics"
-      responses:
-        204:
-          description: "Aggregated execution metrics submitted successfully."
-          schema:
-            type: "object"
-            additionalProperties:
-              type: "object"
-        401:
-          description: "Credentials not provided or incorrect."
-          schema:
-            $ref: "#/definitions/Error"
-        404:
-          description: "The tool cannot be found to submit aggregated execution metrics."
-          schema:
-            $ref: "#/definitions/Error"
-      security:
-      - BEARER: []
     put:
       tags:
       - "extendedGA4GH"
@@ -778,9 +707,10 @@ paths:
     post:
       tags:
       - "extendedGA4GH"
-      summary: "Submit execution metrics for a tool that was executed on a platform."
-      description: "This endpoint submits execution metrics for a tool that was executed\
-        \ on a platform"
+      summary: "Submit individual or aggregated execution metrics for a tool that\
+        \ was executed on a platform."
+      description: "This endpoint submits individual or aggregated execution metrics\
+        \ for a tool that was executed on a platform"
       operationId: "executionMetricsPost"
       consumes:
       - "application/json"
@@ -825,7 +755,7 @@ paths:
         type: "string"
       - in: "body"
         name: "body"
-        description: "Execution metrics to submit"
+        description: "Individual or aggregated execution metrics to submit"
         required: true
         schema:
           $ref: "#/definitions/ExecutionsRequestBody"
@@ -7163,6 +7093,7 @@ definitions:
       unit:
         type: "string"
         description: "The unit of the data points"
+        readOnly: true
     description: "This describes aggregated CPU metrics for workflow executions."
   DescriptionMetrics:
     type: "object"
@@ -7841,14 +7772,20 @@ definitions:
       unit:
         type: "string"
         description: "The unit of the data points"
+        readOnly: true
     description: "This describes aggregated execution time metrics in seconds for\
       \ workflow executions."
   ExecutionsRequestBody:
     type: "object"
     required:
+    - "aggregatedExecutions"
     - "runExecutions"
     - "validationExecutions"
     properties:
+      aggregatedExecutions:
+        type: "array"
+        items:
+          $ref: "#/definitions/Metrics"
       runExecutions:
         type: "array"
         items:
@@ -8067,6 +8004,7 @@ definitions:
       unit:
         type: "string"
         description: "The unit of the data points"
+        readOnly: true
     description: "This describes aggregated memory metrics for workflow executions\
       \ in GB."
   Metadata:
@@ -9308,16 +9246,15 @@ definitions:
         type: "string"
   ValidationInfo:
     type: "object"
+    required:
+    - "id"
     properties:
-      failedValidationVersions:
-        type: "array"
-        items:
-          type: "string"
-      mostRecentErrorMessage:
-        type: "string"
-      mostRecentIsValid:
-        type: "boolean"
-      mostRecentVersion:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the validation info in this web\
+          \ service"
+      mostRecentVersionName:
         type: "string"
       numberOfRuns:
         type: "integer"
@@ -9325,10 +9262,12 @@ definitions:
       passingRate:
         type: "number"
         format: "double"
-      successfulValidationVersions:
+      validationVersions:
         type: "array"
+        description: "A list containing validation info for the most recent execution\
+          \ of the validator tool versions"
         items:
-          type: "string"
+          $ref: "#/definitions/ValidationVersionInfo"
   ValidationStatusMetric:
     type: "object"
     required:
@@ -9345,6 +9284,35 @@ definitions:
         additionalProperties:
           $ref: "#/definitions/ValidationInfo"
     description: "Aggregated metrics about workflow validation statuses"
+  ValidationVersionInfo:
+    type: "object"
+    required:
+    - "dateExecuted"
+    - "id"
+    - "isValid"
+    - "name"
+    - "numberOfRuns"
+    - "passingRate"
+    properties:
+      dateExecuted:
+        type: "string"
+      errorMessage:
+        type: "string"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the validation version info in\
+          \ this web service"
+      isValid:
+        type: "boolean"
+      name:
+        type: "string"
+      numberOfRuns:
+        type: "integer"
+        format: "int32"
+      passingRate:
+        type: "number"
+        format: "double"
   VerificationInformation:
     type: "object"
     properties:

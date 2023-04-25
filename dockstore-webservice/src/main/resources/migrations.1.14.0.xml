@@ -446,4 +446,77 @@
         <dropColumn columnName="author" tableName="version_metadata"/>
         <dropColumn columnName="email" tableName="version_metadata"/>
     </changeSet>
+    <changeSet author="ktran (generated)" id="modifyValidationMetricSchema">
+        <addColumn tableName="validator_tool_validation_info">
+            <column name="validationinfoid" type="int8">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <dropColumn columnName="dbcreatedate" tableName="validator_tool_validation_info"/>
+        <dropColumn columnName="dbupdatedate" tableName="validator_tool_validation_info"/>
+        <dropColumn columnName="failedvalidationversions" tableName="validator_tool_validation_info"/>
+        <dropColumn columnName="mostrecenterrormessage" tableName="validator_tool_validation_info"/>
+        <dropColumn columnName="mostrecentisvalid" tableName="validator_tool_validation_info"/>
+        <dropColumn columnName="mostrecentversion" tableName="validator_tool_validation_info"/>
+        <dropColumn columnName="numberofruns" tableName="validator_tool_validation_info"/>
+        <dropColumn columnName="passingrate" tableName="validator_tool_validation_info"/>
+        <dropColumn columnName="successfulvalidationversions" tableName="validator_tool_validation_info"/>
+
+        <createTable tableName="validation_info">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validation_info_pkey"/>
+            </column>
+            <column defaultValueComputed="now()" name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="numberofruns" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="passingrate" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mostrecentversionname" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="validation_version_info">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validation_version_info_pkey"/>
+            </column>
+            <column name="dateexecuted" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueComputed="now()" name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="errormessage" type="VARCHAR(255)"/>
+            <column name="isvalid" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberofruns" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="passingrate" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="validation_versions">
+            <column name="validationinfoid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="validationversioninfoid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint columnNames="validationversioninfoid" constraintName="uk_validationversioninfoid_validation_versions" tableName="validation_versions"/>
+        <addUniqueConstraint columnNames="validationinfoid" constraintName="uk_validationinfoid_validator_tool_validation_info" tableName="validator_tool_validation_info"/>
+
+        <addForeignKeyConstraint baseColumnNames="validationversioninfoid" baseTableName="validation_versions" constraintName="fk_validationversioninfoid_validation_versions" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_version_info"/>
+        <addForeignKeyConstraint baseColumnNames="validationinfoid" baseTableName="validation_versions" constraintName="fk_validationinfoid_validation_versions" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_info"/>
+        <addForeignKeyConstraint baseColumnNames="validationinfoid" baseTableName="validator_tool_validation_info" constraintName="fk_validationinfoid_validator_tool_validation_info" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_info"/>
+    </changeSet>
 </databaseChangeLog>

@@ -544,81 +544,6 @@ paths:
       summary: Get aggregated execution metrics for a tool from all platforms
       tags:
       - extendedGA4GH
-    post:
-      description: This endpoint submits aggregated execution metrics for a tool that
-        was executed on a platform
-      operationId: aggregatedMetricsPost
-      parameters:
-      - description: "A unique identifier of the tool, scoped to this registry, for\
-          \ example `123456`"
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      - description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`"
-        in: path
-        name: version_id
-        required: true
-        schema:
-          type: string
-      - description: Platform that the tool was executed on
-        in: query
-        name: platform
-        required: true
-        schema:
-          type: string
-          enum:
-          - GALAXY
-          - TERRA
-          - DNA_STACK
-          - DNA_NEXUS
-          - CGC
-          - NHLBI_BIODATA_CATALYST
-          - ANVIL
-          - CAVATICA
-          - NEXTFLOW_TOWER
-          - ELWAZI
-          - AGC
-          - OTHER
-      - description: Optional description about the execution metrics
-        in: query
-        name: description
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Metrics'
-        description: Aggregated execution metrics to submit
-        required: true
-      responses:
-        "204":
-          content:
-            application/json:
-              schema:
-                type: string
-          description: Aggregated execution metrics submitted successfully.
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: Credentials not provided or incorrect.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: The tool cannot be found to submit aggregated execution metrics.
-      security:
-      - BEARER: []
-      summary: Submit aggregated execution metrics for a tool that was executed on
-        a platform.
-      tags:
-      - extendedGA4GH
     put:
       description: This endpoint adds aggregated metrics for a workflow that was executed
         on a platform
@@ -691,8 +616,8 @@ paths:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
     post:
-      description: This endpoint submits execution metrics for a tool that was executed
-        on a platform
+      description: This endpoint submits individual or aggregated execution metrics
+        for a tool that was executed on a platform
       operationId: executionMetricsPost
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -738,7 +663,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExecutionsRequestBody'
-        description: Execution metrics to submit
+        description: Individual or aggregated execution metrics to submit
         required: true
       responses:
         "204":
@@ -757,7 +682,8 @@ paths:
           description: The tool cannot be found to submit execution metrics.
       security:
       - BEARER: []
-      summary: Submit execution metrics for a tool that was executed on a platform.
+      summary: Submit individual or aggregated execution metrics for a tool that was
+        executed on a platform.
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
@@ -8132,6 +8058,7 @@ components:
         unit:
           type: string
           description: The unit of the data points
+          readOnly: true
       required:
       - average
       - maximum
@@ -8798,6 +8725,7 @@ components:
         unit:
           type: string
           description: The unit of the data points
+          readOnly: true
       required:
       - average
       - maximum
@@ -8807,6 +8735,11 @@ components:
       type: object
       description: Request body model for executionMetricsPost
       properties:
+        aggregatedExecutions:
+          type: array
+          description: List of aggregated executions to submit
+          items:
+            $ref: '#/components/schemas/Metrics'
         runExecutions:
           type: array
           description: List of workflow run executions to submit
@@ -8818,6 +8751,7 @@ components:
           items:
             $ref: '#/components/schemas/ValidationExecution'
       required:
+      - aggregatedExecutions
       - runExecutions
       - validationExecutions
     ExtendedUserData:
@@ -9128,6 +9062,7 @@ components:
         unit:
           type: string
           description: The unit of the data points
+          readOnly: true
       required:
       - average
       - maximum
@@ -10330,32 +10265,13 @@ components:
     ValidationInfo:
       type: object
       description: Aggregated validation information
-      example: "{\n    \"MINIWDL\": {\n        \"mostRecentVersion\": \"1.0\",\n \
-        \       \"mostRecentIsValid\": true,\n        \"successfulValidationVersions\"\
-        : [\"1.0\"],\n        \"failedValidationVersions\": [],\n        \"passingRate\"\
-        , 100.0,\n        \"numberOfRuns\": 1\n    }\n}\n"
       properties:
-        failedValidationVersions:
-          type: array
-          description: A set of validator tool versions that unsuccessfully validated
-            the workflow in its most recent run
-          example: []
-          items:
-            type: string
-            description: A set of validator tool versions that unsuccessfully validated
-              the workflow in its most recent run
-            example: "[]"
-        mostRecentErrorMessage:
-          type: string
-          description: The error message of the most recent validation run if it failed
-        mostRecentIsValid:
-          type: boolean
-          description: The boolean isValid value from the most recent validation run
-          example: true
-        mostRecentVersion:
+        id:
+          type: integer
+          format: int64
+        mostRecentVersionName:
           type: string
           description: The version of the validator tool that was most recently executed
-          example: "1.0"
         numberOfRuns:
           type: integer
           format: int32
@@ -10367,24 +10283,14 @@ components:
           description: A percentage representing how often the validator successfully
             validates the workflow
           example: 100.0
-        successfulValidationVersions:
+        validationVersions:
           type: array
-          description: A set of validator tool versions that successfully validated
-            the workflow in its most recent run
-          example:
-          - "1.0"
           items:
-            type: string
-            description: A set of validator tool versions that successfully validated
-              the workflow in its most recent run
-            example: "[\"1.0\"]"
+            $ref: '#/components/schemas/ValidationVersionInfo'
       required:
-      - failedValidationVersions
-      - mostRecentIsValid
-      - mostRecentVersion
+      - mostRecentVersionName
       - numberOfRuns
       - passingRate
-      - successfulValidationVersions
     ValidationStatusMetric:
       type: object
       description: Aggregated metrics about workflow validation statuses
@@ -10399,12 +10305,48 @@ components:
             $ref: '#/components/schemas/ValidationInfo'
           description: A map containing key-value pairs indicating whether the validator
             tool successfully validated the workflow
-          example: "{\n    \"MINIWDL\": {\n        \"mostRecentVersion\": \"1.0\"\
-            ,\n        \"mostRecentIsValid\": true,\n        \"successfulValidationVersions\"\
-            : [\"1.0\"],\n        \"failedValidationVersions\": [],\n        \"passingRate\"\
-            , 100.0,\n        \"numberOfRuns\": 1\n    }\n}\n"
       required:
       - validatorToolToValidationInfo
+    ValidationVersionInfo:
+      type: object
+      description: Validation information for a validator tool version
+      properties:
+        dateExecuted:
+          type: string
+          description: The date and time that the validator tool was executed in ISO
+            8601 UTC date format
+          example: 2023-03-31T15:06:49.888745366Z
+        errorMessage:
+          type: string
+          description: The error message for a failed validation by the validator
+            tool
+        id:
+          type: integer
+          format: int64
+        isValid:
+          type: boolean
+          description: Boolean indicating if the workflow was validated successfully
+          example: true
+        name:
+          type: string
+          description: The version name of the validator tool
+        numberOfRuns:
+          type: integer
+          format: int32
+          description: The number of times the validator was executed on the workflow
+          example: 1
+        passingRate:
+          type: number
+          format: double
+          description: A percentage representing how often the validator successfully
+            validates the workflow
+          example: 100.0
+      required:
+      - dateExecuted
+      - isValid
+      - name
+      - numberOfRuns
+      - passingRate
     VerificationInformation:
       type: object
       properties:
