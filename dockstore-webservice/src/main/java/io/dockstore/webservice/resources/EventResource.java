@@ -137,7 +137,7 @@ public class EventResource {
 
     private List<Event> filterCategoryEvents(List<Event> events) {
         List<Event> filteredEvents = new ArrayList<>();
-        events.forEach((event) -> {
+        events.forEach(event -> {
             if (event.getOrganization() == null) {
                 filteredEvents.add(event);
             } else {
