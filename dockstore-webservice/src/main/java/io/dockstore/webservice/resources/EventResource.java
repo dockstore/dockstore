@@ -138,8 +138,12 @@ public class EventResource {
     private List<Event> filterCategoryEvents(List<Event> events) {
         List<Event> filteredEvents = new ArrayList<>();
         events.forEach((event) -> {
-            if (!event.getOrganization().isCategorizer()) {
+            if (event.getOrganization() == null) {
                 filteredEvents.add(event);
+            } else {
+                if (!event.getOrganization().isCategorizer()) {
+                    filteredEvents.add(event);
+                }
             }
         });
         return filteredEvents;
