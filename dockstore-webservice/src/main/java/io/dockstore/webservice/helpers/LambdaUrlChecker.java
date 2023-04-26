@@ -33,7 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.UriBuilder;
-import org.apache.commons.collections4.map.LRUMap;
+import org.apache.commons.collections.map.LRUMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,7 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
     private static final String GS_PROTOCOL = "gs://";
     private String checkUrlLambdaUrl;
 
-    private Map<String, Boolean> checkedUrlsMap = Collections.synchronizedMap(new LRUMap<>(LRU_CACHE_SIZE));
+    private Map<String, Boolean> checkedUrlsMap = Collections.synchronizedMap(new LRUMap(LRU_CACHE_SIZE));
 
     public LambdaUrlChecker(String checkUrlLambdaUrl) {
         this.checkUrlLambdaUrl = checkUrlLambdaUrl;
