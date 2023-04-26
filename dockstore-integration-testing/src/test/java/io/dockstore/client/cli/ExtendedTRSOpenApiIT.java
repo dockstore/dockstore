@@ -29,6 +29,7 @@ import static io.dockstore.webservice.core.metrics.constraints.HasExecutionsOrMe
 import static io.dockstore.webservice.core.metrics.constraints.HasMetrics.MUST_CONTAIN_METRICS;
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
+import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.INVALID_PLATFORM;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.TOOL_NOT_FOUND_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.VERSION_NOT_FOUND_ERROR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -275,6 +276,11 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         exception = assertThrows(ApiException.class, () -> otherExtendedGa4GhApi.executionMetricsPost(goodExecutionsRequestBody, platform, id, versionId, description));
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Non-admin and non-curator user should not be able to submit metrics");
 
+        // Test that the platform must be an actual platform and not ALL
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(goodExecutionsRequestBody, Partner.ALL.name(), id, versionId, description));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "Should not be able to specify ALL as a platform");
+        assertTrue(exception.getMessage().contains(INVALID_PLATFORM));
+
         // Test that the response body must contain ExecutionStatus for RunExecution
         List<RunExecution> runExecutions = createRunExecutions(1);
         runExecutions.forEach(execution -> execution.setExecutionStatus(null));
@@ -434,11 +440,22 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         assertEquals(1, validationInfo.getNumberOfRuns());
         platform1Metrics = workflowVersion.getMetricsByPlatform().get(platform1);
 
+        // Verify that the endpoint can submit metrics that were aggregated across all platforms using Partner.ALL
+        final String allPlatforms = Partner.ALL.name();
+        extendedGa4GhApi.aggregatedMetricsPut(metrics, allPlatforms, workflowId, workflowVersionId);
+        workflow = workflowsApi.getPublishedWorkflow(workflow.getId(), "metrics");
+        workflowVersion = workflow.getWorkflowVersions().stream().filter(v -> workflowVersionId.equals(v.getName())).findFirst().orElse(null);
+        assertNotNull(workflowVersion);
+        Metrics allPlatformsMetrics = workflowVersion.getMetricsByPlatform().get(allPlatforms);
+
         Map<String, Metrics> metricsGet = extendedGa4GhApi.aggregatedMetricsGet(workflowId, workflowVersionId);
         assertNotNull(metricsGet.get(platform1));
         assertNotNull(metricsGet.get(platform2));
+        assertNotNull(metricsGet.get(allPlatforms));
+
         assertEquals(platform1Metrics, metricsGet.get(platform1));
         assertEquals(platform2Metrics, metricsGet.get(platform2));
+        assertEquals(allPlatformsMetrics, metricsGet.get(allPlatforms));
     }
 
     @Test

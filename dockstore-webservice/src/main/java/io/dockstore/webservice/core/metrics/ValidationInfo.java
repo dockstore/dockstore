@@ -32,6 +32,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.CreationTimestamp;
@@ -48,20 +50,24 @@ public class ValidationInfo {
     @ApiModelProperty(value = "Implementation specific ID for the validation info in this web service", required = true, position = 0)
     private long id;
 
+    @NotEmpty
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @JoinTable(name = "validation_versions", joinColumns = @JoinColumn(name = "validationinfoid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationversioninfoid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "A list containing validation info for the most recent execution of the validator tool versions")
     private List<ValidationVersionInfo> validationVersions = new ArrayList<>();
 
+    @NotNull
     @Column(nullable = false)
     @Schema(description = "The version of the validator tool that was most recently executed", required = true)
     private String mostRecentVersionName;
 
+    @NotNull
     @Column(nullable = false)
     @Schema(description = "A percentage representing how often the validator successfully validates the workflow", required = true, example = "100.0")
     private Double passingRate;
 
+    @NotNull
     @Column(nullable = false)
     @Schema(description = "The number of times the validator was executed on the workflow", required = true, example = "1")
     private Integer numberOfRuns;

@@ -60,15 +60,15 @@ public class Metrics {
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "executiontime", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated execution time metrics in ISO 8601 duration format")
-    @Schema(description = "Aggregated execution time metrics in ISO 8601 duration format")
+    @ApiModelProperty(value = "Aggregated execution time metrics in seconds")
+    @Schema(description = "Aggregated execution time metrics in seconds")
     private ExecutionTimeStatisticMetric executionTime;
 
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "memory", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated memory metrics")
-    @Schema(description = "Aggregated memory metrics")
+    @ApiModelProperty(value = "Aggregated memory metrics in GB")
+    @Schema(description = "Aggregated memory metrics in GB")
     private MemoryStatisticMetric memory;
 
     @Valid

@@ -582,6 +582,7 @@ paths:
           - ELWAZI
           - AGC
           - OTHER
+          - ALL
       requestBody:
         content:
           application/json:
@@ -653,6 +654,7 @@ paths:
           - ELWAZI
           - AGC
           - OTHER
+          - ALL
       - description: Optional description about the execution metrics
         in: query
         name: description
@@ -7823,6 +7825,7 @@ components:
           - ELWAZI
           - AGC
           - OTHER
+          - ALL
         supportedLanguages:
           type: array
           items:
@@ -10291,6 +10294,7 @@ components:
       - mostRecentVersionName
       - numberOfRuns
       - passingRate
+      - validationVersions
     ValidationStatusMetric:
       type: object
       description: Aggregated metrics about workflow validation statuses

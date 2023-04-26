@@ -680,6 +680,7 @@ paths:
         - "ELWAZI"
         - "AGC"
         - "OTHER"
+        - "ALL"
       - in: "body"
         name: "body"
         description: "Aggregated metrics to add to the version"
@@ -748,6 +749,7 @@ paths:
         - "ELWAZI"
         - "AGC"
         - "OTHER"
+        - "ALL"
       - name: "description"
         in: "query"
         description: "Optional description about the execution metrics"
@@ -8058,14 +8060,14 @@ definitions:
           \ executions"
         $ref: "#/definitions/ExecutionStatusMetric"
       executionTime:
-        description: "Aggregated execution time metrics in ISO 8601 duration format"
+        description: "Aggregated execution time metrics in seconds"
         $ref: "#/definitions/ExecutionTimeMetric"
       id:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the metrics in this webservice"
       memory:
-        description: "Aggregated memory metrics"
+        description: "Aggregated memory metrics in GB"
         $ref: "#/definitions/MemoryMetric"
       validationStatus:
         description: "Aggregated validation status metrics"
@@ -9248,6 +9250,9 @@ definitions:
     type: "object"
     required:
     - "id"
+    - "mostRecentVersionName"
+    - "numberOfRuns"
+    - "passingRate"
     properties:
       id:
         type: "integer"

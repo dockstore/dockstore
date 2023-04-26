@@ -113,8 +113,7 @@ public final class S3ClientHelper {
     }
 
     public static String getVersionName(String key) {
-        final String[] keyComponents = splitKey(key);
-        return keyComponents[VERSION_NAME_INDEX];
+        return getElementFromKey(key, VERSION_NAME_INDEX);
     }
 
     /**
@@ -123,8 +122,7 @@ public final class S3ClientHelper {
      * @return
      */
     public static String getMetricsPlatform(String key) {
-        final String[] keyComponents = splitKey(key);
-        return keyComponents[METRICS_PLATFORM_INDEX];
+        return getElementFromKey(key, METRICS_PLATFORM_INDEX);
     }
 
     /**
@@ -135,6 +133,21 @@ public final class S3ClientHelper {
     public static String getFileName(String key) {
         final String[] keyComponents = splitKey(key);
         return keyComponents[keyComponents.length - 1];
+    }
+
+    /**
+     * Given an S3 key, it splits it into an array of Strings according to the delimiter, then returns the requested element index if it exists.
+     * If not, it returns an empty string
+     * @param key
+     * @param elementIndex
+     * @return
+     */
+    public static String getElementFromKey(String key, int elementIndex) {
+        final String[] keyComponents = splitKey(key);
+        if (keyComponents.length > elementIndex) {
+            return keyComponents[elementIndex];
+        }
+        return "";
     }
 
     public static String[] splitKey(String key) {
