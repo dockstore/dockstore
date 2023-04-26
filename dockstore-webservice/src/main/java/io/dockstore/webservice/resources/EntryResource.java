@@ -495,7 +495,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                     progress.done = true;
                 }
                 progress.processedEntries += list.size();
-                LOG.info("Executing {} updates starting at offset {}", PROCESSOR_PAGE_SIZE, progress.offset);
+                LOG.info("Executing {} updates starting at offset {}", list.size(), progress.offset);
                 progress.offset += PROCESSOR_PAGE_SIZE;
                 processor.apply(list, allVersions);
             });

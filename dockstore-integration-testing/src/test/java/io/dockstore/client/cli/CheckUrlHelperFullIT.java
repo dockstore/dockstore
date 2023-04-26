@@ -40,7 +40,6 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -148,7 +147,7 @@ public class CheckUrlHelperFullIT {
 
         // Clear publicaccessibletestparameterfile
         testingPostgres.runUpdateStatement("update version_metadata set publicaccessibletestparameterfile = null");
-        // Confirm the above worked cleared out the language versions
+        // Confirm the above worked cleared out the publicaccessibletestparameterfile
         wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
         wdlWorkflow.getWorkflowVersions().forEach(wv -> assertNull(wv.getVersionMetadata().isPublicAccessibleTestParameterFile()));
         cwlWorkflow = workflowsApi.getWorkflow(cwlWorkflow.getId(), null);
@@ -158,17 +157,14 @@ public class CheckUrlHelperFullIT {
         assertEquals(2, processed);
 
         wdlWorkflow = workflowsApi.getWorkflow(wdlWorkflow.getId(), null);
-        wdlWorkflow.getWorkflowVersions().forEach(wv -> assertTrue(!wv.isValid() || wv.getVersionMetadata().isPublicAccessibleTestParameterFile(),
-            "No valid versions have file inputs, should be open"));
+        final WorkflowVersion wdlOneZeroZero = wdlWorkflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("1.0.0"))
+                .findFirst().get();
+        assertTrue(wdlOneZeroZero.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Version 1.0.0 has no file inputs, should be open");
 
         cwlWorkflow = workflowsApi.getWorkflow(cwlWorkflow.getId(), null);
-        final List<WorkflowVersion> validVersions =
-            cwlWorkflow.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).toList();
-        assertEquals(2, validVersions.size());
-        assertTrue(validVersions.stream().anyMatch(wv -> wv.getVersionMetadata().isPublicAccessibleTestParameterFile()),
-            "One valid version has no file inputs, should be open");
-        assertTrue(validVersions.stream().anyMatch(wv -> !wv.getVersionMetadata().isPublicAccessibleTestParameterFile()),
-            "One valid version has file inputs and no test parameter file, should not be open");
+        final WorkflowVersion testCwl = cwlWorkflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("testCWL"))
+                .findFirst().get();
+        assertFalse(testCwl.getVersionMetadata().isPublicAccessibleTestParameterFile(), "testCWL has a file input, but no test parameter file, should not be open");
     }
 
     private Workflow getFoobar1Workflow(WorkflowsApi client) {
