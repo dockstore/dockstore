@@ -15,7 +15,7 @@
  */
 package io.dockstore.client.cli;
 
-import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static io.dockstore.common.FixtureUtility.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

@@ -782,6 +782,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.topicSelection = topicSelection;
     }
 
+    @JsonProperty
     public Set<Author> getAuthors() {
         T realDefaultVersion = this.getActualDefaultVersion();
         if (realDefaultVersion != null) {
@@ -795,6 +796,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.authors.addAll(authors);
     }
 
+    @JsonProperty
     public Set<OrcidAuthor> getOrcidAuthors() {
         T realDefaultVersion = this.getActualDefaultVersion();
         if (realDefaultVersion != null) {

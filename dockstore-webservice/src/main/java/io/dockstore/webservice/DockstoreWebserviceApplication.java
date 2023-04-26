@@ -128,21 +128,21 @@ import io.dockstore.webservice.resources.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
-import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.client.HttpClientBuilder;
+import io.dropwizard.core.Application;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.forms.MultiPartBundle;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.migrations.MigrationsBundle;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.MetadataApi;
 import io.swagger.api.MetadataApiV1;
@@ -170,11 +170,10 @@ import javax.ws.rs.core.Response;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
-import org.eclipse.jetty.util.component.LifeCycle;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
@@ -398,7 +397,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(RolesAllowedDynamicFeature.class);
         environment.jersey().register(new ConstraintExceptionMapper());
 
-
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
         final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
@@ -484,43 +482,37 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
 
-        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-            // Register connection pool health check after server starts so the environment has dropwizard metrics
-            @Override
-            public void lifeCycleStarted(LifeCycle event) {
-                final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
-                environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
-                metadataResource.setHealthCheckRegistry(environment.healthChecks());
-            }
+        // Register connection pool health check after server starts so the environment has dropwizard metrics
+        environment.lifecycle().addServerLifecycleListener(server -> {
+            final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
+            environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+            metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
 
-        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-            // Indexes Elasticsearch if mappings don't exist when the application is started
-            @Override
-            public void lifeCycleStarted(LifeCycle event) {
-                if (!ElasticSearchHelper.doMappingsExist()) {
-                    // A lock is used to prevent concurrent indexing requests in a deployment where multiple webservices start at the same time
-                    if (ElasticSearchHelper.acquireLock()) {
-                        try {
-                            LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
-                            Session session = hibernate.getSessionFactory().openSession();
-                            ManagedSessionContext.bind(session);
-                            Response response = getToolsExtendedApi().toolsIndexGet(null);
-                            session.close();
-                            if (response.getStatus() == HttpStatus.SC_OK) {
-                                LOG.info("Indexed Elasticsearch");
-                            } else {
-                                LOG.error("Error indexing Elasticsearch with status code {}", response.getStatus());
-                            }
-                        } catch (Exception e) {
-                            LOG.error("Could not index Elasticsearch", e);
-                        } finally {
-                            ElasticSearchHelper.releaseLock();
+        // Indexes Elasticsearch if mappings don't exist when the application is started
+        environment.lifecycle().addServerLifecycleListener(event -> {
+            if (!ElasticSearchHelper.doMappingsExist()) {
+                // A lock is used to prevent concurrent indexing requests in a deployment where multiple webservices start at the same time
+                if (ElasticSearchHelper.acquireLock()) {
+                    try {
+                        LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
+                        Session session = hibernate.getSessionFactory().openSession();
+                        ManagedSessionContext.bind(session);
+                        Response response = getToolsExtendedApi().toolsIndexGet(null);
+                        session.close();
+                        if (response.getStatus() == HttpStatus.SC_OK) {
+                            LOG.info("Indexed Elasticsearch");
+                        } else {
+                            LOG.error("Error indexing Elasticsearch with status code {}", response.getStatus());
                         }
+                    } catch (Exception e) {
+                        LOG.error("Could not index Elasticsearch", e);
+                    } finally {
+                        ElasticSearchHelper.releaseLock();
                     }
-                } else {
-                    LOG.info("Elasticsearch indices already exist");
                 }
+            } else {
+                LOG.info("Elasticsearch indices already exist");
             }
         });
     }

@@ -32,7 +32,7 @@
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
-        <revision>1.14</revision>
+        <revision>1.15</revision>
         <changelist>.0-SNAPSHOT</changelist>
 
         <!--

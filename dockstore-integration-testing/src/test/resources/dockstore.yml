@@ -41,7 +41,7 @@ authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10s
 
 server:
   applicationConnectors:
-    - type: http
+    - type: custom-http
       port: 8080
   adminConnectors:
     - type: http
