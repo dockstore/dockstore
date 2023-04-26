@@ -140,6 +140,72 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final PermissionsInterface permissionsInterface;
     private final SessionFactory sessionFactory;
 
+    private Function<Integer, List<Workflow>> getWorkflows = (offset) -> workflowDAO.findAllWorkflows(offset, PROCESSOR_PAGE_SIZE);
+
+    private Function<Integer, List<Tool>> getTools = (offset) -> toolDAO.findAllTools(offset, PROCESSOR_PAGE_SIZE);
+
+    private BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForLanguageVersions =
+            (workflows, allVersions) -> {
+                workflows.forEach(workflow -> {
+                    LanguageHandlerInterface languageHandlerInterface =
+                            LanguageHandlerFactory.getInterface(workflow.getDescriptorType());
+                    workflow.getWorkflowVersions().stream()
+                            .filter(version -> allVersions || version.getVersionMetadata()
+                                    .getDescriptorTypeVersions().isEmpty())
+                            .forEach(version -> {
+                                final String primaryPath = version.getWorkflowPath();
+                                readSourceFilesAndUpdate(languageHandlerInterface, version, primaryPath);
+                            });
+                });
+                return null;
+            };
+
+    private BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForOpenData =
+            (workflows, allVersions) -> {
+                workflows.forEach(workflow -> {
+                    LanguageHandlerInterface languageHandlerInterface =
+                            LanguageHandlerFactory.getInterface(workflow.getDescriptorType());
+                    workflow.getWorkflowVersions().stream()
+                            .filter(version -> allVersions || version.getVersionMetadata().getPublicAccessibleTestParameterFile() == null)
+                            .forEach(version -> {
+                                final Boolean openData =
+                                        languageHandlerInterface.isOpenData(version, lambdaUrlChecker)
+                                                .orElse(null);
+                                version.getVersionMetadata().setPublicAccessibleTestParameterFile(openData);
+                            });
+                });
+                return null;
+            };
+
+    private BiFunction<List<Tool>, Boolean, Void> processLegacyToolsForLanguageVersions =
+            (tools, allVersions) -> {
+                tools.stream()
+                        .filter(tool -> tool.getDescriptorType().size() == 1) // Only support tools with 1 language
+                        .forEach(tool -> {
+                            final String descriptorLanguageText = tool.getDescriptorType().get(0);
+                            LanguageHandlerInterface languageHandlerInterface =
+                                    LanguageHandlerFactory.getInterface(
+                                            DescriptorLanguage.convertShortStringToEnum(descriptorLanguageText));
+                            tool.getWorkflowVersions().stream()
+                                    .filter(version -> allVersions || version.getVersionMetadata()
+                                            .getDescriptorTypeVersions().isEmpty())
+                                    .forEach(version -> {
+                                        final String primaryPath;
+                                        if (DescriptorLanguage.convertShortStringToEnum(descriptorLanguageText)
+                                                == DescriptorLanguage.WDL) {
+                                            primaryPath = version.getWdlPath();
+                                        } else { // We will not add new languages to Tool (perhaps to AppTool), so this is safe
+                                            primaryPath = version.getCwlPath();
+                                        }
+                                        readSourceFilesAndUpdate(languageHandlerInterface, version,
+                                                primaryPath);
+                                    });
+                        });
+                return null;
+            };
+
+
+
     @SuppressWarnings("checkstyle:ParameterNumber")
     public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
         WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration configuration) {
@@ -502,70 +568,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
         return progress.processedEntries;
     }
-
-    private Function<Integer, List<Workflow>> getWorkflows = (offset) -> workflowDAO.findAllWorkflows(offset, PROCESSOR_PAGE_SIZE);
-
-    private Function<Integer, List<Tool>> getTools = (offset) -> toolDAO.findAllTools(offset, PROCESSOR_PAGE_SIZE);
-
-    private BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForLanguageVersions =
-        (workflows, allVersions) -> {
-            workflows.forEach(workflow -> {
-                LanguageHandlerInterface languageHandlerInterface =
-                    LanguageHandlerFactory.getInterface(workflow.getDescriptorType());
-                workflow.getWorkflowVersions().stream()
-                    .filter(version -> allVersions || version.getVersionMetadata()
-                        .getDescriptorTypeVersions().isEmpty())
-                    .forEach(version -> {
-                        final String primaryPath = version.getWorkflowPath();
-                        readSourceFilesAndUpdate(languageHandlerInterface, version, primaryPath);
-                    });
-            });
-            return null;
-        };
-
-    private BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForOpenData =
-        (workflows, allVersions) -> {
-            workflows.forEach(workflow -> {
-                LanguageHandlerInterface languageHandlerInterface =
-                    LanguageHandlerFactory.getInterface(workflow.getDescriptorType());
-                workflow.getWorkflowVersions().stream()
-                    .filter(version -> allVersions || version.getVersionMetadata().getPublicAccessibleTestParameterFile() == null)
-                    .forEach(version -> {
-                        final Boolean openData =
-                            languageHandlerInterface.isOpenData(version, lambdaUrlChecker)
-                                .orElse(null);
-                        version.getVersionMetadata().setPublicAccessibleTestParameterFile(openData);
-                    });
-            });
-            return null;
-        };
-
-    private BiFunction<List<Tool>, Boolean, Void> processLegacyToolsForLanguageVersions =
-        (tools, allVersions) -> {
-            tools.stream()
-                .filter(tool -> tool.getDescriptorType().size() == 1) // Only support tools with 1 language
-                .forEach(tool -> {
-                    final String descriptorLanguageText = tool.getDescriptorType().get(0);
-                    LanguageHandlerInterface languageHandlerInterface =
-                        LanguageHandlerFactory.getInterface(
-                            DescriptorLanguage.convertShortStringToEnum(descriptorLanguageText));
-                    tool.getWorkflowVersions().stream()
-                        .filter(version -> allVersions || version.getVersionMetadata()
-                            .getDescriptorTypeVersions().isEmpty())
-                        .forEach(version -> {
-                            final String primaryPath;
-                            if (DescriptorLanguage.convertShortStringToEnum(descriptorLanguageText)
-                                == DescriptorLanguage.WDL) {
-                                primaryPath = version.getWdlPath();
-                            } else { // We will not add new languages to Tool (perhaps to AppTool), so this is safe
-                                primaryPath = version.getCwlPath();
-                            }
-                            readSourceFilesAndUpdate(languageHandlerInterface, version,
-                                primaryPath);
-                        });
-                });
-            return null;
-        };
 
 
     private void readSourceFilesAndUpdate(final LanguageHandlerInterface languageHandlerInterface,
