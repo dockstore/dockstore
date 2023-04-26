@@ -23,11 +23,11 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.database.AppToolPath;
 import io.dockstore.webservice.core.database.RSSAppToolPath;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
 public class AppToolDAO extends EntryDAO<AppTool> {

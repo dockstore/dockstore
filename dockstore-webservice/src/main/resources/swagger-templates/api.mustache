@@ -28,14 +28,14 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
-import javax.servlet.ServletConfig;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.*;
+import jakarta.servlet.ServletConfig;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.*;
 {{#useBeanValidation}}
-import javax.validation.constraints.*;
+import jakarta.validation.constraints.*;
 {{/useBeanValidation}}
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/{{{baseName}}}")

@@ -20,10 +20,10 @@ package io.dockstore.webservice.core.metrics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
-import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

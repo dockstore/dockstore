@@ -16,8 +16,8 @@
 
 package io.dockstore.webservice.resources;
 
-import javax.annotation.Generated;
-import javax.ws.rs.ext.Provider;
+import jakarta.annotation.Generated;
+import jakarta.ws.rs.ext.Provider;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.Contact;

@@ -26,7 +26,7 @@ import java.util.Objects;
  * Now used only by TRS V1
  */
 @ApiModel(description = "A tool dockerfile is a document that describes how to build a particular Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@jakarta.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
 @JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class ToolDockerfile {
     private String dockerfile = null;

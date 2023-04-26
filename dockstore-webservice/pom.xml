@@ -518,10 +518,9 @@
             </exclusions>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
             <!-- note: this brings in a version of jaxb-api that breaks
             liquibase https://liquibase.jira.com/browse/CORE-3262
             -->
@@ -532,10 +531,9 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2 -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-jaxrs2</artifactId>
+            <artifactId>swagger-jaxrs2-jakarta</artifactId>
             <!-- note: this brings in a version of jaxb-api that breaks
             liquibase https://liquibase.jira.com/browse/CORE-3262
             -->
@@ -546,10 +544,9 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2-servlet-initializer -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+            <artifactId>swagger-jaxrs2-servlet-initializer-jakarta</artifactId>
         </dependency>
 
         <dependency>
@@ -600,8 +597,8 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <groupId>com.fasterxml.jackson.jakarta.rs</groupId>
+            <artifactId>jackson-jakarta-rs-json-provider</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.oauth-client</groupId>
@@ -1036,7 +1033,7 @@
         </dependency>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-integration</artifactId>
+            <artifactId>swagger-integration-jakarta</artifactId>
             <!-- note: this brings in a version of jaxb-api that breaks
            liquibase https://liquibase.jira.com/browse/CORE-3262
            -->
@@ -1458,7 +1455,7 @@
                     <generateModelDocumentation>false</generateModelDocumentation>
                     <generateSupportingFiles>true</generateSupportingFiles>
                     <withXml>true</withXml>
-                    <library>jersey3</library>
+                    <library>jersey2</library>
                     <ignoreFileOverride>${pom.basedir}/src/main/resources/openapi-templates/swagger-codegen-ignore</ignoreFileOverride>
                     <templateDirectory>${pom.basedir}/src/main/resources/openapi-templates</templateDirectory>
                 </configuration>
@@ -1495,13 +1492,54 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <filesToInclude>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/openapi/api/ToolsApi.java,${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</filesToInclude>
+                    <includes>
+                        <include>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/openapi/api/ToolsApi.java</include>
+                        <include>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</include>
+                        <!-- can be better after https://github.com/swagger-api/swagger-codegen/issues/11797 -->
+                        <include>${pom.basedir}/target/generated-sources/swagger/src/gen/java/**/*.java</include>
+                        <include>${pom.basedir}/target/generated-sources/swagger/src/main/java/**/*.java</include>
+                    </includes>
                     <regex>false</regex>
                     <replacements>
                         <replacement>
                             <token>{relative_path}</token>
                             <value>{relative_path : .+}</value>
                         </replacement>
+                        <!-- for these jakarta replacements, we can do better after https://github.com/swagger-api/swagger-codegen/issues/11797 -->
+                        <replacement>
+                            <token>javax.annotation</token>
+                            <value>jakarta.annotation</value>
+                        </replacement>
+                        <replacement>
+                            <token>@javax.annotation</token>
+                            <value>@jakarta.annotation</value>
+                        </replacement>
+                        <replacement>
+                            <token>javax.validation</token>
+                            <value>jakarta.validation</value>
+                        </replacement>
+                        <replacement>
+                            <token>javax.ws</token>
+                            <value>jakarta.ws</value>
+                        </replacement>
+                        <replacement>
+                            <token>javax.servlet</token>
+                            <value>jakarta.servlet</value>
+                        </replacement>
+                        <replacement>
+                            <token>javax.xml.bind</token>
+                            <value>jakarta.xml.bind</value>
+                        </replacement>
+                        <replacement>
+                            <token>javax.xml.bind</token>
+                            <value>jakarta.xml.bind</value>
+                        </replacement>
+                        <!--
+                        <replacement>
+                            <token>com.fasterxml.jackson.jaxrs.json</token>
+                            <value>com.fasterxml.jackson.jakarta.rs.json</value>
+                        </replacement>
+                        -->
                     </replacements>
                 </configuration>
             </plugin>

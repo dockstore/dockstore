@@ -595,34 +595,29 @@ POM as their parent.
                 <artifactId>swagger-core</artifactId>
                 <version>${swagger-annotations-version}</version>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/io.swagger/swagger-models -->
             <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-models</artifactId>
                 <version>${swagger-annotations-version}</version>
             </dependency>
-
-            <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
                 <version>${openapi-annotations-version}</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-integration</artifactId>
+                <artifactId>swagger-integration-jakarta</artifactId>
                 <version>${openapi-annotations-version}</version>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2-servlet-initializer -->
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+                <artifactId>swagger-jaxrs2-servlet-initializer-jakarta</artifactId>
                 <version>${openapi-annotations-version}</version>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2 -->
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-jaxrs2</artifactId>
+                <artifactId>swagger-jaxrs2-jakarta</artifactId>
                 <version>${openapi-annotations-version}</version>
             </dependency>
 

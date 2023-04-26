@@ -29,6 +29,12 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.EntryLite;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -39,16 +45,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
+import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -262,7 +264,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
      * @return
      */
     public List<T> findAllPublished(Integer offset, Integer limit, String filter, String sortCol, String sortOrder, Class<T> classType) {
-        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        HibernateCriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<T> query = criteriaQuery();
         Root<T> entry = query.from(classType != null ? classType : typeOfT);
         processQuery(filter, sortCol, sortOrder, cb, query, entry);
@@ -280,8 +282,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     // TODO: these methods should be merged with the proprietary version in EntryDAO, but should be a major version refactoring.
     @SuppressWarnings("checkstyle:ParameterNumber")
     public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
-        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<Long> q = cb.createQuery(Long.class);
+        final HibernateCriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final JpaCriteriaQuery<Long> q = cb.createQuery(Long.class);
 
         Root<T> entryRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
 
@@ -298,8 +300,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         if (filter.isEmpty()) {
             return countAllPublished();
         }
-        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        HibernateCriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        JpaCriteriaQuery<Long> query = cb.createQuery(Long.class);
         Root<T> entry = query.from(classType != null ? classType : typeOfT);
         processQuery(filter.get(), "", "", cb, query, entry);
         query.select(cb.count(entry));
@@ -382,8 +384,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     public List<T> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, int startIndex, int pageRemaining) {
 
-        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<T> q = cb.createQuery(typeOfT);
+        final HibernateCriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final JpaCriteriaQuery<T> q = cb.createQuery(typeOfT);
         final Root<T> tRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
         // order by id
         q.orderBy(cb.asc(tRoot.get("id")));
