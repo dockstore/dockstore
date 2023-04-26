@@ -503,11 +503,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return progress.processedEntries;
     }
 
-    Function<Integer, List<Workflow>> getWorkflows = (offset) -> workflowDAO.findAllWorkflows(offset, PROCESSOR_PAGE_SIZE);
+    private Function<Integer, List<Workflow>> getWorkflows = (offset) -> workflowDAO.findAllWorkflows(offset, PROCESSOR_PAGE_SIZE);
 
-    Function<Integer, List<Tool>> getTools = (offset) -> toolDAO.findAllTools(offset, PROCESSOR_PAGE_SIZE);
+    private Function<Integer, List<Tool>> getTools = (offset) -> toolDAO.findAllTools(offset, PROCESSOR_PAGE_SIZE);
 
-    BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForLanguageVersions =
+    private BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForLanguageVersions =
         (workflows, allVersions) -> {
             workflows.forEach(workflow -> {
                 LanguageHandlerInterface languageHandlerInterface =
@@ -523,7 +523,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             return null;
         };
 
-    BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForOpenData =
+    private BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForOpenData =
         (workflows, allVersions) -> {
             workflows.forEach(workflow -> {
                 LanguageHandlerInterface languageHandlerInterface =
@@ -540,7 +540,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             return null;
         };
 
-    BiFunction<List<Tool>, Boolean, Void> processLegacyToolsForLanguageVersions =
+    private BiFunction<List<Tool>, Boolean, Void> processLegacyToolsForLanguageVersions =
         (tools, allVersions) -> {
             tools.stream()
                 .filter(tool -> tool.getDescriptorType().size() == 1) // Only support tools with 1 language
