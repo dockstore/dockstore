@@ -32,7 +32,7 @@
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-hibernate5</artifactId>
+            <artifactId>jackson-datatype-hibernate5-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>
@@ -364,20 +364,6 @@
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-healthchecks</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.javassist</groupId>
-                    <artifactId>javassist</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -1380,7 +1366,7 @@
             <!-- replaces com.github.kongchen:swagger-maven-plugin for OpenAPI 3.0 -->
             <plugin>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-maven-plugin</artifactId>
+                <artifactId>swagger-maven-plugin-jakarta</artifactId>
                 <version>${openapi-annotations-version}</version>
                 <configuration>
                     <outputFileName>openapi</outputFileName>
@@ -1472,7 +1458,7 @@
                     <generateModelDocumentation>false</generateModelDocumentation>
                     <generateSupportingFiles>true</generateSupportingFiles>
                     <withXml>true</withXml>
-                    <library>jersey2</library>
+                    <library>jersey3</library>
                     <ignoreFileOverride>${pom.basedir}/src/main/resources/openapi-templates/swagger-codegen-ignore</ignoreFileOverride>
                     <templateDirectory>${pom.basedir}/src/main/resources/openapi-templates</templateDirectory>
                 </configuration>

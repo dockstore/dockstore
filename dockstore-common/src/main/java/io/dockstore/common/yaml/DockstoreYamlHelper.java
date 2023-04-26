@@ -1,6 +1,10 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.DescriptorLanguageSubclass;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -21,10 +25,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
@@ -430,7 +430,7 @@ public final class DockstoreYamlHelper {
     private static <T> String buildMessageFromViolation(ConstraintViolation<T> violation, String targetDescription) {
         // Determine the subject of the error message, either a property name or a description of the target.
         String subject = null;
-        javax.validation.Path propertyPath = violation.getPropertyPath();
+        jakarta.validation.Path propertyPath = violation.getPropertyPath();
         if (propertyPath != null) {
             String propertyPathString = propertyPath.toString();
             if (propertyPathString != null && !propertyPathString.isEmpty()) {
@@ -462,7 +462,7 @@ public final class DockstoreYamlHelper {
      * @param violation
      */
     private static <T> boolean doesNotReferenceEntry(ConstraintViolation<T> violation) {
-        javax.validation.Path propertyPath = violation.getPropertyPath();
+        jakarta.validation.Path propertyPath = violation.getPropertyPath();
         if (propertyPath == null) {
             return true;
         }
