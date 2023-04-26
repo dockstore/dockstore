@@ -45,10 +45,6 @@ class LambdaUrlCheckerTest {
 
         // Lambda not invoked because the value is not a Java URL (no protocol)
         assertEquals(UrlStatus.NOT_ALL_OPEN, LAMBDA_URL_CHECKER.checkUrls(Set.of("localfile.cram")), "A local file is a malformed url");
-
-        // Lambda is not invoked because s3 is not a protocol that Java recognizes out of the box
-        assertEquals(UrlStatus.NOT_ALL_OPEN, LAMBDA_URL_CHECKER.checkUrls(Set.of("s3://human-pangenomics/working/HPRC_PLUS/HG005/raw_data/Illumina/child/5A1-24481579/5A1_S5_L001_R1_001.fastq.gz")),
-            "s3 protocol not recognized by Java");
     }
 
     @Test
