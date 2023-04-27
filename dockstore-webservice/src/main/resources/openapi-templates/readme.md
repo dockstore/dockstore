@@ -7,6 +7,7 @@ Changes include:
 * overriding of path
 * override tags to GA4GHV20
 * adding @JsonValue annotation to modelEnum
+* Changing from JacksonJaxbJsonProvider to JacksonXmlBindJsonProvider to support jakarta migration
 
 Updated selected templates to
 Using https://github.com/swagger-api/swagger-codegen-generators/tree/v1.0.25/src/main/resources/handlebars/JavaJaxRS

@@ -92,6 +92,7 @@ import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
@@ -362,7 +363,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                     createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId, user.getId());
                 }
             }
-        } catch (IOException | URISyntaxException | JAXBException e) {
+        } catch (IOException | URISyntaxException | JAXBException | DatatypeConfigurationException e) {
             throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
