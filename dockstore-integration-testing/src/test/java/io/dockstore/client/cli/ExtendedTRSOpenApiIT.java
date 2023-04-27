@@ -373,7 +373,6 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         Metrics platform1Metrics = workflowVersion.getMetricsByPlatform().get(platform1);
         assertNotNull(platform1Metrics);
         // Verify execution status
-        assertFalse(platform1Metrics.getExecutionStatusCount().isValid());
         assertEquals(1, platform1Metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(1, platform1Metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
         assertFalse(platform1Metrics.getExecutionStatusCount().getCount().containsKey(FAILED_RUNTIME_INVALID.name()), "Should not contain this because no executions had this status");

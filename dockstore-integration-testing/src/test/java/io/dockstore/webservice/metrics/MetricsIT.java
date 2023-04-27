@@ -22,9 +22,7 @@ import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.Ex
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
 import static io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool.MINIWDL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
@@ -154,7 +152,6 @@ class MetricsIT extends BaseIT {
         executionStatusCount.put(SUCCESSFUL, 10);
         executionStatusCountMetric.setCount(executionStatusCount);
         metrics.setExecutionStatusCount(executionStatusCountMetric);
-        assertTrue(metrics.getExecutionStatusCount().isValid());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(0, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
@@ -162,7 +159,6 @@ class MetricsIT extends BaseIT {
         executionStatusCount.put(FAILED_RUNTIME_INVALID, 1);
         executionStatusCountMetric.setCount(executionStatusCount);
         metrics.setExecutionStatusCount(executionStatusCountMetric);
-        assertFalse(metrics.getExecutionStatusCount().isValid());
         assertEquals(11, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(1, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());

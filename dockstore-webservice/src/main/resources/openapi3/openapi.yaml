@@ -8693,8 +8693,6 @@ components:
           type: integer
           format: int32
           description: Number of successful executions
-        valid:
-          type: boolean
       required:
       - count
       - numberOfFailedExecutions

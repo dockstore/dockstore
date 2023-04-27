@@ -7740,8 +7740,6 @@ definitions:
       numberOfSuccessfulExecutions:
         type: "integer"
         format: "int32"
-      valid:
-        type: "boolean"
     description: "Aggregated metrics about workflow execution statuses"
   ExecutionTimeMetric:
     type: "object"

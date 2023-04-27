@@ -519,4 +519,7 @@
         <addForeignKeyConstraint baseColumnNames="validationinfoid" baseTableName="validation_versions" constraintName="fk_validationinfoid_validation_versions" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_info"/>
         <addForeignKeyConstraint baseColumnNames="validationinfoid" baseTableName="validator_tool_validation_info" constraintName="fk_validationinfoid_validator_tool_validation_info" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_info"/>
     </changeSet>
+    <changeSet author="ktran (generated)" id="dropIsValidColumnForExecutionStatusMetric">
+        <dropColumn columnName="isvalid" tableName="execution_status"/>
+    </changeSet>
 </databaseChangeLog>
