@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.helpers;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.ProxySelector;
@@ -34,12 +36,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.UriBuilder;
 import org.apache.commons.collections.map.LRUMap;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class LambdaUrlChecker implements CheckUrlInterface {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LambdaUrlChecker.class);
+    private static final Gson GSON = new Gson(); // Thread-safe
     private static final int LRU_CACHE_SIZE = 50;
     private static final String S3_PROTOCOL = "s3://";
     private static final String GS_PROTOCOL = "gs://";
@@ -65,8 +69,13 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
         }
         request = HttpRequest.newBuilder().uri(uri).GET().build();
         try {
-            String body = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
-                HttpResponse.BodyHandlers.ofString()).body();
+            final HttpResponse<String> httpResponse = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build()
+                    .send(request, HttpResponse.BodyHandlers.ofString());
+            final String body = httpResponse.body();
+            if (httpResponse.statusCode() >= HttpStatus.SC_MULTIPLE_CHOICES) { // a 3xx isn't an error, but if we get it (we shouldn't), we're not following it
+                LOGGER.error("Error invoking checkUrl lambda; status code: {0}; body: {1}", httpResponse.statusCode(), body);
+                return Optional.empty();
+            }
             final Optional<Boolean> checkStatus = checkStatus(body);
             checkStatus.ifPresent(b -> checkedUrlsMap.put(url, b));
             return checkStatus;
@@ -79,12 +88,14 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
         }
     }
 
-    private Optional<Boolean> checkStatus(String body) {
-        if ("{\"message\":true}".equals(body)) {
-            return Optional.of(true);
-        }
-        if ("{\"message\":false}".equals(body)) {
-            return Optional.of(false);
+    private Optional<Boolean> checkStatus(final String body) {
+        if (body != null) {
+            try {
+                final LambdaResponse lambdaResponse = GSON.fromJson(body, LambdaResponse.class);
+                return Optional.of(lambdaResponse.isMessage());
+            } catch (JsonSyntaxException e) {
+                LOGGER.error("Error reading response from check url lambda", e);
+            }
         }
         return Optional.empty();
     }
@@ -161,4 +172,17 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
         }
         return s3Uri;
     }
+
+    private static class LambdaResponse {
+        private boolean message;
+
+        public boolean isMessage() {
+            return message;
+        }
+
+        public void setMessage(boolean message) {
+            this.message = message;
+        }
+    }
+
 }
