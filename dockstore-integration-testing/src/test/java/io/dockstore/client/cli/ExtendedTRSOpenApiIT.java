@@ -64,9 +64,9 @@ import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.RunExecution;
 import io.dockstore.openapi.client.model.ValidationExecution;
-import io.dockstore.openapi.client.model.ValidationInfo;
 import io.dockstore.openapi.client.model.ValidationStatusMetric;
-import io.dockstore.openapi.client.model.ValidationVersionInfo;
+import io.dockstore.openapi.client.model.ValidatorInfo;
+import io.dockstore.openapi.client.model.ValidatorVersionInfo;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.Partner;
@@ -400,18 +400,18 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         long metricsDbCount = testingPostgres.runSelectStatement("select count(*) from metrics", long.class);
         assertEquals(1, metricsDbCount, "There should only be 1 row in the metrics table because we only have one entry version with aggregated metrics");
 
-        ValidationVersionInfo expectedMostRecentVersion = new ValidationVersionInfo()
+        ValidatorVersionInfo expectedMostRecentVersion = new ValidatorVersionInfo()
                 .name("1.0")
                 .isValid(true)
                 .dateExecuted(Instant.now().toString())
                 .numberOfRuns(1)
                 .passingRate(100d);
         // Put validation metrics for platform2
-        ValidationStatusMetric validationStatusMetric = new ValidationStatusMetric().validatorToolToValidationInfo(Map.of(
+        ValidationStatusMetric validationStatusMetric = new ValidationStatusMetric().validatorTools(Map.of(
                 MINIWDL.toString(),
-                new ValidationInfo()
+                new ValidatorInfo()
                         .mostRecentVersionName(expectedMostRecentVersion.getName())
-                        .validationVersions(List.of(expectedMostRecentVersion))
+                        .validatorVersions(List.of(expectedMostRecentVersion))
                         .passingRate(100d)
                         .numberOfRuns(1)));
         metrics = new Metrics().validationStatus(validationStatusMetric);
@@ -427,16 +427,16 @@ class ExtendedTRSOpenApiIT extends BaseIT {
 
         // Verify validation status
         Metrics platform2Metrics = workflowVersion.getMetricsByPlatform().get(platform2);
-        ValidationInfo validationInfo = platform2Metrics.getValidationStatus().getValidatorToolToValidationInfo().get(MINIWDL.toString());
-        assertNotNull(validationInfo);
-        assertEquals("1.0", validationInfo.getMostRecentVersionName());
-        Optional<ValidationVersionInfo> mostRecentValidationVersion = validationInfo.getValidationVersions().stream().filter(validationVersion -> validationInfo.getMostRecentVersionName().equals(validationVersion.getName())).findFirst();
+        ValidatorInfo validatorInfo = platform2Metrics.getValidationStatus().getValidatorTools().get(MINIWDL.toString());
+        assertNotNull(validatorInfo);
+        assertEquals("1.0", validatorInfo.getMostRecentVersionName());
+        Optional<ValidatorVersionInfo> mostRecentValidationVersion = validatorInfo.getValidatorVersions().stream().filter(validationVersion -> validatorInfo.getMostRecentVersionName().equals(validationVersion.getName())).findFirst();
         assertTrue(mostRecentValidationVersion.isPresent());
         assertTrue(mostRecentValidationVersion.get().isIsValid());
         assertEquals(100d, mostRecentValidationVersion.get().getPassingRate());
         assertEquals(1, mostRecentValidationVersion.get().getNumberOfRuns());
-        assertEquals(100d, validationInfo.getPassingRate());
-        assertEquals(1, validationInfo.getNumberOfRuns());
+        assertEquals(100d, validatorInfo.getPassingRate());
+        assertEquals(1, validatorInfo.getNumberOfRuns());
         platform1Metrics = workflowVersion.getMetricsByPlatform().get(platform1);
 
         // Verify that the endpoint can submit metrics that were aggregated across all platforms using Partner.ALL

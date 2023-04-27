@@ -9244,7 +9244,23 @@ definitions:
         - "OTHER"
       validatorToolVersion:
         type: "string"
-  ValidationInfo:
+  ValidationStatusMetric:
+    type: "object"
+    required:
+    - "validatorTools"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the count metrics in this webservice"
+      validatorTools:
+        type: "object"
+        description: "A map containing key-value pairs indicating whether the validator\
+          \ tool successfully validated the workflow"
+        additionalProperties:
+          $ref: "#/definitions/ValidatorInfo"
+    description: "Aggregated metrics about workflow validation statuses"
+  ValidatorInfo:
     type: "object"
     required:
     - "id"
@@ -9255,7 +9271,7 @@ definitions:
       id:
         type: "integer"
         format: "int64"
-        description: "Implementation specific ID for the validation info in this web\
+        description: "Implementation specific ID for the validator info in this web\
           \ service"
       mostRecentVersionName:
         type: "string"
@@ -9265,29 +9281,13 @@ definitions:
       passingRate:
         type: "number"
         format: "double"
-      validationVersions:
+      validatorVersions:
         type: "array"
         description: "A list containing validation info for the most recent execution\
           \ of the validator tool versions"
         items:
-          $ref: "#/definitions/ValidationVersionInfo"
-  ValidationStatusMetric:
-    type: "object"
-    required:
-    - "validatorToolToValidationInfo"
-    properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the count metrics in this webservice"
-      validatorToolToValidationInfo:
-        type: "object"
-        description: "A map containing key-value pairs indicating whether the validator\
-          \ tool successfully validated the workflow"
-        additionalProperties:
-          $ref: "#/definitions/ValidationInfo"
-    description: "Aggregated metrics about workflow validation statuses"
-  ValidationVersionInfo:
+          $ref: "#/definitions/ValidatorVersionInfo"
+  ValidatorVersionInfo:
     type: "object"
     required:
     - "dateExecuted"

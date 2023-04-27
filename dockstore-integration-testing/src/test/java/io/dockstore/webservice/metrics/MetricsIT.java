@@ -38,9 +38,9 @@ import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import io.dockstore.webservice.core.metrics.Metrics;
-import io.dockstore.webservice.core.metrics.ValidationInfo;
 import io.dockstore.webservice.core.metrics.ValidationStatusCountMetric;
-import io.dockstore.webservice.core.metrics.ValidationVersionInfo;
+import io.dockstore.webservice.core.metrics.ValidatorInfo;
+import io.dockstore.webservice.core.metrics.ValidatorVersionInfo;
 import io.dockstore.webservice.jdbi.MetricsDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
@@ -187,18 +187,18 @@ class MetricsIT extends BaseIT {
 
         // Add aggregated information about validation
         // Add a successful miniwdl validation
-        ValidationVersionInfo miniwdlValidationVersionInfo = new ValidationVersionInfo();
-        miniwdlValidationVersionInfo.setName("1.0");
-        miniwdlValidationVersionInfo.setIsValid(true);
-        miniwdlValidationVersionInfo.setDateExecuted(Instant.now().toString());
-        miniwdlValidationVersionInfo.setNumberOfRuns(5);
-        miniwdlValidationVersionInfo.setPassingRate(100d);
-        ValidationInfo miniwdlValidationInfo = new ValidationInfo();
-        miniwdlValidationInfo.setValidationVersions(List.of(miniwdlValidationVersionInfo));
-        miniwdlValidationInfo.setMostRecentVersionName(miniwdlValidationVersionInfo.getName());
-        miniwdlValidationInfo.setNumberOfRuns(miniwdlValidationVersionInfo.getNumberOfRuns());
-        miniwdlValidationInfo.setPassingRate(miniwdlValidationVersionInfo.getPassingRate());
-        ValidationStatusCountMetric validationStatusCountMetric = new ValidationStatusCountMetric(Map.of(MINIWDL, miniwdlValidationInfo));
+        ValidatorVersionInfo miniwdlValidatorVersionInfo = new ValidatorVersionInfo();
+        miniwdlValidatorVersionInfo.setName("1.0");
+        miniwdlValidatorVersionInfo.setIsValid(true);
+        miniwdlValidatorVersionInfo.setDateExecuted(Instant.now().toString());
+        miniwdlValidatorVersionInfo.setNumberOfRuns(5);
+        miniwdlValidatorVersionInfo.setPassingRate(100d);
+        ValidatorInfo miniwdlValidatorInfo = new ValidatorInfo();
+        miniwdlValidatorInfo.setValidatorVersions(List.of(miniwdlValidatorVersionInfo));
+        miniwdlValidatorInfo.setMostRecentVersionName(miniwdlValidatorVersionInfo.getName());
+        miniwdlValidatorInfo.setNumberOfRuns(miniwdlValidatorVersionInfo.getNumberOfRuns());
+        miniwdlValidatorInfo.setPassingRate(miniwdlValidatorVersionInfo.getPassingRate());
+        ValidationStatusCountMetric validationStatusCountMetric = new ValidationStatusCountMetric(Map.of(MINIWDL, miniwdlValidatorInfo));
         metrics.setValidationStatus(validationStatusCountMetric);
 
         return metrics;

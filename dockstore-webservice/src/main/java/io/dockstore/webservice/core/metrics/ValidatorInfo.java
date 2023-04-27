@@ -40,22 +40,22 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "validation_info")
-@Schema(description = "Aggregated validation information")
+@Table(name = "validator_info")
+@Schema(description = "Aggregated validation information for a validator tool")
 @SuppressWarnings("checkstyle:magicnumber")
-public class ValidationInfo {
+public class ValidatorInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the validation info in this web service", required = true, position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the validator info in this web service", required = true, position = 0)
     private long id;
 
     @NotEmpty
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
-    @JoinTable(name = "validation_versions", joinColumns = @JoinColumn(name = "validationinfoid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationversioninfoid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @JoinTable(name = "validator_versions", joinColumns = @JoinColumn(name = "validatorinfoid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validatorversioninfoid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "A list containing validation info for the most recent execution of the validator tool versions")
-    private List<ValidationVersionInfo> validationVersions = new ArrayList<>();
+    private List<ValidatorVersionInfo> validatorVersions = new ArrayList<>();
 
     @NotNull
     @Column(nullable = false)
@@ -81,7 +81,7 @@ public class ValidationInfo {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    public ValidationInfo() {
+    public ValidatorInfo() {
     }
 
     public long getId() {
@@ -116,11 +116,11 @@ public class ValidationInfo {
         this.numberOfRuns = numberOfRuns;
     }
 
-    public List<ValidationVersionInfo> getValidationVersions() {
-        return validationVersions;
+    public List<ValidatorVersionInfo> getValidatorVersions() {
+        return validatorVersions;
     }
 
-    public void setValidationVersions(List<ValidationVersionInfo> validationVersions) {
-        this.validationVersions = validationVersions;
+    public void setValidatorVersions(List<ValidatorVersionInfo> validatorVersions) {
+        this.validatorVersions = validatorVersions;
     }
 }

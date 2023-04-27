@@ -33,9 +33,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "validation_version_info")
+@Table(name = "validator_version_info")
 @Schema(description = "Validation information for a validator tool version")
-public class ValidationVersionInfo {
+public class ValidatorVersionInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -85,7 +85,7 @@ public class ValidationVersionInfo {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    public ValidationVersionInfo() {
+    public ValidatorVersionInfo() {
     }
 
     public long getId() {

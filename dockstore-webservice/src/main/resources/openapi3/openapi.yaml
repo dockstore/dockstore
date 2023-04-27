@@ -10263,9 +10263,25 @@ components:
       - isValid
       - validatorTool
       - validatorToolVersion
-    ValidationInfo:
+    ValidationStatusMetric:
       type: object
-      description: Aggregated validation information
+      description: Aggregated metrics about workflow validation statuses
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the count metrics in this webservice
+        validatorTools:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ValidatorInfo'
+          description: A map containing key-value pairs indicating whether the validator
+            tool successfully validated the workflow
+      required:
+      - validatorTools
+    ValidatorInfo:
+      type: object
+      description: Aggregated validation information for a validator tool
       properties:
         id:
           type: integer
@@ -10284,32 +10300,16 @@ components:
           description: A percentage representing how often the validator successfully
             validates the workflow
           example: 100.0
-        validationVersions:
+        validatorVersions:
           type: array
           items:
-            $ref: '#/components/schemas/ValidationVersionInfo'
+            $ref: '#/components/schemas/ValidatorVersionInfo'
       required:
       - mostRecentVersionName
       - numberOfRuns
       - passingRate
-      - validationVersions
-    ValidationStatusMetric:
-      type: object
-      description: Aggregated metrics about workflow validation statuses
-      properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the count metrics in this webservice
-        validatorToolToValidationInfo:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/ValidationInfo'
-          description: A map containing key-value pairs indicating whether the validator
-            tool successfully validated the workflow
-      required:
-      - validatorToolToValidationInfo
-    ValidationVersionInfo:
+      - validatorVersions
+    ValidatorVersionInfo:
       type: object
       description: Validation information for a validator tool version
       properties:
