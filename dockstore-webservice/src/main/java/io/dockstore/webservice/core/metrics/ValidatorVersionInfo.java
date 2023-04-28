@@ -34,7 +34,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "validator_version_info")
-@Schema(description = "Validation information for a validator tool version")
+@Schema(description = "Validation information for a version of a specific validator tool, like miniwdl v1.9.1")
 public class ValidatorVersionInfo {
 
     @Id
@@ -52,7 +52,7 @@ public class ValidatorVersionInfo {
     @Column(nullable = false)
     @JsonProperty(required = true)
     @Schema(description = "Boolean indicating if the workflow was validated successfully", required = true, example = "true")
-    private Boolean isValid;
+    private boolean isValid;
 
     @Schema(description = "The error message for a failed validation by the validator tool")
     private String errorMessage;
@@ -68,13 +68,13 @@ public class ValidatorVersionInfo {
     @Column(nullable = false)
     @JsonProperty(required = true)
     @Schema(description = "A percentage representing how often the validator successfully validates the workflow", required = true, example = "100.0")
-    private Double passingRate;
+    private double passingRate;
 
     @NotNull
     @Column(nullable = false)
     @JsonProperty(required = true)
     @Schema(description = "The number of times the validator was executed on the workflow", required = true, example = "1")
-    private Integer numberOfRuns;
+    private int numberOfRuns;
 
     // database timestamps
     @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
@@ -104,11 +104,11 @@ public class ValidatorVersionInfo {
         this.name = name;
     }
 
-    public Boolean getIsValid() {
+    public boolean getIsValid() {
         return isValid;
     }
 
-    public void setIsValid(Boolean valid) {
+    public void setIsValid(boolean valid) {
         isValid = valid;
     }
 
@@ -128,19 +128,19 @@ public class ValidatorVersionInfo {
         this.dateExecuted = dateExecuted;
     }
 
-    public Double getPassingRate() {
+    public double getPassingRate() {
         return passingRate;
     }
 
-    public void setPassingRate(Double passingRate) {
+    public void setPassingRate(double passingRate) {
         this.passingRate = passingRate;
     }
 
-    public Integer getNumberOfRuns() {
+    public int getNumberOfRuns() {
         return numberOfRuns;
     }
 
-    public void setNumberOfRuns(Integer numberOfRuns) {
+    public void setNumberOfRuns(int numberOfRuns) {
         this.numberOfRuns = numberOfRuns;
     }
 }

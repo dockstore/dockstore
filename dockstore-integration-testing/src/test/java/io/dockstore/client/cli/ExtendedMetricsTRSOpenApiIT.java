@@ -54,7 +54,9 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
+import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.CpuMetric;
 import io.dockstore.openapi.client.model.ExecutionStatusMetric;
@@ -95,16 +97,16 @@ import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
- * Extra confidential integration tests, focuses on proposed GA4GH extensions
+ * Extra confidential integration tests, focuses on proposed metrics GA4GH extensions
  * {@link BaseIT}
  */
 @LocalstackDockerProperties(imageTag = IMAGE_TAG, services = { ServiceName.S3 }, environmentVariableProvider = LocalStackTestUtilities.LocalStackEnvironmentVariables.class)
 @ExtendWith({ SystemStubsExtension.class, MuteForSuccessfulTests.class, BaseIT.TestStatus.class, LocalstackDockerExtension.class })
 @Tag(ConfidentialTest.NAME)
 @Tag(LocalStackTest.NAME)
-class ExtendedTRSOpenApiIT extends BaseIT {
+class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
-    private static final String DOCKSTORE_WORKFLOW_CNV_REPO = "DockstoreTestUser2/dockstore_workflow_cnv";
+    private static final String DOCKSTORE_WORKFLOW_CNV_REPO = "DockstoreTestUser2/docksgtore_workflow_cnv";
     private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
     private static final Gson GSON = new Gson();
 
@@ -179,8 +181,8 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         // Admin user
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
-        final io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(webClient);
+        final UsersApi usersApi = new UsersApi(webClient);
+        final ContainersApi containersApi = new ContainersApi(webClient);
         final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         final String platform1 = Partner.TERRA.name();
         final String platform2 = Partner.DNA_STACK.name();
@@ -561,7 +563,7 @@ class ExtendedTRSOpenApiIT extends BaseIT {
         // Admin user
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        final UsersApi usersApi = new UsersApi(webClient);
         final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         final String platform1 = Partner.TERRA.name();
         final String description = "Aggregated metrics";

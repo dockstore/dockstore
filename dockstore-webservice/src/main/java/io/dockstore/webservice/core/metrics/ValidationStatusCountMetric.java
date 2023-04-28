@@ -44,6 +44,9 @@ import org.hibernate.annotations.BatchSize;
 @SuppressWarnings("checkstyle:magicnumber")
 public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, ValidatorInfo> {
 
+    /**
+     * This field is a map of ValidatorTool enums to ValidatorInfo objects.
+     */
     @NotEmpty
     @JsonProperty("validatorTools")
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)

@@ -39,9 +39,12 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+/**
+ * This class contains aggregated validation information for a particular validator tool.
+ */
 @Entity
 @Table(name = "validator_info")
-@Schema(description = "Aggregated validation information for a validator tool")
+@Schema(description = "Aggregated validation information for a particular validator tool like miniwdl")
 @SuppressWarnings("checkstyle:magicnumber")
 public class ValidatorInfo {
 
@@ -64,13 +67,13 @@ public class ValidatorInfo {
 
     @NotNull
     @Column(nullable = false)
-    @Schema(description = "A percentage representing how often the validator successfully validates the workflow", required = true, example = "100.0")
-    private Double passingRate;
+    @Schema(description = "A percentage representing how often the validator successfully validated the workflow", required = true, example = "100.0")
+    private double passingRate;
 
     @NotNull
     @Column(nullable = false)
     @Schema(description = "The number of times the validator was executed on the workflow", required = true, example = "1")
-    private Integer numberOfRuns;
+    private int numberOfRuns;
 
     // database timestamps
     @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
@@ -100,19 +103,19 @@ public class ValidatorInfo {
         this.mostRecentVersionName = mostRecentVersionName;
     }
 
-    public Double getPassingRate() {
+    public double getPassingRate() {
         return passingRate;
     }
 
-    public void setPassingRate(Double passingRate) {
+    public void setPassingRate(double passingRate) {
         this.passingRate = passingRate;
     }
 
-    public Integer getNumberOfRuns() {
+    public int getNumberOfRuns() {
         return numberOfRuns;
     }
 
-    public void setNumberOfRuns(Integer numberOfRuns) {
+    public void setNumberOfRuns(int numberOfRuns) {
         this.numberOfRuns = numberOfRuns;
     }
 
