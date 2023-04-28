@@ -73,7 +73,7 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
                     .send(request, HttpResponse.BodyHandlers.ofString());
             final String body = httpResponse.body();
             if (httpResponse.statusCode() >= HttpStatus.SC_MULTIPLE_CHOICES) { // a 3xx isn't an error, but if we get it (we shouldn't), we're not following it
-                LOGGER.error("Error invoking checkUrl lambda; status code: {0}; body: {1}", httpResponse.statusCode(), body);
+                LOGGER.error("Error invoking checkUrl lambda; status code: {}; body: {}", httpResponse.statusCode(), body);
                 return Optional.empty();
             }
             final Optional<Boolean> checkStatus = checkStatus(body);

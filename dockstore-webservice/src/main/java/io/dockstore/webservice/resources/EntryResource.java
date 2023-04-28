@@ -83,7 +83,7 @@ import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DefaultValue;
@@ -140,9 +140,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final PermissionsInterface permissionsInterface;
     private final SessionFactory sessionFactory;
 
-    private Function<Integer, List<Workflow>> getWorkflows = (offset) -> workflowDAO.findAllWorkflows(offset, PROCESSOR_PAGE_SIZE);
+    private IntFunction<List<Workflow>> getWorkflows = offset -> workflowDAO.findAllWorkflows(offset, PROCESSOR_PAGE_SIZE);
 
-    private Function<Integer, List<Tool>> getTools = (offset) -> toolDAO.findAllTools(offset, PROCESSOR_PAGE_SIZE);
+    private IntFunction<List<Tool>> getTools = offset -> toolDAO.findAllTools(offset, PROCESSOR_PAGE_SIZE);
 
     private BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForLanguageVersions =
             (workflows, allVersions) -> {
@@ -564,7 +564,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
      * @param allVersions
      * @return the number of entries processed
      */
-    private <T extends Entry> int loadAndProcessEntries(Function<Integer, List<T>> loader,
+    private <T extends Entry> int loadAndProcessEntries(IntFunction<List<T>> loader,
         BiFunction<List<T>, Boolean, Void> processor, Boolean allVersions) {
         final ProcessorProgress progress = new ProcessorProgress();
         while (!progress.done) {
