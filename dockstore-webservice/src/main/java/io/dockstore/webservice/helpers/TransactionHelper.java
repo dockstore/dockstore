@@ -34,7 +34,7 @@ public final class TransactionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(TransactionHelper.class);
     private Session session;
-    private RuntimeException thrown;
+    private Throwable thrown;
 
     public TransactionHelper(Session session) {
         this.session = session;
@@ -74,8 +74,8 @@ public final class TransactionHelper {
         check();
         try {
             session.clear();
-        } catch (RuntimeException ex) {
-            handle("clear", ex);
+        } catch (RuntimeException | Error throwable) {
+            handle("clear", throwable);
         }
     }
 
@@ -83,8 +83,8 @@ public final class TransactionHelper {
         check();
         try {
             session.beginTransaction();
-        } catch (RuntimeException ex) {
-            handle("begin", ex);
+        } catch (RuntimeException | Error throwable) {
+            handle("begin", throwable);
         }
     }
 
@@ -95,8 +95,8 @@ public final class TransactionHelper {
             if (isActive(transaction) && transaction.getStatus().canRollback()) {
                 transaction.rollback();
             }
-        } catch (RuntimeException ex) {
-            handle("rollback", ex);
+        } catch (RuntimeException | Error throwable) {
+            handle("rollback", throwable);
         }
     }
 
@@ -107,12 +107,16 @@ public final class TransactionHelper {
             if (isActive(transaction)) {
                 transaction.commit();
             }
-        } catch (RuntimeException ex) {
-            handle("commit", ex);
+        } catch (RuntimeException | Error throwable) {
+            handle("commit", throwable);
         }
     }
 
-    public RuntimeException thrown() {
+    private boolean isActive(Transaction transaction) {
+        return transaction != null && transaction.isActive();
+    }
+
+    public Throwable thrown() {
         return thrown;
     }
 
@@ -120,25 +124,32 @@ public final class TransactionHelper {
         if (thrown != null) {
             LOG.error("operation on session that has thrown", thrown);
             thrown = new RuntimeException("operation on session that has thrown");
-            throw thrown;
+            rethrow(thrown);
         }
     }
 
-    private void handle(String operation, RuntimeException ex) {
-        thrown = ex;
-        LOG.error("{} failed", operation, ex);
+    private void handle(String operation, Throwable throwable) {
+        thrown = throwable;
+        LOG.error("{} failed", operation, throwable);
         // To prevent us from interacting with foobared state, the
         // Hibernate docs instruct us to immediately close a session
         // if a previous operation on the session has thrown.
         try {
             session.close();
-        } catch (RuntimeException closeEx) {
-            LOG.error("post-Exception close failed", closeEx);
+        } catch (Throwable closeThrowable) {
+            LOG.error("post-throw close failed", closeThrowable);
         }
-        throw ex;
+        rethrow(throwable);
     }
 
-    private boolean isActive(Transaction transaction) {
-        return transaction != null && transaction.isActive();
+    private void rethrow(Throwable throwable) {
+        if (throwable instanceof RuntimeException) {
+            throw (RuntimeException)throwable;
+        } else if (throwable instanceof Error) {
+            throw (Error)throwable;
+        } else {
+            LOG.error("attempt to rethrow unexpected checked exception", throwable);
+            throw new RuntimeException(throwable);
+        }
     }
 }

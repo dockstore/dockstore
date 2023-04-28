@@ -221,4 +221,28 @@ class WebhookIT extends BaseIT {
         assertTrue(foobar.getWorkflowVersions().stream().allMatch(v -> "/README2.md".equals(v.getReadMePath()) && v.getDescription().contains("an 'X' in it")));
         assertTrue(foobar2.getWorkflowVersions().stream().allMatch(v -> "/docs/README.md".equals(v.getReadMePath()) && v.getDescription().contains("a '🙃' in it")));
     }
+
+    /**
+     * Tests that the github release correctly handles an Error thrown during .dockstore.yml processing.
+     * https://ucsc-cgl.atlassian.net/browse/DOCK-2299
+     */
+    @Test
+    public void testErrorThrownDuringRelease() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
+
+        // Attempt to process a repo containing a recursive WDL.  Internally, we use Cromwell code to process WDLs.
+        // The Cromwell code should throw a StackOverflowError, which will bubble out of the .dockstore.yml processing code.
+        try {
+            client.handleGitHubRelease("refs/heads/main", installationId, "dockstore-testing/recursive-wdl", BasicIT.USER_2_USERNAME);
+            Assert.fail("should have thrown");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            // Confirm that the release failed and was logged correctly.
+            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+            Assert.assertEquals("There should be one event", 1, events.stream().count());
+            Assert.assertEquals("There should be no successful events", 0, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count());
+        }
+    }
 }
