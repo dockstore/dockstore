@@ -41,7 +41,6 @@ import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import java.util.Optional;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -92,7 +91,7 @@ public class CheckUrlHelperFullIT {
 
         testingPostgres.runUpdateStatement("update version_metadata set publicaccessibletestparameterfile = null");
         workflowVersion = getWorkflowVersion(client);
-        Assertions.assertNull(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Database should've reverted it to null");
+        assertNull(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Database should've reverted it to null");
 
         // Test updating existing version
         client.handleGitHubRelease(gitReference, installationId, workflowRepo, dockstoreTestUser2);

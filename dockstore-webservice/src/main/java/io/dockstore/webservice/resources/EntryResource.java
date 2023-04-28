@@ -503,6 +503,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return createAndSetDiscourseTopic(id);
     }
 
+    /**
+     * Updates the language versions for all tool and workflow versions. If <code>allVersions</code> is true, processes all
+     * versions; if it's false, only processes those that have not been processed.
+     * @param user
+     * @param allVersions
+     * @return
+     */
     @Path("/updateLanguageVersions")
     @RolesAllowed("admin")
     @UnitOfWork
@@ -523,6 +530,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return processedTools + processedWorkflows;
     }
 
+    /**
+     * Goes through workflow (BioWorkflow and AppTool) versions and updates their open data status. If <code>allVersions</code> is true,
+     * processes all workflow versions, if it's false, processes only versions whose open data status is null.
+     * @param user
+     * @param allVersions
+     * @return
+     */
     @Path("/updateOpenData")
     @RolesAllowed("admin")
     @UnitOfWork
@@ -563,7 +577,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 progress.processedEntries += list.size();
                 LOG.info("Executing {} updates starting at offset {}", list.size(), progress.offset);
                 progress.offset += PROCESSOR_PAGE_SIZE;
-                processor.apply(list, allVersions);
+                try {
+                    processor.apply(list, allVersions);
+                } catch (Exception e) {
+                    LOG.error("Error processing entries", e); // Log and continue
+                }
             });
         }
         return progress.processedEntries;
