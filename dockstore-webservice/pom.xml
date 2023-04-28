@@ -1303,43 +1303,6 @@
                     </dependency>
                 </dependencies>
             </plugin>
-            <plugin>
-                <groupId>com.github.kongchen</groupId>
-                <artifactId>swagger-maven-plugin</artifactId>
-                <version>3.1.8</version>
-                <configuration>
-                    <apiSources>
-                        <apiSource>
-                            <springmvc>false</springmvc>
-                            <locations>
-                                <location>io.swagger.api</location>
-                                <location>io.swagger.model</location>
-                                <location>io.dockstore.webservice.resources</location>
-                                <location>io.dockstore.webservice.resources.rss</location>
-                                <location>io.dockstore.webservice.resources.proposedGA4GH</location>
-                            </locations>
-                            <swaggerDirectory>${pom.basedir}/src/main/resources</swaggerDirectory>
-                            <swaggerFileName>swagger</swaggerFileName>
-                            <outputFormats>yaml</outputFormats>
-                            <basePath>/</basePath>
-                            <swaggerApiReader>com.github.kongchen.swagger.docgen.reader.SwaggerReader</swaggerApiReader>
-                            <attachSwaggerArtifact>true</attachSwaggerArtifact>
-                        </apiSource>
-                    </apiSources>
-                    <enabledObjectMapperFeatures>
-                        <feature>com.fasterxml.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY</feature>
-                        <feature>com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS</feature>
-                    </enabledObjectMapperFeatures>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <!-- replaces com.github.kongchen:swagger-maven-plugin for OpenAPI 3.0 -->
             <plugin>
                 <groupId>io.swagger.core.v3</groupId>

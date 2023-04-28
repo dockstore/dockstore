@@ -351,7 +351,7 @@ Lists of 373 third-party dependencies.
      (Apache-2.0) ssl-config-core (com.typesafe:ssl-config-core_2.13:0.3.8 - https://github.com/lightbend/ssl-config)
      (The BSD License) Stax2 API (org.codehaus.woodstox:stax2-api:4.2.1 - http://github.com/FasterXML/stax2-api)
      (Apache License 2.0) swagger-annotations (io.swagger:swagger-annotations:1.6.8 - https://github.com/swagger-api/swagger-core/modules/swagger-annotations)
-     (Apache License 2.0) swagger-annotations-jakarta (io.swagger.core.v3:swagger-annotations-jakarta:2.2.4 - https://github.com/swagger-api/swagger-core/modules/swagger-annotations-jakarta)
+     (Apache License 2.0) swagger-annotations-jakarta (io.swagger.core.v3:swagger-annotations-jakarta:2.1.13 - https://github.com/swagger-api/swagger-core/modules/swagger-annotations-jakarta)
      (Apache License 2.0) swagger-core (io.swagger:swagger-core:1.6.8 - https://github.com/swagger-api/swagger-core/modules/swagger-core)
      (Apache License 2.0) swagger-core-jakarta (io.swagger.core.v3:swagger-core-jakarta:2.2.4 - https://github.com/swagger-api/swagger-core/modules/swagger-core-jakarta)
      (Apache License 2.0) swagger-integration-jakarta (io.swagger.core.v3:swagger-integration-jakarta:2.2.4 - https://github.com/swagger-api/swagger-core/modules/swagger-integration-jakarta)
