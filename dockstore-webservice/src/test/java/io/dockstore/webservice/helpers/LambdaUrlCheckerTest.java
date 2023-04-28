@@ -68,4 +68,11 @@ class LambdaUrlCheckerTest {
         final String invalidGsProtocol = "gs:///whatever";
         assertEquals(invalidGsProtocol, LAMBDA_URL_CHECKER.convertGsOrS3Uri(invalidGsProtocol));
     }
+
+    @Test
+    void testStripTrailingSlash() {
+        final String url = "https://dockstore.org";
+        assertEquals(url, new LambdaUrlChecker(url + "/").getCheckUrlLambdaUrl());
+        assertEquals(url, new LambdaUrlChecker(url).getCheckUrlLambdaUrl());
+    }
 }
