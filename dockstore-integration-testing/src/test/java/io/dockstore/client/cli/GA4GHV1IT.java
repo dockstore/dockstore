@@ -30,9 +30,9 @@ import io.swagger.client.model.ToolTestsV1;
 import io.swagger.client.model.ToolV1;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.model.ToolDescriptor;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 

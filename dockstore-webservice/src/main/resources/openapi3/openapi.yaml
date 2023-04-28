@@ -5839,6 +5839,43 @@ paths:
       - BEARER: []
       tags:
       - users
+    patch:
+      description: Adds the logged-in user to any Dockstore workflows that they should
+        have access to.
+      operationId: addUserToDockstoreWorkflows
+      parameters:
+      - description: User to update
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: "This is here to appease Swagger. It requires PATCH methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+          description: Successfully added user to Dockstore workflows that they should
+            have access to
+        "400":
+          description: Bad request
+        "404":
+          description: User not found
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/{userId}/workflows/published:
     get:
       description: List all published workflows from a user.

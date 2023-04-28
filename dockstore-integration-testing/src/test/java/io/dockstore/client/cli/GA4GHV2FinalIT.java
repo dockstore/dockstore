@@ -30,10 +30,10 @@ import io.dockstore.openapi.client.model.ToolClass;
 import io.dockstore.openapi.client.model.ToolFile;
 import io.dockstore.openapi.client.model.ToolVersion;
 import io.openapi.model.Service;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 

@@ -31,6 +31,37 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>io.swagger.codegen.v3</groupId>
+                <artifactId>swagger-codegen-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/api.yaml</inputSpec>
+                            <language>java</language>
+                            <configOptions>
+                                <sourceFolder>src/gen/java/main</sourceFolder>
+                                <dateLibrary>java11</dateLibrary>
+                                <java8>true</java8>
+                                <java11>true</java11>
+                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                                <useRuntimeException>true</useRuntimeException>
+                                <library>jersey2</library>
+                                <generateModelTests>false</generateModelTests>
+                                <generateApiTests>false</generateApiTests>
+                                <generateModelDocumentation>false</generateModelDocumentation>
+                                <generateApiDocumentation>false</generateApiDocumentation>
+                                <invokerPackage>io.dockstore.openapi.client</invokerPackage>
+                                <modelPackage>io.dockstore.openapi.client.model</modelPackage>
+                                <apiPackage>io.dockstore.openapi.client.api</apiPackage>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <!-- this is terrible and due to 1.6.0 backwards compatibility https://github.com/dockstore/dockstore/issues/2860 -->
                 <!-- remove when 1.6.0 clients age out -->
                 <groupId>com.google.code.maven-replacer-plugin</groupId>
@@ -125,37 +156,6 @@
                                     <value>jakarta.xml.bind</value>
                                 </replacement>
                             </replacements>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>io.swagger.codegen.v3</groupId>
-                <artifactId>swagger-codegen-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/api.yaml</inputSpec>
-                            <language>java</language>
-                            <configOptions>
-                                <sourceFolder>src/gen/java/main</sourceFolder>
-                                <dateLibrary>java11</dateLibrary>
-                                <java8>true</java8>
-                                <java11>true</java11>
-                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
-                                <useRuntimeException>true</useRuntimeException>
-                                <library>jersey2</library>
-                                <generateModelTests>false</generateModelTests>
-                                <generateApiTests>false</generateApiTests>
-                                <generateModelDocumentation>false</generateModelDocumentation>
-                                <generateApiDocumentation>false</generateApiDocumentation>
-                                <invokerPackage>io.dockstore.openapi.client</invokerPackage>
-                                <modelPackage>io.dockstore.openapi.client.model</modelPackage>
-                                <apiPackage>io.dockstore.openapi.client.api</apiPackage>
-                            </configOptions>
                         </configuration>
                     </execution>
                 </executions>
