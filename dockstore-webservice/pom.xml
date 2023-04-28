@@ -58,7 +58,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>2.0.1</version>
+            <version>2.0.2</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
@@ -312,6 +312,10 @@
                     <artifactId>poi</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -1007,8 +1011,8 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>javax.persistence</groupId>
-            <artifactId>javax.persistence-api</artifactId>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -1230,7 +1234,7 @@
                             <usedDependencies>
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.swagger:swagger-core</usedDependency>
-                                <usedDependency>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer</usedDependency>
+                                <usedDependency>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer-jakarta</usedDependency>
                                 <usedDependency>jakarta.activation:jakarta.activation-api</usedDependency>
                                 <!-- these are used by org.kohsuke:github-api for handling JWT tokens -->
                                 <usedDependency>com.auth0:java-jwt</usedDependency>
