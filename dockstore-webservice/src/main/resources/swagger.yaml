@@ -2783,6 +2783,26 @@ paths:
           schema:
             type: "integer"
             format: "int32"
+  /entries/updateOpenData:
+    post:
+      tags:
+      - "entries"
+      operationId: "updateOpenData"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "allVersions"
+        in: "query"
+        required: false
+        type: "boolean"
+        default: false
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "integer"
+            format: "int32"
   /entries/{entryId}/versions/{versionId}/descriptionMetrics:
     get:
       tags:
