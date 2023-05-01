@@ -52,7 +52,6 @@ public class EventDAO extends AbstractDAO<Event> {
     public List<Event> findEventsForInitiatorUser(User loggedInUser, long initiatorUser, Integer offset, Integer limit) {
         Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByInitiatorUserId")
             .setParameter("initiatorUser", initiatorUser);
-        System.out.println("jo");
         if (loggedInUser.getId() == initiatorUser) {
             query.setFirstResult(offset).setMaxResults(limit);
             return list(query);
