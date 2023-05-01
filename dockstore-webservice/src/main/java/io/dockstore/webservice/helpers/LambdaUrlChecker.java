@@ -37,6 +37,8 @@ import org.slf4j.LoggerFactory;
 public final class LambdaUrlChecker implements CheckUrlInterface {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LambdaUrlChecker.class);
+    private static final String S3_PROTOCOL = "s3://";
+    private static final String GS_PROTOCOL = "gs://";
     private String checkUrlLambdaUrl;
 
     public LambdaUrlChecker(String checkUrlLambdaUrl) {
@@ -91,10 +93,12 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
         if (possibleUrls.isEmpty()) {
             return UrlStatus.ALL_OPEN;
         }
-        if (hasMalformedOrFileProtocolUrl(possibleUrls)) {
+        // Java does not support s3 nor gs protocols out of the box; convert to https URLs before seeing if valid
+        final Set<String> convertedUrls = possibleUrls.stream().map(this::convertGsOrS3Uri).collect(Collectors.toSet());
+        if (hasMalformedOrFileProtocolUrl(convertedUrls)) {
             return UrlStatus.NOT_ALL_OPEN;
         }
-        List<Optional<Boolean>> objectStream = possibleUrls.parallelStream().map(this::checkUrl)
+        List<Optional<Boolean>> objectStream = convertedUrls.parallelStream().map(this::checkUrl)
             .collect(Collectors.toCollection(ArrayList::new));
         if (objectStream.stream().anyMatch(urlStatus -> urlStatus.isPresent() && urlStatus.get().equals(false))) {
             return UrlStatus.NOT_ALL_OPEN;
@@ -103,5 +107,42 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
             return UrlStatus.UNKNOWN;
         }
         return UrlStatus.ALL_OPEN;
+    }
+
+    /**
+     * If <code>possibleUrl</code> is an s3 or gs URI, convert it to an https url, otherwise return it as is.
+     * @param possibleUrl
+     * @return
+     */
+    String convertGsOrS3Uri(String possibleUrl) {
+        if (possibleUrl != null) {
+            if (possibleUrl.startsWith(S3_PROTOCOL)) {
+                return convertS3Uri(possibleUrl);
+            } else if (possibleUrl.startsWith(GS_PROTOCOL)) {
+                return convertGsUri(possibleUrl);
+            }
+        }
+        return possibleUrl;
+    }
+
+    private static String convertGsUri(String gsUri) {
+        final String path = gsUri.substring(GS_PROTOCOL.length());
+        if (!path.startsWith("/")) {
+            return "https://storage.googleapis.com/" + path;
+        }
+        return gsUri;
+    }
+
+    private String convertS3Uri(String s3Uri) {
+        final String bucketAndPath = s3Uri.substring(S3_PROTOCOL.length());
+        if (!bucketAndPath.startsWith("/")) {
+            final int firstSlash = bucketAndPath.indexOf('/');
+            if (firstSlash != -1) {
+                final String bucket = bucketAndPath.substring(0, firstSlash);
+                final String objectKey = bucketAndPath.substring(firstSlash);
+                return "https://%s.s3.amazonaws.com%s".formatted(bucket, objectKey);
+            }
+        }
+        return s3Uri;
     }
 }

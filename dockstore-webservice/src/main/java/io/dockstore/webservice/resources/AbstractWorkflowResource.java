@@ -782,6 +782,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setAuthors(remoteWorkflowVersion.getAuthors());
                 existingWorkflowVersion.setOrcidAuthors(remoteWorkflowVersion.getOrcidAuthors());
                 existingWorkflowVersion.setKernelImagePath(remoteWorkflowVersion.getKernelImagePath());
+                existingWorkflowVersion.setReadMePath(remoteWorkflowVersion.getReadMePath());
+                existingWorkflowVersion.setDescriptionAndDescriptionSource(remoteWorkflowVersion.getDescription(), remoteWorkflowVersion.getDescriptionSource());
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion,
                     workflow.getDescriptorType());
                 updatedWorkflowVersion = existingWorkflowVersion;
