@@ -93,7 +93,7 @@ public class EventResource {
     @UnitOfWork(readOnly = true)
     @Operation(description = DESCRIPTION, summary = SUMMARY, security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = SUMMARY, authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of events", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Event.class))))
     public List<Event> getEvents(@Parameter(hidden = true) @ApiParam(hidden = true) @Auth User user,
                                  @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
@@ -136,40 +136,40 @@ public class EventResource {
      */
     private List<Event> getEventsForUser(User user, User loggedInUser, EventSearchType eventSearchType, int limit, Integer offset) {
         switch (eventSearchType) {
-            case STARRED_ENTRIES -> {
-                Set<Long> entryIDs = user.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
-                List<Event> eventsByEntryIDs = this.eventDAO.findEventsByEntryIDs(loggedInUser, entryIDs, offset, limit);
-                eagerLoadEventEntries(eventsByEntryIDs);
-                return eventsByEntryIDs;
-            }
-            case STARRED_ORGANIZATION -> {
-                Set<Long> organizationIDs = user.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
-                List<Event> allByOrganizationIds = this.eventDAO.findAllByOrganizationIds(loggedInUser, organizationIDs, offset, limit);
-                eagerLoadEventEntries(allByOrganizationIds);
-                return allByOrganizationIds;
-            }
-            case ALL_STARRED -> {
-                Set<Long> organizationIDs2 = user.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
-                Set<Long> entryIDs2 = user.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
-                List<Event> allByOrganizationIdsOrEntryIds = this.eventDAO
-                        .findAllByOrganizationIdsOrEntryIds(loggedInUser, organizationIDs2, entryIDs2, offset, limit);
-                eagerLoadEventEntries(allByOrganizationIdsOrEntryIds);
-                return allByOrganizationIdsOrEntryIds;
-            }
-            case PROFILE -> {
-                List<Event> eventsByUserID = this.eventDAO.findEventsForInitiatorUser(loggedInUser, user.getId(), offset, limit);
-                eagerLoadEventEntries(eventsByUserID);
-                return eventsByUserID;
-            }
-            case SELF_ORGANIZATIONS -> {
-                Set<Long> organizationIDs = user.getOrganizations().stream().map(u -> u.getOrganization().getId()).collect(Collectors.toSet());
-                List<Event> allByOrganizationIds = this.eventDAO.findAllByOrganizationIds(loggedInUser, organizationIDs, offset, limit);
-                eagerLoadEventEntries(allByOrganizationIds);
-                return allByOrganizationIds;
-            }
-            default -> {
-                return Collections.emptyList();
-            }
+        case STARRED_ENTRIES -> {
+            Set<Long> entryIDs = user.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
+            List<Event> eventsByEntryIDs = this.eventDAO.findEventsByEntryIDs(loggedInUser, entryIDs, offset, limit);
+            eagerLoadEventEntries(eventsByEntryIDs);
+            return eventsByEntryIDs;
+        }
+        case STARRED_ORGANIZATION -> {
+            Set<Long> organizationIDs = user.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
+            List<Event> allByOrganizationIds = this.eventDAO.findAllByOrganizationIds(loggedInUser, organizationIDs, offset, limit);
+            eagerLoadEventEntries(allByOrganizationIds);
+            return allByOrganizationIds;
+        }
+        case ALL_STARRED -> {
+            Set<Long> organizationIDs2 = user.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
+            Set<Long> entryIDs2 = user.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
+            List<Event> allByOrganizationIdsOrEntryIds = this.eventDAO
+                    .findAllByOrganizationIdsOrEntryIds(loggedInUser, organizationIDs2, entryIDs2, offset, limit);
+            eagerLoadEventEntries(allByOrganizationIdsOrEntryIds);
+            return allByOrganizationIdsOrEntryIds;
+        }
+        case PROFILE -> {
+            List<Event> eventsByUserID = this.eventDAO.findEventsForInitiatorUser(loggedInUser, user.getId(), offset, limit);
+            eagerLoadEventEntries(eventsByUserID);
+            return eventsByUserID;
+        }
+        case SELF_ORGANIZATIONS -> {
+            Set<Long> organizationIDs = user.getOrganizations().stream().map(u -> u.getOrganization().getId()).collect(Collectors.toSet());
+            List<Event> allByOrganizationIds = this.eventDAO.findAllByOrganizationIds(loggedInUser, organizationIDs, offset, limit);
+            eagerLoadEventEntries(allByOrganizationIds);
+            return allByOrganizationIds;
+        }
+        default -> {
+            return Collections.emptyList();
+        }
         }
     }
 
