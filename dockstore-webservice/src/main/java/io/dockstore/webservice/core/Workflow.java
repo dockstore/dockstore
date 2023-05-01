@@ -40,7 +40,6 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
 import java.util.Comparator;
@@ -144,7 +143,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
-    @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @BatchSize(size = 25)
     @Filter(name = "versionNameFilter")

@@ -39,7 +39,6 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
@@ -164,7 +163,6 @@ public class Tool extends Entry<Tool, Tag> {
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
     @JsonAlias({ "tags", "workflowVersions"})
-    @OrderBy("id")
     @Cascade(CascadeType.DETACH)
     @BatchSize(size = 25)
     @Filter(name = "versionNameFilter")

@@ -602,6 +602,11 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-models-jakarta</artifactId>
+                <version>${openapi-annotations-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations-jakarta</artifactId>
                 <version>${openapi-annotations-version}</version>
             </dependency>
@@ -1138,12 +1143,6 @@ POM as their parent.
                 <artifactId>swagger-jersey2-jaxrs</artifactId>
                 <version>${swagger-annotations-version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-jaxrs</artifactId>
-                <version>${swagger-annotations-version}</version>
-            </dependency>
-
             <dependency>
                 <groupId>com.auth0</groupId>
                 <artifactId>java-jwt</artifactId>

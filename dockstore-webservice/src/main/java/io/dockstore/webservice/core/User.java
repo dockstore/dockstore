@@ -124,7 +124,6 @@ public class User implements Principal, Comparable<User>, Serializable {
         @UniqueConstraint(columnNames = {"id", "token_type"})}, indexes = {@Index(name = "profile_by_username", columnList = "username"), @Index(name = "profile_by_email", columnList = "email")})
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
     @ApiModelProperty(value = "Profile information of the user retrieved from 3rd party sites (GitHub, Google, etc)")
-    @OrderBy("id")
     private SortedMap<String, Profile> userProfiles = new TreeMap<>();
 
     @Column(columnDefinition = "text")
@@ -143,14 +142,12 @@ public class User implements Principal, Comparable<User>, Serializable {
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
-    @OrderBy("id")
     @JsonIgnore
     private final SortedSet<Entry> entries;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Entries in the dockstore that this user starred", position = 10)
-    @OrderBy("id")
     @JsonIgnore
     private final SortedSet<Entry> starredEntries;
 
@@ -612,10 +609,8 @@ public class User implements Principal, Comparable<User>, Serializable {
         public String onlineProfileId;
 
         @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
-        @CreationTimestamp
         private Timestamp dbCreateDate;
         @Column()
-        @UpdateTimestamp
         private Timestamp dbUpdateDate;
     }
 }

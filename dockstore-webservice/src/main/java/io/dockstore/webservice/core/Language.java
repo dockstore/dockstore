@@ -9,8 +9,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import java.io.Serializable;
 import java.sql.Timestamp;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 @Embeddable
 public class Language implements Serializable {
@@ -24,14 +22,12 @@ public class Language implements Serializable {
     @ApiModelProperty(value = "The version of the supported language")
     private String version;
 
-    @Column(updatable = false)
-    @CreationTimestamp
+    @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
     @ApiModelProperty(dataType = "long")
     @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column()
-    @UpdateTimestamp
     @ApiModelProperty(dataType = "long")
     @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;

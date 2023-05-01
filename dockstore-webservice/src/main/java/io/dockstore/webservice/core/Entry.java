@@ -50,7 +50,6 @@ import jakarta.persistence.NamedNativeQuery;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.OrderBy;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
@@ -148,14 +147,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers", position = 3)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<Label> labels = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false, position = 4)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<User> users;
 
@@ -163,7 +160,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
     @JsonSerialize(using = EntryStarredSerializer.class)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<User> starredUsers;
 
@@ -253,7 +249,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_input_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the input file formats of every version of an entry", position = 15)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
@@ -261,7 +256,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_output_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the output file formats of every version of an entry", position = 16)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 

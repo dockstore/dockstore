@@ -26,8 +26,6 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 @Embeddable
 @Schema(description = "Aggregated validation information")
@@ -65,11 +63,9 @@ public class ValidationInfo implements Serializable {
 
     // database timestamps
     @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
-    @CreationTimestamp
     private Timestamp dbCreateDate;
 
     @Column()
-    @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
     public ValidationInfo() {

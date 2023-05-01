@@ -182,7 +182,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     }
 
     @PATCH
-    @io.swagger.jaxrs.PATCH
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork

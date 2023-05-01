@@ -47,7 +47,6 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.SequenceGenerator;
 import java.sql.Timestamp;
@@ -147,7 +146,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
-    @OrderBy("path")
     @BatchSize(size = 25)
     private final SortedSet<SourceFile> sourceFiles;
 
@@ -189,14 +187,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 12)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 13)
-    @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
@@ -215,7 +211,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached validations for each version.", position = 14)
-    @OrderBy("type")
     @BatchSize(size = 25)
     private final SortedSet<Validation> validations;
 

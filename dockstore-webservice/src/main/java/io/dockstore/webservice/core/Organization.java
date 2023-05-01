@@ -58,7 +58,7 @@ import org.hibernate.annotations.Where;
     @NamedQuery(name = "io.dockstore.webservice.core.Organization.findByName", query = "SELECT org FROM Organization org WHERE lower(org.name) = lower(:name)"),
     @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedById", query = "SELECT org FROM Organization org WHERE org.id = :id AND org.status = 'APPROVED'"),
     @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedByName", query = "SELECT org FROM Organization org WHERE lower(org.name) = lower(:name) AND org.status = 'APPROVED'"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedSortedByStar", query = "SELECT org FROM Organization org LEFT JOIN org.starredUsers WHERE org.status = 'APPROVED' GROUP BY org.id ORDER BY COUNT(organizationid) DESC")
+    @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedSortedByStar", query = "SELECT org FROM Organization org LEFT JOIN org.starredUsers WHERE org.status = 'APPROVED' GROUP BY org.id ORDER BY COUNT(org.id) DESC")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Organization implements Serializable, Aliasable {

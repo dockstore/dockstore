@@ -1,5 +1,5 @@
 
-Lists of 372 third-party dependencies.
+Lists of 369 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -329,7 +329,6 @@ Lists of 372 third-party dependencies.
      (The Apache Software License, Version 2.0) rank-eval (org.elasticsearch.plugin:rank-eval-client:7.10.2 - https://github.com/elastic/elasticsearch)
      (CC0) reactive-streams (org.reactivestreams:reactive-streams:1.0.3 - http://www.reactive-streams.org/)
      (MIT) refined (eu.timepit:refined_2.13:0.9.28 - https://github.com/fthomas/refined)
-     (The New BSD License) (WTFPL) Reflections (org.reflections:reflections:0.9.12 - http://github.com/ronmamo/reflections)
      (The Apache Software License, Version 2.0) rest (org.elasticsearch.client:elasticsearch-rest-client:7.10.2 - https://github.com/elastic/elasticsearch)
      (The Apache Software License, Version 2.0) rest-high-level (org.elasticsearch.client:elasticsearch-rest-high-level-client:7.10.2 - https://github.com/elastic/elasticsearch)
      (Apache-2.0) Scala Compiler (org.scala-lang:scala-compiler:2.13.9 - https://www.scala-lang.org/)
@@ -354,10 +353,8 @@ Lists of 372 third-party dependencies.
      (Apache License 2.0) swagger-core (io.swagger:swagger-core:1.6.8 - https://github.com/swagger-api/swagger-core/modules/swagger-core)
      (Apache License 2.0) swagger-core-jakarta (io.swagger.core.v3:swagger-core-jakarta:2.2.4 - https://github.com/swagger-api/swagger-core/modules/swagger-core-jakarta)
      (Apache License 2.0) swagger-integration-jakarta (io.swagger.core.v3:swagger-integration-jakarta:2.2.4 - https://github.com/swagger-api/swagger-core/modules/swagger-integration-jakarta)
-     (Apache License 2.0) swagger-jaxrs (io.swagger:swagger-jaxrs:1.6.8 - https://github.com/swagger-api/swagger-core/modules/swagger-jaxrs)
      (Apache License 2.0) swagger-jaxrs2-jakarta (io.swagger.core.v3:swagger-jaxrs2-jakarta:2.2.4 - https://github.com/swagger-api/swagger-core/modules/swagger-jaxrs2-jakarta)
      (Apache License 2.0) swagger-jaxrs2-servlet-initializer-jakarta (io.swagger.core.v3:swagger-jaxrs2-servlet-initializer-jakarta:2.2.4 - https://github.com/swagger-api/swagger-core/modules/swagger-jaxrs2-servlet-initializer-jakarta)
-     (Apache License 2.0) swagger-jersey2-jaxrs (Jersey 2.x support) (io.swagger:swagger-jersey2-jaxrs:1.6.8 - https://github.com/swagger-api/swagger-core/modules/swagger-jersey2-jaxrs)
      (Apache License 2.0) swagger-models (io.swagger:swagger-models:1.6.8 - https://github.com/swagger-api/swagger-core/modules/swagger-models)
      (Apache License 2.0) swagger-models-jakarta (io.swagger.core.v3:swagger-models-jakarta:2.2.4 - https://github.com/swagger-api/swagger-core/modules/swagger-models-jakarta)
      (Common Public License Version 1.0) System Rules (com.github.stefanbirkner:system-rules:1.19.0 - http://stefanbirkner.github.io/system-rules/)

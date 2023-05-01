@@ -326,11 +326,9 @@ public class SourceFile implements Comparable<SourceFile> {
 
         // database timestamps
         @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
-        @CreationTimestamp
         private Timestamp dbCreateDate;
 
         @Column()
-        @UpdateTimestamp
         private Timestamp dbUpdateDate;
     }
 }
