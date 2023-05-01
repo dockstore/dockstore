@@ -506,7 +506,6 @@
                                     <excludes>
                                         <!-- inconsistent in dropwizard 2.1.5 list of transient dependencies and causes this to break, nonetheless the actual versions end up being consistent as checked by
                                          keysmap.list and mvn dependency:tree. Weird -->
-                                        <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</exclude>
                                         <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
                                         <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
                                     </excludes>
@@ -543,6 +542,8 @@
                                         <exclude>javax.validation:validation-api</exclude>
                                         <!-- Replaced with jakarta.xml.bind:jakarta.xml.bind-api -->
                                         <exclude>javax.xml.bind:jaxb-api</exclude>
+                                        <!-- Replace with a bunch from https://github.com/spring-projects/spring-boot/issues/33356 -->
+                                        <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</exclude>
                                         <!-- should be using v2 api -->
                                         <exclude>com.amazonaws:*</exclude>
                                         <!-- we should be using jpa 2.2 -->

@@ -1,5 +1,5 @@
 
-Lists of 373 third-party dependencies.
+Lists of 372 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -186,7 +186,6 @@ Lists of 373 third-party dependencies.
      (The Apache Software License, Version 2.0) Jackson Jakarta-RS: JSON (com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider:2.14.2 - https://github.com/FasterXML/jackson-jakarta-rs-providers/jackson-jakarta-rs-json-provider)
      (The Apache Software License, Version 2.0) Jackson module: Blackbird (com.fasterxml.jackson.module:jackson-module-blackbird:2.14.2 - https://github.com/FasterXML/jackson-modules-base)
      (The Apache Software License, Version 2.0) Jackson module: Jakarta XML Bind Annotations (jakarta.xml.bind) (com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations:2.14.2 - https://github.com/FasterXML/jackson-modules-base)
-     (The Apache Software License, Version 2.0) Jackson module: Old JAXB Annotations (javax.xml.bind) (com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.14.2 - https://github.com/FasterXML/jackson-modules-base)
      (The Apache Software License, Version 2.0) Jackson-annotations (com.fasterxml.jackson.core:jackson-annotations:2.14.2 - https://github.com/FasterXML/jackson)
      (The Apache Software License, Version 2.0) Jackson-core (com.fasterxml.jackson.core:jackson-core:2.14.2 - https://github.com/FasterXML/jackson-core)
      (The Apache Software License, Version 2.0) jackson-databind (com.fasterxml.jackson.core:jackson-databind:2.14.2 - https://github.com/FasterXML/jackson)
