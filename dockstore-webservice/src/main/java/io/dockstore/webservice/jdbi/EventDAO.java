@@ -52,12 +52,14 @@ public class EventDAO extends AbstractDAO<Event> {
     public List<Event> findEventsForInitiatorUser(User loggedInUser, long initiatorUser, Integer offset, Integer limit) {
         Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByInitiatorUserId")
             .setParameter("initiatorUser", initiatorUser);
+
+        //when viewing your own profile, show all events
         if (loggedInUser.getId() == initiatorUser) {
             query.setFirstResult(offset).setMaxResults(limit);
             return list(query);
         }
         List<Event> filteredEvents = new ArrayList<>();
-        //filters out events regarding unpublished entries when viewing other users' profiles (not your own profile)
+        //First, filters out all category events. Then filters out events regarding unpublished entries when viewing other users' profiles (not your own profile)
         filterCategoryEvents(loggedInUser, query.getResultList()).forEach(event -> {
             if (event.getWorkflow() == null && event.getTool() == null) {
                 filteredEvents.add(event);
