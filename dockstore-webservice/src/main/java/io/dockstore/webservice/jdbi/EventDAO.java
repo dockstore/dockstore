@@ -49,12 +49,11 @@ public class EventDAO extends AbstractDAO<Event> {
         return list(query);
     }
 
-    public List<Event> findEventsForInitiatorUser(long initiatorUser, Integer offset, Integer limit) {
+    public List<Event> findEventsForInitiatorUser(User loggedInUser, long initiatorUser, Integer offset, Integer limit) {
         Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByInitiatorUserId")
-            .setParameter("initiatorUser", initiatorUser)
-            .setFirstResult(offset)
-            .setMaxResults(limit);
-        return list(query);
+            .setParameter("initiatorUser", initiatorUser);
+        List<Event> filteredEvents = filterCategoryEvents(loggedInUser, query.getResultList());
+        return filteredEvents.subList(offset, Math.min(offset + limit, filteredEvents.size()));
     }
 
     public long countAllEventsForOrganization(long organizationId) {
@@ -63,27 +62,43 @@ public class EventDAO extends AbstractDAO<Event> {
         return (Long) query.getSingleResult();
     }
 
-    public List<Event> findEventsByEntryIDs(Set<Long> entryIds, Integer offset, int limit) {
+    private List<Event> filterCategoryEvents(User loggedInUser, List<Event> events) {
+        if (loggedInUser != null && (loggedInUser.isCurator() || loggedInUser.getIsAdmin())) {
+            return events;
+        } else {
+            List<Event> filteredEvents = new ArrayList<>();
+            events.forEach(event -> {
+                if (event.getOrganization() == null || !event.getOrganization().isCategorizer()) {
+                    filteredEvents.add(event);
+                }
+            });
+            return filteredEvents;
+        }
+    }
+
+    public List<Event> findEventsByEntryIDs(User loggedInUser, Set<Long> entryIds, Integer offset, int limit) {
         int newLimit = Math.min(MAX_LIMIT, limit);
         if (entryIds.isEmpty()) {
             return Collections.emptyList();
         }
         Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByEntryIds");
-        query.setParameterList("entryIDs", entryIds).setFirstResult(offset).setMaxResults(newLimit);
-        return list(query);
+        query.setParameterList("entryIDs", entryIds);
+        List<Event> filteredEvents = filterCategoryEvents(loggedInUser, query.getResultList());
+        return filteredEvents.subList(offset, Math.min(offset + limit, filteredEvents.size()));
     }
 
-    public List<Event> findAllByOrganizationIds(Set<Long> organizationIds, Integer offset, int limit) {
+    public List<Event> findAllByOrganizationIds(User loggedInUser, Set<Long> organizationIds, Integer offset, int limit) {
         int newLimit = Math.min(MAX_LIMIT, limit);
         if (organizationIds.isEmpty()) {
             return Collections.emptyList();
         }
         Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIds");
-        query.setParameterList("organizationIDs", organizationIds).setFirstResult(offset).setMaxResults(newLimit);
-        return list(query);
+        query.setParameterList("organizationIDs", organizationIds);
+        List<Event> filteredEvents = filterCategoryEvents(loggedInUser, query.getResultList());
+        return filteredEvents.subList(offset, Math.min(offset + limit, filteredEvents.size()));
     }
 
-    public List<Event> findAllByOrganizationIdsOrEntryIds(Set<Long> organizationIds, Set<Long> entryIds, Integer offset, int limit) {
+    public List<Event> findAllByOrganizationIdsOrEntryIds(User loggedInUser, Set<Long> organizationIds, Set<Long> entryIds, Integer offset, int limit) {
         int newLimit = Math.min(MAX_LIMIT, limit);
 
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
@@ -107,8 +122,9 @@ public class EventDAO extends AbstractDAO<Event> {
         query.select(event);
 
         int primitiveOffset = MoreObjects.firstNonNull(offset, 0);
-        TypedQuery<Event> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(newLimit);
-        return typedQuery.getResultList();
+        TypedQuery<Event> typedQuery = currentSession().createQuery(query);
+        List<Event> filteredEvents = filterCategoryEvents(loggedInUser, typedQuery.getResultList());
+        return filteredEvents.subList(primitiveOffset, Math.min(primitiveOffset + newLimit, filteredEvents.size()));
     }
 
     public void delete(Event event) {
