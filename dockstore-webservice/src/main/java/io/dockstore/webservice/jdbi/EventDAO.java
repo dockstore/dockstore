@@ -20,7 +20,6 @@ import javax.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
-import scala.Int;
 
 public class EventDAO extends AbstractDAO<Event> {
     public static final int MAX_LIMIT = 100;
