@@ -36,7 +36,6 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.lang.reflect.ParameterizedType;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -139,7 +138,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         MutablePair<String, Entry> results = null;
         if (pair.size() > 0) {
             String type = (String)(pair.get(0))[0];
-            BigInteger id = (BigInteger)(pair.get(0))[1];
+            Long id = (Long)(pair.get(0))[1];
             Long longId = id.longValue();
             if ("workflow".equals(type)) {
                 results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(longId)));
