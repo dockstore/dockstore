@@ -54,21 +54,11 @@ public class EventDAO extends AbstractDAO<Event> {
             .setParameter("initiatorUser", initiatorUser);
 
         //when viewing your own profile, show all events
-        if (loggedInUser.getId() == initiatorUser) {
+        if (loggedInUser != null && loggedInUser.getId() == initiatorUser) {
             query.setFirstResult(offset).setMaxResults(limit);
             return list(query);
         }
-        List<Event> filteredEvents = new ArrayList<>();
-        //First, filters out all category events. Then filters out events regarding unpublished entries when viewing other users' profiles (not your own profile)
-        filterCategoryEvents(loggedInUser, query.getResultList()).forEach(event -> {
-            if (event.getWorkflow() == null && event.getTool() == null) {
-                filteredEvents.add(event);
-            } else if (event.getWorkflow() != null && event.getWorkflow().getIsPublished()) {
-                filteredEvents.add(event);
-            } else if (event.getTool() != null && event.getTool().getIsPublished()) {
-                filteredEvents.add(event);
-            }
-        });
+        List<Event> filteredEvents = filterCategoryEvents(loggedInUser, query.getResultList());
         return filteredEvents.subList(offset, Math.min(offset + limit, filteredEvents.size()));
     }
 
