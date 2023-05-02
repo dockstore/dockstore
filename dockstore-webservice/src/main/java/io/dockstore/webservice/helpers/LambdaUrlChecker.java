@@ -52,7 +52,13 @@ public final class LambdaUrlChecker implements CheckUrlInterface {
     private Map<String, Boolean> checkedUrlsMap = Collections.synchronizedMap(new LRUMap(LRU_CACHE_SIZE));
 
     public LambdaUrlChecker(String checkUrlLambdaUrl) {
-        this.checkUrlLambdaUrl = checkUrlLambdaUrl;
+        // Hackish, remove trailing slash if present. Ideally, the configured url would just not have the trailing slash to begin with,
+        // but see discussion linked from SEAB-5416 -- it's hard to reset in production without downtime.
+        this.checkUrlLambdaUrl = checkUrlLambdaUrl.replaceAll("/$", "");
+    }
+
+    String getCheckUrlLambdaUrl() {
+        return checkUrlLambdaUrl;
     }
 
     private Optional<Boolean> checkUrl(String url) {
