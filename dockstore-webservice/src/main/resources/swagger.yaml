@@ -680,6 +680,7 @@ paths:
         - "ELWAZI"
         - "AGC"
         - "OTHER"
+        - "ALL"
       - in: "body"
         name: "body"
         description: "Aggregated metrics to add to the version"
@@ -707,9 +708,10 @@ paths:
     post:
       tags:
       - "extendedGA4GH"
-      summary: "Submit execution metrics for a workflow that was executed on a platform."
-      description: "This endpoint submits execution metrics for a workflow that was\
-        \ executed on a platform"
+      summary: "Submit individual or aggregated execution metrics for a tool that\
+        \ was executed on a platform."
+      description: "This endpoint submits individual or aggregated execution metrics\
+        \ for a tool that was executed on a platform"
       operationId: "executionMetricsPost"
       consumes:
       - "application/json"
@@ -747,6 +749,7 @@ paths:
         - "ELWAZI"
         - "AGC"
         - "OTHER"
+        - "ALL"
       - name: "description"
         in: "query"
         description: "Optional description about the execution metrics"
@@ -754,7 +757,7 @@ paths:
         type: "string"
       - in: "body"
         name: "body"
-        description: "Execution metrics to submit"
+        description: "Individual or aggregated execution metrics to submit"
         required: true
         schema:
           $ref: "#/definitions/ExecutionsRequestBody"
@@ -7112,6 +7115,7 @@ definitions:
       unit:
         type: "string"
         description: "The unit of the data points"
+        readOnly: true
     description: "This describes aggregated CPU metrics for workflow executions."
   DescriptionMetrics:
     type: "object"
@@ -7756,8 +7760,6 @@ definitions:
       numberOfSuccessfulExecutions:
         type: "integer"
         format: "int32"
-      valid:
-        type: "boolean"
     description: "Aggregated metrics about workflow execution statuses"
   ExecutionTimeMetric:
     type: "object"
@@ -7790,14 +7792,20 @@ definitions:
       unit:
         type: "string"
         description: "The unit of the data points"
+        readOnly: true
     description: "This describes aggregated execution time metrics in seconds for\
       \ workflow executions."
   ExecutionsRequestBody:
     type: "object"
     required:
+    - "aggregatedExecutions"
     - "runExecutions"
     - "validationExecutions"
     properties:
+      aggregatedExecutions:
+        type: "array"
+        items:
+          $ref: "#/definitions/Metrics"
       runExecutions:
         type: "array"
         items:
@@ -8016,6 +8024,7 @@ definitions:
       unit:
         type: "string"
         description: "The unit of the data points"
+        readOnly: true
     description: "This describes aggregated memory metrics for workflow executions\
       \ in GB."
   Metadata:
@@ -8056,6 +8065,11 @@ definitions:
     required:
     - "executionStatusCount"
     properties:
+      additionalAggregatedMetrics:
+        type: "object"
+        description: "Additional aggregated metrics"
+        additionalProperties:
+          type: "object"
       cpu:
         description: "Aggregated CPU metrics"
         $ref: "#/definitions/CpuMetric"
@@ -8064,14 +8078,14 @@ definitions:
           \ executions"
         $ref: "#/definitions/ExecutionStatusMetric"
       executionTime:
-        description: "Aggregated execution time metrics in ISO 8601 duration format"
+        description: "Aggregated execution time metrics in seconds"
         $ref: "#/definitions/ExecutionTimeMetric"
       id:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the metrics in this webservice"
       memory:
-        description: "Aggregated memory metrics"
+        description: "Aggregated memory metrics in GB"
         $ref: "#/definitions/MemoryMetric"
       validationStatus:
         description: "Aggregated validation status metrics"
@@ -9250,18 +9264,36 @@ definitions:
         - "OTHER"
       validatorToolVersion:
         type: "string"
-  ValidationInfo:
+  ValidationStatusMetric:
     type: "object"
+    required:
+    - "validatorTools"
     properties:
-      failedValidationVersions:
-        type: "array"
-        items:
-          type: "string"
-      mostRecentErrorMessage:
-        type: "string"
-      mostRecentIsValid:
-        type: "boolean"
-      mostRecentVersion:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the count metrics in this webservice"
+      validatorTools:
+        type: "object"
+        description: "A map containing key-value pairs indicating whether the validator\
+          \ tool successfully validated the workflow"
+        additionalProperties:
+          $ref: "#/definitions/ValidatorInfo"
+    description: "Aggregated metrics about workflow validation statuses"
+  ValidatorInfo:
+    type: "object"
+    required:
+    - "id"
+    - "mostRecentVersionName"
+    - "numberOfRuns"
+    - "passingRate"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the validator info in this web\
+          \ service"
+      mostRecentVersionName:
         type: "string"
       numberOfRuns:
         type: "integer"
@@ -9269,22 +9301,41 @@ definitions:
       passingRate:
         type: "number"
         format: "double"
-      successfulValidationVersions:
+      validatorVersions:
         type: "array"
+        description: "A list containing validation info for the most recent execution\
+          \ of the validator tool versions"
         items:
-          type: "string"
-  ValidationStatusMetric:
+          $ref: "#/definitions/ValidatorVersionInfo"
+  ValidatorVersionInfo:
     type: "object"
+    required:
+    - "dateExecuted"
+    - "id"
+    - "isValid"
+    - "name"
+    - "numberOfRuns"
+    - "passingRate"
     properties:
+      dateExecuted:
+        type: "string"
+      errorMessage:
+        type: "string"
       id:
         type: "integer"
         format: "int64"
-        description: "Implementation specific ID for the count metrics in this webservice"
-      validatorToolToIsValid:
-        type: "object"
-        additionalProperties:
-          $ref: "#/definitions/ValidationInfo"
-    description: "Aggregated metrics about workflow validation statuses"
+        description: "Implementation specific ID for the validation version info in\
+          \ this web service"
+      isValid:
+        type: "boolean"
+      name:
+        type: "string"
+      numberOfRuns:
+        type: "integer"
+        format: "int32"
+      passingRate:
+        type: "number"
+        format: "double"
   VerificationInformation:
     type: "object"
     properties:

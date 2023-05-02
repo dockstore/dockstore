@@ -18,11 +18,12 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.dockstore.webservice.core.metrics.constraints.HasMetrics;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
+import java.util.Map;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,10 +33,11 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.validation.Valid;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-@HasMetrics
 @Entity
 @Table(name = "metrics")
 @ApiModel(value = "Metrics", description = "Aggregated metrics associated with entry versions")
@@ -47,35 +49,46 @@ public class Metrics {
     @Schema(description = "Implementation specific ID for the metrics in this webservice")
     private long id;
 
+    @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "executionstatuscount", referencedColumnName = "id")
     @ApiModelProperty(value = "A count of the different execution statuses from the workflow executions", required = true)
     @Schema(description = "A count of the different execution statuses from the workflow executions", required = true)
     private ExecutionStatusCountMetric executionStatusCount;
 
+    @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "executiontime", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated execution time metrics in ISO 8601 duration format")
-    @Schema(description = "Aggregated execution time metrics in ISO 8601 duration format")
+    @ApiModelProperty(value = "Aggregated execution time metrics in seconds")
+    @Schema(description = "Aggregated execution time metrics in seconds")
     private ExecutionTimeStatisticMetric executionTime;
 
+    @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "memory", referencedColumnName = "id")
-    @ApiModelProperty(value = "Aggregated memory metrics")
-    @Schema(description = "Aggregated memory metrics")
+    @ApiModelProperty(value = "Aggregated memory metrics in GB")
+    @Schema(description = "Aggregated memory metrics in GB")
     private MemoryStatisticMetric memory;
 
+    @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "cpu", referencedColumnName = "id")
     @ApiModelProperty(value = "Aggregated CPU metrics")
     @Schema(description = "Aggregated CPU metrics")
     private CpuStatisticMetric cpu;
 
+    @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "validationstatus", referencedColumnName = "id")
     @ApiModelProperty(value = "Aggregated validation status metrics")
     @Schema(description = "Aggregated validation status metrics")
     private ValidationStatusCountMetric validationStatus;
+
+    @Transient // Don't persist to the database. This is meant to be used by platforms to submit additional aggregated metrics to Dockstore that aren't defined above.
+    @JsonProperty
+    @ApiModelProperty(value = "Additional aggregated metrics")
+    @Schema(description = "Additional aggregated metrics")
+    private Map<String, Object> additionalAggregatedMetrics;
 
     // database timestamps
     @Column(updatable = false)
@@ -141,6 +154,15 @@ public class Metrics {
 
     public void setValidationStatus(ValidationStatusCountMetric validationStatus) {
         this.validationStatus = validationStatus;
+    }
+
+    @JsonIgnore // Avoid serializing this because the field is not stored in the DB and will always be null
+    public Map<String, Object> getAdditionalAggregatedMetrics() {
+        return additionalAggregatedMetrics;
+    }
+
+    public void setAdditionalAggregatedMetrics(Map<String, Object> additionalAggregatedMetrics) {
+        this.additionalAggregatedMetrics = additionalAggregatedMetrics;
     }
 
     public Timestamp getDbCreateDate() {

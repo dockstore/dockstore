@@ -22,12 +22,12 @@ import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
- * Validates that ExecutionsRequestBody has executions.
+ * Validates that ExecutionsRequestBody has executions or metrics.
  */
-public class HasExecutionsValidator implements ConstraintValidator<HasExecutions, ExecutionsRequestBody> {
+public class HasExecutionsOrMetricsValidator implements ConstraintValidator<HasExecutionsOrMetrics, ExecutionsRequestBody> {
 
     @Override
     public boolean isValid(final ExecutionsRequestBody executionsRequestBody, final ConstraintValidatorContext context) {
-        return !executionsRequestBody.getRunExecutions().isEmpty() || !executionsRequestBody.getValidationExecutions().isEmpty();
+        return !executionsRequestBody.getRunExecutions().isEmpty() || !executionsRequestBody.getValidationExecutions().isEmpty() || !executionsRequestBody.getAggregatedExecutions().isEmpty();
     }
 }

@@ -18,6 +18,7 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
@@ -29,6 +30,7 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.SequenceGenerator;
+import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -44,21 +46,25 @@ public abstract class StatisticMetric {
     private long id;
 
     @Column(nullable = false)
+    @NotNull
     @ApiModelProperty(value = "The minimum value from the data points", required = true)
     @Schema(description = "The minimum value from the data points", required = true)
     private Double minimum;
 
     @Column(nullable = false)
+    @NotNull
     @ApiModelProperty(value = "The maximum value from the data points", required = true)
     @Schema(description = "The maximum value from the data points", required = true)
     private Double maximum;
 
     @Column(nullable = false)
+    @NotNull
     @ApiModelProperty(value = "The average value from the data points", required = true)
     @Schema(description = "The average value from the data points", required = true)
     private Double average;
 
     @Column(nullable = false)
+    @NotNull
     @ApiModelProperty(value = "The number of data points used to calculate the average", required = true)
     @Schema(description = "The number of data points used to calculate the average", required = true)
     private Integer numberOfDataPointsForAverage;
@@ -66,6 +72,7 @@ public abstract class StatisticMetric {
     @Column
     @ApiModelProperty(value = "The unit of the data points")
     @Schema(description = "The unit of the data points")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String unit;
 
     // database timestamps

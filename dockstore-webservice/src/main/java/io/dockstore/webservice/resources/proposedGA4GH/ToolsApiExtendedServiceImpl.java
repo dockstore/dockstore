@@ -90,6 +90,7 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static final int ES_BATCH_INSERT_SIZE = 500;
+    public static final String INVALID_PLATFORM = "Invalid platform. Please select an individual platform.";
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
@@ -409,6 +410,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
+        checkActualPlatform(platform);
+
         // Check that the entry and version exists
         Entry<?, ?> entry;
         try {
@@ -505,6 +508,16 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             restClient.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT);
         } catch (Exception e) {
             LOG.warn("Could not delete previous elastic search " + index + " index, not an issue if this is cold start", e);
+        }
+    }
+
+    /**
+     * Checks if the platform is an actual platform and not Partner.ALL
+     * @param platform
+     */
+    private void checkActualPlatform(Partner platform) {
+        if (!platform.isActualPartner()) {
+            throw new CustomWebApplicationException(INVALID_PLATFORM, HttpStatus.SC_BAD_REQUEST);
         }
     }
 }

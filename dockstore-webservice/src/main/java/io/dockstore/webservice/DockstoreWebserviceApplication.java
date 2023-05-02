@@ -75,6 +75,8 @@ import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.ValidationStatusCountMetric;
+import io.dockstore.webservice.core.metrics.ValidatorInfo;
+import io.dockstore.webservice.core.metrics.ValidatorVersionInfo;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
@@ -218,7 +220,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
             AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class, SourceFileMetadata.class, Metrics.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, ExecutionTimeStatisticMetric.class,
-            CountMetric.class, ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class) {
+            CountMetric.class, ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
