@@ -2660,7 +2660,7 @@ paths:
       - entries
   /events:
     get:
-      description: Optional authentication.
+      description: Requires authentication.
       operationId: getEvents
       parameters:
       - in: query
@@ -2704,7 +2704,7 @@ paths:
       - events
   /events/{userId}:
     get:
-      description: No authentication.
+      description: Optional authentication.
       operationId: getUserEvents
       parameters:
       - in: path
