@@ -118,11 +118,7 @@ public class EventResource {
                                      @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User user = this.userDAO.findById(userId);
         checkUserExists(user);
-        if (loggedInUser.isPresent()) {
-            return getEventsForUser(user, loggedInUser.get(), eventSearchType, limit, offset);
-        }
-        return getEventsForUser(user, null, eventSearchType, limit, offset);
-
+        return getEventsForUser(user, loggedInUser.orElse(null), eventSearchType, limit, offset);
     }
 
 

@@ -20,6 +20,7 @@ import javax.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+import scala.Int;
 
 public class EventDAO extends AbstractDAO<Event> {
     public static final int MAX_LIMIT = 100;
@@ -58,8 +59,7 @@ public class EventDAO extends AbstractDAO<Event> {
             query.setFirstResult(offset).setMaxResults(limit);
             return list(query);
         }
-        List<Event> filteredEvents = filterCategoryEvents(loggedInUser, query.getResultList());
-        return filteredEvents.subList(offset, Math.min(offset + limit, filteredEvents.size()));
+        return offsetAndLimitEvents(filterCategoryEvents(loggedInUser, query.getResultList()), offset, limit);
     }
 
     public long countAllEventsForOrganization(long organizationId) {
@@ -82,6 +82,10 @@ public class EventDAO extends AbstractDAO<Event> {
         }
     }
 
+    private List<Event> offsetAndLimitEvents(List<Event> events, Integer offset, Integer limit) {
+        return events.subList(offset, Math.min(offset + limit, events.size()));
+    }
+
     public List<Event> findEventsByEntryIDs(User loggedInUser, Set<Long> entryIds, Integer offset, int limit) {
         int newLimit = Math.min(MAX_LIMIT, limit);
         if (entryIds.isEmpty()) {
@@ -89,8 +93,7 @@ public class EventDAO extends AbstractDAO<Event> {
         }
         Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByEntryIds");
         query.setParameterList("entryIDs", entryIds);
-        List<Event> filteredEvents = filterCategoryEvents(loggedInUser, query.getResultList());
-        return filteredEvents.subList(offset, Math.min(offset + limit, filteredEvents.size()));
+        return offsetAndLimitEvents(filterCategoryEvents(loggedInUser, query.getResultList()), offset, limit);
     }
 
     public List<Event> findAllByOrganizationIds(User loggedInUser, Set<Long> organizationIds, Integer offset, int limit) {
@@ -100,8 +103,7 @@ public class EventDAO extends AbstractDAO<Event> {
         }
         Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIds");
         query.setParameterList("organizationIDs", organizationIds);
-        List<Event> filteredEvents = filterCategoryEvents(loggedInUser, query.getResultList());
-        return filteredEvents.subList(offset, Math.min(offset + limit, filteredEvents.size()));
+        return offsetAndLimitEvents(filterCategoryEvents(loggedInUser, query.getResultList()), offset, limit);
     }
 
     public List<Event> findAllByOrganizationIdsOrEntryIds(User loggedInUser, Set<Long> organizationIds, Set<Long> entryIds, Integer offset, int limit) {
@@ -129,8 +131,7 @@ public class EventDAO extends AbstractDAO<Event> {
 
         int primitiveOffset = MoreObjects.firstNonNull(offset, 0);
         TypedQuery<Event> typedQuery = currentSession().createQuery(query);
-        List<Event> filteredEvents = filterCategoryEvents(loggedInUser, typedQuery.getResultList());
-        return filteredEvents.subList(primitiveOffset, Math.min(primitiveOffset + newLimit, filteredEvents.size()));
+        return offsetAndLimitEvents(filterCategoryEvents(loggedInUser, typedQuery.getResultList()), primitiveOffset, newLimit);
     }
 
     public void delete(Event event) {
