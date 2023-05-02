@@ -276,7 +276,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public long countAllHosted(long userid) {
-        return ((BigInteger)namedQuery("Entry.hostedWorkflowCount").setParameter("userid", userid).getSingleResult()).longValueExact();
+        return ((Long)namedQuery("Entry.hostedWorkflowCount").setParameter("userid", userid).getSingleResult());
     }
 
     // TODO: these methods should be merged with the proprietary version in EntryDAO, but should be a major version refactoring.
