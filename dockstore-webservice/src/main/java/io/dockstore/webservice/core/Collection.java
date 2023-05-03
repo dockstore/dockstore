@@ -58,11 +58,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.getByAlias", query = "SELECT e from Collection e JOIN e.aliases a WHERE KEY(a) IN :alias AND e.deleted = FALSE"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE id = :organizationId AND col.deleted = FALSE"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE col.organizationID = :organizationId AND col.deleted = FALSE"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.deleteByOrgId", query = "DELETE Collection c WHERE c.organization.id = :organizationId"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrgId", query = "SELECT c from Collection c WHERE c.organization.id = :organizationId AND c.deleted = FALSE"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND id = :organizationId AND col.deleted = FALSE"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByDisplayNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.displayName) = lower(:displayName) AND id = :organizationId AND col.deleted = FALSE"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND col.organizationID = :organizationId AND col.deleted = FALSE"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByDisplayNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.displayName) = lower(:displayName) AND col.organizationID = :organizationId AND col.deleted = FALSE"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entries entries WHERE entries.id = :entryVersionId AND c.deleted = FALSE")
 })
 

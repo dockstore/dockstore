@@ -30,7 +30,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "cloud_instance", uniqueConstraints = @UniqueConstraint(name = "unique_user_instances", columnNames = {"url", "user_id",
     "partner"}))
 @NamedQueries({
-    @NamedQuery(name = "io.dockstore.webservice.core.CloudInstance.findAllWithoutUser", query = "SELECT ci from CloudInstance ci where id is null")
+    @NamedQuery(name = "io.dockstore.webservice.core.CloudInstance.findAllWithoutUser", query = "SELECT ci from CloudInstance ci where ci.user is null")
 })
 public class CloudInstance implements Serializable {
     @Id
