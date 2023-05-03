@@ -63,11 +63,11 @@ class TransactionHelperIT extends BaseIT {
     }
 
     private void insert() {
-        session.createQuery("insert into Label values (1234, 'foo')").executeUpdate();
+        session.createQuery("insert into Label (id, value) values (1234L, 'foo')").executeUpdate();
     }
 
     private int count() {
-        return session.createQuery("select * from Label").list().size();
+        return session.createQuery("select count(*) from Label").list().size();
     }
 
     private void shouldThrow(Runnable runnable) {
