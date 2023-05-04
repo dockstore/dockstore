@@ -29,6 +29,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
+import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -1368,21 +1369,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     }
 
                     if (toolsJSONTable.isPresent()) {
-                        // TODO code to refactor
-                        lInterface.checkSnapshotImages(existingTag.getName(), toolsJSONTable.get());
-
-                        Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable.get());
-                        existingTag.getImages().addAll(images);
+                        checkAndAddImages(existingTag, toolsJSONTable.get(), lInterface);
                     }
 
                     // If there is a notebook kernel image, attempt to snapshot it.
-                    if (existingTag.getKernelPath() != null) {
-                        // TODO code to refactor
-                        String kernelToolsJson = convertImageToToolsJson(existingTag.getKernelPath());
-                        lInterface.checkSnapshotImages(existingTag.getName(), kernelToolsJson);
-
-                        Set<Image> images = lInterface.getImagesFromRegistry(kernelToolsJson);
-                        existingTag.getImages().addAll(images);
+                    if (existingTag.getKernelImagePath() != null) {
+                        checkAndAddImages(existingTag, convertImageToToolsJson(existingTag.getKernelImagePath(), lInterface), lInterface);
                     }
 
                     // store dag
@@ -1403,14 +1395,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return result.getWorkflowVersions();
     }
 
-    // TODO refactor duplicate code above to checkAndAddImages(...?
-
     private void checkAndAddImages(WorkflowVersion version, String toolsJson, LanguageHandlerInterface languageHandler) {
-         // Check that a snapshot can occur (all images are referenced by tag or digest)
+         // Check that a snapshot can occur (all images are referenced by tag or digest).
          languageHandler.checkSnapshotImages(version.getName(), toolsJson);
-         // Retrieve the images
+         // Retrieve the images.
          Set<Image> images = languageHandler.getImagesFromRegistry(toolsJson);
-         // Add them to the version
+         // Add them to the version.
          version.getImages().addAll(images);
     }
 
@@ -1419,6 +1409,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // see CWLHandler
         // need to create DockerInfo
         // use methods getURLFromEntry and determineImageSpecifier
+        LanguageHandlerInterface.DockerSpecifier specifier = LanguageHandlerInterface.determineImageSpecifier(image, DockerImageReference.LITERAL);
+        String url = languageHandler.getURLFromEntry(image, toolDAO, specifier);
+        LanguageHandlerInterface.DockerInfo info = new LanguageHandlerInterface.DockerInfo("", image, url, specifier);
+        return languageHandler.getJSONTableToolContent(Map.of("", info));
     }
 
     @GET
