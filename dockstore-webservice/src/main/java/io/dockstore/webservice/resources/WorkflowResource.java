@@ -1376,9 +1376,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     }
 
                     // If there is a notebook kernel image, attempt to snapshot it.
-                    if (version.getKernelPath() != null) {
+                    if (existingTag.getKernelPath() != null) {
                         // TODO code to refactor
-                        String kernelToolsJson = convertImageToToolsJson(version.getKernelPath());
+                        String kernelToolsJson = convertImageToToolsJson(existingTag.getKernelPath());
                         lInterface.checkSnapshotImages(existingTag.getName(), kernelToolsJson);
 
                         Set<Image> images = lInterface.getImagesFromRegistry(kernelToolsJson);
