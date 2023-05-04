@@ -249,6 +249,8 @@ public abstract class AbstractImageRegistry {
                     .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
                         gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
                 updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
+                List<String> descriptorTypes = tool.calculateDescriptorType();
+                tool.setDescriptorType(descriptorTypes);
             } catch (Exception e) {
                 LOG.info(String.format("Refreshing %s error: %s", tool.getPath(), e));
                 exceptionMessages.add(String.format("Refreshing %s error: %s", tool.getPath(), e.getMessage()));

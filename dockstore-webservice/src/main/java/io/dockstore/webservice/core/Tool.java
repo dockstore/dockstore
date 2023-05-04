@@ -479,9 +479,15 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     public List<String> calculateDescriptorType() {
-        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(
-                Collectors.toSet());
-        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> !(lang.toString().equals("cwl") || lang.toString().equals("wdl"))).filter(lang -> set.contains(lang.getFileType()))
-                .map(lang -> lang.toString()).distinct().collect(Collectors.toList());
+        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream()
+                .flatMap(tag -> tag.getSourceFiles().stream())
+                .map(SourceFile::getType)
+                .collect(Collectors.toSet());
+        return Arrays.stream(DescriptorLanguage.values())
+                .filter(lang -> !(lang.toString().equals("cwl") || lang.toString().equals("wdl")))
+                .filter(lang -> set.contains(lang.getFileType()))
+                .map(lang -> lang.toString())
+                .distinct()
+                .collect(Collectors.toList());
     }
 }

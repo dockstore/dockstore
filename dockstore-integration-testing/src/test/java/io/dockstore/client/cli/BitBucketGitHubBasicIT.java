@@ -17,6 +17,7 @@
 package io.dockstore.client.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -98,6 +99,25 @@ class BitBucketGitHubBasicIT extends BaseIT {
             final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
             assertEquals(secondToolCount, thirdToolCount, "there should be no change in count of tools");
         }
+    }
+
+    @Test
+    void testCalculateDescriptorTypesAutomatedBuildTool() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        UsersApi usersApi = new UsersApi(client);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        // Make sure the tool has a descriptor type then clear it in the DB
+        DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandbitbucket", "");
+        assertFalse(tool.getDescriptorType().isEmpty());
+        testingPostgres.runUpdateStatement("update tool set descriptortype = '' where id = " + tool.getId());
+        tool = toolsApi.getContainer(tool.getId(), "");
+        assertTrue(tool.getDescriptorType().isEmpty());
+
+        // Verify that refreshing the tool by organization sets the descriptor type
+        usersApi.refreshToolsByOrganization(usersApi.getUser().getId(), tool.getNamespace(), tool.getName());
+        tool = toolsApi.getContainer(tool.getId(), "");
+        assertFalse(tool.getDescriptorType().isEmpty());
     }
 
 
