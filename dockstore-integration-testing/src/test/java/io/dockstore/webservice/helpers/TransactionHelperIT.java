@@ -67,7 +67,7 @@ class TransactionHelperIT extends BaseIT {
     }
 
     private int count() {
-        return session.createQuery("select count(*) from Label").list().size();
+        return ((Long) session.createQuery("select count(*) from Label").getSingleResult()).intValue();
     }
 
     private void shouldThrow(Runnable runnable) {
