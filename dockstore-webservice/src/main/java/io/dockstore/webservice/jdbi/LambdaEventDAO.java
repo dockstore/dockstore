@@ -35,7 +35,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
 
     public void delete(LambdaEvent lambdaEvent) {
         Session session = currentSession();
-        session.delete(lambdaEvent);
+        session.remove(lambdaEvent);
         session.flush();
     }
 

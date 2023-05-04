@@ -802,7 +802,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else {
             Session currentSession = sessionFactory.getCurrentSession();
-            currentSession.delete(existingRole);
+            currentSession.remove(existingRole);
         }
 
         Event deleteUserOrganizationEvent = new Event.Builder().withUser(organizationAndUserToDelete.getRight())

@@ -54,11 +54,11 @@ public class NotebookDAO extends EntryDAO<Notebook> {
     }
 
     public List<NotebookPath> findAllPublishedPaths() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPaths"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPaths", NotebookPath.class).list();
     }
 
     public List<RSSNotebookPath> findAllPublishedPathsOrderByDbupdatedate() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(
-                RSS_ENTRY_LIMIT));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPathsOrderByDbupdatedate", RSSNotebookPath.class).setMaxResults(
+                RSS_ENTRY_LIMIT).list();
     }
 }

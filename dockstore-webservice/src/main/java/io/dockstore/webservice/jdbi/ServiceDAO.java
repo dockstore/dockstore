@@ -63,6 +63,6 @@ public class ServiceDAO extends EntryDAO<Service> {
     }
 
     public List<WorkflowPath> findAllPublishedPaths() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Service.findAllPublishedPaths"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Service.findAllPublishedPaths", WorkflowPath.class).list();
     }
 }

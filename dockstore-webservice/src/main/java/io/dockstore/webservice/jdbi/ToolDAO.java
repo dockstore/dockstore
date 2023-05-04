@@ -50,15 +50,15 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public List<ToolPath> findAllPublishedPaths() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPaths"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPaths", ToolPath.class).list();
     }
 
     public List<RSSToolPath> findAllPublishedPathsOrderByDbupdatedate() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(RSS_ENTRY_LIMIT));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate", RSSToolPath.class).setMaxResults(RSS_ENTRY_LIMIT).list();
     }
 
     public List<String> getAllPublishedNamespaces() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.getPublishedNamespaces"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Tool.getPublishedNamespaces", String.class).list();
     }
 
     /**
@@ -199,7 +199,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public List<Tool> findAllTools(int offset, int pageSize) {
-        return (List<Tool>) namedQuery("io.dockstore.webservice.core.Tool.findAllTools")
+        return namedTypedQuery("io.dockstore.webservice.core.Tool.findAllTools")
             .setMaxResults(pageSize)
             .setFirstResult(offset)
             .list();
