@@ -58,15 +58,15 @@ public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
     }
 
     public List<WorkflowPath> findAllPublishedPaths() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths", WorkflowPath.class).list();
     }
 
     public List<RSSWorkflowPath> findAllPublishedPathsOrderByDbupdatedate() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(
-                RSS_ENTRY_LIMIT));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate", RSSWorkflowPath.class).setMaxResults(
+                RSS_ENTRY_LIMIT).list();
     }
 
     public List<MyWorkflows> findUserBioWorkflows(long userId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows").setParameter("userId", userId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows", MyWorkflows.class).setParameter("userId", userId).list();
     }
 }

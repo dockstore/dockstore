@@ -53,12 +53,12 @@ public class AppToolDAO extends EntryDAO<AppTool> {
         return entryRoot;
     }
     public List<AppToolPath> findAllPublishedPaths() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.AppTool.findAllPublishedPaths"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.AppTool.findAllPublishedPaths", AppToolPath.class).list();
     }
 
     public List<RSSAppToolPath> findAllPublishedPathsOrderByDbupdatedate() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.AppTool.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(
-                RSS_ENTRY_LIMIT));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.AppTool.findAllPublishedPathsOrderByDbupdatedate", RSSAppToolPath.class).setMaxResults(
+                RSS_ENTRY_LIMIT).list();
     }
 
 

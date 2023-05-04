@@ -22,6 +22,7 @@ import io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -48,7 +49,7 @@ public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, Vali
     @CollectionTable(name = "validator_tool_validation_info", joinColumns = @JoinColumn(name = "validationstatusid", referencedColumnName = "id"))
     @BatchSize(size = 25)
     @ApiModelProperty(value = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true)
-    @Schema(description = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true, example = """
+    @Schema(description = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", requiredMode = RequiredMode.REQUIRED, example = """
             {
                 "MINIWDL": true
             }

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -49,7 +50,7 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     @CollectionTable(name = "execution_status_count", joinColumns = @JoinColumn(name = "executionstatusid", referencedColumnName = "id"))
     @BatchSize(size = 25)
     @ApiModelProperty(value = "A map containing the count for each key")
-    @Schema(description = "A map containing the count for each key", required = true, example = """
+    @Schema(description = "A map containing the count for each key", requiredMode = RequiredMode.REQUIRED, example = """
             {
                 "SUCCESSFUL": 5,
                 "FAILED_RUNTIME_INVALID": 1,
@@ -59,15 +60,15 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     private Map<ExecutionStatus, Integer> count = new EnumMap<>(ExecutionStatus.class);
 
     @Column(nullable = false)
-    @Schema(description = "Number of successful executions", required = true)
+    @Schema(description = "Number of successful executions", requiredMode = RequiredMode.REQUIRED)
     private int numberOfSuccessfulExecutions;
 
     @Column(nullable = false)
-    @Schema(description = "Number of failed executions. An execution may have failed because it was semantically or runtime invalid", required = true)
+    @Schema(description = "Number of failed executions. An execution may have failed because it was semantically or runtime invalid", requiredMode = RequiredMode.REQUIRED)
     private int numberOfFailedExecutions;
 
     @Column(nullable = false)
-    @Schema(description = "Indicates if all executions of the workflow are semantic and runtime valid", required = true)
+    @Schema(description = "Indicates if all executions of the workflow are semantic and runtime valid", requiredMode = RequiredMode.REQUIRED)
     boolean isValid;
 
     public ExecutionStatusCountMetric() {

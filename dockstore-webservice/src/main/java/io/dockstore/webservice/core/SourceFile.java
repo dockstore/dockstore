@@ -29,6 +29,7 @@ import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -120,7 +121,7 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
-    @Schema(description = "Enumerates the type of file", required = true)
+    @Schema(description = "Enumerates the type of file", requiredMode = RequiredMode.REQUIRED)
     private DescriptorLanguage.FileType type;
 
     @Column(columnDefinition = "TEXT")
@@ -129,12 +130,12 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
-    @Schema(description = "Path to sourcefile relative to its parent", required = true)
+    @Schema(description = "Path to sourcefile relative to its parent", requiredMode = RequiredMode.REQUIRED)
     private String path;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
-    @Schema(description = "Absolute path of sourcefile in git repo", required = true)
+    @Schema(description = "Absolute path of sourcefile in git repo", requiredMode = RequiredMode.REQUIRED)
     private String absolutePath;
 
     @Column(columnDefinition = "boolean default false")

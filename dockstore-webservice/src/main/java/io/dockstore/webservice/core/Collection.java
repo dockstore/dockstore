@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -85,7 +86,7 @@ public class Collection implements Serializable, Aliasable {
     @Pattern(regexp = "[a-zA-Z](-?[a-zA-Z\\d]){0,38}")
     @Size(min = 3, max = 39)
     @ApiModelProperty(value = "Name of the collection.", required = true, example = "alignment", position = 1)
-    @Schema(description = "Name of the collection", required = true, example = "alignment")
+    @Schema(description = "Name of the collection", requiredMode = RequiredMode.REQUIRED, example = "alignment")
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -101,7 +102,7 @@ public class Collection implements Serializable, Aliasable {
 
     @Column
     @ApiModelProperty(value = "Short description of the collection", position = 4)
-    @Schema(description = "Short description of the collection", required = true, example = "A collection of alignment algorithms")
+    @Schema(description = "Short description of the collection", requiredMode = RequiredMode.REQUIRED, example = "A collection of alignment algorithms")
     private String topic;
 
     @Transient

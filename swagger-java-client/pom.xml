@@ -82,8 +82,8 @@
                 </executions>
                 <configuration>
                     <includes>
-                        <include>${pom.basedir}/target/generated-sources/swagger/src/gen/java/**/*.java</include>
-                        <include>${pom.basedir}/target/generated-sources/swagger/src/main/java/**/*.java</include>
+                        <include>${project.basedir}/target/generated-sources/swagger/src/gen/java/**/*.java</include>
+                        <include>${project.basedir}/target/generated-sources/swagger/src/main/java/**/*.java</include>
                     </includes>
                     <regex>false</regex>
                     <replacements>

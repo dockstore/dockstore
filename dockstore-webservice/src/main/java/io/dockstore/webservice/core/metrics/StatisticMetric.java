@@ -20,6 +20,7 @@ package io.dockstore.webservice.core.metrics;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -45,22 +46,22 @@ public abstract class StatisticMetric {
 
     @Column(nullable = false)
     @ApiModelProperty(value = "The minimum value from the data points", required = true)
-    @Schema(description = "The minimum value from the data points", required = true)
+    @Schema(description = "The minimum value from the data points", requiredMode = RequiredMode.REQUIRED)
     private Double minimum;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "The maximum value from the data points", required = true)
-    @Schema(description = "The maximum value from the data points", required = true)
+    @Schema(description = "The maximum value from the data points", requiredMode = RequiredMode.REQUIRED)
     private Double maximum;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "The average value from the data points", required = true)
-    @Schema(description = "The average value from the data points", required = true)
+    @Schema(description = "The average value from the data points", requiredMode = RequiredMode.REQUIRED)
     private Double average;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "The number of data points used to calculate the average", required = true)
-    @Schema(description = "The number of data points used to calculate the average", required = true)
+    @Schema(description = "The number of data points used to calculate the average", requiredMode = RequiredMode.REQUIRED)
     private Integer numberOfDataPointsForAverage;
 
     @Column

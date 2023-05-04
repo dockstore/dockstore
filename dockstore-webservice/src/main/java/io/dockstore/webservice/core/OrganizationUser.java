@@ -3,6 +3,7 @@ package io.dockstore.webservice.core;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EmbeddedId;
@@ -50,7 +51,7 @@ public class OrganizationUser implements Serializable {
     @Column(nullable = false, columnDefinition = "text")
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "The status of the organization invitation", required = true)
-    @Schema(description = "The status of the organization invitation", required = true)
+    @Schema(description = "The status of the organization invitation", requiredMode = RequiredMode.REQUIRED)
     private InvitationStatus status;
 
     @Column(updatable = false)

@@ -22,6 +22,9 @@ import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.integration.api.OpenApiReader;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.info.License;
 import jakarta.annotation.Generated;
 import jakarta.ws.rs.ext.Provider;
 
@@ -36,7 +39,7 @@ import jakarta.ws.rs.ext.Provider;
 @Tag(name = "tools")
 @Provider
 @OpenAPIDefinition(
-    tags = {@io.swagger.v3.oas.annotations.tags.Tag (name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS), @Tag(name = "entries", description = ResourceConstants.ENTRIES),
+    tags = {@Tag (name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS), @Tag(name = "entries", description = ResourceConstants.ENTRIES),
         @Tag(name = "containers", description = ResourceConstants.CONTAINERS),
         @Tag(name = "aliases", description = ResourceConstants.ALIASES),
         @Tag(name = "containertags", description = ResourceConstants.CONTAINERTAGS),
@@ -54,7 +57,7 @@ import jakarta.ws.rs.ext.Provider;
         @Tag(name = "users", description = ResourceConstants.USERS),
         @Tag(name = "metadata", description = ResourceConstants.METADATA)},
     servers = {@Server(url = "/api", description = "Current server when hosted on AWS"), @Server(url = "/", description = "When working locally"), @Server(url = "https://dockstore.org/api", description = "Production server"), @Server(url = "https://staging.dockstore.org/api", description = "Staging server"), @Server(url = "https://dev.dockstore.net/api", description = "Nightly build server")},
-    info = @io.swagger.v3.oas.annotations.info.Info(description = Description.DESCRIPTION, version = "1.15.0-SNAPSHOT", title = "Dockstore API", contact = @io.swagger.v3.oas.annotations.info.Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @io.swagger.v3.oas.annotations.info.License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = Description.TOS_LOCATION)
+    info = @Info(description = Description.DESCRIPTION, version = "1.15.0-SNAPSHOT", title = "Dockstore API", contact = @Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = Description.TOS_LOCATION)
 )
 public class Description implements ReaderListener {
 
@@ -68,7 +71,7 @@ public class Description implements ReaderListener {
 
     @Override
     public void beforeScan(OpenApiReader reader, OpenAPI openAPI) {
-
+        // intentionally left empty
     }
 
     @Override

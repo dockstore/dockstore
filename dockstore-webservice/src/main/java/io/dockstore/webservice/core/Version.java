@@ -25,6 +25,7 @@ import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -113,12 +114,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @Column
     @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1, example = "master")
-    @Schema(description = "git commit/tag/branch", required = true, example = "master")
+    @Schema(description = "git commit/tag/branch", requiredMode = RequiredMode.REQUIRED, example = "master")
     private String reference;
 
     @Column
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2, example = "latest")
-    @Schema(description = "Implementation specific, can be a quay.io or docker hub tag name", required = true, example = "latest")
+    @Schema(description = "Implementation specific, can be a quay.io or docker hub tag name", requiredMode = RequiredMode.REQUIRED, example = "latest")
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)

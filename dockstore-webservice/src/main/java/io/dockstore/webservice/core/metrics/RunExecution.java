@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus;
 import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.NotNull;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
@@ -39,7 +40,7 @@ public class RunExecution extends Execution {
 
     @NotNull
     @JsonProperty(required = true)
-    @Schema(description = "The status of the execution", required = true)
+    @Schema(description = "The status of the execution", requiredMode = RequiredMode.REQUIRED)
     private ExecutionStatus executionStatus;
 
     @ISO8601ExecutionTime

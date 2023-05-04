@@ -22,6 +22,7 @@ import io.dockstore.webservice.core.metrics.constraints.HasMetrics;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -50,7 +51,7 @@ public class Metrics {
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "executionstatuscount", referencedColumnName = "id")
     @ApiModelProperty(value = "A count of the different execution statuses from the workflow executions", required = true)
-    @Schema(description = "A count of the different execution statuses from the workflow executions", required = true)
+    @Schema(description = "A count of the different execution statuses from the workflow executions", requiredMode = RequiredMode.REQUIRED)
     private ExecutionStatusCountMetric executionStatusCount;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)

@@ -139,7 +139,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         if (pair.size() > 0) {
             String type = (String)(pair.get(0))[0];
             Long id = (Long)(pair.get(0))[1];
-            Long longId = id.longValue();
+            Long longId = id;
             if ("workflow".equals(type)) {
                 results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(longId)));
             } else {
@@ -155,7 +155,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public void delete(T entry) {
         Session session = currentSession();
-        session.delete(entry);
+        session.remove(entry);
         session.flush();
     }
 
@@ -168,15 +168,15 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId").setParameter("entryId", entryId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId", CollectionOrganization.class).setParameter("entryId", entryId).list();
     }
 
     public List<CategorySummary> findCategorySummariesByEntryId(long entryId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId").setParameter("entryId", entryId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId", CategorySummary.class).setParameter("entryId", entryId).list();
     }
 
     public List<Category> findCategoriesByEntryId(long entryId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategoriesByEntryId").setParameter("entryId", entryId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Entry.findCategoriesByEntryId", Category.class).setParameter("entryId", entryId).list();
     }
 
     /**
@@ -207,7 +207,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<EntryLite> findEntryVersions(long userId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteByUserId").setParameter("userId", userId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteByUserId", EntryLite.class).setParameter("userId", userId).list();
     }
     public List<T> findMyEntries(long userId) {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntriesByUserId").setParameter("userId", userId));
@@ -217,35 +217,35 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<CollectionEntry> getCollectionWorkflows(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionWorkflows").setParameter("collectionId", collectionId));
+        return this.currentSession().createNamedQuery("Entry.getCollectionWorkflows", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public long getWorkflowsLength(long collectionId) {
-        return (long)(this.currentSession().getNamedQuery("Entry.getWorkflowsLength").setParameter("collectionId", collectionId).getSingleResult());
+        return this.currentSession().createNamedQuery("Entry.getWorkflowsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
     public List<CollectionEntry> getCollectionServices(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionServices").setParameter("collectionId", collectionId));
+        return this.currentSession().createNamedQuery("Entry.getCollectionServices", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public List<CollectionEntry> getCollectionTools(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionTools").setParameter("collectionId", collectionId));
+        return this.currentSession().createNamedQuery("Entry.getCollectionTools", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public long getToolsLength(long collectionId) {
-        return (long)(this.currentSession().getNamedQuery("Entry.getToolsLength").setParameter("collectionId", collectionId).getSingleResult());
+        return this.currentSession().createNamedQuery("Entry.getToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
     public List<CollectionEntry> getCollectionWorkflowsWithVersions(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionWorkflowsWithVersions").setParameter("collectionId", collectionId));
+        return this.currentSession().createNamedQuery("Entry.getCollectionWorkflowsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public List<CollectionEntry> getCollectionServicesWithVersions(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionServicesWithVersions").setParameter("collectionId", collectionId));
+        return this.currentSession().createNamedQuery("Entry.getCollectionServicesWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public List<CollectionEntry> getCollectionToolsWithVersions(long collectionId) {
-        return list(this.currentSession().getNamedQuery("Entry.getCollectionToolsWithVersions").setParameter("collectionId", collectionId));
+        return this.currentSession().createNamedQuery("Entry.getCollectionToolsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public List<T> findAllPublished(Integer offset, Integer limit, String filter, String sortCol, String sortOrder) {
@@ -308,11 +308,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     private long countAllPublished() {
-        return (long)this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished", Long.class).getSingleResult();
     }
 
     public List<Label> getLabelByEntryId(long entryId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findLabelByEntryId").setParameter("entryId", entryId));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Entry.findLabelByEntryId", Label.class).setParameter("entryId", entryId).list();
     }
 
     public List<String> getToolsDescriptorTypes(long entryId) {
@@ -325,7 +325,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<Entry> findAllGitHubEntriesWithNoTopicAutomatic() {
-        return list(this.currentSession().getNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic"));
+        return this.currentSession().createNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic", Entry.class).list();
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
