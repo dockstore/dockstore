@@ -105,7 +105,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             } else {
                 createValidationForMissingMainScript(version, filepath, mainScriptPath);
             }
-            updateDescriptorTypeVersion(sourceFiles, version, configuration, potentialScript);
+            updateDescriptorTypeAndEngineVersion(sourceFiles, version, configuration, potentialScript);
         } catch (NextflowUtilities.NextflowParsingException e) {
             createValidationForGeneralFailure(version, filepath);
         }
@@ -120,7 +120,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      * @param configuration
      * @param mainScript
      */
-    private void updateDescriptorTypeVersion(final Set<SourceFile> sourceFiles, final Version version,
+    private void updateDescriptorTypeAndEngineVersion(final Set<SourceFile> sourceFiles, final Version version,
             final Configuration configuration, final Optional<SourceFile> mainScript) {
         final String dslVersion = this.calculateDslVersion(configuration, mainScript).orElse(null);
         sourceFiles.stream()
@@ -128,6 +128,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             .filter(sourceFile -> sourceFile.getType() == FileType.NEXTFLOW)
             .forEach(sourceFile -> sourceFile.getMetadata().setTypeVersion(dslVersion));
         version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
+        version.getVersionMetadata().setEngineVersions(getEngineVersions(configuration));
     }
 
     @Override
@@ -482,6 +483,17 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         } else {
             return "main.nf";
         }
+    }
+
+    private List<String> getEngineVersions(Configuration configuration) {
+        final String nextflowVersion = "manifest.nextflowVersion";
+        if (configuration.containsKey(nextflowVersion)) {
+            // A language can be run in several engines, e.g., Cromwell and Miniwdl can run WDL.
+            // So, unlike language versions, store the engine name as well, even though for Nextflow
+            // there's currently only one known engine.
+            return List.of("Nextflow " + configuration.getString(nextflowVersion));
+        }
+        return List.of();
     }
 
     private Optional<SourceFile> findSourceFileByPath(Set<SourceFile> sourceFiles, String path) {

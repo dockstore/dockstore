@@ -499,9 +499,9 @@ public abstract class SourceCodeRepoInterface {
                 LOG.info(message);
             }
             if (version.getReference() != null) {
-                String reaMeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
-                if (StringUtils.isNotBlank(reaMeContent)) {
-                    version.setDescriptionAndDescriptionSource(reaMeContent, DescriptionSource.README);
+                String readMeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
+                if (StringUtils.isNotBlank(readMeContent)) {
+                    version.setDescriptionAndDescriptionSource(readMeContent, DescriptionSource.README);
                 }
             }
             return;
@@ -512,15 +512,15 @@ public abstract class SourceCodeRepoInterface {
             fileContent = first.get().getContent();
             LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
             anInterface.parseWorkflowContent(filePath, fileContent, sourceFiles, version);
-            // Previously, version has no description
             boolean noDescription = (version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null;
-            // Previously, version has a README description
-            boolean oldReadMeDescription = (DescriptionSource.README == version.getDescriptionSource());
-            // Checking these conditions to prevent overwriting description from descriptor
-            if (noDescription || oldReadMeDescription) {
-                String readmeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
+            String readmeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
+            if (!Strings.isNullOrEmpty(version.getReadMePath())) {
+                // overwrite description from descriptor if there is a custom path specified in the .dockstore.yml
+                version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.CUSTOM_README);
+            } else if (noDescription) {
+                // use the root README as a fallback if there is no other description
                 if (StringUtils.isNotBlank(readmeContent)) {
-                    version.setDescriptionAndDescriptionSource(readmeContent, Strings.isNullOrEmpty(version.getReadMePath()) ? DescriptionSource.README : DescriptionSource.CUSTOM_README);
+                    version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
                 }
             }
         }

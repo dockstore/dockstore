@@ -16,6 +16,11 @@
 
 package io.dockstore.common;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -23,14 +28,18 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dropwizard.Application;
+import io.dropwizard.core.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
@@ -48,18 +57,22 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.ws.rs.client.Client;
 import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.http.HttpStatus;
 import org.assertj.core.util.Files;
+import org.glassfish.jersey.client.ClientProperties;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -348,7 +361,7 @@ public final class CommonTestUtilities {
         try {
             application.run("db", "migrate", configPath, "--include", String.join(",", migrations));
         } catch (Exception e) {
-            Assert.fail("database migration failed");
+            fail("database migration failed");
         }
     }
 
@@ -356,7 +369,7 @@ public final class CommonTestUtilities {
         try {
             application.run("db", "drop-all", "--confirm-delete-everything", configPath);
         } catch (Exception e) {
-            Assert.fail("database drop-all failed");
+            fail("database drop-all failed");
         }
     }
 
@@ -521,9 +534,9 @@ public final class CommonTestUtilities {
     }
 
     public static void checkToolList(String log) {
-        Assert.assertTrue(log.contains("NAME"));
-        Assert.assertTrue(log.contains("DESCRIPTION"));
-        Assert.assertTrue(log.toLowerCase().contains("git repo"));
+        assertTrue(log.contains("NAME"));
+        assertTrue(log.contains("DESCRIPTION"));
+        assertTrue(log.toLowerCase().contains("git repo"));
     }
 
     public static void restartElasticsearch() throws IOException {
@@ -615,6 +628,27 @@ public final class CommonTestUtilities {
             }
         }
         return Optional.empty();
+    }
+
+    public static void testXTotalCount(Client jerseyClient, String path, int expectedValue) {
+        Response response = jerseyClient.target(path).request().property(ClientProperties.READ_TIMEOUT, 0).get();
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
+        MultivaluedMap<String, Object> headers = response.getHeaders();
+        Object xTotalCount = headers.getFirst("X-total-count");
+        assertEquals(String.valueOf(expectedValue), xTotalCount);
+    }
+
+    public static Workflow createHostedWorkflowWithVersion(final HostedApi hostedApi) {
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "awesomeTool", CWL.getShortName(), null, null);
+        SourceFile file = new SourceFile();
+        file.setContent("cwlVersion: v1.0\n" + "class: Workflow");
+        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        file.setPath("/Dockstore.cwl");
+        file.setAbsolutePath("/Dockstore.cwl");
+        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
+        file.setContent("cwlVersion: v1.1\n" + "class: Workflow");
+        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
+        return hostedWorkflow;
     }
 
     /**

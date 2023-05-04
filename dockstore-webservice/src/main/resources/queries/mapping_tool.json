@@ -53,6 +53,31 @@
         "type": "keyword",
         "null_value": ""
       },
+      "all_authors": {
+        "properties": {
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "null_value": ""
+              }
+            }
+          },
+          "role": {
+            "type": "text"
+          },
+          "affiliation": {
+            "type": "text"
+          },
+          "email": {
+            "type": "text"
+          },
+          "orcid": {
+            "type": "text"
+          }
+        }
+      },
       "categories": {
         "properties": {
           "description": {

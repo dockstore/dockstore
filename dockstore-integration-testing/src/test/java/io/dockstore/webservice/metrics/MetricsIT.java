@@ -17,6 +17,10 @@
 
 package io.dockstore.webservice.metrics;
 
+import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID;
+import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID;
+import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
+import static io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool.MINIWDL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -36,9 +40,14 @@ import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import io.dockstore.webservice.core.metrics.Metrics;
+import io.dockstore.webservice.core.metrics.ValidationInfo;
+import io.dockstore.webservice.core.metrics.ValidationStatusCountMetric;
 import io.dockstore.webservice.jdbi.MetricsDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -138,21 +147,27 @@ class MetricsIT extends BaseIT {
         Metrics metrics = new Metrics();
 
         ExecutionStatusCountMetric executionStatusCountMetric = new ExecutionStatusCountMetric();
+        Map<ExecutionStatusCountMetric.ExecutionStatus, Integer> executionStatusCount = new HashMap<>();
         // Add 10 successful workflow runs
-        executionStatusCountMetric.addCount(ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL, 10);
+        executionStatusCount.put(SUCCESSFUL, 10);
+        executionStatusCountMetric.setCount(executionStatusCount);
         metrics.setExecutionStatusCount(executionStatusCountMetric);
         assertTrue(metrics.getExecutionStatusCount().isValid());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(0, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
         // Add 1 failed workflow run that was runtime invalid
-        metrics.getExecutionStatusCount().addCount(ExecutionStatusCountMetric.ExecutionStatus.FAILED_RUNTIME_INVALID, 1);
+        executionStatusCount.put(FAILED_RUNTIME_INVALID, 1);
+        executionStatusCountMetric.setCount(executionStatusCount);
+        metrics.setExecutionStatusCount(executionStatusCountMetric);
         assertFalse(metrics.getExecutionStatusCount().isValid());
         assertEquals(11, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(1, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
         // Add 1 failed workflow run that was semantically invalid
-        metrics.getExecutionStatusCount().addCount(ExecutionStatusCountMetric.ExecutionStatus.FAILED_SEMANTIC_INVALID, 1);
+        executionStatusCount.put(FAILED_SEMANTIC_INVALID, 1);
+        executionStatusCountMetric.setCount(executionStatusCount);
+        metrics.setExecutionStatusCount(executionStatusCountMetric);
         assertEquals(12, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(2, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
@@ -171,6 +186,18 @@ class MetricsIT extends BaseIT {
         // The minimum CPU used was 1GB, the maximum was 4GB, and the average was 2G. 10 data points were used to calculate the average
         MemoryStatisticMetric memoryStatisticMetric = new MemoryStatisticMetric(1.0, 4.0, 2.5, 10);
         metrics.setMemory(memoryStatisticMetric);
+
+        // Add aggregated information about validation
+        // Add a successful miniwdl validation
+        ValidationInfo miniwdlValidationInfo = new ValidationInfo();
+        miniwdlValidationInfo.setMostRecentIsValid(true);
+        miniwdlValidationInfo.setMostRecentVersion("1.0");
+        miniwdlValidationInfo.setSuccessfulValidationVersions(List.of("1.0"));
+        miniwdlValidationInfo.setFailedValidationVersions(List.of());
+        miniwdlValidationInfo.setNumberOfRuns(1);
+        miniwdlValidationInfo.setPassingRate(100d);
+        ValidationStatusCountMetric validationStatusCountMetric = new ValidationStatusCountMetric(Map.of(MINIWDL, miniwdlValidationInfo));
+        metrics.setValidationStatus(validationStatusCountMetric);
 
         return metrics;
     }

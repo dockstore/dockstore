@@ -286,12 +286,15 @@
         </sql>
     </changeSet>
     <changeSet id="tighten constraint for names" author="dyuen">
+        <validCheckSum>8:c3f62dac8fdb39029443416261f10a9b</validCheckSum>
+        <validCheckSum>8:dc78648569654a8993edb1619c02cb78</validCheckSum>
         <sql dbms="postgresql">
             CREATE UNIQUE INDEX case_insensitive_toolname on tool using btree (registry, namespace, name, lower(toolname)) where toolname is not null;
             CREATE UNIQUE INDEX case_insensitive_apptool_toolname on apptool using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
             CREATE UNIQUE INDEX case_insensitive_notebook_workflowname on notebook using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
             -- see https://github.com/dockstore/dockstore/issues/5287, the id may need to be incremented depending on how often people stumble into this
-            CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 18876;
+            -- remember to add new valid checksum values above when changing this limit to avoid a migration failure
+            CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 21207;
         </sql>
     </changeSet>
     <changeSet author="dyuen (generated)" id="per_version_readme_path">
@@ -383,5 +386,64 @@
     </changeSet>
     <changeSet author="svonworl" id="dropSubclassFromWorkflowVersion">
         <dropColumn columnName="subclass" tableName="workflowversion"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="default_jointable_timestamps">
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="collection_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="entry_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="organization_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="workflowversion_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="entry_orcidputcode"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="sourcefile_verified"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="user_profile"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="version_metadata_orcidputcode"/>
+    </changeSet>
+    <changeSet id="add engine versions" author="coverbeck">
+        <addColumn tableName="version_metadata">
+            <column name="engineversions" type="varchar"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addValidationMetrics">
+        <createTable tableName="validator_tool_validation_info">
+            <column name="validationstatusid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_info_pkey"/>
+            </column>
+            <column defaultValueComputed="now()" name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="mostrecentisvalid" type="bool">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mostrecentversion" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mostrecenterrormessage" type="TEXT"/>
+            <column name="numberofruns" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="passingrate" type="float8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="failedvalidationversions" type="TEXT"/>
+            <column name="successfulvalidationversions" type="TEXT"/>
+            <column name="validatortool" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_info_pkey"/>
+            </column>
+        </createTable>
+        <createTable tableName="validation_status">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validation_status_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </createTable>
+
+        <addColumn tableName="metrics">
+            <column name="validationstatus" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="validationstatus" baseTableName="metrics" constraintName="fk_validationstatus_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
+        <addForeignKeyConstraint baseColumnNames="validationstatusid" baseTableName="validator_tool_validation_info" constraintName="fk_validationstatusid_validator_tool_validation_info" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="dropVersionMetadataAuthorAndEmail">
+        <dropColumn columnName="author" tableName="version_metadata"/>
+        <dropColumn columnName="email" tableName="version_metadata"/>
     </changeSet>
 </databaseChangeLog>

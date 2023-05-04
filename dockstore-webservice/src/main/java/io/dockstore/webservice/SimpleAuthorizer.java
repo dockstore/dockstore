@@ -18,6 +18,8 @@ package io.dockstore.webservice;
 
 import io.dockstore.webservice.core.User;
 import io.dropwizard.auth.Authorizer;
+import javax.ws.rs.container.ContainerRequestContext;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +32,7 @@ public class SimpleAuthorizer implements Authorizer<User> {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleAuthorizer.class);
 
     @Override
-    public boolean authorize(User principal, String role) {
+    public boolean authorize(User principal, String role, @Nullable ContainerRequestContext requestContext) {
         if (principal.isBanned()) {
             LOG.error("Denying access to %s".formatted(principal));
             return false;

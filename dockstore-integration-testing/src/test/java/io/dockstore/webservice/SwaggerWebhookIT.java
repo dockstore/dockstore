@@ -24,11 +24,11 @@ import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.NOTEBOOK;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
-import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -1650,8 +1650,8 @@ class SwaggerWebhookIT extends BaseIT {
         checkWorkflowMetadataWithDefaultVersionMetadata(workflow2, defaultVersion.get());
 
         // Clear workflow metadata to test the scenario where the default version metadata was updated and is now out of sync with the workflow's metadata
-        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET author = NULL where id = '%s'", workflow.getId()));
-        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET email = NULL where id = '%s'", workflow.getId()));
+        testingPostgres.runUpdateStatement(String.format("UPDATE author SET name = 'foo' where versionid = '%s'", defaultVersion.get().getId()));
+        testingPostgres.runUpdateStatement(String.format("UPDATE author SET email = 'foo' where versionid = '%s'", defaultVersion.get().getId()));
         testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET description = NULL where id = '%s'", workflow.getId()));
         // GitHub release should sync metadata with default version
         workflowsApi.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
@@ -1693,8 +1693,9 @@ class SwaggerWebhookIT extends BaseIT {
 
     // Asserts that the workflow metadata is the same as the default version metadata
     private void checkWorkflowMetadataWithDefaultVersionMetadata(io.dockstore.openapi.client.model.Workflow workflow, io.dockstore.openapi.client.model.WorkflowVersion defaultVersion) {
-        assertEquals(defaultVersion.getAuthor(), workflow.getAuthor(), "Workflow author should equal default version author");
-        assertEquals(defaultVersion.getEmail(), workflow.getEmail(), "Workflow email should equal default version email");
+        assertEquals(1, defaultVersion.getAuthors().size());
+        assertEquals(defaultVersion.getAuthors().size(), workflow.getAuthors().size());
+        assertEquals(defaultVersion.getAuthors().get(0), workflow.getAuthors().get(0), "Workflow author should equal default version author");
         assertEquals(defaultVersion.getDescription(), workflow.getDescription(), "Workflow description should equal default version description");
     }
 

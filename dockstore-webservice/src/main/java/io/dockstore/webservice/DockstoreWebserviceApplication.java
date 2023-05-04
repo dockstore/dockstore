@@ -74,6 +74,7 @@ import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import io.dockstore.webservice.core.metrics.Metrics;
+import io.dockstore.webservice.core.metrics.ValidationStatusCountMetric;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
@@ -127,21 +128,21 @@ import io.dockstore.webservice.resources.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
-import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.client.HttpClientBuilder;
+import io.dropwizard.core.Application;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.forms.MultiPartBundle;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.migrations.MigrationsBundle;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.MetadataApi;
 import io.swagger.api.MetadataApiV1;
@@ -169,11 +170,10 @@ import javax.ws.rs.core.Response;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
-import org.eclipse.jetty.util.component.LifeCycle;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
@@ -195,6 +195,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String DOCKSTORE_WEB_CACHE_MISS_LOG_FILE = "/tmp/dockstore-web-cache.misses.log";
     public static final File CACHE_MISS_LOG_FILE = new File(DOCKSTORE_WEB_CACHE_MISS_LOG_FILE);
 
+    /**
+     * use this to detect whether we're running on CircleCI. Definitely not kosher, use sparingly and only as required.
+     */
+    public static final String CIRCLE_SHA_1 = "CIRCLE_SHA1";
+
     private static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
@@ -212,7 +217,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
             AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class, SourceFileMetadata.class, Metrics.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, ExecutionTimeStatisticMetric.class,
-            CountMetric.class, ExecutionStatusCountMetric.class) {
+            CountMetric.class, ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -272,7 +277,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         }
         // match HttpURLConnection which does not have a timeout by default
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
-        if (System.getenv("CIRCLE_SHA1") != null) {
+        if (runningOnCircleCI()) {
             builder.eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName(), "central"));
         }
         okHttpClient = builder.cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS)
@@ -289,6 +294,15 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             }
         }
     }
+
+    /**
+     * Use this sparingly. Generally, we want the application under test to be as similar to production as possible.
+     * However, sometimes it is necessary to trigger different behaviour due to test limitations/edge cases.
+     * @return true if we're running on CircleCI
+     */
+    public static boolean runningOnCircleCI() {
+        return System.getenv(CIRCLE_SHA_1) != null;
+    }    
 
     private static Cache generateCache(String suffix) {
         int cacheSize = CACHE_IN_MB * BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE; // 100 MiB
@@ -383,7 +397,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(RolesAllowedDynamicFeature.class);
         environment.jersey().register(new ConstraintExceptionMapper());
 
-
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
         final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
@@ -410,8 +423,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
         final MetadataResource metadataResource = new MetadataResource(getHibernate().getSessionFactory(), configuration);
         environment.jersey().register(metadataResource);
-        environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
-        environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
+        environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration));
+        environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new LambdaEventResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new NotificationResource(getHibernate().getSessionFactory()));
@@ -469,43 +482,37 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
 
-        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-            // Register connection pool health check after server starts so the environment has dropwizard metrics
-            @Override
-            public void lifeCycleStarted(LifeCycle event) {
-                final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
-                environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
-                metadataResource.setHealthCheckRegistry(environment.healthChecks());
-            }
+        // Register connection pool health check after server starts so the environment has dropwizard metrics
+        environment.lifecycle().addServerLifecycleListener(server -> {
+            final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
+            environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+            metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
 
-        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-            // Indexes Elasticsearch if mappings don't exist when the application is started
-            @Override
-            public void lifeCycleStarted(LifeCycle event) {
-                if (!ElasticSearchHelper.doMappingsExist()) {
-                    // A lock is used to prevent concurrent indexing requests in a deployment where multiple webservices start at the same time
-                    if (ElasticSearchHelper.acquireLock()) {
-                        try {
-                            LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
-                            Session session = hibernate.getSessionFactory().openSession();
-                            ManagedSessionContext.bind(session);
-                            Response response = getToolsExtendedApi().toolsIndexGet(null);
-                            session.close();
-                            if (response.getStatus() == HttpStatus.SC_OK) {
-                                LOG.info("Indexed Elasticsearch");
-                            } else {
-                                LOG.error("Error indexing Elasticsearch with status code {}", response.getStatus());
-                            }
-                        } catch (Exception e) {
-                            LOG.error("Could not index Elasticsearch", e);
-                        } finally {
-                            ElasticSearchHelper.releaseLock();
+        // Indexes Elasticsearch if mappings don't exist when the application is started
+        environment.lifecycle().addServerLifecycleListener(event -> {
+            if (!ElasticSearchHelper.doMappingsExist()) {
+                // A lock is used to prevent concurrent indexing requests in a deployment where multiple webservices start at the same time
+                if (ElasticSearchHelper.acquireLock()) {
+                    try {
+                        LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
+                        Session session = hibernate.getSessionFactory().openSession();
+                        ManagedSessionContext.bind(session);
+                        Response response = getToolsExtendedApi().toolsIndexGet(null);
+                        session.close();
+                        if (response.getStatus() == HttpStatus.SC_OK) {
+                            LOG.info("Indexed Elasticsearch");
+                        } else {
+                            LOG.error("Error indexing Elasticsearch with status code {}", response.getStatus());
                         }
+                    } catch (Exception e) {
+                        LOG.error("Could not index Elasticsearch", e);
+                    } finally {
+                        ElasticSearchHelper.releaseLock();
                     }
-                } else {
-                    LOG.info("Elasticsearch indices already exist");
                 }
+            } else {
+                LOG.info("Elasticsearch indices already exist");
             }
         });
     }

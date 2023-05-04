@@ -21,6 +21,7 @@ import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration.LimitConfig;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.SourceFile;
@@ -34,6 +35,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -97,15 +99,22 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private final EventDAO eventDAO;
     private final int calculatedEntryLimit;
     private final int calculatedEntryVersionLimit;
+    private LambdaUrlChecker checkUrlInterface;
 
-    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
+    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration config) {
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
+        final LimitConfig limitConfig = config.getLimitConfig();
         this.calculatedEntryLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowLimit(), Integer.MAX_VALUE);
         this.calculatedEntryVersionLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowVersionLimit(), Integer.MAX_VALUE);
+        final String lambdaUrl = config.getCheckUrlLambdaUrl();
+        if (lambdaUrl != null) {
+            checkUrlInterface = new LambdaUrlChecker(lambdaUrl);
+        }
+
     }
 
     /**
@@ -258,8 +267,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         FileFormatHelper.updateFileFormats(entry, entry.getWorkflowVersions(), fileFormatDAO, true);
 
         // TODO: Not setting lastModified for hosted tools now because we plan to get rid of the lastmodified column in Tool table in the future.
-        if (validatedVersion instanceof WorkflowVersion) {
-            entry.setLastModified(((WorkflowVersion)validatedVersion).getLastModified());
+        if (validatedVersion instanceof WorkflowVersion workflowVersion) {
+            entry.setLastModified(workflowVersion.getLastModified());
+            if (checkUrlInterface != null) {
+                Workflow workflow = (Workflow) entry; // It's a workflow version, so it has to be a workflow
+                AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, checkUrlInterface, workflow.getDescriptorType());
+            }
         }
         updateBlacklistedVersionNames(entry, version);
         userDAO.clearCache();

@@ -72,8 +72,11 @@ import io.swagger.client.model.Tag;
 import io.swagger.client.model.Tag.DoiStatusEnum;
 import io.swagger.client.model.Workflow;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -1188,7 +1191,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         toolsApi.refresh(toolTest.getId());
 
         DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId(), null);
-        assertNotNull(refreshedTool.getAuthor(), "Author should be set, even if tag name and tag reference are mismatched.");
+        assertFalse(refreshedTool.getAuthors().isEmpty(), "Author should be set, even if tag name and tag reference are mismatched.");
     }
 
     /**
@@ -1583,6 +1586,14 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         // Add alias
         Entry entry = entryApi.addAliases(refresh.getId(), "foobar");
         assertTrue(entry.getAliases().containsKey("foobar"), "Should have alias foobar");
+
+        // check that dates are present
+        final Timestamp dbDate = testingPostgres.runSelectStatement("select dbcreatedate from entry_alias where id = " + entry.getId(), Timestamp.class);
+        assertNotNull(dbDate);
+        // check that date looks sane
+        final Calendar instance = GregorianCalendar.getInstance();
+        instance.set(2020, Calendar.MARCH, 13);
+        assertTrue(dbDate.after(instance.getTime()));
 
         // Get unpublished tool by alias as owner
         DockstoreTool aliasTool = containersApi.getToolByAlias("foobar");

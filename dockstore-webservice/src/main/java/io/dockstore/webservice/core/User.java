@@ -611,7 +611,7 @@ public class User implements Principal, Comparable<User>, Serializable {
         @JsonIgnore
         public String onlineProfileId;
 
-        @Column(updatable = false)
+        @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
         @CreationTimestamp
         private Timestamp dbCreateDate;
         @Column()

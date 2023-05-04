@@ -26,6 +26,7 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.ToolTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -240,8 +241,10 @@ class AdvancedIndexingBenchmarkIT extends BaseIT {
         return fixedStringLabels.get(RAND.nextInt(fixedStringLabels.size()));
     }
 
-    private String randomAuthor() {
-        return fixedAuthors.get(RAND.nextInt(fixedAuthors.size()));
+    private Set<Author> randomAuthor() {
+        Author randomAuthor = new Author(fixedAuthors.get(RAND.nextInt(fixedAuthors.size())));
+        randomAuthor.setEmail(randomIdentifier());
+        return Set.of(randomAuthor);
     }
 
     private String randomOrganization() {
@@ -250,9 +253,8 @@ class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     private Tool randomlyGenerateTool() {
         Tool tool = new Tool();
-        tool.setAuthor(randomAuthor());
+        tool.setAuthors(randomAuthor());
         tool.setDescription((randomIdentifier()));
-        tool.setEmail(randomIdentifier());
         tool.setLastUpdated(new Date());
         tool.setGitUrl("https://github.com/" + randomIdentifier() + "/" + randomIdentifier());
         tool.setMode(ToolMode.MANUAL_IMAGE_PATH);

@@ -43,7 +43,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.rules.TemporaryFolder;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -64,7 +63,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(RegressionTest.NAME)
 class GeneralRegressionIT extends BaseIT {
     @TempDir
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    public static File temporaryFolder;
     static URL url;
     static File dockstore;
     private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";
@@ -78,7 +77,7 @@ class GeneralRegressionIT extends BaseIT {
     public static void getOldDockstoreClient() throws IOException {
         TestUtility.createFakeDockstoreConfigFile();
         url = new URL("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
-        dockstore = temporaryFolder.newFile("dockstore");
+        dockstore = new File(temporaryFolder, "dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         Assertions.assertTrue(dockstore.setExecutable(true));
     }

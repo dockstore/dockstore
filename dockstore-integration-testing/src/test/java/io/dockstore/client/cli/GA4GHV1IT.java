@@ -15,7 +15,7 @@
  */
 package io.dockstore.client.cli;
 
-import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static io.dockstore.common.FixtureUtility.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -264,16 +264,16 @@ class GA4GHV1IT extends GA4GHIT {
         // Check responses
         Response response = checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
         ToolV1 responseObject = response.readEntity(ToolV1.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author1");
+        assertEquals("#workflow/github.com/fakeOrganization/fakeRepository", responseObject.getId());
         response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository");
         responseObject = response.readEntity(ToolV1.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author2");
+        assertEquals("#workflow/bitbucket.org/fakeOrganization/fakeRepository", responseObject.getId());
         response = checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(ToolV1.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author3");
+        assertEquals("#workflow/github.com/fakeOrganization/fakeRepository/Potato", responseObject.getId());
         response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(ToolV1.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author4");
+        assertEquals("#workflow/bitbucket.org/fakeOrganization/fakeRepository/Potato", responseObject.getId());
 
         // test garbage source control value
         response = checkedResponse(baseURL + "tools/%23workflow%2Fgarbagio%2FfakeOrganization%2FfakeRepository%2FPotato", HttpStatus.SC_NOT_FOUND);

@@ -311,6 +311,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         frozen = version.isFrozen();
         commitID = version.getCommitID();
         readMePath = version.getReadMePath();
+        this.setAuthors(version.getAuthors());
+        this.setOrcidAuthors(version.getOrcidAuthors());
         this.setVersionMetadata(version.getVersionMetadata());
     }
 
@@ -490,20 +492,23 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().descriptionSource = newDescriptionSource;
     }
 
-    // remove this method when author is removed from VersionMetadata
-    public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;
-    }
-
-    // remove this method when author is removed from VersionMetadata
-    public void setEmail(String newEmail) {
-        this.getVersionMetadata().email = newEmail;
-    }
-
     public void addAuthor(final Author author) {
-        boolean isNewAuthor = this.authors.stream().noneMatch(existingAuthor -> existingAuthor.getName().equals(author.getName()));
-        if (isNewAuthor) {
-            this.authors.add(author);
+        this.authors.add(author);
+    }
+
+    /**
+     * Sets the versions authors using authors from the descriptor.
+     * @param newAuthors
+     */
+    @JsonIgnore
+    public void setAuthorsFromDescriptor(Set<Author> newAuthors) {
+        // If it's a .dockstore.yml workflow, clear authors because it may be from the .dockstore.yml
+        if (this.parent instanceof Workflow workflow && workflow.getMode() == WorkflowMode.DOCKSTORE_YML) {
+            this.getOrcidAuthors().clear();
+            this.setAuthors(newAuthors);
+        } else {
+            // Don't need to worry about existing authors if it's not a .dockstore.yml because the authors are always from the descriptor
+            this.authors.addAll(newAuthors);
         }
     }
 
@@ -605,8 +610,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
      * @param newVersionMetadata    Newest metadata from source control
      */
     public void setVersionMetadata(VersionMetadata newVersionMetadata) {
-        this.setAuthor(newVersionMetadata.author);
-        this.setEmail(newVersionMetadata.email);
         this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
         this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }

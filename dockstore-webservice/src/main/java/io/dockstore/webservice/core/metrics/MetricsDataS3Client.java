@@ -70,7 +70,7 @@ public class MetricsDataS3Client {
      * @param metricsData The metrics data in JSON format
      */
     public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData) {
-        if (StringUtils.isBlank(metricsData) || "[]".equals(metricsData)) {
+        if (StringUtils.isBlank(metricsData)) {
             throw new CustomWebApplicationException("Execution metrics data must be provided", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -96,7 +96,7 @@ public class MetricsDataS3Client {
      * @param fileName     The file name to use. Should be the time that the data was submitted in milliseconds since epoch appended with '.json'
      * @return S3 key (file path)
      */
-    static String generateKey(String toolId, String versionName, String platform, String fileName) {
+    public static String generateKey(String toolId, String versionName, String platform, String fileName) {
         List<String> pathList = new ArrayList<>();
         pathList.add(S3ClientHelper.convertToolIdToPartialKey(toolId));
         pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8));
@@ -173,6 +173,6 @@ public class MetricsDataS3Client {
     }
 
     static MetricsData convertS3KeyToMetricsData(String key) {
-        return new MetricsData(S3ClientHelper.getToolId(key), S3ClientHelper.getVersionName(key), S3ClientHelper.getPlatform(key), S3ClientHelper.getFileName(key), key);
+        return new MetricsData(S3ClientHelper.getToolId(key), S3ClientHelper.getVersionName(key), S3ClientHelper.getMetricsPlatform(key), S3ClientHelper.getFileName(key), key);
     }
 }

@@ -21,18 +21,22 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Notebook;
+import io.dockstore.webservice.core.OrcidAuthor;
+import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
+import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
 import io.openapi.model.DescriptorType;
@@ -46,6 +50,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -334,17 +339,23 @@ public class ElasticListener implements StateListenerInterface {
             .anyMatch(Boolean::booleanValue);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
         List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
+        List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
+        Set<Author> allAuthors = getAllAuthors(entry);
         Entry detachedEntry = removeIrrelevantProperties(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
-        ((ObjectNode)jsonNode).put("stars_count", (long) entry.getStarredUsers().size());
-        ((ObjectNode)jsonNode).put("verified", verified);
-        ((ObjectNode)jsonNode).put("openData", openData);
-        ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
-        ((ObjectNode)jsonNode).put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
+        final ObjectNode objectNode = (ObjectNode) jsonNode;
+        objectNode.put("stars_count", (long) entry.getStarredUsers().size());
+        objectNode.put("verified", verified);
+        objectNode.put("openData", openData);
+        objectNode.put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        objectNode.put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
+        objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
+        objectNode.put("all_authors", MAPPER.valueToTree(allAuthors));
         addCategoriesJson(jsonNode, entry);
         return jsonNode;
     }
+
 
     private static void addCategoriesJson(JsonNode node, Entry<?, ?> entry) {
 
@@ -370,8 +381,7 @@ public class ElasticListener implements StateListenerInterface {
      */
     static Entry removeIrrelevantProperties(final Entry entry) {
         Entry detachedEntry;
-        if (entry instanceof Tool) {
-            Tool tool = (Tool) entry;
+        if (entry instanceof Tool tool) {
             Tool detachedTool = new Tool();
             tool.getWorkflowVersions().forEach(version -> {
                 Hibernate.initialize(version.getSourceFiles());
@@ -392,12 +402,10 @@ public class ElasticListener implements StateListenerInterface {
             // This is some weird hack to always use topicAutomatic for search table
             detachedTool.setTopicAutomatic(tool.getTopic());
             detachedEntry = detachedTool;
-        } else if (entry instanceof BioWorkflow) {
-            BioWorkflow bioWorkflow = (BioWorkflow) entry;
+        } else if (entry instanceof BioWorkflow bioWorkflow) {
             BioWorkflow detachedBioWorkflow = new BioWorkflow();
             detachedEntry = detachWorkflow(detachedBioWorkflow, bioWorkflow);
-        } else if (entry instanceof AppTool) {
-            AppTool appTool = (AppTool) entry;
+        } else if (entry instanceof AppTool appTool) {
             AppTool detachedAppTool = new AppTool();
             detachedEntry = detachWorkflow(detachedAppTool, appTool);
         } else if (entry instanceof Notebook notebook) {
@@ -408,7 +416,6 @@ public class ElasticListener implements StateListenerInterface {
         }
 
         detachedEntry.setDescription(entry.getDescription());
-        detachedEntry.setAuthor(entry.getAuthor());
         detachedEntry.setAliases(entry.getAliases());
         detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
@@ -523,6 +530,42 @@ public class ElasticListener implements StateListenerInterface {
                 .map(descriptorTypeVersion -> String.join(" ", language, descriptorTypeVersion))
                 .toList();
     }
+
+    private static List<String> getDistinctEngineVersions(final Set<Version> workflowVersions) {
+        return workflowVersions.stream()
+            .map(workflowVersion -> workflowVersion.getVersionMetadata().getEngineVersions())
+            .flatMap(List::stream)
+            .distinct()
+            .toList();
+    }
+
+    /**
+     * Returns a set of Author containing non-ORCID authors and ORCID authors with additional information.
+     * @param entry
+     * @return
+     */
+    private static Set<Author> getAllAuthors(Entry entry) {
+        Set<Author> allAuthors = new HashSet<>();
+        if (!entry.getOrcidAuthors().isEmpty()) {
+            Optional<String> token = ORCIDHelper.getOrcidAccessToken();
+            if (token.isPresent()) {
+                Set<OrcidAuthorInformation> orcidAuthorInformation = ((Set<OrcidAuthor>)entry.getOrcidAuthors()).stream()
+                        .map(orcidAuthor -> ORCIDHelper.getOrcidAuthorInformation(orcidAuthor.getOrcid(), token.get()))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(Collectors.toSet());
+                allAuthors.addAll(orcidAuthorInformation);
+            }
+        }
+        allAuthors.addAll(entry.getAuthors());
+
+        if (allAuthors.isEmpty()) {
+            // Add an empty author with a null name so that ES has something to replace with the null_value otherwise an empty array is ignored by ES
+            allAuthors.add(new Author());
+        }
+        return allAuthors;
+    }
+
 
     /**
      * If entry is a checker workflow, return null.  Otherwise, return entry

@@ -32,7 +32,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.core.metrics.Execution;
+import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
@@ -92,9 +92,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static final int ES_BATCH_INSERT_SIZE = 500;
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
-    public static final String EXECUTION_STATUS_ERROR = "All executions must contain ExecutionStatus";
-    public static final String EXECUTION_TIME_FORMAT_ERROR = "Execution time must be in ISO 8601 format";
-    public static final String EXECUTION_STATUS_COUNT_ERROR = "Aggregated metrics must contain ExecutionStatusCount";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
@@ -411,7 +408,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, List<Execution> executions) {
+    public Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
         // Check that the entry and version exists
         Entry<?, ?> entry;
         try {
@@ -427,20 +424,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         Optional<? extends Version<?>> version = getVersion(entry, versionId);
         if (version.isEmpty()) {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
-        }
-
-        // Check that all executions have at least the ExecutionStatus
-        if (executions.stream().anyMatch(execution -> execution.getExecutionStatus() == null)) {
-            throw new CustomWebApplicationException(EXECUTION_STATUS_ERROR, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        List<String> malformedExecutionTimes = executions.stream()
-                .map(Execution::getExecutionTime)
-                .filter(executionTime -> executionTime != null && Execution.checkExecutionTimeISO8601Format(executionTime).isEmpty())
-                .toList();
-        if (!malformedExecutionTimes.isEmpty()) {
-            throw new CustomWebApplicationException(String.format("%s. Found the following malformed execution times: %s.",
-                    EXECUTION_TIME_FORMAT_ERROR, String.join(", ", malformedExecutionTimes)), HttpStatus.SC_BAD_REQUEST);
         }
 
         try {
@@ -474,13 +457,29 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
         }
 
-        // Check that the aggregated metrics have at least ExecutionStatusCount
-        if (aggregatedMetrics.getExecutionStatusCount() == null) {
-            throw new CustomWebApplicationException(EXECUTION_STATUS_COUNT_ERROR, HttpStatus.SC_BAD_REQUEST);
-        }
-
         version.getMetricsByPlatform().put(platform, aggregatedMetrics);
         return Response.ok().entity(version.getMetricsByPlatform()).build();
+    }
+
+    @Override
+    public Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId, Optional<User> user) {
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, user);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            throw new CustomWebApplicationException("Invalid entry ID", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (entry == null) {
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Version<?> version = getVersion(entry, versionId).orElse(null);
+        if (version == null) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        return version.getMetricsByPlatform();
     }
 
     private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {

@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.14.0-SNAPSHOT"
+  version: "1.15.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -598,6 +598,45 @@ paths:
             items:
               $ref: "#/definitions/ToolV1"
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
+    get:
+      tags:
+      - "extendedGA4GH"
+      summary: "Get aggregated execution metrics for a tool from all platforms"
+      description: "This endpoint retrieves aggregated metrics for a tool from all\
+        \ platforms"
+      operationId: "aggregatedMetricsGet"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Aggregated metrics retrieved successfully."
+          schema:
+            type: "object"
+            additionalProperties:
+              type: "object"
+        401:
+          description: "Credentials not provided or incorrect."
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: "The tool cannot be found to get aggregated metrics."
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+      - BEARER: []
     put:
       tags:
       - "extendedGA4GH"
@@ -718,9 +757,7 @@ paths:
         description: "Execution metrics to submit"
         required: true
         schema:
-          type: "array"
-          items:
-            $ref: "#/definitions/Execution"
+          $ref: "#/definitions/ExecutionsRequestBody"
       responses:
         204:
           description: "Execution metrics submitted successfully."
@@ -4395,6 +4432,25 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Repository"
+  /users/starredNotebooks:
+    get:
+      tags:
+      - "users"
+      summary: "Get the authenticated user's starred notebooks."
+      description: ""
+      operationId: "getStarredNotebooks"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
   /users/starredOrganizations:
     get:
       tags:
@@ -7076,6 +7132,12 @@ definitions:
         description: "aliases can be used as an alternate unique id for entries"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       custom_docker_registry_path:
         type: "string"
         readOnly: true
@@ -7115,6 +7177,12 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidAuthors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       tags:
         type: "array"
         uniqueItems: true
@@ -7144,7 +7212,7 @@ definitions:
       author:
         type: "string"
         position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
+        description: "This is the name of the author, retrieved from the default version"
       description:
         type: "string"
         position: 2
@@ -7177,7 +7245,8 @@ definitions:
       email:
         type: "string"
         position: 6
-        description: "This is the email of the git organization"
+        description: "This is the email of the author, retrieved from the default\
+          \ version"
       defaultVersion:
         type: "string"
         position: 7
@@ -7358,6 +7427,12 @@ definitions:
         description: "aliases can be used as an alternate unique id for entries"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       dbCreateDate:
         type: "integer"
         format: "int64"
@@ -7389,6 +7464,12 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidAuthors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       topic:
         type: "string"
       topicAutomatic:
@@ -7418,7 +7499,7 @@ definitions:
       author:
         type: "string"
         position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
+        description: "This is the name of the author, retrieved from the default version"
       description:
         type: "string"
         position: 2
@@ -7451,7 +7532,8 @@ definitions:
       email:
         type: "string"
         position: 6
-        description: "This is the email of the git organization"
+        description: "This is the email of the author, retrieved from the default\
+          \ version"
       defaultVersion:
         type: "string"
         position: 7
@@ -7635,29 +7717,6 @@ definitions:
         description: "(github) apps tool that the event is acting on."
         $ref: "#/definitions/AppTool"
     description: "This describes events that occur on the Dockstore site."
-  Execution:
-    type: "object"
-    required:
-    - "executionStatus"
-    properties:
-      additionalProperties:
-        type: "object"
-        additionalProperties:
-          type: "object"
-      cpuRequirements:
-        type: "integer"
-        format: "int32"
-      executionStatus:
-        type: "string"
-        enum:
-        - "SUCCESSFUL"
-        - "FAILED_SEMANTIC_INVALID"
-        - "FAILED_RUNTIME_INVALID"
-      executionTime:
-        type: "string"
-      memoryRequirementsGB:
-        type: "number"
-        format: "double"
   ExecutionStatusMetric:
     type: "object"
     properties:
@@ -7713,6 +7772,20 @@ definitions:
         description: "The unit of the data points"
     description: "This describes aggregated execution time metrics in seconds for\
       \ workflow executions."
+  ExecutionsRequestBody:
+    type: "object"
+    required:
+    - "runExecutions"
+    - "validationExecutions"
+    properties:
+      runExecutions:
+        type: "array"
+        items:
+          $ref: "#/definitions/RunExecution"
+      validationExecutions:
+        type: "array"
+        items:
+          $ref: "#/definitions/ValidationExecution"
   ExtendedUserData:
     type: "object"
     properties:
@@ -7980,6 +8053,9 @@ definitions:
       memory:
         description: "Aggregated memory metrics"
         $ref: "#/definitions/MemoryMetric"
+      validationStatus:
+        description: "Aggregated validation status metrics"
+        $ref: "#/definitions/ValidationStatusMetric"
     description: "Aggregated metrics associated with entry versions"
   Notebook:
     allOf:
@@ -8296,6 +8372,29 @@ definitions:
         type: "boolean"
       repositoryName:
         type: "string"
+  RunExecution:
+    type: "object"
+    required:
+    - "executionStatus"
+    properties:
+      additionalProperties:
+        type: "object"
+        additionalProperties:
+          type: "object"
+      cpuRequirements:
+        type: "integer"
+        format: "int32"
+      executionStatus:
+        type: "string"
+        enum:
+        - "SUCCESSFUL"
+        - "FAILED_SEMANTIC_INVALID"
+        - "FAILED_RUNTIME_INVALID"
+      executionTime:
+        type: "string"
+      memoryRequirementsGB:
+        type: "number"
+        format: "double"
   Service:
     allOf:
     - $ref: "#/definitions/Workflow"
@@ -8778,12 +8877,13 @@ definitions:
       type:
         type: "string"
         enum:
-        - "SMK"
         - "CWL"
         - "WDL"
         - "NFL"
+        - "GALAXY"
+        - "SMK"
         - "SERVICE"
-        - "GXFORMAT2"
+        - "JUPYTER"
       url:
         type: "string"
         example: "https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl"
@@ -9102,6 +9202,69 @@ definitions:
         type: "string"
         position: 3
         description: "Mapping of filepath to validation message"
+  ValidationExecution:
+    type: "object"
+    required:
+    - "dateExecuted"
+    - "isValid"
+    - "validatorTool"
+    - "validatorToolVersion"
+    properties:
+      additionalProperties:
+        type: "object"
+        additionalProperties:
+          type: "object"
+      dateExecuted:
+        type: "string"
+      errorMessage:
+        type: "string"
+      isValid:
+        type: "boolean"
+      validatorTool:
+        type: "string"
+        enum:
+        - "MINIWDL"
+        - "WOMTOOL"
+        - "CWLTOOL"
+        - "NF_VALIDATION"
+        - "OTHER"
+      validatorToolVersion:
+        type: "string"
+  ValidationInfo:
+    type: "object"
+    properties:
+      failedValidationVersions:
+        type: "array"
+        items:
+          type: "string"
+      mostRecentErrorMessage:
+        type: "string"
+      mostRecentIsValid:
+        type: "boolean"
+      mostRecentVersion:
+        type: "string"
+      numberOfRuns:
+        type: "integer"
+        format: "int32"
+      passingRate:
+        type: "number"
+        format: "double"
+      successfulValidationVersions:
+        type: "array"
+        items:
+          type: "string"
+  ValidationStatusMetric:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the count metrics in this webservice"
+      validatorToolToIsValid:
+        type: "object"
+        additionalProperties:
+          $ref: "#/definitions/ValidationInfo"
+    description: "Aggregated metrics about workflow validation statuses"
   VerificationInformation:
     type: "object"
     properties:
@@ -9292,6 +9455,11 @@ definitions:
         description: "The language versions for the version's descriptor files"
         items:
           type: "string"
+      engineVersions:
+        type: "array"
+        description: "The engine versions this workflow version can run on"
+        items:
+          type: "string"
       id:
         type: "integer"
         format: "int64"
@@ -9328,6 +9496,12 @@ definitions:
         description: "aliases can be used as an alternate unique id for entries"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       dbCreateDate:
         type: "integer"
         format: "int64"
@@ -9366,6 +9540,12 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidAuthors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       parentEntry:
         $ref: "#/definitions/Entry"
       topic:
@@ -9392,7 +9572,7 @@ definitions:
       author:
         type: "string"
         position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
+        description: "This is the name of the author, retrieved from the default version"
       description:
         type: "string"
         position: 2
@@ -9425,7 +9605,8 @@ definitions:
       email:
         type: "string"
         position: 6
-        description: "This is the email of the git organization"
+        description: "This is the email of the author, retrieved from the default\
+          \ version"
       defaultVersion:
         type: "string"
         position: 7
@@ -9526,7 +9707,7 @@ definitions:
         - "NFL"
         - "gxformat2"
         - "service"
-        - "ipynb"
+        - "jupyter"
       workflow_path:
         type: "string"
         position: 19

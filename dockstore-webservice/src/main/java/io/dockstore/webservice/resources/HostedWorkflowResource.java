@@ -90,8 +90,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final PermissionsInterface permissionsInterface;
     private final SessionFactory sessionFactory;
 
-    public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
-        super(sessionFactory, permissionsInterface, limitConfig);
+    public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration config) {
+        super(sessionFactory, permissionsInterface, config);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;

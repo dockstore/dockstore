@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import org.apache.http.client.HttpClient;
+import org.apache.hc.client5.http.classic.HttpClient;
 import org.hibernate.SessionFactory;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")

@@ -40,6 +40,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dropwizard.client.JerseyClientBuilder;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -51,6 +52,7 @@ import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
 import java.util.List;
 import java.util.Optional;
+import javax.ws.rs.client.Client;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -184,6 +186,10 @@ class GitHubWorkflowIT extends BaseIT {
         workflowApi.publish(appTool.getId(), publishRequest);
         assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
             WorkflowSubClass.APPTOOL.getValue()).size(), "There should be 1 app tool published");
+        // there should be one app tool account to header count too
+        Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
+        CommonTestUtilities.testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published?subclass=APPTOOL", SUPPORT.getLocalPort()), 1);
+
         assertEquals(publishedWorkflowsCount, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
             WorkflowSubClass.BIOWORKFLOW.getValue()).size(), "Published workflow count should be unchanged");
     }
@@ -478,16 +484,18 @@ class GitHubWorkflowIT extends BaseIT {
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", BIOWORKFLOW, null);
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId(), true);
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
-            assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
-            assertEquals("Peter Amstutz", workflow.getAuthor());
-            assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+            assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflowVersion.getDescription());
+            assertEquals(1, workflowVersion.getAuthors().size());
+            assertEquals("Peter Amstutz", workflowVersion.getAuthors().get(0).getName());
+            assertEquals("peter.amstutz@curoverse.com", workflowVersion.getAuthors().get(0).getEmail());
         });
-        assertEquals("master", workflow.getDefaultVersion(), "Default branch should've been set to get metadata");
-        assertEquals("peter.amstutz@curoverse.com", workflow.getEmail());
-        assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
-        assertEquals("Peter Amstutz", workflow.getAuthor());
         assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         assertEquals("master", workflow.getDefaultVersion(), "Default version should've been set to get metadata");
+        assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
+        assertEquals(1, workflow.getAuthors().size());
+        assertEquals("Peter Amstutz", workflow.getAuthors().get(0).getName());
+        assertEquals("peter.amstutz@curoverse.com", workflow.getAuthors().get(0).getEmail());
+
         Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersion.isPresent());

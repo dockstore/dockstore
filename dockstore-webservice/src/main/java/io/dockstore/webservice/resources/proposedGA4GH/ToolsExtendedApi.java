@@ -20,7 +20,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_D
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.metrics.Execution;
+import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.resources.ResourceConstants;
 import io.dropwizard.auth.Auth;
@@ -43,9 +43,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.security.RolesAllowed;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -228,7 +229,7 @@ public class ToolsExtendedApi {
         @ApiParam(value = ExecutionMetricsPost.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsPost.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
         @ApiParam(value = ExecutionMetricsPost.PLATFORM_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsPost.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
         @ApiParam(value = ExecutionMetricsPost.DESCRIPTION_DESCRIPTION) @Parameter(description = ExecutionMetricsPost.DESCRIPTION_DESCRIPTION, in = ParameterIn.QUERY) @QueryParam("description") String description,
-        @ApiParam(value = ExecutionMetricsPost.EXECUTIONS_DESCRIPTION, required = true) @RequestBody(description = ExecutionMetricsPost.EXECUTIONS_DESCRIPTION, required = true, content = @Content(array = @ArraySchema(schema = @Schema(implementation = Execution.class)))) List<Execution> executions,
+        @ApiParam(value = ExecutionMetricsPost.EXECUTIONS_DESCRIPTION, required = true) @RequestBody(description = ExecutionMetricsPost.EXECUTIONS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = ExecutionsRequestBody.class))) @Valid ExecutionsRequestBody executions,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.submitMetricsData(id, versionId, platform, user, description, executions);
     }
@@ -258,9 +259,29 @@ public class ToolsExtendedApi {
         @ApiParam(value = AggregatedMetricsPut.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
         @ApiParam(value = AggregatedMetricsPut.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
         @ApiParam(value = AggregatedMetricsPut.PLATFORM_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
-        @ApiParam(value = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = Metrics.class))) Metrics aggregatedMetrics,
+        @ApiParam(value = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = Metrics.class))) @Valid Metrics aggregatedMetrics,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.setAggregatedMetrics(id, versionId, platform, aggregatedMetrics);
+    }
+
+    @GET
+    @UnitOfWork(readOnly = true)
+    @Path("/{id}/versions/{version_id}/aggregatedMetrics")
+    @Produces({MediaType.APPLICATION_JSON})
+    @ApiOperation(value = AggregatedMetricsGet.SUMMARY, notes = AggregatedMetricsGet.DESCRIPTION, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Map.class)
+    @ApiResponses(value = {
+        @ApiResponse(code = HttpStatus.SC_OK, message = AggregatedMetricsGet.OK_RESPONSE, response = Map.class),
+        @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = AggregatedMetricsGet.NOT_FOUND_RESPONSE, response = Error.class),
+        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = AggregatedMetricsGet.UNAUTHORIZED_RESPONSE, response = Error.class)})
+    @Operation(operationId = "aggregatedMetricsGet", summary = AggregatedMetricsGet.SUMMARY, description = AggregatedMetricsGet.DESCRIPTION)
+    public Map<Partner, Metrics> aggregatedMetricsGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = AggregatedMetricsGet.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.ID_DESCRIPTION,
+                in = ParameterIn.PATH) @PathParam("id") String id,
+        @ApiParam(value = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, required = true) @Parameter(
+                description = AggregatedMetricsGet.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+        @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
+        return delegate.getAggregatedMetrics(id, versionId, user);
     }
 
     private static final class AggregatedMetricsPut {
@@ -272,6 +293,16 @@ public class ToolsExtendedApi {
         public static final String AGGREGATED_METRICS_DESCRIPTION = "Aggregated metrics to add to the version";
         public static final String OK_RESPONSE = "Aggregated metrics added successfully.";
         public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to add aggregated metrics.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
+    }
+
+    private static final class AggregatedMetricsGet {
+        public static final String SUMMARY = "Get aggregated execution metrics for a tool from all platforms";
+        public static final String DESCRIPTION = "This endpoint retrieves aggregated metrics for a tool from all platforms";
+        public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
+        public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
+        public static final String OK_RESPONSE = "Aggregated metrics retrieved successfully.";
+        public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to get aggregated metrics.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
 

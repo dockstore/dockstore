@@ -241,9 +241,6 @@ jobs:
             # skip swagger validation because of difficult-to-fix operationId duplications
             # java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
             java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
-      - run:
-          name: copy m2 manually
-          command: cp -r ~/.m2 .
       - persist_to_workspace:
           root: .
           paths:
@@ -284,9 +281,6 @@ jobs:
             - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
             - dockstore-java-
-      - run:
-          name: manually copy back .m2
-          command: cp -r .m2 ~/.m2
       - checkout
       - install-postgres
       - install-git-secrets
@@ -315,7 +309,7 @@ jobs:
             - dockstore-web-cache-
       - run:
           name: run the actual tests
-          command: |            
+          command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp \
@@ -436,23 +430,23 @@ jobs:
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps:
-    - attach_workspace:
-        at: .
-    - restore_cache:
-        keys:
-          # Find a cache corresponding to this specific licenses file checksum
-          # when this file is changed, this key will fail
-          - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
-          # Find the most recent cache used from any branch
-          - dockstore-java-
-    - run:
-        name: build
-        command: ./mvnw clean install -DskipTests
-    - run:
-        name: SonarCloud scan - coverage
-        command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
-    - store_artifacts:
-        path: misses
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys:
+            # Find a cache corresponding to this specific licenses file checksum
+            # when this file is changed, this key will fail
+            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            # Find the most recent cache used from any branch
+            - dockstore-java-
+      - run:
+          name: build
+          command: ./mvnw clean install -DskipTests
+      - run:
+          name: SonarCloud scan - coverage
+          command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
+      - store_artifacts:
+          path: misses
 
 commands:
   install-postgres:
@@ -524,7 +518,7 @@ commands:
             python3 -V
       - run:
           name: Docker-Compose
-          command: docker-compose up -d
+          command: docker compose up -d
   setup_test:
     steps:
       - attach_workspace:
@@ -536,9 +530,6 @@ commands:
             - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
             - dockstore-java-
-      - run:
-          name: manually copy back .m2
-          command: cp -r .m2 ~/.m2
       - run:
           name: split up tests and create a file for cache checksum
           command: |
@@ -634,5 +625,4 @@ commands:
       - persist_to_workspace:
           root: .
           paths:
-          - coverage
-
+            - coverage
