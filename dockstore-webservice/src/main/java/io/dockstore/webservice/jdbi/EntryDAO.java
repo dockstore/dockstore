@@ -160,11 +160,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public Entry<? extends Entry, ? extends Version> getGenericEntryById(long id) {
-        return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryById").setParameter("id", id));
+        return this.currentSession().createNamedQuery("Entry.getGenericEntryById", Entry.class).setParameter("id", id).getSingleResult();
     }
 
     public Entry<? extends Entry, ? extends Version>  getGenericEntryByAlias(String alias) {
-        return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
+        return this.currentSession().createNamedQuery("Entry.getGenericEntryByAlias", Entry.class).setParameter("alias", alias).getSingleResult();
     }
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
@@ -202,18 +202,17 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public T findPublishedById(long id) {
-        return (T)uniqueResult(
-                this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
+        return (T) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById", Entry.class).setParameter("id", id).getSingleResult();
     }
 
     public List<EntryLite> findEntryVersions(long userId) {
         return this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteByUserId", EntryLite.class).setParameter("userId", userId).list();
     }
     public List<T> findMyEntries(long userId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntriesByUserId").setParameter("userId", userId));
+        return (List<T>) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntriesByUserId", Entry.class).setParameter("userId", userId).list();
     }
     public List<T> findMyEntriesPublished(long userId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId").setParameter("userId", userId));
+        return (List<T>) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId", Entry.class).setParameter("userId", userId).list();
     }
 
     public List<CollectionEntry> getCollectionWorkflows(long collectionId) {

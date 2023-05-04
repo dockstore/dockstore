@@ -119,7 +119,7 @@ public class EventDAO extends AbstractDAO<Event> {
 
     public void deleteEventByEntryID(long entryId) {
         currentSession().flush();
-        Query<Event> query = this.currentSession().createNamedQuery("io.dockstore.webservice.core.Event.deleteByEntryId", Event.class);
+        Query<Event> query = this.currentSession().createNamedQuery("io.dockstore.webservice.core.Event.deleteByEntryId");
         query.setParameter("entryId", entryId);
         query.executeUpdate();
         currentSession().flush();
