@@ -45,6 +45,7 @@ import io.dockstore.openapi.client.model.CollectionOrganization;
 import io.dockstore.openapi.client.model.EntryType;
 import io.dockstore.openapi.client.model.EntryTypeMetadata;
 import io.dockstore.openapi.client.model.Organization;
+import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Workflow;
@@ -220,6 +221,30 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
+    void testSnapshot() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        workflowsApi.handleGitHubRelease("refs/tags/with-kernel-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        WorkflowVersion version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        // Publish the notebook
+        PublishRequest publishRequest = new PublishRequest();
+        publishRequest.setPublish(true);
+        workflowsApi.publish1(notebook.getId(), publishRequest);
+        assertFalse(version.isFrozen());
+        assertEquals(0, testingPostgres.runSelectStatement("select count(*) from entry_version_image where versionid = " + version.getId(), long.class));
+        // Snapshot the notebook
+        version.setFrozen(true);
+        workflowsApi.updateWorkflowVersion(notebook.getId(), List.of(version));
+        // Confirm that the version is frozen and the Image is stored
+        notebook = workflowsApi.getWorkflow(notebook.getId(), null);
+        version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        assertTrue(version.isFrozen());
+        assertEquals(1, testingPostgres.runSelectStatement("select count(*) from entry_version_image where versionid = " + version.getId(), long.class));
+    }
+
+    @Test
     void testMetadata() {
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
@@ -259,6 +284,7 @@ class NotebookIT extends BaseIT {
         assertEquals(0, notebook.getStarredUsers().size());
         assertEquals(0, usersApi.getStarredNotebooks().size());
     }
+
     @Test
     void testNotebookRSSFeedAndSitemap() {
         ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
@@ -280,6 +306,7 @@ class NotebookIT extends BaseIT {
         String sitemap = metadataApi.sitemap();
         assertTrue(sitemap.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "Sitemap with testing data should have 1 notebook");
     }
+
     @Test
     void testNotebookToCollectionCategory() {
         final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
