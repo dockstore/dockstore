@@ -1396,12 +1396,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     private void checkAndAddImages(WorkflowVersion version, String toolsJson, LanguageHandlerInterface languageHandler) {
-         // Check that a snapshot can occur (all images are referenced by tag or digest).
-         languageHandler.checkSnapshotImages(version.getName(), toolsJson);
-         // Retrieve the images.
-         Set<Image> images = languageHandler.getImagesFromRegistry(toolsJson);
-         // Add them to the version.
-         version.getImages().addAll(images);
+        // Check that a snapshot can occur (all images are referenced by tag or digest).
+        languageHandler.checkSnapshotImages(version.getName(), toolsJson);
+        // Retrieve the images.
+        Set<Image> images = languageHandler.getImagesFromRegistry(toolsJson);
+        // Add them to the version.
+        version.getImages().addAll(images);
     }
 
     private String convertImageToToolsJson(String image, LanguageHandlerInterface languageHandler) {
