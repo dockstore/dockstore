@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
@@ -211,6 +212,9 @@ class OpenApiCRUDClientIT extends BaseIT {
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
                 .createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", null, "coolNamespace", null);
+        // Verify that a hosted tool with no versions has a default descriptor type
+        assertEquals(1, hostedTool.getDescriptorType().size());
+        assertEquals(DescriptorLanguage.CWL.toString(), hostedTool.getDescriptorType().get(0));
         // Should not be able to publish a hosted tool without valid versions
         ApiException exception = assertThrows(ApiException.class, () -> containersApi.publish(hostedTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true)));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());

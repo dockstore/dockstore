@@ -249,8 +249,6 @@ public abstract class AbstractImageRegistry {
                     .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
                         gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
                 updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
-                List<String> descriptorTypes = tool.calculateDescriptorType();
-                tool.setDescriptorType(descriptorTypes);
             } catch (Exception e) {
                 LOG.info(String.format("Refreshing %s error: %s", tool.getPath(), e));
                 exceptionMessages.add(String.format("Refreshing %s error: %s", tool.getPath(), e.getMessage()));
@@ -344,8 +342,6 @@ public abstract class AbstractImageRegistry {
         updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         Tool updatedTool = newDBTools.get(0);
 
-        List<String> descriptorTypes = updatedTool.calculateDescriptorType();
-        updatedTool.setDescriptorType(descriptorTypes);
         logToolRefresh(dashboardPrefix, tool);
 
         String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
@@ -610,6 +606,8 @@ public abstract class AbstractImageRegistry {
             }
 
         }
+        List<String> descriptorTypes = tool.calculateDescriptorType();
+        tool.setDescriptorType(descriptorTypes);
         FileFormatHelper.updateFileFormats(tool, tool.getWorkflowVersions(), fileFormatDAO, true);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);

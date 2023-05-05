@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.swagger.client.ApiClient;
@@ -102,24 +103,53 @@ class BitBucketGitHubBasicIT extends BaseIT {
     }
 
     @Test
-    void testCalculateDescriptorTypesAutomatedBuildTool() {
+    void testRefreshToolDescriptorTypes() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         ContainersApi toolsApi = new ContainersApi(client);
 
+        // This tool has a descriptor type that was calculated from the descriptor files
+        DockstoreTool toolWithVersions = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandbitbucket", "");
+        assertFalse(toolWithVersions.getWorkflowVersions().isEmpty());
         // Make sure the tool has a descriptor type then clear it in the DB
-        DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandbitbucket", "");
-        assertFalse(tool.getDescriptorType().isEmpty());
-        testingPostgres.runUpdateStatement("update tool set descriptortype = '' where id = " + tool.getId());
-        tool = toolsApi.getContainer(tool.getId(), "");
-        assertTrue(tool.getDescriptorType().isEmpty());
-
+        assertDescriptorType(toolWithVersions.getId(), DescriptorLanguage.CWL.toString());
+        clearDescriptorType(toolWithVersions.getId());
         // Verify that refreshing the tool by organization sets the descriptor type
-        usersApi.refreshToolsByOrganization(usersApi.getUser().getId(), tool.getNamespace(), tool.getName());
-        tool = toolsApi.getContainer(tool.getId(), "");
-        assertFalse(tool.getDescriptorType().isEmpty());
+        usersApi.refreshToolsByOrganization(usersApi.getUser().getId(), toolWithVersions.getNamespace(), toolWithVersions.getName());
+        assertDescriptorType(toolWithVersions.getId(), DescriptorLanguage.CWL.toString());
+        // Clear the descriptor type again and verify that refreshing a single tool populates it again
+        clearDescriptorType(toolWithVersions.getId());
+        toolsApi.refresh(toolWithVersions.getId());
+        assertDescriptorType(toolWithVersions.getId(), DescriptorLanguage.CWL.toString());
+
+        // This tool has no descriptor files because it has no versions
+        DockstoreTool toolWithNoVersions = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/nobuildsatall", null);
+        assertTrue(toolWithNoVersions.getWorkflowVersions().isEmpty());
+        // Make sure the tool has a descriptor type then clear it in the DB
+        // It will initially have CWL as the default descriptor type because of the setDefaultDescriptorTypeForToolsWithEmptyDescriptorType 1.14.0 migration
+        assertDescriptorType(toolWithNoVersions.getId(), DescriptorLanguage.CWL.toString());
+        clearDescriptorType(toolWithNoVersions.getId());
+        // Refresh tool by organization, which should set a default descriptor type
+        usersApi.refreshToolsByOrganization(usersApi.getUser().getId(), toolWithNoVersions.getNamespace(), toolWithNoVersions.getName());
+        assertDescriptorType(toolWithNoVersions.getId(), DescriptorLanguage.CWL.toString());
+        // Clear the descriptor type again and verify that refreshing a single tool populates it again
+        clearDescriptorType(toolWithNoVersions.getId());
+        // Set a giturl for this tool because it doesn't have one and it's needed for refreshing a single tool
+        testingPostgres.runUpdateStatement("update tool set giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git' where id = " + toolWithNoVersions.getId());
+        toolsApi.refresh(toolWithNoVersions.getId());
+        assertDescriptorType(toolWithNoVersions.getId(), DescriptorLanguage.CWL.toString());
     }
 
+    private void clearDescriptorType(long toolId) {
+        testingPostgres.runUpdateStatement("update tool set descriptortype = '' where id = " + toolId);
+        final long emptyDescriptorTypeCount = testingPostgres.runSelectStatement("select count(*) from tool where descriptortype = '' and id = " + toolId, long.class);
+        assertEquals(1, emptyDescriptorTypeCount);
+    }
+
+    private void assertDescriptorType(long toolId, String expectedDescriptorType) {
+        final String actualDescriptorTypeCount = testingPostgres.runSelectStatement("select descriptortype from tool where id = " + toolId, String.class);
+        assertEquals(expectedDescriptorType, actualDescriptorTypeCount);
+    }
 
     /**
      * Check that refreshing an existing tool with a different tool name will not throw an error

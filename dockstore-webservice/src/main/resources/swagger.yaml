@@ -7421,6 +7421,8 @@ definitions:
       descriptorType:
         type: "array"
         position: 28
+        description: "The descriptor types for the tool, calculated from the tool's\
+          \ descriptor files. Defaults to CWL"
         readOnly: true
         items:
           type: "string"
