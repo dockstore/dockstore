@@ -1405,10 +1405,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     private String convertImageToToolsJson(String image, LanguageHandlerInterface languageHandler) {
-        // TODO
-        // see CWLHandler
-        // need to create DockerInfo
-        // use methods getURLFromEntry and determineImageSpecifier
         LanguageHandlerInterface.DockerSpecifier specifier = LanguageHandlerInterface.determineImageSpecifier(image, DockerImageReference.LITERAL);
         String url = languageHandler.getURLFromEntry(image, toolDAO, specifier);
         LanguageHandlerInterface.DockerInfo info = new LanguageHandlerInterface.DockerInfo("", image, url, specifier);

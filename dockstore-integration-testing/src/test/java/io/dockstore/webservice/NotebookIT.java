@@ -225,7 +225,7 @@ class NotebookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/with-kernel-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        workflowsApi.handleGitHubRelease("refs/tags/with-tagged-kernel-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         WorkflowVersion version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
         // Publish the notebook

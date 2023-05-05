@@ -396,7 +396,7 @@ public interface LanguageHandlerInterface {
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
             StringBuilder errorMessage = new StringBuilder(String.format(
-                    "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.",
+                    "Snapshot for version %s failed because not all images are specified using a digest nor a valid tag.",
                     versionName));
 
             if (parameterImages.size() > 1) {
