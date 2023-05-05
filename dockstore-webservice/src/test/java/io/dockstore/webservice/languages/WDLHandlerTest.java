@@ -112,10 +112,8 @@ class WDLHandlerTest {
 
     @Test
     void testRecursiveImports() throws IOException {
-        final File recursiveWdl = new File(ResourceHelpers.resourceFilePath("recursive.wdl"));
-
         final WDLHandler wdlHandler = new WDLHandler();
-        String s = FileUtils.readFileToString(recursiveWdl, StandardCharsets.UTF_8);
+        String s = getFileContent("recursive.wdl");
         try {
             wdlHandler.checkForRecursiveHTTPImports(s, new HashSet<>());
             Assertions.fail("Should've detected recursive import");
@@ -258,6 +256,14 @@ class WDLHandlerTest {
         assertEquals(2, arrayInputWithTwoUrls.values().size(), "workflow.files array has 2 possible urls");
         final FileInputs fileInput = twoInputs.stream().filter(input -> input.type().equals("File")).findFirst().get();
         assertEquals(1, fileInput.values().size(), "workfile.file3 has one possible url");
+    }
+
+    @Test
+    void testFileInputsWithRecursiveImport() throws IOException {
+        final WDLHandler wdlHandler = new WDLHandler();
+        final String fileContent = getFileContent("recursive.wdl");
+        final Optional<Map<String, String>> fileInputs = wdlHandler.getFileInputs(fileContent, Set.of());
+        assertEquals(Optional.empty(), fileInputs, "Recursive import should not throw");
     }
 
     private String getFileContent(String path) throws IOException {
