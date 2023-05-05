@@ -517,7 +517,7 @@
 				    -->
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>[11.0.11,18.0)</version>
+                                    <version>[17.0.3,18.0)</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
@@ -551,6 +551,16 @@
                                         <!-- we're on junit 5 now -->
                                         <exclude>junit:junit</exclude>
                                         <exclude>org.junit.vintage:junit-vintage-engine</exclude>
+                                        <!-- more bans from the javax to jakarta merge  -->
+                                        <exclude>com.fasterxml.jackson.datatype:jackson-datatype-hibernate5</exclude>
+                                        <exclude>javax.persistence:javax.persistence-api</exclude>
+                                        <exclude>javax.transaction:javax.transaction-api</exclude>
+                                        <exclude>org.eclipse.jetty.toolchain:jetty-servlet-api</exclude>
+                                        <exclude>io.dropwizard.metrics:metrics-servlets</exclude>
+                                        <exclude>io.swagger.core.v3:swagger-integration</exclude>
+                                        <exclude>io.swagger:swagger-jaxrs</exclude>
+                                        <exclude>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer</exclude>
+                                        <exclude>io.swagger:swagger-jersey2-jaxrs</exclude>
                                     </excludes>
                                     <includes>
                                         <!-- exempt encryption library which hasn't moved to new namespace -->
