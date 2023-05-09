@@ -520,4 +520,10 @@
     <changeSet author="ktran (generated)" id="dropIsValidColumnForExecutionStatusMetric">
         <dropColumn columnName="isvalid" tableName="execution_status"/>
     </changeSet>
+    <changeSet author="ktran" id="setDefaultDescriptorTypeForToolsWithEmptyDescriptorType">
+        <sql dbms="postgresql">
+            UPDATE tool SET descriptortype='CWL' where descriptortype='';
+        </sql>
+        <dropDefaultValue columnDataType="varchar" columnName="descriptortype" tableName="tool"/>
+    </changeSet>
 </databaseChangeLog>

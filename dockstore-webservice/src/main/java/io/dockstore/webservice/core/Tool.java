@@ -28,7 +28,6 @@ import io.dockstore.common.ValidationConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -110,6 +109,8 @@ public class Tool extends Entry<Tool, Tag> {
 
     static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";
 
+    static final String DEFAULT_DESCRIPTOR_TYPE = DescriptorLanguage.CWL.toString();
+
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 13)
@@ -151,10 +152,10 @@ public class Tool extends Entry<Tool, Tag> {
             + "If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools", position = 25, dataType = "long")
     private Date lastBuild;
 
-    @Column(nullable = false, columnDefinition = "varchar default ''")
+    @Column(nullable = false, columnDefinition = "varchar")
     @Convert(converter = DescriptorTypeConverter.class)
-    @ApiModelProperty(position = 28, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
-    private List<String> descriptorType = new ArrayList<>();
+    @ApiModelProperty(position = 28, accessMode = ApiModelProperty.AccessMode.READ_ONLY, value = "The descriptor types for the tool, calculated from the tool's descriptor files. Defaults to CWL")
+    private List<String> descriptorType = List.of(DEFAULT_DESCRIPTOR_TYPE);
 
     @Column
     @Size(max = 256)
@@ -317,12 +318,23 @@ public class Tool extends Entry<Tool, Tag> {
         this.mode = mode;
     }
 
+    /**
+     * Gets the descriptor type list. Defaults to CWL if the list is empty.
+     * @return
+     */
     public List<String> getDescriptorType() {
+        if (this.descriptorType.isEmpty()) {
+            this.descriptorType = List.of(DEFAULT_DESCRIPTOR_TYPE);
+        }
         return this.descriptorType;
     }
 
+    /**
+     * Sets the descriptor type. Defaults to CWL if the descriptor type list is empty.
+     * @param descriptorType
+     */
     public void setDescriptorType(final List<String> descriptorType) {
-        this.descriptorType = descriptorType;
+        this.descriptorType = descriptorType.isEmpty() ? List.of(DEFAULT_DESCRIPTOR_TYPE) : descriptorType;
     }
 
     @JsonProperty("default_dockerfile_path")
@@ -478,10 +490,19 @@ public class Tool extends Entry<Tool, Tag> {
         getDefaultPaths().put(DescriptorLanguage.FileType.CWL_TEST_JSON, defaultTestCwlParameterFile);
     }
 
+    /**
+     * Calculates the descriptor types from the versions' source files.
+     * @return
+     */
     public List<String> calculateDescriptorType() {
-        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(
-                Collectors.toSet());
-        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> !(lang.toString().equals("cwl") || lang.toString().equals("wdl"))).filter(lang -> set.contains(lang.getFileType()))
-                .map(lang -> lang.toString()).distinct().collect(Collectors.toList());
+        Set<DescriptorLanguage.FileType> sourceFileTypes = this.getWorkflowVersions().stream()
+                .flatMap(tag -> tag.getSourceFiles().stream())
+                .map(SourceFile::getType)
+                .collect(Collectors.toSet());
+        return Arrays.stream(DescriptorLanguage.values())
+                .filter(lang -> sourceFileTypes.contains(lang.getFileType()))
+                .map(DescriptorLanguage::toString)
+                .distinct()
+                .collect(Collectors.toList());
     }
 }
