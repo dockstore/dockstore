@@ -764,6 +764,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 setDockstoreYmlAuthorsForVersion(yamlAuthors, remoteWorkflowVersion);
             }
 
+            // Mark the version as valid/invalid.
+            remoteWorkflowVersion.setValid(gitHubSourceCodeRepo.isValidVersion(remoteWorkflowVersion));
+
             // So we have workflowversion which is the new version, we want to update the version and associated source files
             WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
             WorkflowVersion updatedWorkflowVersion;
@@ -811,9 +814,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (latestTagAsDefault && Version.ReferenceType.TAG.equals(updatedWorkflowVersion.getReferenceType()) && addedVersionIsNewer) {
                 workflow.setActualDefaultVersion(updatedWorkflowVersion);
             }
-
-            // Mark the version as valid/invalid.
-            updatedWorkflowVersion.setValid(gitHubSourceCodeRepo.isValidVersion(updatedWorkflowVersion));
 
             // Log that we've successfully added the version.
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
