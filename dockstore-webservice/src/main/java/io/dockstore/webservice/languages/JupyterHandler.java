@@ -88,7 +88,7 @@ public class JupyterHandler implements LanguageHandlerInterface {
         return notebook;
     }
 
-    private List<Cell> findCells(Nbformat notebook) {
+    private List<Nbformat.Cell> findCells(Nbformat notebook) {
         // Notebooks with major version 4 have a root level "cells" property.
         // Older notebooks have a root level "worksheets" property, consisting of a list of worksheets, each of which contains a "cells" field.
         // According to this link, older notebook environments had "no UI to support multiple worksheets":
@@ -274,7 +274,7 @@ public class JupyterHandler implements LanguageHandlerInterface {
             return cells;
         }
 
-        public List<Cell> getWorksheets() {
+        public List<Worksheet> getWorksheets() {
             return worksheets;
         }
 
@@ -335,8 +335,13 @@ public class JupyterHandler implements LanguageHandlerInterface {
         }
 
         public static class Worksheet {
+
             @SerializedName("cells")
             private List<Cell> cells;
+
+            public List<Cell> getCells() {
+                return cells;
+            }
         }
     }
 }
