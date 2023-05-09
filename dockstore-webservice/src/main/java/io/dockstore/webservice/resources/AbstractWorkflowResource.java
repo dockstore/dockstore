@@ -798,17 +798,26 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (workflow.getLastModified() == null || (updatedWorkflowVersion.getLastModified() != null && workflow.getLastModifiedDate().before(updatedWorkflowVersion.getLastModified()))) {
                 workflow.setLastModified(updatedWorkflowVersion.getLastModified());
             }
+
             // Update file formats for the version and then the entry.
             // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
             Set<WorkflowVersion> workflowVersions = new HashSet<>();
             workflowVersions.add(updatedWorkflowVersion);
             FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
+
+            // Set the default version, if necessary.
             boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null || workflow.getActualDefaultVersion().getLastModified()
                             .before(updatedWorkflowVersion.getLastModified());
             if (latestTagAsDefault && Version.ReferenceType.TAG.equals(updatedWorkflowVersion.getReferenceType()) && addedVersionIsNewer) {
                 workflow.setActualDefaultVersion(updatedWorkflowVersion);
             }
+
+            // Mark the version as valid/invalid.
+            updatedWorkflowVersion.setValid(gitHubSourceCodeRepo.isValidVersion(updatedWorkflowVersion));
+
+            // Log that we've successfully added the version.
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
+
             // Update index if default version was updated
             // verified and verified platforms are the only versions-level properties unrelated to default version that affect the index but GitHub Apps do not update it
             if (workflow.getActualDefaultVersion() != null && updatedWorkflowVersion.getName() != null && workflow.getActualDefaultVersion().getName().equals(updatedWorkflowVersion.getName())) {
