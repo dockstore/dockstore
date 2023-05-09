@@ -160,11 +160,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public Entry<? extends Entry, ? extends Version> getGenericEntryById(long id) {
-        return this.currentSession().createNamedQuery("Entry.getGenericEntryById", Entry.class).setParameter("id", id).getSingleResult();
+        return this.currentSession().createNamedQuery("Entry.getGenericEntryById", Entry.class).setParameter("id", id).uniqueResult();
     }
 
     public Entry<? extends Entry, ? extends Version>  getGenericEntryByAlias(String alias) {
-        return this.currentSession().createNamedQuery("Entry.getGenericEntryByAlias", Entry.class).setParameter("alias", alias).getSingleResult();
+        return this.currentSession().createNamedQuery("Entry.getGenericEntryByAlias", Entry.class).setParameter("alias", alias).uniqueResult();
     }
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
@@ -202,7 +202,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public T findPublishedById(long id) {
-        return (T) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById", Entry.class).setParameter("id", id).getSingleResult();
+        return (T) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById", Entry.class).setParameter("id", id).uniqueResult();
     }
 
     public List<EntryLite> findEntryVersions(long userId) {
