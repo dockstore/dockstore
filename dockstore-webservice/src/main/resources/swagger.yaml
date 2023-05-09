@@ -1597,8 +1597,8 @@ paths:
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Set of updated sourcefiles, add files by adding new files with\
-          \ unknown paths, delete files by including them with emptied content"
+        description: "Set of updated source files, add files by adding new files with\
+          \ unknown paths, delete files by including them with null content"
         required: true
         schema:
           type: "array"
@@ -5383,8 +5383,8 @@ paths:
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Set of updated sourcefiles, add files by adding new files with\
-          \ unknown paths, delete files by including them with emptied content"
+        description: "Set of updated source files, add files by adding new files with\
+          \ unknown paths, delete files by including them with null content"
         required: true
         schema:
           type: "array"
