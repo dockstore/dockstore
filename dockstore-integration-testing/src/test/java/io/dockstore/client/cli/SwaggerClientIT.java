@@ -615,6 +615,23 @@ class SwaggerClientIT extends BaseIT {
     }
 
     /**
+     * This tests if a proper response is returned on a "miss"
+     *
+     * @throws ApiException
+     */
+    @Test
+    void testNotFoundWorkflow() throws ApiException {
+        ApiClient client = getWebClient();
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        try {
+            workflowsApi.getPublishedWorkflow(47L, null);
+            fail("Should've got an error getting an unknown workflow");
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode(), "Should've gotten a status message");
+        }
+    }
+
+    /**
      * This tests if an already unstarred workflow can be unstarred again.
      * This test will pass if this action cannot be performed.
      *

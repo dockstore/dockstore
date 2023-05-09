@@ -30,6 +30,8 @@ servers:
 - description: Nightly build server
   url: https://dev.dockstore.net/api
   variables: {}
+security:
+- BEARER: []
 tags:
 - description: "Create, update list aliases for accessing entries"
   name: aliases
