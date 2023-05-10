@@ -1542,7 +1542,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testCheckUser() {
-        // Authorized user should pass
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         boolean userOneExists = userApi.checkUserExists("DockstoreTestUser2");
@@ -1552,7 +1551,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         boolean fakeUserExists = userApi.checkUserExists("NotARealUser");
         assertFalse(fakeUserExists);
 
-        // Unauthorized user should fail
+        // Unauthorized user should still be able to check
         ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "", testingPostgres);
         UsersApi unauthUserApi = new UsersApi(unauthClient);
         boolean failed = false;
@@ -1561,7 +1560,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         } catch (ApiException ex) {
             failed = true;
         }
-        assertTrue(failed, "Should throw an exception when not authorized.");
+        assertFalse(failed, "Should not throw an exception when unauthorized.");
     }
 
     /**
