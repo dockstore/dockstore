@@ -470,7 +470,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
-    public boolean checkUserExists(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+    public boolean checkUserExists(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
                                    @ApiParam("User name to check") @PathParam("username") @NotBlank String username) {
         @SuppressWarnings("deprecation")
         User foundUser = userDAO.findByUsername(username);
