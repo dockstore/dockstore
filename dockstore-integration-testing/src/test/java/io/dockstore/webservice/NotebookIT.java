@@ -176,7 +176,7 @@ class NotebookIT extends BaseIT {
     void testRegisterOldNotebook() {
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/heads/old", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        workflowsApi.handleGitHubRelease("refs/tags/old-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         // Check a few fields to make sure we registered successfully
         String path = simpleRepoPath + "/old";
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
