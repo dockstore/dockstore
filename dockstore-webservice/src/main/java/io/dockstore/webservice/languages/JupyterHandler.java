@@ -89,12 +89,13 @@ public class JupyterHandler implements LanguageHandlerInterface {
     }
 
     private List<Nbformat.Cell> findCells(Nbformat notebook) {
-        // Notebooks with major version 4 have a root level "cells" property.
-        // Older notebooks have a root level "worksheets" property, consisting of a list of worksheets, each of which contains a "cells" field.
+        // Notebooks with major version 4 have a root-level "cells" property.
+        // Older notebooks have a root-level "worksheets" property, consisting of a list of worksheets, each of which contains a "cells" field.
         // According to this link, older notebook environments had "no UI to support multiple worksheets":
         // https://github.com/ipython/ipython/wiki/IPEP-17%3a-Notebook-Format-4
-        // So, if a list of worksheets exists, return the cells from the first one:
-        if (notebook.getWorksheets() != null && notebook.getWorksheets().size() > 0) {
+        // So, if the major version < 4 and a list of worksheets exists, return the cells from the first one:
+        if (notebook.getFormatMajor() != null && notebook.getFormatMajor() < 4 &&
+            notebook.getWorksheets() != null && notebook.getWorksheets().size() > 0) {
             return notebook.getWorksheets().get(0).getCells();
         }
         return notebook.getCells();

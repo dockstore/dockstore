@@ -155,6 +155,7 @@ class NotebookIT extends BaseIT {
         assertEquals(Set.of("Author One", "Author Two"), version.getAuthors().stream().map(Author::getName).collect(Collectors.toSet()));
         List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
         assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
+        assertEquals(List.of("4.0"), version.getVersionMetadata().getDescriptorTypeVersions());
     }
 
     @Test
@@ -169,6 +170,23 @@ class NotebookIT extends BaseIT {
         WorkflowVersion version = notebook.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
         assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml", "/info.txt", "/data/a.txt", "/data/b.txt", "/requirements.txt", "/.binder/runtime.txt"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
+    }
+
+    @Test
+    void testRegisterOldNotebook() {
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        workflowsApi.handleGitHubRelease("refs/heads/old", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        // Check a few fields to make sure we registered successfully
+        String path = simpleRepoPath + "/old";
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(EntryType.NOTEBOOK, notebook.getEntryType());
+        assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
+        assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
+        assertEquals(1, notebook.getWorkflowVersions().size());
+        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        assertTrue(version.isValid());
+        assertEquals(List.of("3.0"), version.getVersionMetadata().getDescriptorTypeVersions());
     }
 
     @Test
