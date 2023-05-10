@@ -53,6 +53,7 @@ public class JupyterHandler implements LanguageHandlerInterface {
     public static final Set<String> REES_DIRS = Set.of("/", "/binder/", "/.binder/");
 
     private static final String PYTHON = "python";
+    private static final int FOUR = 4;
 
     @Override
     public Version parseWorkflowContent(String filePath, String content, Set<SourceFile> sourceFiles, Version version) {
@@ -94,8 +95,8 @@ public class JupyterHandler implements LanguageHandlerInterface {
         // According to this link, older notebook environments had "no UI to support multiple worksheets":
         // https://github.com/ipython/ipython/wiki/IPEP-17%3a-Notebook-Format-4
         // So, if the major version < 4 and a list of worksheets exists, return the cells from the first one:
-        if (notebook.getFormatMajor() != null && notebook.getFormatMajor() < 4 &&
-            notebook.getWorksheets() != null && notebook.getWorksheets().size() > 0) {
+        if (notebook.getFormatMajor() != null && notebook.getFormatMajor() < FOUR
+            && notebook.getWorksheets() != null && notebook.getWorksheets().size() > 0) {
             return notebook.getWorksheets().get(0).getCells();
         }
         return notebook.getCells();
