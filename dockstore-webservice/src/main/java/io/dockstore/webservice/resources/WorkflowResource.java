@@ -22,7 +22,6 @@ import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
-
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
@@ -98,22 +97,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -139,6 +122,22 @@ import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -621,10 +620,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (!workflowVersion.isFrozen()) {
             LOG.error(user.getUsername() + ": Could not generate DOI for " + workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED);
             throw new CustomWebApplicationException("Could not generate DOI for " + workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED + ". ", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        if (workflowVersion.getAuthors().isEmpty() && workflowVersion.getOrcidAuthors().isEmpty()) {
-            throw new CustomWebApplicationException(WORKFLOW_VERSION_HAS_NO_AUTHOR, HttpStatus.SC_BAD_REQUEST);
         }
 
         List<Token> tokens = checkOnZenodoToken(user);

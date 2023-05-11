@@ -4,13 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.swagger.zenodo.client.model.DepositMetadata;
 import org.junit.jupiter.api.Test;
 
 class ZenodoHelperTest {
@@ -63,6 +64,35 @@ class ZenodoHelperTest {
     void checkCreationFromValidDoi() {
         String doi = "10.5072/zenodo.372767";
         ZenodoHelper.createAliasUsingDoi(doi);
+    }
+
+    @Test
+    void testMetadataCreatorWithNoAuthors() {
+        final DepositMetadata depositMetadata = new DepositMetadata();
+        final BioWorkflow bioWorkflow = new BioWorkflow();
+        final WorkflowVersion workflowVersion = new WorkflowVersion();
+        bioWorkflow.getWorkflowVersions().add(workflowVersion);
+        try {
+            ZenodoHelper.setMetadataCreator(depositMetadata, bioWorkflow);
+            fail("Should have failed");
+        } catch (CustomWebApplicationException ex) {
+            assertEquals(ZenodoHelper.AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO, ex.getErrorMessage());
+        }
+    }
+
+    @Test
+    void testMetadataCreateWithOneAuthor() {
+        final DepositMetadata depositMetadata = new DepositMetadata();
+        final BioWorkflow bioWorkflow = new BioWorkflow();
+        final WorkflowVersion workflowVersion = new WorkflowVersion();
+        final Author author = new Author();
+        final String joeBlow = "Joe Blow";
+        author.setName(joeBlow);
+        workflowVersion.addAuthor(author);
+        bioWorkflow.getWorkflowVersions().add(workflowVersion);
+        bioWorkflow.setActualDefaultVersion(workflowVersion);
+        ZenodoHelper.setMetadataCreator(depositMetadata, bioWorkflow);
+        assertEquals(joeBlow, depositMetadata.getCreators().get(0).getName());
     }
 
 }
