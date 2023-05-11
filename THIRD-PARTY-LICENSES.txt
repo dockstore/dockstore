@@ -1,5 +1,5 @@
 
-Lists of 368 third-party dependencies.
+Lists of 365 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -178,7 +178,6 @@ Lists of 368 third-party dependencies.
      (The Apache Software License, Version 2.0) Jackson dataformat: CBOR (com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.14.2 - https://github.com/FasterXML/jackson-dataformats-binary)
      (The Apache Software License, Version 2.0) Jackson datatype: Guava (com.fasterxml.jackson.datatype:jackson-datatype-guava:2.14.2 - https://github.com/FasterXML/jackson-datatypes-collections)
      (The Apache Software License, Version 2.0) Jackson datatype: jdk8 (com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.14.2 - https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jdk8)
-     (The Apache Software License, Version 2.0) Jackson datatype: Joda (com.fasterxml.jackson.datatype:jackson-datatype-joda:2.14.2 - https://github.com/FasterXML/jackson-datatype-joda)
      (The Apache Software License, Version 2.0) Jackson datatype: JSR310 (com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2 - https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310)
      (The Apache Software License, Version 2.0) Jackson extensions to the Google HTTP Client Library for Java. (com.google.http-client:google-http-client-jackson:1.29.2 - https://github.com/googleapis/google-http-java-client/google-http-client-jackson)
      (Apache License 2.0) Jackson Integration for Metrics (io.dropwizard.metrics:metrics-json:4.2.18 - https://metrics.dropwizard.io/metrics-json)
@@ -217,7 +216,6 @@ Lists of 368 third-party dependencies.
      (EPL 2.0) (GPL2 w/ CPE) javax.inject:1 as OSGi bundle (org.glassfish.hk2.external:jakarta.inject:2.6.1 - https://github.com/eclipse-ee4j/glassfish-hk2/external/jakarta.inject)
      (Eclipse Distribution License v. 1.0) (Eclipse Public License v1.0) javax.persistence-api (javax.persistence:javax.persistence-api:2.2 - https://github.com/javaee/jpa-spec)
      (CDDL + GPLv2 with classpath exception) javax.transaction API (javax.transaction:javax.transaction-api:1.3 - http://jta-spec.java.net)
-     (CDDL 1.1) (GPL2 w/ CPE) javax.ws.rs-api (javax.ws.rs:javax.ws.rs-api:2.0.1 - http://jax-rs-spec.java.net)
      (Eclipse Distribution License - v 1.0) JAXB Runtime (org.glassfish.jaxb:jaxb-runtime:2.3.6 - https://eclipse-ee4j.github.io/jaxb-ri/)
      (Apache License, version 2.0) JBoss Logging 3 (org.jboss.logging:jboss-logging:3.4.1.Final - http://www.jboss.org)
      (Apache License, Version 2.0) JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:2.0.7 - http://www.slf4j.org)
@@ -290,7 +288,6 @@ Lists of 368 third-party dependencies.
      (Apache License 2.0) Metrics Utility Servlets (io.dropwizard.metrics:metrics-servlets:4.2.18 - https://metrics.dropwizard.io/metrics-servlets)
      (The Apache Software License, Version 2.0) metrics3-statsd (com.readytalk:metrics3-statsd:4.2.0 - no url defined)
      (Apache 2) metrics4-scala (nl.grons:metrics4-scala_2.13:4.2.8 - https://github.com/erikvanoosten/metrics-scala)
-     (Prior BSD License) MiG Base64 (com.brsanthu:migbase64:2.2 - http://sourceforge.net/projects/migbase64/)
      (Eclipse Distribution License - v 1.0) MIME streaming extension (org.jvnet.mimepull:mimepull:1.9.15 - https://github.com/eclipse-ee4j/metro-mimepull)
      (The MIT License) mockito-core (org.mockito:mockito-core:3.12.4 - https://github.com/mockito/mockito)
      (The MIT License) mockito-inline (org.mockito:mockito-inline:3.12.4 - https://github.com/mockito/mockito)
