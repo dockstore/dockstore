@@ -300,12 +300,12 @@ public final class ZenodoHelper {
      * @param workflow    workflow for which DOI is registered
      */
     static void setMetadataCreator(DepositMetadata depositMetadata, Workflow workflow) {
-        final Stream<Author> authors = workflow.getAuthors().stream().map(ZenodoHelper::zenodoAuthor);
+        final Stream<Author> authors = workflow.getAuthors().stream().map(ZenodoHelper::fromDockstoreAuthor);
         final Stream<Author> orcidAuthors = workflow.getOrcidAuthors().stream()
                 .map(OrcidAuthor::getOrcid)
                 .map(orcidId -> ORCIDHelper.getOrcidAuthorInformation(orcidId, null))
                 .flatMap(Optional::stream)
-                .map(ZenodoHelper::zenodoAuthor);
+                .map(ZenodoHelper::fromOrcidAuthorInfo);
         final List<Author> zenodoAuthors = Stream.concat(authors, orcidAuthors).toList();
         if (zenodoAuthors.isEmpty()) {
             throw new CustomWebApplicationException(AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO, HttpStatus.SC_BAD_REQUEST);
@@ -313,15 +313,15 @@ public final class ZenodoHelper {
         depositMetadata.setCreators(zenodoAuthors);
     }
 
-    private static Author zenodoAuthor(io.dockstore.webservice.core.Author dockstoreAuthor) {
+    private static Author fromDockstoreAuthor(io.dockstore.webservice.core.Author dockstoreAuthor) {
         final Author author = new Author();
         author.setName(dockstoreAuthor.getName());
         author.setAffiliation(dockstoreAuthor.getAffiliation());
         return author;
     }
 
-    private static Author zenodoAuthor(OrcidAuthorInformation orcidAuthorInformation) {
-        final Author author = ZenodoHelper.zenodoAuthor(orcidAuthorInformation);
+    private static Author fromOrcidAuthorInfo(OrcidAuthorInformation orcidAuthorInformation) {
+        final Author author = ZenodoHelper.fromDockstoreAuthor(orcidAuthorInformation);
         author.setOrcid(orcidAuthorInformation.getOrcid());
         return author;
     }
