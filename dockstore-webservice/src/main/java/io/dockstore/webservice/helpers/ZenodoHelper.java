@@ -1,10 +1,9 @@
 package io.dockstore.webservice.helpers;
 
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
+
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Label;
-import io.dockstore.webservice.core.OrcidAuthor;
-import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -22,11 +21,6 @@ import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
