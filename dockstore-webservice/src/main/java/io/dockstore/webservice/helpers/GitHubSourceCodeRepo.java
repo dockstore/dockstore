@@ -231,6 +231,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    public void checkRepoNotPrivate(String repositoryId) {
+        GHRepository repository;
+        try {
+            repository = github.getRepository(repositoryId);
+        } catch (IOException e) {
+            final String msg = "Error determining if repo %s is private".formatted(repositoryId);
+            LOG.error(msg, e);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        if (repository.isPrivate()) {
+            throw new CustomWebApplicationException("Dockstore does not process private GitHub repositories", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
     private String readFileFromRepo(String fileName, String reference, GHRepository repo) {
         GHRateLimit startRateLimit = null;
         try {

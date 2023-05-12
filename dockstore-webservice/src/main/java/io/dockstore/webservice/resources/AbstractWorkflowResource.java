@@ -375,6 +375,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         PrintWriter messageWriter = new PrintWriter(stringWriter);
 
         try {
+            gitHubSourceCodeRepo.checkRepoNotPrivate(repository);
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
