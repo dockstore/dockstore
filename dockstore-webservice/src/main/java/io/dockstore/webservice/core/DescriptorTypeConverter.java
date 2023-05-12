@@ -1,10 +1,10 @@
 package io.dockstore.webservice.core;
 
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

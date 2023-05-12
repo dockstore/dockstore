@@ -33,6 +33,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ class JupyterHandlerTest {
   
     private static String read(String resourceName) {
         try {
-            return FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("notebooks/ipynb/" + resourceName)));
+            return FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("notebooks/ipynb/" + resourceName)), StandardCharsets.UTF_8);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

@@ -19,12 +19,12 @@ package io.dockstore.webservice;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.swagger.annotations.ApiModelProperty;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.io.Serializable;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 
 /**
  * Workflow is broken into three different subclasses: BioWorkflow, Service, and AppTool. All three are in separate tables in our database and there is a unique

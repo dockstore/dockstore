@@ -1467,7 +1467,7 @@ public class OrganizationIT extends BaseIT {
         final UsersApi usersApi = new UsersApi(webClientUser2);
         final List<Organization> starredOrganizations = usersApi.getStarredOrganizations();
         assertEquals(1, starredOrganizations.size());
-        final long starredOrgNumberOfCollections = starredOrganizations.get(0).getCollectionsLength().longValue();
+        final long starredOrgNumberOfCollections = starredOrganizations.get(0).getCollectionsLength();
         assertEquals(1, starredOrgNumberOfCollections);
     }
 

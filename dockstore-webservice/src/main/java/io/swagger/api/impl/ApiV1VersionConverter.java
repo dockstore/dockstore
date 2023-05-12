@@ -28,10 +28,10 @@ import io.swagger.model.ToolTestsV1;
 import io.swagger.model.ToolV1;
 import io.swagger.model.ToolVersion;
 import io.swagger.model.ToolVersionV1;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 
 /**
  * Converts between the V2-beta version of the GA4GH TRS to V1

@@ -3,13 +3,11 @@ package io.dockstore.webservice.core;
 import io.dockstore.common.DescriptorLanguage;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import java.sql.Timestamp;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * This is for information gained after parsing the workflow with a language parser (WDLHandler, CWLHandler, etc)
@@ -24,14 +22,12 @@ public class ParsedInformation {
     private boolean hasHTTPImports = false;
     private boolean hasLocalImports = false;
 
-    @Column(updatable = false)
-    @CreationTimestamp
+    @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
     @ApiModelProperty(dataType = "long")
     @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column()
-    @UpdateTimestamp
     @ApiModelProperty(dataType = "long")
     @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;

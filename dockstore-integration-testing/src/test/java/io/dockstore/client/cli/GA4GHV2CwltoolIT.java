@@ -54,7 +54,7 @@ class GA4GHV2CwltoolIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,
             ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
-    protected static javax.ws.rs.client.Client client;
+    protected static jakarta.ws.rs.client.Client client;
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -103,7 +103,7 @@ class GA4GHV2CwltoolIT {
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
         String command = "cwl-runner";
         String originalUrl =
-                baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
+                baseURL + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
         String descriptorPath = TestUtility.mimicNginxRewrite(originalUrl, basePath);
         String testParameterFilePath = ResourceHelpers.resourceFilePath("testWorkflow.json");
         ImmutablePair<String, String> stringStringImmutablePair = Utilities
