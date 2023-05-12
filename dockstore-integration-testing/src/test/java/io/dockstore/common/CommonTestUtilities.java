@@ -82,7 +82,7 @@ import org.slf4j.LoggerFactory;
 public final class CommonTestUtilities {
 
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
-    public static final String OLD_DOCKSTORE_VERSION = "1.12.0";
+    public static final String OLD_DOCKSTORE_VERSION = "1.13.0";
     public static final List<String> COMMON_MIGRATIONS = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "1.7.0",
             "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0");
     // Travis is slow, need to wait up to 1 min for webservice to return
