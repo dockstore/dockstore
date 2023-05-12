@@ -20,11 +20,11 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.api.NotFoundException;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import java.util.Map;
 import java.util.Optional;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 
 /**
  * Created by kcao on 01/03/17.

@@ -15,7 +15,7 @@
  */
 package io.dockstore.common.yaml;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * A service defined in a version 1.1 .dockstore.yml

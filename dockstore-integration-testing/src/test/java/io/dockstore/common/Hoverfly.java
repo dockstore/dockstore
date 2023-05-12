@@ -36,7 +36,7 @@ import io.dockstore.webservice.core.TokenType;
 import io.specto.hoverfly.junit.core.SimulationSource;
 import io.specto.hoverfly.junit.core.model.RequestFieldMatcher;
 import io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 
 /**

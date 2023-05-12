@@ -1,8 +1,8 @@
 package io.dockstore.webservice;
 
+import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import javax.validation.constraints.NotNull;
 import okhttp3.Call;
 import okhttp3.EventListener;
 import okhttp3.Response;

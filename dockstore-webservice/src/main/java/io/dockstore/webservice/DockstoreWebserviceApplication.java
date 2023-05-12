@@ -17,7 +17,7 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory.getToolsExtendedApi;
-import static javax.servlet.DispatcherType.REQUEST;
+import static jakarta.servlet.DispatcherType.REQUEST;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
@@ -28,9 +28,8 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
 import com.google.common.base.Joiner;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import io.dockstore.common.LanguagePluginManager;
 import io.dockstore.language.CompleteLanguageInterface;
@@ -150,12 +149,11 @@ import io.swagger.api.ToolClassesApi;
 import io.swagger.api.ToolClassesApiV1;
 import io.swagger.api.ToolsApi;
 import io.swagger.api.ToolsApiV1;
-import io.swagger.jaxrs.config.BeanConfig;
-import io.swagger.jaxrs.listing.ApiListingResource;
-import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.v3.jaxrs2.SwaggerSerializers;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -166,7 +164,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import javax.ws.rs.core.Response;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
@@ -321,7 +318,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private static void configureMapper(ObjectMapper objectMapper) {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        objectMapper.registerModule(new Hibernate5Module());
+        objectMapper.registerModule(new Hibernate5JakartaModule());
         objectMapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
         objectMapper.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
         // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
@@ -345,13 +342,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     @Override
     @SuppressWarnings("checkstyle:MethodLength")
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
-        BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setSchemes(new String[] { configuration.getExternalConfig().getScheme() });
-        String portFragment = configuration.getExternalConfig().getPort() == null ? "" : ":" + configuration.getExternalConfig().getPort();
-        beanConfig.setHost(configuration.getExternalConfig().getHostname() + portFragment);
-        beanConfig.setBasePath(MoreObjects.firstNonNull(configuration.getExternalConfig().getBasePath(), "/"));
-        beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api,io.openapi.api");
-        beanConfig.setScan(true);
 
         restrictSourceFiles(configuration);
 
@@ -544,7 +534,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new UsernameRenameRequiredFilter());
 
         // Swagger providers
-        environment.jersey().register(ApiListingResource.class);
         environment.jersey().register(SwaggerSerializers.class);
     }
 

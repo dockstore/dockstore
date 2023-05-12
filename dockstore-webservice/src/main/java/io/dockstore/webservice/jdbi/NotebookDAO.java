@@ -23,11 +23,11 @@ import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.database.NotebookPath;
 import io.dockstore.webservice.core.database.RSSNotebookPath;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
 public class NotebookDAO extends EntryDAO<Notebook> {
@@ -54,11 +54,11 @@ public class NotebookDAO extends EntryDAO<Notebook> {
     }
 
     public List<NotebookPath> findAllPublishedPaths() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPaths"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPaths", NotebookPath.class).list();
     }
 
     public List<RSSNotebookPath> findAllPublishedPathsOrderByDbupdatedate() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(
-                RSS_ENTRY_LIMIT));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Notebook.findAllPublishedPathsOrderByDbupdatedate", RSSNotebookPath.class).setMaxResults(
+                RSS_ENTRY_LIMIT).list();
     }
 }

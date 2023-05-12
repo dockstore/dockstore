@@ -36,9 +36,9 @@ import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.model.Error;
+import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Set;
-import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.AfterAll;
@@ -61,7 +61,7 @@ public abstract class GA4GHIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,
         ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
-    protected static javax.ws.rs.client.Client client;
+    protected static jakarta.ws.rs.client.Client client;
     protected static TestingPostgres testingPostgres;
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
