@@ -6978,6 +6978,8 @@ definitions:
         type: "string"
       checkUrlLambdaVersion:
         type: "string"
+      colabImportUrl:
+        type: "string"
       composeSetupVersion:
         type: "string"
       cwlParsingLambdaVersion:
@@ -7027,6 +7029,8 @@ definitions:
       googleClientId:
         type: "string"
       googleScope:
+        type: "string"
+      mybinderImportUrl:
         type: "string"
       nextflowParsingLambdaVersion:
         type: "string"
