@@ -21,10 +21,10 @@ import static io.dockstore.common.PipHelper.DEV_SEM_VER;
 import io.dockstore.webservice.core.User;
 import io.swagger.api.MetadataApiService;
 import io.swagger.model.Metadata;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import java.util.Optional;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 
 public class MetadataApiServiceImpl extends MetadataApiService {
     @Override

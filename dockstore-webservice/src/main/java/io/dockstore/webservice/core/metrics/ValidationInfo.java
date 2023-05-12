@@ -19,26 +19,25 @@ package io.dockstore.webservice.core.metrics;
 
 import io.dockstore.webservice.core.ValidatorToolVersionConverter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Embeddable;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 @Embeddable
 @Schema(description = "Aggregated validation information")
 @SuppressWarnings("checkstyle:magicnumber")
 public class ValidationInfo implements Serializable {
     @Column(nullable = false)
-    @Schema(description = "The version of the validator tool that was most recently executed", required = true)
+    @Schema(description = "The version of the validator tool that was most recently executed", requiredMode = RequiredMode.REQUIRED)
     private String mostRecentVersion;
 
     @Column(nullable = false)
-    @Schema(description = "The boolean isValid value from the most recent validation run", required = true)
+    @Schema(description = "The boolean isValid value from the most recent validation run", requiredMode = RequiredMode.REQUIRED)
     private Boolean mostRecentIsValid;
 
     @Column(columnDefinition = "TEXT")
@@ -47,32 +46,31 @@ public class ValidationInfo implements Serializable {
 
     @Column(columnDefinition = "TEXT")
     @Convert(converter = ValidatorToolVersionConverter.class)
-    @Schema(description = "A set of validator tool versions that successfully validated the workflow in its most recent run", required = true)
+    @Schema(description = "A set of validator tool versions that successfully validated the workflow in its most recent run", requiredMode = RequiredMode.REQUIRED)
     private List<String> successfulValidationVersions = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
     @Convert(converter = ValidatorToolVersionConverter.class)
-    @Schema(description = "A set of validator tool versions that unsuccessfully validated the workflow in its most recent run", required = true)
+    @Schema(description = "A set of validator tool versions that unsuccessfully validated the workflow in its most recent run", requiredMode = RequiredMode.REQUIRED)
     private List<String> failedValidationVersions = new ArrayList<>();
 
     @Column(nullable = false)
-    @Schema(description = "A percentage representing how often the validator successfully validates the workflow", required = true)
+    @Schema(description = "A percentage representing how often the validator successfully validates the workflow", requiredMode = RequiredMode.REQUIRED)
     private Double passingRate;
 
     @Column(nullable = false)
-    @Schema(description = "The number of times the validator was executed on the workflow", required = true)
+    @Schema(description = "The number of times the validator was executed on the workflow", requiredMode = RequiredMode.REQUIRED)
     private Integer numberOfRuns;
 
     // database timestamps
     @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
-    @CreationTimestamp
     private Timestamp dbCreateDate;
 
     @Column()
-    @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
     public ValidationInfo() {
+        // seems like intentionally left empty
     }
 
     public String getMostRecentVersion() {

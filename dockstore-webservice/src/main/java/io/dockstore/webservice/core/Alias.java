@@ -15,12 +15,10 @@
  */
 package io.dockstore.webservice.core;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.sql.Timestamp;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Currently stores alias information for Collections, Organizations, Tools and Workflows.
@@ -35,10 +33,8 @@ public class Alias implements Serializable {
 
     // database timestamps
     @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
-    @CreationTimestamp
     private Timestamp dbCreateDate;
 
     @Column()
-    @UpdateTimestamp
     private Timestamp dbUpdateDate;
 }

@@ -74,6 +74,7 @@ import org.apache.http.HttpStatus;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -1150,7 +1151,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         if (isJsonObject(yamlOrJson)) {
             return new Gson().fromJson(yamlOrJson, Map.class);
         } else {
-            new Yaml(new SafeConstructor()).load(yamlOrJson);
+            new Yaml(new SafeConstructor(new LoaderOptions())).load(yamlOrJson);
             return new Yaml().load(yamlOrJson);
         }
     }

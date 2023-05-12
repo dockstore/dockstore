@@ -42,7 +42,7 @@
         in the dependency section
         -->
         <swagger-annotations-version>1.6.5</swagger-annotations-version>
-        <openapi-annotations-version>2.1.13</openapi-annotations-version>
+        <openapi-annotations-version>2.2.9</openapi-annotations-version>
         <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
         <postgresql.version>42.2.23</postgresql.version>
         <maven-surefire.version>3.0.0-M5</maven-surefire.version>
@@ -505,7 +505,6 @@
                                     <excludes>
                                         <!-- inconsistent in dropwizard 2.1.5 list of transient dependencies and causes this to break, nonetheless the actual versions end up being consistent as checked by
                                          keysmap.list and mvn dependency:tree. Weird -->
-                                        <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</exclude>
                                         <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
                                         <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
                                     </excludes>
@@ -517,7 +516,7 @@
 				    -->
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>[11.0.11,18.0)</version>
+                                    <version>[17.0.3,18.0)</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
@@ -542,6 +541,8 @@
                                         <exclude>javax.validation:validation-api</exclude>
                                         <!-- Replaced with jakarta.xml.bind:jakarta.xml.bind-api -->
                                         <exclude>javax.xml.bind:jaxb-api</exclude>
+                                        <!-- Replace with a bunch from https://github.com/spring-projects/spring-boot/issues/33356 -->
+                                        <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</exclude>
                                         <!-- should be using v2 api -->
                                         <exclude>com.amazonaws:*</exclude>
                                         <!-- we should be using jpa 2.2 -->
@@ -549,6 +550,16 @@
                                         <!-- we're on junit 5 now -->
                                         <exclude>junit:junit</exclude>
                                         <exclude>org.junit.vintage:junit-vintage-engine</exclude>
+                                        <!-- more bans from the javax to jakarta merge  -->
+                                        <exclude>com.fasterxml.jackson.datatype:jackson-datatype-hibernate5</exclude>
+                                        <exclude>javax.persistence:javax.persistence-api</exclude>
+                                        <exclude>javax.transaction:javax.transaction-api</exclude>
+                                        <exclude>org.eclipse.jetty.toolchain:jetty-servlet-api</exclude>
+                                        <exclude>io.dropwizard.metrics:metrics-servlets</exclude>
+                                        <exclude>io.swagger.core.v3:swagger-integration</exclude>
+                                        <exclude>io.swagger:swagger-jaxrs</exclude>
+                                        <exclude>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer</exclude>
+                                        <exclude>io.swagger:swagger-jersey2-jaxrs</exclude>
                                     </excludes>
                                     <includes>
                                         <!-- exempt encryption library which hasn't moved to new namespace -->

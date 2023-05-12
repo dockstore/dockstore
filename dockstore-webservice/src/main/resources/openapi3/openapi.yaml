@@ -30,6 +30,8 @@ servers:
 - description: Nightly build server
   url: https://dev.dockstore.net/api
   variables: {}
+security:
+- BEARER: []
 tags:
 - description: "Create, update list aliases for accessing entries"
   name: aliases
@@ -40,45 +42,45 @@ tags:
 - description: "Needed for SmartAPI compatibility apparantly, might be cargo cult\
     \ behaviour"
   name: NIHdatacommons
+- description: Interact with entries in Dockstore regardless of whether they are containers
+    or workflows
+  name: entries
 - description: List and register entries in the dockstore (pairs of images + metadata
     (CWL and Dockerfile))
   name: containers
 - description: List and modify tags for containers
   name: containertags
-- description: Interact with entries in Dockstore regardless of whether they are containers
-    or workflows
-  name: entries
-- description: Created and modify hosted entries in the dockstore
-  name: hosted
-- description: Query lambda events triggered by GitHub Apps
-  name: lambdaEvents
-- description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
-    \ etc."
-  name: metadata
-- description: List and modify notifications for users of Dockstore
-  name: curation
-- description: "List and register workflows in the dockstore (CWL, Nextflow, WDL)"
-  name: workflows
-- description: "List, modify, refresh, and delete tokens for external services"
-  name: tokens
-- description: Interactions with the Dockstore-support's ToolTester application
-  name: toolTester
-- description: "List, modify, and manage end users of the dockstore"
-  name: users
-- description: Optional experimental extensions of the GA4GH API
-  name: extendedGA4GH
 - description: "A curated subset of resources proposed as a common standard for tool\
-    \ repositories. Implements TRS [2.0.1](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.1)."
-  name: GA4GHV20
+    \ repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)\
+    \ and is considered final (not subject to change)"
+  name: GA4GHV1
 - description: "A curated subset of resources proposed as a common standard for tool\
     \ repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)\
     \ . Integrators are welcome to use these endpoints but they are subject to change\
     \ based on community input."
   name: GA4GH
 - description: "A curated subset of resources proposed as a common standard for tool\
-    \ repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)\
-    \ and is considered final (not subject to change)"
-  name: GA4GHV1
+    \ repositories. Implements TRS [2.0.1](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.1)."
+  name: GA4GHV20
+- description: Optional experimental extensions of the GA4GH API
+  name: extendedGA4GH
+- description: "List, modify, refresh, and delete tokens for external services"
+  name: tokens
+- description: "List and register workflows in the dockstore (CWL, Nextflow, WDL)"
+  name: workflows
+- description: Interactions with the Dockstore-support's ToolTester application
+  name: toolTester
+- description: List and modify notifications for users of Dockstore
+  name: curation
+- description: Created and modify hosted entries in the dockstore
+  name: hosted
+- description: "List, modify, and manage end users of the dockstore"
+  name: users
+- description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
+    \ etc."
+  name: metadata
+- description: Query lambda events triggered by GitHub Apps
+  name: lambdaEvents
 paths:
   /aliases/workflow-versions/{alias}:
     get:
@@ -9891,7 +9893,7 @@ components:
         path:
           type: string
           description: "Relative path of the file.  A descriptor's path can be used\
-            \ with the GA4GH .../{type}/descriptor/{relative_path} endpoint."
+            \ with the GA4GH .../{type}/descriptor/{relative_path : .+} endpoint."
     ToolTesterLog:
       type: object
       properties:

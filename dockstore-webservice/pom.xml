@@ -32,7 +32,7 @@
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-hibernate5</artifactId>
+            <artifactId>jackson-datatype-hibernate5-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>
@@ -53,22 +53,22 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>2.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dockstore</groupId>
-            <artifactId>swagger-java-sam-client</artifactId>
-            <version>2.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dockstore</groupId>
-            <artifactId>swagger-java-bitbucket-client</artifactId>
             <version>2.0.2</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
+            <artifactId>swagger-java-sam-client</artifactId>
+            <version>2.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>swagger-java-bitbucket-client</artifactId>
+            <version>2.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-discourse-client</artifactId>
-            <version>2.0.0</version>
+            <version>2.0.1</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
@@ -94,145 +94,8 @@
             <artifactId>commons-validator</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-jersey2-jaxrs</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.code.findbugs</groupId>
-                    <artifactId>jsr305</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                    <artifactId>jackson-jaxrs-json-provider</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.datatype</groupId>
-                    <artifactId>jackson-datatype-joda</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.module</groupId>
-                    <artifactId>jackson-module-jaxb-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.scala-lang</groupId>
-                    <artifactId>scala-library</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.dataformat</groupId>
-                    <artifactId>jackson-dataformat-yaml</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.containers</groupId>
-                    <artifactId>jersey-container-servlet-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-server</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.hk2.external</groupId>
-                    <artifactId>javax.inject</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-models</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-jaxrs</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.ws.rs</groupId>
-                    <artifactId>jsr311-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.code.findbugs</groupId>
-                    <artifactId>jsr305</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                    <artifactId>jackson-jaxrs-json-provider</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.datatype</groupId>
-                    <artifactId>jackson-datatype-joda</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.module</groupId>
-                    <artifactId>jackson-module-jaxb-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.scala-lang</groupId>
-                    <artifactId>scala-library</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.dataformat</groupId>
-                    <artifactId>jackson-dataformat-yaml</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.containers</groupId>
-                    <artifactId>jersey-container-servlet-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-server</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.hk2.external</groupId>
-                    <artifactId>javax.inject</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-models-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
@@ -314,6 +177,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-assets</artifactId>
         </dependency>
@@ -356,20 +223,6 @@
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-healthchecks</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.javassist</groupId>
-                    <artifactId>javassist</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -524,10 +377,9 @@
             </exclusions>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
             <!-- note: this brings in a version of jaxb-api that breaks
             liquibase https://liquibase.jira.com/browse/CORE-3262
             -->
@@ -538,10 +390,9 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2 -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-jaxrs2</artifactId>
+            <artifactId>swagger-jaxrs2-jakarta</artifactId>
             <!-- note: this brings in a version of jaxb-api that breaks
             liquibase https://liquibase.jira.com/browse/CORE-3262
             -->
@@ -552,10 +403,9 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2-servlet-initializer -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+            <artifactId>swagger-jaxrs2-servlet-initializer-jakarta</artifactId>
         </dependency>
 
         <dependency>
@@ -606,8 +456,8 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <groupId>com.fasterxml.jackson.jakarta.rs</groupId>
+            <artifactId>jackson-jakarta-rs-json-provider</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.oauth-client</groupId>
@@ -993,9 +843,13 @@
         </dependency>
         <dependency>
             <groupId>org.orcid</groupId>
-            <artifactId>orcid-model</artifactId>
-            <version>3.0.4</version>
+            <artifactId>orcid-model-jakarta</artifactId>
+            <version>3.3.0</version>
             <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.module</groupId>
+                    <artifactId>jackson-module-jaxb-annotations</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-lang3</artifactId>
@@ -1003,10 +857,6 @@
                 <exclusion>
                     <groupId>commons-lang</groupId>
                     <artifactId>commons-lang</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                    <artifactId>jackson-jaxrs-json-provider</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>io.swagger</groupId>
@@ -1024,8 +874,8 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>javax.persistence</groupId>
-            <artifactId>javax.persistence-api</artifactId>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -1038,7 +888,7 @@
         </dependency>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-integration</artifactId>
+            <artifactId>swagger-integration-jakarta</artifactId>
             <!-- note: this brings in a version of jaxb-api that breaks
            liquibase https://liquibase.jira.com/browse/CORE-3262
            -->
@@ -1245,9 +1095,8 @@
                                 <ignoredDependency>org.apache.httpcomponents:httpcore-osgi</ignoredDependency>
                             </ignoredDependencies>
                             <usedDependencies>
-                                <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.swagger:swagger-core</usedDependency>
-                                <usedDependency>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer</usedDependency>
+                                <usedDependency>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer-jakarta</usedDependency>
                                 <usedDependency>jakarta.activation:jakarta.activation-api</usedDependency>
                                 <!-- these are used by org.kohsuke:github-api for handling JWT tokens -->
                                 <usedDependency>com.auth0:java-jwt</usedDependency>
@@ -1304,7 +1153,7 @@
                 -->
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
-                <version>4.8.0</version>
+                <version>4.21.1</version>
                 <configuration>
                     <driver>org.postgresql.Driver</driver>
                     <referenceDriver>org.postgresql.Driver</referenceDriver>
@@ -1328,47 +1177,10 @@
                     </dependency>
                 </dependencies>
             </plugin>
-            <plugin>
-                <groupId>com.github.kongchen</groupId>
-                <artifactId>swagger-maven-plugin</artifactId>
-                <version>3.1.8</version>
-                <configuration>
-                    <apiSources>
-                        <apiSource>
-                            <springmvc>false</springmvc>
-                            <locations>
-                                <location>io.swagger.api</location>
-                                <location>io.swagger.model</location>
-                                <location>io.dockstore.webservice.resources</location>
-                                <location>io.dockstore.webservice.resources.rss</location>
-                                <location>io.dockstore.webservice.resources.proposedGA4GH</location>
-                            </locations>
-                            <swaggerDirectory>${pom.basedir}/src/main/resources</swaggerDirectory>
-                            <swaggerFileName>swagger</swaggerFileName>
-                            <outputFormats>yaml</outputFormats>
-                            <basePath>/</basePath>
-                            <swaggerApiReader>com.github.kongchen.swagger.docgen.reader.SwaggerReader</swaggerApiReader>
-                            <attachSwaggerArtifact>true</attachSwaggerArtifact>
-                        </apiSource>
-                    </apiSources>
-                    <enabledObjectMapperFeatures>
-                        <feature>com.fasterxml.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY</feature>
-                        <feature>com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS</feature>
-                    </enabledObjectMapperFeatures>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <!-- replaces com.github.kongchen:swagger-maven-plugin for OpenAPI 3.0 -->
             <plugin>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-maven-plugin</artifactId>
+                <artifactId>swagger-maven-plugin-jakarta</artifactId>
                 <version>${openapi-annotations-version}</version>
                 <configuration>
                     <outputFileName>openapi</outputFileName>
@@ -1497,12 +1309,47 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <filesToInclude>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/openapi/api/ToolsApi.java,${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</filesToInclude>
+                    <includes>
+                        <include>${project.basedir}/target/generated-sources/swagger/src/gen/java/io/openapi/api/ToolsApi.java</include>
+                        <include>${project.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</include>
+                        <!-- can be better after https://github.com/swagger-api/swagger-codegen/issues/11797 -->
+                        <include>${project.basedir}/target/generated-sources/swagger/src/gen/java/**/*.java</include>
+                        <include>${project.basedir}/target/generated-sources/swagger/src/main/java/**/*.java</include>
+                    </includes>
                     <regex>false</regex>
                     <replacements>
                         <replacement>
                             <token>{relative_path}</token>
                             <value>{relative_path : .+}</value>
+                        </replacement>
+                        <!-- for these jakarta replacements, we can do better after https://github.com/swagger-api/swagger-codegen/issues/11797 -->
+                        <replacement>
+                            <token>javax.annotation</token>
+                            <value>jakarta.annotation</value>
+                        </replacement>
+                        <replacement>
+                            <token>@javax.annotation</token>
+                            <value>@jakarta.annotation</value>
+                        </replacement>
+                        <replacement>
+                            <token>javax.validation</token>
+                            <value>jakarta.validation</value>
+                        </replacement>
+                        <replacement>
+                            <token>javax.ws</token>
+                            <value>jakarta.ws</value>
+                        </replacement>
+                        <replacement>
+                            <token>javax.servlet</token>
+                            <value>jakarta.servlet</value>
+                        </replacement>
+                        <replacement>
+                            <token>javax.xml.bind</token>
+                            <value>jakarta.xml.bind</value>
+                        </replacement>
+                        <replacement>
+                            <token>javax.xml.bind</token>
+                            <value>jakarta.xml.bind</value>
                         </replacement>
                     </replacements>
                 </configuration>

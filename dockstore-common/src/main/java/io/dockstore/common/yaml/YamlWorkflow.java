@@ -19,10 +19,10 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.yaml.constraints.EntryName;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 /**
  * A workflow as described in a .dockstore.yml

@@ -28,11 +28,12 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.testing.DropwizardTestSupport;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,7 +55,7 @@ class OpenApiIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
-    protected static javax.ws.rs.client.Client client;
+    protected static jakarta.ws.rs.client.Client client;
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -76,6 +77,7 @@ class OpenApiIT {
     }
 
     @Test
+    @Disabled("no longer generated in 1.15 with transition to jakarta")
     void testSwagger20() {
         Response response = client.target(baseURL + "swagger.json").request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
