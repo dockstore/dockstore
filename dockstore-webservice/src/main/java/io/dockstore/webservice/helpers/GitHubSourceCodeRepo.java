@@ -125,6 +125,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * each section that starts with (?!.* is excluding a specific character
      */
     public static final Pattern GIT_BRANCH_TAG_PATTERN = Pattern.compile("^refs/(tags|heads)/((?!.*//)(?!.*\\^)(?!.*:)(?!.*\\\\)(?!.*@)(?!.*\\[)(?!.*\\?)(?!.*~)(?!.*\\.\\.)[\\p{Punct}\\p{L}\\d\\-_/]+)$");
+    public static final String DO_NOT_PROCESS_PRIVATE_GITHUB_REPOS = "Dockstore does not process private GitHub repositories";
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
     private final String githubTokenUsername;
@@ -241,7 +242,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         if (repository.isPrivate()) {
-            throw new CustomWebApplicationException("Dockstore does not process private GitHub repositories", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(DO_NOT_PROCESS_PRIVATE_GITHUB_REPOS, HttpStatus.SC_BAD_REQUEST);
         }
     }
 

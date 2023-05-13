@@ -55,6 +55,7 @@ class WebhookIT extends BaseIT {
     private final String taggedToolRepo = "dockstore-testing/tagged-apptool";
     private final String taggedToolRepoPath = "dockstore-testing/tagged-apptool/md5sum";
     private final String workflowDockstoreYmlRepo = "dockstore-testing/workflow-dockstore-yml";
+    private final String privateRepo = "dockstore-testing/secret-workflow";
 
     @BeforeEach
     public void cleanDB() {
@@ -221,4 +222,17 @@ class WebhookIT extends BaseIT {
         assertTrue(foobar.getWorkflowVersions().stream().allMatch(v -> "/README2.md".equals(v.getReadMePath()) && v.getDescription().contains("an 'X' in it")));
         assertTrue(foobar2.getWorkflowVersions().stream().allMatch(v -> "/docs/README.md".equals(v.getReadMePath()) && v.getDescription().contains("a '🙃' in it")));
     }
+
+    // TODO: Add private repo to dockstore-testing, then enable this test
+    //    @Test
+    //    void testPrivateRepos() {
+    //        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+    //        WorkflowsApi workflowClient = new WorkflowsApi(webClient);
+    //        try {
+    //            workflowClient.handleGitHubRelease("refs/tags/1.0", installationId, privateRepo, BasicIT.USER_2_USERNAME);
+    //            fail("Should not be able to handle a private repo");
+    //        } catch (ApiException e) {
+    //            assertTrue(e.getMessage().contains(GitHubSourceCodeRepo.DO_NOT_PROCESS_PRIVATE_GITHUB_REPOS));
+    //        }
+    //    }
 }
