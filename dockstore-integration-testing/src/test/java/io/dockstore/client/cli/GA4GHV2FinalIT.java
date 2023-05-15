@@ -224,7 +224,7 @@ class GA4GHV2FinalIT extends GA4GHIT {
 
         // Check responses
         Response response = checkedResponse(
-            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject.getContent());
@@ -232,7 +232,7 @@ class GA4GHV2FinalIT extends GA4GHIT {
             .target(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Ftest.potato.json").request().get();
         assertEquals(HttpStatus.SC_NOT_FOUND, response2.getStatus());
         Response response3 = checkedResponse(
-            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
         FileWrapper responseObject3 = response3.readEntity(FileWrapper.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("potato", responseObject3.getContent());
@@ -312,12 +312,12 @@ class GA4GHV2FinalIT extends GA4GHIT {
 
         // Check responses
         Response response = checkedResponse(
-            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor//nested/test.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor//nested/test.cwl.json");
         String responseObject = response.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject);
         Response response2 = checkedResponse(
-            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor//test.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor//test.cwl.json");
         String responseObject2 = response2.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response2.getStatus());
         assertEquals("potato", responseObject2);
