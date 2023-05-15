@@ -367,7 +367,7 @@ class NotebookIT extends BaseIT {
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
         assertEquals(1,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
         assertEquals(1, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
-
+        assertEquals(1, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getNotebooksLength());
 
         //remove notebook from collection
         organizationsApi.deleteEntryFromCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
@@ -376,6 +376,7 @@ class NotebookIT extends BaseIT {
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
         assertEquals(0,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
         assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
+        assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getNotebooksLength());
 
         //add notebook to category
         Set<String> expectedCategoryNames = new HashSet<>();
@@ -385,6 +386,8 @@ class NotebookIT extends BaseIT {
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
         assertEquals(1,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
         assertEquals(1, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
+        assertEquals(1, categoriesApi.getCategoryById(category.getId()).getNotebooksLength());
+
 
         //remove notebook from category
         organizationsApi.deleteEntryFromCollection(categorizerOrg.getId(), category.getId(), notebookID, null);
@@ -393,6 +396,7 @@ class NotebookIT extends BaseIT {
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
         assertEquals(0,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
         assertEquals(0, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
+        assertEquals(0, categoriesApi.getCategoryById(category.getId()).getNotebooksLength());
     }
 
     private Organization createTestOrganization(String name, boolean categorizer) {
