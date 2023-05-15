@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 
@@ -52,10 +53,21 @@ public final class S3ClientHelper {
      * Creates an S3Client. Purposely not specifying a region because the <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/awscore/client/builder/AwsClientBuilder.html#region(software.amazon.awssdk.regions.Region)">docs</a>
      * say that it will identify according to the listed logic. Since we deploy with Fargate, the AWS_REGION environment variable will automatically be set
      * and the SDK will grab the region from that.
+     * This assumes that the bucket being accessed was created in the same region as the region that webservice is running in.
      * @return
      */
     public static S3Client createS3Client() {
         return initS3ClientBuilder().build();
+    }
+
+    /**
+     * Creates an S3Client with a specific region specified.
+     * Should only use this if the bucket being accessed was created in a different region from the region that the webservice is running in.
+     * @param region
+     * @return
+     */
+    public static S3Client createS3Client(Region region) {
+        return initS3ClientBuilder().region(region).build();
     }
 
     /**

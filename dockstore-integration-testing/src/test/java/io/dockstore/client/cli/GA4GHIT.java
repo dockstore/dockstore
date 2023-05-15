@@ -210,7 +210,7 @@ public abstract class GA4GHIT {
 
         // Check responses
         Response response = checkedResponse(baseURL
-            + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+            + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject);
@@ -219,7 +219,7 @@ public abstract class GA4GHIT {
             .get();
         assertEquals(HttpStatus.SC_NOT_FOUND, response2.getStatus());
         Response response3 = checkedResponse(
-            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Ftest.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Ftest.cwl.json");
         String responseObject3 = response3.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("potato", responseObject3);
