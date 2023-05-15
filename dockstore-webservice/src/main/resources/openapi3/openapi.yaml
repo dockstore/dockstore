@@ -7745,6 +7745,10 @@ components:
           maxLength: 39
           minLength: 3
           pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
+        notebooksLength:
+          type: integer
+          format: int64
+          description: Number of notebooks inside this collection
         organizationID:
           type: integer
           format: int64
@@ -7868,6 +7872,10 @@ components:
           maxLength: 39
           minLength: 3
           pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
+        notebooksLength:
+          type: integer
+          format: int64
+          description: Number of notebooks inside this collection
         organizationID:
           type: integer
           format: int64

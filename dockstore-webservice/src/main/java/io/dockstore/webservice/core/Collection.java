@@ -117,6 +117,12 @@ public class Collection implements Serializable, Aliasable {
     @Schema(description = "Number of tools inside this collection")
     private long toolsLength;
 
+    @Transient
+    @JsonSerialize
+    @ApiModelProperty(value = "Number of notebooks inside this collection", position = 6)
+    @Schema(description = "Number of notebooks inside this collection")
+    private long notebooksLength;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumns({
         @JoinColumn(name = "collection_id", nullable = false, columnDefinition = "bigint"),
@@ -268,6 +274,14 @@ public class Collection implements Serializable, Aliasable {
     @JsonProperty
     public long getToolsLength() {
         return this.toolsLength;
+    }
+
+    public void setNotebooksLength(long notebooksLength) {
+        this.notebooksLength = notebooksLength;
+    }
+
+    public long getNotebooksLength() {
+        return this.notebooksLength;
     }
 
     public long getOrganizationID() {

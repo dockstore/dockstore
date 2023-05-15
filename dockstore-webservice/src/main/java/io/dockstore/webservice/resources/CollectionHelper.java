@@ -62,6 +62,7 @@ class CollectionHelper {
         collection.setEntries(new HashSet<>());
         collection.setWorkflowsLength(entryDAO.getWorkflowsLength(collection.getId()));
         collection.setToolsLength(entryDAO.getToolsLength(collection.getId()));
+        collection.setNotebooksLength(entryDAO.getNotebooksLength(collection.getId()));
     }
 
     public void evictAndSummarize(java.util.Collection<? extends Collection> c) {
@@ -112,7 +113,9 @@ class CollectionHelper {
             }
         });
         collection.setCollectionEntries(collectionEntries);
+        List<CollectionEntry> collectionNotebooks = entryDAO.getCollectionNotebooks(collection.getId());
         collection.setWorkflowsLength(collectionWorkflows.size() + (long)collectionWorkflowsWithVersions.size());
         collection.setToolsLength(collectionTools.size() + (long)collectionToolsWithVersions.size());
+        collection.setNotebooksLength(collectionNotebooks.size());
     }
 }
