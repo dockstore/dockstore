@@ -103,7 +103,7 @@ class GA4GHV2CwltoolIT {
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
         String command = "cwl-runner";
         String originalUrl =
-                baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
+                baseURL + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
         String descriptorPath = TestUtility.mimicNginxRewrite(originalUrl, basePath);
         String testParameterFilePath = ResourceHelpers.resourceFilePath("testWorkflow.json");
         ImmutablePair<String, String> stringStringImmutablePair = Utilities
