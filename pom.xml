@@ -140,7 +140,6 @@
         <module>swagger-java-client</module>
         <module>openapi-java-client</module>
         <module>dockstore-integration-testing</module>
-        <module>dockstore-event-consumer</module>
         <module>reports</module>
     </modules>
 
