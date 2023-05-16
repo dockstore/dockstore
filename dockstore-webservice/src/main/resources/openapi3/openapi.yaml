@@ -7949,6 +7949,8 @@ components:
           type: string
         checkUrlLambdaVersion:
           type: string
+        colabImportUrl:
+          type: string
         composeSetupVersion:
           type: string
         cwlParsingLambdaVersion:
@@ -7998,6 +8000,8 @@ components:
         googleClientId:
           type: string
         googleScope:
+          type: string
+        mybinderImportUrl:
           type: string
         nextflowParsingLambdaVersion:
           type: string
