@@ -493,7 +493,7 @@ commands:
           name: install pip
           command: |
             sudo apt update
-            sudo apt install python3-distutils python3-dev python3-pip libxml2-dev libxslt-dev
+            sudo apt install python3-distutils python3-dev python3-pip
             # For debug purposes, a python3 version was installed in the image, pip is untagged
             python3 --version
             pip3 --version
