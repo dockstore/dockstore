@@ -280,6 +280,7 @@ public class Collection implements Serializable, Aliasable {
         this.notebooksLength = notebooksLength;
     }
 
+    @JsonProperty
     public long getNotebooksLength() {
         return this.notebooksLength;
     }
