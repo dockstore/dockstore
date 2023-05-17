@@ -226,7 +226,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     public List<CollectionEntry> getCollectionNotebooks(long collectionId) {
         List<CollectionEntry> collectionWorkflows =  getCollectionWorkflows(collectionId);
         List<CollectionEntry> collectionNotebooks = new ArrayList<>();
-        collectionWorkflows.forEach((entry) -> {
+        collectionWorkflows.forEach(entry -> {
             if (entry.getEntryType().equals("notebook")) {
                 collectionNotebooks.add(entry);
             }
