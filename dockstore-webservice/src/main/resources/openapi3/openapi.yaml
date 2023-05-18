@@ -5370,6 +5370,7 @@ paths:
           - TOOLS
           - WORKFLOWS
           - SERVICES
+          - NOTEBOOKS
       responses:
         "200":
           content:

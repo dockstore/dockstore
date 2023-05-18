@@ -820,6 +820,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (type == null || type == EntrySearchType.SERVICES) {
             entriesLite.addAll(serviceDAO.findEntryVersions(userId));
         }
+        if (type == null || type == EntrySearchType.NOTEBOOKS) {
+            entriesLite.addAll(notebookDAO.findEntryVersions(userId));
+        }
 
         //cleanup fields for UI: filter(if applicable), sort, and limit by count(if applicable)
         List<EntryUpdateTime> filteredEntries = entriesLite
