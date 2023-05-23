@@ -24,7 +24,7 @@ pyparsing==3.0.8
 python-dateutil==2.8.2
 rdflib==6.1.1
 rdflib-jsonld==0.6.2
-requests==2.27.1
+requests==2.31.0
 ruamel.yaml==0.17.21
 scandir==1.10.0
 schema-salad==8.2.20220204150214
