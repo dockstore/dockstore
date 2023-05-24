@@ -713,7 +713,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptorContent);
             return Optional.of(wdlBridge.getInputFiles(tempMainDescriptor.getPath()));
-        } catch (SyntaxError | IOException e) {
+        } catch (StackOverflowError | SyntaxError | IOException e) { // StackOverflowError: https://github.com/dockstore/dockstore/issues/5496
             LOG.error("Error parsing WDL", e);
             return Optional.empty();
         } finally {

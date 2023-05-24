@@ -18,6 +18,7 @@
 package io.dockstore.webservice.helpers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.UnsupportedEncodingException;
 import org.junit.jupiter.api.Test;
@@ -71,6 +72,10 @@ class S3ClientHelperTest {
         // Key of tool with tool name
         s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow%2Fthing/1.0/agc/foo.json";
         assertEquals("1.0", S3ClientHelper.getVersionName(s3Key));
+
+        // Test key with no version
+        s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow/";
+        assertTrue(S3ClientHelper.getVersionName(s3Key).isEmpty());
     }
 
     @Test
@@ -88,6 +93,10 @@ class S3ClientHelperTest {
         // Key of tool with tool name
         s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow%2Fthing/1.0/agc/foo.json";
         assertEquals("agc", S3ClientHelper.getMetricsPlatform(s3Key));
+
+        // Test key with no platform
+        s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow/";
+        assertTrue(S3ClientHelper.getMetricsPlatform(s3Key).isEmpty());
     }
 
     @Test
@@ -109,5 +118,15 @@ class S3ClientHelperTest {
         // ToolTester keys
         s3Key = "tool/quay.io/pancancer/pcawg-bwa-mem-workflow/2.7.0/test1.json/cwltool/foo.json";
         assertEquals("foo.json", S3ClientHelper.getFileName(s3Key));
+    }
+
+    @Test
+    void testGetElementFromKey() {
+        assertEquals("foo", S3ClientHelper.getElementFromKey("foo", 0));
+        assertEquals("foo", S3ClientHelper.getElementFromKey("foo/bar", 0));
+        assertEquals("potato", S3ClientHelper.getElementFromKey("foo/bar/potato", 2));
+
+        assertEquals("", S3ClientHelper.getElementFromKey("foo", 1));
+        assertEquals("", S3ClientHelper.getElementFromKey("foo/bar/potato", 10));
     }
 }

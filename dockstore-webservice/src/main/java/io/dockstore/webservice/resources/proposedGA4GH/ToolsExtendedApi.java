@@ -22,6 +22,7 @@ import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.Metrics;
+import io.dockstore.webservice.core.metrics.constraints.HasMetrics;
 import io.dockstore.webservice.resources.ResourceConstants;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -236,7 +237,7 @@ public class ToolsExtendedApi {
 
     @PUT
     @UnitOfWork
-    @RolesAllowed({"curator", "admin", "platformPartner"})
+    @RolesAllowed({"curator", "admin"})
     @Path("/{id}/versions/{version_id}/aggregatedMetrics")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON})
@@ -259,7 +260,7 @@ public class ToolsExtendedApi {
         @ApiParam(value = AggregatedMetricsPut.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
         @ApiParam(value = AggregatedMetricsPut.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
         @ApiParam(value = AggregatedMetricsPut.PLATFORM_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsPut.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
-        @ApiParam(value = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = Metrics.class))) @Valid Metrics aggregatedMetrics,
+        @ApiParam(value = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true) @RequestBody(description = AggregatedMetricsPut.AGGREGATED_METRICS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = Metrics.class))) @Valid @HasMetrics Metrics aggregatedMetrics,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         return delegate.setAggregatedMetrics(id, versionId, platform, aggregatedMetrics);
     }
@@ -307,13 +308,13 @@ public class ToolsExtendedApi {
     }
 
     private static final class ExecutionMetricsPost {
-        public static final String SUMMARY = "Submit execution metrics for a workflow that was executed on a platform.";
-        public static final String DESCRIPTION = "This endpoint submits execution metrics for a workflow that was executed on a platform";
+        public static final String SUMMARY = "Submit individual or aggregated execution metrics for a tool that was executed on a platform.";
+        public static final String DESCRIPTION = "This endpoint submits individual or aggregated execution metrics for a tool that was executed on a platform";
         public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
         public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
         public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
         public static final String DESCRIPTION_DESCRIPTION = "Optional description about the execution metrics";
-        public static final String EXECUTIONS_DESCRIPTION = "Execution metrics to submit";
+        public static final String EXECUTIONS_DESCRIPTION = "Individual or aggregated execution metrics to submit";
         public static final String OK_RESPONSE = "Execution metrics submitted successfully.";
         public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to submit execution metrics.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";

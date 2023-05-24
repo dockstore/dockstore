@@ -92,6 +92,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         implements AuthenticatedResourceInterface, EntryVersionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHostedEntryResource.class);
+    private static final String UPDATED_SOURCEFILES = "Set of updated source files, add files by adding new files with unknown paths, delete files by including them with null content";
     private final FileDAO fileDAO;
     private final UserDAO userDAO;
     private final PermissionsInterface permissionsInterface;
@@ -188,8 +189,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Consumes(MediaType.APPLICATION_JSON)
     public T editHosted(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @Parameter(description = "Entry to modify", name = "entryId", in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true)
-        @Parameter(description = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", name = "sourceFiles", required = true) Set<SourceFile> sourceFiles) {
+        @ApiParam(value = UPDATED_SOURCEFILES, required = true)
+        @Parameter(description = UPDATED_SOURCEFILES, name = "sourceFiles", required = true) Set<SourceFile> sourceFiles) {
         T entry = getEntryDAO().findById(entryId);
         checkNotNullEntry(entry);
         checkCanWrite(user, entry);
