@@ -64,7 +64,7 @@
         </sql>
     </changeSet>
     <changeSet id="max_workflowname_and_toolname" author="coverbeck">
-        <!-- 256 is from StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT.
+        <!-- 256 is from common.ValidationConstants.ENTRY_NAME_LENGTH_MAX.
              If truncating, add numbers using a sequence to ensure workflowname uniqueness within a sourcecontrol, organization, repository;
              otherwise a uniqueness constraint will cause a failure.
         -->

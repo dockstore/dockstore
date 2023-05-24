@@ -1,0 +1,15 @@
+{
+  "runExecutions": [
+    {
+      "executionStatus": "SUCCESSFUL",
+      "totalTime": "PT5m",
+      "additionalProperties": {
+        "@context": {
+          "schema": "https://schema.org"
+        },
+        "schema:actionStatus": "CompletedActionStatus",
+        "schema:totalTime": "PT5M"
+      }
+    }
+  ]
+}

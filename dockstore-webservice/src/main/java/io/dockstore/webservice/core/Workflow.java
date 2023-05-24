@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.helpers.StringInputValidationHelper;
+import io.dockstore.common.ValidationConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -61,7 +61,7 @@ import org.hibernate.annotations.Filter;
  *
  * @author dyuen
  */
-@ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore", subTypes = {BioWorkflow.class, Service.class, AppTool.class}, discriminator = "type")
+@ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore", subTypes = {BioWorkflow.class, Service.class, AppTool.class, Notebook.class}, discriminator = "type")
 
 @Entity
 // this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value
@@ -71,6 +71,7 @@ import org.hibernate.annotations.Filter;
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.countAllPublished", query = "SELECT COUNT(c.id)" + Workflow.PUBLISHED_QUERY),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPathWithoutUser", query = "SELECT w FROM Workflow w WHERE w.sourceControl = :sourcecontrol AND w.organization = :organization AND w.repository = :repository and :user not in elements(w.users) "),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname AND c.isPublished = true"),
@@ -80,10 +81,12 @@ import org.hibernate.annotations.Filter;
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl AND :user not in elements(c.users)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganizationsWithoutUser", query = "SELECT c FROM Workflow c WHERE lower(c.organization) in :organizations AND c.sourceControl = :sourceControl AND :user not in elements(c.users)"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
     @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedOrganizations", query = "SELECT distinct lower(organization) FROM Workflow w WHERE w.isPublished = true"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllWorkflows", query = "SELECT w FROM Workflow w order by w.id")
 })
 
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
@@ -92,7 +95,8 @@ import org.hibernate.annotations.Filter;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({@JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
     @JsonSubTypes.Type(value = Service.class, name = "Service"),
-    @JsonSubTypes.Type(value = AppTool.class, name = "AppTool")})
+    @JsonSubTypes.Type(value = AppTool.class, name = "AppTool"),
+    @JsonSubTypes.Type(value = Notebook.class, name = "Notebook")})
 public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
@@ -104,7 +108,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Column(columnDefinition = "varchar(256)")
     @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", position = 14)
-    @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
+    @Size(max = ValidationConstants.ENTRY_NAME_LENGTH_MAX)
     private String workflowName;
 
     @Column(nullable = false)
@@ -129,13 +133,13 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
     @Column(nullable = false)
     @Convert(converter = DescriptorLanguageConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either SMK, CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "SMK, CWL, WDL, NFL, gxformat2, service")
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either SMK, CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "SMK, CWL, WDL, NFL, gxformat2, service, jupyter")
     private DescriptorLanguage descriptorType;
 
     // TODO: Change this to LAZY, this is the source of all our problems
     @Column(nullable = false, columnDefinition = "varchar(255) default 'n/a'")
     @Convert(converter = DescriptorLanguageSubclassConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true, position = 22)
+    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services and notebooks.", required = true, position = 22)
     private DescriptorLanguageSubclass descriptorTypeSubclass = DescriptorLanguageSubclass.NOT_APPLICABLE;
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
@@ -193,8 +197,8 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     public void copyWorkflow(Workflow targetWorkflow) {
         targetWorkflow.setIsPublished(getIsPublished());
         targetWorkflow.setWorkflowName(getWorkflowName());
-        targetWorkflow.setAuthor(getAuthor());
-        targetWorkflow.setEmail(getEmail());
+        targetWorkflow.setAuthors(getAuthors());
+        targetWorkflow.setOrcidAuthors(getOrcidAuthors());
         targetWorkflow.setDescription(getDescription());
         targetWorkflow.setLastModified(getLastModifiedDate());
         targetWorkflow.setForumUrl(getForumUrl());
@@ -390,7 +394,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
         @Override
         public String convertToDatabaseColumn(DescriptorLanguageSubclass attribute) {
-            return attribute.getShortName();
+            return attribute.getShortName().toLowerCase();
         }
 
         @Override

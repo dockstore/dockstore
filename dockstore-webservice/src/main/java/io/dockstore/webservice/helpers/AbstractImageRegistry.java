@@ -174,7 +174,7 @@ public abstract class AbstractImageRegistry {
         //  - belongs to user
         //  - correct registry
         //  - correct organization/namespace
-        List<Tool> manualTools = userTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).collect(Collectors.toList());
+        List<Tool> manualTools = userTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).toList();
         // notManualTools is similar except it's not manualMode
         List<Tool> notManualTools = userTools.stream().filter(tool -> !ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).collect(Collectors.toList());
         apiTools.addAll(manualTools);
@@ -224,8 +224,7 @@ public abstract class AbstractImageRegistry {
         List<Tool> userRegistryNamespaceRepositoryTools = toolDAO
                 .findByUserRegistryNamespaceRepository(userId, registryString, organization, repository);
         List<Tool> manualTools = userRegistryNamespaceRepositoryTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH
-                .equals(tool.getMode())).collect(
-                Collectors.toList());
+                .equals(tool.getMode())).toList();
         List<Tool> notManualTools = userRegistryNamespaceRepositoryTools.stream().filter(tool -> !ToolMode.MANUAL_IMAGE_PATH
                 .equals(tool.getMode())).collect(
                 Collectors.toList());
@@ -343,8 +342,6 @@ public abstract class AbstractImageRegistry {
         updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         Tool updatedTool = newDBTools.get(0);
 
-        List<String> descriptorTypes = updatedTool.calculateDescriptorType();
-        updatedTool.setDescriptorType(descriptorTypes);
         logToolRefresh(dashboardPrefix, tool);
 
         String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
@@ -609,6 +606,8 @@ public abstract class AbstractImageRegistry {
             }
 
         }
+        List<String> descriptorTypes = tool.calculateDescriptorType();
+        tool.setDescriptorType(descriptorTypes);
         FileFormatHelper.updateFileFormats(tool, tool.getWorkflowVersions(), fileFormatDAO, true);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
@@ -758,6 +757,7 @@ public abstract class AbstractImageRegistry {
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.setContent(newFile.getContent());
+                    oldFile.getMetadata().setTypeVersion(newFile.getMetadata().getTypeVersion());
                     newFiles.remove(newFile);
                     found = true;
                     break;
@@ -927,7 +927,7 @@ public abstract class AbstractImageRegistry {
             } else {
                 // If test json, must grab all
                 List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == f)
-                    .collect(Collectors.toList());
+                    .toList();
                 cwlTestJson.forEach(file -> sourceCodeRepo.readFile(repositoryId, tag, files, f, file.getPath()));
             }
         }

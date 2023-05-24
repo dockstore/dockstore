@@ -24,11 +24,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.Registry;
-import io.dockstore.webservice.helpers.StringInputValidationHelper;
+import io.dockstore.common.ValidationConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -99,7 +98,8 @@ import org.hibernate.annotations.Filter;
     @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace AND t.name = :repository"),
     @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
     @NamedQuery(name = "io.dockstore.webservice.core.Tool.getPublishedNamespaces", query = "SELECT distinct lower(namespace) FROM Tool c WHERE c.isPublished = true"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Tool.getPublishedEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.isPublished = true AND t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.getPublishedEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.isPublished = true AND t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllTools", query = "SELECT t from Tool t order by t.id")
 })
 
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
@@ -108,6 +108,8 @@ import org.hibernate.annotations.Filter;
 public class Tool extends Entry<Tool, Tag> {
 
     static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";
+
+    static final String DEFAULT_DESCRIPTOR_TYPE = DescriptorLanguage.CWL.toString();
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
@@ -129,7 +131,7 @@ public class Tool extends Entry<Tool, Tag> {
     private boolean privateAccess = false;
 
     @Column(columnDefinition = "varchar(256)")
-    @Size(max = StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT)
+    @Size(max = ValidationConstants.ENTRY_NAME_LENGTH_MAX)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
@@ -150,10 +152,10 @@ public class Tool extends Entry<Tool, Tag> {
             + "If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools", position = 25, dataType = "long")
     private Date lastBuild;
 
-    @Column(nullable = false, columnDefinition = "varchar default ''")
+    @Column(nullable = false, columnDefinition = "varchar")
     @Convert(converter = DescriptorTypeConverter.class)
-    @ApiModelProperty(position = 28, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
-    private List<String> descriptorType = new ArrayList<>();
+    @ApiModelProperty(position = 28, accessMode = ApiModelProperty.AccessMode.READ_ONLY, value = "The descriptor types for the tool, calculated from the tool's descriptor files. Defaults to CWL")
+    private List<String> descriptorType = List.of(DEFAULT_DESCRIPTOR_TYPE);
 
     @Column
     @Size(max = 256)
@@ -217,6 +219,10 @@ public class Tool extends Entry<Tool, Tag> {
 
     public EntryType getEntryType() {
         return EntryType.TOOL;
+    }
+
+    public EntryTypeMetadata getEntryTypeMetadata() {
+        return EntryTypeMetadata.TOOL;
     }
 
     // compromise: this sucks, but setting the json property to tags allows for backwards compatibility of existing clients
@@ -312,12 +318,23 @@ public class Tool extends Entry<Tool, Tag> {
         this.mode = mode;
     }
 
+    /**
+     * Gets the descriptor type list. Defaults to CWL if the list is empty.
+     * @return
+     */
     public List<String> getDescriptorType() {
+        if (this.descriptorType.isEmpty()) {
+            this.descriptorType = List.of(DEFAULT_DESCRIPTOR_TYPE);
+        }
         return this.descriptorType;
     }
 
+    /**
+     * Sets the descriptor type. Defaults to CWL if the descriptor type list is empty.
+     * @param descriptorType
+     */
     public void setDescriptorType(final List<String> descriptorType) {
-        this.descriptorType = descriptorType;
+        this.descriptorType = descriptorType.isEmpty() ? List.of(DEFAULT_DESCRIPTOR_TYPE) : descriptorType;
     }
 
     @JsonProperty("default_dockerfile_path")
@@ -473,10 +490,19 @@ public class Tool extends Entry<Tool, Tag> {
         getDefaultPaths().put(DescriptorLanguage.FileType.CWL_TEST_JSON, defaultTestCwlParameterFile);
     }
 
+    /**
+     * Calculates the descriptor types from the versions' source files.
+     * @return
+     */
     public List<String> calculateDescriptorType() {
-        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(
-                Collectors.toSet());
-        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> !(lang.toString().equals("cwl") || lang.toString().equals("wdl"))).filter(lang -> set.contains(lang.getFileType()))
-                .map(lang -> lang.toString()).distinct().collect(Collectors.toList());
+        Set<DescriptorLanguage.FileType> sourceFileTypes = this.getWorkflowVersions().stream()
+                .flatMap(tag -> tag.getSourceFiles().stream())
+                .map(SourceFile::getType)
+                .collect(Collectors.toSet());
+        return Arrays.stream(DescriptorLanguage.values())
+                .filter(lang -> sourceFileTypes.contains(lang.getFileType()))
+                .map(DescriptorLanguage::toString)
+                .distinct()
+                .collect(Collectors.toList());
     }
 }

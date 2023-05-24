@@ -26,6 +26,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
@@ -64,12 +65,15 @@ import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface.GitRepo;
+import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -122,6 +126,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
@@ -149,6 +154,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
+    private SessionFactory sessionFactory;
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
@@ -159,6 +165,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final EventDAO eventDAO;
     private final LambdaEventDAO lambdaEventDAO;
     private final DeletedUsernameDAO deletedUsernameDAO;
+    private final NotebookDAO notebookDAO;
     private final PermissionsInterface authorizer;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
     private final HttpClient client;
@@ -179,6 +186,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.deletedUsernameDAO = new DeletedUsernameDAO(sessionFactory);
+        this.notebookDAO = new NotebookDAO(sessionFactory);
+        this.sessionFactory = sessionFactory;
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
@@ -650,6 +659,25 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return appTools;
     }
 
+    @GET
+    @Path("/{userId}/notebooks")
+    @Timed
+    @UnitOfWork
+    @Operation(operationId = "userNotebooks", description = "List all notebooks owned by the authenticated user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), method = "GET")
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+        + "", description = "A list of notebooks owned by the user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Workflow.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
+    public List<Workflow> userNotebooks(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        checkUserId(user, userId);
+        final User fetchedUser = this.userDAO.findById(userId);
+        checkNotNullUser(fetchedUser);
+        List<Workflow> notebooks = notebookDAO.findMyEntries(fetchedUser.getId()).stream().map(Workflow.class::cast).toList();
+        EntryVersionHelper.stripContentFromEntries(notebooks, this.userDAO);
+        return notebooks;
+    }
+
     private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {
         List<Workflow> workflows = new ArrayList<>();
         myWorkflows.forEach(myWorkflow -> {
@@ -814,8 +842,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return u.getStarredEntries().stream().filter(element -> element instanceof Tool || element instanceof AppTool)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return this.getStarredEntries(u, Set.of(EntryType.TOOL, EntryType.APPTOOL));
     }
 
     @GET
@@ -829,8 +856,22 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return u.getStarredEntries().stream().filter(element -> element instanceof BioWorkflow)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return this.getStarredEntries(u, Set.of(EntryType.WORKFLOW));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/starredNotebooks")
+    @Operation(operationId = "getStarredNotebooks", description = "Get the authenticated user's starred notebooks.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = "A list of the authenticated user's starred notebooks", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Entry.class))))
+    @ApiOperation(value = "Get the authenticated user's starred notebooks.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = Entry.class, responseContainer = "List")
+    public Set<Entry> getStarredNotebooks(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        User u = userDAO.findById(user.getId());
+        checkNotNullUser(u);
+        return this.getStarredEntries(u, Set.of(EntryType.NOTEBOOK));
     }
 
     @GET
@@ -844,7 +885,18 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public Set<Entry> getStarredServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         checkNotNullUser(u);
-        return u.getStarredEntries().stream().filter(element -> element instanceof Service)
+        return this.getStarredEntries(u, Set.of(EntryType.SERVICE));
+    }
+
+    /**
+     * Helper function for getStarred endpoints
+     *
+     * @param user
+     * @param desiredTypes
+     * @return a user's starredEntries for desired entryTypes
+     */
+    public Set<Entry> getStarredEntries(User user, Set<EntryType> desiredTypes) {
+        return user.getStarredEntries().stream().filter(entry -> desiredTypes.contains(entry.getEntryType()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -879,6 +931,49 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
 
         return userDAO.findAll();
+    }
+
+    @POST
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/updateUserWorkflows")
+    @Operation(operationId = "checkWorkflowOwnership", description = "Check workflow ownership", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT
+        + "", description = "Successfully updated workflow ownership for all users")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    public Response updateUserWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User adminUser) {
+        final List<Long> allGitHubUsers = userDAO.findAllGitHubUserIds();
+        allGitHubUsers.forEach(userId -> {
+            // Break into many transactions so all workflows are not loaded into memory
+            try {
+                new TransactionHelper(sessionFactory).transaction(() -> {
+                    tokenDAO.findGithubByUserId(userId).stream().limit(1).forEach(gitHubToken -> {
+                        final SourceCodeRepoInterface sourceCodeRepo =
+                            SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken);
+                        final Set<String> orgMemberships = sourceCodeRepo.getOrganizationMemberships();
+                        final Set<GitRepo> gitRepos = sourceCodeRepo.getRepoLevelAccessRepositories();
+                        final User user = userDAO.findById(userId);
+                        user.getEntries().stream().filter(Workflow.class::isInstance)
+                            .map(Workflow.class::cast)
+                            .filter(workflow -> {
+                                final boolean userHasOrganizationAccess =
+                                    orgMemberships.contains(workflow.getOrganization());
+                                return !userHasOrganizationAccess && !hasRepoLevelAccess(gitRepos, workflow);
+                            })
+                            .forEach(workflow -> workflow.removeUser(user));
+                    });
+                });
+            } catch (Exception e) {
+                // LOG and continue -- don't let one user's invalid token or other problem block everybody
+                final String message = String.format("Error updating workflows for user %s", userId);
+                LOG.error(message, e);
+            }
+        });
+        return Response.noContent().build();
+    }
+
+    private static boolean hasRepoLevelAccess(final Set<GitRepo> gitRepos, final Workflow workflow) {
+        return gitRepos.contains(new GitRepo(workflow.getOrganization(), workflow.getRepository()));
     }
 
     @GET
@@ -1022,16 +1117,45 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .collect(Collectors.toList());
 
         scTokens.forEach(token -> {
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);
-            Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-            Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
-
-            organizations.forEach(organization -> {
-                List<Workflow> workflowsWithoutuser = workflowDAO.findByOrganizationWithoutUser(token.getTokenSource().getSourceControl(), organization, user);
-                workflowsWithoutuser.forEach(workflow -> workflow.addUser(user));
-            });
+            final SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);
+            final SourceControl sourceControl = token.getTokenSource().getSourceControl();
+            addUserToReposInOrgsWhereUserIsAMember(user, sourceControl, sourceCodeRepo);
+            addUserToReposWithRepoLevelMembership(user, sourceControl, sourceCodeRepo);
         });
         return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()));
+    }
+
+    /**
+     * Adds the user to all workflows whose repos the user direct access to. For example, if a user has been
+     * granted GitHub permissions to the GitHub organization "myorg" and the repository "anotherOrg/repo",
+     * this method will add the user to "anotherOrg/repo", only (if not already present).
+     * @param user
+     * @param sourceControl
+     * @param sourceCodeRepo
+     */
+    private void addUserToReposWithRepoLevelMembership(final User user, final SourceControl sourceControl,
+        final SourceCodeRepoInterface sourceCodeRepo) {
+        sourceCodeRepo.getRepoLevelAccessRepositories().forEach(gitRepo ->
+            workflowDAO.findByPathWithoutUser(sourceControl, gitRepo.getOrganization(), gitRepo.getRepository(),
+                    user)
+            .forEach(workflow -> workflow.addUser(user)));
+    }
+
+    /**
+     * Adds the user to all workflows against repos in organizations where the user is a member.
+     * For example, if a user has been
+     * granted GitHub permissions to the GitHub organization "myorg" and the repository "anotherOrg/repo",
+     * this method will add the user to all workflows based on repos in the "myorg" organization.
+     * @param user
+     * @param sourceControl
+     * @param sourceCodeRepo
+     */
+    private void addUserToReposInOrgsWhereUserIsAMember(final User user, final SourceControl sourceControl,
+        final SourceCodeRepoInterface sourceCodeRepo) {
+        final List<String> organizationMemberships = new ArrayList(sourceCodeRepo.getOrganizationMemberships());
+        workflowDAO.findByOrganizationsWithoutUser(sourceControl, organizationMemberships,
+                user)
+            .forEach(workflow -> workflow.addUser(user));
     }
 
     @PUT
@@ -1065,9 +1189,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         // Set the new privileges.
         targetUser.setIsAdmin(privilegeRequest.isAdmin());
         targetUser.setCurator(privilegeRequest.isCurator());
+        targetUser.setPlatformPartner(privilegeRequest.isPlatformPartner());
 
         // Invalidate any tokens corresponding to the target user.
-        tokenDAO.findByUserId(targetUser.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+        tokenDAO.findByUserId(targetUser.getId()).forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
 
         return targetUser;
     }

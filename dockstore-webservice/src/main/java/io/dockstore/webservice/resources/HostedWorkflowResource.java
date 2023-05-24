@@ -90,8 +90,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final PermissionsInterface permissionsInterface;
     private final SessionFactory sessionFactory;
 
-    public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
-        super(sessionFactory, permissionsInterface, limitConfig);
+    public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration config) {
+        super(sessionFactory, permissionsInterface, config);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
@@ -232,7 +232,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         VersionTypeValidation validDescriptorSet;
         Validation descriptorValidation;
         if (mainDescriptor.isPresent()) {
-            validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath, entry);
         } else {
             Map<String, String> validationMessage = new HashMap<>();
             validationMessage.put("Unknown", "Missing the primary descriptor.");

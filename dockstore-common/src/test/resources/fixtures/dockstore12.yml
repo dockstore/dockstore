@@ -21,11 +21,13 @@ workflows:
      subclass: cwl
      publish: no
      primaryDescriptorPath: /Dockstore.cwl
+     readMePath: /foobar2/readme.md
      testParameterFiles:
        - /dockstore.cwl.json
-  # A workflow with no name:
   -  subclass: CWL
+     name: bloop
      primaryDescriptorPath: /Dockstore.cwl
+     readMePath: /other-readme.md
      testParameterFiles:
        - /dockstore.cwl.json
 service:
@@ -69,3 +71,25 @@ service:
           description: Data for Xena in TSV format
         metadata:
           description: The metadata, in JSON format, that corresponds to the previous tsv file
+
+notebooks:
+  - name: notebook0
+    format: Jupyter
+    language: Python
+    path: /notebook0.ipynb
+    publish: true
+    latestTagAsDefault: true
+    filters:
+      branches:
+        - branch0
+      tags:
+        - tag0
+    authors:
+      - name: author0
+    testParameterFiles:
+      - /test0
+    otherFiles:
+      - /other0
+  - name: notebook1
+    path: /notebook1.ipynb
+    kernel: quay.io/seqware/seqware_full/1.1

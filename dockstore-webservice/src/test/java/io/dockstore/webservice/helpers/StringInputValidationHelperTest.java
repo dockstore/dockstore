@@ -1,20 +1,20 @@
 package io.dockstore.webservice.helpers;
 
-import static io.dockstore.webservice.helpers.StringInputValidationHelper.ENTRY_NAME_LENGTH_LIMIT;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import io.dockstore.common.ValidationConstants;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class StringInputValidationHelperTest {
+class StringInputValidationHelperTest {
 
     @Test
-    public void testCheckEntryName() {
+    void testCheckEntryName() {
         try {
             StringInputValidationHelper.checkEntryName(Tool.class, "!@#$/%^&*<foo><bar>");
             fail("Entry name with special characters that are not underscores and hyphens should fail validation.");
@@ -47,7 +47,7 @@ public class StringInputValidationHelperTest {
             String longWorkflowName = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-"
                     + "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmn"; // 257 characters
             StringInputValidationHelper.checkEntryName(BioWorkflow.class, longWorkflowName);
-            fail("Entry name that exceeds " + ENTRY_NAME_LENGTH_LIMIT + " characters should fail validation.");
+            fail("Entry name that exceeds " + ValidationConstants.ENTRY_NAME_LENGTH_MAX + " characters should fail validation.");
         } catch (CustomWebApplicationException ex) {
             assertTrue(ex.getErrorMessage().contains("Invalid workflow name"));
         }

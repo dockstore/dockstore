@@ -18,18 +18,20 @@ package io.dockstore.webservice;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
-import static junit.framework.TestCase.assertNotSame;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
@@ -53,51 +55,42 @@ import io.swagger.client.model.Tool;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
-import org.glassfish.jersey.client.ClientProperties;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * @author dyuen
  */
-@Category(ConfidentialTest.class)
-public class ServiceIT extends BaseIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+@ExtendWith(TestStatus.class)
+@Tag(ConfidentialTest.NAME)
+class ServiceIT extends BaseIT {
 
-    private final boolean servicesExposedInTRS = false;
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
     private WorkflowDAO workflowDAO;
     private ServiceDAO serviceDAO;
     private Session session;
     private UserDAO userDAO;
     private FileDAO fileDAO;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -118,7 +111,7 @@ public class ServiceIT extends BaseIT {
     }
 
     @Test
-    public void checkWorkflowAndServiceHierarchy() {
+    void checkWorkflowAndServiceHierarchy() {
         CreateContent createContent = new CreateContent().invoke(false);
         long workflowID = createContent.getWorkflowID();
         long serviceID = createContent.getServiceID();
@@ -138,21 +131,22 @@ public class ServiceIT extends BaseIT {
     }
 
     @Test
-    @Ignore("https://github.com/dockstore/dockstore/pull/4720")
-    public void testTRSOutputOfService() {
+    @Disabled("https://github.com/dockstore/dockstore/pull/4720")
+    void testTRSOutputOfService() {
         new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
         Ga4GhApi client = new Ga4GhApi(webClient);
         final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null);
         assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("workflow")).count() >= 1);
         // TODO: change boolean once services are exposed
+        boolean servicesExposedInTRS = false;
         if (servicesExposedInTRS) {
             assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("service")).count() >= 2);
         }
     }
 
     @Test
-    public void testProprietaryAPI() {
+    void testProprietaryAPI() {
         final CreateContent invoke = new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -161,8 +155,8 @@ public class ServiceIT extends BaseIT {
         assertTrue(workflows.size() >= 2 && workflows.stream()
             .noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
         Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
-        testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published", SUPPORT.getLocalPort()));
-        testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published?services=true", SUPPORT.getLocalPort()));
+        CommonTestUtilities.testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published", SUPPORT.getLocalPort()), 2);
+        CommonTestUtilities.testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published?services=true", SUPPORT.getLocalPort()), 2);
         assertTrue(services.size() >= 1 && services.stream()
             .allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
 
@@ -176,22 +170,8 @@ public class ServiceIT extends BaseIT {
         assertTrue(workflow.getLabels().stream().anyMatch(label -> "batman".equals(label.getValue())));
     }
 
-    /**
-     * Test X-total-count.  It so happens there's two services and two bioworkflows
-     *
-     * @param jerseyClient Jersey Client to test endpoint
-     * @param path         Path of endpoint
-     */
-    private void testXTotalCount(Client jerseyClient, String path) {
-        Response response = jerseyClient.target(path).request().property(ClientProperties.READ_TIMEOUT, 0).get();
-        assertEquals(HttpStatus.SC_OK, response.getStatus());
-        MultivaluedMap<String, Object> headers = response.getHeaders();
-        Object xTotalCount = headers.getFirst("X-total-count");
-        assertEquals("2", xTotalCount);
-    }
-
     @Test
-    public void testGeneralDefaultPathMechanism() {
+    void testGeneralDefaultPathMechanism() {
         final CreateContent invoke = new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -204,7 +184,7 @@ public class ServiceIT extends BaseIT {
      * A service is created and a version is added for a release 1.0
      */
     @Test
-    public void testGitHubAppEndpoints() throws Exception {
+    void testGitHubAppEndpoints() {
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
@@ -220,32 +200,32 @@ public class ServiceIT extends BaseIT {
         io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, SERVICE, "versions");
 
         assertNotNull(service);
-        assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
+        assertEquals(1, service.getWorkflowVersions().size(), "Should have a new version");
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(service.getWorkflowVersions().get(0).getId());
-        assertEquals("Should have 3 source files", 3, sourceFiles.size());
+        assertEquals(3, sourceFiles.size(), "Should have 3 source files");
 
         long users = testingPostgres.runSelectStatement("select count(*) from user_entry where entryid = '" + service.getId() + "'", long.class);
-        assertEquals("Should have 1 user", 1, users);
+        assertEquals(1, users, "Should have 1 user");
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
             long.class);
-        Assert.assertEquals("there should be one matching service", 1, count);
+        assertEquals(1, count, "there should be one matching service");
 
         // Test user endpoints
         UsersApi usersApi = new UsersApi(webClient);
         final long userId = testingPostgres.runSelectStatement("select userid from user_entry where entryid = '" + service.getId() + "'", long.class);
         List<io.swagger.client.model.Workflow> services = usersApi.userServices(userId);
         List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(userId);
-        assertEquals("There should be one service", 1, services.size());
-        assertEquals("There should be no workflows", 0, workflows.size());
+        assertEquals(1, services.size(), "There should be one service");
+        assertEquals(0, workflows.size(), "There should be no workflows");
 
         // Should not be able to refresh service
         try {
             client.refresh(services.get(0).getId(), false);
             fail("Should not be able refresh a service");
         } catch (ApiException ex) {
-            assertEquals("Should fail since you cannot refresh services.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should fail since you cannot refresh services.");
         }
     }
 
@@ -253,7 +233,7 @@ public class ServiceIT extends BaseIT {
      * Ensures that you cannot create a service if the given user is not on Dockstore
      */
     @Test
-    public void createServiceNoUser() throws Exception {
+    void createServiceNoUser() {
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
@@ -267,22 +247,21 @@ public class ServiceIT extends BaseIT {
             client.handleGitHubRelease(serviceRepo, "iamnotarealuser", "refs/tags/1.0", installationId);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+            assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
         }
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
             long.class);
-        Assert.assertEquals("there should be no matching service", 0, count);
+        assertEquals(0, count, "there should be no matching service");
     }
 
     /**
      * Ensures that a service and workflow can have the same path
      *
-     * @throws Exception
      */
     @Test
-    public void testServiceWithSamePathAsWorkflow() throws Exception {
+    void testServiceWithSamePathAsWorkflow() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -321,7 +300,7 @@ public class ServiceIT extends BaseIT {
      * This tests that you can't add a version that doesn't exist
      */
     @Test
-    public void updateServiceIncorrectTag() throws Exception {
+    void updateServiceIncorrectTag() {
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
@@ -335,7 +314,7 @@ public class ServiceIT extends BaseIT {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/1.0-fake", installationId);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+            assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
         }
     }
 
@@ -343,7 +322,7 @@ public class ServiceIT extends BaseIT {
      * This tests that you can't add a version with an invalid dockstore.yml or no dockstore.yml
      */
     @Test
-    public void updateServiceNoOrInvalidYml() throws Exception {
+    void updateServiceNoOrInvalidYml() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -356,7 +335,7 @@ public class ServiceIT extends BaseIT {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/no-yml", installationId);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+            assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
         }
 
         // Add version that has invalid dockstore.yml
@@ -364,7 +343,7 @@ public class ServiceIT extends BaseIT {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/invalid-yml", installationId);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+            assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
         }
     }
 
@@ -372,7 +351,7 @@ public class ServiceIT extends BaseIT {
      * Tests that refresh will only grab the releases
      */
     @Test
-    public void updateServiceSync() throws Exception {
+    void updateServiceSync() {
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
@@ -392,7 +371,7 @@ public class ServiceIT extends BaseIT {
             client.refresh(service.getId(), false);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
-            assertEquals("Should not be able to refresh a dockstore.yml service.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should not be able to refresh a dockstore.yml service.");
         }
     }
 
@@ -400,7 +379,7 @@ public class ServiceIT extends BaseIT {
      * This tests that you cannot create a service from an in invalid GitHub repository
      */
     @Test
-    public void createServiceNoGitHubRepo() throws Exception {
+    void createServiceNoGitHubRepo() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -413,7 +392,7 @@ public class ServiceIT extends BaseIT {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/1.0", installationId);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+            assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
         }
     }
 

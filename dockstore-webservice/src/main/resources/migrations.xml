@@ -22,13 +22,15 @@
     <include file="migrations.1.3.1.consistency.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.confidential1.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.confidential2.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.confidential4.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.add_test_tools.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.4.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.testworkflow.xml" relativeToChangelogFile="true"/>
-    <include file="migrations.test.add_test_tools.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.5.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.confidential1_1.5.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.confidential2_1.5.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.confidential4_1.5.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test_1.5.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.6.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.samepaths.xml" relativeToChangelogFile="true"/>
@@ -42,4 +44,6 @@
     <include file="migrations.1.11.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.12.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.13.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.1.14.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.add_notebook_1.14.0.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

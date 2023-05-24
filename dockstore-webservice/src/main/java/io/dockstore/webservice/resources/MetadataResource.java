@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2022 OICR, UCSC
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.DockstoreWebserviceApplication.getOkHttpClient;
+import static io.dockstore.webservice.helpers.GitHubSourceCodeRepo.GITHUB_MAX_CACHE_AGE_SECONDS;
 import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY;
 import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
 
@@ -37,19 +38,27 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.CLIInfo;
 import io.dockstore.webservice.api.Config;
 import io.dockstore.webservice.api.HealthCheckResult;
+import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryTypeMetadata;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.database.RSSAppToolPath;
+import io.dockstore.webservice.core.database.RSSNotebookPath;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.RSSListener;
 import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
+import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -114,10 +123,8 @@ import org.kohsuke.github.GHRelease;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
-import org.kohsuke.github.HttpConnector;
 import org.kohsuke.github.PagedIterable;
-import org.kohsuke.github.extras.ImpatientHttpConnector;
-import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
+import org.kohsuke.github.extras.okhttp3.OkHttpGitHubConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,6 +145,8 @@ public class MetadataResource {
     private final OrganizationDAO organizationDAO;
     private final CollectionDAO collectionDAO;
     private final BioWorkflowDAO bioWorkflowDAO;
+    private final AppToolDAO appToolDAO;
+    private final NotebookDAO notebookDAO;
     private final DockstoreWebserviceConfiguration config;
     private final SitemapListener sitemapListener;
     private final RSSListener rssListener;
@@ -152,6 +161,8 @@ public class MetadataResource {
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.config = config;
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
+        this.appToolDAO = new AppToolDAO(sessionFactory);
+        this.notebookDAO = new NotebookDAO(sessionFactory);
         this.sitemapListener = PublicStateManager.getInstance().getSitemapListener();
         this.rssListener = PublicStateManager.getInstance().getRSSListener();
     }
@@ -179,7 +190,9 @@ public class MetadataResource {
         SortedSet<String> urls = new TreeSet<>();
         urls.addAll(getToolPaths());
         urls.addAll(getBioWorkflowPaths());
+        urls.addAll(getAppToolPaths());
         urls.addAll(getOrganizationAndCollectionPaths());
+        urls.addAll(getNotebookPaths());
         return urls;
     }
 
@@ -207,6 +220,13 @@ public class MetadataResource {
                 Collectors.toList());
     }
 
+    private List<String> getAppToolPaths() {
+        return appToolDAO.findAllPublishedPaths().stream().map(appToolPath -> createWorkflowURL(appToolPath.getAppTool())).collect(Collectors.toList());
+    }
+
+    private List<String> getNotebookPaths() {
+        return notebookDAO.findAllPublishedPaths().stream().map(notebookPath -> createWorkflowURL(notebookPath.getNotebook())).collect(Collectors.toList());
+    }
     private String createOrganizationURL(Organization organization) {
         return MetadataResourceHelper.createOrganizationURL(organization);
     }
@@ -222,6 +242,7 @@ public class MetadataResource {
     private String createToolURL(Tool tool) {
         return MetadataResourceHelper.createToolURL(tool);
     }
+
 
     @GET
     @Timed
@@ -240,13 +261,15 @@ public class MetadataResource {
     }
 
     private String getRSS() {
-        List<Tool> tools = toolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSToolPath::getTool).collect(Collectors.toList());
-        List<Workflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).collect(
-                Collectors.toList());
-
+        List<Tool> tools = toolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSToolPath::getTool).toList();
+        List<BioWorkflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).toList();
+        List<AppTool> appTools = appToolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSAppToolPath::getAppTool).toList();
+        List<Notebook> notebooks = notebookDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSNotebookPath::getNotebook).toList();
         List<Entry<?, ?>> dbEntries =  new ArrayList<>();
         dbEntries.addAll(tools);
         dbEntries.addAll(workflows);
+        dbEntries.addAll(appTools);
+        dbEntries.addAll(notebooks);
         dbEntries.sort(Comparator.comparingLong(entry -> entry.getLastUpdated().getTime()));
 
         // TODO: after seeing if this works, make this more efficient than just returning everything
@@ -265,6 +288,7 @@ public class MetadataResource {
         List<RSSEntry> entries = new ArrayList<>();
         for (Entry<?, ?> dbEntry : dbEntries) {
             RSSEntry entry = new RSSEntry();
+            // AppTools, BioWorkflows, Services, and Notebooks are all subclasses of Workflows
             if (dbEntry instanceof Workflow) {
                 Workflow workflow = (Workflow)dbEntry;
                 entry.setTitle(workflow.getWorkflowPath());
@@ -382,6 +406,19 @@ public class MetadataResource {
             !lang.isPluginLanguage() || LanguageHandlerFactory.getPluginMap().containsKey(lang))
             .forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
         return descriptorLanguageList;
+    }
+
+    @GET
+    @Timed
+    @Path("/entryTypeMetadataList")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get the metadata for each entry type", description = "Get the metadata for each entry type")
+    @ApiResponse(description = "List of entry type metadata", content = @Content(
+        mediaType = "application/json",
+        array = @ArraySchema(schema = @Schema(implementation = EntryTypeMetadata.class))))
+    @ApiOperation(value = "Get the metadata for each entry type", response = EntryTypeMetadata.class, responseContainer = "List")
+    public List<EntryTypeMetadata> getEntryTypeMetadataList() {
+        return EntryTypeMetadata.values();
     }
 
     @GET
@@ -507,8 +544,7 @@ public class MetadataResource {
         CLIInfo cliInfo = new CLIInfo();
         try {
             OkHttpClient build = getOkHttpClient();
-            ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
-            HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
+            OkHttpGitHubConnector okHttp3Connector = new OkHttpGitHubConnector(build, GITHUB_MAX_CACHE_AGE_SECONDS);
             GitHub gitHub = GitHubBuilder.fromEnvironment().withConnector(okHttp3Connector).build();
 
             GHRepository repository = gitHub.getRepository("dockstore/dockstore-cli");

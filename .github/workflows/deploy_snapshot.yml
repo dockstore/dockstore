@@ -1,33 +1,66 @@
-name: Develop Deploy
+name: Deploy develop snapshot
 
 on:
   push:
     branches:
       - develop
       
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     
     permissions:
-      id-token: write    
+      contents: read
+      pages: write
+      id-token: write 
+      
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres:13.7
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: dockstore
+          POSTGRES_USER: dockstore
+          POSTGRES_DB: webservice_test
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432          
 
     steps:
       - uses: actions/checkout@v3
       # Step that does that actual cache save and restore
-      - uses: actions/cache@v3.0.8
+      - uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
            ${{ runner.os }}-maven-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17.0.4+8'
+          distribution: 'adopt'
+
       - name: Deploy with mvnw
         run: ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests
         env: 
           SNAPSHOT_DEPLOY_TOKEN: ${{ secrets.SNAPSHOT_DEPLOY_TOKEN }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: docker_checksum_upload_from_github
@@ -52,7 +85,7 @@ jobs:
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           push: true
@@ -69,3 +102,21 @@ jobs:
 
       - name: Copy checksum files
         run: aws s3 cp image-digest.txt  s3://${{ secrets.AWS_BUCKET }}/${{ env.S3_FOLDER }}-${{ steps.slug.outputs.sha7 }}/image-digest.txt
+
+      # deploy database documentation and also verify that non-confidential migrations seem sane
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      - name: Generate database documentation  
+        run: | 
+          rm dockstore-webservice/target/dockstore-webservice-*sources.jar || true
+          java -jar dockstore-webservice/target/dockstore-webservice-*.jar db migrate --include 1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,1.7.0,1.8.0,1.9.0,1.10.0,1.11.0,1.12.0,1.13.0,1.14.0  dockstore-integration-testing/src/test/resources/dockstore.yml 
+          java -jar dockstore-webservice/target/dockstore-webservice-*.jar db generate-docs dockstore-integration-testing/src/test/resources/dockstore.yml generated-docs
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          # Upload entire repository
+          path: 'generated-docs'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
+        

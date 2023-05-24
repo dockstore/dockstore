@@ -34,6 +34,7 @@ import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -105,7 +106,7 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
                 //                for (SourceFile file : tag.getSourceFiles()) {
                 //                    Path tempFile = Files.createTempFile("temp", "file");
                 //                    FileUtils.writeStringToFile(tempFile.toFile(), file.getContent(), StandardCharsets.UTF_8);
-                //                    // file name is passsed in but seems to be ignore
+                //                    // file name is passed in but seems to be ignore
                 //                    filesApi.createFile(depositionID, tempFile.toFile(), new File(file.getPath()).getName());
                 //                }
                 // TODO: this would be fleshed out to populate descriptors, secondary descriptors, test json, dockerfiles, etc.
@@ -123,9 +124,8 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
                 relatedIdentifier.setRelation(RelatedIdentifier.RelationEnum.ISIDENTICALTO);
                 returnDeposit.getMetadata().setRelatedIdentifiers(Collections.singletonList(relatedIdentifier));
 
-                Author author1 = new Author();
-                author1.setName(publishedContainer.getAuthor());
-                returnDeposit.getMetadata().setCreators(Collections.singletonList(author1));
+                List<Author> authors = publishedContainer.getAuthors().stream().map(author -> new Author().name(author.getName())).toList();
+                returnDeposit.getMetadata().setCreators(authors);
                 NestedDepositMetadata nestedDepositMetadata = new NestedDepositMetadata();
                 nestedDepositMetadata.setMetadata(returnDeposit.getMetadata());
                 depositApi.putDeposit(depositionID, nestedDepositMetadata);

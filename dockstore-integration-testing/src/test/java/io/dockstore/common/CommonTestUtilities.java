@@ -16,6 +16,11 @@
 
 package io.dockstore.common;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -23,27 +28,51 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import com.google.common.collect.Lists;
+import com.google.common.hash.Hashing;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.ws.rs.client.Client;
 import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.Assert;
+import org.apache.http.HttpStatus;
+import org.assertj.core.util.Files;
+import org.glassfish.jersey.client.ClientProperties;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,27 +81,19 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonTestUtilities {
 
-    public static final String OLD_DOCKSTORE_VERSION = "1.12.0";
+    private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
+    public static final String OLD_DOCKSTORE_VERSION = "1.13.0";
+    public static final List<String> COMMON_MIGRATIONS = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "1.7.0",
+            "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0");
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
-    public static final String PUBLIC_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
+    public static final String PUBLIC_CONFIG_PATH = getUniversalResourceFileAbsolutePath("dockstore.yml").orElse(null);
     /**
      * confidential testing config, includes keys
      */
-    public static final String CONFIDENTIAL_CONFIG_PATH;
+    public static final String CONFIDENTIAL_CONFIG_PATH = getUniversalResourceFileAbsolutePath("dockstoreTest.yml").orElse(null);
     static final String DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
-    private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
-
-    static {
-        String confidentialConfigPath = null;
-        try {
-            confidentialConfigPath = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
-        } catch (Exception e) {
-            LOG.error("Confidential Dropwizard configuration file not found.", e);
-
-        }
-        CONFIDENTIAL_CONFIG_PATH = confidentialConfigPath;
-    }
+    public static final String BITBUCKET_TOKEN_CACHE = "/tmp/dockstore-bitbucket-token-cache/";
 
     private CommonTestUtilities() {
 
@@ -82,42 +103,30 @@ public final class CommonTestUtilities {
      * Drops the database and recreates from migrations, not including any test data, using new application
      *
      * @param support reference to testing instance of the dockstore web service
-     * @throws Exception
      */
-    public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         dropAndRecreateNoTestData(support, CONFIDENTIAL_CONFIG_PATH);
     }
 
     public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support,
-        String dropwizardConfigurationFile) throws Exception {
+        String dropwizardConfigurationFile) {
         LOG.info("Dropping and Recreating the database with no test data");
-        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
-        application
-            .run("db", "migrate", dropwizardConfigurationFile, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,"
-                    + "1.6.0,1.7.0,1.8.0,1.9.0,1.10.0,1.11.0,1.12.0,1.13.0");
+        dropAllAndRunMigration(listMigrations(), support.newApplication(), dropwizardConfigurationFile);
     }
 
     /**
      * Drops the database and recreates from migrations for non-confidential tests
      *
      * @param support reference to testing instance of the dockstore web service
-     * @throws Exception
      */
-    public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication)
-        throws Exception {
+    public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) {
         dropAndCreateWithTestData(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
     }
 
     public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        String dropwizardConfigurationFile) throws Exception {
+        String dropwizardConfigurationFile)  {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
-        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, dropwizardConfigurationFile,
-                isNewApplication);
-
-        List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, dropwizardConfigurationFile);
+        dropAllAndRunMigration(listMigrations("test", "test_1.5.0"), getApplication(support, isNewApplication), dropwizardConfigurationFile);
     }
 
     /**
@@ -126,10 +135,9 @@ public final class CommonTestUtilities {
      * @param support reference to testing instance of the dockstore web service
      * @param isNewApplication
      * @param needBitBucketToken if false BitBucket token is deleted from database
-     * @throws Exception
      */
     public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        TestingPostgres testingPostgres, boolean needBitBucketToken) throws Exception {
+        TestingPostgres testingPostgres, boolean needBitBucketToken) {
         dropAndCreateWithTestDataAndAdditionalTools(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
         if (!needBitBucketToken) {
             deleteBitBucketToken(testingPostgres);
@@ -138,20 +146,28 @@ public final class CommonTestUtilities {
     }
 
     // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
-    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres)
-            throws Exception {
+    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres) {
         dropAndCreateWithTestDataAndAdditionalTools(support, isNewApplication, testingPostgres, false);
     }
 
     public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-            String dropwizardConfigurationFile) throws Exception {
+            String dropwizardConfigurationFile) {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
-        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, dropwizardConfigurationFile,
-                isNewApplication);
+        dropAllAndRunMigration(listMigrations("test", "add_test_tools", "test_1.5.0"), getApplication(support, isNewApplication), dropwizardConfigurationFile);
+    }
 
-        List<String> migrationList = Arrays
-                .asList("1.3.0.generated", "1.3.1.consistency", "test", "add_test_tools", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, dropwizardConfigurationFile);
+    /**
+     * Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
+     * <p>
+     * Adds 2 published workflows to the database.
+     * @param support reference to testing instance of the dockstore web service
+     * @param isNewApplication
+     * @param dropwizardConfigurationFile
+     */
+    public static void dropAndCreateWithTestDataAndAdditionalToolsAndWorkflows(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
+            String dropwizardConfigurationFile) {
+        LOG.info("Dropping and Recreating the database with non-confidential test data");
+        dropAllAndRunMigration(listMigrations("test", "add_test_tools", "testworkflow", "test_1.5.0"), getApplication(support, isNewApplication), dropwizardConfigurationFile);
     }
 
     /**
@@ -183,8 +199,8 @@ public final class CommonTestUtilities {
     }
 
     private static String getBasePath() {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        String configFileAbsolutePath = getUniversalResourceFileAbsolutePath("config2").orElse(null);
+        INIConfiguration parseConfig = Utilities.parseConfig(configFileAbsolutePath);
         return parseConfig.getString(Constants.WEBSERVICE_BASE_PATH);
     }
 
@@ -196,7 +212,6 @@ public final class CommonTestUtilities {
      * Deletes BitBucket Tokens from Database
      *
      * @param testingPostgres reference to the testing instance of Postgres
-     * @throws Exception
      */
     private static void deleteBitBucketToken(TestingPostgres testingPostgres)  {
         if (testingPostgres != null) {
@@ -206,21 +221,22 @@ public final class CommonTestUtilities {
             LOG.info("testingPostgres is null");
         }
     }
+
+    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
+        TestingPostgres testingPostgres, boolean needBitBucketToken) {
+        cleanStatePrivate(support, isNewApplication, testingPostgres, needBitBucketToken, TestUser.TEST_USER1);
+    }
+
     /**
      * Wrapper for dropping and recreating database from migrations for test confidential 1 and optionally deleting BitBucket tokens
      *
      * @param support reference to testing instance of the dockstore web service
      * @param testingPostgres reference to the testing instance of Postgres
      * @param needBitBucketToken if false the bitbucket token will be deleted
-     * @throws Exception
      */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres,
-        boolean needBitBucketToken) throws Exception {
-        LOG.info("Dropping and Recreating the database with confidential 1 test data");
-        cleanStatePrivate1(support, CONFIDENTIAL_CONFIG_PATH);
-        if (!needBitBucketToken) {
-            deleteBitBucketToken(testingPostgres);
-        }
+        boolean needBitBucketToken) {
+        cleanStatePrivate(support, testingPostgres, needBitBucketToken, TestUser.TEST_USER1);
     }
 
     /**
@@ -228,13 +244,21 @@ public final class CommonTestUtilities {
      *
      * @param support reference to testing instance of the dockstore web service
      * @param testingPostgres reference to the testing instance of Postgres
-     * @throws Exception
      */
-    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres) throws Exception {
+    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres) {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, testingPostgres, false);
-        // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
-        // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+    }
+
+    /**
+     * Drops and recreates database from migrations for test confidential 1
+     *
+     * @param support reference to testing instance of the dockstore web service
+     * @param configPath
+     */
+    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
+        boolean isNewApplication) {
+        cleanStatePrivate(support, configPath, isNewApplication, TestUser.TEST_USER1);
     }
 
     /**
@@ -242,28 +266,148 @@ public final class CommonTestUtilities {
      *
      * @param support    reference to testing instance of the dockstore web service
      * @param configPath
-     * @throws Exception
      */
-    private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath)
-        throws Exception {
-        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", configPath);
-
-        List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0",
-                "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, configPath);
+    private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) {
+        cleanStatePrivate(support, configPath, TestUser.TEST_USER1);
     }
 
-    public static void runMigration(List<String> migrationList, Application<DockstoreWebserviceConfiguration> application,
-        String configPath) {
-        migrationList.forEach(migration -> {
-            try {
-                application.run("db", "migrate", configPath, "--include", migration);
-            } catch (Exception e) {
-                Assert.fail();
+    /**
+     * Clean the database and reset it with a specific test user.
+     * @param support
+     * @param configPath
+     * @param isNewApplication
+     * @param testUser
+     */
+    public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
+        boolean isNewApplication, TestUser testUser) {
+        dropAllAndRunMigration(listMigrations(testUser.databasedump, testUser.databasedumpUpgrade), getApplication(support, isNewApplication), configPath);
+    }
+
+    /**
+     * Clean the database and reset it with a specific test user, but also manage the bitbucket tokens.
+     *
+     * For efficiency, bitbucket tests should use this to preserve the bitbucket tokens to avoid them resetting with every test, breaking the cache.
+     * @param support
+     * @param testingPostgres
+     * @param needBitBucketToken
+     * @param testUser
+     */
+    public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres,
+        boolean needBitBucketToken, TestUser testUser) {
+        LOG.info("Dropping and Recreating the database with confidential " + (testUser.ordinal() + 1) + " test data");
+        cleanStatePrivate(support, CONFIDENTIAL_CONFIG_PATH, testUser);
+        handleBitBucketTokens(support, testingPostgres, needBitBucketToken);
+    }
+
+    private static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath, TestUser user) {
+        dropAllAndRunMigration(listMigrations(user.databasedump, user.databasedumpUpgrade), support.getApplication(), configPath);
+    }
+
+    /**
+     * Clean the database and reset it with a specific test user, but also manage the bitbucket tokens and set whether we want to restart the web service (I think).
+     *
+     * For efficiency, bitbucket tests should use this to preserve the bitbucket tokens to avoid them resetting with every test, breaking the cache.
+     * @param support
+     * @param isNewApplication
+     * @param testingPostgres
+     * @param needBitBucketToken
+     * @param testUser
+     */
+    public static void cleanStatePrivate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
+        TestingPostgres testingPostgres, boolean needBitBucketToken, TestUser testUser) {
+        LOG.info("Dropping and Recreating the database with confidential " + (testUser.ordinal() + 1) + " test data");
+
+        cleanStatePrivate(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication, testUser);
+        handleBitBucketTokens(support, testingPostgres, needBitBucketToken);
+    }
+
+    public static void cacheBitbucketTokens(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
+        DockstoreWebserviceApplication application = support.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+        TokenDAO tokenDAO = new TokenDAO(sessionFactory);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        final List<Token> allBitBucketTokens = tokenDAO.findAllBitBucketTokens();
+        File cacheDirectory = new File(BITBUCKET_TOKEN_CACHE);
+        if (!cacheDirectory.exists()) {
+            Files.newFolder(BITBUCKET_TOKEN_CACHE);
+        }
+        for (Token token : allBitBucketTokens) {
+            // a token with an update time is not straight from the DB dump OR a token with a expiry date
+            if (token.getDbUpdateDate() != null || (token.getExpirationTime() != null) && Instant.now().isBefore(Instant.ofEpochMilli(token.getExpirationTime()))) {
+                final String serializedToken = gson.toJson(token);
+                try {
+                    FileUtils.writeStringToFile(new File(BITBUCKET_TOKEN_CACHE + Hashing.sha256().hashString(token.getRefreshToken(), StandardCharsets.UTF_8) + ".json"), serializedToken,
+                        StandardCharsets.UTF_8, false);
+                } catch (IOException | UncheckedIOException e) {
+                    LOG.error("could not cache bitbucket token", e);
+                    throw new RuntimeException(e);
+                }
             }
-        });
+        }
+    }
+
+    /**
+     * Returns a list of migrations containing COMMON_MIGRATIONS and additional migrations
+     * @param additionals
+     * @return
+     */
+    public static List<String> listMigrations(String... additionals) {
+        return Stream.concat(COMMON_MIGRATIONS.stream(), Stream.of(additionals)).collect(Collectors.toList());
+    }
+
+    public static void runMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
+        String configPath) {
+        try {
+            application.run("db", "migrate", configPath, "--include", String.join(",", migrations));
+        } catch (Exception e) {
+            fail("database migration failed");
+        }
+    }
+
+    public static void dropAll(Application<DockstoreWebserviceConfiguration> application, String configPath) {
+        try {
+            application.run("db", "drop-all", "--confirm-delete-everything", configPath);
+        } catch (Exception e) {
+            fail("database drop-all failed");
+        }
+    }
+
+    public static void dropAllAndRunMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
+        String configPath) {
+        dropAll(application, configPath);
+        runMigration(migrations, application, configPath);
+    }
+
+    private static void handleBitBucketTokens(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, TestingPostgres testingPostgres, boolean needBitBucketToken) {
+        if (!needBitBucketToken) {
+            deleteBitBucketToken(testingPostgres);
+        } else {
+            DockstoreWebserviceApplication application = support.getApplication();
+            Session session = application.getHibernate().getSessionFactory().openSession();
+            ManagedSessionContext.bind(session);
+            //TODO restore bitbucket token from disk cache to reduce rate limit from busting cache with new access tokens
+            SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+            TokenDAO tokenDAO = new TokenDAO(sessionFactory);
+            final List<Token> allBitBucketTokens = tokenDAO.findAllBitBucketTokens();
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+            for (Token token : allBitBucketTokens) {
+                try {
+                    final String cacheCandidate = FileUtils.readFileToString(new File(BITBUCKET_TOKEN_CACHE + Hashing.sha256().hashString(token.getRefreshToken(), StandardCharsets.UTF_8) + ".json"),
+                        StandardCharsets.UTF_8);
+                    final Token cachedToken = gson.fromJson(cacheCandidate, Token.class);
+                    if (cachedToken != null) {
+                        testingPostgres.runUpdateStatement(
+                            "update token set content = '" + cachedToken.getContent() + "', dbUpdateDate = '" + cachedToken.getDbUpdateDate().toLocalDateTime().toString() + "' where id = "
+                                + cachedToken.getId());
+                    }
+                } catch (IOException | UncheckedIOException e) {
+                    // probably ok
+                    LOG.debug("could not read bitbucket token", e);
+                }
+            }
+        }
     }
 
     /**
@@ -272,26 +416,20 @@ public final class CommonTestUtilities {
      * @param support reference to testing instance of the dockstore web service
      * @param testingPostgres reference to the testing instance of Postgres
      * @param needBitBucketToken if false BitBucket token is deleted
-     * @throws Exception
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        TestingPostgres testingPostgres, boolean needBitBucketToken) throws Exception {
-        LOG.info("Dropping and Recreating the database with confidential 2 test data");
-
-        cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
-        if (!needBitBucketToken) {
-            deleteBitBucketToken(testingPostgres);
-        }
+        TestingPostgres testingPostgres, boolean needBitBucketToken) {
+        cleanStatePrivate(support, isNewApplication, testingPostgres, needBitBucketToken, TestUser.TEST_USER2);
     }
+
     /**
      * Wrapper for dropping and recreating database from migrations for test confidential 2
      *
      * @param support reference to testing instance of the dockstore web service
      * @param testingPostgres reference to the testing instance of Postgres
-     * @throws Exception
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
-        TestingPostgres testingPostgres) throws Exception {
+        TestingPostgres testingPostgres) {
 
         cleanStatePrivate2(support, isNewApplication, testingPostgres, false);
         // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
@@ -303,17 +441,10 @@ public final class CommonTestUtilities {
      *
      * @param support reference to testing instance of the dockstore web service
      * @param configPath
-     * @throws Exception
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
-        boolean isNewApplication) throws Exception {
-        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, configPath, isNewApplication);
-
-        List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
-
-                "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, configPath);
+        boolean isNewApplication) {
+        cleanStatePrivate(support, configPath, isNewApplication, TestUser.TEST_USER2);
     }
 
     /**
@@ -326,45 +457,26 @@ public final class CommonTestUtilities {
      * @param needBitBucketToken If false BitBucket tokens will be deleted
      */
     public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres,
-        boolean needBitBucketToken) throws Exception {
-        LOG.info("Dropping and Recreating the database with confidential 2 test data and additonal tools");
+        boolean needBitBucketToken) {
+        LOG.info("Dropping and Recreating the database with confidential 2 test data and additional tools");
         addAdditionalToolsWithPrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         if (!needBitBucketToken) {
             deleteBitBucketToken(testingPostgres);
         }
-
     }
 
-
-
     // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
-    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres)
-            throws Exception {
+    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, TestingPostgres testingPostgres) {
         addAdditionalToolsWithPrivate2(support,  isNewApplication, testingPostgres, false);
     }
 
     public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
-            boolean isNewApplication) throws Exception {
-        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, configPath, isNewApplication);
-
-        List<String> migrationList = Arrays
-                .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "add_test_tools", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
-
-                        "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, configPath);
+            boolean isNewApplication) {
+        dropAllAndRunMigration(listMigrations("test.confidential2", "add_test_tools", "test.confidential2_1.5.0"), getApplication(support, isNewApplication), configPath);
     }
 
-    public static Application<DockstoreWebserviceConfiguration> getApplicationAndDropDB(
-            final DropwizardTestSupport<DockstoreWebserviceConfiguration> support, final String configPath, final boolean isNewApplication)
-            throws Exception {
-        Application<DockstoreWebserviceConfiguration> application;
-        if (isNewApplication) {
-            application = support.newApplication();
-        } else {
-            application = support.getApplication();
-        }
-        application.run("db", "drop-all", "--confirm-delete-everything", configPath);
-        return application;
+    public static Application<DockstoreWebserviceConfiguration> getApplication(final DropwizardTestSupport<DockstoreWebserviceConfiguration> support, final boolean isNewApplication) {
+        return isNewApplication ? support.newApplication() : support.getApplication();
     }
 
     /**
@@ -372,16 +484,10 @@ public final class CommonTestUtilities {
      * Specifically for tests toolsIdGet4Workflows() in GA4GHV1IT.java and toolsIdGet4Workflows() in GA4GHV2IT.java
      *
      * @param support reference to testing instance of the dockstore web service
-     * @throws Exception
      */
-    public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         LOG.info("Migrating samepaths migrations");
-        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        application
-            .run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,samepaths");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0, 1.8.0, 1.9.0,1.10.0,1.11.0, 1.12.0, 1.13.0");
-
+        dropAllAndRunMigration(listMigrations("samepaths"), support.newApplication(), CONFIDENTIAL_CONFIG_PATH);
     }
 
     /**
@@ -389,16 +495,10 @@ public final class CommonTestUtilities {
      * Specifically for tests cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles in GA4GHV2IT.java
      *
      * @param support reference to testing instance of the dockstore web service
-     * @throws Exception
      */
-    public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         LOG.info("Migrating testworkflow migrations");
-        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        List<String> migrationList = Arrays
-                .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0",
-                        "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0");
-        runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
+        dropAllAndRunMigration(listMigrations("test", "testworkflow", "test_1.5.0"), support.getApplication(), CONFIDENTIAL_CONFIG_PATH);
     }
 
     public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws RuntimeException {
@@ -434,12 +534,12 @@ public final class CommonTestUtilities {
     }
 
     public static void checkToolList(String log) {
-        Assert.assertTrue(log.contains("NAME"));
-        Assert.assertTrue(log.contains("DESCRIPTION"));
-        Assert.assertTrue(log.toLowerCase().contains("git repo"));
+        assertTrue(log.contains("NAME"));
+        assertTrue(log.contains("DESCRIPTION"));
+        assertTrue(log.toLowerCase().contains("git repo"));
     }
 
-    public static void restartElasticsearch() throws Exception {
+    public static void restartElasticsearch() throws IOException {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
 
         try (DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost())
@@ -481,9 +581,94 @@ public final class CommonTestUtilities {
         return publishRequest;
     }
 
-    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
+    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client, String acceptType) {
         return client
-                .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
-                        new String[] { "BEARER" }, type).getData();
+            .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "application/zip",
+                new String[] { "BEARER" }, type).getData();
+    }
+
+    /**
+     * Get an arbitrary URL with the accept type defaulting to "application/zip".
+     */
+    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
+        return getArbitraryURL(url, type, client, "application/zip");
+    }
+
+    /**
+     * This retrieves a resource file using getResourceAsStream, which works for retrieving resource files packaged in a jar.
+     * This allows other repos, like dockstore-support, to use utility methods that require resource files from this package.
+     * @param resourceFileName
+     * @return
+     */
+    public static Optional<File> getUniversalResourceFile(String resourceFileName) {
+        File tempResourceFile = null;
+        try (InputStream inputStream = Objects.requireNonNull(CommonTestUtilities.class.getClassLoader().getResourceAsStream(resourceFileName))) {
+            tempResourceFile = File.createTempFile(resourceFileName, null);
+            tempResourceFile.deleteOnExit();
+            FileUtils.copyInputStreamToFile(inputStream, tempResourceFile);
+            return Optional.of(tempResourceFile);
+        } catch (Exception e) {
+            LOG.error("Could not get resource file {}", resourceFileName, e);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Get the absolute path of a resource file. The resource file is retrieved using getResourceAsStream, which works for retrieving resource files packaged in a jar.
+     * @param resourceFileName
+     * @return
+     */
+    public static Optional<String> getUniversalResourceFileAbsolutePath(String resourceFileName) {
+        Optional<File> resourceFile = getUniversalResourceFile(resourceFileName);
+        if (resourceFile.isPresent()) {
+            try {
+                return Optional.of(resourceFile.get().getAbsolutePath());
+            } catch (SecurityException e) {
+                LOG.error("Could not get absolute path of resource file {}", resourceFile, e);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public static void testXTotalCount(Client jerseyClient, String path, int expectedValue) {
+        Response response = jerseyClient.target(path).request().property(ClientProperties.READ_TIMEOUT, 0).get();
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
+        MultivaluedMap<String, Object> headers = response.getHeaders();
+        Object xTotalCount = headers.getFirst("X-total-count");
+        assertEquals(String.valueOf(expectedValue), xTotalCount);
+    }
+
+    public static Workflow createHostedWorkflowWithVersion(final HostedApi hostedApi) {
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "awesomeTool", CWL.getShortName(), null, null);
+        SourceFile file = new SourceFile();
+        file.setContent("cwlVersion: v1.0\n" + "class: Workflow");
+        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        file.setPath("/Dockstore.cwl");
+        file.setAbsolutePath("/Dockstore.cwl");
+        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
+        file.setContent("cwlVersion: v1.1\n" + "class: Workflow");
+        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
+        return hostedWorkflow;
+    }
+
+    /**
+     * This collects some information about our test users
+     */
+    public enum TestUser {
+        TEST_USER1("test.confidential1", "test.confidential1_1.5.0", "DockstoreTestUser"),
+        TEST_USER2("test.confidential2", "test.confidential2_1.5.0", "DockstoreTestUser2"),
+        TEST_USER4("test.confidential4", "test.confidential4_1.5.0", "DockstoreTestUser4");
+
+        public final String databasedump;
+
+        public final String databasedumpUpgrade;
+
+        public final String dockstoreUserName;
+
+        TestUser(String databasedump, String databasedumpUpgrade, String dockstoreUserName) {
+            this.databasedump = databasedump;
+            this.databasedumpUpgrade = databasedumpUpgrade;
+            this.dockstoreUserName = dockstoreUserName;
+        }
     }
 }

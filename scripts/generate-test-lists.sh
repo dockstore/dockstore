@@ -33,6 +33,22 @@ function make_file_names_fully_qualified_class_paths {
   sed -i 's+.*java/++g; s+/+.+g; s+\.java$++g' "$FILE_TO_CHANGE"
 }
 
+#####################################
+# Get list of all Unit Tests        #
+#####################################
+
+# Modify prefix for integration tests
+PREFIX="$BASE_PREFIX""/unit"
+mkdir -p "$PREFIX"
+
+
+# Using same wild card patterns the Failsafe Plugin uses
+# https://maven.apache.org/surefire/maven-failsafe-plugin/examples/inclusion-exclusion.html
+find . -name "*Test\.java" -or -name "Test*\.java" -or -name "*TestCase\.java" > "$PREFIX"/all.txt
+
+FILE_TO_CHANGE="$PREFIX"/all.txt
+make_file_names_fully_qualified_class_paths
+
 
 #####################################
 # Get list of all Integration Tests #
@@ -50,6 +66,3 @@ find . -name "*IT\.java" -or -name "IT*\.java" -or -name "*ITCase\.java" > "$PRE
 
 FILE_TO_CHANGE="$PREFIX"/all.txt
 make_file_names_fully_qualified_class_paths
-
-
-

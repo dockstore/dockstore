@@ -49,7 +49,7 @@ public final class DockstoreYamlHelper {
     enum Version {
         ONE_ZERO("1.0") {
             @Override
-            public DockstoreYaml readAndValidateDockstoreYaml(final String content) throws DockstoreYamlException {
+            public DockstoreYaml readAndValidateDockstoreYaml(final String content, boolean validateEntries) throws DockstoreYamlException {
                 final DockstoreYaml10 dockstoreYaml10 = readDockstoreYaml10(content);
                 validate(dockstoreYaml10);
                 return dockstoreYaml10;
@@ -62,7 +62,7 @@ public final class DockstoreYamlHelper {
         },
         ONE_ONE("1.1") {
             @Override
-            public DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException {
+            public DockstoreYaml readAndValidateDockstoreYaml(String content, boolean validateEntries) throws DockstoreYamlException {
                 final DockstoreYaml11 dockstoreYaml11 = readDockstoreYaml11(content);
                 validate(dockstoreYaml11);
                 return dockstoreYaml11;
@@ -75,9 +75,9 @@ public final class DockstoreYamlHelper {
         },
         ONE_TWO("1.2") {
             @Override
-            public DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException {
+            public DockstoreYaml readAndValidateDockstoreYaml(String content, boolean validateEntries) throws DockstoreYamlException {
                 final DockstoreYaml12 dockstoreYaml12 = readDockstoreYaml12(content);
-                validate(dockstoreYaml12);
+                validate(dockstoreYaml12, validateEntries, ".dockstore.yml");
                 return dockstoreYaml12;
             }
 
@@ -93,7 +93,7 @@ public final class DockstoreYamlHelper {
             this.version = version;
         }
 
-        public abstract DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException;
+        public abstract DockstoreYaml readAndValidateDockstoreYaml(String content, boolean validateEntries) throws DockstoreYamlException;
 
         public abstract void validateDockstoreYamlProperties(String content) throws DockstoreYamlException;
 
@@ -111,15 +111,20 @@ public final class DockstoreYamlHelper {
     private DockstoreYamlHelper() {
     }
 
+    public static DockstoreYaml12 readAsDockstoreYaml12(final String content) throws DockstoreYamlException {
+        return readAsDockstoreYaml12(content, false);
+    }
+
     /**
      * Reads a .dockstore.yml and returns a DockstoreYaml12 object, if possible. It's possible if the .dockstore.yml
      * is version 1.1 or 1.2, but not 1.0.
      * @param content
+     * @param validateEntries
      * @return a DockstoreYaml12
      * @throws DockstoreYamlException
      */
-    public static DockstoreYaml12 readAsDockstoreYaml12(final String content) throws DockstoreYamlException {
-        final DockstoreYaml dockstoreYaml = readDockstoreYaml(content);
+    public static DockstoreYaml12 readAsDockstoreYaml12(final String content, boolean validateEntries) throws DockstoreYamlException {
+        final DockstoreYaml dockstoreYaml = readDockstoreYaml(content, validateEntries);
         if (dockstoreYaml instanceof DockstoreYaml12) {
             return (DockstoreYaml12)dockstoreYaml;
         } else if (dockstoreYaml instanceof DockstoreYaml11) {
@@ -147,10 +152,10 @@ public final class DockstoreYamlHelper {
         return readContent(content, constructor, true);
     }
 
-    static DockstoreYaml readDockstoreYaml(final String content) throws DockstoreYamlException {
+    static DockstoreYaml readDockstoreYaml(final String content, boolean validateEntries) throws DockstoreYamlException {
         final Optional<Version> maybeVersion = findValidVersion(content);
         if (maybeVersion.isPresent()) {
-            return maybeVersion.get().readAndValidateDockstoreYaml(content);
+            return maybeVersion.get().readAndValidateDockstoreYaml(content, validateEntries);
         }
         throw new DockstoreYamlException(DOCKSTORE_YML_MISSING_VALID_VERSION);
     }
@@ -176,7 +181,9 @@ public final class DockstoreYamlHelper {
             return dockstoreYaml12;
         } catch (UnsupportedOperationException | InvocationTargetException | IllegalAccessException e) {
             final String msg = "Error converting ; " + e.getMessage();
-            LOG.error(msg, e);
+            if (LOG.isDebugEnabled()) {
+                LOG.error(msg, e);
+            }
             throw new DockstoreYamlException(msg);
         }
     }
@@ -218,7 +225,9 @@ public final class DockstoreYamlHelper {
             return yaml.load(content);
         } catch (Exception e) {
             final String exceptionMsg = e.getMessage();
-            LOG.error(ERROR_READING_DOCKSTORE_YML + exceptionMsg, e);
+            if (LOG.isDebugEnabled()) {
+                LOG.error(ERROR_READING_DOCKSTORE_YML + exceptionMsg, e);
+            }
             throw new DockstoreYamlException(exceptionMsg);
         }
     }
@@ -340,7 +349,9 @@ public final class DockstoreYamlHelper {
                         try {
                             fieldClass = Class.forName(className);
                         } catch (ClassNotFoundException ex) {
-                            LOG.error("Could not get the class object for {}", className, ex);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.error("Could not get the class object for {}", className, ex);
+                            }
                             continue;
                         }
                         addNewPropertyClassToQueue(dockstoreYamlPackageName, fieldClass, discoveredClasses, dockstoreYmlPropertiesQueue);
@@ -373,9 +384,30 @@ public final class DockstoreYamlHelper {
         }
     }
 
-    private static <T> void validate(final T validatee) throws DockstoreYamlException {
+    public static <T> void validate(final T target) throws DockstoreYamlException {
+        validate(target, true);
+    }
+
+    public static <T> void validate(final T target, final boolean validateEntries) throws DockstoreYamlException {
+        validate(target, validateEntries, ".dockstore.yml");
+    }
+
+    /**
+     * Performs constraint validation on an object, throwing an exception containing a descriptive error message if there are violations.
+     * @param target object to validate
+     * @param validateEntries determines whether to validate the entries in a target representing a .dockstore.yml, should be false for other types of target
+     * @param targetDescription a very short description of the target, used to form error messages for top-level violations
+     * @throws DockstoreYamlException an exception containing a descriptive error message that details all violations
+     */
+    public static <T> void validate(final T target, final boolean validateEntries, final String targetDescription) throws DockstoreYamlException {
+        // Generate a set of all validations.
         final Validator validator = createValidator();
-        final Set<ConstraintViolation<T>> violations = validator.validate(validatee);
+        Set<ConstraintViolation<T>> violations = validator.validate(target);
+        // If we're not interested in the the entry-related violations, filter them out.
+        // If the @Valid annotation supported groups (it does not), we could have simply not generated the entry-related violations in the first place.
+        if (!validateEntries) {
+            violations = violations.stream().filter(DockstoreYamlHelper::doesNotReferenceEntry).collect(Collectors.toSet());
+        }
         if (!violations.isEmpty()) {
             throw new DockstoreYamlException(
                 violations.stream()
@@ -383,28 +415,59 @@ public final class DockstoreYamlHelper {
                     // Sort them lexicographically by property path (ex "workflows[0].author[0].name").
                     // The result doesn't match their order in the yaml file, but is probably good enough for now...
                     .sorted((a, b) -> a.getPropertyPath().toString().compareTo(b.getPropertyPath().toString()))
-                    .map(v -> buildMessageFromViolation(v))  // NOSONAR here, a lambda is more understandable than method reference
+                    .map(v -> buildMessageFromViolation(v, targetDescription))  // NOSONAR a lambda is more understandable than method reference here
                     .collect(Collectors.joining("; ")));
         }
     }
 
-    private static <T> String buildMessageFromViolation(ConstraintViolation<T> violation) {
-        String message = violation.getMessage();
-
-        // If the violation contains a non-empty property path, add it to the message, with a summary of the invalid value, if present.
+    /**
+     * Creates an error message from a constraint violation, using a description of the
+     * target (object being validated) if the property is not available.
+     * @param violation constrain violation to convert
+     * @param targetDescription string that described the object being validated (ex: ".dockstore.yml")
+     * @return a well-formed error message
+     */
+    private static <T> String buildMessageFromViolation(ConstraintViolation<T> violation, String targetDescription) {
+        // Determine the subject of the error message, either a property name or a description of the target.
+        String subject = null;
         javax.validation.Path propertyPath = violation.getPropertyPath();
         if (propertyPath != null) {
             String propertyPathString = propertyPath.toString();
             if (propertyPathString != null && !propertyPathString.isEmpty()) {
-                message = String.format("Property \"%s\" %s", propertyPathString, message);
-                Object invalidValue = violation.getInvalidValue();
-                if (invalidValue != null) {
-                    message = String.format("%s (current value: \"%s\")", message, StringUtils.abbreviate(invalidValue.toString(), INVALID_VALUE_ECHO_LIMIT));
-                }
+                subject = String.format("Property \"%s\"", propertyPathString);
             }
+        }
+        if (subject == null) {
+            subject = targetDescription;
+        }
+
+        // Create the message by prepending the subject to the verb phrase in the violation message.
+        String message = String.format("%s %s", subject, violation.getMessage());
+
+        // If there's a non-null invalid value and its toString() method overrides the base Object.toString(), include its string representation in the message.
+        Object invalidValue = violation.getInvalidValue();
+        if (invalidValue != null && !invalidValue.toString().equals(objectToString(invalidValue))) {
+            message = String.format("%s (current value: \"%s\")", message, StringUtils.abbreviate(invalidValue.toString(), INVALID_VALUE_ECHO_LIMIT));
         }
 
         return message;
+    }
+
+    private static String objectToString(Object obj) {
+        return obj.getClass().getName() + '@' + Integer.toHexString(obj.hashCode()); // Object.toString() definition per the official docs
+    }
+
+    /**
+     * Determine if a violation does not reference a property in .dockstore.yml that represents an entry (tool/workflow/etc).
+     * @param violation
+     */
+    private static <T> boolean doesNotReferenceEntry(ConstraintViolation<T> violation) {
+        javax.validation.Path propertyPath = violation.getPropertyPath();
+        if (propertyPath == null) {
+            return true;
+        }
+        String path = propertyPath.toString();
+        return !(path.startsWith("workflows[") || path.startsWith("tools[") || path.startsWith("service."));
     }
 
     private static Validator createValidator() {

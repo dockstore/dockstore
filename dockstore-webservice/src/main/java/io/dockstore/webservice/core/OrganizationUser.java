@@ -39,12 +39,19 @@ public class OrganizationUser implements Serializable {
         ADMIN, MAINTAINER, MEMBER
     }
 
+    public enum InvitationStatus { 
+        PENDING, REJECTED, ACCEPTED 
+    }
+
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "The role of the user in the organization", required = true)
     private Role role;
 
-    @ApiModelProperty(value = "Has the user accepted their membership.", required = true)
-    private boolean accepted = false;
+    @Column(nullable = false, columnDefinition = "text")
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "The status of the organization invitation", required = true)
+    @Schema(description = "The status of the organization invitation", required = true)
+    private InvitationStatus status;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -68,7 +75,7 @@ public class OrganizationUser implements Serializable {
         this.user = user;
         this.organization = organization;
         this.role = role;
-        this.accepted = false;
+        this.status = InvitationStatus.PENDING;
 
         organization.getUsers().add(this);
         user.getOrganizations().add(this);
@@ -106,12 +113,12 @@ public class OrganizationUser implements Serializable {
         this.role = role;
     }
 
-    public boolean isAccepted() {
-        return accepted;
+    public InvitationStatus getStatus() {
+        return status;
     }
 
-    public void setAccepted(boolean accepted) {
-        this.accepted = accepted;
+    public void setStatus(InvitationStatus status) {
+        this.status = status;
     }
 
     public Timestamp getDbCreateDate() {

@@ -16,6 +16,7 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.DescriptorLanguageSubclass;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -38,4 +39,16 @@ public class Service12 extends AbstractYamlService implements Workflowish {
         this.subclass = subclass;
     }
 
+    public List<String> getTestParameterFiles() {
+        throw new UnsupportedOperationException();
+    }
+
+    public String getPrimaryDescriptorPath() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getReadMePath() {
+        throw new UnsupportedOperationException();
+    }
 }

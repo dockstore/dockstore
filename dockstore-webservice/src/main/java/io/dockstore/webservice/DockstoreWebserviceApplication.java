@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
@@ -50,6 +51,7 @@ import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Notification;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Organization;
@@ -57,6 +59,7 @@ import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.SourceFileMetadata;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
@@ -65,10 +68,20 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.VersionMetadata;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.metrics.CountMetric;
+import io.dockstore.webservice.core.metrics.CpuStatisticMetric;
+import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
+import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
+import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
+import io.dockstore.webservice.core.metrics.Metrics;
+import io.dockstore.webservice.core.metrics.ValidationStatusCountMetric;
+import io.dockstore.webservice.core.metrics.ValidatorInfo;
+import io.dockstore.webservice.core.metrics.ValidatorVersionInfo;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
+import io.dockstore.webservice.helpers.EmailPropertyFilter;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
@@ -81,6 +94,7 @@ import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -146,17 +160,9 @@ import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -174,7 +180,6 @@ import org.eclipse.jetty.util.component.LifeCycle;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
@@ -193,6 +198,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String DOCKSTORE_WEB_CACHE_MISS_LOG_FILE = "/tmp/dockstore-web-cache.misses.log";
     public static final File CACHE_MISS_LOG_FILE = new File(DOCKSTORE_WEB_CACHE_MISS_LOG_FILE);
 
+    /**
+     * use this to detect whether we're running on CircleCI. Definitely not kosher, use sparingly and only as required.
+     */
+    public static final String CIRCLE_SHA_1 = "CIRCLE_SHA1";
+
     private static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
@@ -209,7 +219,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class, WorkflowVersion.class, FileFormat.class,
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
-            AppTool.class, Category.class, FullWorkflowPath.class) {
+            AppTool.class, Category.class, FullWorkflowPath.class, Notebook.class, SourceFileMetadata.class, Metrics.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, ExecutionTimeStatisticMetric.class,
+            CountMetric.class, ExecutionStatusCountMetric.class, ValidationStatusCountMetric.class, ValidatorInfo.class, ValidatorVersionInfo.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -269,7 +280,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         }
         // match HttpURLConnection which does not have a timeout by default
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
-        if (System.getenv("CIRCLE_SHA1") != null) {
+        if (runningOnCircleCI()) {
             builder.eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName(), "central"));
         }
         okHttpClient = builder.cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS)
@@ -287,12 +298,21 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         }
     }
 
+    /**
+     * Use this sparingly. Generally, we want the application under test to be as similar to production as possible.
+     * However, sometimes it is necessary to trigger different behaviour due to test limitations/edge cases.
+     * @return true if we're running on CircleCI
+     */
+    public static boolean runningOnCircleCI() {
+        return System.getenv(CIRCLE_SHA_1) != null;
+    }    
+
     private static Cache generateCache(String suffix) {
         int cacheSize = CACHE_IN_MB * BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE; // 100 MiB
         final File cacheDir;
         try {
             // let's try using the same cache each time
-            // not sure how corruptible/non-curruptable the cache is
+            // not sure how corruptible/non-corruptible the cache is
             // namespace cache when testing on circle ci
             cacheDir = Files.createDirectories(Paths.get(DOCKSTORE_WEB_CACHE + (suffix == null ? "" : "/" + suffix))).toFile();
         } catch (IOException e) {
@@ -312,6 +332,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
         // To convert every Date we have to RFC 3339, we can use this
         // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));
+
+        // try to set a filter
+        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter("emailFilter", new EmailPropertyFilter()));
     }
 
     public static File getFilePluginLocation(DockstoreWebserviceConfiguration configuration) {
@@ -355,6 +378,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final FileDAO fileDAO = new FileDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
         final AppToolDAO appToolDAO = new AppToolDAO(hibernate.getSessionFactory());
+        final NotebookDAO notebookDAO = new NotebookDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
         final VersionDAO versionDAO = new VersionDAO(hibernate.getSessionFactory());
@@ -381,7 +405,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(hibernate.getSessionFactory(), authorizer, tokenDAO, toolDAO, versionDAO, userDAO, configuration);
+        final EntryResource entryResource = new EntryResource(hibernate.getSessionFactory(), authorizer, tokenDAO, toolDAO, versionDAO, userDAO, workflowDAO, configuration);
         environment.jersey().register(entryResource);
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
@@ -403,8 +427,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
         final MetadataResource metadataResource = new MetadataResource(getHibernate().getSessionFactory(), configuration);
         environment.jersey().register(metadataResource);
-        environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
-        environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
+        environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration));
+        environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new LambdaEventResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new NotificationResource(getHibernate().getSessionFactory()));
@@ -429,6 +453,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setBioWorkflowDAO(bioWorkflowDAO);
         ToolsApiServiceImpl.setServiceDAO(serviceDAO);
         ToolsApiServiceImpl.setAppToolDAO(appToolDAO);
+        ToolsApiServiceImpl.setNotebookDAO(notebookDAO);
         ToolsApiServiceImpl.setFileDAO(fileDAO);
         ToolsApiServiceImpl.setVersionDAO(versionDAO);
         ToolsApiServiceImpl.setConfig(configuration);
@@ -438,6 +463,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setToolDAO(toolDAO);
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiExtendedServiceImpl.setAppToolDAO(appToolDAO);
+        ToolsApiExtendedServiceImpl.setNotebookDAO(notebookDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 
         DOIGeneratorFactory.setConfig(configuration);
@@ -458,8 +484,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 "Authorization, X-Auth-Username, X-Auth-Password, X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
 
         // Initialize GitHub App Installation Access Token cache
-        CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
-        cacheConfigManager.initCache();
+        CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
 
         environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
             // Register connection pool health check after server starts so the environment has dropwizard metrics
@@ -500,65 +525,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 }
             }
         });
-
-        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-            @Override
-            public void lifeCycleStarted(LifeCycle event) {
-                Session session = hibernate.getSessionFactory().openSession();
-                ManagedSessionContext.bind(session);
-                final Transaction transaction = session.beginTransaction();
-                try {
-                    final String errorPrefix = "could not update old style github token";
-                    TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
-                    // cannot use normal github library
-                    final java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().build();
-                    // exclude both gho tokens that the application generates and ghp tokens that we can insert for testing
-                    // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
-                    for (Token t : tokenDAO.findAllGitHubTokens()) {
-                        if (!t.getContent().startsWith("gho_") && !t.getContent().startsWith("ghp_")) {
-                            try {
-                                HttpRequest request = HttpRequest.newBuilder()
-                                    .uri(new URI("https://api.github.com/applications/" + configuration.getGithubClientID() + "/token"))
-                                    .header("Accept", "application/vnd.github+json")
-                                    .header("Authorization", getBasicAuthenticationHeader(configuration.getGithubClientID(), configuration.getGithubClientSecret()))
-                                    .method("PATCH", BodyPublishers.ofString("{\"access_token\":\"" + t.getContent() + "\"}"))
-                                    .build();
-                                final HttpResponse<ResetTokenModel> send = client.send(request, new JsonBodyHandler<>(ResetTokenModel.class));
-                                final ResetTokenModel body = send.body();
-                                if (send.statusCode() == HttpStatus.SC_OK) {
-                                    String newToken = body.token;
-                                    t.setContent(newToken);
-                                    tokenDAO.update(t);
-                                    LOG.info("updated token for {}", t.getUsername());
-                                } else {
-                                    LOG.error(errorPrefix + " for {}, error code {}, token was not found on github", t.getUsername(), send.statusCode());
-                                }
-                            } catch (IOException e) {
-                                LOG.error(errorPrefix + " for {}", t.getUsername());
-                                LOG.error(errorPrefix, e);
-                            } catch (URISyntaxException e) {
-                                LOG.error(errorPrefix + " for {} due to syntax issue", t.getUsername());
-                                LOG.error(errorPrefix, e);
-                            } catch (InterruptedException e) {
-                                LOG.error(errorPrefix + " for {} due to interruption", t.getUsername());
-                                LOG.error(errorPrefix, e);
-                                // Restore interrupted state... (sonarcloud suggestion)
-                                Thread.currentThread().interrupt();
-                                return;
-                            }
-                        }
-                    }
-                } finally {
-                    transaction.commit();
-                    ManagedSessionContext.unbind(hibernate.getSessionFactory());
-                }
-            }
-        });
-    }
-
-    private static String getBasicAuthenticationHeader(String username, String password) {
-        String valueToEncode = username + ":" + password;
-        return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes(StandardCharsets.UTF_8));
     }
 
     private void registerAPIsAndMisc(Environment environment) {
@@ -646,50 +612,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             SourceFile.restrictPaths(regex, violationMessage);
         } else {
             SourceFile.unrestrictPaths();
-        }
-    }
-
-
-    private static class ResetTokenModel {
-
-        private String token;
-
-        public String getToken() {
-            return token;
-        }
-
-        public void setToken(String token) {
-            this.token = token;
-        }
-    }
-
-    private static class JsonBodyHandler<W> implements HttpResponse.BodyHandler<W> {
-
-        private final Class<W> wClass;
-
-        JsonBodyHandler(Class<W> wClass) {
-            this.wClass = wClass;
-        }
-
-        @Override
-        public HttpResponse.BodySubscriber<W> apply(HttpResponse.ResponseInfo responseInfo) {
-            return asJSON(wClass);
-        }
-
-        public <T> HttpResponse.BodySubscriber<T> asJSON(Class<T> targetType) {
-            HttpResponse.BodySubscriber<String> upstream = HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8);
-
-            return HttpResponse.BodySubscribers.mapping(
-                upstream,
-                (String body) -> {
-                    try {
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-                        return objectMapper.readValue(body, targetType);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
         }
     }
 }

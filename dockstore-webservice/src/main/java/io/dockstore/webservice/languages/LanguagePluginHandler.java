@@ -21,6 +21,8 @@ import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
+import io.dockstore.language.MinimalLanguageInterface.FileMetadata;
+import io.dockstore.language.MinimalLanguageInterface.FileReader;
 import io.dockstore.language.MinimalLanguageInterface.GenericFileType;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -28,6 +30,7 @@ import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.lang.reflect.InvocationTargetException;
@@ -40,8 +43,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,13 +72,36 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             author.setEmail(workflowMetadata.getEmail());
             version.addAuthor(author);
         }
+
+        // TODO: this can probably be removed after EntryResource.updateLanguageVersions is removed since this should only happen with previously imported data
+        // with old data, we need to re-parse original content since original parsing lacked file-level metadata
+        final Map<String, FileMetadata> stringFileMetadataMap = minimalLanguageInterface.indexWorkflowFiles(filepath, content, new FileReader() {
+            @Override
+            public String readFile(String path) {
+                return sourceFiles.stream().filter(file -> file.getPath().equals(path)).findFirst().map(SourceFile::getContent).orElse(null);
+            }
+
+            @Override
+            public List<String> listFiles(String pathToDirectory) {
+                return sourceFiles.stream().map(SourceFile::getPath).toList();
+            }
+        });
+        // save file versioning back to source files
+        sourceFiles.forEach(file -> {
+            final FileMetadata fileMetadata = stringFileMetadataMap.get(file.getPath());
+            if (fileMetadata != null) {
+                file.getMetadata().setTypeVersion(fileMetadata.languageVersion());
+            }
+        });
+        version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
+
         version.setDescriptionAndDescriptionSource(workflowMetadata.getDescription(), DescriptionSource.DESCRIPTOR);
         // TODO: hook up validation object to version for parsing metadata
         return version;
     }
 
     @Override
-    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, Workflow workflow) {
         if (minimalLanguageInterface instanceof RecommendedLanguageInterface) {
             Optional<SourceFile> mainDescriptor = sourcefiles.stream()
                     .filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
@@ -106,8 +130,8 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
      * @param sourceFiles set of sourcefiles
      * @return Generic indexed files mapping
      */
-    private Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> sourcefilesToIndexedFiles(Set<SourceFile> sourceFiles) {
-        Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> indexedFiles = new HashMap<>();
+    private Map<String, FileMetadata> sourcefilesToIndexedFiles(Set<SourceFile> sourceFiles) {
+        Map<String, FileMetadata> indexedFiles = new HashMap<>();
 
         for (SourceFile file : sourceFiles) {
             String content = file.getContent();
@@ -138,7 +162,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 throw new CustomWebApplicationException("Could not determine file type category for source file "
                     + file.getPath(), HttpStatus.SC_METHOD_FAILURE);
             }
-            Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, genericFileType);
+            FileMetadata indexedFile = new FileMetadata(content, genericFileType, null);
             indexedFiles.put(absolutePath, indexedFile);
         }
         return indexedFiles;
@@ -171,13 +195,14 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
         };
 
-        final Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> stringPairMap = minimalLanguageInterface
+        final Map<String, FileMetadata> stringPairMap = minimalLanguageInterface
             .indexWorkflowFiles(filepath, content, reader);
         Map<String, SourceFile> results = new HashMap<>();
-        for (Map.Entry<String, Pair<String, MinimalLanguageInterface.GenericFileType>> entry : stringPairMap.entrySet()) {
+        for (Map.Entry<String, FileMetadata> entry : stringPairMap.entrySet()) {
             final SourceFile sourceFile = new SourceFile();
             sourceFile.setPath(entry.getKey());
-            sourceFile.setContent(entry.getValue().getLeft());
+            sourceFile.setContent(entry.getValue().content());
+            sourceFile.getMetadata().setTypeVersion(entry.getValue().languageVersion());
             if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
@@ -190,9 +215,9 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             // however this may not be true for some languages, and we may have to change this
             if (sourceFile.getType() == null) {
                 DescriptorLanguage.FileType importedFileType = null;
-                if (entry.getValue().getRight() == GenericFileType.IMPORTED_DESCRIPTOR) {
+                if (entry.getValue().genericFileType() == GenericFileType.IMPORTED_DESCRIPTOR) {
                     importedFileType = minimalLanguageInterface.getDescriptorLanguage().getFileType();
-                } else if (entry.getValue().getRight() == GenericFileType.TEST_PARAMETER_FILE) {
+                } else if (entry.getValue().genericFileType() == GenericFileType.TEST_PARAMETER_FILE) {
                     importedFileType = minimalLanguageInterface.getDescriptorLanguage().getTestParamType();
                 } else {
                     // For some languages this may be incorrect
@@ -211,22 +236,23 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
         ToolDAO dao) {
 
         if (type == Type.DAG && minimalLanguageInterface instanceof CompleteLanguageInterface) {
-            final Map<String, Object> maps = ((CompleteLanguageInterface)minimalLanguageInterface)
+            final Map<String, Object> maps = ((CompleteLanguageInterface) minimalLanguageInterface)
                 .loadCytoscapeElements(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
             return Optional.of(gson.toJson(maps));
         } else if (type == Type.TOOLS && minimalLanguageInterface instanceof CompleteLanguageInterface) {
             // TODO: hook up tools here for Galaxy
             List<CompleteLanguageInterface.RowData> rowData = new ArrayList<>();
             try {
-                rowData = ((CompleteLanguageInterface)minimalLanguageInterface)
-                        .generateToolsTable(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
-            } catch (NullPointerException e) {
+                rowData = ((CompleteLanguageInterface) minimalLanguageInterface)
+                    .generateToolsTable(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
+            } catch (RuntimeException e) {
                 LOG.error("could not parse tools from workflow", e);
                 return Optional.empty();
             }
             final Map<String, DockerInfo> collect = rowData.stream()
-                    .collect(Collectors.toMap(row -> row.toolid,
-                            row -> new DockerInfo("TBD".equals(row.filename) ? null : row.filename, "TBD".equals(row.dockerContainer) ? null : row.dockerContainer, row.link == null ? null : row.link.toString())));
+                .collect(Collectors.toMap(row -> row.toolid,
+                    row -> new DockerInfo("TBD".equals(row.filename) ? null : row.filename, "TBD".equals(row.dockerContainer) ? null : row.dockerContainer,
+                        row.link == null ? null : row.link.toString())));
             return Optional.of(getJSONTableToolContent(collect));
         }
         return Optional.empty();

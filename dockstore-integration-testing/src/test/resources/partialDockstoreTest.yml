@@ -22,6 +22,11 @@ externalConfig:
   scheme: http
   port: 8080
 
+metricsConfig:
+  s3BucketName: local-dockstore-metrics-data
+  # LocalStack usually runs at this endpoint
+  s3EndpointOverride: http://localhost:4566
+
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=0s
 
 database:

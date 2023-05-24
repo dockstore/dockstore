@@ -15,16 +15,17 @@
  */
 package core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.dockstore.webservice.core.SourceFile;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class SortTest {
+class SortTest {
 
     @Test
-    public void testCWLSourceFileSortOrder() {
+    void testCWLSourceFileSortOrder() {
         // for the GUI, we should try to sort `/Dockstore.cwl` first before relative files
         SortedSet<SourceFile> files = new TreeSet<>();
 
@@ -34,11 +35,11 @@ public class SortTest {
         createAndAddFile(files, "tool.cwl", "/tool.cwl");
         createAndAddFile(files, "extra.js", "/extra.js");
 
-        Assert.assertEquals("/Dockstore.cwl", files.iterator().next().getPath());
+        assertEquals("/Dockstore.cwl", files.iterator().next().getPath());
     }
 
     @Test
-    public void testWDLSourceFileSortOrder() {
+    void testWDLSourceFileSortOrder() {
         // for the GUI, we should try to sort `/Dockstore.wdl` first before relative files
         SortedSet<SourceFile> files = new TreeSet<>();
 
@@ -48,7 +49,7 @@ public class SortTest {
         createAndAddFile(files, "tool.cwl", "/tool.cwl");
         createAndAddFile(files, "extra.js", "/extra.js");
 
-        Assert.assertEquals("/Dockstore.wdl", files.iterator().next().getPath());
+        assertEquals("/Dockstore.wdl", files.iterator().next().getPath());
     }
 
     private void createAndAddFile(SortedSet<SourceFile> files, String path, String absolutePath) {

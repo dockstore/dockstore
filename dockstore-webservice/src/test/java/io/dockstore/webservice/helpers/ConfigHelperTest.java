@@ -1,18 +1,24 @@
 package io.dockstore.webservice.helpers;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ConfigHelperTest {
+import io.dockstore.common.MuteForSuccessfulTests;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+class ConfigHelperTest {
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
     /**
      * Tests that a mock git.properties file can be read to surface
@@ -20,15 +26,15 @@ public class ConfigHelperTest {
      * checks that config is set to "git property not found".
      */
     @Test
-    public void readGitProperties() {
+    void readGitProperties() {
         String gitPropertiesFile = "fixtures/git.properties";
         final ConfigHelper.GitInfo gitInfo = ConfigHelper.readGitProperties(gitPropertiesFile);
-        Assert.assertEquals("test-id-short", gitInfo.commitId);
-        Assert.assertEquals("test-version",  gitInfo.buildVersion);
+        assertEquals("test-id-short", gitInfo.commitId);
+        assertEquals("test-version", gitInfo.buildVersion);
 
         String failGitPropertiesFile = "fail.git.properties";
         final ConfigHelper.GitInfo failGitInfo = ConfigHelper.readGitProperties(failGitPropertiesFile);
-        Assert.assertEquals("git property not found", failGitInfo.commitId);
-        Assert.assertEquals("git property not found", failGitInfo.buildVersion);
+        assertEquals("git property not found", failGitInfo.commitId);
+        assertEquals("git property not found", failGitInfo.buildVersion);
     }
 }

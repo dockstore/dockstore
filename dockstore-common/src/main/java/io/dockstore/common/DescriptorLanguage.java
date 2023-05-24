@@ -16,6 +16,11 @@
 
 package io.dockstore.common;
 
+import static io.dockstore.common.EntryType.APPTOOL;
+import static io.dockstore.common.EntryType.NOTEBOOK;
+import static io.dockstore.common.EntryType.TOOL;
+import static io.dockstore.common.EntryType.WORKFLOW;
+
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.Objects;
@@ -35,50 +40,51 @@ public enum DescriptorLanguage {
     // should be called 'Snakefile' (no suffix), the other descriptors should have the '.smk' suffix.
     // https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html
     SMK("SMK", "Snakemake", FileType.DOCKSTORE_SMK, FileType.SMK_TEST_PARAMS, false, true,
-            Set.of("smk", ""), true, true) {
+            Set.of("smk", ""), true, true, Set.of(WORKFLOW, APPTOOL, TOOL)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
         }
     },
     CWL("CWL", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON, false, false,
-        Set.of("cwl", "yaml", "yml"), true, true) {
+        Set.of("cwl", "yaml", "yml"), true, true, Set.of(WORKFLOW, APPTOOL, TOOL)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
         }
     },
-    WDL("WDL", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON, false, false, Set.of("wdl"), true, true) {
+    WDL("WDL", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON, false, false, Set.of("wdl"), true, true, Set.of(WORKFLOW, APPTOOL, TOOL)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
         }
     },
     GXFORMAT2("gxformat2", "Galaxy Workflow Format 2", FileType.DOCKSTORE_GXFORMAT2, FileType.GXFORMAT2_TEST_FILE, false, true,
-        Set.of("ga", "yaml", "yml"), true, false) {
+        Set.of("ga", "yaml", "yml"), true, false, Set.of(WORKFLOW)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_YML;
         }
     },
     // DOCKSTORE-2428 - demo how to add new workflow language
-    SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON, false, true, Set.of("swl"), false, false) {
-        @Override
-        public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type);
-        }
-    },
-    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false, Set.of("config"), true, false) {
+    SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON, false, true, Set.of("swl"), false, false, Set.of(WORKFLOW, APPTOOL, TOOL)),
+    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false, Set.of("config"), true, false, Set.of(WORKFLOW)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.NEXTFLOW || type == FileType.DOCKSTORE_YML;
         }
     },
     SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON, true,
-        false, Set.of("yml"), true, false) {
+        false, Set.of("yml"), true, false, Set.of(EntryType.SERVICE)) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_SERVICE_OTHER;
+        }
+    },
+    JUPYTER("jupyter", "Jupyter .ipynb notebook", FileType.DOCKSTORE_JUPYTER, FileType.DOCKSTORE_NOTEBOOK_TEST_FILE, false, false, Set.of("ipynb"), false, false, Set.of(NOTEBOOK)) {
+        @Override
+        public boolean isRelevantFileType(FileType type) {
+            return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_NOTEBOOK_REES || type == FileType.DOCKSTORE_NOTEBOOK_OTHER;
         }
     };
 
@@ -118,8 +124,10 @@ public enum DescriptorLanguage {
 
     private final boolean supportsChecker;
 
+    private final Set<EntryType> entryTypes;
+
     @SuppressWarnings("checkstyle:ParameterNumber")
-    DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType, final boolean serviceLanguage, final boolean pluginLanguage, final Set<String> defaultPrimaryDescriptorExtensions, final boolean supportsHosted, final boolean supportsChecker) {
+    DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType, final boolean serviceLanguage, final boolean pluginLanguage, final Set<String> defaultPrimaryDescriptorExtensions, final boolean supportsHosted, final boolean supportsChecker, Set<EntryType> entryTypes) {
         this.shortName = shortName;
         this.friendlyName = friendlyName;
         this.fileType = fileType;
@@ -129,6 +137,7 @@ public enum DescriptorLanguage {
         this.defaultPrimaryDescriptorExtensions = defaultPrimaryDescriptorExtensions;
         this.supportsHosted = supportsHosted;
         this.supportsChecker = supportsChecker;
+        this.entryTypes = entryTypes;
     }
 
     @Override
@@ -203,12 +212,17 @@ public enum DescriptorLanguage {
         return supportsHosted;
     }
 
+    public Set<EntryType> getEntryTypes() {
+        return entryTypes;
+    }
+
     public enum FileTypeCategory {
         GENERIC_DESCRIPTOR, // for languages where we don't currently store in the DB whether a descriptor is primary (we should)
         PRIMARY_DESCRIPTOR,
         SECONDARY_DESCRIPTOR,
         TEST_FILE,
         CONTAINERFILE,
+        CONFIGURATION_FILE,
         OTHER
     }
 
@@ -244,7 +258,8 @@ public enum DescriptorLanguage {
         DOCKSTORE_YML(FileTypeCategory.OTHER),
         DOCKSTORE_SERVICE_YML(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_SERVICE_TEST_JSON(FileTypeCategory.TEST_FILE), DOCKSTORE_SERVICE_OTHER(FileTypeCategory.OTHER),
         DOCKSTORE_GXFORMAT2(FileTypeCategory.GENERIC_DESCRIPTOR), GXFORMAT2_TEST_FILE(FileTypeCategory.TEST_FILE),
-        DOCKSTORE_SWL(FileTypeCategory.GENERIC_DESCRIPTOR), SWL_TEST_JSON(FileTypeCategory.TEST_FILE);
+        DOCKSTORE_SWL(FileTypeCategory.GENERIC_DESCRIPTOR), SWL_TEST_JSON(FileTypeCategory.TEST_FILE),
+        DOCKSTORE_JUPYTER(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_NOTEBOOK_REES(FileTypeCategory.CONFIGURATION_FILE), DOCKSTORE_NOTEBOOK_TEST_FILE(FileTypeCategory.TEST_FILE), DOCKSTORE_NOTEBOOK_OTHER(FileTypeCategory.OTHER);
         // DOCKSTORE-2428 - demo how to add new workflow language
 
         private final FileTypeCategory category;
@@ -280,9 +295,9 @@ public enum DescriptorLanguage {
      */
     public static class DescriptorLanguageBean {
 
-        public String value;
+        public final String value;
 
-        public String friendlyName;
+        public final String friendlyName;
 
         public DescriptorLanguageBean(DescriptorLanguage descriptorLanguage) {
             this.value = descriptorLanguage.toString();

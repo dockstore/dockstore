@@ -4,6 +4,7 @@ import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import java.util.Arrays;
@@ -128,4 +129,29 @@ public abstract class EntryLite {
             return EntryType.APPTOOL;
         }
     }
+
+    public static class EntryLiteNotebook extends EntryLite {
+        private final Notebook notebook = new Notebook();
+
+        public EntryLiteNotebook(final SourceControl sourceControl, final String organization, final String repository, final String workflowName, final Date entryUpdated, final Date versionUpdated) {
+            super(entryUpdated, versionUpdated);
+            this.notebook.setSourceControl(sourceControl);
+            this.notebook.setOrganization(organization);
+            this.notebook.setRepository(repository);
+            this.notebook.setWorkflowName(workflowName);
+
+        }
+
+        @Override
+        public String getEntryPath() {
+            return notebook.getEntryPath();
+        }
+
+        @Override
+        public EntryType getEntryType() {
+            return EntryType.NOTEBOOK;
+        }
+    }
+
+
 }

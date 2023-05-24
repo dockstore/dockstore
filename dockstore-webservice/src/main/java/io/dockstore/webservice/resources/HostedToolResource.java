@@ -82,7 +82,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     private final TagDAO tagDAO;
     private final SessionFactory sessionFactory;
 
-    public HostedToolResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
+    public HostedToolResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration limitConfig) {
         super(sessionFactory, permissionsInterface, limitConfig);
         this.tagDAO = new TagDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
@@ -183,6 +183,9 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool deleteHostedVersion(User user, Long entryId, String version) {
         Tool tool = super.deleteHostedVersion(user, entryId, version);
+        // Deleting a version can change the descriptor types of the tool
+        List<String> descriptorTypes =  tool.calculateDescriptorType();
+        tool.setDescriptorType(descriptorTypes);
         PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
         return tool;
     }

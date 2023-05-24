@@ -22,29 +22,32 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.AppTool;
-import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.OrcidPutCode;
-import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
 import io.dropwizard.auth.Auth;
@@ -79,8 +82,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -90,6 +96,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
@@ -112,9 +119,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public static final String ENTRY_NO_DOI_ERROR_MESSAGE = "Entry does not have a concept DOI associated with it";
     public static final String VERSION_NO_DOI_ERROR_MESSAGE = "Version does not have a DOI url associated with it";
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
+    private static final int PROCESSOR_PAGE_SIZE = 25;
 
     private final TokenDAO tokenDAO;
-    private final ToolDAO toolDAO;
+    private LambdaUrlChecker lambdaUrlChecker;
+    private ToolDAO toolDAO;
+    private WorkflowDAO workflowDAO;
     private final VersionDAO<?> versionDAO;
     private final UserDAO userDAO;
     private final CollectionHelper collectionHelper;
@@ -124,12 +134,84 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final int discourseCategoryId;
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
+    private final String baseUrl;
     private final String hostName;
+    private final boolean isProduction;
     private final PermissionsInterface permissionsInterface;
+    private final SessionFactory sessionFactory;
 
+    private IntFunction<List<Workflow>> getWorkflows = offset -> workflowDAO.findAllWorkflows(offset, PROCESSOR_PAGE_SIZE);
+
+    private IntFunction<List<Tool>> getTools = offset -> toolDAO.findAllTools(offset, PROCESSOR_PAGE_SIZE);
+
+    private BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForLanguageVersions =
+            (workflows, allVersions) -> {
+                workflows.forEach(workflow -> {
+                    LanguageHandlerInterface languageHandlerInterface =
+                            LanguageHandlerFactory.getInterface(workflow.getDescriptorType());
+                    workflow.getWorkflowVersions().stream()
+                            .filter(version -> allVersions || version.getVersionMetadata()
+                                    .getDescriptorTypeVersions().isEmpty())
+                            .forEach(version -> {
+                                final String primaryPath = version.getWorkflowPath();
+                                readSourceFilesAndUpdate(languageHandlerInterface, version, primaryPath);
+                            });
+                });
+                return null;
+            };
+
+    private BiFunction<List<Workflow>, Boolean, Void> processWorkflowsForOpenData =
+            (workflows, allVersions) -> {
+                workflows.forEach(workflow -> {
+                    LanguageHandlerInterface languageHandlerInterface =
+                            LanguageHandlerFactory.getInterface(workflow.getDescriptorType());
+                    workflow.getWorkflowVersions().stream()
+                            .filter(version -> allVersions || version.getVersionMetadata().getPublicAccessibleTestParameterFile() == null)
+                            .forEach(version -> {
+                                final Boolean openData =
+                                        languageHandlerInterface.isOpenData(version, lambdaUrlChecker)
+                                                .orElse(null);
+                                version.getVersionMetadata().setPublicAccessibleTestParameterFile(openData);
+                            });
+                });
+                return null;
+            };
+
+    private BiFunction<List<Tool>, Boolean, Void> processLegacyToolsForLanguageVersions =
+            (tools, allVersions) -> {
+                tools.stream()
+                        .filter(tool -> tool.getDescriptorType().size() == 1) // Only support tools with 1 language
+                        .forEach(tool -> {
+                            final String descriptorLanguageText = tool.getDescriptorType().get(0);
+                            LanguageHandlerInterface languageHandlerInterface =
+                                    LanguageHandlerFactory.getInterface(
+                                            DescriptorLanguage.convertShortStringToEnum(descriptorLanguageText));
+                            tool.getWorkflowVersions().stream()
+                                    .filter(version -> allVersions || version.getVersionMetadata()
+                                            .getDescriptorTypeVersions().isEmpty())
+                                    .forEach(version -> {
+                                        final String primaryPath;
+                                        if (DescriptorLanguage.convertShortStringToEnum(descriptorLanguageText)
+                                                == DescriptorLanguage.WDL) {
+                                            primaryPath = version.getWdlPath();
+                                        } else { // We will not add new languages to Tool (perhaps to AppTool), so this is safe
+                                            primaryPath = version.getCwlPath();
+                                        }
+                                        readSourceFilesAndUpdate(languageHandlerInterface, version,
+                                                primaryPath);
+                                    });
+                        });
+                return null;
+            };
+
+
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
-        DockstoreWebserviceConfiguration configuration) {
+        WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration configuration) {
+        this.sessionFactory = sessionFactory;
         this.permissionsInterface = permissionsInterface;
+        this.workflowDAO = workflowDAO;
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
@@ -138,13 +220,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
         discourseCategoryId = configuration.getDiscourseCategoryId();
+        final String checkUrlLambdaUrl = configuration.getCheckUrlLambdaUrl();
+        lambdaUrlChecker = checkUrlLambdaUrl == null ? null : new LambdaUrlChecker(checkUrlLambdaUrl);
 
         ApiClient apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Content-Type", "application/x-www-form-urlencoded");
         apiClient.addDefaultHeader("cache-control", "no-cache");
         apiClient.setBasePath(discourseUrl);
 
+        baseUrl = configuration.getExternalConfig().computeBaseUrl();
         hostName = configuration.getExternalConfig().getHostname();
+        isProduction = configuration.getExternalConfig().computeIsProduction();
         topicsApi = new TopicsApi(apiClient);
     }
 
@@ -417,6 +503,112 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return createAndSetDiscourseTopic(id);
     }
 
+    /**
+     * Updates the language versions for all tool and workflow versions. If <code>allVersions</code> is true, processes all
+     * versions; if it's false, only processes those that have not been processed.
+     * @param user
+     * @param allVersions
+     * @return
+     */
+    @Path("/updateLanguageVersions")
+    @RolesAllowed("admin")
+    @UnitOfWork
+    @POST
+    @Operation(operationId = "updateLanguageVersions", description = "Update language versions", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Number of entries processed",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)))
+    public int updateLanguageVersions(
+        @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Whether to process all versions or only versions without language descriptor already set", in = ParameterIn.QUERY, required = false)
+        @QueryParam("allVersions") @DefaultValue("false") boolean allVersions) {
+        LOG.info("Processing tools for language versions");
+        final int processedTools = loadAndProcessEntries(getTools, processLegacyToolsForLanguageVersions, allVersions);
+        LOG.info("Completed processing {} tools", processedTools);
+        LOG.info("Processing workflows for language versions");
+        final int processedWorkflows = loadAndProcessEntries(getWorkflows, processWorkflowsForLanguageVersions, allVersions);
+        LOG.info("Completed processing {} workflows", processedWorkflows);
+        return processedTools + processedWorkflows;
+    }
+
+    /**
+     * Goes through workflow (BioWorkflow and AppTool) versions and updates their open data status. If <code>allVersions</code> is true,
+     * processes all workflow versions, if it's false, processes only versions whose open data status is null.
+     * @param user
+     * @param allVersions
+     * @return
+     */
+    @Path("/updateOpenData")
+    @RolesAllowed("admin")
+    @UnitOfWork
+    @POST
+    @Operation(operationId = "updateOpenData", description = "Update open data", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Number of entries processed",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)))
+    public int updateOpenData(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Whether to process all versions or only versions without open data already set", in = ParameterIn.QUERY, required = false)
+        @QueryParam("allVersions") @DefaultValue("false") boolean allVersions) {
+        if (lambdaUrlChecker == null) {
+            throw new CustomWebApplicationException("The url checker is not configured; this request cannot be processed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        LOG.info("Processing workflows for open data");
+        final int processedEntries = loadAndProcessEntries(getWorkflows, processWorkflowsForOpenData, allVersions);
+        LOG.info("Completed processing {} entries for open data", processedEntries);
+        return processedEntries;
+    }
+
+    /**
+     * Loads and processes entries in batches, committing each batch as it goes along. The batch
+     * size is {@link #PROCESSOR_PAGE_SIZE}
+     * @param loader
+     * @param processor
+     * @param allVersions
+     * @return the number of entries processed
+     */
+    private <T extends Entry> int loadAndProcessEntries(IntFunction<List<T>> loader,
+        BiFunction<List<T>, Boolean, Void> processor, Boolean allVersions) {
+        final ProcessorProgress progress = new ProcessorProgress();
+        while (!progress.done) {
+            final TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
+            transactionHelper.transaction(() -> {
+                final List<T> list = loader.apply(progress.offset);
+                if (list.size() < PROCESSOR_PAGE_SIZE) {
+                    progress.done = true;
+                }
+                progress.processedEntries += list.size();
+                LOG.info("Executing {} updates starting at offset {}", list.size(), progress.offset);
+                progress.offset += PROCESSOR_PAGE_SIZE;
+                try {
+                    processor.apply(list, allVersions);
+                } catch (Exception e) {
+                    LOG.error("Error processing entries", e); // Log and continue
+                }
+            });
+        }
+        return progress.processedEntries;
+    }
+
+
+    private void readSourceFilesAndUpdate(final LanguageHandlerInterface languageHandlerInterface,
+        final Version<? extends Version> workflowVersion, String primaryPath) {
+        workflowVersion.getSourceFiles().stream()
+            .filter(sf -> isPrimaryDescriptor(primaryPath, sf))
+            .findFirst()
+            .ifPresent(primary -> {
+                try {
+                    languageHandlerInterface.parseWorkflowContent(primaryPath,
+                        primary.getContent(), workflowVersion.getSourceFiles(), workflowVersion);
+                } catch (RuntimeException e) {
+                    // Log the error and carry on.
+                    final String message = String.format("Error parsing workflow content for version %s", workflowVersion.getId());
+                    LOG.error(message, e);
+                }
+            });
+    }
+
+    private boolean isPrimaryDescriptor(String path, SourceFile sourceFile) {
+        return sourceFile.getPath().equals(path);
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -453,35 +645,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
 
         // Create title and link to entry
-
-        String entryLink = "https://dockstore.org/";
-        String title = "";
-        if (hostName.contains("staging")) {
-            entryLink = "https://staging.dockstore.org/";
-            title = "Staging ";
-        }
-        if (entry instanceof BioWorkflow) {
-            title += ((BioWorkflow)(entry)).getWorkflowPath();
-            entryLink += "workflows/";
-        } else if (entry instanceof Service) {
-            title += ((Service)(entry)).getWorkflowPath();
-            entryLink += "services/";
-        } else if (entry instanceof AppTool) {
-            title += ((AppTool)(entry)).getWorkflowPath();
-            entryLink += "tools/";
-        } else {
-            title += ((Tool)(entry)).getToolPath();
-            entryLink += "tools/";
-        }
-
-        entryLink += title;
+        final String entryPath = entry.getEntryPath();
+        final String title = isProduction ? entryPath : (baseUrl + " " + entryPath);
+        final String entryLink = baseUrl + "/" + entry.getEntryTypeMetadata().getSitePath() + "/" + entryPath;
 
         // Create description
-        String description = "";
-        if (entry.getDescription() != null) {
-            description = entry.getDescription() != null ? entry.getDescription().substring(0, Math.min(entry.getDescription().length(), maxDescriptionLength)) : "";
-        }
-
+        String description = StringUtils.defaultString(entry.getDescription());
+        description = StringUtils.truncate(description, maxDescriptionLength);
         description += "\n<hr>\n<small>This is a companion discussion topic for the original entry at <a href='" + entryLink + "'>" + title + "</a></small>\n";
 
         // Check that discourse is reachable
@@ -551,4 +721,16 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public boolean canShare(User user, Entry entry) {
         return AuthenticatedResourceInterface.super.canShare(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.SHARE);
     }
+
+    /**
+     * Need this class because the values need to be accessed from a lambda, and a lambda can
+     * only access "effectively final" variables from outside the lambda.
+     *
+     */
+    private static class ProcessorProgress {
+        private int offset = 0;
+        private int processedEntries = 0;
+        private boolean done = false;
+    }
+
 }

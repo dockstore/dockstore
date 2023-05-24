@@ -15,6 +15,9 @@
  */
 package io.dockstore.webservice.languages;
 
+import static java.nio.file.attribute.PosixFilePermissions.asFileAttribute;
+import static java.nio.file.attribute.PosixFilePermissions.fromString;
+
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.github.zafarkhaja.semver.expr.LexerException;
 import com.github.zafarkhaja.semver.expr.UnexpectedTokenException;
@@ -33,13 +36,20 @@ import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.CheckUrlInterface;
+import io.dockstore.webservice.helpers.CheckUrlInterface.UrlStatus;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceFileHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,10 +71,14 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.http.HttpStatus;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wdl.draft3.parser.WdlParser;
+import wdl.draft3.parser.WdlParser.SyntaxError;
 
 /**
  * This class will eventually handle support for understanding WDL
@@ -74,9 +88,12 @@ public class WDLHandler implements LanguageHandlerInterface {
     public static final String ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT = "Error parsing workflow. You may have a recursive import.";
     public static final String ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT = "Recursive local import detected: ";
     public static final String WDL_PARSE_ERROR = "Unable to parse WDL workflow, ";
+    // According to the WDL 1.0 spec, WDL files without a 'version' field should be treated as 'draft-2'
+    public static final String DEFAULT_WDL_VERSION = "draft-2";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     private static final String LATEST_SUPPORTED_WDL_VERSION = "1.0";
+    private static final String DESCRIPTOR_SUFFIX = "descriptor";
 
     public static void checkForRecursiveLocalImports(String content, Set<SourceFile> sourceFiles, Set<String> absolutePaths, String parent)
             throws ParseException {
@@ -124,12 +141,20 @@ public class WDLHandler implements LanguageHandlerInterface {
         WdlBridge wdlBridge = new WdlBridge();
         final Map<String, String> secondaryFiles = sourceFiles.stream()
                 .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
-        wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
+        wdlBridge.setSecondaryFiles(secondaryFiles);
         File tempMainDescriptor = null;
         try {
-            tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+            tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
             try {
+                // Set language version for descriptor source files
+                for (SourceFile sourceFile : sourceFiles) {
+                    if (sourceFile.getType() == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
+                        sourceFile.getMetadata().setTypeVersion(getLanguageVersion(sourceFile.getAbsolutePath(), sourceFiles).orElse(null));
+                    }
+                }
+                version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
+
                 List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath(), filepath);
                 Queue<String> authors = new LinkedList<>();
                 Queue<String> emails = new LinkedList<>();
@@ -189,13 +214,15 @@ public class WDLHandler implements LanguageHandlerInterface {
                 LOG.error("Unable to parse WDL file " + filepath, ex);
                 Map<String, String> validationMessageObject = new HashMap<>();
                 String errorMessage = "WDL file is malformed or missing, cannot extract metadata. " + ex.getMessage();
-                errorMessage = getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath()).orElse(errorMessage);
+                errorMessage = getUnsupportedWDLVersionErrorString(content).orElse(errorMessage);
                 validationMessageObject.put(filepath, errorMessage);
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
                 version.setDescriptionAndDescriptionSource(null, null);
                 version.getAuthors().clear();
                 version.getOrcidAuthors().clear();
                 return version;
+            } catch (StackOverflowError error) {
+                throw createStackOverflowThrowable(error);
             }
         } catch (IOException e) {
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -244,7 +271,9 @@ public class WDLHandler implements LanguageHandlerInterface {
         if (filteredSourceFiles.size() > 0) {
             try {
                 Optional<SourceFile> primaryDescriptor = filteredSourceFiles.stream()
-                        .filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
+                    .filter(sourceFile1 -> Objects.equals(sourceFile1.getPath(),
+                        primaryDescriptorFilePath))
+                    .findFirst();
 
                 if (primaryDescriptor.isPresent()) {
                     if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
@@ -273,7 +302,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                         secondaryDescContent.put(sourceFile.getAbsolutePath(), sourceFile.getContent());
                     }
                 }
-                tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+                tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
                 Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
                 String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
                 try {
@@ -294,7 +323,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 }
 
                 WdlBridge wdlBridge = new WdlBridge();
-                wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
+                wdlBridge.setSecondaryFiles(secondaryDescContent);
 
                 if (Objects.equals(type, "tool")) {
                     wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath(), primaryDescriptorFilePath);
@@ -315,6 +344,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (Exception e) {
                 LOG.error("Unhandled exception", e);
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } catch (StackOverflowError error) {
+                throw createStackOverflowThrowable(error);
             } finally {
                 FileUtils.deleteQuietly(tempMainDescriptor);
             }
@@ -362,7 +393,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, Workflow workflow) {
         return validateEntrySet(sourcefiles, primaryDescriptorFilePath, "workflow");
     }
 
@@ -450,7 +481,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         // Write main descriptor to file
         // The use of temporary files is not needed here and might cause new problems
         try {
-            tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+            tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
 
             WdlBridge wdlBridge = new WdlBridge();
@@ -476,6 +507,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             final String exMsg = "Could not process request, " + ex.getMessage();
             LOG.error(exMsg, ex);
             throw new CustomWebApplicationException(exMsg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (StackOverflowError error) {
+            throw createStackOverflowThrowable(error);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }
@@ -566,13 +599,68 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     /**
+     * Get the version from the WDL descriptor file content. If no version is found, return the default WDL version defined by the WDL spec.
+     * If the version is invalid, return Optional.empty()
+     *
+     * @param primaryDescriptorPath The absolute path of the descriptor SourceFile to get the 'version' from
+     * @param sourceFiles           A set of SourceFiles containing the primary descriptor SourceFile and any imports
+     * @return
+     */
+    public static Optional<String> getLanguageVersion(String primaryDescriptorPath, Set<SourceFile> sourceFiles) {
+        WdlBridge wdlBridge = new WdlBridge();
+
+        Optional<SourceFile> primaryDescriptor = sourceFiles.stream().filter(sourceFile -> sourceFile.getAbsolutePath().equals(primaryDescriptorPath)).findFirst();
+        if (primaryDescriptor.isEmpty()) {
+            return Optional.empty();
+        }
+
+        final String primaryDescriptorContent = primaryDescriptor.get().getContent();
+        Map<String, String> secondaryFiles = new HashMap<>();
+        sourceFiles.stream()
+                .filter(sourceFile -> !sourceFile.getAbsolutePath().equals(primaryDescriptorPath))
+                .forEach(descriptorSourceFile -> {
+                    secondaryFiles.put(descriptorSourceFile.getAbsolutePath(), descriptorSourceFile.getContent());
+                });
+        wdlBridge.setSecondaryFiles(secondaryFiles);
+
+        File tempMainDescriptor = null;
+        try {
+            tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
+            Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptorContent);
+            // It's possible for isVersionValid to be false for a valid 'version' so we must double-check by trying to find a 'version' string in the content
+            // Ex: Cromwell doesn't support WDL 1.1 so a 'version 1.1' workflow will return false for isVersionValid
+            final boolean isVersionValid = wdlBridge.isVersionFieldValid(tempMainDescriptor.getAbsolutePath(), primaryDescriptorPath);
+            Optional<String> parsedVersionString = getSemanticVersionString(primaryDescriptorContent);
+
+            if (parsedVersionString.isEmpty()) {
+                if (isVersionValid) {
+                    // Return default version if there's no parsed 'version' field and the version is valid (no 'version' is valid)
+                    return Optional.of(DEFAULT_WDL_VERSION);
+                }
+                // If there's no parsed 'version' string and the version isn't valid, then there's likely something wrong with the version
+                return Optional.empty();
+            }
+            return parsedVersionString;
+        } catch (IOException e) {
+            LOG.error("Error creating temporary file for descriptor {}", primaryDescriptorPath, e);
+            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (StackOverflowError error) {
+            throw createStackOverflowThrowable(error);
+        } finally {
+            // Delete the temp directory and its contents
+            FileUtils.deleteQuietly(tempMainDescriptor);
+        }
+    }
+
+    /**
      * Get the semantic version string from the WDL file
-     * @param primaryDescriptorPath path to the primary WDL descriptor
+     * @param descriptorContent the file content of the primary WDL descriptor
      * @return the semantic version string, e.g. '1.0', which should be in the first code line, e.g. 'version 1.0' or 'draft-3'
      */
-    public static Optional<String> getSemanticVersionString(String primaryDescriptorPath) {
+    public static Optional<String> getSemanticVersionString(String descriptorContent) {
         WdlBridge wdlBridge = new WdlBridge();
-        Optional<String> firstCodeLine = wdlBridge.getFirstCodeLine(primaryDescriptorPath);
+        Optional<String> firstCodeLine = wdlBridge.getFirstCodeLine(descriptorContent);
+
         // https://www.scala-lang.org/files/archive/api/2.13.x/scala/jdk/javaapi/OptionConverters$.html
         // The WDL specification says that WDL descriptors from now on must have
         // a version string as the first line, e.g. 'version 1.0' or 'version draft-3'
@@ -580,8 +668,11 @@ public class WDLHandler implements LanguageHandlerInterface {
         // however some very old WDL scripts may not have a version string line
         // Check to see if we found the first line of code and that it has two parts
         if (firstCodeLine.isPresent()) {
+            String wdlCommentSymbol = "#";
             String semanticVersionLine = firstCodeLine.get();
-            String[] semanticVersionStringArray = semanticVersionLine.split("\\s+");
+            // Remove comment in lines like 'version 1.0 # this is a comment'
+            String semanticVersionStringWithoutComments = semanticVersionLine.split(wdlCommentSymbol)[0];
+            String[] semanticVersionStringArray = semanticVersionStringWithoutComments.split("\\s+");
             // If there is a version string line the first part should be 'version'
             if (semanticVersionStringArray[0].equals("version") && semanticVersionStringArray.length == 2) {
                 // Return the version such as '1.0' or 'draft-3'
@@ -594,8 +685,8 @@ public class WDLHandler implements LanguageHandlerInterface {
         return Optional.empty();
     }
 
-    public static Optional<String> getUnsupportedWDLVersionErrorString(String primaryDescriptorPath) {
-        Optional<String> semVersionString = getSemanticVersionString(primaryDescriptorPath);
+    public static Optional<String> getUnsupportedWDLVersionErrorString(String primaryDescriptorContent) {
+        Optional<String> semVersionString = getSemanticVersionString(primaryDescriptorContent);
         if (semVersionString.isPresent() && versionIsGreaterThanCurrentlySupported(semVersionString.get())) {
             return Optional.of("Dockstore only supports up to  WDL version " + LATEST_SUPPORTED_WDL_VERSION + ". The version of"
                     + " this workflow is " + semVersionString.get() + ". Dockstore cannot verify or parse this WDL version.");
@@ -603,4 +694,160 @@ public class WDLHandler implements LanguageHandlerInterface {
             return Optional.empty();
         }
     }
+
+    /**
+     * Returns a map of file input names to types. For example:
+     * <pre>
+     * "checkerWorkflow.input_crai_files" -> "Array[File]?"
+     * "checkerWorkflow.referenceFilesBlob" -> "File"
+     * "checkerWorkflow.input_cram_files" -> "Array[File]"
+     * "checkerWorkflow.inputTruthVCFFile" -> "File"
+     * "checkerWorkflow.variantcaller.referenceGenomeFilesTarGz" -> "Array[File]?"
+     * </pre>
+     */
+    Optional<Map<String, String>> getFileInputs(String primaryDescriptorContent, Set<SourceFile> sourceFiles) {
+        final WdlBridge wdlBridge = new WdlBridge();
+        wdlBridge.setSecondaryFiles(sourceFiles.stream().collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent)));
+        File tempMainDescriptor = null;
+        try {
+            tempMainDescriptor = createTempFile("main", DESCRIPTOR_SUFFIX);
+            Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(primaryDescriptorContent);
+            return Optional.of(wdlBridge.getInputFiles(tempMainDescriptor.getPath()));
+        } catch (StackOverflowError | SyntaxError | IOException e) { // StackOverflowError: https://github.com/dockstore/dockstore/issues/5496
+            LOG.error("Error parsing WDL", e);
+            return Optional.empty();
+        } finally {
+            FileUtils.deleteQuietly(tempMainDescriptor); // Works with null parameter
+        }
+    }
+
+    @Override
+    public Optional<Boolean> isOpenData(final WorkflowVersion workflowVersion, final CheckUrlInterface checkUrlInterface) {
+        final Optional<SourceFile> maybeDescriptor = workflowVersion.findPrimaryDescriptor();
+        if (maybeDescriptor.isEmpty()) {
+            return Optional.empty();
+        }
+        final SourceFile primaryDescriptor = maybeDescriptor.get();
+        final Optional<Map<String, String>> fileInputMap =
+            getFileInputs(primaryDescriptor.getContent(), workflowVersion.getSourceFiles());
+        if (fileInputMap.isEmpty()) { // Primary descriptor does not exist or is not well-formed
+            return Optional.empty();
+        }
+        if (fileInputMap.get().isEmpty()) {
+            // Has no file inputs, consider it open.
+            // https://github.com/dockstore/dockstore/pull/5347#discussion_r1117213315
+            return Optional.of(true);
+        }
+        final List<JSONObject> testFiles = workflowVersion.findTestFiles().stream().map(SourceFileHelper::testFileAsJsonObject)
+            .filter(Optional::isPresent).map(Optional::get).toList();
+        if (testFiles.isEmpty()) {
+            // Has file inputs, but no test parameter files; not open data.
+            return Optional.of(false);
+        }
+
+        final UrlStatus urlStatus =
+            anyTestFileHasAllOpenData(fileInputMap.get(), testFiles, checkUrlInterface);
+        if (urlStatus == UrlStatus.UNKNOWN) {
+            return Optional.empty();
+        } else {
+            return Optional.of(urlStatus == UrlStatus.ALL_OPEN);
+        }
+    }
+
+    private UrlStatus anyTestFileHasAllOpenData(final Map<String, String> fileInputMap,
+        final List<JSONObject> testFiles, CheckUrlInterface checkUrlInterface) {
+        for (JSONObject testFile: testFiles) {
+            final List<FileInputs> testFileInputs = fileInputValues(testFile, fileInputMap);
+            if (everyFileInputHasValue(testFileInputs)) {
+                final Set<String> possibleUrls =
+                    testFileInputs.stream().map(p -> p.values()).flatMap(Set::stream).collect(
+                        Collectors.toSet());
+                final UrlStatus urlStatus = checkUrlInterface.checkUrls(possibleUrls);
+                if (urlStatus == UrlStatus.ALL_OPEN || urlStatus == UrlStatus.UNKNOWN) {
+                    return urlStatus;
+                }
+            }
+        }
+        return UrlStatus.NOT_ALL_OPEN;
+    }
+
+    private static boolean everyFileInputHasValue(final List<FileInputs> fileInputs) {
+        return fileInputs.stream().noneMatch(fileInput -> fileInput.values.isEmpty());
+    }
+
+    /**
+     * Given the known input parameter names of type file/array[file], look for the corresponding
+     * values in the test parameter file. Cannot assume the test parameter file structure matches
+     * what the WDL is expecting; they could be out of sync.
+     *
+     * @param json
+     * @param fileInputs
+     * @return
+     */
+    List<FileInputs> fileInputValues(JSONObject json, Map<String, String> fileInputs) {
+        return fileInputs.entrySet().stream().map(entry -> {
+            final String parameterName = entry.getKey();
+            final String parameterType = entry.getValue();
+            return new FileInputs(parameterName, parameterType, fileInputValues(json, parameterName, parameterType));
+        }).toList();
+    }
+
+    private Set<String> fileInputValues(JSONObject json, String parameterName, String parameterType) {
+        if (json.has(parameterName)) {
+            final Object fileParameterValue = json.get(parameterName);
+            if (parameterType.toLowerCase().contains("array")) { // Declared in WDL as an array of files
+                return getStringsFromMaybeArray(fileParameterValue);
+            } else if (fileParameterValue instanceof String maybeUrl) { // Declared in WDL as a single File
+                return Set.of(maybeUrl);
+            }
+        }
+        return Set.of();
+    }
+
+    /**
+     * The input parameter is defined as an array of files in WDL; if the parameter is also an array
+     * in the test parameter file, return all string elements of the array.
+     * @param parameterValue
+     * @return
+     */
+    private Set<String> getStringsFromMaybeArray(Object parameterValue) {
+        final Set<String> values = new HashSet<>();
+        if (parameterValue instanceof JSONArray jsonArray) {
+            for (Object element : jsonArray) {
+                if (element instanceof String maybeUrl) {
+                    values.add(maybeUrl);
+                }
+            }
+        }
+        return values;
+    }
+
+
+    private static RuntimeException createStackOverflowThrowable(StackOverflowError error) {
+        throw new CustomWebApplicationException(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+    }
+
+    /**
+     * Securely creates a temporary file, using pattern recommended by SonarCloud
+     *
+     * @param suffix
+     * @param prefix
+     * @return a temporary file
+     * @throws IOException
+     */
+    private static File createTempFile(String prefix, String suffix) throws IOException {
+        if (SystemUtils.IS_OS_UNIX) {
+            FileAttribute<Set<PosixFilePermission>> attr = asFileAttribute(fromString("rwx------"));
+            return java.nio.file.Files.createTempFile(prefix, suffix, attr).toFile();
+        } else {
+            File f = java.nio.file.Files.createTempFile(prefix, suffix).toFile(); //NOSONAR - Next line addresses the security issue by limiting file permissions to this user
+            if (!f.setReadable(true, true) || !f.setWritable(true, true)
+                || !f.setExecutable(true, true)) {
+                throw new IOException("Error limiting permissions for temporary file");
+            }
+            return f;
+        }
+    }
+    record FileInputs(String name, String type, Set<String> values) {}
+
 }

@@ -176,23 +176,14 @@ public final class Hoverfly {
                     .get("/v3.0/0000-0000-0000-0000").anyBody().willReturn(notFound())
                     .get("/v3.0/1111-1111-1111-1111").anyBody().willReturn(notFound())
                     .get("/v3.0/0000-1234-5678-0000").anyBody().willReturn(notFound()),
-
+            service("https://pub.orcid.org")
+                    // Since it's repetitive to mock all the responses needed to create an OrcidAuthor for these IDs, simulate that the ORCID IDs don't exist.
+                    .get("/v3.0/0000-0000-0000-0000").anyBody().willReturn(notFound())
+                    .get("/v3.0/1111-1111-1111-1111").anyBody().willReturn(notFound())
+                    .get("/v3.0/0000-1234-5678-0000").anyBody().willReturn(notFound()),
             service("https://sandbox.orcid.org")
                     .post("/oauth/token").anyBody().willReturn(success(GSON.toJson(getFakeTokenResponse("")), MediaType.APPLICATION_JSON))
     );
-
-    public static final SimulationSource CHECK_URL_SOURCE =
-        dsl(service("http://fakecheckurllambdabaseurl:3000")
-            .get("/lambda").withState("status", "good").anyBody().anyQueryParams().willReturn(response().status(HttpStatus.SC_OK).body(
-                "{\"message\":true}"))
-            .get("/lambda").withState("status", "bad").anyBody().anyQueryParams().willReturn(response().status(HttpStatus.SC_OK).body(
-                "{\"message\":false}"))
-            .get("/lambda").withState("status", "someGoodSomeBad").anyBody().queryParam("url", "https://badUrl.com").willReturn(response().status(HttpStatus.SC_OK).body(
-                "{\"message\":false}"))
-            .get("/lambda").withState("status", "someGoodSomeBad").anyBody().anyQueryParams().willReturn(response().status(HttpStatus.SC_OK).body(
-                "{\"message\":true}"))
-            .get("/lambda").withState("status", "terriblyWrong").anyBody().anyQueryParams().willReturn(response().status(HttpStatus.SC_SERVICE_UNAVAILABLE))
-        );
 
     public static final SimulationSource SIMULATION_SOURCE = dsl(service("https://www.googleapis.com")
 

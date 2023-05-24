@@ -16,14 +16,16 @@
 package io.dockstore.client.cli;
 
 import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.codahale.metrics.Gauge;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.CommonTestUtilities.TestUser;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
 import io.dockstore.common.DescriptorLanguage;
@@ -43,6 +45,7 @@ import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.Workflow.ModeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import java.io.File;
 import java.util.ArrayList;
@@ -53,30 +56,32 @@ import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestWatcher;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 /**
  * Base integration test class
  * A default configuration that cleans the database between tests and provides some basic methods
  */
-@Category(ConfidentialTest.class)
+@ExtendWith(TestStatus.class)
+@ExtendWith(SystemStubsExtension.class)
+@org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
 public class BaseIT {
 
     // This is obviously an admin
     public static final String ADMIN_USERNAME = "admin@admin.com";
     // This is also an admin
-    public static final String USER_1_USERNAME = "DockstoreTestUser";
+    public static final String USER_1_USERNAME = TestUser.TEST_USER1.dockstoreUserName;
     // This is also an admin
-    public static final String USER_2_USERNAME = "DockstoreTestUser2";
+    public static final String USER_2_USERNAME = TestUser.TEST_USER2.dockstoreUserName;
+    // This is also an admin
+    public static final String USER_4_USERNAME = TestUser.TEST_USER4.dockstoreUserName;
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     protected static TestingPostgres testingPostgres;
@@ -160,11 +165,11 @@ public class BaseIT {
         Workflow workflow = workflowsApi
             .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
                 "/test.json");
-        assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
+        assertEquals(ModeEnum.STUB, workflow.getMode());
 
         // Refresh
         workflow = workflowsApi.refresh(workflow.getId(), false);
-        assertEquals(Workflow.ModeEnum.FULL, workflow.getMode());
+        assertEquals(ModeEnum.FULL, workflow.getMode());
 
         // Publish
         if (toPublish) {
@@ -200,7 +205,7 @@ public class BaseIT {
         workflow = workflowsApi.refresh(workflow.getId(), false);
         WorkflowVersion updatedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         assertNotNull(updatedVersion.getCommitID());
-        assertNotEquals(versionOfInterest + " version should be updated (different dbupdatetime)", oldVersion.getDbUpdateDate(), updatedVersion.getDbUpdateDate());
+        assertNotEquals(oldVersion.getDbUpdateDate(), updatedVersion.getDbUpdateDate(), versionOfInterest + " version should be updated (different dbupdatetime)");
 
         // When the commit ID is different, a refresh should occur
         oldVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
@@ -208,7 +213,7 @@ public class BaseIT {
         workflow = workflowsApi.refresh(workflow.getId(), false);
         updatedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
         assertNotNull(updatedVersion.getCommitID());
-        assertNotEquals(versionOfInterest + " version should be updated (different dbupdatetime)", oldVersion.getDbUpdateDate(), updatedVersion.getDbUpdateDate());
+        assertNotEquals(oldVersion.getDbUpdateDate(), updatedVersion.getDbUpdateDate(), versionOfInterest + " version should be updated (different dbupdatetime)");
 
         // Updating the workflow should make the version not synced, a refresh should refresh all versions
         workflow.setWorkflowPath(incorrectDescriptorPath);
@@ -230,11 +235,11 @@ public class BaseIT {
         // Refresh should only update the version that is not synced
         workflow = workflowsApi.getWorkflow(workflow.getId(), "");
         testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
-        assertFalse("Version should not be synced", testBothVersion.isSynced());
+        assertFalse(testBothVersion.isSynced(), "Version should not be synced");
         workflow = workflowsApi.refresh(workflow.getId(), false);
         testBothVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), versionOfInterest)).findFirst().get();
-        assertTrue("Version should now be synced", testBothVersion.isSynced());
-        assertEquals("Workflow version path should be set", correctDescriptorPath, testBothVersion.getWorkflowPath());
+        assertTrue(testBothVersion.isSynced(), "Version should now be synced");
+        assertEquals(correctDescriptorPath, testBothVersion.getWorkflowPath(), "Workflow version path should be set");
     }
 
     static void refreshByOrganizationReplacement(WorkflowsApi workflowApi, io.dockstore.openapi.client.ApiClient openAPIWebClient) {
@@ -268,15 +273,9 @@ public class BaseIT {
 
 
 
-    @Rule
-    public final TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
     final String curatorUsername = "curator@curator.com";
 
-    @BeforeClass
+    @BeforeAll
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
@@ -292,12 +291,12 @@ public class BaseIT {
             TimeUnit.SECONDS.sleep(10);
             active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
             waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
-            Assert.assertEquals("There should be no active connections", 0, active);
-            Assert.assertEquals("There should be no waiting connections", 0, waiting);
+            assertEquals(0, active, "There should be no active connections");
+            assertEquals(0, waiting, "There should be no waiting connections");
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();
@@ -350,13 +349,25 @@ public class BaseIT {
         return client;
     }
 
-    @After
+    @AfterEach
     public void after() throws InterruptedException {
         assertNoMetricsLeaks(SUPPORT);
     }
 
-    @Before
+    @BeforeEach
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
+    }
+
+    public static class TestStatus implements TestWatcher {
+        @Override
+        public void testSuccessful(ExtensionContext context) {
+            System.out.printf("Test successful: %s%n", context.getTestMethod().get());
+        }
+
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            System.out.printf("Test failed: %s%n", context.getTestMethod().get());
+        }
     }
 }

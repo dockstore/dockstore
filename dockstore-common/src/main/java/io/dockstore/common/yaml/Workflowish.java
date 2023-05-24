@@ -15,4 +15,12 @@ public interface Workflowish {
     boolean getLatestTagAsDefault();
     Object getSubclass();
     Filters getFilters();
+    List<String> getTestParameterFiles();
+    String getPrimaryDescriptorPath();
+
+    /**
+     * Optional: Document a specific readme path that can override the base readme file.
+     * @return
+     */
+    String getReadMePath();
 }

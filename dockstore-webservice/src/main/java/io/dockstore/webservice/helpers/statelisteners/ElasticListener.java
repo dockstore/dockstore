@@ -18,23 +18,29 @@ package io.dockstore.webservice.helpers.statelisteners;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Label;
-import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.Notebook;
+import io.dockstore.webservice.core.OrcidAuthor;
+import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
+import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
+import io.openapi.model.DescriptorType;
+import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -43,6 +49,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -79,7 +87,8 @@ public class ElasticListener implements StateListenerInterface {
     public static DockstoreWebserviceConfiguration config;
     public static final String TOOLS_INDEX = "tools";
     public static final String WORKFLOWS_INDEX = "workflows";
-    public static final String ALL_INDICES = "tools,workflows";
+    public static final String NOTEBOOKS_INDEX = "notebooks";
+    public static final List<String> INDEXES = EntryTypeMetadata.values().stream().filter(EntryTypeMetadata::isEsSupported).map(EntryTypeMetadata::getEsIndex).toList();
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
@@ -98,13 +107,27 @@ public class ElasticListener implements StateListenerInterface {
         Hibernate.initialize(entry.getAliases());
     }
 
+    private String determineIndex(Entry entry) {
+        if (entry.getEntryTypeMetadata().isEsSupported()) {
+            return entry.getEntryTypeMetadata().getEsIndex();
+        } else {
+            return null;
+        }
+    }
+
+    private List<Entry> filterEntriesByIndex(List<Entry> entries, String index) {
+        return entries.stream().filter(entry -> Objects.equals(determineIndex(entry), index)).toList();
+    }
+
     @Override
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
         eagerLoadEntry(entry);
         entry = filterCheckerWorkflows(entry);
-        // #2771 will need to disable this and properly create objects to get services into the index
-        entry = entry instanceof Service ? null : entry;
         if (entry == null) {
+            return;
+        }
+        String index = determineIndex(entry);
+        if (index == null) {
             return;
         }
         LOGGER.info("Performing index update with " + command + ".");
@@ -118,12 +141,11 @@ public class ElasticListener implements StateListenerInterface {
         }
         try {
             RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
-            String entryType = entry instanceof Tool || entry instanceof AppTool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             DocWriteResponse post;
             switch (command) {
             case PUBLISH:
             case UPDATE:
-                UpdateRequest updateRequest = new UpdateRequest(entryType, String.valueOf(entry.getId()));
+                UpdateRequest updateRequest = new UpdateRequest(index, String.valueOf(entry.getId()));
                 String json = MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry));
                 // The below should've worked but it doesn't, the 2 lines after are used instead
                 // updateRequest.upsert(json, XContentType.JSON);
@@ -132,7 +154,7 @@ public class ElasticListener implements StateListenerInterface {
                 post = client.update(updateRequest, RequestOptions.DEFAULT);
                 break;
             case DELETE:
-                DeleteRequest deleteRequest = new DeleteRequest(entryType, String.valueOf(entry.getId()));
+                DeleteRequest deleteRequest = new DeleteRequest(index, String.valueOf(entry.getId()));
                 post  = client.delete(deleteRequest, RequestOptions.DEFAULT);
                 break;
             default:
@@ -179,22 +201,18 @@ public class ElasticListener implements StateListenerInterface {
     public void bulkUpsert(List<Entry> entries) {
         entries.forEach(this::eagerLoadEntry);
         entries = filterCheckerWorkflows(entries);
-        // #2771 will need to disable this and properly create objects to get services into the index
-        if (entries.isEmpty()) {
-            return;
-        }
-        // sort entries into workflows and tools
-        List<Entry> workflowsEntryList = entries.stream().filter(entry -> (entry instanceof BioWorkflow)).collect(Collectors.toList());
-        List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool) || (entry instanceof AppTool)).collect(Collectors.toList());
-        if (!workflowsEntryList.isEmpty()) {
-            postBulkUpdate(WORKFLOWS_INDEX, workflowsEntryList);
-        }
-        if (!toolsEntryList.isEmpty()) {
-            postBulkUpdate(TOOLS_INDEX, toolsEntryList);
+        // For each index, bulk index the corresponding entries
+        for (String index: INDEXES) {
+            postBulkUpdate(index, filterEntriesByIndex(entries, index));
         }
     }
 
     private void postBulkUpdate(String index, List<Entry> entries) {
+
+        if (entries.isEmpty()) {
+            return;
+        }
+
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
@@ -312,18 +330,32 @@ public class ElasticListener implements StateListenerInterface {
      * @throws IOException  Mapper problems
      */
     public static JsonNode dockstoreEntryToElasticSearchObject(final Entry entry) throws IOException {
+        // TODO: avoid loading all versions to calculate verified, openData and descriptor type versions
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
+        final boolean openData = workflowVersions.stream()
+            .map(wv -> wv.getVersionMetadata().getPublicAccessibleTestParameterFile())
+            .filter(Objects::nonNull)
+            .anyMatch(Boolean::booleanValue);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
+        List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
+        List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
+        Set<Author> allAuthors = getAllAuthors(entry);
         Entry detachedEntry = removeIrrelevantProperties(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
-        ((ObjectNode)jsonNode).put("stars_count", (long) entry.getStarredUsers().size());
-        ((ObjectNode)jsonNode).put("verified", verified);
-        ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        final ObjectNode objectNode = (ObjectNode) jsonNode;
+        objectNode.put("stars_count", (long) entry.getStarredUsers().size());
+        objectNode.put("verified", verified);
+        objectNode.put("openData", openData);
+        objectNode.put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        objectNode.put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
+        objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
+        objectNode.put("all_authors", MAPPER.valueToTree(allAuthors));
         addCategoriesJson(jsonNode, entry);
         return jsonNode;
     }
+
 
     private static void addCategoriesJson(JsonNode node, Entry<?, ?> entry) {
 
@@ -349,8 +381,7 @@ public class ElasticListener implements StateListenerInterface {
      */
     static Entry removeIrrelevantProperties(final Entry entry) {
         Entry detachedEntry;
-        if (entry instanceof Tool) {
-            Tool tool = (Tool) entry;
+        if (entry instanceof Tool tool) {
             Tool detachedTool = new Tool();
             tool.getWorkflowVersions().forEach(version -> {
                 Hibernate.initialize(version.getSourceFiles());
@@ -371,21 +402,20 @@ public class ElasticListener implements StateListenerInterface {
             // This is some weird hack to always use topicAutomatic for search table
             detachedTool.setTopicAutomatic(tool.getTopic());
             detachedEntry = detachedTool;
-        } else if (entry instanceof BioWorkflow) {
-            BioWorkflow bioWorkflow = (BioWorkflow) entry;
+        } else if (entry instanceof BioWorkflow bioWorkflow) {
             BioWorkflow detachedBioWorkflow = new BioWorkflow();
             detachedEntry = detachWorkflow(detachedBioWorkflow, bioWorkflow);
-        } else if (entry instanceof AppTool) {
-            AppTool appTool = (AppTool) entry;
+        } else if (entry instanceof AppTool appTool) {
             AppTool detachedAppTool = new AppTool();
             detachedEntry = detachWorkflow(detachedAppTool, appTool);
+        } else if (entry instanceof Notebook notebook) {
+            Notebook detachedNotebook = new Notebook();
+            detachedEntry = detachWorkflow(detachedNotebook, notebook);
         } else {
             return entry;
         }
 
-
         detachedEntry.setDescription(entry.getDescription());
-        detachedEntry.setAuthor(entry.getAuthor());
         detachedEntry.setAliases(entry.getAliases());
         detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
@@ -437,21 +467,16 @@ public class ElasticListener implements StateListenerInterface {
     private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions) {
         Set<Version> detachedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
-            Version detatchedVersion = workflowVersion.createEmptyVersion();
-            detatchedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
-            detatchedVersion.setInputFileFormats(new TreeSet<>(workflowVersion.getInputFileFormats()));
-            detatchedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
-            detatchedVersion.setName(workflowVersion.getName());
-            detatchedVersion.setReference(workflowVersion.getReference());
+            Version detachedVersion = workflowVersion.createEmptyVersion();
+            detachedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
+            detachedVersion.setInputFileFormats(new TreeSet<>(workflowVersion.getInputFileFormats()));
+            detachedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
+            detachedVersion.setName(workflowVersion.getName());
+            detachedVersion.setReference(workflowVersion.getReference());
             SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-            sourceFiles.forEach(sourceFile -> {
-                Gson gson = new Gson();
-                String gsonString = gson.toJson(sourceFile);
-                SourceFile detachedSourceFile = gson.fromJson(gsonString, SourceFile.class);
-                detatchedVersion.addSourceFile(detachedSourceFile);
-            });
-            detatchedVersion.updateVerified();
-            detachedVersions.add(detatchedVersion);
+            sourceFiles.forEach(sourceFile -> detachedVersion.addSourceFile(SourceFile.copy(sourceFile)));
+            detachedVersion.updateVerified();
+            detachedVersions.add(detachedVersion);
         });
         return detachedVersions;
     }
@@ -461,6 +486,10 @@ public class ElasticListener implements StateListenerInterface {
         detachedWorkflow.setDescriptorType(workflow.getDescriptorType());
         detachedWorkflow.setSourceControl(workflow.getSourceControl());
         detachedWorkflow.setOrganization(workflow.getOrganization());
+        // Set the descriptor type subclass if it has a meaningful value
+        if (workflow.getDescriptorTypeSubclass().isApplicable()) {
+            detachedWorkflow.setDescriptorTypeSubclass(workflow.getDescriptorTypeSubclass());
+        }
 
         // These are for table
         detachedWorkflow.setWorkflowName(workflow.getWorkflowName());
@@ -481,6 +510,62 @@ public class ElasticListener implements StateListenerInterface {
         });
         return platforms;
     }
+
+    private static List<String> getDistinctDescriptorTypeVersions(Entry entry, Set<? extends Version> workflowVersions) {
+        String language;
+        if (entry instanceof Tool tool && tool.getDescriptorType().size() == 1) {
+            // Only set descriptor type versions if there's one descriptor type otherwise we can't tell which version belongs to which type without looking at the source files
+            language = tool.getDescriptorType().get(0);
+        } else if (entry instanceof BioWorkflow || entry instanceof AppTool) {
+            language = ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(((Workflow) entry).getDescriptorType()).map(DescriptorType::toString).orElse("unsupported language");
+        } else {
+            return List.of();
+        }
+
+        // Get a list of unique descriptor type versions with the descriptor type prepended. Ex: 'WDL 1.0'
+        return workflowVersions.stream()
+                .map(workflowVersion -> (List<String>)workflowVersion.getVersionMetadata().getDescriptorTypeVersions())
+                .flatMap(List::stream)
+                .distinct()
+                .map(descriptorTypeVersion -> String.join(" ", language, descriptorTypeVersion))
+                .toList();
+    }
+
+    private static List<String> getDistinctEngineVersions(final Set<Version> workflowVersions) {
+        return workflowVersions.stream()
+            .map(workflowVersion -> workflowVersion.getVersionMetadata().getEngineVersions())
+            .flatMap(List::stream)
+            .distinct()
+            .toList();
+    }
+
+    /**
+     * Returns a set of Author containing non-ORCID authors and ORCID authors with additional information.
+     * @param entry
+     * @return
+     */
+    private static Set<Author> getAllAuthors(Entry entry) {
+        Set<Author> allAuthors = new HashSet<>();
+        if (!entry.getOrcidAuthors().isEmpty()) {
+            Optional<String> token = ORCIDHelper.getOrcidAccessToken();
+            if (token.isPresent()) {
+                Set<OrcidAuthorInformation> orcidAuthorInformation = ((Set<OrcidAuthor>)entry.getOrcidAuthors()).stream()
+                        .map(orcidAuthor -> ORCIDHelper.getOrcidAuthorInformation(orcidAuthor.getOrcid(), token.get()))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(Collectors.toSet());
+                allAuthors.addAll(orcidAuthorInformation);
+            }
+        }
+        allAuthors.addAll(entry.getAuthors());
+
+        if (allAuthors.isEmpty()) {
+            // Add an empty author with a null name so that ES has something to replace with the null_value otherwise an empty array is ignored by ES
+            allAuthors.add(new Author());
+        }
+        return allAuthors;
+    }
+
 
     /**
      * If entry is a checker workflow, return null.  Otherwise, return entry

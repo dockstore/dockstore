@@ -15,9 +15,9 @@
  */
 package core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Version;
@@ -30,36 +30,36 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import org.apache.commons.io.FileUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class NFLParseTest {
+class NFLParseTest {
 
     @Test
-    public void testNFLCoreMetadataNoAuthorExample() throws IOException {
+    void testNFLCoreMetadataNoAuthorExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-chipseq/nextflow.config");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new WorkflowVersion());
-        assertNull("incorrect author", entry.getAuthor());
-        assertTrue("incorrect description", entry.getDescription().startsWith("Analysis pipeline used for ChIP-seq (chromatin immunoprecipitation sequencing) data"));
+        assertNull(entry.getAuthor(), "incorrect author");
+        assertTrue(entry.getDescription().startsWith("Analysis pipeline used for ChIP-seq (chromatin immunoprecipitation sequencing) data"), "incorrect description");
     }
 
     @Test
-    public void testNFLCoreMetadataWithAuthorExample() throws IOException {
+    void testNFLCoreMetadataWithAuthorExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-rnaseq/nextflow.config");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new WorkflowVersion());
         assertEquals(2, entry.getAuthors().size());
-        assertTrue("incorrect description", entry.getDescription().startsWith("Nextflow RNA-Seq analysis pipeline, part of the nf-core community."));
+        assertTrue(entry.getDescription().startsWith("Nextflow RNA-Seq analysis pipeline, part of the nf-core community."), "incorrect description");
     }
 
     @Test
-    public void testNFLNotCoreExample() throws IOException {
+    void testNFLNotCoreExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-ampa/nextflow.config");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new WorkflowVersion());
-        assertEquals("incorrect description", "Fast automated prediction of protein antimicrobial regions", entry.getDescription());
+        assertEquals("Fast automated prediction of protein antimicrobial regions", entry.getDescription(), "incorrect description");
     }
 }

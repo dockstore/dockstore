@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     # Should only release tags
     # TODO: should only release tags where the required status checks are passing
@@ -23,12 +23,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       # Step that does that actual cache save and restore
-      - uses: actions/cache@v3.0.8
+      - uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
            ${{ runner.os }}-maven-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17.0.4+8'
+          distribution: 'adopt'
 
       - name: Store Maven project version 
         run: echo "maven_project_version=$(mvn help:evaluate -Dexpression=project.version -Dchangelist=${{ github.event.inputs.changelist }} -q -DforceStdout)" >> $GITHUB_ENV
@@ -38,7 +44,7 @@ jobs:
           echo "${{ env.maven_project_version }}"
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: docker_checksum_upload_from_github
@@ -62,7 +68,7 @@ jobs:
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           push: true

@@ -31,6 +31,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
@@ -356,7 +357,8 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("Private tools require a tool maintainer email.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        if (!foundTool.isPrivateAccess() && tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail()) && Strings.isNullOrEmpty(tool.getEmail())) {
+        List<String> authorEmails = foundTool.getAuthors().stream().map(Author::getEmail).filter(Objects::nonNull).toList();
+        if (!foundTool.isPrivateAccess() && tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail()) && authorEmails.isEmpty()) {
             throw new CustomWebApplicationException("A published, private tool must have either an tool author email or tool maintainer email set up.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -722,26 +724,18 @@ public class DockerRepoResource
 
         final User foundUser = userDAO.findById(user.getId());
         if (request.getPublish()) {
-            boolean validTag = false;
-
-            Set<Tag> tags = tool.getWorkflowVersions();
-            for (Tag tag : tags) {
-                if (tag.isValid()) {
-                    validTag = true;
-                    break;
-                }
-            }
-
             if (tool.isPrivateAccess()) {
                 // Check that either tool maintainer email or author email is not null
-                if (Strings.isNullOrEmpty(tool.getToolMaintainerEmail()) && Strings.isNullOrEmpty(tool.getEmail())) {
+                List<String> authorEmails = tool.getAuthors().stream().map(Author::getEmail).filter(Objects::nonNull).toList();
+                if (Strings.isNullOrEmpty(tool.getToolMaintainerEmail()) && authorEmails.isEmpty()) {
                     throw new CustomWebApplicationException(
                         "Either a tool email or tool maintainer email is required to publish private tools.", HttpStatus.SC_BAD_REQUEST);
                 }
             }
 
             // Can publish a tool IF it has at least one valid tag (or is manual) and a git url
-            if (validTag && (!tool.getGitUrl().isEmpty()) || Objects.equals(tool.getMode(), ToolMode.HOSTED)) {
+            final boolean validTag = tool.getWorkflowVersions().stream().anyMatch(Version::isValid);
+            if (validTag && (!tool.getGitUrl().isEmpty() || Objects.equals(tool.getMode(), ToolMode.HOSTED))) {
                 tool.setIsPublished(true);
                 if (checker != null) {
                     if (!checker.getIsPublished()) {

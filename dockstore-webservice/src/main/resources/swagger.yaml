@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.13.0-SNAPSHOT"
+  version: "1.14.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -43,7 +43,7 @@ tags:
     \ and is considered final (not subject to change)"
 - name: "GA4GHV20"
   description: "A curated subset of resources proposed as a common standard for tool\
-    \ repositories. Implements TRS [2.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0)."
+    \ repositories. Implements TRS [2.0.1](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.1)."
 - name: "hosted"
   description: "Created and modify hosted entries in the dockstore"
 - name: "lambdaEvents"
@@ -597,6 +597,183 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/ToolV1"
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
+    get:
+      tags:
+      - "extendedGA4GH"
+      summary: "Get aggregated execution metrics for a tool from all platforms"
+      description: "This endpoint retrieves aggregated metrics for a tool from all\
+        \ platforms"
+      operationId: "aggregatedMetricsGet"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Aggregated metrics retrieved successfully."
+          schema:
+            type: "object"
+            additionalProperties:
+              type: "object"
+        401:
+          description: "Credentials not provided or incorrect."
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: "The tool cannot be found to get aggregated metrics."
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "extendedGA4GH"
+      summary: "Add aggregated execution metrics for a workflow that was executed\
+        \ on a platform."
+      description: "This endpoint adds aggregated metrics for a workflow that was\
+        \ executed on a platform"
+      operationId: "aggregatedMetricsPut"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      - name: "platform"
+        in: "query"
+        description: "Platform that the tool was executed on"
+        required: true
+        type: "string"
+        enum:
+        - "GALAXY"
+        - "TERRA"
+        - "DNA_STACK"
+        - "DNA_NEXUS"
+        - "CGC"
+        - "NHLBI_BIODATA_CATALYST"
+        - "ANVIL"
+        - "CAVATICA"
+        - "NEXTFLOW_TOWER"
+        - "ELWAZI"
+        - "AGC"
+        - "OTHER"
+        - "ALL"
+      - in: "body"
+        name: "body"
+        description: "Aggregated metrics to add to the version"
+        required: true
+        schema:
+          $ref: "#/definitions/Metrics"
+      responses:
+        200:
+          description: "Aggregated metrics added successfully."
+          schema:
+            type: "object"
+            additionalProperties:
+              type: "object"
+        401:
+          description: "Credentials not provided or incorrect."
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: "The tool cannot be found to add aggregated metrics."
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+      - BEARER: []
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
+    post:
+      tags:
+      - "extendedGA4GH"
+      summary: "Submit individual or aggregated execution metrics for a tool that\
+        \ was executed on a platform."
+      description: "This endpoint submits individual or aggregated execution metrics\
+        \ for a tool that was executed on a platform"
+      operationId: "executionMetricsPost"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      - name: "platform"
+        in: "query"
+        description: "Platform that the tool was executed on"
+        required: true
+        type: "string"
+        enum:
+        - "GALAXY"
+        - "TERRA"
+        - "DNA_STACK"
+        - "DNA_NEXUS"
+        - "CGC"
+        - "NHLBI_BIODATA_CATALYST"
+        - "ANVIL"
+        - "CAVATICA"
+        - "NEXTFLOW_TOWER"
+        - "ELWAZI"
+        - "AGC"
+        - "OTHER"
+        - "ALL"
+      - name: "description"
+        in: "query"
+        description: "Optional description about the execution metrics"
+        required: false
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "Individual or aggregated execution metrics to submit"
+        required: true
+        schema:
+          $ref: "#/definitions/ExecutionsRequestBody"
+      responses:
+        204:
+          description: "Execution metrics submitted successfully."
+        401:
+          description: "Credentials not provided or incorrect."
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: "The tool cannot be found to submit execution metrics."
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+      - BEARER: []
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
     post:
       tags:
@@ -1355,6 +1532,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "JUPYTER"
       - name: "namespace"
         in: "query"
         description: "The Docker namespace (Tools only)"
@@ -1419,8 +1597,8 @@ paths:
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Set of updated sourcefiles, add files by adding new files with\
-          \ unknown paths, delete files by including them with emptied content"
+        description: "Set of updated source files, add files by adding new files with\
+          \ unknown paths, delete files by including them with null content"
         required: true
         schema:
           type: "array"
@@ -2063,6 +2241,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "JUPYTER"
       responses:
         200:
           description: "successful operation"
@@ -2254,6 +2433,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "JUPYTER"
       responses:
         200:
           description: "successful operation"
@@ -2586,6 +2766,46 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
+  /entries/updateLanguageVersions:
+    post:
+      tags:
+      - "entries"
+      operationId: "updateLanguageVersions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "allVersions"
+        in: "query"
+        required: false
+        type: "boolean"
+        default: false
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "integer"
+            format: "int32"
+  /entries/updateOpenData:
+    post:
+      tags:
+      - "entries"
+      operationId: "updateOpenData"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "allVersions"
+        in: "query"
+        required: false
+        type: "boolean"
+        default: false
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "integer"
+            format: "int32"
   /entries/{entryId}/versions/{versionId}/descriptionMetrics:
     get:
       tags:
@@ -2696,7 +2916,7 @@ paths:
       tags:
       - "events"
       summary: "Get events based on filters."
-      description: "Optional authentication."
+      description: "Requires authentication."
       operationId: "getEvents"
       produces:
       - "application/json"
@@ -2710,6 +2930,7 @@ paths:
         - "STARRED_ORGANIZATION"
         - "ALL_STARRED"
         - "PROFILE"
+        - "SELF_ORGANIZATIONS"
       - name: "limit"
         in: "query"
         required: false
@@ -2758,6 +2979,7 @@ paths:
         - "STARRED_ORGANIZATION"
         - "ALL_STARRED"
         - "PROFILE"
+        - "SELF_ORGANIZATIONS"
       - name: "limit"
         in: "query"
         required: false
@@ -2897,6 +3119,23 @@ paths:
       responses:
         default:
           description: "successful operation"
+  /metadata/entryTypeMetadataList:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get the metadata for each entry type"
+      description: ""
+      operationId: "getEntryTypeMetadataList"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/EntryTypeMetadata"
   /metadata/health:
     get:
       tags:
@@ -4216,6 +4455,25 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Repository"
+  /users/starredNotebooks:
+    get:
+      tags:
+      - "users"
+      summary: "Get the authenticated user's starred notebooks."
+      description: ""
+      operationId: "getStarredNotebooks"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
   /users/starredOrganizations:
     get:
       tags:
@@ -4311,6 +4569,17 @@ paths:
               $ref: "#/definitions/User"
       security:
       - BEARER: []
+  /users/updateUserWorkflows:
+    post:
+      tags:
+      - "users"
+      operationId: "updateUserWorkflows"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        default:
+          description: "successful operation"
   /users/user:
     get:
       tags:
@@ -4734,6 +5003,28 @@ paths:
               $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
+  /users/{userId}/notebooks:
+    get:
+      tags:
+      - "users"
+      operationId: "userNotebooks"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
   /users/{userId}/services:
     get:
       tags:
@@ -4998,6 +5289,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "JUPYTER"
       - name: "namespace"
         in: "query"
         description: "The Docker namespace (Tools only)"
@@ -5091,8 +5383,8 @@ paths:
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Set of updated sourcefiles, add files by adding new files with\
-          \ unknown paths, delete files by including them with emptied content"
+        description: "Set of updated source files, add files by adding new files with\
+          \ unknown paths, delete files by including them with null content"
         required: true
         schema:
           type: "array"
@@ -5234,7 +5526,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         required: false
         type: "string"
       - name: "subclass"
@@ -5246,6 +5538,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5270,13 +5563,14 @@ paths:
         type: "string"
       - name: "subclass"
         in: "query"
-        description: "Which Workflow subclass to retrieve."
+        description: "Which Workflow subclass to retrieve actions for."
         required: true
         type: "string"
         enum:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5306,12 +5600,16 @@ paths:
         description: "repository path"
         required: true
         type: "string"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to retrieve permissions for."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5349,12 +5647,16 @@ paths:
         - "OWNER"
         - "WRITER"
         - "READER"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to remove a role from."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5387,12 +5689,16 @@ paths:
         required: true
         schema:
           $ref: "#/definitions/Permission"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to add a permission to."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5420,7 +5726,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         required: false
         type: "string"
       - name: "subclass"
@@ -5432,6 +5738,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       - name: "versionName"
         in: "query"
         description: "Version name"
@@ -5516,7 +5823,7 @@ paths:
         - "desc"
       - name: "services"
         in: "query"
-        description: "Should only be used by Dockstore CLI versions < 1.12.0. Indicates\
+        description: "Should only be used by Dockstore versions < 1.14.0. Indicates\
           \ whether to get a service or workflow"
         required: false
         type: "boolean"
@@ -5531,6 +5838,7 @@ paths:
         - "BIOWORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       responses:
         200:
           description: "successful operation"
@@ -5557,7 +5865,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         required: false
         type: "string"
       responses:
@@ -5709,6 +6017,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "JUPYTER"
       responses:
         200:
           description: "successful operation"
@@ -5736,7 +6045,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         required: false
         type: "string"
       responses:
@@ -5873,6 +6182,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "JUPYTER"
       responses:
         200:
           description: "successful operation"
@@ -6168,6 +6478,7 @@ paths:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "JUPYTER"
       responses:
         200:
           description: "successful operation"
@@ -6773,6 +7084,39 @@ definitions:
       zenodoScope:
         type: "string"
     description: "Configuration information for UI clients of the Dockstore webservice."
+  CpuMetric:
+    type: "object"
+    required:
+    - "average"
+    - "maximum"
+    - "minimum"
+    - "numberOfDataPointsForAverage"
+    properties:
+      average:
+        type: "number"
+        format: "double"
+        description: "The average value from the data points"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for statistical metrics in this webservice"
+      maximum:
+        type: "number"
+        format: "double"
+        description: "The maximum value from the data points"
+      minimum:
+        type: "number"
+        format: "double"
+        description: "The minimum value from the data points"
+      numberOfDataPointsForAverage:
+        type: "integer"
+        format: "int32"
+        description: "The number of data points used to calculate the average"
+      unit:
+        type: "string"
+        description: "The unit of the data points"
+        readOnly: true
+    description: "This describes aggregated CPU metrics for workflow executions."
   DescriptionMetrics:
     type: "object"
     properties:
@@ -6812,6 +7156,12 @@ definitions:
         description: "aliases can be used as an alternate unique id for entries"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       custom_docker_registry_path:
         type: "string"
         readOnly: true
@@ -6821,6 +7171,18 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       forumUrl:
         type: "string"
         description: "This is a link to a forum or discussion board"
@@ -6839,6 +7201,12 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidAuthors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       tags:
         type: "array"
         uniqueItems: true
@@ -6868,7 +7236,7 @@ definitions:
       author:
         type: "string"
         position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
+        description: "This is the name of the author, retrieved from the default version"
       description:
         type: "string"
         position: 2
@@ -6901,7 +7269,8 @@ definitions:
       email:
         type: "string"
         position: 6
-        description: "This is the email of the git organization"
+        description: "This is the email of the author, retrieved from the default\
+          \ version"
       defaultVersion:
         type: "string"
         position: 7
@@ -7052,6 +7421,8 @@ definitions:
       descriptorType:
         type: "array"
         position: 28
+        description: "The descriptor types for the tool, calculated from the tool's\
+          \ descriptor files. Defaults to CWL"
         readOnly: true
         items:
           type: "string"
@@ -7082,12 +7453,30 @@ definitions:
         description: "aliases can be used as an alternate unique id for entries"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       dbCreateDate:
         type: "integer"
         format: "int64"
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7101,6 +7490,12 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidAuthors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       topic:
         type: "string"
       topicAutomatic:
@@ -7130,7 +7525,7 @@ definitions:
       author:
         type: "string"
         position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
+        description: "This is the name of the author, retrieved from the default version"
       description:
         type: "string"
         position: 2
@@ -7163,7 +7558,8 @@ definitions:
       email:
         type: "string"
         position: 6
-        description: "This is the email of the git organization"
+        description: "This is the email of the author, retrieved from the default\
+          \ version"
       defaultVersion:
         type: "string"
         position: 7
@@ -7222,6 +7618,31 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+  EntryTypeMetadata:
+    type: "object"
+    properties:
+      searchEntryType:
+        type: "string"
+      searchSupported:
+        type: "boolean"
+      sitePath:
+        type: "string"
+      term:
+        type: "string"
+      termPlural:
+        type: "string"
+      trsPrefix:
+        type: "string"
+      trsSupported:
+        type: "boolean"
+      type:
+        type: "string"
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
   EntryUpdateTime:
     type: "object"
     properties:
@@ -7232,6 +7653,7 @@ definitions:
         - "WORKFLOW"
         - "SERVICE"
         - "APPTOOL"
+        - "NOTEBOOK"
       lastUpdateDate:
         type: "integer"
         format: "int64"
@@ -7321,6 +7743,79 @@ definitions:
         description: "(github) apps tool that the event is acting on."
         $ref: "#/definitions/AppTool"
     description: "This describes events that occur on the Dockstore site."
+  ExecutionStatusMetric:
+    type: "object"
+    properties:
+      count:
+        type: "object"
+        description: "A map containing the count for each key"
+        additionalProperties:
+          type: "integer"
+          format: "int32"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the count metrics in this webservice"
+      numberOfFailedExecutions:
+        type: "integer"
+        format: "int32"
+      numberOfSuccessfulExecutions:
+        type: "integer"
+        format: "int32"
+    description: "Aggregated metrics about workflow execution statuses"
+  ExecutionTimeMetric:
+    type: "object"
+    required:
+    - "average"
+    - "maximum"
+    - "minimum"
+    - "numberOfDataPointsForAverage"
+    properties:
+      average:
+        type: "number"
+        format: "double"
+        description: "The average value from the data points"
+      maximum:
+        type: "number"
+        format: "double"
+        description: "The maximum value from the data points"
+      minimum:
+        type: "number"
+        format: "double"
+        description: "The minimum value from the data points"
+      numberOfDataPointsForAverage:
+        type: "integer"
+        format: "int32"
+        description: "The number of data points used to calculate the average"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for statistical metrics in this webservice"
+      unit:
+        type: "string"
+        description: "The unit of the data points"
+        readOnly: true
+    description: "This describes aggregated execution time metrics in seconds for\
+      \ workflow executions."
+  ExecutionsRequestBody:
+    type: "object"
+    required:
+    - "aggregatedExecutions"
+    - "runExecutions"
+    - "validationExecutions"
+    properties:
+      aggregatedExecutions:
+        type: "array"
+        items:
+          $ref: "#/definitions/Metrics"
+      runExecutions:
+        type: "array"
+        items:
+          $ref: "#/definitions/RunExecution"
+      validationExecutions:
+        type: "array"
+        items:
+          $ref: "#/definitions/ValidationExecution"
   ExtendedUserData:
     type: "object"
     properties:
@@ -7500,6 +7995,40 @@ definitions:
       hostedEntryVersionLimit:
         type: "integer"
         format: "int32"
+  MemoryMetric:
+    type: "object"
+    required:
+    - "average"
+    - "maximum"
+    - "minimum"
+    - "numberOfDataPointsForAverage"
+    properties:
+      average:
+        type: "number"
+        format: "double"
+        description: "The average value from the data points"
+      maximum:
+        type: "number"
+        format: "double"
+        description: "The maximum value from the data points"
+      minimum:
+        type: "number"
+        format: "double"
+        description: "The minimum value from the data points"
+      numberOfDataPointsForAverage:
+        type: "integer"
+        format: "int32"
+        description: "The number of data points used to calculate the average"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for statistical metrics in this webservice"
+      unit:
+        type: "string"
+        description: "The unit of the data points"
+        readOnly: true
+    description: "This describes aggregated memory metrics for workflow executions\
+      \ in GB."
   Metadata:
     type: "object"
     required:
@@ -7533,6 +8062,44 @@ definitions:
       version:
         type: "string"
     description: "Describes this registry to better allow for mirroring and indexing."
+  Metrics:
+    type: "object"
+    required:
+    - "executionStatusCount"
+    properties:
+      additionalAggregatedMetrics:
+        type: "object"
+        description: "Additional aggregated metrics"
+        additionalProperties:
+          type: "object"
+      cpu:
+        description: "Aggregated CPU metrics"
+        $ref: "#/definitions/CpuMetric"
+      executionStatusCount:
+        description: "A count of the different execution statuses from the workflow\
+          \ executions"
+        $ref: "#/definitions/ExecutionStatusMetric"
+      executionTime:
+        description: "Aggregated execution time metrics in seconds"
+        $ref: "#/definitions/ExecutionTimeMetric"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the metrics in this webservice"
+      memory:
+        description: "Aggregated memory metrics in GB"
+        $ref: "#/definitions/MemoryMetric"
+      validationStatus:
+        description: "Aggregated validation status metrics"
+        $ref: "#/definitions/ValidationStatusMetric"
+    description: "Aggregated metrics associated with entry versions"
+  Notebook:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties: {}
+      description: "This describes one notebook in the dockstore as a special degenerate\
+        \ case of a workflow"
   Notification:
     type: "object"
     properties:
@@ -7717,12 +8284,9 @@ definitions:
   OrganizationUser:
     type: "object"
     required:
-    - "accepted"
     - "role"
+    - "status"
     properties:
-      accepted:
-        type: "boolean"
-        description: "Has the user accepted their membership."
       dbCreateDate:
         type: "integer"
         format: "int64"
@@ -7740,6 +8304,13 @@ definitions:
         - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
+      status:
+        type: "string"
+        description: "The status of the organization invitation"
+        enum:
+        - "PENDING"
+        - "REJECTED"
+        - "ACCEPTED"
       user:
         $ref: "#/definitions/User"
   OrganizationUserId:
@@ -7764,6 +8335,7 @@ definitions:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
+        - "JUPYTER"
       hasHTTPImports:
         type: "boolean"
       hasLocalImports:
@@ -7836,6 +8408,29 @@ definitions:
         type: "boolean"
       repositoryName:
         type: "string"
+  RunExecution:
+    type: "object"
+    required:
+    - "executionStatus"
+    properties:
+      additionalProperties:
+        type: "object"
+        additionalProperties:
+          type: "object"
+      cpuRequirements:
+        type: "integer"
+        format: "int32"
+      executionStatus:
+        type: "string"
+        enum:
+        - "SUCCESSFUL"
+        - "FAILED_SEMANTIC_INVALID"
+        - "FAILED_RUNTIME_INVALID"
+      executionTime:
+        type: "string"
+      memoryRequirementsGB:
+        type: "number"
+        format: "double"
   Service:
     allOf:
     - $ref: "#/definitions/Workflow"
@@ -7874,6 +8469,8 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the source file in this web service"
+      metadata:
+        $ref: "#/definitions/SourceFileMetadata"
       verifiedBySource:
         type: "object"
         description: "maps from platform to whether an entry successfully ran on it\
@@ -7903,6 +8500,10 @@ definitions:
         - "GXFORMAT2_TEST_FILE"
         - "DOCKSTORE_SWL"
         - "SWL_TEST_JSON"
+        - "DOCKSTORE_JUPYTER"
+        - "DOCKSTORE_NOTEBOOK_REES"
+        - "DOCKSTORE_NOTEBOOK_TEST_FILE"
+        - "DOCKSTORE_NOTEBOOK_OTHER"
       content:
         type: "string"
         position: 2
@@ -7926,6 +8527,15 @@ definitions:
         description: "The checksum(s) of the sourcefile's content"
         items:
           $ref: "#/definitions/Checksum"
+  SourceFileMetadata:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      typeVersion:
+        type: "string"
+        description: "The language version for the given descriptor file type"
   StarRequest:
     type: "object"
     properties:
@@ -7954,6 +8564,14 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      readMePath:
+        type: "string"
+        description: "A custom readme for the version, if applicable."
+      userFiles:
+        type: "array"
+        description: "The user-specified files for the version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       reference:
@@ -8080,10 +8698,18 @@ definitions:
         position: 23
         enum:
         - "README"
+        - "CUSTOM_README"
         - "DESCRIPTOR"
       email:
         type: "string"
         position: 24
+      metricsByPlatform:
+        type: "object"
+        position: 26
+        description: "The aggregated metrics for executions of this version, grouped\
+          \ by platform"
+        additionalProperties:
+          $ref: "#/definitions/Metrics"
       last_built:
         type: "integer"
         format: "int64"
@@ -8287,12 +8913,13 @@ definitions:
       type:
         type: "string"
         enum:
-        - "SMK"
         - "CWL"
         - "WDL"
         - "NFL"
+        - "GALAXY"
+        - "SMK"
         - "SERVICE"
-        - "GXFORMAT2"
+        - "JUPYTER"
       url:
         type: "string"
         example: "https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl"
@@ -8491,6 +9118,7 @@ definitions:
     required:
     - "curator"
     - "isAdmin"
+    - "platformPartner"
     - "setupComplete"
     properties:
       id:
@@ -8558,6 +9186,10 @@ definitions:
         position: 17
         description: "Indicates whether the user is required to change their username\
           \ before being allowed to do various operations on Dockstore."
+      platformPartner:
+        type: "boolean"
+        position: 18
+        description: "Indicates whether this account corresponds to a platform partner"
     description: "End users for the dockstore"
   Validation:
     type: "object"
@@ -8594,6 +9226,10 @@ definitions:
         - "GXFORMAT2_TEST_FILE"
         - "DOCKSTORE_SWL"
         - "SWL_TEST_JSON"
+        - "DOCKSTORE_JUPYTER"
+        - "DOCKSTORE_NOTEBOOK_REES"
+        - "DOCKSTORE_NOTEBOOK_TEST_FILE"
+        - "DOCKSTORE_NOTEBOOK_OTHER"
       valid:
         type: "boolean"
         position: 2
@@ -8602,6 +9238,106 @@ definitions:
         type: "string"
         position: 3
         description: "Mapping of filepath to validation message"
+  ValidationExecution:
+    type: "object"
+    required:
+    - "dateExecuted"
+    - "isValid"
+    - "validatorTool"
+    - "validatorToolVersion"
+    properties:
+      additionalProperties:
+        type: "object"
+        additionalProperties:
+          type: "object"
+      dateExecuted:
+        type: "string"
+      errorMessage:
+        type: "string"
+      isValid:
+        type: "boolean"
+      validatorTool:
+        type: "string"
+        enum:
+        - "MINIWDL"
+        - "WOMTOOL"
+        - "CWLTOOL"
+        - "NF_VALIDATION"
+        - "OTHER"
+      validatorToolVersion:
+        type: "string"
+  ValidationStatusMetric:
+    type: "object"
+    required:
+    - "validatorTools"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the count metrics in this webservice"
+      validatorTools:
+        type: "object"
+        description: "A map containing key-value pairs indicating whether the validator\
+          \ tool successfully validated the workflow"
+        additionalProperties:
+          $ref: "#/definitions/ValidatorInfo"
+    description: "Aggregated metrics about workflow validation statuses"
+  ValidatorInfo:
+    type: "object"
+    required:
+    - "id"
+    - "mostRecentVersionName"
+    - "numberOfRuns"
+    - "passingRate"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the validator info in this web\
+          \ service"
+      mostRecentVersionName:
+        type: "string"
+      numberOfRuns:
+        type: "integer"
+        format: "int32"
+      passingRate:
+        type: "number"
+        format: "double"
+      validatorVersions:
+        type: "array"
+        description: "A list containing validation info for the most recent execution\
+          \ of the validator tool versions"
+        items:
+          $ref: "#/definitions/ValidatorVersionInfo"
+  ValidatorVersionInfo:
+    type: "object"
+    required:
+    - "dateExecuted"
+    - "id"
+    - "isValid"
+    - "name"
+    - "numberOfRuns"
+    - "passingRate"
+    properties:
+      dateExecuted:
+        type: "string"
+      errorMessage:
+        type: "string"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the validation version info in\
+          \ this web service"
+      isValid:
+        type: "boolean"
+      name:
+        type: "string"
+      numberOfRuns:
+        type: "integer"
+        format: "int32"
+      passingRate:
+        type: "number"
+        format: "double"
   VerificationInformation:
     type: "object"
     properties:
@@ -8634,6 +9370,14 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      readMePath:
+        type: "string"
+        description: "A custom readme for the version, if applicable."
+      userFiles:
+        type: "array"
+        description: "The user-specified files for the version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -8759,10 +9503,18 @@ definitions:
         position: 23
         enum:
         - "README"
+        - "CUSTOM_README"
         - "DESCRIPTOR"
       email:
         type: "string"
         position: 24
+      metricsByPlatform:
+        type: "object"
+        position: 26
+        description: "The aggregated metrics for executions of this version, grouped\
+          \ by platform"
+        additionalProperties:
+          $ref: "#/definitions/Metrics"
     description: "Base class for versions of entries in the Dockstore"
   VersionMetadata:
     type: "object"
@@ -8771,6 +9523,16 @@ definitions:
         type: "string"
         description: "This is a human-readable description of this container and what\
           \ it is trying to accomplish, required GA4GH"
+      descriptorTypeVersions:
+        type: "array"
+        description: "The language versions for the version's descriptor files"
+        items:
+          type: "string"
+      engineVersions:
+        type: "array"
+        description: "The engine versions this workflow version can run on"
+        items:
+          type: "string"
       id:
         type: "integer"
         format: "int64"
@@ -8780,6 +9542,8 @@ definitions:
           $ref: "#/definitions/ParsedInformation"
       publicAccessibleTestParameterFile:
         type: "boolean"
+        description: "Whether the version has everything needed to run without restricted\
+          \ access permissions"
       userIdToOrcidPutCode:
         type: "object"
         description: "The presence of the put code for a userid indicates the version\
@@ -8805,12 +9569,30 @@ definitions:
         description: "aliases can be used as an alternate unique id for entries"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       dbCreateDate:
         type: "integer"
         format: "int64"
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      entryType:
+        type: "string"
+        readOnly: true
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
+        - "NOTEBOOK"
+      entryTypeMetadata:
+        readOnly: true
+        $ref: "#/definitions/EntryTypeMetadata"
       forumUrl:
         type: "string"
         description: "This is a link to a forum or discussion board"
@@ -8831,6 +9613,12 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidAuthors:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       parentEntry:
         $ref: "#/definitions/Entry"
       topic:
@@ -8857,7 +9645,7 @@ definitions:
       author:
         type: "string"
         position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
+        description: "This is the name of the author, retrieved from the default version"
       description:
         type: "string"
         position: 2
@@ -8890,7 +9678,8 @@ definitions:
       email:
         type: "string"
         position: 6
-        description: "This is the email of the git organization"
+        description: "This is the email of the author, retrieved from the default\
+          \ version"
       defaultVersion:
         type: "string"
         position: 7
@@ -8991,6 +9780,7 @@ definitions:
         - "NFL"
         - "gxformat2"
         - "service"
+        - "jupyter"
       workflow_path:
         type: "string"
         position: 19
@@ -9013,12 +9803,18 @@ definitions:
         type: "string"
         position: 22
         description: "This is a descriptor type subclass for the workflow. Currently\
-          \ it is only used for services."
+          \ it is only used for services and notebooks."
         enum:
         - "DOCKER_COMPOSE"
         - "HELM"
         - "SWARM"
         - "KUBERNETES"
+        - "PYTHON"
+        - "R"
+        - "JAVASCRIPT"
+        - "SCALA"
+        - "JULIA"
+        - "OTHER"
         - "NOT_APPLICABLE"
       full_workflow_path:
         type: "string"
@@ -9062,6 +9858,14 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/OrcidAuthor"
+      readMePath:
+        type: "string"
+        description: "A custom readme for the version, if applicable."
+      userFiles:
+        type: "array"
+        description: "The user-specified files for the version."
+        items:
+          type: "string"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -9187,10 +9991,18 @@ definitions:
         position: 23
         enum:
         - "README"
+        - "CUSTOM_README"
         - "DESCRIPTOR"
       email:
         type: "string"
         position: 24
+      metricsByPlatform:
+        type: "object"
+        position: 26
+        description: "The aggregated metrics for executions of this version, grouped\
+          \ by platform"
+        additionalProperties:
+          $ref: "#/definitions/Metrics"
       workflow_path:
         type: "string"
         position: 101
@@ -9201,20 +10013,15 @@ definitions:
         position: 102
         description: "Remote: Last time version on GitHub repo was changed. Hosted:\
           \ time version created."
-      subClass:
-        type: "string"
-        position: 103
-        description: "The subclass of this for services."
-        enum:
-        - "DOCKER_COMPOSE"
-        - "SWARM"
-        - "KUBERNETES"
-        - "HELM"
       synced:
         type: "boolean"
         position: 105
         description: "Whether or not the version has been refreshed since its last\
           \ edit on Dockstore."
+      kernelImagePath:
+        type: "string"
+        position: 106
+        description: "User-specified notebook kernel image reference"
     description: "This describes one workflow version associated with a workflow."
   WorkflowVersionPathInfo:
     type: "object"

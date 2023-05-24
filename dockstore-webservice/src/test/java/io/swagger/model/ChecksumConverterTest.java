@@ -1,26 +1,33 @@
 package io.swagger.model;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.ChecksumConverter;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
-public class ChecksumConverterTest {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+class ChecksumConverterTest {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
 
     @Test
-    public void checksumConverter() {
+    void checksumConverter() {
         final ChecksumConverter cs = new ChecksumConverter();
         final String[] stringTypes = {"sha256", "sha512", "md5"};
         final String[] stringChecksums = {"fakeSHA256Checksum", "fakeSHA512Checksum", "fakeMD5Checksum"};
@@ -28,34 +35,35 @@ public class ChecksumConverterTest {
 
         // Can hand empty list
         List<Checksum> listChecksums = new ArrayList<>();
-        Assert.assertNull(cs.convertToDatabaseColumn(listChecksums));
+        assertNull(cs.convertToDatabaseColumn(listChecksums));
 
         // Can handle multiple checksums
         for (int i = 0; i < stringTypes.length; i++) {
             listChecksums.add(new Checksum(stringTypes[i], stringChecksums[i]));
         }
-        Assert.assertEquals(validStringChecksums, cs.convertToDatabaseColumn(listChecksums));
+        assertEquals(validStringChecksums, cs.convertToDatabaseColumn(listChecksums));
 
         // Can handle spaces
         List<Checksum> listChecksumsSpaces = new ArrayList<>();
         for (int i = 0; i < stringTypes.length; i++) {
             listChecksumsSpaces.add(new Checksum(stringTypes[i] + " ", "   " + stringChecksums[i]));
         }
-        Assert.assertEquals(validStringChecksums, cs.convertToDatabaseColumn(listChecksumsSpaces));
+        assertEquals(validStringChecksums, cs.convertToDatabaseColumn(listChecksumsSpaces));
 
         String stringChecksumSpaces = stringTypes[0] + "  :   " + stringChecksums[0] + "    ";
-        Assert.assertEquals(stringTypes[0] + ":" + stringChecksums[0], cs.convertToEntityAttribute(stringChecksumSpaces).get(0).getType() + ":" + cs.convertToEntityAttribute(stringChecksumSpaces).get(0).getChecksum());
+        assertEquals(stringTypes[0] + ":" + stringChecksums[0],
+            cs.convertToEntityAttribute(stringChecksumSpaces).get(0).getType() + ":" + cs.convertToEntityAttribute(stringChecksumSpaces).get(0).getChecksum());
 
         // Can handle invalid formatting
         String invalidStringChecksum = stringTypes[0] + stringChecksums[0];
         String incompleteStringChecksum = stringTypes[0];
-        Assert.assertNull(cs.convertToEntityAttribute(invalidStringChecksum));
-        Assert.assertNull(cs.convertToEntityAttribute(incompleteStringChecksum));
+        assertNull(cs.convertToEntityAttribute(invalidStringChecksum));
+        assertNull(cs.convertToEntityAttribute(incompleteStringChecksum));
 
         Checksum incompleteChecksum = new Checksum();
         incompleteChecksum.setType(stringTypes[0]);
         listChecksums.add(incompleteChecksum);
-        Assert.assertNull(cs.convertToDatabaseColumn(listChecksums));
+        assertNull(cs.convertToDatabaseColumn(listChecksums));
 
     }
 }

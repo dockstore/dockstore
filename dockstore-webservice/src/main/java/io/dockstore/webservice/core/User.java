@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -86,6 +87,7 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUserId", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com' AND p.onlineProfileId = :id)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findAllGitHubUsers", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com')"),
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findAllGitHubUserIds", query = "SELECT t.id FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com')"),
     @NamedQuery(name = "io.dockstore.webservice.core.database.UserInfo.findAllGoogleUserInfo", query =
         "SELECT new io.dockstore.webservice.core.database.UserInfo(user.username, userProfiles.username, userProfiles.email, KEY(userProfiles))"
             + " FROM User user INNER JOIN user.userProfiles as userProfiles WHERE( KEY(userProfiles) = 'google.com' )"),
@@ -95,6 +97,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User>, Serializable {
+
+    public static final String INDICATES_WHETHER_THIS_USER_IS_A_CURATOR = "Indicates whether this user is a curator";
+    public static final String INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER = "Indicates whether this account corresponds to a platform partner";
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "enduser_id_seq")
     @SequenceGenerator(name = "enduser_id_seq", sequenceName = "enduser_id_seq", allocationSize = 1)
@@ -150,8 +155,14 @@ public class User implements Principal, Comparable<User>, Serializable {
     private final SortedSet<Entry> starredEntries;
 
     @Column(columnDefinition = "boolean default 'false'")
-    @ApiModelProperty(value = "Indicates whether this user is a curator", required = true, position = 11)
+    @ApiModelProperty(value = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR, required = true, position = 11)
+    @Schema(description = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR)
     private boolean curator;
+
+    @Column(columnDefinition = "boolean default 'false'")
+    @ApiModelProperty(value = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER, required = true, position = 18)
+    @Schema(description = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER)
+    private boolean platformPartner;
 
     @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
@@ -556,11 +567,20 @@ public class User implements Principal, Comparable<User>, Serializable {
         this.usernameChangeRequired = usernameChangeRequired;
     }
 
+    public boolean isPlatformPartner() {
+        return platformPartner;
+    }
+
+    public void setPlatformPartner(boolean platformPartner) {
+        this.platformPartner = platformPartner;
+    }
+
     /**
      * The profile of a user using a token (Google profile, GitHub profile, etc)
      * The order of the properties are important, the UI lists these properties in this order.
      */
     @Embeddable
+    @JsonFilter("emailFilter")
     public static class Profile implements Serializable {
         @Column(columnDefinition = "text")
         public String name;
@@ -591,7 +611,7 @@ public class User implements Principal, Comparable<User>, Serializable {
         @JsonIgnore
         public String onlineProfileId;
 
-        @Column(updatable = false)
+        @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
         @CreationTimestamp
         private Timestamp dbCreateDate;
         @Column()

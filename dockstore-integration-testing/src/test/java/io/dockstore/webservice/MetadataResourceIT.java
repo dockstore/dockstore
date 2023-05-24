@@ -16,6 +16,11 @@
 
 package io.dockstore.webservice;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.openapi.client.ApiClient;
@@ -25,21 +30,20 @@ import io.dockstore.openapi.client.model.HealthCheckResult;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-public class MetadataResourceIT extends BaseIT {
+class MetadataResourceIT extends BaseIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
 
-    @BeforeClass
+    @BeforeAll
     public static void dumpDBAndCreateSchema() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, CommonTestUtilities.PUBLIC_CONFIG_PATH);
     }
 
     @Test
-    public void testCheckHealth() {
+    void testCheckHealth() {
         ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();
         MetadataApi metadataApi = new MetadataApi(anonymousApiClient);
 
@@ -49,47 +53,54 @@ public class MetadataResourceIT extends BaseIT {
             results = metadataApi.checkHealth(null);
             // Not asserting size because there seems to be an JdbiHealthCheck present when running tests
             healthCheckNames = results.stream().map(HealthCheckResult::getHealthCheckName).collect(Collectors.toList());
-            Assert.assertTrue(healthCheckNames.contains("hibernate") && healthCheckNames.contains("deadlocks") && healthCheckNames.contains("connectionPool"));
+            assertTrue(healthCheckNames.contains("hibernate") && healthCheckNames.contains("deadlocks") && healthCheckNames.contains("connectionPool"));
         } catch (ApiException e) {
-            Assert.fail("Health checks should not fail");
+            fail("Health checks should not fail");
         }
 
         try {
             results = metadataApi.checkHealth(List.of("hibernate"));
-            Assert.assertEquals(1, results.size());
+            assertEquals(1, results.size());
             healthCheckNames = results.stream().map(HealthCheckResult::getHealthCheckName).collect(Collectors.toList());
-            Assert.assertTrue(healthCheckNames.contains("hibernate"));
+            assertTrue(healthCheckNames.contains("hibernate"));
         } catch (ApiException e) {
-            Assert.fail("Hibernate health check should not fail");
+            fail("Hibernate health check should not fail");
         }
 
         try {
             results = metadataApi.checkHealth(List.of("deadlocks"));
-            Assert.assertEquals(1, results.size());
+            assertEquals(1, results.size());
             healthCheckNames = results.stream().map(HealthCheckResult::getHealthCheckName).collect(Collectors.toList());
-            Assert.assertTrue(healthCheckNames.contains("deadlocks"));
+            assertTrue(healthCheckNames.contains("deadlocks"));
         } catch (ApiException e) {
-            Assert.fail("Deadlocks health check should not fail");
+            fail("Deadlocks health check should not fail");
         }
 
         try {
             results = metadataApi.checkHealth(List.of("connectionPool"));
-            Assert.assertEquals(1, results.size());
+            assertEquals(1, results.size());
             healthCheckNames = results.stream().map(HealthCheckResult::getHealthCheckName).collect(Collectors.toList());
-            Assert.assertTrue(healthCheckNames.contains("connectionPool"));
+            assertTrue(healthCheckNames.contains("connectionPool"));
         } catch (ApiException e) {
-            Assert.fail("Connection pool health check should not fail");
+            fail("Connection pool health check should not fail");
         }
 
         try {
             results = metadataApi.checkHealth(List.of("hibernate", "connectionPool"));
-            Assert.assertEquals(2, results.size());
+            assertEquals(2, results.size());
             healthCheckNames = results.stream().map(HealthCheckResult::getHealthCheckName).collect(Collectors.toList());
-            Assert.assertTrue(healthCheckNames.contains("connectionPool"));
+            assertTrue(healthCheckNames.contains("connectionPool"));
         } catch (ApiException e) {
-            Assert.fail("Hibernate and connection pool health checks should not fail");
+            fail("Hibernate and connection pool health checks should not fail");
         }
 
-        Assert.assertThrows(ApiException.class, () -> metadataApi.checkHealth(List.of("foobar")));
+        assertThrows(ApiException.class, () -> metadataApi.checkHealth(List.of("foobar")));
+    }
+
+    @Test
+    void testEntryTypeMetadataList() {
+        ApiClient anonymousApiClient = getAnonymousOpenAPIWebClient();
+        MetadataApi metadataApi = new MetadataApi(anonymousApiClient);
+        assertEquals(io.dockstore.webservice.core.EntryTypeMetadata.values().size(), metadataApi.getEntryTypeMetadataList().size());
     }
 }

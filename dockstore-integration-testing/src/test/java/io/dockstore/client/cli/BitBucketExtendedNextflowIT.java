@@ -15,9 +15,17 @@
  */
 package io.dockstore.client.cli;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.CommonTestUtilities.TestUser;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.SourceFile;
@@ -29,33 +37,38 @@ import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
-@Category(BitBucketTest.class)
-public class BitBucketExtendedNextflowIT extends BaseIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+@ExtendWith(TestStatus.class)
+@Tag(BitBucketTest.NAME)
+class BitBucketExtendedNextflowIT extends BaseIT {
 
+    public static final String DOCKSTORE_TEST_USER_4 = TestUser.TEST_USER4.dockstoreUserName;
     // bitbucket workflow
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW =
-        SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/ampa-nf";
+        SourceControl.BITBUCKET + "/" + DOCKSTORE_TEST_USER_4 + "/ampa-nf";
     // workflow with binaries in bin directory
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW =
-        SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/kallisto-nf";
+        SourceControl.BITBUCKET + "/" + DOCKSTORE_TEST_USER_4 + "/kallisto-nf";
 
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
     private FileDAO fileDAO;
 
-    @Before
+    @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -67,20 +80,24 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         ManagedSessionContext.bind(session);
     }
 
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres, true);
+        CommonTestUtilities.cleanStatePrivate(SUPPORT, false, testingPostgres, true, TestUser.TEST_USER4);
+    }
+
+    @AfterEach
+    public void preserveBitBucketTokens() {
+        CommonTestUtilities.cacheBitbucketTokens(SUPPORT);
     }
 
 
     @Test
-    public void testBitbucketNextflowWorkflow() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+    void testBitbucketNextflowWorkflow() {
+        final ApiClient webClient = getWebClient(USER_4_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // get workflow stubs
-        Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/ampa-nf", "/nextflow.config", "",
+        Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), DOCKSTORE_TEST_USER_4 + "/ampa-nf", "/nextflow.config", "",
                 DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
         workflowApi.refresh(workflow.getId(), false);
 
@@ -99,8 +116,8 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         testWorkflowVersionMetadata(bitbucketWorkflow);
         testWorkflowVersionMetadata(byPathWorkflow);
         // Purposely mess up the metadata to test if it can be updated through refresh
-        testingPostgres.runUpdateStatement("update version_metadata set email='bad_potato'");
-        testingPostgres.runUpdateStatement("update version_metadata set author='bad_potato'");
+        testingPostgres.runUpdateStatement("update author set email='bad_potato'");
+        testingPostgres.runUpdateStatement("update author set name='bad_potato'");
         testingPostgres.runUpdateStatement("update version_metadata set description='bad_potato'");
         final Workflow refreshedBitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId(), true);
         byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, BIOWORKFLOW, "versions");
@@ -108,7 +125,7 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         testWorkflowVersionMetadata(refreshedBitbucketWorkflow);
         testWorkflowVersionMetadata(byPathWorkflow);
         List<io.dockstore.webservice.core.SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get().getId());
-        Assert.assertEquals(4, sourceFileList.size());
+        assertEquals(4, sourceFileList.size());
     }
 
     /**
@@ -121,31 +138,30 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         final String descriptorDescription = "Fast automated prediction of protein antimicrobial regions";
         final String versionWithReadmeDescription = "v1.0";
 
-        Assert.assertEquals(descriptorDescription, workflow.getDescription());
-        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.getName().equals(versionWithReadmeDescription)));
+        assertEquals(descriptorDescription, workflow.getDescription());
+        assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.getName().equals(versionWithReadmeDescription)));
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
             if (workflowVersion.getName().equals(versionWithReadmeDescription)) {
-                Assert.assertTrue(workflowVersion.getDescription().contains(partialReadmeDescription));
-                Assert.assertNull(workflowVersion.getAuthor());
-                Assert.assertNull(workflowVersion.getEmail());
+                assertTrue(workflowVersion.getDescription().contains(partialReadmeDescription));
+                assertNull(workflowVersion.getAuthor());
+                assertNull(workflowVersion.getEmail());
             } else {
-                Assert.assertNotNull(descriptorDescription, workflowVersion.getDescription());
-                Assert.assertEquals("test.user@test.com", workflowVersion.getAuthor());
-                Assert.assertNull(workflowVersion.getEmail());
+                assertNotNull(workflowVersion.getDescription(), descriptorDescription);
+                assertEquals("test.user@test.com", workflowVersion.getAuthor());
+                assertNull(workflowVersion.getEmail());
             }
         });
     }
 
 
     @Test
-    public void testBitbucketBinaryWorkflow() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres, true);
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+    void testBitbucketBinaryWorkflow() {
+        final ApiClient webClient = getWebClient(USER_4_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // get workflow stubs
 
         Workflow workflow = workflowApi
-                .manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/kallisto-nf", "/nextflow.config", "",
+                .manualRegister(SourceControl.BITBUCKET.name(), DOCKSTORE_TEST_USER_4 + "/kallisto-nf", "/nextflow.config", "",
                         DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
         workflowApi.refresh(workflow.getId(), false);
 
@@ -158,12 +174,12 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, BIOWORKFLOW, null);
         final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
-        Assert.assertTrue("Should have gotten the description from README", bitbucketWorkflow.getDescription().contains("A Nextflow implementation of Kallisto & Sleuth RNA-Seq Tools"));
+        assertTrue(bitbucketWorkflow.getDescription().contains("A Nextflow implementation of Kallisto & Sleuth RNA-Seq Tools"), "Should have gotten the description from README");
         List<SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v1.0")).findFirst().get().getId());
-        Assert.assertEquals(6, sourceFileList.size());
+        assertEquals(6, sourceFileList.size());
         // two of the files should essentially be blanked
-        Assert.assertEquals("two files have our one-line warning", 2, sourceFileList.stream()
-            .filter(file -> file.getContent().split("\n").length == 1 && file.getContent().contains("Dockstore does not")).count());
+        assertEquals(2, sourceFileList.stream()
+            .filter(file -> file.getContent().split("\n").length == 1 && file.getContent().contains("Dockstore does not")).count(), "two files have our one-line warning");
     }
 
 }

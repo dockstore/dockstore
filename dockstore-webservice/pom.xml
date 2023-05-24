@@ -458,6 +458,11 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
@@ -472,8 +477,14 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -550,8 +561,18 @@
             <type>test-jar</type>
         </dependency>
         <dependency>
-            <groupId>com.github.stefanbirkner</groupId>
-            <artifactId>system-rules</artifactId>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>uk.org.webcompere</groupId>
+            <artifactId>system-stubs-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>uk.org.webcompere</groupId>
+            <artifactId>system-stubs-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -605,7 +626,7 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
-        <dependency>
+         <dependency>
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-tools</artifactId>
         </dependency>
@@ -617,6 +638,10 @@
                     <groupId>com.google.guava</groupId>
                     <artifactId>guava</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -625,7 +650,21 @@
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
+            <artifactId>cromwell-wdl-transforms-draft3_2.13</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.scala-lang</groupId>
+                    <artifactId>scala-library</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>jawn-parser_2.13</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -886,6 +925,10 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>regions</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>auth</artifactId>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-encryption-sdk-java -->
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -898,6 +941,20 @@
             <groupId>org.kohsuke</groupId>
             <artifactId>github-api</artifactId>
         </dependency>
+        <!-- used for github-api build-in handing of JWTtokens -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
@@ -973,6 +1030,10 @@
             <artifactId>commons-configuration2</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-integration</artifactId>
             <!-- note: this brings in a version of jaxb-api that breaks
@@ -1034,8 +1095,43 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <files>
+                                <file>src/main/resources/requirements/swagger-ui/requirements.properties</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
+                    <execution>
+                        <id>populate-swagger-properties</id>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>generated/src/main/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/resources/requirements/swagger-ui</directory>
+                                    <excludes>
+                                      <exclude>**/*.properties</exclude>
+                                    </excludes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>copy-resources</id>
                         <phase>compile</phase>
@@ -1086,6 +1182,7 @@
                             <includes>
                                 <include>io/dockstore/**</include>
                                 <include>io/github/**</include>
+                                <include>ValidationMessages.properties</include>
                             </includes>
                         </filter>
                         <filter>
@@ -1106,7 +1203,7 @@
                         </goals>
                         <configuration>
                             <transformers>
-                                <!-- Akka used by Cromwell expects a consistant reference.conf file.  Also order matters, so keep it first in the list of transformers -->
+                                <!-- Akka used by Cromwell expects a consistent reference.conf file.  Also order matters, so keep it first in the list of transformers -->
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>reference.conf</resource>
                                 </transformer>
@@ -1149,6 +1246,11 @@
                                 <usedDependency>io.swagger:swagger-core</usedDependency>
                                 <usedDependency>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer</usedDependency>
                                 <usedDependency>jakarta.activation:jakarta.activation-api</usedDependency>
+                                <!-- these are used by org.kohsuke:github-api for handling JWT tokens -->
+                                <usedDependency>com.auth0:java-jwt</usedDependency>
+                                <usedDependency>io.jsonwebtoken:jjwt-impl</usedDependency>
+                                <usedDependency>io.jsonwebtoken:jjwt-api</usedDependency>
+                                <usedDependency>io.jsonwebtoken:jjwt-jackson</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
@@ -1334,9 +1436,10 @@
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
                 <configuration>
                     <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
-                    <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
-                    <!--  Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.1-beta.1-smk-galaxy/openapi/ga4gh-tool-discovery.yaml</inputSpec>
+                    <!-- <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
+                    <!-- Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
+		    <!-- note that the version of the TRS api in our fork is badly named and is not in sync with the main repo -->
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.7-beta.1-notebooks/openapi/openapi.yaml</inputSpec>
                     <language>jaxrs-jersey</language>
                     <configOptions>
                         <dateLibrary>java11</dateLibrary>

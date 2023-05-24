@@ -18,20 +18,47 @@
 
 package io.dockstore.common;
 
+import static io.dockstore.common.EntryType.APPTOOL;
+import static io.dockstore.common.EntryType.NOTEBOOK;
+import static io.dockstore.common.EntryType.SERVICE;
+import static io.dockstore.common.EntryType.TOOL;
+import static io.dockstore.common.EntryType.WORKFLOW;
+
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 
 public enum DescriptorLanguageSubclass {
-    DOCKER_COMPOSE("docker-compose"),
-    HELM("helm"),
-    SWARM("swarm"),
-    KUBERNETES("kubernetes"),
-    NOT_APPLICABLE("n/a");
+    DOCKER_COMPOSE("docker-compose", SERVICE),
+    HELM("helm", SERVICE),
+    SWARM("swarm", SERVICE),
+    KUBERNETES("kubernetes", SERVICE),
+
+    PYTHON("Python", NOTEBOOK),
+    R("R", NOTEBOOK),
+    JAVASCRIPT("Javascript", NOTEBOOK),
+    SCALA("Scala", NOTEBOOK),
+    JULIA("Julia", NOTEBOOK),
+    OTHER("other", NOTEBOOK),
+
+    NOT_APPLICABLE("n/a", Set.of(SERVICE, WORKFLOW, APPTOOL, TOOL));
 
     private final String shortName;
 
-    DescriptorLanguageSubclass(final String shortName) {
+    private Set<EntryType> entryTypes;
+
+    DescriptorLanguageSubclass(final String shortName, Set<EntryType> entryTypes) {
         this.shortName = shortName;
+        this.entryTypes = entryTypes;
+    }
+
+    DescriptorLanguageSubclass(final String shortName, EntryType entryType) {
+        this(shortName, Set.of(entryType));
+    }
+
+    public boolean isApplicable() {
+        return this != NOT_APPLICABLE;
     }
 
     @Override
@@ -39,9 +66,13 @@ public enum DescriptorLanguageSubclass {
         return shortName;
     }
 
-
+    @JsonValue
     public String getShortName() {
         return shortName;
+    }
+
+    public Set<EntryType> getEntryTypes() {
+        return entryTypes;
     }
 
     public static DescriptorLanguageSubclass convertShortNameStringToEnum(final String descriptorSubclass) {

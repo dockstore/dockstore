@@ -20,18 +20,24 @@ import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.NOTEBOOK;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.SERVICE;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
+import static io.swagger.api.impl.ToolsImplCommon.NOTEBOOK_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.google.common.base.Splitter;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -45,6 +51,7 @@ import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
@@ -54,9 +61,12 @@ import io.dockstore.webservice.permissions.Role;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.openapi.api.ToolsApiService;
 import io.openapi.model.Checksum;
+import io.openapi.model.DescriptorType;
+import io.openapi.model.DescriptorTypeWithPlain;
 import io.openapi.model.Error;
 import io.openapi.model.ExtendedFileWrapper;
 import io.openapi.model.FileWrapper;
+import io.openapi.model.OneOfFileWrapperImageType;
 import io.openapi.model.ToolFile;
 import io.openapi.model.ToolVersion;
 import io.swagger.api.impl.ToolsImplCommon;
@@ -76,15 +86,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.constraints.Pattern;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,6 +118,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static WorkflowDAO workflowDAO = null;
     private static ServiceDAO serviceDAO = null;
     private static AppToolDAO appToolDAO = null;
+    private static NotebookDAO notebookDAO = null;
     private static FileDAO fileDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
@@ -143,6 +155,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         //ToolsApiServiceImpl.bioWorkflowHelper = () -> appToolDAO;
     }
 
+    public static void setNotebookDAO(NotebookDAO notebookDAO) {
+        ToolsApiServiceImpl.notebookDAO = notebookDAO;
+    }
+
     public static void setFileDAO(FileDAO fileDAO) {
         ToolsApiServiceImpl.fileDAO = fileDAO;
     }
@@ -161,6 +177,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @Override
     public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+
+        // https://github.com/ga4gh/tool-registry-service-schemas/issues/229 (text only doesn't make sense)
+        boolean consumesHeaderTextOnly = value.getAcceptableMediaTypes().stream().allMatch(mediaType -> mediaType.isCompatible(MediaType.TEXT_PLAIN_TYPE) && !mediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE));
+        if (consumesHeaderTextOnly) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+
         ParsedRegistryID parsedID = null;
         try {
             parsedID = new ParsedRegistryID(id);
@@ -246,6 +269,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             entry = workflowDAO.findByPath(entryPath, user.isEmpty(), BioWorkflow.class).orElse(null);
         } else if (parsedID.toolType() == ParsedRegistryID.ToolType.SERVICE) {
             entry = workflowDAO.findByPath(entryPath, user.isEmpty(), Service.class).orElse(null);
+        } else if (parsedID.toolType() == ParsedRegistryID.ToolType.NOTEBOOK) {
+            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), Notebook.class).orElse(null);
         } else {
             throw new UnsupportedOperationException("Tool type that should not be present found:" + parsedID.toolType());
         }
@@ -262,32 +287,32 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public boolean canExamine(User user, Entry entry) {
         return AuthenticatedResourceInterface.super.canExamine(user, entry)
-            || (entry instanceof Workflow && permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.READ));
+            || (entry instanceof Workflow && AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.READ));
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value, Optional<User> user) {
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
+    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String id, DescriptorTypeWithPlain type, String versionId, SecurityContext securityContext, ContainerRequestContext value,
+        Optional<User> user) {
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type.toString());
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType.get(), null,
-            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type, "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), user);
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
+    public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String id, DescriptorTypeWithPlain type, String versionId, @Pattern(regexp = ".+") String relativePath,
         SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         if (type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type.toString());
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType.get(), relativePath,
-            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type, "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type.toString(), "plain"), user);
     }
 
     private boolean contextContainsPlainText(ContainerRequestContext value) {
@@ -295,18 +320,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value, Optional<User> user) {
+    public Response toolsIdVersionsVersionIdTypeTestsGet(String id, DescriptorTypeWithPlain type, String versionId, SecurityContext securityContext, ContainerRequestContext value,
+        Optional<User> user) {
         if (type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type.toString());
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
-        boolean plainTextResponse = contextContainsPlainText(value) || type.toLowerCase().contains("plain");
+        boolean plainTextResponse = contextContainsPlainText(value) || type.toString().toLowerCase().contains("plain");
 
         final DescriptorLanguage.FileType fileTypeActual = fileType.get();
         final DescriptorLanguage descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(fileTypeActual);
@@ -323,9 +348,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
     @Override
-    public Response toolsGet(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
-        String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
-        ContainerRequestContext value, Optional<User> user) {
+    public Response toolsGet(String id, String alias, String toolClass, DescriptorType descriptorType, String registry, String organization, String name, String toolname, String description,
+        String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
 
         final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
         final String relativePath = value.getUriInfo().getRequestUri().getPath();
@@ -341,7 +365,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final List<Entry<?, ?>> all = new ArrayList<>();
         NumberOfEntityTypes numEntries;
         try {
-            numEntries = getEntries(all, id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user, actualLimit,
+            numEntries = getEntries(all, id, alias, toolClass, descriptorType == null ? null : descriptorType.toString(), registry, organization, name, toolname, description, author, checker, user, actualLimit,
                 startIndex);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_REGISTRY_RESPONSE;
@@ -437,10 +461,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @SuppressWarnings("checkstyle:ParameterNumber")
     private NumberOfEntityTypes getEntries(List<Entry<?, ?>> all, String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, Optional<User> user, int actualLimit, int offset) throws UnsupportedEncodingException {
+
         long numTools = 0;
         long numWorkflows = 0;
         long numAppTools = 0;
         long numServices = 0;
+        long numNotebooks = 0;
 
         if (id != null) {
             ParsedRegistryID parsedID = new ParsedRegistryID(id);
@@ -468,25 +494,26 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 } catch (UnsupportedOperationException ex) {
                     // If unable to match descriptor language, do not return any entries.
                     LOG.info(ex.getMessage());
-                    return new NumberOfEntityTypes(numTools, numWorkflows, numAppTools, numServices);
+                    return new NumberOfEntityTypes(0, 0, 0, 0, 0);
                 }
             }
 
             // calculate whether we want a page of tools, a page of workflows, or a page that includes both
-            numTools = WORKFLOW.equalsIgnoreCase(toolClass) || SERVICE.equalsIgnoreCase(toolClass) ? 0 : toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            numWorkflows = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || SERVICE.equalsIgnoreCase(toolClass) ? 0 : bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            numAppTools = WORKFLOW.equalsIgnoreCase(toolClass) || SERVICE.equalsIgnoreCase(toolClass) ? 0 : appToolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            numServices = WORKFLOW.equalsIgnoreCase(toolClass) || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) ? 0 : serviceDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-
+            boolean allClasses = (toolClass == null);
+            numTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || allClasses ? toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numWorkflows = WORKFLOW.equalsIgnoreCase(toolClass) || allClasses ? bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numAppTools = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) || allClasses ? appToolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numServices = SERVICE.equalsIgnoreCase(toolClass) || allClasses ? serviceDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
+            numNotebooks = NOTEBOOK.equalsIgnoreCase(toolClass) || allClasses ? notebookDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker) : 0;
 
             long startIndex = offset;
             long pageRemaining = actualLimit;
             long entriesConsidered = 0;
 
-            ImmutableTriple<String, EntryDAO, Long>[] typeDAOs = new ImmutableTriple[]{ImmutableTriple.of(COMMAND_LINE_TOOL, toolDAO, numTools),
-                ImmutableTriple.of(WORKFLOW, bioWorkflowDAO, numWorkflows), ImmutableTriple.of(COMMAND_LINE_TOOL, appToolDAO, numAppTools), ImmutableTriple.of(SERVICE, serviceDAO, numServices)};
+            EntryTypeDAOAndStats[] typeDAOs = new EntryTypeDAOAndStats[]{new EntryTypeDAOAndStats(COMMAND_LINE_TOOL, toolDAO, numTools),
+                new EntryTypeDAOAndStats(WORKFLOW, bioWorkflowDAO, numWorkflows), new EntryTypeDAOAndStats(COMMAND_LINE_TOOL, appToolDAO, numAppTools), new EntryTypeDAOAndStats(SERVICE, serviceDAO, numServices), new EntryTypeDAOAndStats(NOTEBOOK, notebookDAO, numNotebooks)};
 
-            for (ImmutableTriple<String, EntryDAO, Long> typeDAO : typeDAOs) {
+            for (EntryTypeDAOAndStats typeDAO : typeDAOs) {
                 if (!all.isEmpty()) {
                     // if we got any tools, overflow into the very start of the next type of stuff
                     startIndex = 0;
@@ -497,16 +524,16 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     startIndex = startIndex - entriesConsidered;
                 }
 
-                if (startIndex < typeDAO.right && isCorrectToolClass(toolClass, typeDAO.left)) {
+                if (startIndex < typeDAO.numEntries() && isCorrectToolClass(toolClass, typeDAO.trsClassName())) {
                     // then we want at least some of whatever this DAO returns
                     // TODO we used to handle languages for tools here, test this
-                    all.addAll(typeDAO.middle
+                    all.addAll(typeDAO.dao()
                         .filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, Math.toIntExact(startIndex), Math.toIntExact(pageRemaining)));
                 }
-                entriesConsidered = typeDAO.right;
+                entriesConsidered = typeDAO.numEntries();
             }
         }
-        return new NumberOfEntityTypes(numTools, numWorkflows, numAppTools, numServices);
+        return new NumberOfEntityTypes(numTools, numWorkflows, numAppTools, numServices, numNotebooks);
     }
 
     private boolean isCorrectToolClass(String toolClass, String daoToolClass) {
@@ -556,7 +583,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (description != null && (tool.getDescription() == null || !tool.getDescription().contains(description))) {
                 return null;
             }
-            if (author != null && (tool.getAuthor() == null || !tool.getAuthor().contains(author))) {
+            if (author != null && (tool.getAuthors().isEmpty() || tool.getAuthors().stream().map(Author::getName).noneMatch(authorName -> authorName.contains(author)))) {
                 return null;
             }
         }
@@ -685,6 +712,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
                     for (SourceFile file : testSourceFiles) {
                         FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
+                        toolTests.setImageType(new EmptyImageType());
                         toolTestsList.add(toolTests);
                     }
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
@@ -696,11 +724,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         .filter(sourcefile -> sourcefile.getType() == DOCKERFILE).findFirst();
                     if (potentialDockerfile.isPresent()) {
                         ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
-                        //TODO: hook up file checksum here
                         dockerfile.setChecksum(convertToTRSChecksums(potentialDockerfile.get()));
                         dockerfile.setContent(potentialDockerfile.get().getContent());
                         dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
                         dockerfile.setOriginalFile(potentialDockerfile.get());
+                        dockerfile.setImageType(new EmptyImageType());
                         toolVersion.setContainerfile(true);
                         List<FileWrapper> containerfilesList = new ArrayList<>();
                         containerfilesList.add(dockerfile);
@@ -814,8 +842,19 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext containerRequestContext, Optional<User> user) {
+    public Response toolsIdVersionsVersionIdTypeFilesGet(String id, DescriptorType type, String versionId, String format, SecurityContext securityContext, ContainerRequestContext value,
+        Optional<User> user) {
+
+        // check for incompatible format option and header combination
+        boolean zipFormat = "zip".equalsIgnoreCase(format);
+        boolean jsonOnly = value.getAcceptableMediaTypes().stream().allMatch(mediaType -> mediaType.equals(MediaType.APPLICATION_JSON_TYPE));
+        if (zipFormat && jsonOnly) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+
+        // accept header should also work
+        boolean consumesHeaderZipOnly = value.getAcceptableMediaTypes().stream().allMatch(mediaType -> mediaType.getType().equals("application") && mediaType.getSubtype().equals("zip"));
+
         ParsedRegistryID parsedID = null;
         try {
             parsedID = new ParsedRegistryID(id);
@@ -837,7 +876,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
                     primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
                     Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, workflowVersion.getWorkingDirectory());
+                    if ("zip".equalsIgnoreCase(format) || consumesHeaderZipOnly) {
+                        return getZipResponse(sourceFiles, workflow.getWorkflowPath(), workflowVersion.getName(), Paths.get(workflowVersion.getWorkingDirectory()));
+                    }
+                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), workflowVersion.getWorkingDirectory());
                     return Response.ok().entity(toolFiles).build();
                 } else {
                     return Response.noContent().build();
@@ -852,7 +894,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     primaryDescriptorPaths.add(tag.getCwlPath());
                     primaryDescriptorPaths.add(tag.getWdlPath());
                     Set<SourceFile> sourceFiles = tag.getSourceFiles();
-                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, tag.getWorkingDirectory());
+                    if ("zip".equalsIgnoreCase(format) || consumesHeaderZipOnly) {
+                        return getZipResponse(sourceFiles, tool.getToolPath(), tag.getName(), Paths.get(tag.getWorkingDirectory()));
+                    }
+                    List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type.toString(), tag.getWorkingDirectory());
                     return Response.ok().entity(toolFiles).build();
                 } else {
                     return Response.noContent().build();
@@ -863,6 +908,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } finally {
             versionDAO.disableNameFilter();
         }
+    }
+
+    private Response getZipResponse(Set<SourceFile> sourceFiles, String dockstoreID, String name, Path path) {
+        String fileName = EntryVersionHelper.generateZipFileName(dockstoreID, name);
+
+        return Response.ok().entity((StreamingOutput) output -> EntryVersionHelper.writeStreamAsZipStatic(sourceFiles, output, path))
+            .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 
     /**
@@ -904,6 +956,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             ToolFile toolFile = new ToolFile();
             toolFile.setPath(path.relativize(Paths.get(file.getAbsolutePath())).toString());
             ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
+            // arbitrarily pick first checksum, seems like bug in specification, should probably be array
+            final List<Checksum> checksums = convertToTRSChecksums(file);
+            if (!checksums.isEmpty()) {
+                toolFile.setChecksum(checksums.get(0));
+            }
             if (fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) && mainDescriptor.contains(file.getPath())) {
                 fileTypeEnum = ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
             }
@@ -918,6 +975,23 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     /**
+     * Safe version of io.openapi.model.DescriptorTypeWithPlain.DescriptorTypeWithPlain
+     * @param type
+     * @return
+     */
+    public static DescriptorTypeWithPlain safeDescriptorTypeWithPlainfromValue(String type) {
+        if (type == null) {
+            return null;
+        }
+        for (DescriptorTypeWithPlain b : DescriptorTypeWithPlain.values()) {
+            if (String.valueOf(b.toString()).equalsIgnoreCase(type.replace("-", "_"))) {
+                return b;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Used to parse localised IDs (no URL)
      * If tool, the id will look something like "registry.hub.docker.com/sequenza/sequenza"
      * If workflow, the id will look something like "#workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
@@ -926,7 +1000,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * and services have a "#service" prepended to it.
      */
     public static class ParsedRegistryID {
-        private enum ToolType { TOOL, SERVICE, WORKFLOW
+        private enum ToolType { TOOL, SERVICE, WORKFLOW, NOTEBOOK
         }
 
         private ToolType type = ToolType.TOOL;
@@ -949,6 +1023,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 list.remove(0); // Remove #service from ArrayList to make parsing similar to tool
                 type = ToolType.SERVICE;
             }
+            if (NOTEBOOK_PREFIX.equalsIgnoreCase(firstTextSegment)) {
+                list.remove(0); // Remove #notebook from ArrayList to make parsing similar to tool
+                type = ToolType.NOTEBOOK;
+            }
             checkToolId(list);
             registry = list.get(0);
             organization = list.get(1);
@@ -967,7 +1045,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (toolIdStringSegments.size() < SEGMENTS_IN_ID) {
                 Error error = new Error();
                 error.setCode(HttpStatus.SC_BAD_REQUEST);
-                error.setMessage("Tool ID should have at least 3 separate segments, seperated by /");
+                error.setMessage("Tool ID should have at least 3 separate segments, separated by /");
                 Response errorResponse = Response.status(HttpStatus.SC_BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON).build();
                 throw new WebApplicationException(errorResponse);
             }
@@ -1009,16 +1087,31 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         public final long numWorkflows;
         public final long numAppTools;
         public final long numServices;
+        public final long numNotebooks;
 
-        NumberOfEntityTypes(long numTools, long numWorkflows, long numAppTools, long numServices) {
+        NumberOfEntityTypes(long numTools, long numWorkflows, long numAppTools, long numServices, long numNotebooks) {
             this.numTools = numTools;
             this.numWorkflows = numWorkflows;
             this.numAppTools = numAppTools;
             this.numServices = numServices;
+            this.numNotebooks = numNotebooks;
         }
 
         public long sum() {
-            return numTools + numWorkflows + numAppTools + numServices;
+            return numTools + numWorkflows + numAppTools + numServices + numNotebooks;
         }
+    }
+
+    /**
+     * Placeholder for proper implementation of ImageType.
+     * Fill in with DescriptorType and ImageType
+     * DOCK-5248
+     */
+    @JsonInclude(Include.NON_EMPTY)
+    public static class EmptyImageType implements OneOfFileWrapperImageType {
+    }
+
+    private record EntryTypeDAOAndStats(String trsClassName, EntryDAO<? extends Entry<?, ?>> dao, Long numEntries) {
+
     }
 }

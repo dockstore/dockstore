@@ -1,0 +1,51 @@
+{
+  "bam_cram_file": {
+    "class": "File",
+    "path": "gs://topmed_workflow_testing/topmed_variant_caller/input_files/NWD176325.recab.cram",
+    "secondaryFiles": [
+      {
+        "class": "File",
+        "path": "gs://topmed_workflow_testing/topmed_variant_caller/input_files/NWD176325.recab.cram.crai"
+      }
+    ]
+  },
+  "reference": {
+    "class": "File",
+    "path": "gs://topmed_workflow_testing/topmed_variant_caller/reference_files/hg38/hs38DH.fa",
+    "secondaryFiles": [
+      {
+        "path": "gs://topmed_workflow_testing/topmed_variant_caller/reference_files/hg38/hs38DH.fa.fai",
+        "class": "File"
+      }
+    ]
+  },
+  "reference_genome": "hg38",
+  "chromosomes": [
+    "20"
+  ],
+  "discover_unit": 20000000,
+  "genotype_unit": 1000000,
+  "num_of_jobs": 4,
+  "reference_file": {
+    "class": "File",
+    "path": "gs://topmed_workflow_testing/topmed_variant_caller/reference_files/hg38/hs38DH-db142-v1.tgz"
+  },
+  "reads": [
+    {
+      "path": "https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/data_for_testing/hg19.chr22.5x.normal.bam",
+      "basename": "hg19.chr22.5x.normal.bam",
+      "class": "File"
+    },
+    {
+      "path": "https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/data_for_testing/hg19.chr22.5x.normal2.bam",
+      "basename": "hg19.chr22.5x.normal2.bam",
+      "class": "File",
+      "secondaryFiles": [
+        {
+          "class": "File",
+          "path": "gs://bcbiodata/wes_agha_test/NA12878-ready_exome21.bam.bai"
+        }
+      ]
+    }
+  ]
+}

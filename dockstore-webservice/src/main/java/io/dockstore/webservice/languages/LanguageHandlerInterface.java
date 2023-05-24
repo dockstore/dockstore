@@ -29,18 +29,19 @@ import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.dockerhub.DockerHubImage;
 import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
+import io.dockstore.webservice.helpers.CheckUrlInterface;
 import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.DockerRegistryAPIHelper;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import io.swagger.quay.client.ApiClient;
 import io.swagger.quay.client.ApiException;
-import io.swagger.quay.client.Configuration;
 import io.swagger.quay.client.model.QuayTag;
 import java.io.IOException;
 import java.net.URL;
@@ -73,11 +74,9 @@ import org.yaml.snakeyaml.error.YAMLException;
  * This interface will be the future home of all methods that will need to be added to support a new workflow language
  */
 public interface LanguageHandlerInterface {
-    String QUAY_URL = "https://quay.io/api/v1/";
     String DOCKERHUB_URL = AbstractImageRegistry.DOCKERHUB_URL;
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
     Gson GSON = new Gson();
-    ApiClient API_CLIENT = Configuration.getDefaultApiClient();
     // public.ecr.aws/<registry_alias>/<repository_name>:<image_tag> -> public.ecr.aws/ubuntu/ubuntu:18.04
     // public.ecr.aws/<registry_alias>/<repository_name>@sha256:<image_digest>
     Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)([a-z0-9._-]++)/([a-z0-9._/-]++)(:|@sha256:)(.++)");
@@ -114,7 +113,7 @@ public interface LanguageHandlerInterface {
      * @param primaryDescriptorFilePath Primary descriptor path
      * @return Is a valid workflow set, error message
      */
-    VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+    VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, Workflow workflow);
 
     /**
      * Validates a tool set for the workflow described by with primaryDescriptorFilePath
@@ -137,12 +136,29 @@ public interface LanguageHandlerInterface {
      * @param repositoryId            identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param content                 content of the primary descriptor
      * @param version                 version of the files to get
-     * @param sourceCodeRepoInterface used too retrieve imports
+     * @param sourceCodeRepoInterface used to retrieve imports
      * @param filepath                used to help find relative imports, must be absolute
      * @return map of file paths to SourceFile objects
      */
     Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath);
+
+    /**
+     * Read and process user-specified files.
+     * @param repositoryId            identifies the git repository that we wish to use, normally something like 'organization/repo_name'
+     * @param paths                   paths of the user-specified files
+     * @param version                 version of the files to get
+     * @param sourceCodeRepoInterface used to retrieve files
+     * @param excludePaths            paths to exclude
+     * @return map of file paths to user-specified SourceFile objects
+     */
+    default Map<String, SourceFile> processUserFiles(String repositoryId, List<String> paths, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> excludePaths) {
+        if (paths != null && !paths.isEmpty()) {
+            LOG.error("This language does not support user-specified files");
+            throw new CustomWebApplicationException("This language does not support user-specified files", HttpStatus.SC_BAD_REQUEST);
+        }
+        return Map.of();
+    }
 
     /**
      * Processes a descriptor and its associated secondary descriptors to either return the tools that a workflow has or a DAG representation
@@ -184,11 +200,7 @@ public interface LanguageHandlerInterface {
 
     default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         Optional<String> content = getContent(mainDescriptorPath, mainDescriptor, secondarySourceFiles, type, dao);
-        if (content.isPresent()) {
-            return DAGHelper.cleanDAG(content.get());
-        } else {
-            return null;
-        }
+        return content.map(DAGHelper::cleanDAG).orElse(null);
     }
 
     default ParsedInformation getParsedInformation(Version version, DescriptorLanguage descriptorLanguage) {
@@ -860,7 +872,7 @@ public interface LanguageHandlerInterface {
      * Terrible refactor in progress.
      * This code is used by both WDL and Nextflow to deal with the maps that we create for them.
      *
-     * @param mainDescName    the filename of the main desciptor, used in the DAG list to indicate which tasks live in which descriptors
+     * @param mainDescName    the filename of the main descriptor, used in the DAG list to indicate which tasks live in which descriptors
      * @param type            are we handling DAG or tools listing
      * @param dao             data access to tools
      * @param callType        ?
@@ -939,6 +951,22 @@ public interface LanguageHandlerInterface {
             return Optional.of(getJSONTableToolContent(nodeDockerInfo));
         }
 
+        return Optional.empty();
+    }
+
+    /**
+     * Indicates if the workflow version can be run without access controlled data. This includes
+     * <ul>
+     *     <li>A workflow with no input parameters</li>
+     *     <li>A workflow with input parameters, but none of them are file parameters</li>
+     *     <li>A workflow with file input parameters, and at least one test parameter file that has
+     *     publicly accessible urls for every file input parameter</li>
+     * </ul>
+     * @param workflowVersion
+     * @param checkUrlInterface
+     * @return if unable to determine, Optional.empty(), otherwise an non-empty boolean
+     */
+    default Optional<Boolean> isOpenData(WorkflowVersion workflowVersion, final CheckUrlInterface checkUrlInterface) {
         return Optional.empty();
     }
 

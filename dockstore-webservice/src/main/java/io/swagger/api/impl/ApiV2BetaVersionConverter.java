@@ -26,6 +26,7 @@ import io.swagger.model.Metadata;
 import io.swagger.model.MetadataV1;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolClass;
+import io.swagger.model.ToolFile;
 import io.swagger.model.ToolVersion;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -76,6 +77,10 @@ public final class ApiV2BetaVersionConverter {
                 } else if (innerObject instanceof io.openapi.model.ExtendedFileWrapper) {
                     Object extendedWrapperConverted = getWrapper((io.openapi.model.ExtendedFileWrapper)innerObject);
                     newArrayList.add(extendedWrapperConverted);
+                } else if (innerObject instanceof io.openapi.model.ToolFile) {
+                    io.openapi.model.ToolFile toolFile = (io.openapi.model.ToolFile) innerObject;
+                    final ToolFile oldToolFile = getOldToolFile(toolFile);
+                    newArrayList.add(oldToolFile);
                 } else {
                     newArrayList.add(innerObject);
                 }
@@ -176,6 +181,13 @@ public final class ApiV2BetaVersionConverter {
         oldWrapper.setContent(wrapper.getContent());
         oldWrapper.setUrl(wrapper.getUrl());
         return oldWrapper;
+    }
+
+    public static ToolFile getOldToolFile(io.openapi.model.ToolFile toolFile) {
+        ToolFile oldWToolFile = new ToolFile();
+        oldWToolFile.fileType(io.swagger.model.ToolFile.FileTypeEnum.fromValue(toolFile.getFileType().toString()));
+        oldWToolFile.path(toolFile.getPath());
+        return oldWToolFile;
     }
 
     public static ExtendedFileWrapper getWrapper(io.openapi.model.ExtendedFileWrapper wrapper) {

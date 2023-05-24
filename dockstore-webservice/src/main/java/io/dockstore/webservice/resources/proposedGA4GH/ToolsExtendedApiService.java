@@ -15,7 +15,13 @@
  */
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import io.dockstore.webservice.core.Partner;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
+import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.api.NotFoundException;
+import java.util.Map;
+import java.util.Optional;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -37,5 +43,8 @@ public abstract class ToolsExtendedApiService {
     @SuppressWarnings("checkstyle:ParameterNumber")
     public abstract Response setSourceFileMetadata(String type, String id, String versionId, String relativePath, String platform, String platformVersion, Boolean verified, String metadata);
 
+    public abstract Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions);
 
+    public abstract Response setAggregatedMetrics(String id, String versionId, Partner platform, Metrics aggregatedMetrics);
+    public abstract Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId, Optional<User> user) throws NotFoundException;
 }

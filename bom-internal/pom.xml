@@ -28,7 +28,7 @@ This BOM's (dependency management element) is imported into the top level dockst
 dockstore-cli pom.xml files
 
 The dependencyManagement sections are located in the top level parent POM, and the
-dependecyManagement section is inherited by the other POMs that have the top level
+dependencyManagement section is inherited by the other POMs that have the top level
 POM as their parent.
 -->
 
@@ -48,37 +48,40 @@ POM as their parent.
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
-        <revision>1.13</revision>
+        <revision>1.14</revision>
         <changelist>.0-SNAPSHOT</changelist>
 
-        <dropwizard.version>2.1.3</dropwizard.version>
-        <dropwizard-annotations.version>4.2.12</dropwizard-annotations.version>
+        <dropwizard.version>2.1.5</dropwizard.version>
+        <dropwizard-annotations.version>4.2.17</dropwizard-annotations.version>
         <elasticsearch-version>7.10.2</elasticsearch-version>
-        <swagger-annotations-version>1.6.5</swagger-annotations-version>
-        <openapi-annotations-version>2.1.13</openapi-annotations-version>
+        <swagger-annotations-version>1.6.8</swagger-annotations-version>
+        <openapi-annotations-version>2.2.4</openapi-annotations-version>
         <assertj.version>3.14.0</assertj.version>
-        <junit-version>4.13.1</junit-version>
+        <junit-version>4.13.2</junit-version>
+        <junit5-version>5.9.1</junit5-version>
+        <hoverfly-version>0.14.0</hoverfly-version>
         <logback.version>1.2.11</logback.version>
         <aws.version>2.17.186</aws.version>
-        <powermock.version>2.0.4</powermock.version>
-        <postgresql.version>42.4.1</postgresql.version>
+        <powermock.version>2.0.9</powermock.version>
+        <postgresql.version>42.4.3</postgresql.version>
         <mockito.version>3.12.4</mockito.version>
         <cwlavro.version>2.0.4.7</cwlavro.version>
         <okhttp.version>4.10.0</okhttp.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <swagger-ui.version>3.25.0</swagger-ui.version>
-        <httpcomponents.version>4.5.13</httpcomponents.version>
-        <httpcore.version>4.4.15</httpcore.version>
+        <httpcomponents.version>4.5.14</httpcomponents.version>
+        <httpcore.version>4.4.16</httpcore.version>
         <httpasyncclient.version>4.1.4</httpasyncclient.version>
-        <jetty-servlet.version>9.4.49.v20220914</jetty-servlet.version>
-        <jersey.version>2.37</jersey.version>
+        <jetty-servlet.version>9.4.50.v20221201</jetty-servlet.version>
+        <jersey.version>2.39</jersey.version>
         <netty.version>4.1.72.Final</netty.version>
-        <scala.version>2.12.15</scala.version>
-        <bytebuddy.version>1.12.18</bytebuddy.version>
+        <scala.version>2.13.9</scala.version>
+        <bytebuddy.version>1.14.0</bytebuddy.version>
 <!--        Cromwell versions can be found at https://broadinstitute.jfrog.io/ui/native/libs-release-local/org/broadinstitute/-->
-        <cromwell.version>77</cromwell.version>
-        <jackson.version>2.13.4</jackson.version>
+        <cromwell.version>84</cromwell.version>
+        <jackson.version>2.13.5</jackson.version>
         <docker-client.version>3.2.8</docker-client.version>
+        <system-stubs.version>2.0.1</system-stubs.version>
+        <jjwt.suite.version>0.11.5</jjwt.suite.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
@@ -117,7 +120,7 @@ POM as their parent.
         <dependencies>
             <dependency>
                 <groupId>io.circe</groupId>
-                <artifactId>circe-parser_2.12</artifactId>
+                <artifactId>circe-parser_2.13</artifactId>
                 <version>0.14.1</version>
             </dependency>
             <!-- Specify newer version of reflections to pass pgpverify-maven-plugin check -->
@@ -141,11 +144,11 @@ POM as their parent.
             <dependency>
                 <groupId>com.beust</groupId>
                 <artifactId>jcommander</artifactId>
-                <version>1.78</version>
+                <version>1.82</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
+                <artifactId>cromwell-wdl-transforms-draft3_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
@@ -156,37 +159,37 @@ POM as their parent.
 
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>wdl-draft3_2.12</artifactId>
+                <artifactId>wdl-draft3_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>wdl-draft2_2.12</artifactId>
+                <artifactId>wdl-draft2_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-wdl-transforms-new-base_2.12</artifactId>
+                <artifactId>cromwell-wdl-transforms-new-base_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-wdl-model-draft3_2.12</artifactId>
+                <artifactId>cromwell-wdl-model-draft3_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-wdl-model-draft2_2.12</artifactId>
+                <artifactId>cromwell-wdl-model-draft2_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>wdl-biscayne_2.12</artifactId>
+                <artifactId>wdl-biscayne_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>language-factory-core_2.12</artifactId>
+                <artifactId>language-factory-core_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
@@ -196,17 +199,17 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-core_2.12</artifactId>
+                <artifactId>cromwell-core_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-wom_2.12</artifactId>
+                <artifactId>cromwell-wom_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
-                <artifactId>cromwell-common_2.12</artifactId>
+                <artifactId>cromwell-common_2.13</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
             <dependency>
@@ -216,14 +219,14 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>com.chuusai</groupId>
-                <artifactId>shapeless_2.12</artifactId>
+                <artifactId>shapeless_2.13</artifactId>
                 <version>2.3.7</version>
             </dependency>
 
             <dependency>
                 <groupId>org.typelevel</groupId>
-                <artifactId>cats-core_2.12</artifactId>
-                <version>2.6.1</version>
+                <artifactId>cats-core_2.13</artifactId>
+                <version>2.7.0</version>
             </dependency>
 
             <dependency>
@@ -239,7 +242,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-vfs2</artifactId>
-                <version>2.3</version>
+                <version>2.9.0</version>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.json-simple</groupId>
@@ -273,8 +276,15 @@ POM as their parent.
             <dependency>
                 <groupId>io.specto</groupId>
                 <artifactId>hoverfly-java</artifactId>
-                <version>0.14.0</version>
+                <version>${hoverfly-version}</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/io.specto/hoverfly-java-junit5 -->
+            <dependency>
+                <groupId>io.specto</groupId>
+                <artifactId>hoverfly-java-junit5</artifactId>
+                <version>${hoverfly-version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>com.github.stefanbirkner</groupId>
                 <artifactId>system-rules</artifactId>
@@ -287,6 +297,24 @@ POM as their parent.
                     </exclusion>
                 </exclusions>
             </dependency>
+
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-inline</artifactId>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>uk.org.webcompere</groupId>
+                <artifactId>system-stubs-core</artifactId>
+                <version>${system-stubs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>uk.org.webcompere</groupId>
+                <artifactId>system-stubs-jupiter</artifactId>
+                <version>${system-stubs.version}</version>
+            </dependency>
+
+
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
@@ -319,6 +347,15 @@ POM as their parent.
                 <artifactId>aws-encryption-sdk-java</artifactId>
                 <version>2.4.0</version>
             </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.junit/junit-bom -->
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit5-version}</version>
+                <type>pom</type>
+            </dependency>
+
 
             <dependency>
                 <groupId>org.reactivestreams</groupId>
@@ -372,7 +409,7 @@ POM as their parent.
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.11.2</version>
+                <version>2.12.2</version>
             </dependency>
 
             <dependency>
@@ -467,12 +504,12 @@ POM as their parent.
             <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
-                <version>7.0.0-beta1</version>
+                <version>7.7.0</version>
             </dependency>
             <dependency>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
-                <version>4.7.1</version>
+                <version>4.7.3</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jaxb</groupId>
@@ -492,7 +529,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.25.0</version>
+                <version>3.31.0</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.annotation</groupId>
@@ -578,10 +615,16 @@ POM as their parent.
                 <version>${junit-version}</version>
                 <scope>test</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>3.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>3.2.2</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
@@ -613,7 +656,7 @@ POM as their parent.
             <dependency>
                 <groupId>cloud.localstack</groupId>
                 <artifactId>localstack-utils</artifactId>
-                <version>0.1.19</version>
+                <version>0.2.22</version>
                 <scope>test</scope>
             </dependency>
 
@@ -718,6 +761,11 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest</artifactId>
+                <version>2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>1.3</version>
             </dependency>
@@ -798,7 +846,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.jvnet.mimepull</groupId>
                 <artifactId>mimepull</artifactId>
-                <version>1.9.13</version>
+                <version>1.9.15</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
@@ -807,19 +855,19 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>io.spray</groupId>
-                <artifactId>spray-json_2.12</artifactId>
+                <artifactId>spray-json_2.13</artifactId>
                 <version>1.3.6</version>
             </dependency>
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.31</version>
+                <version>1.33</version>
             </dependency>
 
             <dependency>
                 <groupId>commons-net</groupId>
                 <artifactId>commons-net</artifactId>
-                <version>3.3</version>
+                <version>3.9.0</version>
             </dependency>
 
             <!--  cwl management -->
@@ -919,7 +967,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20180130</version>
+                <version>20230227</version>
             </dependency>
             <dependency>
                 <groupId>org.pf4j</groupId>
@@ -967,11 +1015,10 @@ POM as their parent.
                 <artifactId>jaxb-impl</artifactId>
                 <version>2.2.8</version>
             </dependency>
-            <!-- CVE-2018-1000180 -->
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
-                <version>1.67</version>
+                <version>1.69</version>
             </dependency>
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
@@ -1220,7 +1267,25 @@ POM as their parent.
             <dependency>
                 <groupId>org.kohsuke</groupId>
                 <artifactId>github-api</artifactId>
-                <version>1.123</version>
+                <version>1.313</version>
+            </dependency>
+            <!-- used for github-api build-in handing of JWTtokens -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.suite.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.suite.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.suite.version}</version>
             </dependency>
 
             <dependency>
@@ -1238,6 +1303,22 @@ POM as their parent.
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <installAtEnd>true</installAtEnd>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <deployAtEnd>true</deployAtEnd>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>

@@ -41,6 +41,8 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -71,19 +73,45 @@ public abstract class SourceCodeRepoInterface {
     String gitUsername;
 
     /**
-     * Tries to get the README contents
+     * Tries to get the ReadMe contents
      * First gets all the file names, then see if any of them matches the README regex
      * @param repositoryId
      * @param branch
+     * @param overrideLocation if present, use this location instead of the root
      * @return
      */
-    public String getREADMEContent(String repositoryId, String branch) {
-        List<String> strings = this.listFiles(repositoryId, "/", branch);
-        if (strings == null) {
-            return null;
+    public String getReadMeContent(String repositoryId, String branch, String overrideLocation) {
+
+        Optional<String> first;
+        if (!Strings.isNullOrEmpty(overrideLocation)) {
+            first = checkForReadMeInDirectory(repositoryId, branch, overrideLocation);
+            if (first.isEmpty()) {
+                return null;
+            }
+        } else {
+            List<String> strings = this.listFiles(repositoryId, "/", branch);
+            if (strings == null) {
+                return null;
+            }
+            first = strings.stream().filter(SourceCodeRepoInterface::matchesREADME).findFirst();
         }
-        Optional<String> first = strings.stream().filter(SourceCodeRepoInterface::matchesREADME).findFirst();
         return first.map(s -> this.readFile(repositoryId, s, branch)).orElse(null);
+    }
+
+    /**
+     * Look for a readme file in a potentially cached directory/overrideLocation
+     * @param repositoryId
+     * @param branch
+     * @param overrideLocation
+     * @return
+     */
+    private Optional<String> checkForReadMeInDirectory(String repositoryId, String branch, String overrideLocation) {
+        final Path overridePath = Paths.get(overrideLocation);
+        List<String> strings = this.listFiles(repositoryId, overridePath.getParent().toString(), branch);
+        if (strings == null) {
+            return Optional.empty();
+        }
+        return strings.stream().map(f -> Paths.get(overridePath.getParent().toString(), f).toString()).filter(overrideLocation::equals).findFirst();
     }
 
     public static boolean matchesREADME(String filename) {
@@ -154,6 +182,44 @@ public abstract class SourceCodeRepoInterface {
         }
         return Optional.empty();
     }
+
+    private List<String> prependPath(String path, List<String> names) {
+        String normalizedPath = path.endsWith("/") ? path : path + "/";
+        return names.stream().map(name -> normalizedPath + name).toList();
+    }
+
+    /**
+     * Read the specified file or directory and convert it to a list of SourceFiles.
+     * If the specified path is a file, a list containing the single corresponding SourceFile is returned.
+     * If the specified path is a directory, it is searched recursively and a SourceFile corresponding to each file is returned.
+     * If the specified path is neither a file or directory, or if the path is excluded, an empty list is returned.
+     */
+    public List<SourceFile> readPath(String repositoryId, Version<?> version, DescriptorLanguage.FileType fileType, Set<String> excludePaths, String path) {
+        // If the path is excluded, return an empty list.
+        if (excludePaths.contains(path)) {
+            return List.of();
+        }
+        // Attempt to read the path as a file, and if we're successful, return it.
+        Optional<SourceFile> file = readFile(repositoryId, version, fileType, path);
+        if (file.isPresent()) {
+            return List.of(file.get());
+        }
+        // Attempt to list the contents of the path as if it was a directory, and if we're successful, read the contents.
+        List<String> names = listFiles(repositoryId, path, version.getReference());
+        if (names != null) {
+            return readPaths(repositoryId, version, fileType, excludePaths, prependPath(path, names));
+        }
+        // We couldn't read the path, return an empty list.
+        return List.of();
+    }
+
+    /**
+     * Read the specified list of files and directories.
+     */
+    public List<SourceFile> readPaths(String repositoryId, Version<?> version, DescriptorLanguage.FileType fileType, Set<String> excludePaths, List<String> paths) {
+        return paths.stream().flatMap(path -> readPath(repositoryId, version, fileType, excludePaths, path).stream()).toList();
+    }
+
 
     /**
      * For Nextflow workflows, they seem to auto-import the contents of the lib and bin directories
@@ -433,9 +499,9 @@ public abstract class SourceCodeRepoInterface {
                 LOG.info(message);
             }
             if (version.getReference() != null) {
-                String readmeContent = getREADMEContent(repositoryId, version.getReference());
-                if (StringUtils.isNotBlank(readmeContent)) {
-                    version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                String readMeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
+                if (StringUtils.isNotBlank(readMeContent)) {
+                    version.setDescriptionAndDescriptionSource(readMeContent, DescriptionSource.README);
                 }
             }
             return;
@@ -446,13 +512,13 @@ public abstract class SourceCodeRepoInterface {
             fileContent = first.get().getContent();
             LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
             anInterface.parseWorkflowContent(filePath, fileContent, sourceFiles, version);
-            // Previously, version has no description
             boolean noDescription = (version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null;
-            // Previously, version has a README description
-            boolean oldREADMEDescription = (DescriptionSource.README == version.getDescriptionSource());
-            // Checking these conditions to prevent overwriting description from descriptor
-            if (noDescription || oldREADMEDescription) {
-                String readmeContent = getREADMEContent(repositoryId, version.getReference());
+            String readmeContent = getReadMeContent(repositoryId, version.getReference(), version.getReadMePath());
+            if (!Strings.isNullOrEmpty(version.getReadMePath())) {
+                // overwrite description from descriptor if there is a custom path specified in the .dockstore.yml
+                version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.CUSTOM_README);
+            } else if (noDescription) {
+                // use the root README as a fallback if there is no other description
                 if (StringUtils.isNotBlank(readmeContent)) {
                     version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
                 }
@@ -476,6 +542,8 @@ public abstract class SourceCodeRepoInterface {
      * @return Branch of interest
      */
     public abstract String getMainBranch(Entry<?, ?> entry, String repositoryId);
+
+    public abstract String getDefaultBranch(String repositoryId);
 
     /**
 
@@ -554,9 +622,12 @@ public abstract class SourceCodeRepoInterface {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         if (sourceFile != null && sourceFile.getContent() != null) {
-            final Map<String, SourceFile> stringSourceFileMap = this
-                .resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version, sourceFile.getPath());
-            sourceFileSet.addAll(stringSourceFileMap.values());
+            final Map<String, SourceFile> importFileMap = 
+                resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version, sourceFile.getPath());
+            sourceFileSet.addAll(importFileMap.values());
+            final Map<String, SourceFile> otherFileMap = 
+                resolveUserFiles(repositoryId, identifiedType, version, importFileMap.keySet());
+            sourceFileSet.addAll(otherFileMap.values());
         }
 
         // Look for test parameter files if existing workflow
@@ -565,13 +636,16 @@ public abstract class SourceCodeRepoInterface {
             DescriptorLanguage.FileType workflowDescriptorType = workflow.getTestParameterType();
 
             List<SourceFile> testParameterFiles = existingVersion.getSourceFiles().stream()
-                .filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(Collectors.toList());
+                .filter((SourceFile u) -> u.getType() == workflowDescriptorType).toList();
             testParameterFiles
                 .forEach(file -> this.readFile(repositoryId, existingVersion, sourceFileSet, workflowDescriptorType, file.getPath()));
         }
 
         // If source file is found and valid then add it
         if (sourceFile != null && sourceFile.getContent() != null) {
+            // carry over metadata from plugins
+            final Optional<SourceFile> matchingFile = sourceFileSet.stream().filter(f -> f.getPath().equals(sourceFile.getPath())).findFirst();
+            matchingFile.ifPresent(file -> sourceFile.getMetadata().setTypeVersion(file.getMetadata().getTypeVersion()));
             version.getSourceFiles().add(sourceFile);
         }
 
@@ -660,6 +734,11 @@ public abstract class SourceCodeRepoInterface {
         return languageInterface.processImports(repositoryId, content, version, this, filepath);
     }
 
+    public Map<String, SourceFile> resolveUserFiles(String repositoryId, DescriptorLanguage.FileType fileType, Version<?> version, Set<String> excludePaths) {
+        LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
+        return languageInterface.processUserFiles(repositoryId, version.getUserFiles(), version, this, excludePaths);
+    }
+
     /**
      * The following methods were duplicated code, but are not well designed for this interface
      */
@@ -717,7 +796,7 @@ public abstract class SourceCodeRepoInterface {
             if (entry.getEntryType() == EntryType.APPTOOL) {
                 validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateToolSet(sourceFiles, mainDescriptorPath);
             } else {
-                validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+                validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath, entry);
             }
             Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
             version.addOrUpdateValidation(descriptorValidation);
@@ -745,17 +824,87 @@ public abstract class SourceCodeRepoInterface {
      * @param version Version to check validation
      * @return True if valid workflow version, false otherwise
      */
-    private boolean isValidVersion(WorkflowVersion version) {
+    public boolean isValidVersion(WorkflowVersion version) {
         return version.getValidations().stream().filter(validation -> !Objects.equals(validation.getType(),
                 DescriptorLanguage.FileType.DOCKSTORE_YML)).allMatch(Validation::isValid);
     }
 
     /**
-     * Returns
+     * Returns all organizations that the user has repos in and/or belongs to. This includes both
+     * organizations the user is a member of, as well as organizations that the user may not be a
+     * member of, but has been granted permissions to one or more repos in the org.
      * @return
      */
     public Set<String> getOrganizations() {
         return getWorkflowGitUrl2RepositoryId().values().stream()
             .map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns all organizations a user is a member of.
+     * @return
+     */
+    public Set<String> getOrganizationMemberships() {
+        return getOrganizations();
+    }
+
+    /**
+     * Returns a list of repos that the user has repo-level access to, i.e., the user does not have
+     * permissions based on the organization, but specifically to those repos
+     * @return
+     */
+    public Set<GitRepo> getRepoLevelAccessRepositories() {
+        final Set<String> organizationMemberships = getOrganizationMemberships();
+        return getWorkflowGitUrl2RepositoryId().values().stream()
+            .map(repository -> {
+                final String[] orgRepo = repository.split("/");
+                return new GitRepo(orgRepo[0], orgRepo[1]);
+            })
+            .filter(gitRepo -> !organizationMemberships.contains(gitRepo.getOrganization()))
+            .collect(Collectors.toSet());
+    }
+
+    public static class GitRepo {
+        private final String organization;
+        private final String repository;
+
+        public GitRepo(final String organization, final String repository) {
+            this.organization = organization;
+            this.repository = repository;
+        }
+
+        public String getOrganization() {
+            return organization;
+        }
+
+        public String getRepository() {
+            return repository;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final GitRepo gitRepo = (GitRepo) o;
+            return Objects.equals(organization, gitRepo.organization) && Objects.equals(
+                repository, gitRepo.repository);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(organization, repository);
+        }
+
+        @Override
+        public String toString() {
+            return "GitRepo{"
+                + "organization='" + organization + '\''
+                + ", repository='" + repository + '\''
+                + '}';
+        }
     }
 }

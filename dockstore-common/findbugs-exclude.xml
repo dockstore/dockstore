@@ -23,4 +23,10 @@
         <!-- conflicts with GSON's use of TypeTokens -->
         <Bug pattern="SE_BAD_FIELD_INNER_CLASS"/>
     </Match>
+    <Match>
+        <!-- There is no field called $outer -->
+        <Source name="WdlBridge.scala"/>
+        <Field name="$outer"/>
+        <Bug pattern="SE_BAD_FIELD"/>
+    </Match>
 </FindBugsFilter>

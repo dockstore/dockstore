@@ -28,12 +28,12 @@ import org.slf4j.LoggerFactory;
  *
  * It writes out the input stream to a local file. Unfortunately we can't get the compressed
  * sizes from the request body without saving it to a file first:
- * https://stackoverflow.com/questions/36045421/java-zipentry-getsize-returns-1
+ * <a href="https://stackoverflow.com/questions/36045421/java-zipentry-getsize-returns-1">...</a>
  *
  * For protection,
  * <ol>
  *     <li>Only write up to ZIP_SIZE_LIMIT of bytes to disk.</li>
- *     <li>Look at the the compressed sizes and also only allow up to ZIP_SIZE_LIMIT of bytes</li>
+ *     <li>Look at the compressed sizes and also only allow up to ZIP_SIZE_LIMIT of bytes</li>
  *     <li>Also ensure that there are no more than ZIP_ENTRIES_LIMIT number of entries, e.g., so</li>
  * </ol>
  *
@@ -75,7 +75,7 @@ public final class ZipSourceFileHelper {
             File tempZip = new File(tempDir, "workflow.zip");
             // ByteStreams.limit limits the amount of bytes that can be read from the input stream. No matter how large the input
             // stream, only a max ZIP_SIZE_LIMIT + 1 bytes will be read, and only a max of ZIP_SIZE_LIMIT + 1 bytes will be written to disk.
-            try (InputStream limitStream = ByteStreams.limit(payload, ZIP_SIZE_LIMIT + 1)) {
+            try (InputStream limitStream = ByteStreams.limit(payload, ZIP_SIZE_LIMIT + 1L)) {
                 FileUtils.copyToFile(limitStream, tempZip);
                 if (tempZip.length() > ZIP_SIZE_LIMIT) {
                     throw new CustomWebApplicationException("Request body is too large", HttpStatus.SC_REQUEST_TOO_LONG);
@@ -100,7 +100,7 @@ public final class ZipSourceFileHelper {
     }
 
     protected static void validateZip(ZipFile zipFile, int maxEntries, long maxSize) {
-        if (zipFile.stream().limit(maxEntries + 1).count() > maxEntries) {
+        if (zipFile.stream().limit(maxEntries + 1L).count() > maxEntries) {
             throw new CustomWebApplicationException("Too many entries in the zip", HttpStatus.SC_BAD_REQUEST);
         }
         final Optional<Long> uncompressedSize = zipFile.stream().map(z -> z.getSize()).reduce(Long::sum);

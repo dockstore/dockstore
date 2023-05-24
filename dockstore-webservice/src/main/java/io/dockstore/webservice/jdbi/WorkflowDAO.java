@@ -20,7 +20,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.AppTool;
-import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -198,7 +198,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     public <T extends Workflow> void checkForDuplicateAcrossTables(String path, Class<T> clazz) {
         final List<Workflow> workflows = findByPath(path, false);
         final List<Workflow> filteredWorkflows = workflows.stream()
-            .filter(workflow -> workflow.getClass() != Service.class)
+            .filter(workflow -> workflow.getClass() == BioWorkflow.class || workflow.getClass() == AppTool.class)
             .collect(Collectors.toList());
 
         if (filteredWorkflows.size() > 0) {
@@ -267,6 +267,16 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return list(q);
     }
 
+    public List<Workflow> findByPathWithoutUser(SourceControl sourceControl, String organization, String repository,
+        final User user) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByPathWithoutUser")
+            .setParameter("sourcecontrol", sourceControl)
+            .setParameter("organization", organization)
+            .setParameter("repository", repository)
+            .setParameter("user", user));
+
+    }
+
     public List<Workflow> findByGitUrl(String giturl) {
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
             .setParameter("gitUrl", giturl));
@@ -290,8 +300,22 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
                 .setParameter("sourceControl", sourceControl));
     }
 
+    public List<Workflow> findByOrganizationsWithoutUser(SourceControl sourceControl, List<String> organizations, User user) {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationsWithoutUser")
+            .setParameter("organizations", organizations.stream().map(o -> o.toLowerCase()).collect(Collectors.toList()))
+            .setParameter("user", user)
+            .setParameter("sourceControl", sourceControl));
+    }
+
     public Workflow findByAlias(String alias) {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
+    }
+
+    public List<Workflow> findAllWorkflows(int offset, int pageSize) {
+        return (List<Workflow>) namedQuery("io.dockstore.webservice.core.Workflow.findAllWorkflows")
+            .setMaxResults(pageSize)
+            .setFirstResult(offset)
+            .list();
     }
 
     /**

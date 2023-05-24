@@ -1,0 +1,530 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2022 OICR and UCSC
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.14.0">
+    <changeSet author="ktran (generated)" id="addInvitationStatusColumn">
+        <addColumn tableName="organization_user">
+            <column name="status" type="text"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            <comment>Migrate old organization user accepted column to the new invitation status column</comment>
+            UPDATE organization_user SET status='ACCEPTED' where accepted=true;
+            UPDATE organization_user SET status='PENDING' where accepted=false;
+        </sql>
+        <comment>Purposefully adding the not null constraint after migrating the accepted column so the new status column can be added without specifying a default value</comment>
+        <addNotNullConstraint tableName="organization_user" columnName="status"/>
+        <sql dbms="postgresql">
+            <comment>Create a trigger that syncs the old accepted column with the new status column</comment>
+            CREATE OR REPLACE FUNCTION insert_organization_user_sync_status_func()
+            RETURNS TRIGGER
+            AS
+            '
+            BEGIN
+                IF NEW.status IS NULL THEN
+                    IF NEW.accepted = true THEN
+                        NEW.status := ''ACCEPTED'';
+                    ELSE
+                        NEW.status := ''PENDING'';
+                    END IF;
+                ELSEIF NEW.accepted IS NULL THEN
+                    IF NEW.status = ''ACCEPTED'' THEN
+                        NEW.accepted := true;
+                    ELSE
+                        NEW.accepted := false;
+                    END IF;
+                END IF;
+                RETURN NEW;
+            END;
+            '
+            LANGUAGE plpgsql;
+
+            CREATE OR REPLACE FUNCTION update_organization_user_sync_status_func()
+            RETURNS TRIGGER
+            AS
+            '
+            BEGIN
+                IF OLD.accepted IS DISTINCT FROM NEW.accepted THEN
+                    IF NEW.accepted = true THEN
+                        NEW.status := ''ACCEPTED'';
+                    ELSE
+                        NEW.status := ''PENDING'';
+                    END IF;
+                ELSEIF OLD.status IS DISTINCT FROM NEW.status THEN
+                    IF NEW.status = ''ACCEPTED'' THEN
+                        NEW.accepted := true;
+                    ELSE
+                        NEW.accepted := false;
+                    END IF;
+                END IF;
+                RETURN NEW;
+            END;
+            '
+            LANGUAGE plpgsql;
+
+            CREATE TRIGGER insert_organization_user_sync_status_trigger
+            BEFORE INSERT ON organization_user
+            FOR EACH ROW
+            EXECUTE PROCEDURE insert_organization_user_sync_status_func();
+
+            CREATE TRIGGER update_organization_user_sync_status_trigger
+            BEFORE UPDATE ON organization_user
+            FOR EACH ROW
+            WHEN (OLD.accepted IS DISTINCT FROM NEW.accepted OR OLD.status IS DISTINCT FROM NEW.status)
+            EXECUTE PROCEDURE update_organization_user_sync_status_func();
+        </sql>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addDescriptorTypeVersion">
+        <createTable tableName="sourcefile_metadata">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="sourcefile_metadata_pkey"/>
+            </column>
+            <column name="typeversion" type="text"/>
+        </createTable>
+        <sql dbms="postgresql">
+            insert into sourcefile_metadata (id) select id from sourcefile;
+        </sql>
+        <addForeignKeyConstraint baseTableName="sourcefile_metadata" baseColumnNames="id" constraintName="fk_sourcefile_metadata" referencedTableName="sourcefile" referencedColumnNames="id"/>
+        <addColumn tableName="version_metadata">
+            <column name="descriptortypeversions" type="varchar"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="svonworl" id="addNotebook">
+        <createTable tableName="notebook">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="notebook_pkey"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="conceptdoi" type="VARCHAR(255)"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublished" type="BOOLEAN"/>
+            <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="licensename" type="VARCHAR(255)"/>
+            <column name="topicid" type="BIGINT"/>
+            <column name="checkerid" type="BIGINT"/>
+            <column name="descriptortype" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="n/a" name="descriptortypesubclass" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="forumurl" type="VARCHAR(256)"/>
+            <column defaultValue="STUB" name="mode" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repository" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sourcecontrol" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowname" type="VARCHAR(256)"/>
+            <column name="actualdefaultversion" type="BIGINT"/>
+            <column name="topicautomatic" type="varchar(150 BYTE)"/>
+            <column name="topicmanual" type="varchar(150 BYTE)"/>
+            <column defaultValue="AUTOMATIC" name="topicselection" type="varchar(32 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="notebook" constraintName="fk_defaultversion_notebook" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+        <addUniqueConstraint columnNames="actualdefaultversion" constraintName="uk_actualdefaultversion_notebook" tableName="notebook"/>
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_checkerid_notebook" tableName="notebook"/>
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="notebook" constraintName="fk_checkerid_notebook" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+        <sql dbms="postgresql">
+            CREATE UNIQUE INDEX if not exists full_notebook_name ON notebook USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
+            CREATE UNIQUE INDEX if not exists partial_notebook_name ON notebook USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
+        </sql>
+        <sql dbms="postgresql">
+            CREATE TRIGGER notebook_path_trigger
+            AFTER INSERT
+            ON notebook
+            FOR EACH ROW
+            EXECUTE PROCEDURE workflow_path_insert_trigger_fnc();
+            CREATE TRIGGER notebook_path_deletion_trigger
+            AFTER DELETE
+            ON notebook
+            FOR EACH ROW
+            EXECUTE PROCEDURE workflow_path_deletion_trigger_fnc();
+        </sql>
+    </changeSet>
+    <changeSet author="svonworl" id="addNotebookEvents">
+        <addColumn tableName="event">
+            <column name="notebookid" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="notebookid" baseTableName="event" constraintName="fkNotebookId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="notebook"/>
+    </changeSet>
+    <changeSet author="svonworl" id="addUserFiles">
+        <addColumn tableName="tag">
+            <column name="userfiles" type="varchar"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="userfiles" type="varchar"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addMetrics">
+        <createSequence cacheSize="1" cycle="false" incrementBy="1" maxValue="9223372036854775807" minValue="1" sequenceName="countmetric_id_seq" startValue="1"/>
+        <createSequence cacheSize="1" cycle="false" incrementBy="1" maxValue="9223372036854775807" minValue="1" sequenceName="statisticmetric_id_seq" startValue="1"/>
+
+        <createTable tableName="execution_status">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="executionstatus_pkey"/>
+            </column>
+            <column name="isvalid" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberoffailedexecutions" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberofsuccessfulexecutions" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="execution_status_count">
+            <column name="executionstatusid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="execution_status_count_pkey"/>
+            </column>
+            <column name="count" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="executionstatus" type="varchar(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="execution_status_count_pkey"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="executionstatusid" baseTableName="execution_status_count" constraintName="fk_executionstatusid_execution_status_count" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_status"/>
+
+        <createTable tableName="cpu_metric">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="cpu_metric_pkey"/>
+            </column>
+            <column name="average" type="VARCHAR(255)"/>
+            <column name="maximum" type="VARCHAR(255)"/>
+            <column name="minimum" type="VARCHAR(255)"/>
+            <column name="numberofdatapointsforaverage" type="int"/>
+        </createTable>
+        <createTable tableName="execution_time_metric">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="execution_time_metric_pkey"/>
+            </column>
+            <column name="average" type="VARCHAR(255)"/>
+            <column name="maximum" type="VARCHAR(255)"/>
+            <column name="minimum" type="VARCHAR(255)"/>
+            <column name="numberofdatapointsforaverage" type="int"/>
+        </createTable>
+        <createTable tableName="memory_metric">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="memory_metric_pkey"/>
+            </column>
+            <column name="average" type="VARCHAR(255)"/>
+            <column name="maximum" type="VARCHAR(255)"/>
+            <column name="minimum" type="VARCHAR(255)"/>
+            <column name="numberofdatapointsforaverage" type="int"/>
+        </createTable>
+        <createTable tableName="metrics">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="metrics_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="cpu" type="BIGINT"/>
+            <column name="executionstatuscount" type="BIGINT"/>
+            <column name="executiontime" type="BIGINT"/>
+            <column name="memory" type="BIGINT"/>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="executiontime" baseTableName="metrics" constraintName="fk_executiontime_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_time_metric"/>
+        <addForeignKeyConstraint baseColumnNames="cpu" baseTableName="metrics" constraintName="fk_cpu_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cpu_metric"/>
+        <addForeignKeyConstraint baseColumnNames="memory" baseTableName="metrics" constraintName="fk_memory_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="memory_metric"/>
+        <addForeignKeyConstraint baseColumnNames="executionstatuscount" baseTableName="metrics" constraintName="fk_executionstatuscount_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="execution_status"/>
+
+        <createTable tableName="version_metrics">
+            <column name="versionid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metrics_pkey"/>
+            </column>
+            <column name="metricsid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="platform" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metrics_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="metricsid" constraintName="uk_metricsid_version_metrics" tableName="version_metrics"/>
+        <addForeignKeyConstraint baseColumnNames="metricsid" baseTableName="version_metrics" constraintName="fk_metricsid_version_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="metrics"/>
+    </changeSet>
+    <changeSet id="deleteNonExistentEntries" author="nhyun">
+        <sql dbms="postgresql">
+            DELETE FROM user_entry ue WHERE ue.entryid NOT IN (SELECT id FROM workflow UNION ALL
+                                                               SELECT id FROM apptool UNION ALL
+                                                               SELECT id FROM service UNION ALL
+                                                               SELECT id FROM tool UNION ALL
+                                                               SELECT id FROM notebook);       
+        </sql>
+    </changeSet>
+    <changeSet id="tighten constraint for names" author="dyuen">
+        <validCheckSum>8:c3f62dac8fdb39029443416261f10a9b</validCheckSum>
+        <validCheckSum>8:dc78648569654a8993edb1619c02cb78</validCheckSum>
+        <validCheckSum>8:e0d37f4792acdc1b180651ee3ca92412</validCheckSum>
+        <sql dbms="postgresql">
+            CREATE UNIQUE INDEX case_insensitive_toolname on tool using btree (registry, namespace, name, lower(toolname)) where toolname is not null;
+            CREATE UNIQUE INDEX case_insensitive_apptool_toolname on apptool using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
+            CREATE UNIQUE INDEX case_insensitive_notebook_workflowname on notebook using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
+            -- see https://github.com/dockstore/dockstore/issues/5287, the id may need to be incremented depending on how often people stumble into this
+            -- remember to add new valid checksum values above when changing this limit to avoid a migration failure
+            CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 22054;
+        </sql>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="per_version_readme_path">
+        <addColumn tableName="tag">
+            <column name="readmepath" type="varchar"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="readmepath" type="varchar"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="modifyAndAddColumnsForMetrics">
+        <comment>Add dbcreatedate and dbupdatedate columns for metrics tables that are missing them</comment>
+        <addColumn tableName="execution_status">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cpu_metric">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="memory_metric">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="execution_status">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cpu_metric">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="memory_metric">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+
+        <comment>Add unit columns</comment>
+        <addColumn tableName="cpu_metric">
+            <column name="unit" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="execution_time_metric">
+            <column name="unit" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="memory_metric">
+            <column name="unit" type="varchar(255 BYTE)"/>
+        </addColumn>
+
+        <comment>Modify the datatype of average, maximum, and minimum columns to float8</comment>
+        <modifyDataType columnName="average" newDataType="float8" tableName="cpu_metric"/>
+        <modifyDataType columnName="average" newDataType="float8" tableName="execution_time_metric"/>
+        <modifyDataType columnName="average" newDataType="float8" tableName="memory_metric"/>
+        <modifyDataType columnName="maximum" newDataType="float8" tableName="cpu_metric"/>
+        <modifyDataType columnName="maximum" newDataType="float8" tableName="execution_time_metric"/>
+        <modifyDataType columnName="maximum" newDataType="float8" tableName="memory_metric"/>
+        <modifyDataType columnName="minimum" newDataType="float8" tableName="cpu_metric"/>
+        <modifyDataType columnName="minimum" newDataType="float8" tableName="execution_time_metric"/>
+        <modifyDataType columnName="minimum" newDataType="float8" tableName="memory_metric"/>
+
+        <comment>Add not null constraints for metrics columns missing them</comment>
+        <addNotNullConstraint columnDataType="float8" columnName="average" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="average" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="average" tableName="memory_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="maximum" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="maximum" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="maximum" tableName="memory_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="minimum" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="minimum" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="float8" columnName="minimum" tableName="memory_metric"/>
+        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="cpu_metric"/>
+        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="execution_time_metric"/>
+        <addNotNullConstraint columnDataType="int" columnName="numberofdatapointsforaverage" tableName="memory_metric"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="add_platform_partner">
+        <addColumn tableName="enduser">
+            <column defaultValueBoolean="false" name="platformpartner" type="bool"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="reset open data" author="coverbeck">
+        <update tableName="version_metadata">
+            <!--  Not explicitly specifying a value sets it to null-->
+            <column name="publicaccessibletestparameterfile"></column>
+        </update>
+    </changeSet>
+    <changeSet author="svonworl" id="addKernelImagePathToWorkflowVersion">
+        <addColumn tableName="workflowversion">
+            <column name="kernelimagepath" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="svonworl" id="dropSubclassFromWorkflowVersion">
+        <dropColumn columnName="subclass" tableName="workflowversion"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="default_jointable_timestamps">
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="collection_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="entry_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="organization_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="workflowversion_alias"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="entry_orcidputcode"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="sourcefile_verified"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="user_profile"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="version_metadata_orcidputcode"/>
+    </changeSet>
+    <changeSet id="add engine versions" author="coverbeck">
+        <addColumn tableName="version_metadata">
+            <column name="engineversions" type="varchar"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addValidationMetrics">
+        <createTable tableName="validator_tool_validation_info">
+            <column name="validationstatusid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_info_pkey"/>
+            </column>
+            <column defaultValueComputed="now()" name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="mostrecentisvalid" type="bool">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mostrecentversion" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mostrecenterrormessage" type="TEXT"/>
+            <column name="numberofruns" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="passingrate" type="float8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="failedvalidationversions" type="TEXT"/>
+            <column name="successfulvalidationversions" type="TEXT"/>
+            <column name="validatortool" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_tool_validation_info_pkey"/>
+            </column>
+        </createTable>
+        <createTable tableName="validation_status">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validation_status_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </createTable>
+
+        <addColumn tableName="metrics">
+            <column name="validationstatus" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="validationstatus" baseTableName="metrics" constraintName="fk_validationstatus_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
+        <addForeignKeyConstraint baseColumnNames="validationstatusid" baseTableName="validator_tool_validation_info" constraintName="fk_validationstatusid_validator_tool_validation_info" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="dropVersionMetadataAuthorAndEmail">
+        <dropColumn columnName="author" tableName="version_metadata"/>
+        <dropColumn columnName="email" tableName="version_metadata"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="modifyValidationMetricSchema">
+        <createTable tableName="validator_info">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_info_pkey"/>
+            </column>
+            <column defaultValueComputed="now()" name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="mostrecentversionname" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberofruns" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="passingrate" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="validator_version_info">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validator_version_info_pkey"/>
+            </column>
+            <column name="dateexecuted" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueComputed="now()" name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="errormessage" type="VARCHAR(255)"/>
+            <column name="isvalid" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberofruns" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="passingrate" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="validator_versions">
+            <column name="validatorinfoid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="validatorversioninfoid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="validation_status_validator_info">
+            <column name="validationstatusid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validation_status_validator_info_pkey"/>
+            </column>
+            <column name="validatorinfoid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="validatortool" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="validation_status_validator_info_pkey"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint columnNames="validatorversioninfoid" constraintName="uk_validatorversioninfoid_validator_versions" tableName="validator_versions"/>
+        <addUniqueConstraint columnNames="validatorinfoid" constraintName="uk_validatorinfoid_validation_status_validator_info" tableName="validation_status_validator_info"/>
+
+        <addForeignKeyConstraint baseColumnNames="validatorinfoid" baseTableName="validator_versions" constraintName="fk_validatorinfoid_validator_versions" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validator_info"/>
+        <addForeignKeyConstraint baseColumnNames="validatorinfoid" baseTableName="validation_status_validator_info" constraintName="fk_validatorinfoid_validation_status_validator_info" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validator_info"/>
+        <addForeignKeyConstraint baseColumnNames="validationstatusid" baseTableName="validation_status_validator_info" constraintName="fk_validationstatusid_validation_status_validator_info" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation_status"/>
+        <addForeignKeyConstraint baseColumnNames="validatorversioninfoid" baseTableName="validator_versions" constraintName="fk_validatorversioninfoid_validator_versions" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validator_version_info"/>
+
+        <dropForeignKeyConstraint baseTableName="validator_tool_validation_info" constraintName="fk_validationstatusid_validator_tool_validation_info"/>
+        <dropTable tableName="validator_tool_validation_info"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="dropIsValidColumnForExecutionStatusMetric">
+        <dropColumn columnName="isvalid" tableName="execution_status"/>
+    </changeSet>
+    <changeSet author="ktran" id="setDefaultDescriptorTypeForToolsWithEmptyDescriptorType">
+        <sql dbms="postgresql">
+            UPDATE tool SET descriptortype='CWL' where descriptortype='';
+        </sql>
+        <dropDefaultValue columnDataType="varchar" columnName="descriptortype" tableName="tool"/>
+    </changeSet>
+</databaseChangeLog>

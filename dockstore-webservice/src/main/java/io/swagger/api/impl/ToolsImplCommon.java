@@ -25,9 +25,12 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -36,6 +39,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.openapi.api.impl.ToolsApiServiceImpl;
+import io.openapi.api.impl.ToolsApiServiceImpl.EmptyImageType;
 import io.openapi.model.Checksum;
 import io.openapi.model.DescriptorType;
 import io.openapi.model.ExtendedFileWrapper;
@@ -57,10 +61,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +76,7 @@ import org.slf4j.LoggerFactory;
 public final class ToolsImplCommon {
     public static final String WORKFLOW_PREFIX = "#workflow";
     public static final String SERVICE_PREFIX = "#service";
+    public static final String NOTEBOOK_PREFIX = "#notebook";
     public static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
 
@@ -93,6 +98,7 @@ public final class ToolsImplCommon {
         toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
+        toolDescriptor.setImageType(new EmptyImageType());
         return toolDescriptor;
     }
 
@@ -154,7 +160,7 @@ public final class ToolsImplCommon {
         }
         tool.setAliases(new ArrayList<>(container.getAliases().keySet()));
 
-        for (Version version : inputVersions) {
+        for (Version<?> version : inputVersions) {
             if (shouldHideToolVersion(version, showHiddenTags, container.isHosted())) {
                 continue;
             }
@@ -166,9 +172,11 @@ public final class ToolsImplCommon {
             toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
 
             toolVersion.setSigned(false);
-            final String author = ObjectUtils.firstNonNull(version.getAuthor(), container.getAuthor());
-            if (author != null) {
-                toolVersion.getAuthor().add(author);
+
+            if (!version.getAuthors().isEmpty()) {
+                toolVersion.setAuthor(version.getAuthors().stream().map(Author::getName).toList());
+            } else if (!container.getAuthors().isEmpty()) {
+                toolVersion.setAuthor(container.getAuthors().stream().map(Author::getName).toList());
             }
 
             toolVersion.setImages(MoreObjects.firstNonNull(toolVersion.getImages(), Lists.newArrayList()));
@@ -218,6 +226,8 @@ public final class ToolsImplCommon {
                 if (!descriptorType.isEmpty()) {
                     EnumSet<DescriptorType> set = EnumSet.copyOf(descriptorType);
                     toolVersion.setDescriptorType(Lists.newArrayList(set));
+                    // can assume in Dockstore that a single version only has one language
+                    toolVersion.setDescriptorTypeVersion(Map.of(descriptorType.get(0).toString(), Lists.newArrayList(version.getVersionMetadata().getDescriptorTypeVersions())));
                 }
                 tool.getVersions().add(toolVersion);
             }
@@ -440,10 +450,8 @@ public final class ToolsImplCommon {
     private static String getCheckerWorkflowPath(DockstoreWebserviceConfiguration config, Entry<?, ?> entry) {
         if (entry.getCheckerWorkflow() == null) {
             return null;
-        } else {
-            String newID = WORKFLOW_PREFIX + "/" + entry.getCheckerWorkflow().getWorkflowPath();
-            return getUrlFromId(config, newID);
         }
+        return getUrlFromId(config, getNewId(entry.getCheckerWorkflow()));
     }
 
     /**
@@ -452,22 +460,12 @@ public final class ToolsImplCommon {
      * @param container The Dockstore Entry (Tool or Workflow)
      * @return The new ID of the Tool
      */
-    private static String getNewId(Entry<?, ?> container) {
-        if (container instanceof io.dockstore.webservice.core.Tool) {
-            return ((io.dockstore.webservice.core.Tool)container).getToolPath();
-        } else if (container instanceof AppTool) {
-            return ((AppTool) container).getWorkflowPath();
-        } else if (container instanceof Workflow) {
-            Workflow workflow = (Workflow)container;
-            DescriptorLanguage descriptorType = workflow.getDescriptorType();
-            String workflowPath = workflow.getWorkflowPath();
-            if (descriptorType == DescriptorLanguage.SERVICE) {
-                return SERVICE_PREFIX + "/" + workflowPath;
-            } else {
-                return WORKFLOW_PREFIX + "/" + workflowPath;
-            }
+    private static String getNewId(Entry<?, ?> entry) {
+        EntryTypeMetadata metadata = entry.getEntryTypeMetadata();
+        if (metadata.isTrsSupported()) {
+            return metadata.getTrsPrefix() + entry.getEntryPath();
         } else {
-            LOG.error("Could not construct URL for our container with id: " + container.getId());
+            LOG.error("TRS is not supported for {}, id: {}", metadata.getTermPlural(), entry.getId());
             return null;
         }
     }
@@ -495,7 +493,7 @@ public final class ToolsImplCommon {
     }
 
     /**
-     * Set most of the GA4GH's Tool information that is not dependant on Dockstore's Tags or WorkflowVersions
+     * Set most of the GA4GH's Tool information that is not dependent on Dockstore's Tags or WorkflowVersions
      *
      * @param tool      The GA4GH Tool that will be modified
      * @param container The Dockstore Tool or Workflow
@@ -512,6 +510,8 @@ public final class ToolsImplCommon {
             tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getWorkflowClass());
         } else if (container instanceof Service) {
             tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getServiceClass());
+        } else if (container instanceof Notebook) {
+            tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getNotebookClass());
         } else {
             throw new UnsupportedOperationException("encountered unknown entry type in TRS");
         }
@@ -519,11 +519,6 @@ public final class ToolsImplCommon {
         // Set description
         tool.setDescription(container.getDescription() != null ? container.getDescription() : "");
 
-        // edge case: in Dockstore, a tool with no versions can still have an author but V2 final moved authors to versions of a tool
-        // append it to description
-        if (container.getWorkflowVersions().isEmpty() && container.getAuthor() != null) {
-            tool.setDescription(tool.getDescription() + '\n' + "Author: " + container.getAuthor());
-        }
         return tool;
     }
 

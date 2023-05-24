@@ -1,43 +1,25 @@
 package io.dockstore.common;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * @author gluu
  * @since 14/08/18
  */
-public class PipHelperTest {
+class PipHelperTest {
     @Test
-    public void convertSemVerToAvailableVersion() {
-        Assert.assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion(PipHelper.DEV_SEM_VER));
-        Assert.assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion(null));
-        Assert.assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion("9000.9000.9000"));
-        Assert.assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion("1.13.1"));
-        Assert.assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion("1.13.1-snapshot"));
-        Assert.assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion("1.13.0"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.13.0-snapshot"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.12.0-snapshot"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.12.1"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.12.1-snapshot"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.12.0"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.12.0-snapshot"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.11.1"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.11.0"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.10.0-snapshot"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.10.1"));
-        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.10.0"));
-        Assert.assertEquals("1.7.0", PipHelper.convertSemVerToAvailableVersion("1.9.0"));
-        Assert.assertEquals("1.7.0", PipHelper.convertSemVerToAvailableVersion("1.8.0"));
-        Assert.assertEquals("1.7.0", PipHelper.convertSemVerToAvailableVersion("1.7.0-snapshot"));
-        Assert.assertEquals("1.7.0", PipHelper.convertSemVerToAvailableVersion("1.7.0"));
-        Assert.assertEquals("1.6.0", PipHelper.convertSemVerToAvailableVersion("1.6.0-snapshot"));
-        Assert.assertEquals("1.6.0", PipHelper.convertSemVerToAvailableVersion("1.6.0"));
-        Assert.assertEquals("1.5.0", PipHelper.convertSemVerToAvailableVersion("1.5.0-snapshot"));
-        Assert.assertEquals("1.5.0", PipHelper.convertSemVerToAvailableVersion("1.5.0"));
-        Assert.assertEquals("1.4.0", PipHelper.convertSemVerToAvailableVersion("1.4.0-snapshot"));
-        Assert.assertEquals("1.4.0", PipHelper.convertSemVerToAvailableVersion("1.4.0"));
-        Assert.assertEquals("1.4.0", PipHelper.convertSemVerToAvailableVersion("1.3.0-snapshot"));
-        Assert.assertEquals("1.4.0", PipHelper.convertSemVerToAvailableVersion("1.3.0"));
+    void convertSemVerToAvailableVersion() {
+        assertEquals("1.14.0", PipHelper.convertSemVerToAvailableVersion(PipHelper.DEV_SEM_VER));
+        assertEquals("1.14.0", PipHelper.convertSemVerToAvailableVersion("1.14.1"));
+        assertEquals("1.14.0", PipHelper.convertSemVerToAvailableVersion("1.14.1-snapshot"));
+        assertEquals("1.14.0", PipHelper.convertSemVerToAvailableVersion("1.14.0"));
+        assertEquals("1.14.0", PipHelper.convertSemVerToAvailableVersion(null));
+        assertEquals("1.14.0", PipHelper.convertSemVerToAvailableVersion("9000.9000.9000"));
+        assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion("1.13.1"));
+        assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion("1.13.1-snapshot"));
+        assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion("1.13.0"));
+        assertEquals("1.13.0", PipHelper.convertSemVerToAvailableVersion("1.13.0-snapshot"));
     }
 }

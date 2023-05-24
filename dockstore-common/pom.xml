@@ -29,6 +29,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
         </dependency>
@@ -55,8 +59,13 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -96,11 +105,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.cwl</groupId>
-            <artifactId>cwlavro-tools</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
@@ -118,38 +122,38 @@
 
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>wdl-draft3_2.12</artifactId>
+            <artifactId>wdl-draft3_2.13</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>cats-effect_2.12</artifactId>
+                    <artifactId>cats-effect_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>cats-core_2.12</artifactId>
+                    <artifactId>cats-core_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>alleycats-core_2.12</artifactId>
+                    <artifactId>alleycats-core_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>eu.timepit</groupId>
-                    <artifactId>refined_2.12</artifactId>
+                    <artifactId>refined_2.13</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>wdl-draft2_2.12</artifactId>
+            <artifactId>wdl-draft2_2.13</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>cats-effect_2.12</artifactId>
+                    <artifactId>cats-effect_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>cats-core_2.12</artifactId>
+                    <artifactId>cats-core_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.google.guava</groupId>
@@ -157,11 +161,11 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>alleycats-core_2.12</artifactId>
+                    <artifactId>alleycats-core_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>eu.timepit</groupId>
-                    <artifactId>refined_2.12</artifactId>
+                    <artifactId>refined_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
@@ -172,15 +176,15 @@
 
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>wdl-biscayne_2.12</artifactId>
+            <artifactId>wdl-biscayne_2.13</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>cats-effect_2.12</artifactId>
+                    <artifactId>cats-effect_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>cats-core_2.12</artifactId>
+                    <artifactId>cats-core_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.google.guava</groupId>
@@ -188,11 +192,11 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>alleycats-core_2.12</artifactId>
+                    <artifactId>alleycats-core_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>eu.timepit</groupId>
-                    <artifactId>refined_2.12</artifactId>
+                    <artifactId>refined_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
@@ -204,11 +208,11 @@
 
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>language-factory-core_2.12</artifactId>
+            <artifactId>language-factory-core_2.13</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>cats-effect_2.12</artifactId>
+                    <artifactId>cats-effect_2.13</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -218,7 +222,7 @@
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-core_2.12</artifactId>
+            <artifactId>cromwell-core_2.13</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.guava</groupId>
@@ -230,19 +234,23 @@
                 </exclusion>
                 <exclusion>
                     <groupId>eu.timepit</groupId>
-                    <artifactId>refined_2.12</artifactId>
+                    <artifactId>refined_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>io.circe</groupId>
-                    <artifactId>circe-core_2.12</artifactId>
+                    <artifactId>circe-core_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>cats-core_2.12</artifactId>
+                    <artifactId>cats-core_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
-                    <artifactId>alleycats-core_2.12</artifactId>
+                    <artifactId>alleycats-core_2.13</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>jawn-parser_2.13</artifactId>
                 </exclusion>
                 <!-- probably don't need GCP stuff -->
                 <exclusion>
@@ -253,77 +261,45 @@
                     <groupId>com.google.cloud</groupId>
                     <artifactId>google-cloud-monitoring</artifactId>
                 </exclusion>
-                <!--  Cromwell core pulls in com.fasterxml.jackson.core:jackson-core 2.13.1 which causes error
-                      javax.xml.stream.FactoryConfigurationError: Provider for javax.xml.stream.XMLInputFactory cannot be found
-                      in some integration tests. So exclude the jackson-core version that cromwell pulls in
-                      in favor of the older version of jackson-core specified in bom-internal (2.12.3)
-                      Remove this when jackson-core can be safely upgraded to a newer version
-                -->
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-wom_2.12</artifactId>
-            <exclusions>
-                <!-- Ignore the eu.timepit pulled in by this artifact which
-                 is not needed and requires the Scala 2.12 compiler and which
-                 causes a Scala compiler use warning because all the other
-                 Scala artifacts make use of the 2.13 compiler
-                 -->
-                <exclusion>
-                    <groupId>eu.timepit</groupId>
-                    <artifactId>refined_2.12</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>cromwell-wom_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-common_2.12</artifactId>
-            <exclusions>
-                <!-- Ignore the eu.timepit pulled in by this artifact which
-                 is not needed and requires the Scala 2.12 compiler and which
-                 causes a Scala compiler use warning because all the other
-                 Scala artifacts make use of the 2.13 compiler
-                 -->
-                <exclusion>
-                    <groupId>eu.timepit</groupId>
-                    <artifactId>refined_2.12</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>cromwell-common_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-wdl-transforms-new-base_2.12</artifactId>
+            <artifactId>cromwell-wdl-transforms-new-base_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
+            <artifactId>cromwell-wdl-transforms-draft3_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-wdl-model-draft3_2.12</artifactId>
+            <artifactId>cromwell-wdl-model-draft3_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-wdl-model-draft2_2.12</artifactId>
+            <artifactId>cromwell-wdl-model-draft2_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>com.chuusai</groupId>
-            <artifactId>shapeless_2.12</artifactId>
+            <artifactId>shapeless_2.13</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.typelevel</groupId>
-            <artifactId>cats-core_2.12</artifactId>
+            <artifactId>cats-core_2.13</artifactId>
         </dependency>
 
         <dependency>
             <groupId>io.spray</groupId>
-            <artifactId>spray-json_2.12</artifactId>
+            <artifactId>spray-json_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -331,8 +307,18 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.stefanbirkner</groupId>
-            <artifactId>system-rules</artifactId>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>uk.org.webcompere</groupId>
+            <artifactId>system-stubs-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>uk.org.webcompere</groupId>
+            <artifactId>system-stubs-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

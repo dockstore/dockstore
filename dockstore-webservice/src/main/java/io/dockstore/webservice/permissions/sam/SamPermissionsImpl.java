@@ -39,10 +39,58 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An implementation of the {@link PermissionsInterface} that makes
- * calls to SAM.
+ * <p>An implementation of the {@link PermissionsInterface} that makes
+ * calls to SAM.</p>
+ *
+ * <p>
+ *     Calls to SAM use a Google access token. This token can be acquired in 3 ways:
+ *     <ul>
+ *         <li>Using the user's Google access token in the database.</li>
+ *         <li>Minting and using a new Google access token with the user's refresh token in the
+ *         database. This is only done when we've detected the Google access token has expired.</li>
+ *         <li>A call from the "outside", e.g., Terra accesses a Dockstore API with a Google access
+ *         token minted in Terra. In this case, the access token is stored in the transient
+ *         <code>User.temporaryCredential</code> field. Note that this use case is technically
+ *         possible but not currently used by Terra. Also note that we check the token's "audience"
+ *         to ensure only approved Google clients can access Dockstore this way.</li>
+ *     </ul>
+ * </p>
+ *
+ * <p>What can go wrong with auth?
+ * <ul>
+ *     <li>The user's Google account is not registered in Terra/SAM</li>
+ *     <li>The user's Google account in Terra/SAM has been disabled</li>
+ *     <li>The user's Google refresh token has expired. We are unable to mint a new access token
+ *     for the user. The user must relink their Google account in Dockstore to get a new refresh
+ *     token.</li>
+ * </ul>
+ * </p>
+ *
+ * <p>
+ *   We want the user to know their refresh token has expired, but we don't want to fill up the UI
+ *   with errors for all the SAM APIs. The following public methods will throw an exception for an expired
+ *   refresh token. The ideas is that write operations should throw an error, so you know they failed.
+ *   The exception being <code>workflowsSharedWithUser</code>, because we'd want the UI to display
+ *   a warning if we're unable to fetch shared workflows.
+ *   <ul>
+ *       <li>setPermission</li>
+ *       <li>removePermission</li>
+ *       <li>workflowsSharedWithUser</li>
+ *       <li>selfDestruct</li>
+ *   </ul>
+ *   The following public methods will NOT throw an exception for an expired refresh token. The
+ *   idea is that read-only operations shouldn't cause errors.
+ *   <ul>
+ *       <li>getPermissionsForWorkflow</li>
+ *       <li>getActionsForWorkflow</li>
+ *       <li>canDoAction</li>
+ *       <li>isSharing</li>
+ *   </ul>
+ * </p>
  */
 public class SamPermissionsImpl implements PermissionsInterface {
+
+    static final String GOOGLE_ACCOUNT_MUST_BE_LINKED = "Google account must be linked";
 
     private static final Logger LOG = LoggerFactory.getLogger(SamPermissionsImpl.class);
 
@@ -85,13 +133,15 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * @param requester -- the requester, who must be an owner of <code>workflow</code> or an admin
      * @param workflow the workflow
      * @param permission -- the email and the permission for that email
-     * @return
+     * @return a list of permissions
+     * @throws CustomWebApplicationException
      */
     @Override
     public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
+        checkHasGoogleToken(requester);
         // If original owner, you can't mess with their permissions
         checkEmailNotOriginalOwner(permission.getEmail(), workflow);
-        ResourcesApi resourcesApi = getResourcesApi(requester);
+        ResourcesApi resourcesApi = getResourcesApi(requester); // Intentionally throwing if unable to get token
         try {
             final String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
 
@@ -122,6 +172,14 @@ public class SamPermissionsImpl implements PermissionsInterface {
         }
     }
 
+    /**
+     * Creates a Swagger client for the SAM Resources API, with the authorization header set to the user's Google
+     * access token. Throws a <code>CustomWebApplicationException</code> if unable to get an access
+     * token.
+     * @param requester
+     * @return a resources Swagger API client
+     * @throw CustomWebApplicationException
+     */
     ResourcesApi getResourcesApi(User requester) {
         return new ResourcesApi(getApiClient(requester));
     }
@@ -153,12 +211,19 @@ public class SamPermissionsImpl implements PermissionsInterface {
         }
     }
 
+    /**
+     * Returns a map of roles to workflow paths the user has access to. Throws a
+     * <code>CustomWebApplicationException</code> if unable to get an access token.
+     * @param user
+     * @return a map of roles to workflow paths
+     * @throws CustomWebApplicationException
+     */
     @Override
     public Map<Role, List<String>> workflowsSharedWithUser(User user) {
         if (!hasGoogleToken(user)) {
             return Collections.emptyMap();
         }
-        ResourcesApi resourcesApi = getResourcesApi(user);
+        ResourcesApi resourcesApi = getResourcesApi(user); // Intentionally throwing if unable to get token
         try {
             List<ResourceAndAccessPolicy> resourceAndAccessPolicies = resourcesApi.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE);
             return weedOutDuplicateResourceIds(resourceAndAccessPolicies).stream()
@@ -171,13 +236,21 @@ public class SamPermissionsImpl implements PermissionsInterface {
                         }
                     }).collect(Collectors.toList())));
         } catch (ApiException e) {
-            LOG.error("Error getting shared workflows", e);
-            if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {
+            final String message = "Error getting shared workflows";
+            if (userNotAuthorizedForSam(e)) {
+                LOG.debug(message, e);
                 // If user is unauthorized in SAM, then nothing has been shared with that user
                 return Collections.emptyMap();
             }
-            throw new CustomWebApplicationException("Error getting shared workflows", e.getCode());
+            LOG.error(message, e);
+            throw new CustomWebApplicationException(message, e.getCode());
         }
+    }
+
+    private boolean userNotAuthorizedForSam(ApiException e) {
+        // TLDR; 401 disabled or not accepted TOS; 403 user does not exist, i.e., not registered in SAM
+        // See https://github.com/broadinstitute/sam/blob/1c3c1a3f3e973895de9ba08e6c755edbb04632db/src/main/scala/org/broadinstitute/dsde/workbench/sam/api/SamUserDirectives.scala#L31-L30
+        return e.getCode() == HttpStatus.SC_UNAUTHORIZED || e.getCode() == HttpStatus.SC_FORBIDDEN;
     }
 
     /**
@@ -210,30 +283,59 @@ public class SamPermissionsImpl implements PermissionsInterface {
         }
     }
 
+    /**
+     * Gets the permissions for a workflow. The <code>user</code> must either be one of the
+     * workflow's users, in <code>workflow.getUsers()</code>, or have the Role.OWNER permission
+     * via SAM.
+     *
+     * @param user the user, who must be an owner of the workflow
+     * @param workflow the workflow
+     * @return a list of permissions
+     * @throw CustomWebApplicationException
+     */
     @Override
     public List<Permission> getPermissionsForWorkflow(User user, Workflow workflow) {
-        final List<Permission> dockstoreOwners = PermissionsInterface.getOriginalOwnersForWorkflow(workflow);
-        ResourcesApi resourcesApi = getResourcesApi(user);
-        try {
-            String encoded = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
-            final List<Permission> samPermissions = accessPolicyResponseEntryToUserPermissions(
-                    resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encoded));
-            return PermissionsInterface.mergePermissions(dockstoreOwners, removeDuplicateEmails(samPermissions));
-        } catch (ApiException e) {
-            final String errorGettingPermissions = "Error getting permissions";
-            // 404 - SAM resource has not been created, or user doesn't have access; just return Dockstore owners
-            if (e.getCode() != HttpStatus.SC_NOT_FOUND) {
-                throw new CustomWebApplicationException(errorGettingPermissions, e.getCode());
+        List<Permission> samPermissions = getSamPermissions(user, workflow);
+        if (samPermissions.isEmpty() || !isSamOwner(user, samPermissions)) {
+            // Super method checks if user is workflow user
+            return PermissionsInterface.super.getPermissionsForWorkflow(user, workflow);
+        }
+        // getOriginalOwnersForWorkflow does not check if user is in workflow.getUsers(), because
+        // they have access to the workflow via SAM.
+        final List<Permission> dockstoreOwners = getOriginalOwnersForWorkflow(workflow);
+        return PermissionsInterface.mergePermissions(dockstoreOwners, samPermissions);
+    }
+
+    private List<Permission> getSamPermissions(User user, Workflow workflow) {
+        if (hasGoogleToken(user)) {
+            try {
+                final ResourcesApi resourcesApi = getResourcesApi(user);
+                final String encoded = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
+                return accessPolicyResponseEntryToUserPermissions(
+                        resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encoded));
+            } catch (ApiException e) {
+                final String errorGettingPermissions = "Error getting permissions";
+                LOG.error(errorGettingPermissions, e);
+                // 404 - SAM resource has not been created, or user doesn't have access;
+                if (userNotAuthorizedForSam(e) && e.getCode() != HttpStatus.SC_NOT_FOUND) {
+                    throw new CustomWebApplicationException(errorGettingPermissions, e.getCode());
+                }
             }
         }
-        return dockstoreOwners;
+        return List.of();
+    }
+
+    private boolean isSamOwner(User user, List<Permission> permissions) {
+        final Optional<String> email = userIdForSharing(user);
+        return email.isPresent() && permissions.stream().anyMatch(permission ->
+            permission.getEmail().equals(email.get()) && permission.getRole() == Role.OWNER);
     }
 
     @Override
     public List<Role.Action> getActionsForWorkflow(User user, Workflow workflow) {
         List<Role.Action> list = new ArrayList<>();
         if (workflow.getUsers().contains(user) || canDoAction(user, workflow, Role.Action.SHARE)) {
-            // Short cut to avoid multiple calls; if we can share, we're an owner and can do all actions
+            // Shortcut to avoid multiple calls; if we can share, we're an owner and can do all actions
             list.addAll(Arrays.asList(Role.Action.values()));
         } else if (canDoAction(user, workflow, Role.Action.WRITE)) {
             // If we can write, we can read
@@ -247,8 +349,9 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     @Override
     public void removePermission(User user, Workflow workflow, String email, Role role) {
+        checkHasGoogleToken(user);
         checkEmailNotOriginalOwner(email, workflow);
-        ResourcesApi resourcesApi = getResourcesApi(user);
+        ResourcesApi resourcesApi = getResourcesApi(user); // Intentionally throwing if unable to get token
         String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
         try {
             List<AccessPolicyResponseEntry> entries = resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encodedPath);
@@ -262,6 +365,12 @@ public class SamPermissionsImpl implements PermissionsInterface {
         } catch (ApiException e) {
             LOG.error(MessageFormat.format("Error removing {0} from workflow {1}", email, encodedPath), e);
             throw new CustomWebApplicationException("Error removing permissions", e.getCode());
+        }
+    }
+
+    private void checkHasGoogleToken(final User user) {
+        if (!hasGoogleToken(user)) {
+            throw new CustomWebApplicationException(GOOGLE_ACCOUNT_MUST_BE_LINKED, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -321,19 +430,22 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     @Override
     public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
-        ResourcesApi resourcesApi = getResourcesApi(user);
-        String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
-        try {
-            return resourcesApi.resourceAction(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.toSamAction(action));
-        } catch (ApiException e) {
-            return false;
+        if (hasGoogleToken(user)) {
+            try {
+                final ResourcesApi resourcesApi = getResourcesApi(user);
+                final String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
+                return resourcesApi.resourceAction(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.toSamAction(action));
+            } catch (ApiException e) {
+                LOG.error("Error checking for resource action in SAM", e);
+            }
         }
+        return false;
     }
 
     @Override
     public void selfDestruct(User user) {
         if (hasGoogleToken(user)) {
-            final ResourcesApi resourcesApi = getResourcesApi(user);
+            final ResourcesApi resourcesApi = getResourcesApi(user); // Intentionally throwing if unable to get token
             try {
                 final List<String> resourceIds = ownedResourceIds(resourcesApi);
                 if (!userIsOnlyMember(resourceIds, resourcesApi)) {
@@ -354,19 +466,28 @@ public class SamPermissionsImpl implements PermissionsInterface {
         if (!hasGoogleToken(user)) {
             return false;
         }
-        final ResourcesApi resourcesApi = getResourcesApi(user);
         try {
+            final ResourcesApi resourcesApi = getResourcesApi(user);
             final List<String> resourceIds = ownedResourceIds(resourcesApi);
             return !userIsOnlyMember(resourceIds, resourcesApi);
         } catch (ApiException e) {
-            // User is not in SAM, which means they aren't sharing anything
-            if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {
+            if (userNotAuthorizedForSam(e)) {
+                LOG.debug("User not authorized for sam", e);
                 return false;
             }
             LOG.error("Error fetching user's shared resources", e);
             // Unknown error, assume they could be sharing to be safe
             return true;
         }
+    }
+
+    @Override
+    public Optional<String> userIdForSharing(final User user) {
+        final User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+        if (profile != null) {
+            return Optional.ofNullable(profile.email);
+        }
+        return Optional.empty();
     }
 
     boolean userIsOnlyMember(List<String> resourceIds, ResourcesApi resourcesApi) {
@@ -399,13 +520,22 @@ public class SamPermissionsImpl implements PermissionsInterface {
                     .map(p -> p.getResourceId())
                     .collect(Collectors.toList());
         } catch (ApiException e) {
-            if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {
+            if (userNotAuthorizedForSam(e)) {
                 // User is not in SAM
                 return Collections.emptyList();
             }
             throw e;
         }
     }
+
+    /**
+     * Creates a Swagger API client for SAM, with the authorization set to the user's Google
+     * access token. Throws a <code>CustomWebApplicationException</code> if unable to get a valid Google access
+     * token, which can occur if the Google refresh token has expired.
+     * @param user
+     * @return a Swagger API client
+     * @throw CustomWebApplicationException
+     */
     private ApiClient getApiClient(User user) {
         ApiClient apiClient = new ApiClient() {
             @Override

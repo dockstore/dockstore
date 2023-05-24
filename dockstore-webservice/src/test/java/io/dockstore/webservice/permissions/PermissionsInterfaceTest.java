@@ -1,5 +1,7 @@
 package io.dockstore.webservice.permissions;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -11,20 +13,17 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class PermissionsInterfaceTest {
+class PermissionsInterfaceTest {
 
     private static final String JOHN_DOE_EXAMPLE_COM = "john.doe@example.com";
     private static final String JANE_DOE_EXAMPLE_COM = "jane.doe@example.com";
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+
     private User userJohn;
     private Permission janeDoeOwnerPermission;
     private Permission janeDoeWriterPermission;
@@ -32,7 +31,7 @@ public class PermissionsInterfaceTest {
     private PermissionsInterface permissionsInterface;
     private Workflow mockedWorkflow = Mockito.mock(Workflow.class);
 
-    @Before
+    @BeforeEach
     public void setup() {
         userJohn = new User();
         userJohn.setUsername(JOHN_DOE_EXAMPLE_COM);
@@ -87,38 +86,44 @@ public class PermissionsInterfaceTest {
             public boolean isSharing(User user) {
                 return false;
             }
+
+            @Override
+            public Optional<String> userIdForSharing(final User user) {
+                return Optional.of(user.getUsername());
+            }
         };
     }
 
     @Test
-    public void mergePermissions() {
-        Assert.assertEquals(2, PermissionsInterface.mergePermissions(Collections.singletonList(janeDoeOwnerPermission), Arrays.asList(
+    void mergePermissions() {
+        assertEquals(2, PermissionsInterface.mergePermissions(Collections.singletonList(janeDoeOwnerPermission), Arrays.asList(
                 janeDoeOwnerPermission, janeDoeWriterPermission)).size());
     }
 
     @Test
-    public void getOriginalOwnersForWorkflow() {
+    void getOriginalOwnersForWorkflow() {
         final Set<User> users = new HashSet<>(Collections.singletonList(userJohn));
         mockedWorkflow = Mockito.mock(Workflow.class);
         when(mockedWorkflow.getUsers()).thenReturn(users);
 
-        Assert.assertEquals(1, PermissionsInterface.getOriginalOwnersForWorkflow(mockedWorkflow).size());
+        assertEquals(1, permissionsInterface.getOriginalOwnersForWorkflow(mockedWorkflow).size());
     }
 
     @Test
-    public void unauthorizedGetPermissionsForWorkflow() {
+    void unauthorizedGetPermissionsForWorkflow() {
         final Set<User> users = new HashSet<>(Collections.singletonList(userJohn));
         when(mockedWorkflow.getUsers()).thenReturn(users);
-        thrown.expect(CustomWebApplicationException.class);
-        permissionsInterface.getPermissionsForWorkflow(userJane, mockedWorkflow);
+        assertThrows(CustomWebApplicationException.class, () -> permissionsInterface.getPermissionsForWorkflow(userJane, mockedWorkflow));
     }
 
     @Test
-    public void checkUserNotOriginalOwner() {
+    void checkUserNotOriginalOwner() {
         final Set<User> users = new HashSet<>(Collections.singletonList(userJohn));
         when(mockedWorkflow.getUsers()).thenReturn(users);
-        thrown.expect(CustomWebApplicationException.class);
-        PermissionsInterface.checkUserNotOriginalOwner(JOHN_DOE_EXAMPLE_COM, mockedWorkflow);
-        PermissionsInterface.checkUserNotOriginalOwner(JANE_DOE_EXAMPLE_COM, mockedWorkflow);
+        assertThrows(CustomWebApplicationException.class, () -> {
+            // this one was originally weird with the error on the first line
+            PermissionsInterface.checkUserNotOriginalOwner(JOHN_DOE_EXAMPLE_COM, mockedWorkflow);
+            PermissionsInterface.checkUserNotOriginalOwner(JANE_DOE_EXAMPLE_COM, mockedWorkflow);
+        });
     }
 }

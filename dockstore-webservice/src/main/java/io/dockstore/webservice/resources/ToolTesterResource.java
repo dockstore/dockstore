@@ -29,7 +29,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -104,9 +103,6 @@ public class ToolTesterResource {
             LOG.error(e.getMessage(), e);
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                     HttpStatus.SC_SERVICE_UNAVAILABLE);
-        } catch (UnsupportedEncodingException e) {
-            LOG.error(e.getMessage(), e);
-            throw new CustomWebApplicationException("Could not find log file location", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 }

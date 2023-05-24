@@ -17,14 +17,17 @@ package io.dockstore.webservice.languages;
 
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
@@ -55,20 +58,16 @@ import org.apache.commons.io.FileUtils;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * This test does not require confidential data.
@@ -77,10 +76,14 @@ import org.junit.runner.Description;
  * @author dyuen
  * @since 1.9.0
  */
-@Category({ ConfidentialTest.class, WorkflowTest.class })
-public class GalaxyPluginIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+@ExtendWith(TestStatus.class)
+@Tag(ConfidentialTest.NAME)
+@Tag(WorkflowTest.NAME)
+class GalaxyPluginIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;
-    public static final String GALAXY_PLUGIN_VERSION = "0.0.4";
+    public static final String GALAXY_PLUGIN_VERSION = "0.0.8";
     public static final String GALAXY_PLUGIN_FILENAME = "dockstore-galaxy-interface-" + GALAXY_PLUGIN_VERSION + ".jar";
     public static final String GALAXY_PLUGIN_LOCATION =
         "https://artifacts.oicr.on.ca/artifactory/collab-release/com/github/galaxyproject/dockstore-galaxy-interface/dockstore-galaxy-interface/"
@@ -105,39 +108,28 @@ public class GalaxyPluginIT {
     }
 
     private static TestingPostgres testingPostgres;
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
 
-    private final String galaxyWorkflowRepo = "DockstoreTestUser2/workflow-testing-repo";
-    private final String installationId = "1179416";
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
+
     private FileDAO fileDAO;
 
-    @BeforeClass
+    @BeforeAll
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
         testingPostgres = new TestingPostgres(SUPPORT);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
@@ -151,25 +143,20 @@ public class GalaxyPluginIT {
     }
 
     @Test
-    public void testGalaxyLanguagePlugin() {
+    void testGalaxyLanguagePlugin() {
         MetadataApi metadataApi = new MetadataApi(getWebClient(false, "n/a", testingPostgres));
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         // should have default languages plus galaxy via plugin
-        assertTrue(
-            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
-        assertTrue(
-            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.WDL.getFriendlyName())));
-        assertTrue(
-            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.NEXTFLOW.getFriendlyName())));
-        assertTrue(
-            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.GXFORMAT2.getFriendlyName())));
+        assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
+        assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.WDL.getFriendlyName())));
+        assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.NEXTFLOW.getFriendlyName())));
+        assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.GXFORMAT2.getFriendlyName())));
         // should not be present
-        Assert.assertFalse(
-            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.SWL.getFriendlyName())));
+        assertFalse(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.SWL.getFriendlyName())));
     }
 
     @Test
-    public void testFilterByDescriptorType() {
+    void testFilterByDescriptorType() {
         final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -201,19 +188,20 @@ public class GalaxyPluginIT {
     }
 
     @Test
-    public void testTestParameterPaths() {
+    void testTestParameterPaths() {
         final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        String galaxyWorkflowRepo = "DockstoreTestUser2/workflow-testing-repo";
+        String installationId = "1179416";
         workflowApi.handleGitHubRelease(galaxyWorkflowRepo, BaseIT.USER_2_USERNAME, "refs/heads/validTestParameterFiles", installationId);
         Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + galaxyWorkflowRepo + "/COVID-19-variation-analysis-on-Illumina-metagenomic-data", BaseIT.BIOWORKFLOW, "versions");
         WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
-        assertTrue("Test file should have the expected path",
-                sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")));
+        assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")), "Test file should have the expected path");
     }
 
     @Test
-    public void testSnapshotWorkflow() {
+    void testSnapshotWorkflow() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         final String validVersion = "0.1";
@@ -229,7 +217,7 @@ public class GalaxyPluginIT {
         version.setFrozen(true);
         workflowsApi.updateWorkflowVersion(galaxyWorkflow.getId(), List.of(version));
         version = workflowsApi.getWorkflowVersionById(galaxyWorkflow.getId(), version.getId(), "images");
-        assertTrue("Version should be frozen", version.isFrozen());
-        assertEquals("This version should have no images", 0, version.getImages().size());
+        assertTrue(version.isFrozen(), "Version should be frozen");
+        assertEquals(0, version.getImages().size(), "This version should have no images");
     }
 }

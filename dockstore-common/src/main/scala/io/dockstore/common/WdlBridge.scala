@@ -32,8 +32,7 @@ import wom.types.{WomCompositeType, WomOptionalType, WomType}
 import java.nio.file.{Files, Paths}
 import java.util
 import java.util.Optional
-import scala.collection.JavaConverters
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 
@@ -43,7 +42,7 @@ import scala.util.Try
   * Note: For simplicity, uses draft-3/v1.0 for throwing syntax errors from any language
   */
 class WdlBridge {
-  var secondaryWdlFiles = new util.HashMap[String, String]()
+  var secondaryWdlFiles: util.Map[String, String] = new util.HashMap[String, String]()
 
   def main(args: Array[String]): Unit = {
     println("WdlBridge")
@@ -53,7 +52,7 @@ class WdlBridge {
     * Set the secondary files (imports)
     * @param secondaryFiles
     */
-  def setSecondaryFiles(secondaryFiles: util.HashMap[String, String]): Unit = {
+  def setSecondaryFiles(secondaryFiles: util.Map[String, String]): Unit = {
     secondaryWdlFiles = secondaryFiles
   }
 
@@ -105,7 +104,7 @@ class WdlBridge {
     def getStringValueMetadata(metadata: Map[String, MetaValueElement]): java.util.Map[String, String] = {
       // Metadata is sometimes not a string (booleans for example), ignoring those
       val convertedWorkflowMap = metadata.collect{ case (k, v) if v.isInstanceOf[MetaValueElementString] => (k, v.asInstanceOf[MetaValueElementString].value)}
-      JavaConverters.mapAsJavaMap(convertedWorkflowMap)
+      convertedWorkflowMap.asJava
     }
 
     val bundle = getBundle(filePath, sourceFilePath)
@@ -130,8 +129,16 @@ class WdlBridge {
   }
 
   /**
-    * Create a map of file inputs names to paths
-    * @param filePath absolute path to file
+    * Create a map of file input names to types. For example:
+   * <pre>
+   * "checkerWorkflow.input_crai_files" -> "Array[File]?"
+   * "checkerWorkflow.referenceFilesBlob" -> "File"
+   * "checkerWorkflow.input_cram_files" -> "Array[File]"
+   * "checkerWorkflow.inputTruthVCFFile" -> "File"
+   * "checkerWorkflow.variantcaller.referenceGenomeFilesTarGz" -> "Array[File]?"
+   * </pre>
+   *
+   * @param filePath absolute path to file
     * @throws wdl.draft3.parser.WdlParser.SyntaxError
     * @return mapping of file input name to type
     */
@@ -352,6 +359,7 @@ class WdlBridge {
   /**
     * Get the WomBundle for a workflow
     * @param filePath absolute path to file
+    * @param sourceFilePath the path of the source file
     * @return WomBundle
     */
   def getBundle(filePath: String, sourceFilePath: String): WomBundle = {
@@ -403,8 +411,31 @@ class WdlBridge {
         new WdlBiscayneLanguageFactory(ConfigFactory.empty()))
       .find(_.looksParsable(fileContent))
       .getOrElse(new WdlDraft2LanguageFactory(ConfigFactory.empty()))
-
     languageFactory
+  }
+
+  /**
+   * A workflow's 'version' field is considered valid if the WomBundle is retrieved successfully
+   * or the WomBundle throws an error that is not related to the version.
+   * Note that a workflow with no 'version' field is considered valid.
+   *
+   * @param filePath       absolute path to file
+   * @param sourceFilePath the path of the source file
+   * @return Boolean indicating if the 'version' field is valid in the workflow
+   */
+  def isVersionFieldValid(filePath: String, sourceFilePath: String): Boolean = {
+    try {
+      getBundle(filePath, sourceFilePath)
+    } catch {
+      case ex: WdlParser.SyntaxError =>
+        val error = ex.getMessage
+        val firstCodeLine = getFirstCodeLine(readFile(filePath))
+        // Need to check if the error is a parsing error because other syntax errors could be in the first line if there is no 'version' field
+        val errorContainsFirstCodeLine = firstCodeLine.isPresent && error.contains(firstCodeLine.get) && error.contains("Finished parsing without consuming all tokens")
+        val errorContainsVersion = error.contains("version")
+        return !errorContainsVersion && !errorContainsFirstCodeLine
+    }
+    true
   }
 
   /**
@@ -415,14 +446,13 @@ class WdlBridge {
   def readFile(filePath: String): String = Try(Files.readAllLines(Paths.get(filePath)).asScala.mkString(System.lineSeparator())).get
 
   /**
-    * Get the the first non comment line in the file
-    * @param descriptorFilePath path to the file to read
+    * Get the first non comment line in the file
+    * @param descriptorFileContent the content of the descriptor file
     * @return Optional string containing the first line of code in the file
     */
-  def getFirstCodeLine(descriptorFilePath: String): Optional[String] = {
+  def getFirstCodeLine(descriptorFileContent: String): Optional[String] = {
     val commentIndicators = List("#")
-    val content = readFile(descriptorFilePath)
-    val fileWithoutInitialWhitespace = content.linesIterator.toList.dropWhile { l =>
+    val fileWithoutInitialWhitespace = descriptorFileContent.linesIterator.toList.dropWhile { l =>
       l.forall(_.isWhitespace) || commentIndicators.exists(l.dropWhile(_.isWhitespace).startsWith(_))
     }
 
@@ -439,9 +469,9 @@ object WdlBridge {
   * Class for resolving imports defined in memory (mapping of path to content)
   */
 case class MapResolver(filePath: String) extends ImportResolver {
-  var secondaryWdlFiles = new util.HashMap[String, String]()
+  var secondaryWdlFiles: util.Map[String, String] = new util.HashMap[String, String]()
 
-  def setSecondaryFiles(secondaryFiles: util.HashMap[String, String]): Unit = {
+  def setSecondaryFiles(secondaryFiles: util.Map[String, String]): Unit = {
     secondaryWdlFiles = secondaryFiles
   }
 

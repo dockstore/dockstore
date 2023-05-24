@@ -19,9 +19,12 @@ package io.dockstore.client.cli;
 import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
 import static io.dockstore.common.CommonTestUtilities.checkToolList;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
@@ -31,19 +34,18 @@ import java.io.IOException;
 import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * Tests a variety of basic dockstore CLI commands along with some tool commands
@@ -53,56 +55,57 @@ import org.slf4j.LoggerFactory;
  * @author gluu
  * @since 1.4.0
  */
-@Category({ RegressionTest.class })
-public class ClientRegressionIT extends BaseIT {
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+@ExtendWith(TestStatus.class)
+@Tag(RegressionTest.NAME)
+class ClientRegressionIT extends BaseIT {
+    @TempDir
+    public static File temporaryFolder;
     private static File dockstore;
     private static File testJson;
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientRegressionIT.class);
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
-    @BeforeClass
+    @BeforeAll
     public static void getOldDockstoreClient() throws IOException {
         TestUtility.createFakeDockstoreConfigFile();
         URL url = new URL("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
-        dockstore = temporaryFolder.newFile("dockstore");
+        dockstore = new File(temporaryFolder, "dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         assertTrue(dockstore.setExecutable(true));
         url = new URL("https://raw.githubusercontent.com/DockstoreTestUser/dockstore_parameter_test/master/test.cwl.json");
-        testJson = temporaryFolder.newFile("test.cwl.json");
+        testJson = new File(temporaryFolder, "test.cwl.json");
         FileUtils.copyURLToFile(url, testJson);
     }
 
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
     }
 
     @Test
-    public void testListEntriesOld() throws IOException, ApiException {
+    void testListEntriesOld() throws IOException, ApiException {
         String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list", "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         checkToolList(stringStringImmutablePair.getLeft());
     }
 
     @Test
-    public void testDebugModeListEntriesOld() throws IOException, ApiException {
+    void testDebugModeListEntriesOld() throws IOException, ApiException {
         String[] commandArray = new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list", "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         checkToolList(stringStringImmutablePair.getLeft());
     }
 
     @Test
-    public void testPluginEnableOldClient() {
+    void testPluginEnableOldClient() {
         String[] commandArray1 = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin",
             "download" };
         runOldDockstoreClient(dockstore, commandArray1);
@@ -112,24 +115,24 @@ public class ClientRegressionIT extends BaseIT {
         String stdout = stringStringImmutablePair2.getLeft();
         assertTrue(stdout.contains("dockstore-file-synapse-plugin"));
         assertTrue(stdout.contains("dockstore-file-s3-plugin"));
-        Assert.assertFalse(stdout.contains("dockstore-icgc-storage-client-plugin"));
+        assertFalse(stdout.contains("dockstore-icgc-storage-client-plugin"));
     }
 
     @Test
-    public void testPluginDisableOldClient() {
+    void testPluginDisableOldClient() {
         String[] commandArray = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin",
             "download" };
         runOldDockstoreClient(dockstore, commandArray);
         commandArray = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "list" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         String stdout = stringStringImmutablePair.getLeft();
-        Assert.assertFalse(stdout.contains("dockstore-file-synapse-plugin"));
-        Assert.assertFalse(stdout.contains("dockstore-file-s3-plugin"));
+        assertFalse(stdout.contains("dockstore-file-synapse-plugin"));
+        assertFalse(stdout.contains("dockstore-file-s3-plugin"));
         assertTrue(stdout.contains("dockstore-file-icgc-storage-client-plugin"));
     }
 
     @Test
-    public void testMetadataMethodsOld() throws IOException {
+    void testMetadataMethodsOld() throws IOException {
         String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "--version" };
         ImmutablePair<String, String> stringStringImmutablePair;
         try {
@@ -142,27 +145,27 @@ public class ClientRegressionIT extends BaseIT {
         commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "--server-metadata" };
         stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         assertTrue(stringStringImmutablePair.getLeft().contains("version"));
-        systemOutRule.clearLog();
+        systemOut.clear();
     }
 
     @Test
-    public void testCacheCleaningOld() throws IOException {
+    void testCacheCleaningOld() throws IOException {
         runOldDockstoreClient(dockstore, new String[] { "--config", TestUtility.getConfigFileLocation(true), "--clean-cache" });
-        systemOutRule.clearLog();
+        systemOut.clear();
     }
 
     @Test
-    public void pluginDownloadOld() throws IOException {
+    void pluginDownloadOld() throws IOException {
         String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "plugin", "download" };
         runOldDockstoreClient(dockstore, commandArray);
-        systemOutRule.clearLog();
+        systemOut.clear();
     }
 
     /**
      * Tests that the unpublished tool can be published, refreshed, then launched once the json and input file is attained
      */
     @Test
-    public void testActualToolLaunch() {
+    void testActualToolLaunch() {
         // manual publish the workflow
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry",
@@ -174,10 +177,8 @@ public class ClientRegressionIT extends BaseIT {
         String[] commandArray = { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "launch", "--entry",
             "quay.io/dockstoretestuser/test_input_json", "--json", testJson.getAbsolutePath(), "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
-        assertTrue("Final process status was not a success",
-            (stringStringImmutablePair.getLeft().contains("Final process status is success")));
-        assertTrue("Final process status was not a success",
-            (stringStringImmutablePair.getRight().contains("Final process status is success")));
+        assertTrue((stringStringImmutablePair.getLeft().contains("Final process status is success")), "Final process status was not a success");
+        assertTrue((stringStringImmutablePair.getRight().contains("Final process status is success")), "Final process status was not a success");
 
     }
 

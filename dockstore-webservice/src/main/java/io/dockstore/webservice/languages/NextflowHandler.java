@@ -18,7 +18,9 @@ package io.dockstore.webservice.languages;
 import com.google.common.base.CharMatcher;
 import groovyjarjarantlr.RecognitionException;
 import groovyjarjarantlr.TokenStreamException;
+import groovyjarjarantlr.collections.AST;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.DockerParameter;
 import io.dockstore.common.NextflowUtilities;
@@ -29,6 +31,7 @@ import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.io.IOException;
@@ -88,27 +91,44 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                 }
             }
             // look for extended help message from nf-core workflows when it is available
-            String mainScriptPath = "main.nf";
-            if (configuration.containsKey("manifest.mainScript")) {
-                mainScriptPath = configuration.getString("manifest.mainScript");
-            }
-            String finalMainScriptPath = mainScriptPath;
-            final Optional<SourceFile> potentialScript = sourceFiles.stream().filter(file -> file.getPath().equals(finalMainScriptPath))
-                .findFirst();
+            final String mainScriptPath = getMainScriptPath(configuration);
+            final Optional<SourceFile> potentialScript = findSourceFileByPath(sourceFiles, mainScriptPath);
             if (potentialScript.isPresent()) {
                 String helpMessage = getHelpMessage(potentialScript.get().getContent());
-                // abitrarily follow description, markdown looks funny without the line breaks
+                // arbitrarily follow description, markdown looks funny without the line breaks
                 if (!StringUtils.isEmpty(helpMessage)) {
                     helpMessage = "\n\n" + helpMessage;
                 }
                 String builder = Stream.of(descriptionInProgress, helpMessage).filter(s -> s != null && !s.isEmpty())
                     .collect(Collectors.joining(""));
                 version.setDescriptionAndDescriptionSource(builder, DescriptionSource.DESCRIPTOR);
+            } else {
+                createValidationForMissingMainScript(version, filepath, mainScriptPath);
             }
+            updateDescriptorTypeAndEngineVersion(sourceFiles, version, configuration, potentialScript);
         } catch (NextflowUtilities.NextflowParsingException e) {
-            createValidationMessageForGeneralFailure(version, filepath);
+            createValidationForGeneralFailure(version, filepath);
         }
         return version;
+    }
+
+    /**
+     *  Sets source files' type version, and updates the workflow version descriptor type version
+     *  based on the source files's descriptor type version.
+     * @param sourceFiles
+     * @param version
+     * @param configuration
+     * @param mainScript
+     */
+    private void updateDescriptorTypeAndEngineVersion(final Set<SourceFile> sourceFiles, final Version version,
+            final Configuration configuration, final Optional<SourceFile> mainScript) {
+        final String dslVersion = this.calculateDslVersion(configuration, mainScript).orElse(null);
+        sourceFiles.stream()
+            // Exclude config file and test params
+            .filter(sourceFile -> sourceFile.getType() == FileType.NEXTFLOW)
+            .forEach(sourceFile -> sourceFile.getMetadata().setTypeVersion(dslVersion));
+        version.setDescriptorTypeVersionsFromSourceFiles(sourceFiles);
+        version.getVersionMetadata().setEngineVersions(getEngineVersions(configuration));
     }
 
     @Override
@@ -127,16 +147,12 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         try {
             configuration = NextflowUtilities.grabConfig(content);
         } catch (Exception e) {
-            createValidationMessageForGeneralFailure(version, filepath);
+            createValidationForGeneralFailure(version, filepath);
             return imports;
         }
 
         // add the Nextflow scripts
-        String mainScriptPath = "main.nf";
-        if (configuration.containsKey("manifest.mainScript")) {
-            mainScriptPath = configuration.getString("manifest.mainScript");
-        }
-
+        final String mainScriptPath = getMainScriptPath(configuration);
         suspectedConfigImports.add(mainScriptPath);
 
         for (String filename : suspectedConfigImports) {
@@ -207,10 +223,18 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         return importPath;
     }
 
-    private void createValidationMessageForGeneralFailure(Version version, String filepath) {
+    private void createValidationForGeneralFailure(Version version, String filepath) {
+        createValidation(version, false, filepath, "Nextflow config file is malformed or missing, cannot extract metadata");
+    }
+
+    private void createValidationForMissingMainScript(Version version, String filepath, String mainScriptName) {
+        createValidation(version, false, filepath, String.format("Could not find main script file '%s'", mainScriptName));
+    }
+
+    private void createValidation(Version version, boolean valid, String filepath, String message) {
         Map<String, String> validationMessageObject = new HashMap<>();
-        validationMessageObject.put(filepath, "Nextflow config file is malformed or missing, cannot extract metadata");
-        version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.NEXTFLOW_CONFIG, false, validationMessageObject));
+        validationMessageObject.put(filepath, message);
+        version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.NEXTFLOW_CONFIG, valid, validationMessageObject));
     }
 
     private void handleNextflowImports(String repositoryId, Version version, SourceCodeRepoInterface sourceCodeRepoInterface,
@@ -400,7 +424,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     }
 
     @Override
-    public Optional<String> getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
+    public Optional<String> getContent(String configPath, String configContent, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
 
@@ -411,18 +435,14 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         // nextflow uses the main script from the manifest as the main descriptor
         // add the Nextflow scripts
 
-        Configuration configuration = null;
+        Configuration configuration;
         try {
-            configuration = NextflowUtilities.grabConfig(mainDescriptor);
+            configuration = NextflowUtilities.grabConfig(configContent);
         } catch (NextflowUtilities.NextflowParsingException e) {
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
-        String mainScriptPath = "main.nf";
-        if (configuration.containsKey("manifest.mainScript")) {
-            mainScriptPath = configuration.getString("manifest.mainScript");
-        }
-        final String finalMainScriptPath = mainScriptPath;
-        mainDescriptor = secondarySourceFiles.stream().filter(sf -> sf.getPath().equals(finalMainScriptPath)).findFirst().map(sf -> sf.getContent()).orElse(null);
+        final String mainScriptPath = getMainScriptPath(configuration);
+        final String mainScriptContent = findSourceFileByPath(secondarySourceFiles, mainScriptPath).map(sf -> sf.getContent()).orElse(null);
 
         // Get default container (process.container takes precedence over params.container)
         String defaultContainer = null;
@@ -439,15 +459,15 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
 
         // Add all DockerMap from each secondary sourcefile
         if (!secondarySourceFiles.isEmpty()) {
-            secondarySourceFiles.forEach(sourceFile -> callToDockerMap.putAll(this.getCallsToDockerMap(sourceFile.getContent(), finalDefaultContainer)));
+            secondarySourceFiles.forEach(sourceFile -> callToDockerMap.putAll(getCallsToDockerMap(sourceFile.getContent(), finalDefaultContainer)));
         }
 
-        callToDockerMap.putAll(this.getCallsToDockerMap(mainDescriptor, defaultContainer));
+        callToDockerMap.putAll(getCallsToDockerMap(mainScriptContent, defaultContainer));
         // Iterate over each call, determine dependencies
         // Mapping of stepId -> array of dependencies for the step
-        Map<String, List<String>> callToDependencies = this.getCallsToDependencies(mainDescriptor);
+        Map<String, List<String>> callToDependencies = getCallsToDependencies(mainScriptContent);
         // Get import files
-        Map<String, String> namespaceToPath = this.getImportMap(mainDescriptor);
+        Map<String, String> namespaceToPath = getImportMap(mainScriptContent);
         Map<String, ToolInfo> toolInfoMap = WDLHandler.mapConverterToToolInfo(callToDockerMap, callToDependencies);
         return convertMapsToContent(mainScriptPath, type, dao, callType, toolType, toolInfoMap, namespaceToPath);
     }
@@ -455,6 +475,29 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     private Map<String, String> getImportMap(String mainDescriptor) {
         //TODO: deal with secondary files properly? (for DAG and tools display)
         return new HashMap<>();
+    }
+
+    private String getMainScriptPath(Configuration configuration) {
+        if (configuration.containsKey("manifest.mainScript")) {
+            return configuration.getString("manifest.mainScript");
+        } else {
+            return "main.nf";
+        }
+    }
+
+    private List<String> getEngineVersions(Configuration configuration) {
+        final String nextflowVersion = "manifest.nextflowVersion";
+        if (configuration.containsKey(nextflowVersion)) {
+            // A language can be run in several engines, e.g., Cromwell and Miniwdl can run WDL.
+            // So, unlike language versions, store the engine name as well, even though for Nextflow
+            // there's currently only one known engine.
+            return List.of("Nextflow " + configuration.getString(nextflowVersion));
+        }
+        return List.of();
+    }
+
+    private Optional<SourceFile> findSourceFileByPath(Set<SourceFile> sourceFiles, String path) {
+        return sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), path)).findFirst();
     }
 
     /**
@@ -510,7 +553,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      *
      * @param mainDescriptor content
      * @param keyword        keyword to lookup
-     * @return nodes with the suspectec content
+     * @return nodes with the suspect content
      * @throws RecognitionException
      * @throws TokenStreamException
      * @throws IOException
@@ -614,10 +657,71 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         return map;
     }
 
+    /**
+     * Looks for the first line like <code>nextflow.enable.dsl=2</code>, and returns the value, 2 in this
+     * example.
+     * @param fileContent
+     * @return
+     */
+    protected Optional<String> getDslVersion(String fileContent) {
+        try {
+            List<GroovySourceAST> assignmentsAst = getGroovySourceASTList(fileContent, "=");
+            if (assignmentsAst == null) {
+                throw new IOException("getGroovySourceASTList had a null result");
+            }
+            return assignmentsAst.stream()
+                .filter(equalsAst -> {
+                    final AST firstDotAst = equalsAst.getFirstChild();
+                    if (isNodeText(firstDotAst, ".")) {
+                        final AST secondDotAst = firstDotAst.getFirstChild();
+                        if (isNodeText(secondDotAst, ".") && isNodeText(secondDotAst.getNextSibling(), "dsl")) {
+                            final AST nextflowAst = secondDotAst.getFirstChild();
+                            if (isNodeText(nextflowAst, "nextflow")) {
+                                final AST enableAst = nextflowAst.getNextSibling();
+                                if (isNodeText(enableAst, "enable")) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    return false;
+                })
+                .map(ast -> ast.getFirstChild().getNextSibling().getText())
+                .findFirst();
+        } catch (IOException | TokenStreamException | RecognitionException e) {
+            LOG.warn("could not parse", e);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Calculates the DSL version for a workflow. Given a <code>configuration</code>, that is the
+     * model of nextflow.config file, and a <code>mainScript</code>, which is the main script referenced
+     * by nextflow.config, then:
+     *
+     * <ol>
+     *     <li>If the DSL is specified in the main script, that is the version</li>
+     *     <li>If the DSL is not specified in the main script, but specified in nextflow.config, that is the version</li>
+     *     <li>If it's in neither, we can't calculate the version -- it's based on on the engine version
+     *     or a environment setting</li>
+     * </ol>
+     * @param configuration
+     * @param mainScript
+     * @return
+     */
+    private Optional<String> calculateDslVersion(final Configuration configuration, final Optional<SourceFile> mainScript) {
+        return mainScript
+            .flatMap(sf -> getDslVersion(sf.getContent()))
+            .or(() -> Optional.ofNullable(configuration.getString("nextflow.enable.dsl", null)));
+    }
+
+    private boolean isNodeText(AST node, String text) {
+        return node != null && text.equals(node.getText());
+    }
+
     @Override
-    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        Optional<SourceFile> mainDescriptor = sourcefiles.stream()
-            .filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, Workflow workflow) {
+        Optional<SourceFile> mainDescriptor = findSourceFileByPath(sourcefiles, primaryDescriptorFilePath);
         Map<String, String> validationMessageObject = new HashMap<>();
         String validationMessage;
         String content;

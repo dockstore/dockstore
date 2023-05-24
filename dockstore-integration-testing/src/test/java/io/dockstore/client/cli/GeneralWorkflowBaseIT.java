@@ -1,9 +1,9 @@
 package io.dockstore.client.cli;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.model.DockstoreTool;
@@ -11,7 +11,7 @@ import io.swagger.client.model.Image;
 import io.swagger.client.model.Tag;
 import java.util.List;
 
-public class GeneralWorkflowBaseIT extends BaseIT {
+class GeneralWorkflowBaseIT extends BaseIT {
 
 
     /**
@@ -20,10 +20,10 @@ public class GeneralWorkflowBaseIT extends BaseIT {
      * @param tags
      */
     protected static void verifyChecksumsAreSaved(List<Tag> tags) {
-        assertTrue("The list of tags should not be empty", tags.size() > 0);
+        assertTrue(tags.size() > 0, "The list of tags should not be empty");
         for (Tag tag : tags) {
             List<Image> images = tag.getImages();
-            assertTrue("Tag should have an image", images.size() > 0);
+            assertTrue(images.size() > 0, "Tag should have an image");
             String hashType = tag.getImages().get(0).getChecksums().get(0).getType();
             String checksum = tag.getImages().get(0).getChecksums().get(0).getChecksum();
             assertNotNull(hashType);

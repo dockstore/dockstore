@@ -1,8 +1,9 @@
 package io.dockstore.webservice.helpers;
 
+import static io.dockstore.webservice.helpers.GitHubSourceCodeRepo.GIT_BRANCH_TAG_PATTERN;
+
 import java.util.Optional;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,9 +25,8 @@ public final class GitHelper {
      * @return Optional Git reference name
      */
     public static Optional<String> parseGitHubReference(String gitReference) {
-        // Match the github reference (ex. refs/heads/feature/foobar or refs/tags/1.0)
-        Pattern pattern = Pattern.compile("^refs/(tags|heads)/([a-zA-Z0-9]++([./_-]?[a-zA-Z0-9]+)*)$");
-        Matcher matcher = pattern.matcher(gitReference);
+        // Match the GitHub reference (ex. refs/heads/feature/foobar or refs/tags/1.0)
+        Matcher matcher = GIT_BRANCH_TAG_PATTERN.matcher(gitReference);
 
         if (!matcher.find()) {
             return Optional.empty();

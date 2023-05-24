@@ -16,15 +16,18 @@
 
 package io.dockstore.client.cli;
 
-import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
@@ -56,14 +59,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.eclipse.jetty.http.HttpStatus;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * Basic confidential integration tests, focusing on publishing/unpublishing both automatic and manually added tools
@@ -71,18 +73,19 @@ import org.junit.experimental.categories.Category;
  *
  * @author aduncan
  */
-@Category({ ConfidentialTest.class, ToolTest.class })
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+@ExtendWith(TestStatus.class)
+@org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
+@org.junit.jupiter.api.Tag(ToolTest.NAME)
 public class BasicIT extends BaseIT {
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT, testingPostgres);
@@ -94,14 +97,14 @@ public class BasicIT extends BaseIT {
      */
 
     @Test
-    public void testDisallowedOrgRefresh() {
+    void testDisallowedOrgRefresh() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         try {
             usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
             fail("Refresh by organization should fail");
         } catch (ApiException e) {
-            assertTrue("Should see error message", e.getMessage().contains("Missing the required parameter"));
+            assertTrue(e.getMessage().contains("Missing the required parameter"), "Should see error message");
         }
     }
 
@@ -109,7 +112,7 @@ public class BasicIT extends BaseIT {
      * Tests that registration works with non-short names
      */
     @Test
-    public void testRegistrationWithNonLowerCase() {
+    void testRegistrationWithNonLowerCase() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -123,7 +126,7 @@ public class BasicIT extends BaseIT {
     }
 
     @Test
-    public void testRefreshToolNoVersions() {
+    void testRefreshToolNoVersions() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/noautobuild", null);
@@ -144,7 +147,7 @@ public class BasicIT extends BaseIT {
      * Tests that refresh workflows works, also that refreshing without a github token should not destroy workflows or their existing versions
      */
     @Test
-    public void testRefreshWorkflow() {
+    void testRefreshWorkflow() throws Exception {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
@@ -154,7 +157,7 @@ public class BasicIT extends BaseIT {
 
         // should have a certain number of workflows based on github contents
         final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
-        assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);
+        assertTrue(secondWorkflowCount > 0, "should find non-zero number of workflows");
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
@@ -172,21 +175,20 @@ public class BasicIT extends BaseIT {
         final long updatedWorkflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
         final long updatedWorkflowVersionName = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where name='master'", long.class);
-        assertTrue("there should be only one version", updatedWorkflowVersionCount == 1 && updatedWorkflowVersionName == 1);
+        assertTrue(updatedWorkflowVersionCount == 1 && updatedWorkflowVersionName == 1, "there should be only one version");
 
         // delete quay.io token
         testingPostgres.runUpdateStatement("delete from token where tokensource = 'github.com'");
 
-        systemExit.checkAssertionAfterwards(() -> {
-            // should not delete workflows
-            final long thirdWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
-            Assert.assertEquals("there should be no change in count of workflows", secondWorkflowCount, thirdWorkflowCount);
-        });
+        // should not delete workflows
+        final long thirdWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(secondWorkflowCount, thirdWorkflowCount, "there should be no change in count of workflows");
+
 
         // should include nextflow example workflow stub
         final long nfWorkflowCount = testingPostgres
             .runSelectStatement("select count(*) from workflow where giturl like '%ampa-nf%'", long.class);
-        assertTrue("should find non-zero number of next flow workflows", nfWorkflowCount > 0);
+        assertTrue(nfWorkflowCount > 0, "should find non-zero number of next flow workflows");
 
         // refresh without github token
         try {
@@ -200,7 +202,7 @@ public class BasicIT extends BaseIT {
      * Tests manually adding, updating, and removing a dockerhub tool
      */
     @Test
-    public void testVersionTagDockerhub() {
+    void testVersionTagDockerhub() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
@@ -210,13 +212,13 @@ public class BasicIT extends BaseIT {
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
+        assertTrue(events.isEmpty(), "No starred entries, so there should be no events returned");
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0).stream()
             .filter(e -> e.getType() != TypeEnum.PUBLISH_ENTRY).collect(Collectors.toList());
-        Assert.assertTrue("Should not be an event for the non-tag version that was automatically created for the newly registered tool", events.isEmpty());
+        assertTrue(events.isEmpty(), "Should not be an event for the non-tag version that was automatically created for the newly registered tool");
         // Add a tag
         Tag tag = new Tag();
         tag.setName("masterTest");
@@ -229,9 +231,9 @@ public class BasicIT extends BaseIT {
         tags = toolTagsApi.addTags(tool.getId(), tags);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0).stream()
             .filter(e -> e.getType() != TypeEnum.PUBLISH_ENTRY).collect(Collectors.toList());
-        Assert.assertEquals("Should have created an event for the new tag", 1, events.size());
+        assertEquals(1, events.size(), "Should have created an event for the new tag");
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
-        Assert.assertEquals("there should be one tag", 1, count);
+        assertEquals(1, count, "there should be one tag");
 
         // Update tag
         Optional<Tag> optTag = tags.stream().filter(version -> Objects.equals(version.getName(), "masterTest")).findFirst();
@@ -247,16 +249,16 @@ public class BasicIT extends BaseIT {
 
         final long count2 = testingPostgres.runSelectStatement(
             "select count(*) from tag t, version_metadata vm where name = 'masterTest' and vm.hidden='t' and t.id = vm.id", long.class);
-        Assert.assertEquals("there should be one tag", 1, count2);
+        assertEquals(1, count2, "there should be one tag");
 
         toolTagsApi.deleteTags(tool.getId(), tag.getId());
 
         final long count3 = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
-        Assert.assertEquals("there should be no tags", 0, count3);
+        assertEquals(0, count3, "there should be no tags");
 
     }
     @Test
-    public void testRecentEventsByUser() {
+    void testRecentEventsByUser() {
 
         // Create API client for user
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
@@ -273,7 +275,7 @@ public class BasicIT extends BaseIT {
         // Nothing has been starred so the events API should return an empty collection for the user
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
+        assertTrue(events.isEmpty(), "No starred entries, so there should be no events returned");
 
         // Star the tool that was registered above
         StarRequest starRequest = new StarRequest();
@@ -291,7 +293,7 @@ public class BasicIT extends BaseIT {
 
         // Events API should return 1 event
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        assertEquals("The user should return 4 events relating to the starred entry", 4, events.size());
+        assertEquals(4, events.size(), "The user should return 4 events relating to the starred entry");
 
         // Get the event to compare with another user's request
         Event event = events.get(0);
@@ -302,11 +304,12 @@ public class BasicIT extends BaseIT {
 
         // Get events by user id
         List<Event> eventsForFirstClient = client2EventsApi.getUserEvents(user.getId(), EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        assertEquals("The user should return 4 events relating to the starred entry", 4, eventsForFirstClient.size());
+        assertEquals(4, eventsForFirstClient.size(), "The user should return 4 events relating to the starred entry");
 
         // Get user initiated events by user id
         List<Event> profileEventsForFirstClient = client2EventsApi.getUserEvents(user.getId(), EventSearchType.PROFILE.toString(), 10, 0);
-        assertTrue("The user events should be all initiated by the client", !profileEventsForFirstClient.isEmpty() && profileEventsForFirstClient.stream().allMatch(e -> Objects.equals(e.getInitiatorUser().getId(), user.getId())));
+        assertTrue(!profileEventsForFirstClient.isEmpty() && profileEventsForFirstClient.stream().allMatch(e -> Objects.equals(e.getInitiatorUser().getId(), user.getId())),
+            "The user events should be all initiated by the client");
         profileEventsForFirstClient.sort(Comparator.comparing(Event::getId).reversed());
         List<Event> profileEventsFromWebservice = client2EventsApi.getUserEvents(user.getId(), EventSearchType.PROFILE.toString(), 10, 0);
         assertEquals(profileEventsForFirstClient, profileEventsFromWebservice);
@@ -315,11 +318,11 @@ public class BasicIT extends BaseIT {
         Event event2 = eventsForFirstClient.get(0);
 
         // Assert the event client2 was able to identify is the same event caused by the first client
-        assertEquals("The two events should have the same ID", event.getId(), event2.getId());
+        assertEquals(event.getId(), event2.getId(), "The two events should have the same ID");
     }
 
     @Test
-    public void testRecentEventsByUserWithNullInput() {
+    void testRecentEventsByUserWithNullInput() {
 
         // Create a second client and query for the starred event from the first user
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -339,7 +342,7 @@ public class BasicIT extends BaseIT {
      * Tests the case where a manually registered quay tool matching an automated build should be treated as a separate auto build (see issue 106)
      */
     @Test
-    public void testManualQuaySameAsAutoQuay() {
+    void testManualQuaySameAsAutoQuay() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -351,14 +354,14 @@ public class BasicIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and toolname = 'regular'", long.class);
-        Assert.assertEquals("the tool should be Auto", 1, count);
+        assertEquals(1, count, "the tool should be Auto");
     }
 
     /**
      * Tests the case where a manually registered quay tool has the same path as an auto build but different git repo
      */
     @Test
-    public void testManualQuayToAutoSamePathDifferentGitRepo() {
+    void testManualQuayToAutoSamePathDifferentGitRepo() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -369,14 +372,14 @@ public class BasicIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode = 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and toolname = 'alternate'", long.class);
-        Assert.assertEquals("the tool should be Manual still", 1, count);
+        assertEquals(1, count, "the tool should be Manual still");
     }
 
     /**
      * Tests that a manually published tool still becomes manual even after the existing similar auto tools all have toolnames (see issue 120)
      */
     @Test
-    public void testManualQuayToAutoNoAutoWithoutToolname() {
+    void testManualQuayToAutoNoAutoWithoutToolname() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -391,7 +394,7 @@ public class BasicIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and toolname = 'testtool'", long.class);
-        Assert.assertEquals("the tool should be Auto", 1, count);
+        assertEquals(1, count, "the tool should be Auto");
     }
 
     /**
@@ -399,7 +402,7 @@ public class BasicIT extends BaseIT {
      * UPDATE: Should fail because you can't publish a tool with no valid tags
      */
     @Test
-    public void testManualQuayManualBuild() {
+    void testManualQuayManualBuild() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -417,7 +420,7 @@ public class BasicIT extends BaseIT {
      * Tests the case where a manually registered quay tool does not have any tags
      */
     @Test
-    public void testManualQuayNoTags() {
+    void testManualQuayNoTags() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -435,7 +438,7 @@ public class BasicIT extends BaseIT {
      * Tests that a quick registered quay tool with no autobuild can be updated to have a manually set CWL file from git (see issue 19)
      */
     @Test
-    public void testQuayNoAutobuild() {
+    void testQuayNoAutobuild() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -446,7 +449,7 @@ public class BasicIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'noautobuild' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'",
             long.class);
-        Assert.assertEquals("the tool should now have an associated git repo", 1, count);
+        assertEquals(1, count, "the tool should now have an associated git repo");
 
         DockstoreTool existingToolNoBuild = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/nobuildsatall", "");
         existingToolNoBuild.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
@@ -455,7 +458,7 @@ public class BasicIT extends BaseIT {
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'nobuildsatall' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'",
             long.class);
-        Assert.assertEquals("the tool should now have an associated git repo", 1, count2);
+        assertEquals(1, count2, "the tool should now have an associated git repo");
 
     }
 
@@ -463,7 +466,7 @@ public class BasicIT extends BaseIT {
      * Tests a user trying to add a quay tool that they do not own and are not in the owning organization
      */
     @Test
-    public void testAddQuayRepoOfNonOwnedOrg() {
+    void testAddQuayRepoOfNonOwnedOrg() {
         // Repo user isn't part of org
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
@@ -486,7 +489,7 @@ public class BasicIT extends BaseIT {
      * - Checks if the tag is back
      */
     @Test
-    public void testRefreshAfterDeletingAVersion() {
+    void testRefreshAfterDeletingAVersion() {
         // Get the tool id of the entry whose path is quay.io/dockstoretestuser/quayandgithub
         final long id = testingPostgres
             .runSelectStatement("select id from tool where name = 'quayandgithub' and namespace='dockstoretestuser' and registry='quay.io'",
@@ -495,7 +498,7 @@ public class BasicIT extends BaseIT {
         // Check how many versions the entry has
         final long currentNumberOfTags = testingPostgres
             .runSelectStatement("select count(*) from tag where parentid = '" + id + "'", long.class);
-        assertTrue("There are no tags for this tool", currentNumberOfTags > 0);
+        assertTrue(currentNumberOfTags > 0, "There are no tags for this tool");
 
         // This grabs the first tag that belongs to the tool
         final long firstTag = testingPostgres.runSelectStatement("select id from tag where parentid = '" + id + "'", long.class);
@@ -506,7 +509,7 @@ public class BasicIT extends BaseIT {
         // Double check that there is one less tag
         final long afterDeletionTags = testingPostgres
             .runSelectStatement("select count(*) from tag where parentid = '" + id + "'", long.class);
-        Assert.assertEquals(currentNumberOfTags - 1, afterDeletionTags);
+        assertEquals(currentNumberOfTags - 1, afterDeletionTags);
 
         // Refresh the tool
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
@@ -517,33 +520,33 @@ public class BasicIT extends BaseIT {
         // Check how many tags there are after the refresh
         final long afterRefreshTags = testingPostgres
             .runSelectStatement("select count(*) from tag where parentid = '" + id + "'", long.class);
-        Assert.assertEquals(currentNumberOfTags, afterRefreshTags);
+        assertEquals(currentNumberOfTags, afterRefreshTags);
     }
 
     /**
      * Tests that a git reference for a tool can include branches named like feature/...
      */
     @Test
-    public void testGitReferenceFeatureBranch() {
+    void testGitReferenceFeatureBranch() {
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where reference = 'feature/test'", long.class);
-        Assert.assertEquals("there should be 2 tags with the reference feature/test", 2, count);
+        assertEquals(2, count, "there should be 2 tags with the reference feature/test");
     }
 
     /**
      * This tests that a tool's default version can be automatically set during refresh
      */
     @Test
-    public void testUpdateToolDefaultVersionDuringRefresh() {
+    void testUpdateToolDefaultVersionDuringRefresh() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "regular",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
-        Assert.assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "latest", tool.getDefaultVersion());
+        assertEquals("latest", tool.getDefaultVersion(), "manualRegisterAndPublish does a refresh, it should automatically set the default version");
         tool = toolsApi.updateToolDefaultVersion(tool.getId(), "test");
-        Assert.assertEquals("Should be able to overwrite previous default version", "test", tool.getDefaultVersion());
+        assertEquals("test", tool.getDefaultVersion(), "Should be able to overwrite previous default version");
         tool = toolsApi.refresh(tool.getId());
-        Assert.assertEquals("Refresh should not have set it back to the automatic one", "test", tool.getDefaultVersion());
+        assertEquals("test", tool.getDefaultVersion(), "Refresh should not have set it back to the automatic one");
 
     }
 
@@ -551,7 +554,7 @@ public class BasicIT extends BaseIT {
      * Tests that a WDL file is supported
      */
     @Test
-    public void testQuayGithubQuickRegisterWithWDL() {
+    void testQuayGithubQuickRegisterWithWDL() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
@@ -559,7 +562,7 @@ public class BasicIT extends BaseIT {
         tool = toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and ispublished = 't'", long.class);
-        Assert.assertEquals("the given entry should be published", 1, count);
+        assertEquals(1, count, "the given entry should be published");
     }
 
 
@@ -567,7 +570,7 @@ public class BasicIT extends BaseIT {
      * This tests that a tool can be updated to have default version, and that metadata is set related to the default version
      */
     @Test
-    public void testSetDefaultTag() {
+    void testSetDefaultTag() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         // Update tool with default version that has metadata
@@ -579,12 +582,12 @@ public class BasicIT extends BaseIT {
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and actualdefaultversion is not null", long.class);
-        Assert.assertEquals("the tool should have a default version set", 1, count);
+        assertEquals(1, count, "the tool should have a default version set");
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and actualdefaultversion is not null and author = 'Dockstore Test User'",
             long.class);
-        Assert.assertEquals("the tool should have any metadata set (author)", 1, count2);
+        assertEquals(1, count2, "the tool should have any metadata set (author)");
 
         // Invalidate tags
         testingPostgres.runUpdateStatement("UPDATE tag SET valid='f'");
@@ -604,7 +607,7 @@ public class BasicIT extends BaseIT {
      * Also tests for entry not found when a broken path is used
      */
     @Test
-    public void testManualPublishToolNoDescriptorPaths() {
+    void testManualPublishToolNoDescriptorPaths() {
         // Manual publish, should fail
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
@@ -621,14 +624,15 @@ public class BasicIT extends BaseIT {
         testBrokenPath();
     }
 
-    public void testBrokenPath() {
+    @Test
+    void testBrokenPath() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         try {
             workflowsApi.getWorkflowByPath("potato", BIOWORKFLOW, "potato");
-            Assert.fail("Should've not been able to get an entry that does not exist");
+            fail("Should've not been able to get an entry that does not exist");
         } catch (ApiException e) {
-            Assert.assertEquals("Entry not found.", e.getMessage());
+            assertEquals("Entry not found.", e.getMessage());
         }
     }
 
@@ -636,14 +640,14 @@ public class BasicIT extends BaseIT {
      * This tests the dirty bit attribute for tool tags with quay
      */
     @Test
-    public void testQuayDirtyBit() {
+    void testQuayDirtyBit() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
 
         // Check that no tags have a true dirty bit
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where dirtybit = true", long.class);
-        Assert.assertEquals("there should be no tags with dirty bit, there are " + count, 0, count);
+        assertEquals(0, count, "there should be no tags with dirty bit, there are " + count);
 
         // Edit tag cwl
         DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
@@ -671,7 +675,7 @@ public class BasicIT extends BaseIT {
 
         // There should now be two true dirty bits
         final long count1 = testingPostgres.runSelectStatement("select count(*) from tag where dirtybit = true", long.class);
-        Assert.assertEquals("there should be two tags with dirty bit, there are " + count1, 2, count1);
+        assertEquals(2, count1, "there should be two tags with dirty bit, there are " + count1);
 
         // Update default cwl to /Dockstoreclean.cwl
         existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
@@ -682,14 +686,14 @@ public class BasicIT extends BaseIT {
         // There should only be one tag with /Dockstoreclean.cwl (both tag with new cwl and new wdl should be dirty and not changed)
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tag where cwlpath = '/Dockstoreclean.cwl'", long.class);
-        Assert.assertEquals("there should be only one tag with the cwl path /Dockstoreclean.cwl, there are " + count2, 1, count2);
+        assertEquals(1, count2, "there should be only one tag with the cwl path /Dockstoreclean.cwl, there are " + count2);
     }
 
     /**
      * This tests basic concepts with tool test parameter files
      */
     @Test
-    public void testTestJson() {
+    void testTestJson() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
@@ -700,7 +704,7 @@ public class BasicIT extends BaseIT {
 
         // Check that no WDL or CWL test files
         final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        Assert.assertEquals("there should be no sourcefiles that are test parameter files, there are " + count, 0, count);
+        assertEquals(0, count, "there should be no sourcefiles that are test parameter files, there are " + count);
 
         // Update tag with test parameters
         List<String> toAdd = new ArrayList<>();
@@ -714,14 +718,14 @@ public class BasicIT extends BaseIT {
         toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
         try {
             toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
-            Assert.fail("Should've have thrown an error when deleting non-existent file");
+            fail("Should've have thrown an error when deleting non-existent file");
         } catch (ApiException e) {
-            assertEquals("Should have returned a 404 when deleting non-existent file", HttpStatus.NOT_FOUND_404, e.getCode());
+            assertEquals(HttpStatus.NOT_FOUND_404, e.getCode(), "Should have returned a 404 when deleting non-existent file");
         }
         toolsApi.refresh(existingTool.getId());
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        Assert.assertEquals("there should be two sourcefiles that are test parameter files, there are " + count2, 2, count2);
+        assertEquals(2, count2, "there should be two sourcefiles that are test parameter files, there are " + count2);
 
         // Update tag with test parameters
         toAdd = new ArrayList<>();
@@ -735,7 +739,7 @@ public class BasicIT extends BaseIT {
         toolsApi.refresh(existingTool.getId());
 
         final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        Assert.assertEquals("there should be one sourcefile that is a test parameter file, there are " + count3, 1, count3);
+        assertEquals(1, count3, "there should be one sourcefile that is a test parameter file, there are " + count3);
 
         // Update tag wdltest with test parameters
         toAdd = new ArrayList<>();
@@ -745,7 +749,7 @@ public class BasicIT extends BaseIT {
         toolsApi.refresh(existingTool.getId());
 
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", long.class);
-        Assert.assertEquals("there should be one sourcefile that is a wdl test parameter file, there are " + count4, 1, count4);
+        assertEquals(1, count4, "there should be one sourcefile that is a wdl test parameter file, there are " + count4);
 
         toAdd = new ArrayList<>();
         toAdd.add("test.cwl.json");
@@ -753,7 +757,7 @@ public class BasicIT extends BaseIT {
         toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "wdltest");
         toolsApi.refresh(existingTool.getId());
         final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
-        assertEquals("there should be two sourcefiles that are test parameter files, there are " + count5, 2, count5);
+        assertEquals(2, count5, "there should be two sourcefiles that are test parameter files, there are " + count5);
 
         // refreshing again with the default paths set should not create extra redundant test parameter files
         existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json", "");
@@ -764,14 +768,14 @@ public class BasicIT extends BaseIT {
         final List<Long> testJsonCounts = testingPostgres.runSelectListStatement(
             "select count(*) from sourcefile s, version_sourcefile vs where (s.type = 'CWL_TEST_JSON' or s.type = 'WDL_TEST_JSON') and s.id = vs.sourcefileid group by vs.versionid",
             long.class);
-        assertTrue("there should be at least three sets of test json sourcefiles " + testJsonCounts.size(), testJsonCounts.size() >= 3);
+        assertTrue(testJsonCounts.size() >= 3, "there should be at least three sets of test json sourcefiles " + testJsonCounts.size());
         for (Long testJsonCount : testJsonCounts) {
-            assertTrue("there should be at most two test json for each version", testJsonCount <= 2);
+            assertTrue(testJsonCount <= 2, "there should be at most two test json for each version");
         }
     }
 
     @Test
-    public void testTestParameterOtherUsers() {
+    void testTestParameterOtherUsers() {
         final ApiClient correctWebClient = getWebClient(BaseIT.USER_1_USERNAME, testingPostgres);
         final ApiClient otherWebClient = getWebClient(BaseIT.OTHER_USERNAME, testingPostgres);
 
@@ -781,7 +785,7 @@ public class BasicIT extends BaseIT {
 
         // Check that no WDL or CWL test files
         final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        Assert.assertEquals("there should be no sourcefiles that are test parameter files, there are " + count, 0, count);
+        assertEquals(0, count, "there should be no sourcefiles that are test parameter files, there are " + count);
 
         containersApi
             .addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), DescriptorType.CWL.toString(), "",
@@ -802,7 +806,7 @@ public class BasicIT extends BaseIT {
                 "", "master");
 
         final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        Assert.assertEquals("there should be one sourcefile that is a test parameter file, there are " + count3, 2, count3);
+        assertEquals(2, count3, "there should be one sourcefile that is a test parameter file, there are " + count3);
 
         // start testing deletion
         shouldFail = false;
@@ -821,14 +825,14 @@ public class BasicIT extends BaseIT {
             DescriptorType.CWL.toString(), "master");
 
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
-        Assert.assertEquals("there should be one sourcefile that is a test parameter file, there are " + count4, 0, count4);
+        assertEquals(0, count4, "there should be one sourcefile that is a test parameter file, there are " + count4);
     }
 
     /**
      * This tests some cases for private tools
      */
     @Test
-    public void testPrivateManualPublish() {
+    void testPrivateManualPublish() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -841,7 +845,7 @@ public class BasicIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'",
             long.class);
-        Assert.assertEquals("one tool should be private and published, there are " + count, 1, count);
+        assertEquals(1, count, "one tool should be private and published, there are " + count);
 
         // Manual publish public repo
         DockstoreTool publicTool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "tool2",
@@ -857,8 +861,7 @@ public class BasicIT extends BaseIT {
             publicTool = toolsApi.updateContainer(publicTool.getId(), publicTool);
             fail("Should not be able to update without email");
         } catch (ApiException e) {
-            assertTrue(
-                e.getMessage().contains("A published, private tool must have either an tool author email or tool maintainer email set up"));
+            assertTrue(e.getMessage().contains("A published, private tool must have either an tool author email or tool maintainer email set up"));
         }
 
         // Give the tool a tool maintainer email
@@ -872,7 +875,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can convert a published public tool to private if it has a tool maintainer email set
      */
     @Test
-    public void testPublicToPrivateToPublicTool() {
+    void testPublicToPrivateToPublicTool() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -892,7 +895,7 @@ public class BasicIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'",
             long.class);
-        Assert.assertEquals("one tool should be private and published, there are " + count, 1, count);
+        assertEquals(1, count, "one tool should be private and published, there are " + count);
 
         // Convert the tool back to public
         tool.setPrivateAccess(false);
@@ -902,7 +905,7 @@ public class BasicIT extends BaseIT {
         final long count2 = testingPostgres.runSelectStatement(
             "select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'",
             long.class);
-        Assert.assertEquals("no tool should be private, but there are " + count2, 0, count2);
+        assertEquals(0, count2, "no tool should be private, but there are " + count2);
 
     }
 
@@ -910,7 +913,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can change a tool from public to private without a tool maintainer email, as long as an email is found in the descriptor
      */
     @Test
-    public void testDefaultToEmailInDescriptorForPrivateRepos() {
+    void testDefaultToEmailInDescriptorForPrivateRepos() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -930,7 +933,7 @@ public class BasicIT extends BaseIT {
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail=''",
                 long.class);
-        Assert.assertEquals("one tool should be private and published, there are " + count, 1, count);
+        assertEquals(1, count, "one tool should be private and published, there are " + count);
 
         // Convert the tool back to public
         tool.setPrivateAccess(false);
@@ -941,7 +944,7 @@ public class BasicIT extends BaseIT {
         final long count2 = testingPostgres.runSelectStatement(
             "select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'",
             long.class);
-        Assert.assertEquals("no tool should be private, but there are " + count2, 0, count2);
+        assertEquals(0, count2, "no tool should be private, but there are " + count2);
 
         // Make the tool private but this time define a tool maintainer
         tool.setPrivateAccess(true);
@@ -953,14 +956,14 @@ public class BasicIT extends BaseIT {
         final long count3 = testingPostgres.runSelectStatement(
             "select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail2@domain.com'",
             long.class);
-        Assert.assertEquals("one tool should be private and published, there are " + count3, 1, count3);
+        assertEquals(1, count3, "one tool should be private and published, there are " + count3);
     }
 
     /**
      * This tests that you cannot manually publish a private tool unless it has a tool maintainer email
      */
     @Test
-    public void testPrivateManualPublishNoToolMaintainerEmail() {
+    void testPrivateManualPublishNoToolMaintainerEmail() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -980,8 +983,8 @@ public class BasicIT extends BaseIT {
      * This tests that you can manually publish a gitlab registry image
      */
     @Test
-    @Category(SlowTest.class)
-    public void testManualPublishGitlabDocker() {
+    @org.junit.jupiter.api.Tag(SlowTest.NAME)
+    void testManualPublishGitlabDocker() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -993,7 +996,7 @@ public class BasicIT extends BaseIT {
         // Check that tool exists and is published
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true'", long.class);
-        Assert.assertEquals("one tool should be private and published, there are " + count, 1, count);
+        assertEquals(1, count, "one tool should be private and published, there are " + count);
 
     }
 
@@ -1003,7 +1006,7 @@ public class BasicIT extends BaseIT {
      * - A private Amazon ECR image (has a "*.dkr.ecr.*.amazonaws.com" path) as a public tool
      */
     @Test
-    public void testManualPublishPrivateAccessAmazonECR() {
+    void testManualPublishPrivateAccessAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1036,7 +1039,7 @@ public class BasicIT extends BaseIT {
      * Public and private Amazon ECR repositories have different docker paths, and an Amazon ECR repository cannot change its visibility once it's created.
      */
     @Test
-    public void testManualPublishPrivateAccessUpdateAmazonECR() {
+    void testManualPublishPrivateAccessUpdateAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1050,7 +1053,7 @@ public class BasicIT extends BaseIT {
         final long privateCount = testingPostgres.runSelectStatement(
                 "select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test.dkr.ecr.us-east-1.amazonaws.com' and namespace = 'notarealnamespace' and name = 'notarealname'",
                 long.class);
-        assertEquals("There should be one published, private Amazon ECR tool. There are " + privateCount, 1, privateCount);
+        assertEquals(1, privateCount, "There should be one published, private Amazon ECR tool. There are " + privateCount);
 
         // Update tool to public (shouldn't work)
         privateTool.setPrivateAccess(false);
@@ -1069,7 +1072,7 @@ public class BasicIT extends BaseIT {
         // Check that tool is published and has correct values
         final long publicCount = testingPostgres.runSelectStatement(
                 "select count(*) from tool where ispublished='true' and privateaccess='false'", long.class);
-        assertEquals("There should be one published, public Amazon ECR tool. There are " + publicCount, 1, publicCount);
+        assertEquals(1, publicCount, "There should be one published, public Amazon ECR tool. There are " + publicCount);
 
         // Update tool to private (shouldn't work)
         publicTool.setPrivateAccess(true);
@@ -1088,7 +1091,7 @@ public class BasicIT extends BaseIT {
      * but end up with the same tool paths.
      */
     @Test
-    public void testManualPublishDuplicatePublicAmazonECR() {
+    void testManualPublishDuplicatePublicAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1130,7 +1133,7 @@ public class BasicIT extends BaseIT {
      * but end up with the same tool paths.
      */
     @Test
-    public void testManualPublishDuplicatePrivateAmazonECR() {
+    void testManualPublishDuplicatePrivateAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1173,7 +1176,7 @@ public class BasicIT extends BaseIT {
      * Specifically testing this because Amazon ECR supports slashes in its repository names.
      */
     @Test
-    public void testGetContainerByPathsAmazonECR() {
+    void testGetContainerByPathsAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool;
@@ -1238,14 +1241,14 @@ public class BasicIT extends BaseIT {
 
         try {
             List<DockstoreTool> foundTools = toolsApi.getContainerByPath(tool.getPath());
-            assertEquals("Should have two tools with the path 'public.ecr.aws/abcd1234/foo/bar'.", 2, foundTools.size());
+            assertEquals(2, foundTools.size(), "Should have two tools with the path 'public.ecr.aws/abcd1234/foo/bar'.");
         } catch (ApiException e) {
             fail("Should have been able to get the Amazon ECR tools by path.");
         }
 
         try {
             List<DockstoreTool> foundTools = toolsApi.getPublishedContainerByPath(tool.getPath());
-            assertEquals("Should have two published tools with the path 'public.ecr.aws/abcd1234/foo/bar'.", 2, foundTools.size());
+            assertEquals(2, foundTools.size(), "Should have two published tools with the path 'public.ecr.aws/abcd1234/foo/bar'.");
         } catch (ApiException e) {
             fail("Should have been able to get the published Amazon ECR tools by path.");
         }
@@ -1255,7 +1258,7 @@ public class BasicIT extends BaseIT {
      * This tests that entry paths are split into their registry, org, repo, and entry name components correctly.
      */
     @Test
-    public void testSplitPath() {
+    void testSplitPath() {
         final int registryIndex = 0;
         final int orgIndex = 1;
         final int repoIndex = 2;
@@ -1312,7 +1315,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can manually publish a private only registry (Seven Bridges), but you can't change the tool to public
      */
     @Test
-    public void testManualPublishSevenBridgesTool() {
+    void testManualPublishSevenBridgesTool() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1325,7 +1328,7 @@ public class BasicIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where ispublished='true' and privateaccess='true' and registry='images.sbgenomics.com' and namespace = 'notarealnamespace' and name = 'notarealname'",
             long.class);
-        assertEquals("one tool should be private, published and from seven bridges, there are " + count, 1, count);
+        assertEquals(1, count, "one tool should be private, published and from seven bridges, there are " + count);
 
         // Update tool to public (shouldn't work)
         tool.setPrivateAccess(false);
@@ -1341,7 +1344,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can't manually publish a private only registry (Seven Bridges) with an incorrect registry path
      */
     @Test
-    public void testManualPublishSevenBridgesToolIncorrectRegistryPath() {
+    void testManualPublishSevenBridgesToolIncorrectRegistryPath() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1355,7 +1358,7 @@ public class BasicIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test-images.sbgenomics.com' and namespace = 'notarealnamespace' and name = 'notarealname'",
             long.class);
-        assertEquals("one tool should be private, published and from seven bridges, there are " + count, 1, count);
+        assertEquals(1, count, "one tool should be private, published and from seven bridges, there are " + count);
 
         // Manual publish incorrect path
         try {
@@ -1373,7 +1376,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can't manually publish a private only registry as public
      */
     @Test
-    public void testManualPublishPrivateOnlyRegistryAsPublic() {
+    void testManualPublishPrivateOnlyRegistryAsPublic() {
         // Manual publish
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
@@ -1393,7 +1396,7 @@ public class BasicIT extends BaseIT {
      * This tests that you can't manually publish a tool from a registry that requires a custom docker path without specifying the path
      */
     @Test
-    public void testManualPublishCustomDockerPathRegistry() {
+    void testManualPublishCustomDockerPathRegistry() {
         // Manual publish
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
@@ -1410,7 +1413,7 @@ public class BasicIT extends BaseIT {
 
 
     @Test
-    public void testGettingSourceFilesForTag() {
+    void testGettingSourceFilesForTag() {
         final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
@@ -1421,8 +1424,8 @@ public class BasicIT extends BaseIT {
         Tag tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst().get();
 
         List<SourceFile> sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
-        Assert.assertNotNull(sourceFiles);
-        Assert.assertEquals(3, sourceFiles.size());
+        assertNotNull(sourceFiles);
+        assertEquals(3, sourceFiles.size());
 
         // Check that filtering works
         List<String> fileTypes = new ArrayList<>();
@@ -1431,19 +1434,19 @@ public class BasicIT extends BaseIT {
         fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_WDL.toString());
 
         sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
-        Assert.assertNotNull(sourceFiles);
-        Assert.assertEquals(3, sourceFiles.size());
+        assertNotNull(sourceFiles);
+        assertEquals(3, sourceFiles.size());
 
         fileTypes.remove(1);
         sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
-        Assert.assertNotNull(sourceFiles);
-        Assert.assertEquals(2, sourceFiles.size());
+        assertNotNull(sourceFiles);
+        assertEquals(2, sourceFiles.size());
 
         fileTypes.clear();
         fileTypes.add(DescriptorLanguage.FileType.NEXTFLOW_CONFIG.toString());
         sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
-        Assert.assertNotNull(sourceFiles);
-        Assert.assertEquals(0, sourceFiles.size());
+        assertNotNull(sourceFiles);
+        assertEquals(0, sourceFiles.size());
 
         // Check that you can't grab a tag's sourcefiles if it doesn't belong to the tool.
         DockstoreTool tool2 = manualRegisterAndPublish(toolApi, "dockstoretestuser", "private_test_repo", "tool1",
@@ -1453,9 +1456,9 @@ public class BasicIT extends BaseIT {
 
         try {
             sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tool2tag.getId(), null);
-            Assert.fail("Shouldn't be able to get a tag's sourcefiles if it doesn't belong to the tool.");
+            fail("Shouldn't be able to get a tag's sourcefiles if it doesn't belong to the tool.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            Assert.assertEquals("Version " + tool2tag.getId() + " does not exist for this entry", ex.getMessage());
+            assertEquals("Version " + tool2tag.getId() + " does not exist for this entry", ex.getMessage());
         }
 
 
@@ -1464,16 +1467,16 @@ public class BasicIT extends BaseIT {
         io.dockstore.openapi.client.api.ContainertagsApi user2toolTagsApi = new io.dockstore.openapi.client.api.ContainertagsApi(user2OpenAPIWebClient);
         try {
             sourceFiles = user2toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
-            Assert.fail("Should not be able to grab sourcefiles if not published and doesn't belong to user.");
+            fail("Should not be able to grab sourcefiles if not published and doesn't belong to user.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            Assert.assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
+            assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
         }
 
         // sourcefiles can be viewed by others once published
         tool = toolApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
         sourceFiles = user2toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
-        Assert.assertNotNull(sourceFiles);
-        Assert.assertEquals(3, sourceFiles.size());
+        assertNotNull(sourceFiles);
+        assertEquals(3, sourceFiles.size());
     }
 
 }

@@ -19,4 +19,10 @@ package io.dockstore.common;
  * Setting aside tests that take a substantial amount of time
  */
 public interface SlowTest {
+    String NAME = "io.dockstore.common.SlowTest";
+
+    default String getName() {
+        // silly method to satisfy CheckStyle
+        return NAME;
+    }
 }

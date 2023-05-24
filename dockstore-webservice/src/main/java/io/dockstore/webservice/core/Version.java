@@ -21,20 +21,26 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.metrics.Metrics;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -48,6 +54,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.MapKeyEnumerated;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -217,6 +225,22 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
 
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JoinTable(name = "version_metrics", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "metricsid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @MapKeyColumn(name = "platform")
+    @MapKeyEnumerated(EnumType.STRING)
+    @ApiModelProperty(value = "The aggregated metrics for executions of this version, grouped by platform", position = 26)
+    private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
+
+    @Column(columnDefinition = "varchar")
+    @Convert(converter = UserFilesConverter.class)
+    @ApiModelProperty(value = "The user-specified files for the version.")
+    private List<String> userFiles = new ArrayList<>();
+
+    @Column(columnDefinition = "varchar")
+    @ApiModelProperty(value = "A custom readme for the version, if applicable.")
+    private String readMePath;
+
     @JsonIgnore
     @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
     private Set<EntryVersion> entryVersions = new HashSet<>();
@@ -286,6 +310,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         referenceType = version.getReferenceType();
         frozen = version.isFrozen();
         commitID = version.getCommitID();
+        readMePath = version.getReadMePath();
+        this.setAuthors(version.getAuthors());
+        this.setOrcidAuthors(version.getOrcidAuthors());
         this.setVersionMetadata(version.getVersionMetadata());
     }
 
@@ -465,20 +492,23 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().descriptionSource = newDescriptionSource;
     }
 
-    // remove this method when author is removed from VersionMetadata
-    public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;
-    }
-
-    // remove this method when author is removed from VersionMetadata
-    public void setEmail(String newEmail) {
-        this.getVersionMetadata().email = newEmail;
-    }
-
     public void addAuthor(final Author author) {
-        boolean isNewAuthor = this.authors.stream().noneMatch(existingAuthor -> existingAuthor.getName().equals(author.getName()));
-        if (isNewAuthor) {
-            this.authors.add(author);
+        this.authors.add(author);
+    }
+
+    /**
+     * Sets the versions authors using authors from the descriptor.
+     * @param newAuthors
+     */
+    @JsonIgnore
+    public void setAuthorsFromDescriptor(Set<Author> newAuthors) {
+        // If it's a .dockstore.yml workflow, clear authors because it may be from the .dockstore.yml
+        if (this.parent instanceof Workflow workflow && workflow.getMode() == WorkflowMode.DOCKSTORE_YML) {
+            this.getOrcidAuthors().clear();
+            this.setAuthors(newAuthors);
+        } else {
+            // Don't need to worry about existing authors if it's not a .dockstore.yml because the authors are always from the descriptor
+            this.authors.addAll(newAuthors);
         }
     }
 
@@ -580,14 +610,47 @@ public abstract class Version<T extends Version> implements Comparable<T> {
      * @param newVersionMetadata    Newest metadata from source control
      */
     public void setVersionMetadata(VersionMetadata newVersionMetadata) {
-        this.setAuthor(newVersionMetadata.author);
-        this.setEmail(newVersionMetadata.email);
         this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
         this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }
 
     public void setParent(Entry<?, ?> parent) {
         this.parent = parent;
+    }
+
+
+    public void setDescriptorTypeVersionsFromSourceFiles(Set<SourceFile> sourceFilesWithDescriptorTypeVersions) {
+        List<String> languageVersions = sourceFilesWithDescriptorTypeVersions.stream()
+                .map(SourceFile::getMetadata)
+                .map(SourceFileMetadata::getTypeVersion)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        getVersionMetadata().setDescriptorTypeVersions(languageVersions);
+    }
+
+    public Map<Partner, Metrics> getMetricsByPlatform() {
+        return metricsByPlatform;
+    }
+
+    public void setMetricsByPlatform(Map<Partner, Metrics> metricsByPlatform) {
+        this.metricsByPlatform = metricsByPlatform;
+    }
+
+    public List<String> getUserFiles() {
+        return userFiles;
+    }
+
+    public void setUserFiles(List<String> userFiles) {
+        this.userFiles = userFiles;
+    }
+
+    public String getReadMePath() {
+        return readMePath;
+    }
+
+    public void setReadMePath(String readMePath) {
+        this.readMePath = readMePath;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED

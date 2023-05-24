@@ -16,15 +16,17 @@
 
 package io.dockstore.client.cli;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.ToolTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -49,25 +51,30 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * Focuses on creating a large amount of tools to test indexing
  *
  * @author gluu
  */
-@Category({ BenchmarkTest.class, ToolTest.class })
-@Ignore("more like benchmarking than a test per say")
-public class AdvancedIndexingBenchmarkIT extends BaseIT {
+@Tag(BenchmarkTest.NAME)
+@Tag(ToolTest.NAME)
+@Disabled("more like benchmarking than a test per say")
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     private static final int TOOL_COUNT = 10;
     private static final int MAX_LABELS_PER_TOOL = 5;
@@ -76,10 +83,11 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     private static final String LEXICON = "ABCDEFGHIJKLMNOPQRSTUVWXYZ12345674890";
     private static final java.util.Random RAND = new java.util.Random();
     private static final Set<String> IDENTIFIERS = new HashSet<>();
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
     private DockstoreWebserviceApplication application;
     private Session session;
     private ArrayList<String> fixedStringLabels;
@@ -90,7 +98,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     private javax.ws.rs.client.Client client;
 
     /** do nothing, do not load sample data */
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() {
     }
@@ -109,7 +117,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         return builder.toString();
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -124,13 +132,13 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         indexTimes = new ArrayList<>();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         client.close();
     }
 
     @Test
-    public void testCreate10000Tools() {
+    void testCreate10000Tools() {
         this.sessionFactory = application.getHibernate().getSessionFactory();
         try {
             Transaction transaction = this.sessionFactory.openSession().getTransaction();
@@ -170,7 +178,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         List<Tool> tools = response.readEntity(new GenericType<List<Tool>>() {
         });
         int actualToolCount = tools.size();
-        assertEquals("Supposed to have " + TOOL_COUNT + " tools.  Instead got " + actualToolCount + " tools.", actualToolCount, TOOL_COUNT);
+        assertEquals(TOOL_COUNT, actualToolCount, "Supposed to have " + TOOL_COUNT + " tools.  Instead got " + actualToolCount + " tools.");
         LOGGER.error("Amount of tools created: " + String.valueOf(actualToolCount));
         for (Long indexTime : indexTimes) {
             LOGGER.error(String.valueOf(indexTime));
@@ -214,18 +222,18 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         for (int i = 0; i < RAND.nextInt(MAX_LABELS_PER_TOOL); i++) {
             setLabels.add(randomLabel());
         }
-        String[] arrayLabels = setLabels.toArray(new String[setLabels.size()]);
+        String[] arrayLabels = setLabels.toArray(new String[0]);
         labels = String.join(", ", arrayLabels);
         return labels;
     }
 
     private ArrayList<String> randomlyGenerateFixedAuthors() {
-        Set<String> set = new HashSet();
+        Set<String> set = new HashSet<>();
         while (set.size() != MAX_AUTHORS) {
             set.add(randomIdentifier());
         }
         ArrayList<String> authors = new ArrayList<>(set);
-        assertEquals(authors.size(), MAX_AUTHORS);
+        assertEquals(MAX_AUTHORS, authors.size());
         return authors;
     }
 
@@ -233,8 +241,10 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         return fixedStringLabels.get(RAND.nextInt(fixedStringLabels.size()));
     }
 
-    private String randomAuthor() {
-        return fixedAuthors.get(RAND.nextInt(fixedAuthors.size()));
+    private Set<Author> randomAuthor() {
+        Author randomAuthor = new Author(fixedAuthors.get(RAND.nextInt(fixedAuthors.size())));
+        randomAuthor.setEmail(randomIdentifier());
+        return Set.of(randomAuthor);
     }
 
     private String randomOrganization() {
@@ -243,9 +253,8 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     private Tool randomlyGenerateTool() {
         Tool tool = new Tool();
-        tool.setAuthor(randomAuthor());
+        tool.setAuthors(randomAuthor());
         tool.setDescription((randomIdentifier()));
-        tool.setEmail(randomIdentifier());
         tool.setLastUpdated(new Date());
         tool.setGitUrl("https://github.com/" + randomIdentifier() + "/" + randomIdentifier());
         tool.setMode(ToolMode.MANUAL_IMAGE_PATH);

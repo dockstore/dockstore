@@ -23,11 +23,18 @@ COMMENT ON COLUMN workflowversion.dbupdatedate IS 'Remote: When workflow was ref
 CREATE UNIQUE INDEX full_workflow_name ON workflow USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
 CREATE UNIQUE INDEX full_workflow_name_masterlist ON fullworkflowpath USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
 CREATE UNIQUE INDEX full_tool_name ON tool USING btree (registry, namespace, name, toolname) WHERE toolname IS NOT NULL;
+CREATE UNIQUE INDEX case_insensitive_toolname on tool using btree (registry, namespace, name, lower(toolname)) where toolname is not null;
 CREATE UNIQUE INDEX full_apptool_name ON apptool USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
+CREATE UNIQUE INDEX case_insensitive_apptool_toolname on apptool using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
+CREATE UNIQUE INDEX full_notebook_name ON notebook USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
+CREATE UNIQUE INDEX case_insensitive_notebook_workflowname on notebook using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null;
 CREATE UNIQUE INDEX partial_workflow_name ON workflow USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
 CREATE UNIQUE INDEX partial_workflow_name_masterlist ON fullworkflowpath USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
+-- see https://github.com/dockstore/dockstore/issues/5287, the id may need to be incremented depending on how often people stumble into this
+CREATE UNIQUE INDEX case_insensitive_workflow_workflowname on workflow using btree (sourcecontrol, organization, repository, lower(workflowname)) where workflowname is not null and id > 22054;
 CREATE UNIQUE INDEX partial_tool_name ON tool USING btree (registry, namespace, name) WHERE toolname IS NULL;
 CREATE UNIQUE INDEX partial_apptool_name ON apptool USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
+CREATE UNIQUE INDEX partial_notebook_name ON notebook USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
 CREATE UNIQUE INDEX full_service_name ON service USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
 CREATE UNIQUE INDEX partial_service_name ON service USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
 CREATE UNIQUE INDEX partial_cloud_instance ON cloud_instance USING btree (url) WHERE user_id IS NULL;
@@ -60,3 +67,7 @@ CREATE UNIQUE INDEX collection_name_index ON collection (LOWER(name), organizati
 CREATE UNIQUE INDEX collection_displayname_index ON collection (LOWER(displayname), organizationid) WHERE NOT deleted;
 
 CREATE UNIQUE INDEX collection_categoryname_index ON collection (LOWER(name)) WHERE dtype = 'Category' AND deleted = false;
+
+-- Need to add the accepted column to pass check_migrations.sh because the OrganizationUser JPA class doesn't have the accepted field
+-- Remove this when the accepted column is dropped in the migrations file
+ALTER TABLE organization_user ADD COLUMN accepted boolean NOT NULL;

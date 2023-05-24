@@ -1,13 +1,15 @@
 package io.dockstore.webservice.languages;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -30,15 +32,12 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 // TODO add coverage for CompleteLanguageInterface
-public class LanguagePluginHandlerTest {
+class LanguagePluginHandlerTest {
     public static final String MAIN_DESCRIPTOR_CWL_RESOURCE_PATH = "tools-cwl-workflow-experiments/cwl/workflow_docker.cwl";
     public static final String MAIN_DESCRIPTOR_CWL = "/" + MAIN_DESCRIPTOR_CWL_RESOURCE_PATH;
     public static final String SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH = "tools-cwl-workflow-experiments/cwl/complex_computation_docker.cwl";
@@ -54,7 +53,7 @@ public class LanguagePluginHandlerTest {
     public static final String SERVICE_DESCRIPTOR_RESOURCE_PATH = "tools-cwl-workflow-experiments/cwl/service.yml";
 
     @Test
-    public void parseWorkflowContentTest() throws IOException {
+    void parseWorkflowContentTest() throws IOException {
         Set<SourceFile> sourceFileSet = new TreeSet<>();
 
         SourceFile mainDescriptorSourceFile = createSourceFile(MAIN_DESCRIPTOR_CWL, MAIN_DESCRIPTOR_CWL_RESOURCE_PATH, FileType.DOCKSTORE_CWL);
@@ -66,12 +65,12 @@ public class LanguagePluginHandlerTest {
         Version workflowVersion = new WorkflowVersion();
         workflowVersion = minimalLanguageHandler.parseWorkflowContent(SECONDARY_DESCRIPTOR_CWL,
             mainDescriptorSourceFile.getContent(), sourceFileSet, workflowVersion);
-        Assert.assertEquals("Shakespeare", workflowVersion.getAuthor());
-        Assert.assertEquals("globetheater@bard.com", workflowVersion.getEmail());
+        assertEquals("Shakespeare", workflowVersion.getAuthor());
+        assertEquals("globetheater@bard.com", workflowVersion.getEmail());
     }
 
     @Test
-    public void sourcefilesToIndexedFilesViaValidateWorkflowSetNullTypeTest() throws IOException {
+    void sourcefilesToIndexedFilesViaValidateWorkflowSetNullTypeTest() throws IOException {
         Set<SourceFile> sourceFileSet = new TreeSet<>();
 
         SourceFile otherFileSourceFile = createSourceFile(OTHER_FILE, OTHER_FILE_RESOURCE_PATH, FileType.DOCKSTORE_YML);
@@ -94,14 +93,13 @@ public class LanguagePluginHandlerTest {
         LanguagePluginHandler minimalLanguageHandler = new LanguagePluginHandler(TestLanguage.class);
 
         try {
-            minimalLanguageHandler.validateWorkflowSet(sourceFileSet, SECONDARY_DESCRIPTOR_CWL);
-            Assert.fail("Expected method error");
+            minimalLanguageHandler.validateWorkflowSet(sourceFileSet, SECONDARY_DESCRIPTOR_CWL, null);
+            fail("Expected method error");
         } catch (CustomWebApplicationException e) {
             // ValidateWorkflowSet can intercept the original exception and
             // return HttpStatus.SC_UNPROCESSABLE_ENTITY
-            Assert.assertTrue("Did not get correct status code",
-                e.getResponse().getStatus() == HttpStatus.SC_UNPROCESSABLE_ENTITY
-                    || e.getResponse().getStatus() == HttpStatus.SC_METHOD_FAILURE);
+            assertTrue(e.getResponse().getStatus() == HttpStatus.SC_UNPROCESSABLE_ENTITY
+                || e.getResponse().getStatus() == HttpStatus.SC_METHOD_FAILURE, "Did not get correct status code");
         }
 
         secondaryDescriptorSourceFile.setType(FileType.DOCKSTORE_CWL);
@@ -113,14 +111,14 @@ public class LanguagePluginHandlerTest {
         sourceFileSet.add(secondaryDescriptorSourceFile);
         sourceFileSet.add(testSourceFile);
         sourceFileSet.add(dockerFileSourceFile);
-        VersionTypeValidation versionTypeValidation = minimalLanguageHandler.validateWorkflowSet(sourceFileSet, MAIN_DESCRIPTOR_CWL);
-        Assert.assertTrue(versionTypeValidation.isValid());
+        VersionTypeValidation versionTypeValidation = minimalLanguageHandler.validateWorkflowSet(sourceFileSet, MAIN_DESCRIPTOR_CWL, null);
+        assertTrue(versionTypeValidation.isValid());
 
         sourceFileSet.clear();
         // Missing main descriptor should cause an invalid version validation
         sourceFileSet.add(secondaryDescriptorSourceFile);
-        versionTypeValidation = minimalLanguageHandler.validateWorkflowSet(sourceFileSet, MAIN_DESCRIPTOR_CWL);
-        Assert.assertTrue(!versionTypeValidation.isValid()
+        versionTypeValidation = minimalLanguageHandler.validateWorkflowSet(sourceFileSet, MAIN_DESCRIPTOR_CWL, null);
+        assertTrue(!versionTypeValidation.isValid()
             && versionTypeValidation.getMessage().containsValue("Primary descriptor file not found."));
 
     }
@@ -128,7 +126,7 @@ public class LanguagePluginHandlerTest {
 
     // TODO add coverage for CompleteLanguageInterface
     @Test
-    public void getContentTest() throws IOException {
+    void getContentTest() throws IOException {
         Set<SourceFile> secondarySourceFiles = new TreeSet<>();
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
@@ -144,34 +142,34 @@ public class LanguagePluginHandlerTest {
                 mainDescriptorSourceFile.getContent(), secondarySourceFiles,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
         } catch (CustomWebApplicationException e) {
-            Assert.fail("getContentTest should have passed");
+            fail("getContentTest should have passed");
         }
-        Assert.assertTrue(content.isEmpty());
+        assertTrue(content.isEmpty());
     }
 
     @Test
-    public void processImportsTest() throws IOException {
+    void processImportsTest() throws IOException {
         SourceFile mainDescriptorSourceFile = createSourceFile(MAIN_DESCRIPTOR_CWL, MAIN_DESCRIPTOR_CWL_RESOURCE_PATH, FileType.DOCKSTORE_CWL);
         LanguagePluginHandler minimalLanguageHandler = new LanguagePluginHandler(TestLanguage.class);
         Version emptyVersion = new WorkflowVersion();
         Map<String, SourceFile> importedFilesMap = minimalLanguageHandler.processImports("whatever", mainDescriptorSourceFile.getContent(),
                 emptyVersion, new ToolsCWLWorkflowExpSourceCodeRepoInterface(), MAIN_DESCRIPTOR_CWL);
         SourceFile secondarySourceFile = importedFilesMap.get(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH);
-        Assert.assertSame(FileType.DOCKSTORE_CWL, secondarySourceFile.getType());
+        assertSame(FileType.DOCKSTORE_CWL, secondarySourceFile.getType());
         SourceFile testInputFile = importedFilesMap.get(TEST_INPUT_FILE_RESOURCE_PATH);
-        Assert.assertSame(FileType.CWL_TEST_JSON, testInputFile.getType());
+        assertSame(FileType.CWL_TEST_JSON, testInputFile.getType());
         SourceFile dockerFile = importedFilesMap.get(DOCKERFILE_RESOURCE_PATH);
-        Assert.assertSame(FileType.DOCKERFILE, dockerFile.getType());
+        assertSame(FileType.DOCKERFILE, dockerFile.getType());
         SourceFile serviceFile = importedFilesMap.get(SERVICE_DESCRIPTOR_RESOURCE_PATH);
         // eventually will be DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML
         // when services are enabled?
-        Assert.assertSame(FileType.DOCKSTORE_CWL, serviceFile.getType());
+        assertSame(FileType.DOCKSTORE_CWL, serviceFile.getType());
 
     }
 
     public SourceFile createSourceFile(String filePath, String fileResourcePath, FileType fileType) throws IOException {
         File resourceFile = new File(ResourceHelpers.resourceFilePath(fileResourcePath));
-        String sourceFileContents = Files.asCharSource(resourceFile, Charsets.UTF_8).read();
+        String sourceFileContents = Files.asCharSource(resourceFile, StandardCharsets.UTF_8).read();
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(fileType);
         sourceFile.setContent(sourceFileContents);
@@ -194,25 +192,25 @@ public class LanguagePluginHandlerTest {
         }
 
         @Override
-        public Map<String, Pair<String, GenericFileType>> indexWorkflowFiles(String initialPath,
+        public Map<String, FileMetadata> indexWorkflowFiles(String initialPath,
             String contents, FileReader reader) {
-            Map<String, Pair<String, GenericFileType>> results = new HashMap<>();
+            Map<String, FileMetadata> results = new HashMap<>();
 
             // fake getting the imported descriptor contents from the main descriptor
             String importedContents = reader.readFile(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH);
-            results.put(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH, new ImmutablePair<>(importedContents, GenericFileType.IMPORTED_DESCRIPTOR));
+            results.put(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH, new FileMetadata(importedContents, GenericFileType.IMPORTED_DESCRIPTOR, "v1.2"));
             String testFileContents = reader.readFile(TEST_INPUT_FILE_RESOURCE_PATH);
-            results.put(TEST_INPUT_FILE_RESOURCE_PATH, new ImmutablePair<>(testFileContents, GenericFileType.TEST_PARAMETER_FILE));
+            results.put(TEST_INPUT_FILE_RESOURCE_PATH, new FileMetadata(testFileContents, GenericFileType.TEST_PARAMETER_FILE, null));
             String dockerfileContents = reader.readFile(DOCKERFILE_RESOURCE_PATH);
-            results.put(DOCKERFILE_RESOURCE_PATH, new ImmutablePair<>(dockerfileContents, GenericFileType.CONTAINERFILE));
+            results.put(DOCKERFILE_RESOURCE_PATH, new FileMetadata(dockerfileContents, GenericFileType.CONTAINERFILE, null));
             String serviceContents = reader.readFile(SERVICE_DESCRIPTOR_RESOURCE_PATH);
-            results.put(SERVICE_DESCRIPTOR_RESOURCE_PATH, new ImmutablePair<>(serviceContents, GenericFileType.IMPORTED_DESCRIPTOR));
+            results.put(SERVICE_DESCRIPTOR_RESOURCE_PATH, new FileMetadata(serviceContents, GenericFileType.IMPORTED_DESCRIPTOR, null));
             return results;
         }
 
         @Override
         public WorkflowMetadata parseWorkflowForMetadata(String initialPath, String contents,
-            Map<String, Pair<String, GenericFileType>> indexedFiles) {
+            Map<String, FileMetadata> indexedFiles) {
             WorkflowMetadata workflowMetadata = new WorkflowMetadata();
             workflowMetadata.setAuthor("Shakespeare");
             workflowMetadata.setEmail("globetheater@bard.com");
@@ -227,33 +225,33 @@ public class LanguagePluginHandlerTest {
         }
 
         @Override
-        public VersionTypeValidation validateWorkflowSet(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles) {
+        public VersionTypeValidation validateWorkflowSet(String initialPath, String contents, Map<String, FileMetadata> indexedFiles) {
             // This will be executed via the sourcefilesToIndexedFilesViaValidateWorkflowSetNullTypeTest test code
             // and some files may not be present depending on the inputs to the test
             if (indexedFiles.containsKey(MAIN_DESCRIPTOR_CWL)) {
-                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(MAIN_DESCRIPTOR_CWL).getRight());
+                assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(MAIN_DESCRIPTOR_CWL).genericFileType());
             }
             if (indexedFiles.containsKey(SECONDARY_DESCRIPTOR_CWL)) {
-                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(SECONDARY_DESCRIPTOR_CWL).getRight());
+                assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(SECONDARY_DESCRIPTOR_CWL).genericFileType());
             }
             if (indexedFiles.containsKey(TEST_INPUT_FILE)) {
-                Assert.assertSame(GenericFileType.TEST_PARAMETER_FILE, indexedFiles.get(TEST_INPUT_FILE).getRight());
+                assertSame(GenericFileType.TEST_PARAMETER_FILE, indexedFiles.get(TEST_INPUT_FILE).genericFileType());
             }
             if (indexedFiles.containsKey(DOCKERFILE)) {
-                Assert.assertSame(GenericFileType.CONTAINERFILE, indexedFiles.get(DOCKERFILE).getRight());
+                assertSame(GenericFileType.CONTAINERFILE, indexedFiles.get(DOCKERFILE).genericFileType());
             }
             if (indexedFiles.containsKey(PRIMARY_DESCRIPTOR)) {
-                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(PRIMARY_DESCRIPTOR).getRight());
+                assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(PRIMARY_DESCRIPTOR).genericFileType());
             }
             if (indexedFiles.containsKey(OTHER_FILE)) {
-                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(OTHER_FILE).getRight());
+                assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(OTHER_FILE).genericFileType());
             }
 
             return new VersionTypeValidation(true, Collections.emptyMap());
         }
 
         @Override
-        public VersionTypeValidation validateTestParameterSet(Map<String, Pair<String, GenericFileType>> indexedFiles) {
+        public VersionTypeValidation validateTestParameterSet(Map<String, FileMetadata> indexedFiles) {
             return null;
         }
     }
@@ -280,7 +278,7 @@ public class LanguagePluginHandlerTest {
         }
 
         @Override
-        public String getREADMEContent(String repositoryId, String branch) {
+        public String getReadMeContent(String repositoryId, String branch, String overrideReadMePath) {
             return null;
         }
 
@@ -318,6 +316,11 @@ public class LanguagePluginHandlerTest {
         @Override
         public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
             Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
+            return null;
+        }
+
+        @Override
+        public String getDefaultBranch(String repositoryId) {
             return null;
         }
 

@@ -32,7 +32,7 @@
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
         <!-- the following properties set sane defaults when no revision properties are set from the command-line -->
-        <revision>1.13</revision>
+        <revision>1.14</revision>
         <changelist>.0-SNAPSHOT</changelist>
 
         <!--
@@ -45,7 +45,6 @@
         <openapi-annotations-version>2.1.13</openapi-annotations-version>
         <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
         <postgresql.version>42.2.23</postgresql.version>
-        <swagger-ui.version>4.12.0</swagger-ui.version>
         <maven-surefire.version>3.0.0-M5</maven-surefire.version>
         <maven-failsafe.version>2.22.2</maven-failsafe.version>
 
@@ -187,7 +186,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.10.1</version>
                     <configuration>
-                        <release>11</release>
+                        <release>17</release>
                         <showDeprecation>true</showDeprecation>
                         <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     </configuration>
@@ -276,16 +275,18 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>2.8.2</version>
+                    <version>3.0.0</version>
                     <configuration>
-                        <uniqueVersion>false</uniqueVersion>
-                        <deployAtEnd>false</deployAtEnd>
+                        <deployAtEnd>true</deployAtEnd>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>2.5.2</version>
+                    <version>3.1.0</version>
+                    <configuration>
+                        <installAtEnd>true</installAtEnd>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -351,7 +352,7 @@
                             </goals>
                             <configuration>
                                 <transformers>
-                                    <!-- Akka used by Cromwell expects a consistant reference.conf file.  Also order matters, so keep it first in the list of transformers -->
+                                    <!-- Akka used by Cromwell expects a consistent reference.conf file.  Also order matters, so keep it first in the list of transformers -->
                                     <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                         <resource>reference.conf</resource>
                                     </transformer>
@@ -389,7 +390,7 @@
                 <plugin>
                     <groupId>io.swagger.codegen.v3</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>3.0.33</version>
+                    <version>3.0.36</version>
                 </plugin>
                 <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/versions-maven-plugin -->
                 <plugin>
@@ -456,6 +457,11 @@
                         <tag>${revision}${changelist}</tag>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>properties-maven-plugin</artifactId>
+                    <version>1.1.0</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -496,7 +502,15 @@
                                         <exclude>io.dockstore:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                                <requireUpperBoundDeps />
+                                <requireUpperBoundDeps>
+                                    <excludes>
+                                        <!-- inconsistent in dropwizard 2.1.5 list of transient dependencies and causes this to break, nonetheless the actual versions end up being consistent as checked by
+                                         keysmap.list and mvn dependency:tree. Weird -->
+                                        <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</exclude>
+                                        <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
+                                        <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                                    </excludes>
+                                </requireUpperBoundDeps>
                                 <requireMavenVersion>
                                     <version>3.8.1</version>
 			            <!-- flip this when there is something newer than https://discuss.circleci.com/t/linux-machine-executor-images-2021-july-q3-update/40772
@@ -533,6 +547,9 @@
                                         <exclude>com.amazonaws:*</exclude>
                                         <!-- we should be using jpa 2.2 -->
                                         <exclude>org.hibernate.javax.persistence:hibernate-jpa-2.1-api</exclude>
+                                        <!-- we're on junit 5 now -->
+                                        <exclude>junit:junit</exclude>
+                                        <exclude>org.junit.vintage:junit-vintage-engine</exclude>
                                     </excludes>
                                     <includes>
                                         <!-- exempt encryption library which hasn't moved to new namespace -->
@@ -568,7 +585,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <!-- toggle this when we want the jar to only support Java 17, unless we read up on multi-release jars -->
-                    <release>11</release>
+                    <release>17</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -650,7 +667,7 @@
             <plugin>
                 <groupId>net.revelc.code</groupId>
                 <artifactId>impsort-maven-plugin</artifactId>
-                <version>1.6.2</version>
+                <version>1.8.0</version>
                 <executions>
                     <execution>
                         <id>sort-imports</id>
@@ -659,6 +676,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <compliance>17</compliance>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>io.github.git-commit-id</groupId>
@@ -720,7 +740,8 @@
             </activation>
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
-                    io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest, io.dockstore.common.BitBucketTest
+                    io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest,
+                    io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest
                 </excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
@@ -780,7 +801,9 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <excludeGroups>io.dockstore.common.ToolTest, io.dockstore.common.WorkflowTest, io.dockstore.common.SlowTest, io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest, io.dockstore.common.BitBucketTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.ToolTest, io.dockstore.common.WorkflowTest, io.dockstore.common.SlowTest,
+                    io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest,
+                    io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest</excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
         </profile>
@@ -803,6 +826,15 @@
             </properties>
         </profile>
         <profile>
+            <id>localstack-tests</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.LocalStackTest</groups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
+            </properties>
+        </profile>
+        <profile>
             <id>bitbucket-tests</id>
             <!-- run all tests involving bitbucket -->
             <properties>
@@ -819,7 +851,7 @@
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
-                <excludeGroups>io.dockstore.common.LanguageParsingTest, io.dockstore.common.BitBucketTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.LanguageParsingTest, io.dockstore.common.LocalStackTest, io.dockstore.common.BitBucketTest</excludeGroups>
                 <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
             <build>

@@ -51,6 +51,11 @@ limitConfig:
   workflowLimit: 10
   workflowVersionLimit: 10
 
+metricsConfig:
+  s3BucketName: local-dockstore-metrics-data
+  # LocalStack usually runs at this endpoint
+  s3EndpointOverride: http://localhost:4566
+
 database:
   # the name of your JDBC driver
   driverClass: org.postgresql.Driver

@@ -21,6 +21,7 @@ import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration.LimitConfig;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.SourceFile;
@@ -34,6 +35,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -90,6 +92,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         implements AuthenticatedResourceInterface, EntryVersionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHostedEntryResource.class);
+    private static final String UPDATED_SOURCEFILES = "Set of updated source files, add files by adding new files with unknown paths, delete files by including them with null content";
     private final FileDAO fileDAO;
     private final UserDAO userDAO;
     private final PermissionsInterface permissionsInterface;
@@ -97,15 +100,22 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private final EventDAO eventDAO;
     private final int calculatedEntryLimit;
     private final int calculatedEntryVersionLimit;
+    private LambdaUrlChecker checkUrlInterface;
 
-    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
+    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration config) {
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
+        final LimitConfig limitConfig = config.getLimitConfig();
         this.calculatedEntryLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowLimit(), Integer.MAX_VALUE);
         this.calculatedEntryVersionLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowVersionLimit(), Integer.MAX_VALUE);
+        final String lambdaUrl = config.getCheckUrlLambdaUrl();
+        if (lambdaUrl != null) {
+            checkUrlInterface = new LambdaUrlChecker(lambdaUrl);
+        }
+
     }
 
     /**
@@ -140,8 +150,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         entry.setTopicSelection(TopicSelection.MANUAL);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
-        T byId = getEntryDAO().findById(l);
-        return byId;
+        return getEntryDAO().findById(l);
     }
 
     protected abstract void checkForDuplicatePath(T entry);
@@ -181,8 +190,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Consumes(MediaType.APPLICATION_JSON)
     public T editHosted(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @Parameter(description = "Entry to modify", name = "entryId", in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true)
-        @Parameter(description = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", name = "sourceFiles", required = true) Set<SourceFile> sourceFiles) {
+        @ApiParam(value = UPDATED_SOURCEFILES, required = true)
+        @Parameter(description = UPDATED_SOURCEFILES, name = "sourceFiles", required = true) Set<SourceFile> sourceFiles) {
         T entry = getEntryDAO().findById(entryId);
         checkNotNullEntry(entry);
         checkCanWrite(user, entry);
@@ -237,10 +246,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         String invalidFileNames = String.join(",", invalidFileNames(version));
         if (!invalidFileNames.isEmpty()) {
-            StringBuilder message = new StringBuilder();
-            message.append("Files must have a name. Unable to save new version due to the following files: ");
-            message.append(invalidFileNames);
-            throw new CustomWebApplicationException(message.toString(), HttpStatus.SC_BAD_REQUEST);
+            String message = "Files must have a name. Unable to save new version due to the following files: "
+                + invalidFileNames;
+            throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
         }
 
         validatedVersion.setValid(true); // Hosted entry versions must be valid to save
@@ -260,8 +268,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         FileFormatHelper.updateFileFormats(entry, entry.getWorkflowVersions(), fileFormatDAO, true);
 
         // TODO: Not setting lastModified for hosted tools now because we plan to get rid of the lastmodified column in Tool table in the future.
-        if (validatedVersion instanceof WorkflowVersion) {
-            entry.setLastModified(((WorkflowVersion)validatedVersion).getLastModified());
+        if (validatedVersion instanceof WorkflowVersion workflowVersion) {
+            entry.setLastModified(workflowVersion.getLastModified());
+            if (checkUrlInterface != null) {
+                Workflow workflow = (Workflow) entry; // It's a workflow version, so it has to be a workflow
+                AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, checkUrlInterface, workflow.getDescriptorType());
+            }
         }
         updateBlacklistedVersionNames(entry, version);
         userDAO.clearCache();
@@ -400,7 +412,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
 
         // If the version that's about to be deleted is the default version, unset it
-        if (entry.getActualDefaultVersion().getName().equals(version)) {
+        if (entry.getActualDefaultVersion() != null && entry.getActualDefaultVersion().getName().equals(version)) {
             Optional<U> max = entry.getWorkflowVersions().stream().filter(v -> !Objects.equals(v.getName(), version))
                     .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
             entry.setActualDefaultVersion(max.orElse(null));

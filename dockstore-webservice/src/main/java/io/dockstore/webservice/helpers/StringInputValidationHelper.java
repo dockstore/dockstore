@@ -1,21 +1,19 @@
 package io.dockstore.webservice.helpers;
 
+import io.dockstore.common.ValidationConstants;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
-import java.util.regex.Pattern;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class StringInputValidationHelper {
     private static final Logger LOG = LoggerFactory.getLogger(StringInputValidationHelper.class);
-
-    public static final Pattern ENTRY_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9]+([-_][a-zA-Z0-9]+)*+"); // Used to validate tool and workflow names
-    public static final int ENTRY_NAME_LENGTH_LIMIT = 256;
 
     private StringInputValidationHelper() {
 
@@ -27,10 +25,12 @@ public final class StringInputValidationHelper {
      * @param name Name to validate
      */
     public static void checkEntryName(Class<? extends Entry> entryType, String name) {
-        if (name != null && !name.isEmpty() && (!ENTRY_NAME_PATTERN.matcher(name).matches() || name.length() > ENTRY_NAME_LENGTH_LIMIT)) {
+        if (name != null && !name.isEmpty() && (!ValidationConstants.ENTRY_NAME_PATTERN.matcher(name).matches() || name.length() > ValidationConstants.ENTRY_NAME_LENGTH_MAX)) {
             String entryTypeString;
 
-            if (entryType.equals(Tool.class) || entryType.equals(AppTool.class)) {
+            if (entryType.equals(Notebook.class)) {
+                entryTypeString = "notebook";
+            } else if (entryType.equals(Tool.class) || entryType.equals(AppTool.class)) {
                 entryTypeString = "tool";
             } else if (entryType.equals(BioWorkflow.class)) {
                 entryTypeString = "workflow";
@@ -43,7 +43,7 @@ public final class StringInputValidationHelper {
 
             throw new CustomWebApplicationException(String.format(
                     "Invalid %s name: '%s'. The %s name may not exceed %s characters and may only consist of alphanumeric characters, internal underscores, and internal hyphens.",
-                    entryTypeString, name, entryTypeString, ENTRY_NAME_LENGTH_LIMIT), HttpStatus.SC_BAD_REQUEST);
+                    entryTypeString, name, entryTypeString, ValidationConstants.ENTRY_NAME_LENGTH_MAX), HttpStatus.SC_BAD_REQUEST);
         }
     }
 }

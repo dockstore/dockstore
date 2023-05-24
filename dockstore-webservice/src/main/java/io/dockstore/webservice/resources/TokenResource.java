@@ -462,7 +462,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
                 user = new User();
                 user.setUsername(username);
-                user.setUsernameChangeRequired(shouldRestricUser(username));
+                user.setUsernameChangeRequired(shouldRestrictUser(username));
                 userID = userDAO.create(user);
                 acceptTOSAndPrivacyPolicy(user);
             } else {
@@ -562,10 +562,20 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
-        JsonObject satellizerObject = element.getAsJsonObject();
-        final String code = getCodeFromSatellizerObject(satellizerObject);
-        final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
-        return handleGitHubUser(null, code, registerUser);
+        if (element != null) {
+            try {
+                JsonObject satellizerObject = element.getAsJsonObject();
+                final String code = getCodeFromSatellizerObject(satellizerObject);
+                final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
+                return handleGitHubUser(null, code, registerUser);
+            } catch (IllegalStateException ex) {
+                throw new CustomWebApplicationException("Request body is an invalid JSON", HttpStatus.SC_BAD_REQUEST);
+            }
+
+        } else {
+            LOG.error("Retrieving accessToken was unsuccessful");
+            throw new CustomWebApplicationException("Could not retrieve github.com token", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @GET
@@ -609,7 +619,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 final String username = uniqueNewUsername(githubLogin);
                 User newUser = new User();
                 newUser.setUsername(username);
-                newUser.setUsernameChangeRequired(shouldRestricUser(username));
+                newUser.setUsernameChangeRequired(shouldRestrictUser(username));
                 userID = userDAO.create(newUser);
                 user = userDAO.findById(userID);
                 acceptTOSAndPrivacyPolicy(user);
@@ -693,7 +703,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return dockstoreToken;
     }
 
-    public boolean shouldRestricUser(String username) {
+    public boolean shouldRestrictUser(String username) {
         Matcher matcher = USERNAME_CONTAINS_KEYWORD_PATTERN.matcher(username);
         return matcher.find();
     }
@@ -804,7 +814,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             orcid = tokenResponse.get("orcid").toString();
             scope = tokenResponse.getScope();
             Instant instant = Instant.now();
-            instant.plusSeconds(tokenResponse.getExpiresInSeconds());
+            instant = instant.plusSeconds(tokenResponse.getExpiresInSeconds());
             expirationTime = instant.getEpochSecond();
 
         } catch (IOException e) {

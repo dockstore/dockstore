@@ -16,7 +16,8 @@
 package io.swagger.api.impl;
 
 import static io.dockstore.webservice.DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,9 +25,11 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.ToolMode;
@@ -49,19 +52,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author gluu
  * @since 17/01/18
  */
-public class ToolsImplCommonTest {
+class ToolsImplCommonTest {
     private static final String PLACEHOLDER_CONTENT = "potato";
     private static DockstoreWebserviceConfiguration actualConfig = new DockstoreWebserviceConfiguration();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         actualConfig.getExternalConfig().setHostname("localhost");
         actualConfig.getExternalConfig().setPort("8080");
@@ -69,7 +71,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void wdlSourceFileToToolDescriptor() {
+    void wdlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         sourceFile.setPath("/Dockstore.wdl");
@@ -84,7 +86,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void cwlSourceFileToToolDescriptor() {
+    void cwlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         sourceFile.setPath("/Dockstore.cwl");
@@ -106,7 +108,7 @@ public class ToolsImplCommonTest {
      * Tests a tool with/without a toolname
      */
     @Test
-    public void convertDockstoreToolToTool() {
+    void convertDockstoreToolToTool() {
         convertDockstoreToolToTool("potato");
         convertDockstoreToolToTool(null);
     }
@@ -121,7 +123,6 @@ public class ToolsImplCommonTest {
         tool.setToolname(toolname);
         tool.setNamespace("test_org");
         tool.setRegistry(Registry.QUAY_IO.getDockerPath());
-        tool.setAuthor("sampleAuthor");
         tool.setGitUrl("git@github.com:test_org/test6.git");
         Tag tag = new Tag();
         tag.setImageId("sampleImageId");
@@ -132,6 +133,7 @@ public class ToolsImplCommonTest {
         tag.setAutomated(true);
         tag.setReference("sampleReference");
         tag.setValid(true);
+        tag.setAuthors(Set.of(new Author("sampleAuthor")));
         List<Checksum> checksums = Collections.singletonList(new Checksum("SHA-1", "fakeChecksum"));
         Set<Image> image = Collections.singleton(new Image(checksums, "test_org/test6", "sampleTag", "SampleImageId", Registry.QUAY_IO, null, null));
         tag.setImages(image);
@@ -164,6 +166,7 @@ public class ToolsImplCommonTest {
         hiddenTag.addSourceFile(sourceFile2);
         tag.updateVerified();
         tool.addWorkflowVersion(tag);
+        tool.setActualDefaultVersion(tag);
         tool.addWorkflowVersion(hiddenTag);
         tool.setCheckerWorkflow(null);
         Tool expectedTool = new Tool();
@@ -253,7 +256,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void testGalaxyConversion() {
+    void testGalaxyConversion() {
         Workflow workflow = new BioWorkflow();
         workflow.setSourceControl(SourceControl.GITHUB);
         workflow.setRepository("fakeRepository");
@@ -287,7 +290,7 @@ public class ToolsImplCommonTest {
      * Tests a workflow with/without a workflowname
      */
     @Test
-    public void convertDockstoreWorkflowToTool() throws IOException {
+    void convertDockstoreWorkflowToTool() throws IOException {
         convertDockstoreWorkflowToTool("potato", false);
         convertDockstoreWorkflowToTool(null, false);
 
@@ -314,7 +317,7 @@ public class ToolsImplCommonTest {
         actualWorkflowVersion1.setName(reference1);
         actualWorkflowVersion1.setDirtyBit(false);
         actualWorkflowVersion1.setValid(false);
-        BioWorkflow workflow = new BioWorkflow();
+        Workflow workflow = isService ? new Service() : new BioWorkflow();
         json = mapper.writeValueAsString(actualWorkflowVersion1);
         WorkflowVersion actualWorkflowVersion2 = mapper.readValue(json, WorkflowVersion.class);
         actualWorkflowVersion2.setName(reference2);
@@ -337,7 +340,7 @@ public class ToolsImplCommonTest {
         // Check that Dockstore version is actually has the right verified source
         String[] expectedVerifiedSource = {"chickenTesterSource", "potatoTesterSource"};
         String[] actualVerifiedSource = actualWorkflowVersion3.getVerifiedSources();
-        Assert.assertArrayEquals(expectedVerifiedSource, actualVerifiedSource);
+        assertArrayEquals(expectedVerifiedSource, actualVerifiedSource);
         workflow.addWorkflowVersion(actualWorkflowVersion1);
         workflow.addWorkflowVersion(actualWorkflowVersion2);
         workflow.addWorkflowVersion(actualWorkflowVersion3);
@@ -346,24 +349,21 @@ public class ToolsImplCommonTest {
         workflow.setOrganization("ICGC-TCGA-PanCancer");
         workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
         workflow.setSourceControl(SourceControl.GITHUB);
-        if (isService) {
-            workflow.setDescriptorType(DescriptorLanguage.SERVICE);
-        } else {
-            workflow.setDescriptorType(DescriptorLanguage.WDL);
-        }
+        workflow.setDescriptorType(isService ? DescriptorLanguage.SERVICE : DescriptorLanguage.WDL);
         workflow.setDefaultWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         workflow.setDefaultTestParameterFilePath(null);
         workflow.setId(950);
-        workflow.setAuthor(null);
+        workflow.setAuthors(Collections.emptySet());
         workflow.setDescription(null);
         workflow.setLabels(Collections.emptySortedSet());
         workflow.setUsers(Collections.emptySortedSet());
-        workflow.setEmail(null);
         workflow.setIsPublished(true);
         workflow.setLastModified(null);
         workflow.setLastUpdated(null);
         workflow.setGitUrl("git@github.com:ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow.git");
-        workflow.setCheckerWorkflow(workflow);
+        if (workflow instanceof BioWorkflow bioWorkflow) {
+            bioWorkflow.setCheckerWorkflow(bioWorkflow);
+        }
         Tool actualTool = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(workflow, actualConfig));
         ToolVersion expectedToolVersion1 = new ToolVersion();
         expectedToolVersion1.setName(reference2);
@@ -467,9 +467,8 @@ public class ToolsImplCommonTest {
                         + toolname);
             }
             expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow/" + toolname);
-            expectedTool.setCheckerUrl(
-                "http://localhost:8080" + GA4GH_API_PATH_V2_BETA + "/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
-                    + toolname);
+            expectedTool.setCheckerUrl(isService ? "" :
+                "http://localhost:8080" + GA4GH_API_PATH_V2_BETA + "/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F" + toolname);
         } else {
 
             if (isService) {
@@ -482,11 +481,11 @@ public class ToolsImplCommonTest {
                 expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow");
             }
             expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow");
-            expectedTool.setCheckerUrl(
+            expectedTool.setCheckerUrl(isService ? "" :
                 "http://localhost:8080" + GA4GH_API_PATH_V2_BETA + "/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
         }
-        expectedTool.setHasChecker(true);
-        expectedTool.setToolclass(ToolClassesApiServiceImpl.getWorkflowClass());
+        expectedTool.setHasChecker(!isService);
+        expectedTool.setToolclass(isService ? ToolClassesApiServiceImpl.getServiceClass() : ToolClassesApiServiceImpl.getWorkflowClass());
         expectedTool.setDescription("");
         expectedTool.setAuthor("Unknown author");
         // Meta-version dates are currently dependant on the environment, disabling for now
@@ -507,7 +506,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void sourceFileToToolTests() {
+    void sourceFileToToolTests() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
         sourceFile.setPath("/test.cwl.json");
@@ -522,7 +521,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void processImageDataForToolVersionTest() {
+    void processImageDataForToolVersionTest() {
         io.dockstore.webservice.core.Tool tool = new io.dockstore.webservice.core.Tool();
         Tag tag = new Tag();
         Image image = new Image(new ArrayList<>(), "dummy", "dummy", "a", Registry.QUAY_IO, 1L, "now");
@@ -535,17 +534,17 @@ public class ToolsImplCommonTest {
         io.openapi.model.ToolVersion toolVersion = new io.openapi.model.ToolVersion();
         toolVersion.setImages(new ArrayList<>());
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
-        Assert.assertEquals("There should be the same amount of images as the Tag", 2, toolVersion.getImages().size());
+        assertEquals(2, toolVersion.getImages().size(), "There should be the same amount of images as the Tag");
         List<Long> sortedSizes = toolVersion.getImages().stream().map(ImageData::getSize).sorted().collect(Collectors.toList());
-        Assert.assertEquals(Long.valueOf(1L), sortedSizes.get(0));
-        Assert.assertEquals(Long.valueOf(2L), sortedSizes.get(1));
+        assertEquals(Long.valueOf(1L), sortedSizes.get(0));
+        assertEquals(Long.valueOf(2L), sortedSizes.get(1));
         toolVersion = new io.openapi.model.ToolVersion();
         tag.setImages(new HashSet<>());
         tool = new io.dockstore.webservice.core.Tool();
         tool.addWorkflowVersion(tag);
         toolVersion.setImages(new ArrayList<>());
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
-        Assert.assertEquals("There should be one default image when the Tag has none", 1, toolVersion.getImages().size());
-        Assert.assertEquals(Long.valueOf(0L), toolVersion.getImages().get(0).getSize());
+        assertEquals(1, toolVersion.getImages().size(), "There should be one default image when the Tag has none");
+        assertEquals(Long.valueOf(0L), toolVersion.getImages().get(0).getSize());
     }
 }

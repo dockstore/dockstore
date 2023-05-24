@@ -1,39 +1,44 @@
 package io.dockstore.client.cli;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.common.io.ByteStreams;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Utilities;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
-public class UtilitiesTest {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+class UtilitiesTest {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
     @Test
-    public void testEnvironmentParam() throws IOException {
+    void testEnvironmentParam() {
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
         final Map<String, String> map = new HashMap<>();
         map.put("foo", "goo");
 
         // Ensure foo gets substituted with goo
         Utilities.executeCommand("echo ${foo}", os, ByteStreams.nullOutputStream(), new File("."), map);
-        Assert.assertEquals("goo\n", os.toString());
+        assertEquals("goo\n", os.toString());
 
         // Make sure that a non-existent variable works
         os.reset();
         Utilities.executeCommand("echo ${foo}", os, ByteStreams.nullOutputStream(), new File("."), null);
-        Assert.assertEquals("${foo}\n", os.toString());
+        assertEquals("${foo}\n", os.toString());
     }
 }

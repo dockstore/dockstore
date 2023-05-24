@@ -34,7 +34,7 @@ public class Alias implements Serializable {
     public String content = "";
 
     // database timestamps
-    @Column(updatable = false)
+    @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
     @CreationTimestamp
     private Timestamp dbCreateDate;
 

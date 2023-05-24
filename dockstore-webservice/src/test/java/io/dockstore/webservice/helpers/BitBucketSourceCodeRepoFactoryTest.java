@@ -16,68 +16,69 @@
 
 package io.dockstore.webservice.helpers;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.webservice.core.BioWorkflow;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author dyuen
  */
-@Category(BitBucketTest.class)
-public class BitBucketSourceCodeRepoFactoryTest {
+@Tag(BitBucketTest.NAME)
+class BitBucketSourceCodeRepoFactoryTest {
 
     /**
      * Tests that parsing a BitBucket URL works
      */
     @Test
-    public void testBitBucketUrlParsing() {
+    void testBitBucketUrlParsing() {
         BitBucketSourceCodeRepo repo = new BitBucketSourceCodeRepo("fakeUser", "fakeToken");
         final BioWorkflow entry = new BioWorkflow();
 
         /* Test good URLs */
         entry.setGitUrl("git@bitbucket.org:dockstore/dockstore-ui.git");
         String bitBucketId = repo.getRepositoryId(entry);
-        assertEquals("Bitbucket ID parse check", "dockstore/dockstore-ui", bitBucketId);
+        assertEquals("dockstore/dockstore-ui", bitBucketId, "Bitbucket ID parse check");
 
         entry.setGitUrl("git@bitbucket.org:dockstore/dockstore-ui.git");
         bitBucketId = repo.getRepositoryId(entry);
-        assertEquals("Bitbucket ID parse check", "dockstore/dockstore-ui", bitBucketId);
+        assertEquals("dockstore/dockstore-ui", bitBucketId, "Bitbucket ID parse check");
 
         entry.setGitUrl("git@bitbucket.org:dockstore-cow/goat.git");
         bitBucketId = repo.getRepositoryId(entry);
-        assertEquals("Bitbucket ID parse check", "dockstore-cow/goat", bitBucketId);
+        assertEquals("dockstore-cow/goat", bitBucketId, "Bitbucket ID parse check");
 
         entry.setGitUrl("git@bitbucket.org:dockstore.dot/goat.bat.git");
         bitBucketId = repo.getRepositoryId(entry);
-        assertEquals("Bitbucket ID parse check", "dockstore.dot/goat.bat", bitBucketId);
+        assertEquals("dockstore.dot/goat.bat", bitBucketId, "Bitbucket ID parse check");
 
         entry.setGitUrl("git@bitbucket.org:dockstore.dot/goat.git");
         bitBucketId = repo.getRepositoryId(entry);
-        assertEquals("Bitbucket ID parse check", "dockstore.dot/goat", bitBucketId);
+        assertEquals("dockstore.dot/goat", bitBucketId, "Bitbucket ID parse check");
 
         /* Test bad URLs */
         entry.setGitUrl("git@bitbucket.org/dockstore/dockstore-ui.git");
         bitBucketId = repo.getRepositoryId(entry);
-        assertEquals("Bitbucket ID parse check", null, bitBucketId);
+        assertNull(bitBucketId, "Bitbucket ID parse check");
 
         entry.setGitUrl("git@bitbucket.org:dockstore:dockstore-ui.git");
         bitBucketId = repo.getRepositoryId(entry);
-        assertEquals("Bitbucket ID parse check", null, bitBucketId);
+        assertNull(bitBucketId, "Bitbucket ID parse check");
 
         entry.setGitUrl("git@bitbucket.org:/dockstore-ui.git");
         bitBucketId = repo.getRepositoryId(entry);
-        assertEquals("Bitbucket ID parse check", null, bitBucketId);
+        assertNull(bitBucketId, "Bitbucket ID parse check");
 
         entry.setGitUrl("git@bitbucket.org:dockstore");
         bitBucketId = repo.getRepositoryId(entry);
-        assertEquals("Bitbucket ID parse check", null, bitBucketId);
+        assertNull(bitBucketId, "Bitbucket ID parse check");
 
         entry.setGitUrl("git@bitbucket.org:dockstore/dockstore-ui");
         bitBucketId = repo.getRepositoryId(entry);
-        assertEquals("Bitbucket ID parse check", null, bitBucketId);
+        assertNull(bitBucketId, "Bitbucket ID parse check");
 
     }
 }

@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.13.0-SNAPSHOT
+  version: 1.14.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -68,7 +68,7 @@ tags:
 - description: Optional experimental extensions of the GA4GH API
   name: extendedGA4GH
 - description: "A curated subset of resources proposed as a common standard for tool\
-    \ repositories. Implements TRS [2.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0)."
+    \ repositories. Implements TRS [2.0.1](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.1)."
   name: GA4GHV20
 - description: "A curated subset of resources proposed as a common standard for tool\
     \ repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)\
@@ -510,6 +510,182 @@ paths:
                   $ref: '#/components/schemas/ToolV1'
           description: An array of Tools of the input organization.
       summary: List workflows of an organization
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics:
+    get:
+      description: This endpoint retrieves aggregated metrics for a tool from all
+        platforms
+      operationId: aggregatedMetricsGet
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/Metrics'
+          description: default response
+      summary: Get aggregated execution metrics for a tool from all platforms
+      tags:
+      - extendedGA4GH
+    put:
+      description: This endpoint adds aggregated metrics for a workflow that was executed
+        on a platform
+      operationId: aggregatedMetricsPut
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - description: Platform that the tool was executed on
+        in: query
+        name: platform
+        required: true
+        schema:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Metrics'
+        description: Aggregated metrics to add to the version
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Aggregated metrics added successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to add aggregated metrics.
+      security:
+      - BEARER: []
+      summary: Add aggregated execution metrics for a workflow that was executed on
+        a platform.
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
+    post:
+      description: This endpoint submits individual or aggregated execution metrics
+        for a tool that was executed on a platform
+      operationId: executionMetricsPost
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - description: Platform that the tool was executed on
+        in: query
+        name: platform
+        required: true
+        schema:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
+      - description: Optional description about the execution metrics
+        in: query
+        name: description
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionsRequestBody'
+        description: Individual or aggregated execution metrics to submit
+        required: true
+      responses:
+        "204":
+          description: Execution metrics submitted successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to submit execution metrics.
+      security:
+      - BEARER: []
+      summary: Submit individual or aggregated execution metrics for a tool that was
+        executed on a platform.
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
@@ -976,6 +1152,7 @@ paths:
           - SWL
           - NFL
           - service
+          - jupyter
       - in: query
         name: namespace
         schema:
@@ -1040,8 +1217,8 @@ paths:
               items:
                 $ref: '#/components/schemas/SourceFile'
               uniqueItems: true
-        description: "Set of updated sourcefiles, add files by adding new files with\
-          \ unknown paths, delete files by including them with emptied content"
+        description: "Set of updated source files, add files by adding new files with\
+          \ unknown paths, delete files by including them with null content"
         required: true
       responses:
         default:
@@ -1630,6 +1807,7 @@ paths:
           - SWL
           - NFL
           - service
+          - jupyter
       responses:
         default:
           content:
@@ -1828,6 +2006,10 @@ paths:
             - GXFORMAT2_TEST_FILE
             - DOCKSTORE_SWL
             - SWL_TEST_JSON
+            - DOCKSTORE_JUPYTER
+            - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_TEST_FILE
+            - DOCKSTORE_NOTEBOOK_OTHER
       responses:
         default:
           content:
@@ -1907,6 +2089,7 @@ paths:
           - SWL
           - NFL
           - service
+          - jupyter
       responses:
         default:
           content:
@@ -2187,6 +2370,54 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/updateLanguageVersions:
+    post:
+      description: Update language versions
+      operationId: updateLanguageVersions
+      parameters:
+      - description: Whether to process all versions or only versions without language
+          descriptor already set
+        in: query
+        name: allVersions
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+          description: Number of entries processed
+      security:
+      - BEARER: []
+      tags:
+      - entries
+  /entries/updateOpenData:
+    post:
+      description: Update open data
+      operationId: updateOpenData
+      parameters:
+      - description: Whether to process all versions or only versions without open
+          data already set
+        in: query
+        name: allVersions
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+          description: Number of entries processed
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{entryId}/exportToOrcid:
     post:
       description: Export entry to ORCID. DOI is required
@@ -2323,6 +2554,10 @@ paths:
                   - GXFORMAT2_TEST_FILE
                   - DOCKSTORE_SWL
                   - SWL_TEST_JSON
+                  - DOCKSTORE_JUPYTER
+                  - DOCKSTORE_NOTEBOOK_REES
+                  - DOCKSTORE_NOTEBOOK_TEST_FILE
+                  - DOCKSTORE_NOTEBOOK_OTHER
                 uniqueItems: true
           description: default response
       security:
@@ -2428,7 +2663,7 @@ paths:
       - entries
   /events:
     get:
-      description: Optional authentication.
+      description: Requires authentication.
       operationId: getEvents
       parameters:
       - in: query
@@ -2441,6 +2676,7 @@ paths:
           - STARRED_ORGANIZATION
           - ALL_STARRED
           - PROFILE
+          - SELF_ORGANIZATIONS
       - in: query
         name: limit
         schema:
@@ -2471,7 +2707,7 @@ paths:
       - events
   /events/{userId}:
     get:
-      description: No authentication.
+      description: Optional authentication.
       operationId: getUserEvents
       parameters:
       - in: path
@@ -2490,6 +2726,7 @@ paths:
           - STARRED_ORGANIZATION
           - ALL_STARRED
           - PROFILE
+          - SELF_ORGANIZATIONS
       - in: query
         name: limit
         schema:
@@ -2545,11 +2782,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolClass'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolClass'
           description: A list of potential tool classes.
       security:
       - BEARER: []
@@ -2582,7 +2814,7 @@ paths:
           enum:
           - CommandLineTool
           - Workflow
-      - description: Filter tools by the name of the descriptor type (#/definitions/DescriptorType)
+      - description: Filter tools by the name of the descriptor type
         in: query
         name: descriptorType
         schema:
@@ -2591,9 +2823,10 @@ paths:
           - CWL
           - WDL
           - NFL
-          - SERVICE
           - GALAXY
           - SMK
+          - SERVICE
+          - JUPYTER
       - description: The image registry that contains the image.
         in: query
         name: registry
@@ -2649,11 +2882,6 @@ paths:
         "200":
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tool'
-            text/plain:
               schema:
                 type: array
                 items:
@@ -2721,11 +2949,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolVersion'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolVersion'
           description: An array of tool versions.
       security:
       - BEARER: []
@@ -2758,16 +2981,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ToolVersion'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/ToolVersion'
           description: A tool version.
         "404":
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
           description: The tool can not be found.
@@ -2791,8 +3008,9 @@ paths:
         required: true
         schema:
           type: string
-      - description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`."
+      - description: "An identifier of the tool version, scoped to this registry,\
+          \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
+          \  (For example, `1.0.0` instead of `develop`)"
         in: path
         name: version_id
         required: true
@@ -2806,18 +3024,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
           description: The tool payload.
         "404":
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
           description: There are no container specifications for this tool.
@@ -2829,19 +3039,9 @@ paths:
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
     get:
       description: "Returns the descriptor for the specified tool (examples include\
-        \ CWL, WDL, Nextflow, or Galaxy documents)."
+        \ CWL, WDL, Nextflow, Galaxy, or Snakemake documents)."
       operationId: toolsIdVersionsVersionIdTypeDescriptorGet
       parameters:
-      - description: "The output type of the descriptor. Plain types return the bare\
-          \ descriptor while the \"non-plain\" types return a descriptor wrapped with\
-          \ metadata. Allowable values include \"CWL\", \"WDL\", \"NFL\", \"GALAXY\"\
-          , \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\", \"PLAIN_GALAXY\"\
-          , \"PLAIN_SMK\"."
-        in: path
-        name: type
-        required: true
-        schema:
-          type: string
       - description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`."
         in: path
@@ -2849,8 +3049,30 @@ paths:
         required: true
         schema:
           type: string
+      - description: The output type of the descriptor. Plain types return the bare
+          descriptor while the "non-plain" types return a descriptor wrapped with
+          metadata.
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - GALAXY
+          - SMK
+          - JUPYTER
+          - PLAIN_CWL
+          - PLAIN_WDL
+          - PLAIN_NFL
+          - PLAIN_GALAXY
+          - PLAIN_SMK
+          - PLAIN_JUPYTER
       - description: "An identifier of the tool version, scoped to this registry,\
-          \ for example `v1`."
+          \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
+          \  (For example, `1.0.0` instead of `develop`)"
         in: path
         name: version_id
         required: true
@@ -2891,17 +3113,6 @@ paths:
         parameters and containerfiles.
       operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
       parameters:
-      - description: "The output type of the descriptor. If not specified, it is up\
-          \ to the underlying implementation to determine which output type to return.\
-          \ Plain types return the bare descriptor while the \"non-plain\" types return\
-          \ a descriptor wrapped with metadata. Allowable values are \"CWL\", \"WDL\"\
-          , \"NFL\", \"GALAXY\", \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\"\
-          , \"PLAIN_GALAXY\", \"PLAIN_SMK\"."
-        in: path
-        name: type
-        required: true
-        schema:
-          type: string
       - description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`."
         in: path
@@ -2909,8 +3120,30 @@ paths:
         required: true
         schema:
           type: string
-      - description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`."
+      - description: The output type of the descriptor. Plain types return the bare
+          descriptor while the "non-plain" types return a descriptor wrapped with
+          metadata.
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - GALAXY
+          - SMK
+          - JUPYTER
+          - PLAIN_CWL
+          - PLAIN_WDL
+          - PLAIN_NFL
+          - PLAIN_GALAXY
+          - PLAIN_SMK
+          - PLAIN_JUPYTER
+      - description: "An identifier of the tool version, scoped to this registry,\
+          \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
+          \  (For example, `1.0.0` instead of `develop`)"
         in: path
         name: version_id
         required: true
@@ -2954,16 +3187,9 @@ paths:
     get:
       description: "Get a list of objects that contain the relative path and file\
         \ type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path\
-        \ : .+} endpoint."
+        \ : .+} endpoint. Returns a zip file of all files when format=zip is specified."
       operationId: toolsIdVersionsVersionIdTypeFilesGet
       parameters:
-      - description: "The output type of the descriptor. Examples of allowable values\
-          \ are \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"SMK\"."
-        in: path
-        name: type
-        required: true
-        schema:
-          type: string
       - description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`."
         in: path
@@ -2971,13 +3197,35 @@ paths:
         required: true
         schema:
           type: string
-      - description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`."
+      - description: The output type of the descriptor.
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - GALAXY
+          - SMK
+          - SERVICE
+          - JUPYTER
+      - description: "An identifier of the tool version, scoped to this registry,\
+          \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
+          \  (For example, `1.0.0` instead of `develop`)"
         in: path
         name: version_id
         required: true
         schema:
           type: string
+      - description: Returns a zip file of all files when format=zip is specified.
+        in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - zip
       responses:
         "200":
           content:
@@ -2986,7 +3234,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolFile'
-            text/plain:
+            application/zip:
               schema:
                 type: array
                 items:
@@ -2997,7 +3245,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-            text/plain:
+            application/zip:
               schema:
                 $ref: '#/components/schemas/Error'
           description: The tool can not be output in the specified type.
@@ -3012,16 +3260,6 @@ paths:
         suitable for use with this descriptor type.
       operationId: toolsIdVersionsVersionIdTypeTestsGet
       parameters:
-      - description: "The type of the underlying descriptor. Allowable values include\
-          \ \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\"\
-          , \"PLAIN_NFL\", \"PLAIN_GALAXY\", \"PLAIN_SMK\". For example, \"CWL\" would\
-          \ return an list of ToolTests objects while \"PLAIN_CWL\" would return a\
-          \ bare JSON list with the content of the tests."
-        in: path
-        name: type
-        required: true
-        schema:
-          type: string
       - description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`."
         in: path
@@ -3029,8 +3267,30 @@ paths:
         required: true
         schema:
           type: string
-      - description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`."
+      - description: The output type of the descriptor. Plain types return the bare
+          descriptor while the "non-plain" types return a descriptor wrapped with
+          metadata.
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - GALAXY
+          - SMK
+          - JUPYTER
+          - PLAIN_CWL
+          - PLAIN_WDL
+          - PLAIN_NFL
+          - PLAIN_GALAXY
+          - PLAIN_SMK
+          - PLAIN_JUPYTER
+      - description: "An identifier of the tool version, scoped to this registry,\
+          \ for example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html\
+          \  (For example, `1.0.0` instead of `develop`)"
         in: path
         name: version_id
         required: true
@@ -3170,6 +3430,22 @@ paths:
             text/xml: {}
           description: default response
       summary: Successful response if elastic search is up and running
+      tags:
+      - metadata
+  /metadata/entryTypeMetadataList:
+    get:
+      description: Get the metadata for each entry type
+      operationId: getEntryTypeMetadataList
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryTypeMetadata'
+          description: List of entry type metadata
+      summary: Get the metadata for each entry type
       tags:
       - metadata
   /metadata/health:
@@ -4720,6 +4996,23 @@ paths:
       - BEARER: []
       tags:
       - users
+  /users/starredNotebooks:
+    get:
+      description: Get the authenticated user's starred notebooks.
+      operationId: getStarredNotebooks
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+          description: A list of the authenticated user's starred notebooks
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/starredOrganizations:
     get:
       description: Get the authenticated user's starred organizations.
@@ -4801,6 +5094,19 @@ paths:
                 items:
                   $ref: '#/components/schemas/User'
           description: Successfully updated metadata of all users
+        "403":
+          description: Forbidden
+      security:
+      - BEARER: []
+      tags:
+      - users
+  /users/updateUserWorkflows:
+    post:
+      description: Check workflow ownership
+      operationId: checkWorkflowOwnership
+      responses:
+        "204":
+          description: Successfully updated workflow ownership for all users
         "403":
           description: Forbidden
       security:
@@ -5413,6 +5719,35 @@ paths:
       - BEARER: []
       tags:
       - users
+  /users/{userId}/notebooks:
+    get:
+      description: List all notebooks owned by the authenticated user.
+      operationId: userNotebooks
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+          description: A list of notebooks owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/{userId}/privileges:
     put:
       description: "Updates the provided userID to admin or curator status, usable\
@@ -5729,6 +6064,7 @@ paths:
           - SWL
           - NFL
           - service
+          - jupyter
       - in: query
         name: namespace
         schema:
@@ -5793,8 +6129,8 @@ paths:
               items:
                 $ref: '#/components/schemas/SourceFile'
               uniqueItems: true
-        description: "Set of updated sourcefiles, add files by adding new files with\
-          \ unknown paths, delete files by including them with emptied content"
+        description: "Set of updated source files, add files by adding new files with\
+          \ unknown paths, delete files by including them with null content"
         required: true
       responses:
         default:
@@ -5954,7 +6290,7 @@ paths:
         schema:
           type: string
       - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -5987,7 +6323,7 @@ paths:
         required: true
         schema:
           type: string
-      - description: Which Workflow subclass to retrieve.
+      - description: Which Workflow subclass to retrieve actions for.
         in: query
         name: subclass
         required: true
@@ -6033,11 +6369,12 @@ paths:
           - OWNER
           - WRITER
           - READER
-      - in: query
-        name: services
+      - description: Which Workflow subclass to remove a role from.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
@@ -6060,11 +6397,12 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
-        name: services
+      - description: Which Workflow subclass to retrieve permissions for.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
@@ -6087,11 +6425,12 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
-        name: services
+      - description: Which Workflow subclass to add a permission to.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       requestBody:
         content:
           application/json:
@@ -6122,7 +6461,7 @@ paths:
         schema:
           type: string
       - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -6236,7 +6575,7 @@ paths:
           type: integer
           format: int64
       - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -6419,6 +6758,7 @@ paths:
           - SWL
           - NFL
           - service
+          - jupyter
       responses:
         default:
           content:
@@ -6442,7 +6782,7 @@ paths:
           type: integer
           format: int64
       - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
-          \ validations, aliases, images, authors, validations, aliases, images, authors"
+          \ validations, aliases, images, authors, metrics"
         in: query
         name: include
         schema:
@@ -6571,6 +6911,7 @@ paths:
           - SWL
           - NFL
           - service
+          - jupyter
       responses:
         default:
           content:
@@ -6606,6 +6947,7 @@ paths:
           - SWL
           - NFL
           - service
+          - jupyter
       responses:
         default:
           content:
@@ -6878,6 +7220,7 @@ paths:
           - SWL
           - NFL
           - service
+          - jupyter
       responses:
         default:
           content:
@@ -7170,7 +7513,7 @@ paths:
           type: integer
           format: int64
       - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, authors"
+          \ images, authors, metrics"
         in: query
         name: include
         schema:
@@ -7303,6 +7646,10 @@ paths:
             - GXFORMAT2_TEST_FILE
             - DOCKSTORE_SWL
             - SWL_TEST_JSON
+            - DOCKSTORE_JUPYTER
+            - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_TEST_FILE
+            - DOCKSTORE_NOTEBOOK_OTHER
       responses:
         default:
           content:
@@ -7356,6 +7703,7 @@ components:
       - $ref: '#/components/schemas/Workflow'
     Author:
       type: object
+      description: "Non-ORCID authors for the entry, retrieved from the default version"
       properties:
         affiliation:
           type: string
@@ -7458,10 +7806,11 @@ components:
           type: string
     Checksum:
       type: object
-      description: The checksum value and its type
+      description: "A production (immutable) tool version is required to have a hashcode.\
+        \ Not required otherwise, but might be useful to detect changes. "
       example:
-      - checksum: 77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182
-        type: sha256
+      - checksum: ea2a5db69bd20a42976838790bc29294df3af02b
+        type: sha1
       properties:
         checksum:
           type: string
@@ -7497,6 +7846,10 @@ components:
           - ANVIL
           - CAVATICA
           - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
         supportedLanguages:
           type: array
           items:
@@ -7704,6 +8057,40 @@ components:
           type: string
         zenodoScope:
           type: string
+    CpuMetric:
+      type: object
+      description: This describes aggregated CPU metrics for workflow executions.
+      properties:
+        average:
+          type: number
+          format: double
+          description: The average value from the data points
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for statistical metrics in this
+            webservice
+        maximum:
+          type: number
+          format: double
+          description: The maximum value from the data points
+        minimum:
+          type: number
+          format: double
+          description: The minimum value from the data points
+        numberOfDataPointsForAverage:
+          type: integer
+          format: int32
+          description: The number of data points used to calculate the average
+        unit:
+          type: string
+          description: The unit of the data points
+          readOnly: true
+      required:
+      - average
+      - maximum
+      - minimum
+      - numberOfDataPointsForAverage
     DescriptionMetrics:
       type: object
       properties:
@@ -7732,6 +8119,17 @@ components:
             $ref: '#/components/schemas/Alias'
         author:
           type: string
+          deprecated: true
+          description: "This is the name of the author, retrieved from the default\
+            \ version"
+        authors:
+          type: array
+          description: "Non-ORCID authors for the entry, retrieved from the default\
+            \ version"
+          items:
+            $ref: '#/components/schemas/Author'
+          readOnly: true
+          uniqueItems: true
         checker_id:
           type: integer
           format: int64
@@ -7768,6 +8166,13 @@ components:
             type: string
         email:
           type: string
+          deprecated: true
+          description: "This is the email of the author, retrieved from the default\
+            \ version"
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         forumUrl:
           type: string
           maxLength: 256
@@ -7820,6 +8225,13 @@ components:
           type: string
         namespace:
           type: string
+        orcidAuthors:
+          type: array
+          description: "ORCID authors for the entry, retrieved from the default version"
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          readOnly: true
+          uniqueItems: true
         output_file_formats:
           type: array
           items:
@@ -7900,6 +8312,17 @@ components:
             $ref: '#/components/schemas/Alias'
         author:
           type: string
+          deprecated: true
+          description: "This is the name of the author, retrieved from the default\
+            \ version"
+        authors:
+          type: array
+          description: "Non-ORCID authors for the entry, retrieved from the default\
+            \ version"
+          items:
+            $ref: '#/components/schemas/Author'
+          readOnly: true
+          uniqueItems: true
         checker_id:
           type: integer
           format: int64
@@ -7917,6 +8340,13 @@ components:
           type: string
         email:
           type: string
+          deprecated: true
+          description: "This is the email of the author, retrieved from the default\
+            \ version"
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         gitUrl:
           type: string
         has_checker:
@@ -7951,6 +8381,13 @@ components:
           $ref: '#/components/schemas/Entry'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        orcidAuthors:
+          type: array
+          description: "ORCID authors for the entry, retrieved from the default version"
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          readOnly: true
+          uniqueItems: true
         output_file_formats:
           type: array
           items:
@@ -8003,6 +8440,17 @@ components:
             $ref: '#/components/schemas/Alias'
         author:
           type: string
+          deprecated: true
+          description: "This is the name of the author, retrieved from the default\
+            \ version"
+        authors:
+          type: array
+          description: "Non-ORCID authors for the entry, retrieved from the default\
+            \ version"
+          items:
+            $ref: '#/components/schemas/Author'
+          readOnly: true
+          uniqueItems: true
         checker_id:
           type: integer
           format: int64
@@ -8020,6 +8468,13 @@ components:
           type: string
         email:
           type: string
+          deprecated: true
+          description: "This is the email of the author, retrieved from the default\
+            \ version"
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         gitUrl:
           type: string
         has_checker:
@@ -8055,6 +8510,13 @@ components:
           writeOnly: true
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        orcidAuthors:
+          type: array
+          description: "ORCID authors for the entry, retrieved from the default version"
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          readOnly: true
+          uniqueItems: true
         output_file_formats:
           type: array
           items:
@@ -8098,16 +8560,48 @@ components:
           items:
             type: object
           uniqueItems: true
+    EntryType:
+      type: string
+      description: Entry type
+      enum:
+      - TOOL
+      - WORKFLOW
+      - SERVICE
+      - APPTOOL
+      - NOTEBOOK
+    EntryTypeMetadata:
+      type: object
+      description: Information about an entry type
+      properties:
+        searchEntryType:
+          type: string
+          description: Search 'entryType' parameter value for this entry type
+        searchSupported:
+          type: boolean
+          description: Search support for this entry type
+        sitePath:
+          type: string
+          description: Relative path from the root of the site to the 'pages' where
+            entries of this type are displayed
+        term:
+          type: string
+          description: Singular term used to refer to an instance of this entry type
+        termPlural:
+          type: string
+          description: Plural term used to refer to instances of this entry type
+        trsPrefix:
+          type: string
+          description: TRS ID prefix for this entry type
+        trsSupported:
+          type: boolean
+          description: TRS support for this entry type
+        type:
+          $ref: '#/components/schemas/EntryType'
     EntryUpdateTime:
       type: object
       properties:
         entryType:
-          type: string
-          enum:
-          - TOOL
-          - WORKFLOW
-          - SERVICE
-          - APPTOOL
+          $ref: '#/components/schemas/EntryType'
         lastUpdateDate:
           type: integer
           format: int64
@@ -8175,6 +8669,116 @@ components:
           $ref: '#/components/schemas/Version'
         workflow:
           $ref: '#/components/schemas/Workflow'
+    Execution:
+      type: object
+      description: Metrics of a workflow execution on a platform
+      properties:
+        additionalProperties:
+          type: object
+          additionalProperties:
+            type: object
+            description: "Additional properties that aren't defined. Provide a context,\
+              \ like one from schema.org, if you want to use a specific vocabulary"
+            example:
+              '@context':
+                schema: https://schema.org
+              schema:actionStatus: CompletedActionStatus
+          description: "Additional properties that aren't defined. Provide a context,\
+            \ like one from schema.org, if you want to use a specific vocabulary"
+          example:
+            '@context':
+              schema: https://schema.org
+            schema:actionStatus: CompletedActionStatus
+    ExecutionStatusMetric:
+      type: object
+      description: Aggregated metrics about workflow execution statuses
+      properties:
+        count:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int32
+            description: A map containing the count for each key
+          description: A map containing the count for each key
+          example:
+            FAILED_RUNTIME_INVALID: 1
+            FAILED_SEMANTIC_INVALID: 1
+            SUCCESSFUL: 5
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the count metrics in this webservice
+        numberOfFailedExecutions:
+          type: integer
+          format: int32
+          description: Number of failed executions. An execution may have failed because
+            it was semantically or runtime invalid
+        numberOfSuccessfulExecutions:
+          type: integer
+          format: int32
+          description: Number of successful executions
+      required:
+      - count
+      - numberOfFailedExecutions
+      - numberOfSuccessfulExecutions
+    ExecutionTimeMetric:
+      type: object
+      description: This describes aggregated execution time metrics in seconds for
+        workflow executions.
+      properties:
+        average:
+          type: number
+          format: double
+          description: The average value from the data points
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for statistical metrics in this
+            webservice
+        maximum:
+          type: number
+          format: double
+          description: The maximum value from the data points
+        minimum:
+          type: number
+          format: double
+          description: The minimum value from the data points
+        numberOfDataPointsForAverage:
+          type: integer
+          format: int32
+          description: The number of data points used to calculate the average
+        unit:
+          type: string
+          description: The unit of the data points
+          readOnly: true
+      required:
+      - average
+      - maximum
+      - minimum
+      - numberOfDataPointsForAverage
+    ExecutionsRequestBody:
+      type: object
+      description: Request body model for executionMetricsPost
+      properties:
+        aggregatedExecutions:
+          type: array
+          description: List of aggregated executions to submit
+          items:
+            $ref: '#/components/schemas/Metrics'
+        runExecutions:
+          type: array
+          description: List of workflow run executions to submit
+          items:
+            $ref: '#/components/schemas/RunExecution'
+        validationExecutions:
+          type: array
+          description: List of workflow validation executions to submit
+          items:
+            $ref: '#/components/schemas/ValidationExecution'
+      required:
+      - aggregatedExecutions
+      - runExecutions
+      - validationExecutions
     ExtendedUserData:
       type: object
       properties:
@@ -8199,19 +8803,24 @@ components:
           description: "A production (immutable) tool version is required to have\
             \ a hashcode. Not required otherwise, but might be useful to detect changes. "
           example:
-          - checksum: 77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182
-            type: sha256
+          - checksum: ea2a5db69bd20a42976838790bc29294df3af02b
+            type: sha1
           items:
             $ref: '#/components/schemas/Checksum'
         content:
           type: string
           description: The content of the file itself. One of url or content is required.
+        image_type:
+          $ref: '#/components/schemas/OneOfFileWrapperImageType'
         url:
           type: string
           description: "Optional url to the underlying content, should include version\
             \ information, and can include a git hash.  Note that this URL should\
             \ resolve to the raw unwrapped content that would otherwise be available\
             \ in content. One of url or content is required."
+          example: "{\"descriptorfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\"\
+            },\"containerfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile\"\
+            }}"
     HealthCheckResult:
       type: object
       properties:
@@ -8281,6 +8890,7 @@ components:
           type: string
           description: Used in conjunction with a registry_url if provided to locate
             images.
+          example: "[\"quay.io/seqware/seqware_full/1.1\",\"ubuntu:latest\"]"
         image_type:
           type: string
           enum:
@@ -8291,6 +8901,7 @@ components:
           type: string
           description: A docker registry or a URL to a Singularity registry. Used
             along with image_name to locate a specific image.
+          example: "[\"registry.hub.docker.com\"]"
         size:
           type: integer
           format: int64
@@ -8347,6 +8958,7 @@ components:
           - SWL
           - NFL
           - service
+          - jupyter
         version:
           type: string
     LanguageParsingRequest:
@@ -8367,6 +8979,7 @@ components:
           - SWL
           - NFL
           - service
+          - jupyter
         descriptorRelativePathInGit:
           type: string
           description: The relative path to the primary descriptor (relative to the
@@ -8445,6 +9058,71 @@ components:
         hostedEntryVersionLimit:
           type: integer
           format: int32
+    MemoryMetric:
+      type: object
+      description: This describes aggregated memory metrics for workflow executions
+        in GB.
+      properties:
+        average:
+          type: number
+          format: double
+          description: The average value from the data points
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for statistical metrics in this
+            webservice
+        maximum:
+          type: number
+          format: double
+          description: The maximum value from the data points
+        minimum:
+          type: number
+          format: double
+          description: The minimum value from the data points
+        numberOfDataPointsForAverage:
+          type: integer
+          format: int32
+          description: The number of data points used to calculate the average
+        unit:
+          type: string
+          description: The unit of the data points
+          readOnly: true
+      required:
+      - average
+      - maximum
+      - minimum
+      - numberOfDataPointsForAverage
+    Metrics:
+      type: object
+      description: Aggregated metrics associated with entry versions
+      properties:
+        additionalAggregatedMetrics:
+          type: object
+          additionalProperties:
+            type: object
+            description: Additional aggregated metrics
+          description: Additional aggregated metrics
+        cpu:
+          $ref: '#/components/schemas/CpuMetric'
+        executionStatusCount:
+          $ref: '#/components/schemas/ExecutionStatusMetric'
+        executionTime:
+          $ref: '#/components/schemas/ExecutionTimeMetric'
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the metrics in this webservice
+        memory:
+          $ref: '#/components/schemas/MemoryMetric'
+        validationStatus:
+          $ref: '#/components/schemas/ValidationStatusMetric'
+      required:
+      - executionStatusCount
+    Notebook:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
     Notification:
       type: object
       properties:
@@ -8475,8 +9153,13 @@ components:
           enum:
           - SITEWIDE
           - NEWSBODY
+    OneOfFileWrapperImageType:
+      type: object
+      description: Optionally return additional information on the type of file this
+        is
     OrcidAuthor:
       type: object
+      description: "ORCID authors for the entry, retrieved from the default version"
       properties:
         id:
           type: integer
@@ -8571,8 +9254,6 @@ components:
     OrganizationUser:
       type: object
       properties:
-        accepted:
-          type: boolean
         dbCreateDate:
           type: integer
           format: int64
@@ -8589,8 +9270,17 @@ components:
           - ADMIN
           - MAINTAINER
           - MEMBER
+        status:
+          type: string
+          description: The status of the organization invitation
+          enum:
+          - PENDING
+          - REJECTED
+          - ACCEPTED
         user:
           $ref: '#/components/schemas/User'
+      required:
+      - status
     OrganizationUserId:
       type: object
       properties:
@@ -8613,6 +9303,7 @@ components:
           - SWL
           - NFL
           - service
+          - jupyter
         hasHTTPImports:
           type: boolean
         hasLocalImports:
@@ -8634,6 +9325,8 @@ components:
         admin:
           type: boolean
         curator:
+          type: boolean
+        platformPartner:
           type: boolean
     Profile:
       type: object
@@ -8692,6 +9385,37 @@ components:
           type: boolean
         repositoryName:
           type: string
+    RunExecution:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Execution'
+      - type: object
+        properties:
+          cpuRequirements:
+            type: integer
+            format: int32
+            description: Number of CPUs required for the execution
+            example: 2
+          executionStatus:
+            type: string
+            description: The status of the execution
+            enum:
+            - SUCCESSFUL
+            - FAILED_SEMANTIC_INVALID
+            - FAILED_RUNTIME_INVALID
+          executionTime:
+            type: string
+            description: The total time it took for the execution to complete in ISO
+              8601 duration format
+            example: PT30S
+          memoryRequirementsGB:
+            type: number
+            format: double
+            description: Memory requirements for the execution in GB
+            example: 2
+      description: Metrics of a workflow execution on a platform
+      required:
+      - executionStatus
     Service:
       type: object
       allOf:
@@ -8760,6 +9484,8 @@ components:
         id:
           type: integer
           format: int64
+        metadata:
+          $ref: '#/components/schemas/SourceFileMetadata'
         path:
           type: string
           description: Path to sourcefile relative to its parent
@@ -8785,6 +9511,10 @@ components:
           - GXFORMAT2_TEST_FILE
           - DOCKSTORE_SWL
           - SWL_TEST_JSON
+          - DOCKSTORE_JUPYTER
+          - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_TEST_FILE
+          - DOCKSTORE_NOTEBOOK_OTHER
         verifiedBySource:
           type: object
           additionalProperties:
@@ -8793,6 +9523,17 @@ components:
       - absolutePath
       - path
       - type
+    SourceFileMetadata:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        parent:
+          $ref: '#/components/schemas/SourceFile'
+        typeVersion:
+          type: string
+          description: The language version for the given descriptor file type
     StarRequest:
       type: object
       properties:
@@ -8905,7 +9646,14 @@ components:
           type: string
           enum:
           - README
+          - CUSTOM_README
           - DESCRIPTOR
+        descriptorTypeVersionsFromSourceFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          uniqueItems: true
+          writeOnly: true
         dirtyBit:
           type: boolean
         dockerfile_path:
@@ -8942,6 +9690,10 @@ components:
         last_built:
           type: integer
           format: int64
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         name:
           type: string
           description: "Implementation specific, can be a quay.io or docker hub tag\
@@ -8959,6 +9711,8 @@ components:
           uniqueItems: true
         parent:
           $ref: '#/components/schemas/EntryObjectObject'
+        readMePath:
+          type: string
         reference:
           type: string
           description: git commit/tag/branch
@@ -8974,6 +9728,10 @@ components:
         size:
           type: integer
           format: int64
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:
@@ -9140,12 +9898,13 @@ components:
         type:
           type: string
           enum:
-          - SMK
           - CWL
           - WDL
           - NFL
+          - GALAXY
+          - SMK
           - SERVICE
-          - GXFORMAT2
+          - JUPYTER
         url:
           type: string
       required:
@@ -9160,6 +9919,8 @@ components:
     ToolFile:
       type: object
       properties:
+        checksum:
+          $ref: '#/components/schemas/Checksum'
         file_type:
           type: string
           enum:
@@ -9259,9 +10020,51 @@ components:
             - CWL
             - WDL
             - NFL
-            - SERVICE
             - GALAXY
             - SMK
+            - SERVICE
+            - JUPYTER
+        descriptor_type_version:
+          type: object
+          additionalProperties:
+            type: array
+            description: "A map providing information about the language versions\
+              \ used in this tool. The keys should be the same values used in the\
+              \ `descriptor_type` field, and the value should be an array of all the\
+              \ language versions used for the given `descriptor_type`. Depending\
+              \ on the `descriptor_type` (e.g. CWL) multiple version values may be\
+              \ used in a single tool."
+            example:
+              CWL:
+              - v1.0.2
+              NFL:
+              - DSL2
+              WDL:
+              - "1.0"
+              - "1.0"
+            items:
+              type: string
+              description: "A map providing information about the language versions\
+                \ used in this tool. The keys should be the same values used in the\
+                \ `descriptor_type` field, and the value should be an array of all\
+                \ the language versions used for the given `descriptor_type`. Depending\
+                \ on the `descriptor_type` (e.g. CWL) multiple version values may\
+                \ be used in a single tool."
+              example: "{\"WDL\":[\"1.0\",\"1.0\"],\"CWL\":[\"v1.0.2\"],\"NFL\":[\"\
+                DSL2\"]}"
+          description: "A map providing information about the language versions used\
+            \ in this tool. The keys should be the same values used in the `descriptor_type`\
+            \ field, and the value should be an array of all the language versions\
+            \ used for the given `descriptor_type`. Depending on the `descriptor_type`\
+            \ (e.g. CWL) multiple version values may be used in a single tool."
+          example:
+            CWL:
+            - v1.0.2
+            NFL:
+            - DSL2
+            WDL:
+            - "1.0"
+            - "1.0"
         id:
           type: string
           description: An identifier of the version of this tool for this particular
@@ -9354,6 +10157,7 @@ components:
           type: string
         curator:
           type: boolean
+          description: Indicates whether this user is a curator
         id:
           type: integer
           format: int64
@@ -9363,6 +10167,9 @@ components:
           type: string
         orcid:
           type: string
+        platformPartner:
+          type: boolean
+          description: Indicates whether this account corresponds to a platform partner
         privacyPolicyVersion:
           type: string
           enum:
@@ -9436,8 +10243,138 @@ components:
           - GXFORMAT2_TEST_FILE
           - DOCKSTORE_SWL
           - SWL_TEST_JSON
+          - DOCKSTORE_JUPYTER
+          - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_TEST_FILE
+          - DOCKSTORE_NOTEBOOK_OTHER
         valid:
           type: boolean
+    ValidationExecution:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Execution'
+      - type: object
+        properties:
+          dateExecuted:
+            type: string
+            description: The date and time that the validator tool was executed in
+              ISO 8601 UTC date format
+            example: 2023-03-31T15:06:49.888745366Z
+          errorMessage:
+            type: string
+            description: The error message for a failed validation by the validator
+              tool
+          isValid:
+            type: boolean
+            description: Boolean indicating if the workflow was validated successfully
+            example: true
+          validatorTool:
+            type: string
+            description: The validator tool used to validate the workflow
+            enum:
+            - MINIWDL
+            - WOMTOOL
+            - CWLTOOL
+            - NF_VALIDATION
+            - OTHER
+            example: miniwdl
+          validatorToolVersion:
+            type: string
+            description: The version of the validator tool
+      description: Metrics of a workflow validated on a platform
+      required:
+      - dateExecuted
+      - isValid
+      - validatorTool
+      - validatorToolVersion
+    ValidationStatusMetric:
+      type: object
+      description: Aggregated metrics about workflow validation statuses
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the count metrics in this webservice
+        validatorTools:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ValidatorInfo'
+          description: A map containing key-value pairs indicating whether the validator
+            tool successfully validated the workflow
+      required:
+      - validatorTools
+    ValidatorInfo:
+      type: object
+      description: Aggregated validation information for a particular validator tool
+        like miniwdl
+      properties:
+        id:
+          type: integer
+          format: int64
+        mostRecentVersionName:
+          type: string
+          description: The version of the validator tool that was most recently executed
+        numberOfRuns:
+          type: integer
+          format: int32
+          description: The number of times the validator was executed on the workflow
+          example: 1
+        passingRate:
+          type: number
+          format: double
+          description: A percentage representing how often the validator successfully
+            validated the workflow
+          example: 100.0
+        validatorVersions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidatorVersionInfo'
+      required:
+      - mostRecentVersionName
+      - numberOfRuns
+      - passingRate
+      - validatorVersions
+    ValidatorVersionInfo:
+      type: object
+      description: "Validation information for a version of a specific validator tool,\
+        \ like miniwdl v1.9.1"
+      properties:
+        dateExecuted:
+          type: string
+          description: The date and time that the validator tool was executed in ISO
+            8601 UTC date format
+          example: 2023-03-31T15:06:49.888745366Z
+        errorMessage:
+          type: string
+          description: The error message for a failed validation by the validator
+            tool
+        id:
+          type: integer
+          format: int64
+        isValid:
+          type: boolean
+          description: Boolean indicating if the workflow was validated successfully
+          example: true
+        name:
+          type: string
+          description: The version name of the validator tool
+        numberOfRuns:
+          type: integer
+          format: int32
+          description: The number of times the validator was executed on the workflow
+          example: 1
+        passingRate:
+          type: number
+          format: double
+          description: A percentage representing how often the validator successfully
+            validates the workflow
+          example: 100.0
+      required:
+      - dateExecuted
+      - isValid
+      - name
+      - numberOfRuns
+      - passingRate
     VerificationInformation:
       type: object
       properties:
@@ -9468,7 +10405,14 @@ components:
           type: string
           enum:
           - README
+          - CUSTOM_README
           - DESCRIPTOR
+        descriptorTypeVersionsFromSourceFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          uniqueItems: true
+          writeOnly: true
         dirtyBit:
           type: boolean
         doiStatus:
@@ -9498,6 +10442,10 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         name:
           type: string
           description: "Implementation specific, can be a quay.io or docker hub tag\
@@ -9515,6 +10463,8 @@ components:
           uniqueItems: true
         parent:
           $ref: '#/components/schemas/EntryObjectObject'
+        readMePath:
+          type: string
         reference:
           type: string
           description: git commit/tag/branch
@@ -9527,6 +10477,10 @@ components:
           - BRANCH
           - NOT_APPLICABLE
           - UNSET
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:
@@ -9558,6 +10512,14 @@ components:
           type: string
           description: "This is a human-readable description of this container and\
             \ what it is trying to accomplish, required GA4GH"
+        descriptorTypeVersions:
+          type: array
+          items:
+            type: string
+        engineVersions:
+          type: array
+          items:
+            type: string
         id:
           type: integer
           format: int64
@@ -9567,6 +10529,8 @@ components:
             $ref: '#/components/schemas/ParsedInformation'
         publicAccessibleTestParameterFile:
           type: boolean
+          description: Whether the version has everything needed to run without restricted
+            access permissions
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9609,6 +10573,17 @@ components:
             $ref: '#/components/schemas/Alias'
         author:
           type: string
+          deprecated: true
+          description: "This is the name of the author, retrieved from the default\
+            \ version"
+        authors:
+          type: array
+          description: "Non-ORCID authors for the entry, retrieved from the default\
+            \ version"
+          items:
+            $ref: '#/components/schemas/Author'
+          readOnly: true
+          uniqueItems: true
         checker_id:
           type: integer
           format: int64
@@ -9636,6 +10611,7 @@ components:
           - SWL
           - NFL
           - service
+          - jupyter
         descriptorTypeSubclass:
           type: string
           enum:
@@ -9643,9 +10619,22 @@ components:
           - helm
           - swarm
           - kubernetes
+          - Python
+          - R
+          - Javascript
+          - Scala
+          - Julia
+          - other
           - n/a
         email:
           type: string
+          deprecated: true
+          description: "This is the email of the author, retrieved from the default\
+            \ version"
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         forumUrl:
           type: string
           maxLength: 256
@@ -9695,6 +10684,13 @@ components:
           - STUB
           - HOSTED
           - DOCKSTORE_YML
+        orcidAuthors:
+          type: array
+          description: "ORCID authors for the entry, retrieved from the default version"
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          readOnly: true
+          uniqueItems: true
         organization:
           type: string
         output_file_formats:
@@ -9771,6 +10767,7 @@ components:
       - BIOWORKFLOW
       - SERVICE
       - APPTOOL
+      - NOTEBOOK
     WorkflowVersion:
       type: object
       properties:
@@ -9796,7 +10793,14 @@ components:
           type: string
           enum:
           - README
+          - CUSTOM_README
           - DESCRIPTOR
+        descriptorTypeVersionsFromSourceFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          uniqueItems: true
+          writeOnly: true
         dirtyBit:
           type: boolean
         doiStatus:
@@ -9826,11 +10830,18 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
+        kernelImagePath:
+          type: string
+          description: User-specified notebook kernel image reference
         last_modified:
           type: integer
           format: int64
         legacyVersion:
           type: boolean
+        metricsByPlatform:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Metrics'
         name:
           type: string
           description: "Implementation specific, can be a quay.io or docker hub tag\
@@ -9848,6 +10859,8 @@ components:
           uniqueItems: true
         parent:
           $ref: '#/components/schemas/EntryObjectObject'
+        readMePath:
+          type: string
         reference:
           type: string
           description: git commit/tag/branch
@@ -9860,15 +10873,12 @@ components:
           - BRANCH
           - NOT_APPLICABLE
           - UNSET
-        subClass:
-          type: string
-          enum:
-          - DOCKER_COMPOSE
-          - SWARM
-          - KUBERNETES
-          - HELM
         synced:
           type: boolean
+        userFiles:
+          type: array
+          items:
+            type: string
         valid:
           type: boolean
         validations:

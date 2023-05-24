@@ -17,14 +17,13 @@ package io.dockstore.language;
 
 import io.dockstore.common.VersionTypeValidation;
 import java.util.Map;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
- * Recommended interface for new workflow languages
+ * Recommended interface for new workflow languages.
  * <p>
  * Unstructured information that we would like to know
- * 1) Grammar for your language in order to highlight your language so it looks nice for users. We use https://ace.c9.io/#nav=higlighter
- * but have some experience converting from Linguist grammars ( https://github.com/github/linguist )
+ * 1) Grammar for your language in order to highlight your language so it looks nice for users. We use <a href="https://ace.c9.io/#nav=higlighter">Ace</a>
+ * but have some experience converting from ( <a href="https://github.com/github/linguist">Linguist grammars</a> )
  */
 public interface RecommendedLanguageInterface extends MinimalLanguageInterface {
 
@@ -46,7 +45,7 @@ public interface RecommendedLanguageInterface extends MinimalLanguageInterface {
      * @param indexedFiles the set of files indexed from MinimalLanguageInterface
      * @return validity and if not, messages that would help a user debug
      */
-    VersionTypeValidation validateWorkflowSet(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
+    VersionTypeValidation validateWorkflowSet(String initialPath, String contents, Map<String, FileMetadata> indexedFiles);
 
     /**
      * Given a set of indexed files from MinimalLanguageInterface cut down to just test parameters, says whether the test
@@ -55,5 +54,5 @@ public interface RecommendedLanguageInterface extends MinimalLanguageInterface {
      * @param indexedFiles the set of files indexed from MinimalLanguageInterface
      * @return validity and if not, messages that would help a user debug
      */
-    VersionTypeValidation validateTestParameterSet(Map<String, Pair<String, GenericFileType>> indexedFiles);
+    VersionTypeValidation validateTestParameterSet(Map<String, FileMetadata> indexedFiles);
 }

@@ -16,13 +16,17 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.common.CommonTestUtilities.restartElasticsearch;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.webservice.helpers.AppToolHelper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.ApiResponse;
@@ -32,35 +36,30 @@ import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * @author dyuen
  */
-public class SearchResourceIT extends BaseIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+@ExtendWith(TestStatus.class)
+class SearchResourceIT extends BaseIT {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
     private final String exampleESQuery = "{\"size\":201,\"_source\":{\"excludes\":[\"*.content\",\"*.sourceFiles\",\"description\",\"users\",\"workflowVersions.dirtyBit\",\"workflowVersions.hidden\",\"workflowVersions.last_modified\",\"workflowVersions.name\",\"workflowVersions.valid\",\"workflowVersions.workflow_path\",\"workflowVersions.workingDirectory\",\"workflowVersions.reference\"]},\"query\":{\"match_all\":{}}}";
 
-    @Before
+    @BeforeEach
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -73,35 +72,40 @@ public class SearchResourceIT extends BaseIT {
      * @param hit   The amount of hits expected
      * @param extendedGa4GhApi  The api to get the elasticsearch results
      * @param counter   The amount of tries attempted
+     * @param esQuery   The ES query to run
      */
-    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter) {
+    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter, String esQuery) {
         try {
-            String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
+            String s = extendedGa4GhApi.toolsIndexSearch(esQuery);
             // There's actually two "total", one for shards and one for hits.
             // Need to only look at the hits one
             if (!s.contains("hits\":{\"total\":{\"value\":" + hit + ",")) {
                 if (counter > 5) {
-                    Assert.fail(s + " does not have the correct amount of hits");
+                    fail(s + " does not have the correct amount of hits");
                 } else {
                     long sleepTime = 1000 * counter;
                     Thread.sleep(sleepTime);
-                    waitForIndexRefresh(hit, extendedGa4GhApi, counter + 1);
+                    waitForIndexRefresh(hit, extendedGa4GhApi, counter + 1, esQuery);
                 }
             }
         } catch (Exception e) {
-            Assert.fail("There were troubles sleeping: " + e.getMessage());
+            fail("There were troubles sleeping: " + e.getMessage());
         }
     }
 
+    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter) {
+        waitForIndexRefresh(hit, extendedGa4GhApi, counter, exampleESQuery);
+    }
+
     @Test
-    public void testSearchOperations() throws ApiException {
+    void testSearchOperations() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         EntriesApi entriesApi = new EntriesApi(webClient);
         // update the search index
         ApiResponse<Void> voidApiResponse = extendedGa4GhApi.toolsIndexGetWithHttpInfo();
         int statusCode = voidApiResponse.getStatusCode();
-        Assert.assertEquals(200, statusCode);
+        assertEquals(200, statusCode);
         waitForIndexRefresh(0, extendedGa4GhApi, 0);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
@@ -115,13 +119,37 @@ public class SearchResourceIT extends BaseIT {
         waitForIndexRefresh(1, extendedGa4GhApi,  0);
         // after publication index should include workflow
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
-        assertTrue(s + " should've contained potatoAlias", s.contains("\"aliases\":{\"potatoAlias\":{}}"));
+        assertTrue(s.contains("\"aliases\":{\"potatoAlias\":{}}"), s + " should've contained potatoAlias");
         assertFalse(s.contains("\"aliases\":null"));
         assertTrue(s.contains(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW));
         // ensure source file returns
         String newQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
         String t = extendedGa4GhApi.toolsIndexSearch(newQuery);
-        assertTrue(t + " should've contained sourcefiles", t.contains("sourceFiles") && t.contains("\"checksum\":\"cb5d0323091b22e0a1d6f52a4930ee256b15835c968462c03cf7be2cc842a4ad\""));
+        assertTrue(t.contains("sourceFiles") && t.contains("\"checksum\":\"cb5d0323091b22e0a1d6f52a4930ee256b15835c968462c03cf7be2cc842a4ad\""), t + " should've contained sourcefiles");
+    }
+
+    @Test
+    void testNotebook() throws ApiException {
+        // register a simple published notebook
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.handleGitHubRelease("dockstore-testing/simple-notebook", USER_2_USERNAME, "refs/tags/simple-published-v1", AppToolHelper.INSTALLATION_ID);
+
+        // wait until the notebook is indexed
+        ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        waitForIndexRefresh(1, extendedGa4GhApi, 0, StringUtils.replace(exampleESQuery, "\"match_all\":{}", "\"match\":{\"_index\":\"notebooks\"}"));
+
+        // confirm the correct format and language
+        String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
+        assertTrue(s.contains("\"type\":\"Notebook\""));
+        assertTrue(s.contains("\"repository\":\"simple-notebook\""));
+        assertTrue(s.contains("\"descriptorType\":\"jupyter\""));
+        assertTrue(s.contains("\"descriptorTypeSubclass\":\"Python\""));
+
+        // confirm the presence of the notebook source file
+        String fileQuery = StringUtils.replace(exampleESQuery, "*.sourceFiles", "");
+        String t = extendedGa4GhApi.toolsIndexSearch(fileQuery);
+        assertTrue(t.contains("/notebook.ipynb"));
     }
 
     /**
@@ -129,7 +157,7 @@ public class SearchResourceIT extends BaseIT {
      * index is not made, or the index is made but there are no results.
      */
     @Test
-    public void testElasticSearchHealthCheck() {
+    void testElasticSearchHealthCheck() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         MetadataApi metadataApi = new MetadataApi(webClient);
@@ -138,7 +166,7 @@ public class SearchResourceIT extends BaseIT {
         try {
             metadataApi.checkElasticSearch();
         } catch (ApiException ex) {
-            assertTrue("Should fail", true);
+            assertTrue(true, "Should fail");
         }
 
         // Update the search index
@@ -156,7 +184,7 @@ public class SearchResourceIT extends BaseIT {
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        // do targeted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));

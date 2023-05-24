@@ -15,7 +15,12 @@
  */
 package core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
@@ -28,37 +33,40 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.SortedSet;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
-public class CWLParseTest {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+class CWLParseTest {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
 
     @Test
-    public void testOldMetadataExample() throws IOException {
+    void testOldMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Keiran Raine", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "keiranmraine@gmail.com", entry.getEmail());
+        assertEquals("Keiran Raine", entry.getAuthor(), "incorrect author");
+        assertEquals("keiranmraine@gmail.com", entry.getEmail(), "incorrect email");
     }
 
     @Test
-    public void testNewMetadataExample() throws IOException {
+    void testNewMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
+        assertEquals("Denis Yuen", entry.getAuthor(), "incorrect author");
+        assertEquals("dyuen@oicr.on.ca", entry.getEmail(), "incorrect email");
     }
 
     /**
@@ -67,13 +75,13 @@ public class CWLParseTest {
      * @throws IOException  If file contents could not be read
      */
     @Test
-    public void testcwlVersion11doc1() throws IOException {
+    void testcwlVersion11doc1() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example1.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
-        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription());
+        assertEquals("Peter Amstutz", entry.getAuthor(), "incorrect author");
+        assertEquals("peter.amstutz@curoverse.com", entry.getEmail(), "incorrect email");
+        assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription(), "incorrect description");
     }
 
     /**
@@ -81,13 +89,13 @@ public class CWLParseTest {
      * @throws IOException If file contents could not be read
      */
     @Test
-    public void testcwlVersion11doc2() throws IOException {
+    void testcwlVersion11doc2() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example2.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
-        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription());
+        assertEquals("Peter Amstutz", entry.getAuthor(), "incorrect author");
+        assertEquals("peter.amstutz@curoverse.com", entry.getEmail(), "incorrect email");
+        assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription(), "incorrect description");
     }
 
     /**
@@ -95,13 +103,13 @@ public class CWLParseTest {
      * @throws IOException If file contents could not be read
      */
     @Test
-    public void testcwlVersion11doc3() throws IOException {
+    void testcwlVersion11doc3() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example3.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
-        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.", entry.getDescription());
+        assertEquals("Peter Amstutz", entry.getAuthor(), "incorrect author");
+        assertEquals("peter.amstutz@curoverse.com", entry.getEmail(), "incorrect email");
+        assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.", entry.getDescription(), "incorrect description");
     }
 
     /**
@@ -109,22 +117,22 @@ public class CWLParseTest {
      * @throws IOException If file contents could not be read
      */
     @Test
-    public void testMaliciousCwl() throws IOException {
+    void testMaliciousCwl() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("malicious.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         // This checks the version is not created but not that it was never parsed
-        Assert.assertEquals(false, entry.isValid());
+        assertFalse(entry.isValid());
         SortedSet<Validation> validations = entry.getValidations();
-        Assert.assertTrue(validations.first().getMessage().contains("CWL file is malformed or missing"));
+        assertTrue(validations.first().getMessage().contains("CWL file is malformed or missing"));
     }
 
     @Test
-    public void testCombinedMetadataExample() throws IOException {
+    void testCombinedMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example3.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
+        assertEquals("Denis Yuen", entry.getAuthor(), "incorrect author");
+        assertEquals("dyuen@oicr.on.ca", entry.getEmail(), "incorrect email");
     }
 }

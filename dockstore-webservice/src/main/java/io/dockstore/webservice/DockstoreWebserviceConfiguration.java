@@ -19,6 +19,7 @@ package io.dockstore.webservice;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
+import io.dockstore.webservice.helpers.URIHelper;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.db.DataSourceFactory;
@@ -50,6 +51,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     @Valid
     private LimitConfig limitConfig = new LimitConfig();
+
+    @Valid
+    private MetricsConfig metricsConfig = new MetricsConfig();
 
     @NotEmpty
     private String template;
@@ -528,6 +532,15 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     @JsonProperty
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    public void setMetricsConfig(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
+    }
+
+    @JsonProperty
     public UIConfig getUiConfig() {
         return uiConfig;
     }
@@ -621,6 +634,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         public void setUiPort(String uiPort) {
             this.uiPort = uiPort;
         }
+
+        public String computeBaseUrl() {
+            return URIHelper.createBaseUrl(getScheme(), getHostname(), getUiPort());
+        }
+
+        public boolean computeIsProduction() {
+            return "dockstore.org".equals(getHostname());
+        }
     }
 
     public static class ElasticSearchConfig {
@@ -709,6 +730,28 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setWorkflowVersionLimit(int workflowVersionLimit) {
             this.workflowVersionLimit = workflowVersionLimit;
+        }
+    }
+
+    public static class MetricsConfig {
+        private String s3BucketName;
+
+        private String s3EndpointOverride;
+
+        public String getS3BucketName() {
+            return s3BucketName;
+        }
+
+        public void setS3BucketName(String s3BucketName) {
+            this.s3BucketName = s3BucketName;
+        }
+
+        public String getS3EndpointOverride() {
+            return s3EndpointOverride;
+        }
+
+        public void setS3EndpointOverride(String s3EndpointOverride) {
+            this.s3EndpointOverride = s3EndpointOverride;
         }
     }
 

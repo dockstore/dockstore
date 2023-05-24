@@ -16,8 +16,14 @@
 package io.dockstore.common;
 
 /**
- *  Setting aside Bit Bucket tests so that they can be ran seperately from the unit tests
+ *  Setting aside Bit Bucket tests so that they can be ran separately from the unit tests
  */
 
 public interface BitBucketTest {
+    String NAME = "io.dockstore.common.BitBucketTest";
+
+    default String getName() {
+        // silly method to satisfy CheckStyle
+        return NAME;
+    }
 }

@@ -40,7 +40,6 @@ import org.slf4j.LoggerFactory;
 
 public final class NextflowUtilities {
     private static final Logger LOG = LoggerFactory.getLogger(NextflowUtilities.class);
-    //TODO upgrade to stable release when possible
     private static final String DEFAULT_NEXTFLOW_VERSION = "21.10.6";
     private static final long TIMEOUT_MILLISECONDS = 15000;  // based on webservice logs, usually <6 seconds is needed
 

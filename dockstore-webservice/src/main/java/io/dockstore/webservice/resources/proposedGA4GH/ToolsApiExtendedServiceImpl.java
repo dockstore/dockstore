@@ -18,27 +18,37 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 
 import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_REGISTRY_RESPONSE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
+import io.dockstore.webservice.core.metrics.Metrics;
+import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.S3ClientHelper;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -69,6 +79,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
  * Implementations of methods to return responses containing organization related information
@@ -78,19 +90,27 @@ import org.slf4j.LoggerFactory;
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static final int ES_BATCH_INSERT_SIZE = 500;
+    public static final String INVALID_PLATFORM = "Invalid platform. Please select an individual platform.";
+    public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
+    public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
+    private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
     private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
     private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
-    private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
+    private static final String NOTEBOOKS_INDEX = ElasticListener.NOTEBOOKS_INDEX;
+    private static final String COMMA_SEPARATED_INDEXES = String.join(",", ElasticListener.INDEXES);
     private static final int SEARCH_TERM_LIMIT = 256;
     private static final int TOO_MANY_REQUESTS_429 = 429;
     private static final int ELASTICSEARCH_DEFAULT_LIMIT = 15;
+    public static final String COULD_NOT_SUBMIT_METRICS_DATA = "Could not submit metrics data";
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
     private static AppToolDAO appToolDAO = null;
+    private static NotebookDAO notebookDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
+    private static DockstoreWebserviceConfiguration.MetricsConfig metricsConfig = null;
     private static PublicStateManager publicStateManager = null;
     private static Semaphore elasticSearchConcurrencyLimit = null;
 
@@ -110,8 +130,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         ToolsApiExtendedServiceImpl.appToolDAO = appToolDAO;
     }
 
+    public static void setNotebookDAO(NotebookDAO notebookDAO) {
+        ToolsApiExtendedServiceImpl.notebookDAO = notebookDAO;
+    }
+
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         ToolsApiExtendedServiceImpl.config = config;
+        ToolsApiExtendedServiceImpl.metricsConfig = config.getMetricsConfig();
+
         if (config.getEsConfiguration().getMaxConcurrentSessions() == null) {
             ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(ELASTICSEARCH_DEFAULT_LIMIT);
         } else {
@@ -178,6 +204,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             LOG.info("Processed {} tools and workflows", totalProcessed);
             totalProcessed += indexDAO(appToolDAO);
             LOG.info("Processed {} tools, workflows, and apptools", totalProcessed);
+            totalProcessed += indexDAO(notebookDAO);
+            LOG.info("Processed {} tools, workflows, apptools, and notebooks", totalProcessed);
         }
         return Response.ok().entity(totalProcessed).build();
     }
@@ -198,11 +226,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         try {
             // FYI. it is real tempting to use a try ... catch with resources to close this client, but it actually permanently messes up the client!
             RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
-            // Delete previous indices
-            deleteIndex(client, TOOLS_INDEX);
-            deleteIndex(client, WORKFLOWS_INDEX);
+            // Delete previous indexes
+            deleteIndex(TOOLS_INDEX, client);
+            deleteIndex(WORKFLOWS_INDEX, client);
+            deleteIndex(NOTEBOOKS_INDEX, client);
+            // Create new indexes
             createIndex("queries/mapping_tool.json", TOOLS_INDEX, client);
             createIndex("queries/mapping_workflow.json", WORKFLOWS_INDEX, client);
+            createIndex("queries/mapping_notebook.json", NOTEBOOKS_INDEX, client);
         } catch (IOException | RuntimeException e) {
             LOG.error("Could not clear elastic search index", e);
             throw new CustomWebApplicationException("Search indexing failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -245,14 +276,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                         queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
                     }
                     // This should be using the high-level Elasticsearch client instead
-                    Request request = new Request("GET", "/" + ALL_INDICES + "/_search");
+                    Request request = new Request("GET", "/" + COMMA_SEPARATED_INDEXES + "/_search");
                     if (query != null) {
                         request.setJsonEntity(query);
                     }
                     request.addParameters(parameters);
                     org.elasticsearch.client.Response get = restClient.performRequest(request);
                     if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                        throw new CustomWebApplicationException("Could not search " + ALL_INDICES + "index",
+                        throw new CustomWebApplicationException("Could not search " + COMMA_SEPARATED_INDEXES + " index",
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     }
                     return Response.ok().entity(get.getEntity().getContent()).build();
@@ -330,14 +361,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public Response setSourceFileMetadata(String type, String id, String versionId, String platform, String platformVersion, String relativePath, Boolean verified,
         String metadata) {
 
-        ToolsApiServiceImpl impl = new ToolsApiServiceImpl();
-        ToolsApiServiceImpl.ParsedRegistryID parsedID = null;
+        Entry<?, ?> entry;
         try {
-            parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
+            entry = getEntry(id, Optional.empty());
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_REGISTRY_RESPONSE;
         }
-        Entry<?, ?> entry = impl.getEntry(parsedID, Optional.empty());
         Optional<? extends Version<?>> versionOptional;
 
         if (entry instanceof Workflow) {
@@ -354,7 +383,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         if (versionOptional.isPresent()) {
             Version<?> version = versionOptional.get();
             // so in this stream we need to standardize relative to the main descriptor
-            Optional<SourceFile> correctSourceFile = impl
+            Optional<SourceFile> correctSourceFile = TOOLS_API_SERVICE_IMPL
                 .lookForFilePath(version.getSourceFiles(), relativePath, version.getWorkingDirectory());
             if (correctSourceFile.isPresent()) {
                 SourceFile sourceFile = correctSourceFile.get();
@@ -379,12 +408,116 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         throw new CustomWebApplicationException("Could not submit verification information", HttpStatus.SC_BAD_REQUEST);
     }
 
-    private void deleteIndex(RestHighLevelClient restClient, String index) {
+    @Override
+    public Response submitMetricsData(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
+        checkActualPlatform(platform);
+
+        // Check that the entry and version exists
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.of(owner));
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_REGISTRY_RESPONSE;
+        }
+
+        if (entry == null) {
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Optional<? extends Version<?>> version = getVersion(entry, versionId);
+        if (version.isEmpty()) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String metricsData = mapper.writeValueAsString(executions);
+            MetricsDataS3Client metricsDataS3Client = new MetricsDataS3Client(metricsConfig.getS3BucketName(), metricsConfig.getS3EndpointOverride());
+            metricsDataS3Client.createS3Object(id, versionId, platform.name(), S3ClientHelper.createFileName(), owner.getId(), description, metricsData);
+            return Response.noContent().build();
+        } catch (AwsServiceException | SdkClientException | JsonProcessingException | URISyntaxException e) {
+            LOG.error(COULD_NOT_SUBMIT_METRICS_DATA, e);
+            throw new CustomWebApplicationException(COULD_NOT_SUBMIT_METRICS_DATA, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public Response setAggregatedMetrics(String id, String versionId, Partner platform, Metrics aggregatedMetrics) {
+        // Check that the entry and version exists
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, Optional.empty());
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_REGISTRY_RESPONSE;
+        }
+
+        if (entry == null) {
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Version<?> version = getVersion(entry, versionId).orElse(null);
+        if (version == null) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        version.getMetricsByPlatform().put(platform, aggregatedMetrics);
+        return Response.ok().entity(version.getMetricsByPlatform()).build();
+    }
+
+    @Override
+    public Map<Partner, Metrics> getAggregatedMetrics(String id, String versionId, Optional<User> user) {
+        Entry<?, ?> entry;
+        try {
+            entry = getEntry(id, user);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            throw new CustomWebApplicationException("Invalid entry ID", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (entry == null) {
+            throw new CustomWebApplicationException(TOOL_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Version<?> version = getVersion(entry, versionId).orElse(null);
+        if (version == null) {
+            throw new CustomWebApplicationException(VERSION_NOT_FOUND_ERROR, HttpStatus.SC_NOT_FOUND);
+        }
+
+        return version.getMetricsByPlatform();
+    }
+
+    private Entry<?, ?> getEntry(String id, Optional<User> user) throws UnsupportedEncodingException, IllegalArgumentException {
+        ToolsApiServiceImpl.ParsedRegistryID parsedID =  new ToolsApiServiceImpl.ParsedRegistryID(id);
+        return TOOLS_API_SERVICE_IMPL.getEntry(parsedID, user);
+    }
+
+    private Optional<? extends Version<?>> getVersion(Entry<?, ?> entry, String versionId) {
+        Optional<? extends Version<?>> versionOptional = Optional.empty();
+        if (entry instanceof Workflow workflow) {
+            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+            versionOptional = workflowVersions.stream().filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
+        } else if (entry instanceof Tool tool) {
+            Set<Tag> versions = tool.getWorkflowVersions();
+            versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
+        }
+        return versionOptional;
+    }
+
+    private void deleteIndex(String index, RestHighLevelClient restClient) {
         try {
             DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(index);
             restClient.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT);
         } catch (Exception e) {
             LOG.warn("Could not delete previous elastic search " + index + " index, not an issue if this is cold start", e);
+        }
+    }
+
+    /**
+     * Checks if the platform is an actual platform and not Partner.ALL
+     * @param platform
+     */
+    private void checkActualPlatform(Partner platform) {
+        if (!platform.isActualPartner()) {
+            throw new CustomWebApplicationException(INVALID_PLATFORM, HttpStatus.SC_BAD_REQUEST);
         }
     }
 }

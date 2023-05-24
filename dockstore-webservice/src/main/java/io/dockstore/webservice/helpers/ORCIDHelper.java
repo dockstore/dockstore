@@ -4,6 +4,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_D
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.dockstore.common.ValidationConstants;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -22,13 +23,13 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import javax.ws.rs.core.HttpHeaders;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -68,12 +69,10 @@ public final class ORCIDHelper {
     private static final Logger LOG = LoggerFactory.getLogger(ORCIDHelper.class);
     private static final String ORCID_XML_CONTENT_TYPE = "application/vnd.orcid+xml";
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
-    // Valid ORCIDs can end with 'X':
-    // https://support.orcid.org/hc/en-us/articles/360053289173-Why-does-my-ORCID-iD-have-an-X-
-    // Stephen Hawking's ORCID: https://orcid.org/0000-0002-9079-593X
-    private static final Pattern ORCID_ID_PATTERN = Pattern.compile("\\d{4}-\\d{4}-\\d{4}-\\d{3}[X\\d]"); // ex: 1234-1234-1234-1234
 
     private static String baseApiUrl; // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/"
+    private static String basePublicUrl; // basePublicUrl should result in something like "https://pub.orcid.org/v3.0/"
+
     private static String baseUrl; // baseUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
     private static String orcidClientId;
     private static String orcidClientSecret;
@@ -89,6 +88,8 @@ public final class ORCIDHelper {
             baseUrl = orcidAuthUrl.getProtocol() + "://" + orcidAuthUrl.getHost() + "/";
             // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/"
             baseApiUrl = orcidAuthUrl.getProtocol() + "://api." + orcidAuthUrl.getHost() + "/v3.0/";
+            // if hitting the public API, no point in using the sandbox public API
+            basePublicUrl = orcidAuthUrl.getProtocol() + "://pub." + orcidAuthUrl.getHost().replaceFirst("^sandbox.", "") + "/v3.0/";
         } catch (MalformedURLException e) {
             LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
             throw new CustomWebApplicationException("The ORCID Auth URL in the dropwizard configuration file is malformed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -104,7 +105,7 @@ public final class ORCIDHelper {
 
     /**
      * Get a read-public access token for reading public information.
-     * https://info.orcid.org/documentation/api-tutorials/api-tutorial-read-data-on-a-record/#Get_an_access_token
+     * <a href="https://info.orcid.org/documentation/api-tutorials/api-tutorial-read-data-on-a-record/#Get_an_access_token">...</a>
      * @return An access token
      */
     public static Optional<String> getOrcidAccessToken() {
@@ -219,7 +220,7 @@ public final class ORCIDHelper {
     }
 
     /**
-     * This updates an existing ORCID work
+     * This updates an existing ORCID work.
      * @return
      */
     public static HttpResponse<String> putWorkString(String id, String workString, String token, String putCode)
@@ -231,7 +232,7 @@ public final class ORCIDHelper {
 
 
     /**
-     * Get the ORCID put code from the response
+     * Get the ORCID put code from the response.
      *
      * @param httpResponse
      * @return
@@ -379,8 +380,17 @@ public final class ORCIDHelper {
         HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseApiUrl + id))
                 .header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE)
                 .header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).GET().build();
-        return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
-                HttpResponse.BodyHandlers.ofString());
+        final HttpResponse<String> memberAPIResponse = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
+            BodyHandlers.ofString());
+        if (memberAPIResponse.statusCode() == HttpStatus.SC_OK) {
+            return memberAPIResponse;
+        }
+        // a failure above interpreted by https://groups.google.com/g/orcid-api-users/c/0gXLWIxi9GU seems to indicate
+        // rather than giving up, we can try the public API without a token which is sufficient for this request
+        request = HttpRequest.newBuilder().uri(new URI(basePublicUrl + id))
+            .header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE)
+            .GET().build();
+        return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, BodyHandlers.ofString());
     }
 
     /**
@@ -395,6 +405,6 @@ public final class ORCIDHelper {
     }
 
     public static boolean isValidOrcidId(String orcidId) {
-        return ORCID_ID_PATTERN.matcher(orcidId).matches();
+        return ValidationConstants.ORCID_ID_PATTERN.matcher(orcidId).matches();
     }
 }

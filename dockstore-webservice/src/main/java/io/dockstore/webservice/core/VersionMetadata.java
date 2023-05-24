@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -53,6 +54,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "version_metadata")
 public class VersionMetadata {
+
+    private static final String PUBLIC_ACCESSIBLE_DESCRIPTION = "Whether the version has everything needed to run without restricted access permissions";
+
     @Column(columnDefinition =  "boolean default false")
     protected boolean verified;
 
@@ -70,10 +74,6 @@ public class VersionMetadata {
     @Enumerated(EnumType.STRING)
     protected Version.DOIStatus doiStatus;
 
-    @Column
-    @ApiModelProperty(value = "This is the name of the author stated in the descriptor")
-    protected String author;
-
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     @Schema(description = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
@@ -82,10 +82,6 @@ public class VersionMetadata {
     @Column(name = "description_source")
     @Enumerated(EnumType.STRING)
     protected DescriptionSource descriptionSource;
-
-    @Column
-    @ApiModelProperty(value = "This is the email of the author stated in the descriptor")
-    protected String email;
 
     @MapsId
     @OneToOne
@@ -125,8 +121,19 @@ public class VersionMetadata {
     private Timestamp dbUpdateDate;
 
     @Column()
-    @ApiModelProperty()
+    @ApiModelProperty(value = PUBLIC_ACCESSIBLE_DESCRIPTION)
+    @Schema(description = PUBLIC_ACCESSIBLE_DESCRIPTION)
     private Boolean publicAccessibleTestParameterFile;
+
+    @Column(columnDefinition = "varchar")
+    @Convert(converter = DescriptorTypeVersionConverter.class)
+    @ApiModelProperty(value = "The language versions for the version's descriptor files")
+    private List<String> descriptorTypeVersions = new ArrayList<>();
+
+    @Column(columnDefinition = "varchar")
+    @Convert(converter = EngineVersionConverter.class)
+    @ApiModelProperty(value = "The engine versions this workflow version can run on")
+    private List<String> engineVersions = new ArrayList<>();
 
     public long getId() {
         return id;
@@ -168,5 +175,21 @@ public class VersionMetadata {
 
     public void setPublicAccessibleTestParameterFile(Boolean publicAccessibleTestParameterFile) {
         this.publicAccessibleTestParameterFile = publicAccessibleTestParameterFile;
+    }
+
+    public List<String> getDescriptorTypeVersions() {
+        return descriptorTypeVersions;
+    }
+
+    public void setDescriptorTypeVersions(final List<String> descriptorTypeVersions) {
+        this.descriptorTypeVersions = descriptorTypeVersions;
+    }
+
+    public List<String> getEngineVersions() {
+        return engineVersions;
+    }
+
+    public void setEngineVersions(final List<String> engineVersions) {
+        this.engineVersions = engineVersions;
     }
 }

@@ -1,7 +1,7 @@
 package io.dockstore.webservice.resources;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.User;
@@ -9,15 +9,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class AliasableResourceInterfaceTest {
+class AliasableResourceInterfaceTest {
     private static final String[] ZENODO_DOI_ALIASES = {"10.5281/zenodo.6094", "10.5281/zenodo.60943", "10.5281/zenodo.6094355",
         "10.5281-zenodo.6094", "10.5281-zenodo.60943", "10.5281-zenodo.6094355"};
 
 
     @Test
-    public void testCheckAliasWithBadPrefix() {
+    void testCheckAliasWithBadPrefix() {
         User user = new User();
         user.setIsAdmin(false);
         user.setCurator(false);
@@ -37,7 +37,7 @@ public class AliasableResourceInterfaceTest {
     }
 
     @Test
-    public void testAdminCuratorCheckAliasWithBadPrefix() {
+    void testAdminCuratorCheckAliasWithBadPrefix() {
         // An alias with an invalid prefix can be created by an admin or curator.
         testAdminCuratorCheckAliasWithBadPrefix(true, false);
         testAdminCuratorCheckAliasWithBadPrefix(false, true);
@@ -55,7 +55,7 @@ public class AliasableResourceInterfaceTest {
     }
 
     @Test
-    public void testCheckAliasWithForbiddenFormat() {
+    void testCheckAliasWithForbiddenFormat() {
         User user = new User();
         user.setIsAdmin(false);
         user.setCurator(false);
@@ -73,7 +73,7 @@ public class AliasableResourceInterfaceTest {
     }
 
     @Test
-    public void testAdminCuratorCheckAliasWithForbiddenFormat() {
+    void testAdminCuratorCheckAliasWithForbiddenFormat() {
         // An alias with an invalid prefix can be created by an admin or curator.
         testAdminCuratorCheckAliasWithForbiddenFormat(true, false);
         testAdminCuratorCheckAliasWithForbiddenFormat(false, true);
@@ -89,7 +89,7 @@ public class AliasableResourceInterfaceTest {
     }
 
     @Test
-    public void testNonAdminCuratorCheckAliasAllowingForbiddenFormat() {
+    void testNonAdminCuratorCheckAliasAllowingForbiddenFormat() {
         User user = new User();
         user.setIsAdmin(false);
         user.setCurator(false);

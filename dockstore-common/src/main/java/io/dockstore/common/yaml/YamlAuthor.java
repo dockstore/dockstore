@@ -15,6 +15,10 @@
  */
 package io.dockstore.common.yaml;
 
+import io.dockstore.common.yaml.constraints.AuthorHasNameOrOrcid;
+import io.dockstore.common.yaml.constraints.Orcid;
+import javax.validation.constraints.Email;
+
 @AuthorHasNameOrOrcid
 public class YamlAuthor {
 
@@ -52,6 +56,7 @@ public class YamlAuthor {
         this.affiliation = affiliation;
     }
 
+    @Email
     public String getEmail() {
         return email;
     }
@@ -60,6 +65,7 @@ public class YamlAuthor {
         this.email = email;
     }
 
+    @Orcid
     public String getOrcid() {
         return orcid;
     }

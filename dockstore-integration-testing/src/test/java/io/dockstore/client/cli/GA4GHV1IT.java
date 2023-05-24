@@ -17,9 +17,9 @@ package io.dockstore.client.cli;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
@@ -34,13 +34,13 @@ import java.util.List;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author gluu
  * @since 19/04/17
  */
-public class GA4GHV1IT extends GA4GHIT {
+class GA4GHV1IT extends GA4GHIT {
     private static final String API_VERSION = "api/ga4gh/v1/";
 
     public String getApiVersion() {
@@ -49,7 +49,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testMetadata() throws Exception {
+    void testMetadata() throws Exception {
         Response response = checkedResponse(baseURL + "metadata");
         MetadataV1 metadata = response.readEntity(MetadataV1.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(metadata)).contains("api-version");
@@ -60,7 +60,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testTools() throws Exception {
+    void testTools() throws Exception {
         // The other test which uses a different DB manages to cache the endpoint with different tools
         // Restart application to clear cache
         SUPPORT.after();
@@ -73,7 +73,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsId() throws Exception {
+    void testToolsId() throws Exception {
         toolsIdTool();
         toolsIdWorkflow();
     }
@@ -102,7 +102,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersions() throws Exception {
+    void testToolsIdVersions() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions");
         List<ToolVersionV1> responseObject = response.readEntity(new GenericType<List<ToolVersionV1>>() {
         });
@@ -111,7 +111,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolClasses() throws Exception {
+    void testToolClasses() throws Exception {
         Response response = checkedResponse(baseURL + "tool-classes");
         List<ToolClass> responseObject = response.readEntity(new GenericType<List<ToolClass>>() {
         });
@@ -123,14 +123,14 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersionsVersionId() throws Exception {
+    void testToolsIdVersionsVersionId() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
         ToolVersionV1 responseObject = response.readEntity(ToolVersionV1.class);
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     @Override
-    public void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception {
+    void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
@@ -164,7 +164,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testRelativePathEndpointToolTestParameterFileJSON() {
+    void testRelativePathEndpointToolTestParameterFileJSON() {
         Response response = checkedResponse(
             baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         ToolTestsV1 responseObject = response.readEntity(ToolTestsV1.class);
@@ -179,13 +179,13 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
+    void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
         // Check responses
         Response response = checkedResponse(
-            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         ToolTestsV1 responseObject = response.readEntity(ToolTestsV1.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject.getTest());
@@ -193,7 +193,7 @@ public class GA4GHV1IT extends GA4GHIT {
             .target(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Ftest.potato.json").request().get();
         assertEquals(HttpStatus.SC_NOT_FOUND, response2.getStatus());
         Response response3 = checkedResponse(
-            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
         ToolTestsV1 responseObject3 = response3.readEntity(ToolTestsV1.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("potato", responseObject3.getTest());
@@ -204,7 +204,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersionsVersionIdTypeTests() throws Exception {
+    void testToolsIdVersionsVersionIdTypeTests() throws Exception {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/tests");
         List<ToolTestsV1> responseObject = response.readEntity(new GenericType<List<ToolTestsV1>>() {
         });
@@ -220,7 +220,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Test
     @Override
-    public void testToolsIdVersionsVersionIdTypeDockerfile() {
+    void testToolsIdVersionsVersionIdTypeDockerfile() {
         Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/dockerfile");
         // note: v1 really does expect only one item
         ToolDockerfile responseObject = response.readEntity(ToolDockerfile.class);
@@ -253,7 +253,7 @@ public class GA4GHV1IT extends GA4GHIT {
      * can be retrieved separately
      */
     @Test
-    public void toolsIdGet4Workflows() throws Exception {
+    void toolsIdGet4Workflows() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupSamePathsTest(SUPPORT);
         Response response2 = checkedResponse(baseURL + "tools");
@@ -264,16 +264,16 @@ public class GA4GHV1IT extends GA4GHIT {
         // Check responses
         Response response = checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
         ToolV1 responseObject = response.readEntity(ToolV1.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author1");
+        assertEquals("#workflow/github.com/fakeOrganization/fakeRepository", responseObject.getId());
         response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository");
         responseObject = response.readEntity(ToolV1.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author2");
+        assertEquals("#workflow/bitbucket.org/fakeOrganization/fakeRepository", responseObject.getId());
         response = checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(ToolV1.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author3");
+        assertEquals("#workflow/github.com/fakeOrganization/fakeRepository/Potato", responseObject.getId());
         response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(ToolV1.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author4");
+        assertEquals("#workflow/bitbucket.org/fakeOrganization/fakeRepository/Potato", responseObject.getId());
 
         // test garbage source control value
         response = checkedResponse(baseURL + "tools/%23workflow%2Fgarbagio%2FfakeOrganization%2FfakeRepository%2FPotato", HttpStatus.SC_NOT_FOUND);

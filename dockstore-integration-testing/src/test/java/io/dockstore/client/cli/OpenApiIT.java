@@ -20,7 +20,9 @@ import static io.dockstore.common.CommonTestUtilities.PUBLIC_CONFIG_PATH;
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -29,52 +31,52 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * Testing openapi transition
  *
  * @author dyuen
  */
-@Category(NonConfidentialTest.class)
-public class OpenApiIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+@ExtendWith(TestStatus.class)
+@Tag(NonConfidentialTest.NAME)
+class OpenApiIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
     protected static javax.ws.rs.client.Client client;
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public final TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
+
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
     private final String basePath = "/"; //SUPPORT.getConfiguration().getExternalConfig().getBasePath();
     private final String baseURL = String.format("http://localhost:%d" + basePath, SUPPORT.getLocalPort());
 
-    @BeforeClass
+    @BeforeAll
     public static void dumpDBAndCreateSchema() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, PUBLIC_CONFIG_PATH);
         SUPPORT.before();
         client = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.after();
     }
 
     @Test
-    public void testSwagger20() {
+    void testSwagger20() {
         Response response = client.target(baseURL + "swagger.json").request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         // To prevent connection leak?
@@ -82,7 +84,7 @@ public class OpenApiIT {
     }
 
     @Test
-    public void testOpenApi30() {
+    void testOpenApi30() {
         Response response = client.target(baseURL + "openapi.yaml").request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         // To prevent connection leak?

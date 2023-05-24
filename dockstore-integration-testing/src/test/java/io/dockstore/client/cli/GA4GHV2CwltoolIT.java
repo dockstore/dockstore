@@ -16,10 +16,12 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.LanguageParsingTest;
+import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -30,43 +32,46 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.glassfish.jersey.client.ClientProperties;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.stream.SystemErr;
+import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * @author gluu
  * @since 02/01/18
  */
-@Category(LanguageParsingTest.class)
-public class GA4GHV2CwltoolIT {
+@ExtendWith(SystemStubsExtension.class)
+@ExtendWith(MuteForSuccessfulTests.class)
+@ExtendWith(TestStatus.class)
+@Tag(LanguageParsingTest.NAME)
+class GA4GHV2CwltoolIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,
             ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
     protected static javax.ws.rs.client.Client client;
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+
+    @SystemStub
+    public final SystemOut systemOut = new SystemOut();
+    @SystemStub
+    public final SystemErr systemErr = new SystemErr();
 
     final String basePath = SUPPORT.getConfiguration().getExternalConfig().getBasePath();
 
 
-    @BeforeClass
+    @BeforeAll
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, true);
         SUPPORT.before();
         client = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         SUPPORT.after();
     }
@@ -77,7 +82,7 @@ public class GA4GHV2CwltoolIT {
      * that will reference the GA4GH V2 Beta endpoint
      */
     @Test
-    public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFilesV2Beta() throws Exception {
+    void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFilesV2Beta() throws Exception {
         final String apiVersion = "api/ga4gh/v2/";
         cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles(apiVersion);
     }
@@ -87,7 +92,7 @@ public class GA4GHV2CwltoolIT {
      * that will reference the GA4GH V2 Final endpoint
      */
     @Test
-    public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFilesV2Final() throws Exception {
+    void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFilesV2Final() throws Exception {
         final String apiVersion = "ga4gh/trs/v2/";
         cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles(apiVersion);
 
@@ -98,12 +103,11 @@ public class GA4GHV2CwltoolIT {
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
         String command = "cwl-runner";
         String originalUrl =
-                baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
+                baseURL + "tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
         String descriptorPath = TestUtility.mimicNginxRewrite(originalUrl, basePath);
         String testParameterFilePath = ResourceHelpers.resourceFilePath("testWorkflow.json");
         ImmutablePair<String, String> stringStringImmutablePair = Utilities
                 .executeCommand(command + " " + descriptorPath + " " + testParameterFilePath, System.out, System.err);
-        assertTrue("failure message" + stringStringImmutablePair.left,
-                stringStringImmutablePair.getRight().contains("Final process status is success"));
+        assertTrue(stringStringImmutablePair.getRight().contains("Final process status is success"), "failure message" + stringStringImmutablePair.left);
     }
 }

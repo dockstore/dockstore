@@ -27,6 +27,14 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 public class ToolClassesApiServiceImpl extends ToolClassesApiService {
+    static ToolClass getNotebookClass() {
+        ToolClass type2 = new ToolClass();
+        type2.setName("Notebook");
+        type2.setId("3");
+        type2.setDescription("Notebook");
+        return type2;
+    }
+
     static ToolClass getServiceClass() {
         ToolClass type2 = new ToolClass();
         type2.setName("Service");
@@ -57,6 +65,7 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
         toolTypes.add(getCommandLineToolClass());
         toolTypes.add(getWorkflowClass());
         toolTypes.add(getServiceClass());
+        toolTypes.add(getNotebookClass());
         return Response.ok().entity(toolTypes).build();
     }
 }
