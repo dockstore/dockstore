@@ -162,6 +162,7 @@ public class Metrics {
         return additionalAggregatedMetrics;
     }
 
+    @JsonProperty
     public void setAdditionalAggregatedMetrics(Map<String, Object> additionalAggregatedMetrics) {
         this.additionalAggregatedMetrics = additionalAggregatedMetrics;
     }
