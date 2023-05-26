@@ -330,7 +330,10 @@ jobs:
           path: ~/junit
       - run:
           name: send coverage for unit tests
-          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
+          command: |
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            chmod +x codecov
+            ./codecov -F unit-tests_and_non-confidential-tests
       - run:
           name: run the non-confidential integration tests
           command: |
@@ -356,7 +359,10 @@ jobs:
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
       - run:
           name: send coverage for non-confidential integration tests
-          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
+          command: |
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            chmod +x codecov
+            ./codecov -F unit-tests_and_non-confidential-tests
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
@@ -585,7 +591,10 @@ commands:
           # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
       - run:
           name: send coverage
-          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+          command: |
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            chmod +x codecov
+            ./codecov -F ${TESTING_PROFILE//-}
       - persist_coverage
 
   save_test_results:
