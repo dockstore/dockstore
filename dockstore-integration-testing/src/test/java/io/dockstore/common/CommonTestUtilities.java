@@ -375,7 +375,7 @@ public final class CommonTestUtilities {
 
     private static boolean dumpMigratedDb(String migrationsId) {
         String path = pathOfMigratedDb(migrationsId);
-        return runPsqlCommand("pg_dump webservice_test -U dockstore > " + path);
+        return runPsqlCommand(String.format("pg_dump webservice_test -U dockstore > %s || rm -f %s", path, path));
     }
 
     private static boolean restoreMigratedDb(String migrationsId) {
@@ -383,20 +383,19 @@ public final class CommonTestUtilities {
         if (!new File(path).exists()) {
             return false;
         }
-        return runPsqlCommand("psql webservice_test -U dockstore < " + path);
+        return runPsqlCommand(String.format("psql webservice_test -U dockstore < %s", path));
     }
 
     private static boolean runPsqlCommand(String command) {
-        String dockerized = "docker exec -i postgres1 " + command;
         LOG.info("running command: " + dockerized);
         try {
-            boolean success = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", dockerized}).waitFor() == 0;
+            boolean success = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command}).waitFor() == 0;
             if (!success) {
-                LOG.error("command '" + dockerized + "' failed");
+                LOG.error("command '" + command + "' failed");
             }
             return success;
         } catch (Exception e) {
-            String message = "command '" + dockerized + "' threw";
+            String message = "command '" + command + "' threw";
             LOG.error(message);
             throw new RuntimeException(message, e);
         }
