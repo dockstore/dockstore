@@ -362,11 +362,11 @@ public final class CommonTestUtilities {
         try {
             // application.run("db", "migrate", configPath, "--include", migrationsString);
             LOG.error("A");
-            if (!loadMigratedDb(migrationsString)) {
+            if (!restoreMigratedDb(migrationsString)) {
                 LOG.error("B");
                 application.run("db", "migrate", configPath, "--include", migrationsString);
                 LOG.error("C");
-                saveMigratedDb(migrationsString);
+                dumpMigratedDb(migrationsString);
                 LOG.error("D");
             }
         } catch (Exception e) {
@@ -378,32 +378,33 @@ public final class CommonTestUtilities {
         return "/tmp/dockstore_dump_" + migrationsId + ".sql";
     }
 
-    private static boolean saveMigratedDb(String migrationsId) {
+    private static boolean dumpMigratedDb(String migrationsId) {
         String path = pathOfMigratedDb(migrationsId);
-                LOG.error("E");
-        runPsqlCommand("pg_dump webservice_test -U dockstore > " + path);
-                LOG.error("F");
-        return true;
+        LOG.error("E");
+        return runPsqlCommand("pg_dump webservice_test -U dockstore > " + path);
     }
 
-    private static boolean loadMigratedDb(String migrationsId) {
+    private static boolean restoreMigratedDb(String migrationsId) {
         String path = pathOfMigratedDb(migrationsId);
         if (!new File(path).exists()) {
             return false;
         }
-        runPsqlCommand("psql webservice_test -U dockstore < " + path);
-        return true;
+        return runPsqlCommand("psql webservice_test -U dockstore < " + path);
     }
 
-    private static void runPsqlCommand(String command) {
+    private static boolean runPsqlCommand(String command) {
         String dockerized = "docker exec -i postgres1 " + command;
-                LOG.error("command " + dockerized);
+        LOG.info("running command: " + dockerized);
         try {
-            if (Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", dockerized}).waitFor() != 0) {
-                throw new RuntimeException("command '" + dockerized + "' failed");
+            boolean success = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", dockerized}).waitFor() == 0;
+            if (!success) {
+                LOG.error("command '" + dockerized + "' failed");
             }
+            return success;
         } catch (Exception e) {
-            throw new RuntimeException("command '" + dockerized + "' failed");
+            String message = "command '" + dockerized + "' threw";
+            LOG.error(message);
+            throw new RuntimeException(message, e);
         }
     }
 
