@@ -32,6 +32,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.MapKeyEnumerated;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.EnumMap;
 import java.util.Map;
 import org.hibernate.annotations.BatchSize;
@@ -43,6 +44,7 @@ import org.hibernate.annotations.BatchSize;
 @SuppressWarnings("checkstyle:magicnumber")
 public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCountMetric.ExecutionStatus, Integer> {
 
+    @NotEmpty
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyEnumerated(EnumType.STRING)
     @MapKeyColumn(name = "executionstatus")
@@ -67,20 +69,16 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     @Schema(description = "Number of failed executions. An execution may have failed because it was semantically or runtime invalid", requiredMode = RequiredMode.REQUIRED)
     private int numberOfFailedExecutions;
 
-    @Column(nullable = false)
-    @Schema(description = "Indicates if all executions of the workflow are semantic and runtime valid", requiredMode = RequiredMode.REQUIRED)
-    boolean isValid;
-
     public ExecutionStatusCountMetric() {
         count.put(ExecutionStatus.SUCCESSFUL, 0);
         count.put(ExecutionStatus.FAILED_RUNTIME_INVALID, 0);
         count.put(ExecutionStatus.FAILED_SEMANTIC_INVALID, 0);
-        calculateValidAndNumberOfExecutions();
+        calculateNumberOfExecutions();
     }
 
     public ExecutionStatusCountMetric(Map<ExecutionStatus, Integer> count) {
         this.count = count;
-        calculateValidAndNumberOfExecutions();
+        calculateNumberOfExecutions();
     }
 
     @Override
@@ -88,15 +86,14 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
         return count;
     }
 
-    public void calculateValidAndNumberOfExecutions() {
-        this.isValid = (count.getOrDefault(ExecutionStatus.FAILED_SEMANTIC_INVALID, 0) + count.getOrDefault(ExecutionStatus.FAILED_RUNTIME_INVALID, 0)) == 0;
+    public void calculateNumberOfExecutions() {
         this.numberOfSuccessfulExecutions = count.getOrDefault(ExecutionStatus.SUCCESSFUL, 0);
         this.numberOfFailedExecutions = count.getOrDefault(ExecutionStatus.FAILED_SEMANTIC_INVALID, 0) + count.getOrDefault(ExecutionStatus.FAILED_RUNTIME_INVALID, 0);
     }
 
     public void setCount(Map<ExecutionStatus, Integer> count) {
         this.count = count;
-        calculateValidAndNumberOfExecutions();
+        calculateNumberOfExecutions();
     }
 
     public int getNumberOfSuccessfulExecutions() {
@@ -113,14 +110,6 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
 
     public void setNumberOfFailedExecutions(int numberOfFailedExecutions) {
         this.numberOfFailedExecutions = numberOfFailedExecutions;
-    }
-
-    public boolean isValid() {
-        return isValid;
-    }
-
-    public void setValid(boolean valid) {
-        isValid = valid;
     }
 
     @JsonIgnore

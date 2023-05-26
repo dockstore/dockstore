@@ -724,16 +724,6 @@ public class DockerRepoResource
 
         final User foundUser = userDAO.findById(user.getId());
         if (request.getPublish()) {
-            boolean validTag = false;
-
-            Set<Tag> tags = tool.getWorkflowVersions();
-            for (Tag tag : tags) {
-                if (tag.isValid()) {
-                    validTag = true;
-                    break;
-                }
-            }
-
             if (tool.isPrivateAccess()) {
                 // Check that either tool maintainer email or author email is not null
                 List<String> authorEmails = tool.getAuthors().stream().map(Author::getEmail).filter(Objects::nonNull).toList();
@@ -744,7 +734,8 @@ public class DockerRepoResource
             }
 
             // Can publish a tool IF it has at least one valid tag (or is manual) and a git url
-            if (validTag && (!tool.getGitUrl().isEmpty()) || Objects.equals(tool.getMode(), ToolMode.HOSTED)) {
+            final boolean validTag = tool.getWorkflowVersions().stream().anyMatch(Version::isValid);
+            if (validTag && (!tool.getGitUrl().isEmpty() || Objects.equals(tool.getMode(), ToolMode.HOSTED))) {
                 tool.setIsPublished(true);
                 if (checker != null) {
                     if (!checker.getIsPublished()) {

@@ -22,9 +22,7 @@ import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.Ex
 import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus.SUCCESSFUL;
 import static io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool.MINIWDL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
@@ -40,11 +38,13 @@ import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import io.dockstore.webservice.core.metrics.Metrics;
-import io.dockstore.webservice.core.metrics.ValidationInfo;
 import io.dockstore.webservice.core.metrics.ValidationStatusCountMetric;
+import io.dockstore.webservice.core.metrics.ValidatorInfo;
+import io.dockstore.webservice.core.metrics.ValidatorVersionInfo;
 import io.dockstore.webservice.jdbi.MetricsDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -152,7 +152,6 @@ class MetricsIT extends BaseIT {
         executionStatusCount.put(SUCCESSFUL, 10);
         executionStatusCountMetric.setCount(executionStatusCount);
         metrics.setExecutionStatusCount(executionStatusCountMetric);
-        assertTrue(metrics.getExecutionStatusCount().isValid());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(0, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
@@ -160,7 +159,6 @@ class MetricsIT extends BaseIT {
         executionStatusCount.put(FAILED_RUNTIME_INVALID, 1);
         executionStatusCountMetric.setCount(executionStatusCount);
         metrics.setExecutionStatusCount(executionStatusCountMetric);
-        assertFalse(metrics.getExecutionStatusCount().isValid());
         assertEquals(11, metrics.getExecutionStatusCount().getNumberOfExecutions());
         assertEquals(10, metrics.getExecutionStatusCount().getNumberOfSuccessfulExecutions());
         assertEquals(1, metrics.getExecutionStatusCount().getNumberOfFailedExecutions());
@@ -189,14 +187,18 @@ class MetricsIT extends BaseIT {
 
         // Add aggregated information about validation
         // Add a successful miniwdl validation
-        ValidationInfo miniwdlValidationInfo = new ValidationInfo();
-        miniwdlValidationInfo.setMostRecentIsValid(true);
-        miniwdlValidationInfo.setMostRecentVersion("1.0");
-        miniwdlValidationInfo.setSuccessfulValidationVersions(List.of("1.0"));
-        miniwdlValidationInfo.setFailedValidationVersions(List.of());
-        miniwdlValidationInfo.setNumberOfRuns(1);
-        miniwdlValidationInfo.setPassingRate(100d);
-        ValidationStatusCountMetric validationStatusCountMetric = new ValidationStatusCountMetric(Map.of(MINIWDL, miniwdlValidationInfo));
+        ValidatorVersionInfo miniwdlValidatorVersionInfo = new ValidatorVersionInfo();
+        miniwdlValidatorVersionInfo.setName("1.0");
+        miniwdlValidatorVersionInfo.setIsValid(true);
+        miniwdlValidatorVersionInfo.setDateExecuted(Instant.now().toString());
+        miniwdlValidatorVersionInfo.setNumberOfRuns(5);
+        miniwdlValidatorVersionInfo.setPassingRate(100d);
+        ValidatorInfo miniwdlValidatorInfo = new ValidatorInfo();
+        miniwdlValidatorInfo.setValidatorVersions(List.of(miniwdlValidatorVersionInfo));
+        miniwdlValidatorInfo.setMostRecentVersionName(miniwdlValidatorVersionInfo.getName());
+        miniwdlValidatorInfo.setNumberOfRuns(miniwdlValidatorVersionInfo.getNumberOfRuns());
+        miniwdlValidatorInfo.setPassingRate(miniwdlValidatorVersionInfo.getPassingRate());
+        ValidationStatusCountMetric validationStatusCountMetric = new ValidationStatusCountMetric(Map.of(MINIWDL, miniwdlValidatorInfo));
         metrics.setValidationStatus(validationStatusCountMetric);
 
         return metrics;

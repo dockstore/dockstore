@@ -4,6 +4,8 @@ import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.OrcidAuthor;
+import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -39,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -46,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class ZenodoHelper {
+    static final String AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO = "At least one author is required to publish to Zenodo";
     private static final Logger LOG = LoggerFactory.getLogger(ZenodoHelper.class);
 
     private ZenodoHelper() {
@@ -291,17 +295,35 @@ public final class ZenodoHelper {
     }
 
     /**
-     * Add the workflow author as creator to the deposition metadata
+     * Add the workflow authors as creators to the deposition metadata
      * @param depositMetadata Metadata for the workflow version
      * @param workflow    workflow for which DOI is registered
      */
-    private static void setMetadataCreator(DepositMetadata depositMetadata, Workflow workflow) {
-        // TODO: remove usage of getAuthor() below in https://github.com/dockstore/dockstore/issues/5437
-        String wfAuthor = workflow.getAuthor();
-        String authorStr = (wfAuthor == null || wfAuthor.isEmpty()) ? "Author not specified" : workflow.getAuthor();
-        Author author = new Author();
-        author.setName(authorStr);
-        depositMetadata.setCreators(Collections.singletonList(author));
+    static void setMetadataCreator(DepositMetadata depositMetadata, Workflow workflow) {
+        final Stream<Author> authors = workflow.getAuthors().stream().map(ZenodoHelper::fromDockstoreAuthor);
+        final Stream<Author> orcidAuthors = workflow.getOrcidAuthors().stream()
+                .map(OrcidAuthor::getOrcid)
+                .map(orcidId -> ORCIDHelper.getOrcidAuthorInformation(orcidId, null))
+                .flatMap(Optional::stream)
+                .map(ZenodoHelper::fromOrcidAuthorInfo);
+        final List<Author> zenodoAuthors = Stream.concat(authors, orcidAuthors).toList();
+        if (zenodoAuthors.isEmpty()) {
+            throw new CustomWebApplicationException(AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO, HttpStatus.SC_BAD_REQUEST);
+        }
+        depositMetadata.setCreators(zenodoAuthors);
+    }
+
+    private static Author fromDockstoreAuthor(io.dockstore.webservice.core.Author dockstoreAuthor) {
+        final Author author = new Author();
+        author.setName(dockstoreAuthor.getName());
+        author.setAffiliation(dockstoreAuthor.getAffiliation());
+        return author;
+    }
+
+    private static Author fromOrcidAuthorInfo(OrcidAuthorInformation orcidAuthorInformation) {
+        final Author author = ZenodoHelper.fromDockstoreAuthor(orcidAuthorInformation);
+        author.setOrcid(orcidAuthorInformation.getOrcid());
+        return author;
     }
 
     /**

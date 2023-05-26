@@ -26,15 +26,15 @@ import java.lang.annotation.Target;
 
 /**
  * Defines the `HasExecutions` constraint annotation, which
- * checks that ExecutionsRequestBody has executions.
+ * checks that ExecutionsRequestBody has executions or metrics.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = HasExecutionsValidator.class)
-public @interface HasExecutions {
-    String MUST_CONTAIN_EXECUTIONS = "must contain RunExecutions or ValidationExecutions";
+@Constraint(validatedBy = HasExecutionsOrMetricsValidator.class)
+public @interface HasExecutionsOrMetrics {
+    String MUST_CONTAIN_EXECUTIONS_OR_METRICS = "must contain executions, like RunExecutions or ValidationExecutions, or it must contain Metrics";
 
-    String message() default MUST_CONTAIN_EXECUTIONS;
+    String message() default MUST_CONTAIN_EXECUTIONS_OR_METRICS;
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }

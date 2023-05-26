@@ -53,6 +53,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
@@ -72,7 +73,7 @@ import org.hibernate.Hibernate;
 public class EventResource {
     private static final String PAGINATION_DEFAULT_STRING = "10";
     private static final String SUMMARY = "Get events based on filters.";
-    private static final String DESCRIPTION = "Optional authentication.";
+    private static final String DESCRIPTION = "Requires authentication.";
     private final EventDAO eventDAO;
     private final UserDAO userDAO;
 
@@ -95,29 +96,31 @@ public class EventResource {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of events", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Event.class))))
     public List<Event> getEvents(@Parameter(hidden = true) @ApiParam(hidden = true) @Auth User user,
-        @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
-        @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") Integer limit,
-        @QueryParam("offset") @DefaultValue("0") Integer offset) {
+                                 @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
+                                 @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") Integer limit,
+                                 @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User userWithSession = this.userDAO.findById(user.getId());
-        return getEventsForUser(userWithSession, eventSearchType, limit, offset);
+        return getEventsForUser(userWithSession, userWithSession, eventSearchType, limit, offset);
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}")
-    @Operation(description = "No authentication.", summary = "Get events based on filter and user id.")
+    @Operation(description = "Optional authentication.", summary = "Get events based on filter and user id.")
     @ApiOperation(value = "List recent events for a user.", notes = "No authentication.", response = Event.class, responseContainer = "List")
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of events", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Event.class))))
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
-    public List<Event> getUserEvents(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
-        @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
-        @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") Integer limit,
-        @QueryParam("offset") @DefaultValue("0") Integer offset) {
+    public List<Event> getUserEvents(@Parameter(hidden = true) @ApiParam(hidden = true)  @Auth Optional<User> loggedInUser,
+                                     @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+                                     @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
+                                     @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") Integer limit,
+                                     @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User user = this.userDAO.findById(userId);
         checkUserExists(user);
-        return getEventsForUser(user, eventSearchType, limit, offset);
+        return getEventsForUser(user, loggedInUser.orElse(null), eventSearchType, limit, offset);
     }
+
 
     /**
      * Returns events for the provided user
@@ -127,17 +130,17 @@ public class EventResource {
      * @param offset Event list offset
      * @return A list of events
      */
-    private List<Event> getEventsForUser(User user, EventSearchType eventSearchType, int limit, Integer offset) {
+    private List<Event> getEventsForUser(User user, User loggedInUser, EventSearchType eventSearchType, int limit, Integer offset) {
         switch (eventSearchType) {
         case STARRED_ENTRIES -> {
             Set<Long> entryIDs = user.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
-            List<Event> eventsByEntryIDs = this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit);
+            List<Event> eventsByEntryIDs = this.eventDAO.findEventsByEntryIDs(loggedInUser, entryIDs, offset, limit);
             eagerLoadEventEntries(eventsByEntryIDs);
             return eventsByEntryIDs;
         }
         case STARRED_ORGANIZATION -> {
             Set<Long> organizationIDs = user.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
-            List<Event> allByOrganizationIds = this.eventDAO.findAllByOrganizationIds(organizationIDs, offset, limit);
+            List<Event> allByOrganizationIds = this.eventDAO.findAllByOrganizationIds(loggedInUser, organizationIDs, offset, limit);
             eagerLoadEventEntries(allByOrganizationIds);
             return allByOrganizationIds;
         }
@@ -145,18 +148,18 @@ public class EventResource {
             Set<Long> organizationIDs2 = user.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
             Set<Long> entryIDs2 = user.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
             List<Event> allByOrganizationIdsOrEntryIds = this.eventDAO
-                .findAllByOrganizationIdsOrEntryIds(organizationIDs2, entryIDs2, offset, limit);
+                    .findAllByOrganizationIdsOrEntryIds(loggedInUser, organizationIDs2, entryIDs2, offset, limit);
             eagerLoadEventEntries(allByOrganizationIdsOrEntryIds);
             return allByOrganizationIdsOrEntryIds;
         }
         case PROFILE -> {
-            List<Event> eventsByUserID = this.eventDAO.findEventsForInitiatorUser(user.getId(), offset, limit);
+            List<Event> eventsByUserID = this.eventDAO.findEventsForInitiatorUser(loggedInUser, user.getId(), offset, limit);
             eagerLoadEventEntries(eventsByUserID);
             return eventsByUserID;
         }
         case SELF_ORGANIZATIONS -> {
             Set<Long> organizationIDs = user.getOrganizations().stream().map(u -> u.getOrganization().getId()).collect(Collectors.toSet());
-            List<Event> allByOrganizationIds = this.eventDAO.findAllByOrganizationIds(organizationIDs, offset, limit);
+            List<Event> allByOrganizationIds = this.eventDAO.findAllByOrganizationIds(loggedInUser, organizationIDs, offset, limit);
             eagerLoadEventEntries(allByOrganizationIds);
             return allByOrganizationIds;
         }

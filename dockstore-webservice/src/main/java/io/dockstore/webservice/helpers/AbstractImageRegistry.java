@@ -342,8 +342,6 @@ public abstract class AbstractImageRegistry {
         updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         Tool updatedTool = newDBTools.get(0);
 
-        List<String> descriptorTypes = updatedTool.calculateDescriptorType();
-        updatedTool.setDescriptorType(descriptorTypes);
         logToolRefresh(dashboardPrefix, tool);
 
         String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
@@ -608,6 +606,8 @@ public abstract class AbstractImageRegistry {
             }
 
         }
+        List<String> descriptorTypes = tool.calculateDescriptorType();
+        tool.setDescriptorType(descriptorTypes);
         FileFormatHelper.updateFileFormats(tool, tool.getWorkflowVersions(), fileFormatDAO, true);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);

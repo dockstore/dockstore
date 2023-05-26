@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -42,12 +43,14 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  * @since 24/04/19
  */
 public class ToolTesterS3Client {
+    private static final Region TOOLTESTER_BUCKET_REGION = Region.US_EAST_1;
     private final S3Client s3;
     private final String bucketName;
 
     public ToolTesterS3Client(String bucketName) {
         this.bucketName = bucketName;
-        this.s3 = S3ClientHelper.createS3Client();
+        // Purposely hardcoding the region because the ToolTester bucket is always in us-east-1
+        this.s3 = S3ClientHelper.createS3Client(TOOLTESTER_BUCKET_REGION);
     }
 
     public ToolTesterS3Client(String bucketName, S3Client s3Client) {

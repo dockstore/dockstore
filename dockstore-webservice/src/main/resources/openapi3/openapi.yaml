@@ -584,6 +584,7 @@ paths:
           - ELWAZI
           - AGC
           - OTHER
+          - ALL
       requestBody:
         content:
           application/json:
@@ -618,8 +619,8 @@ paths:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
     post:
-      description: This endpoint submits execution metrics for a workflow that was
-        executed on a platform
+      description: This endpoint submits individual or aggregated execution metrics
+        for a tool that was executed on a platform
       operationId: executionMetricsPost
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -655,6 +656,7 @@ paths:
           - ELWAZI
           - AGC
           - OTHER
+          - ALL
       - description: Optional description about the execution metrics
         in: query
         name: description
@@ -665,7 +667,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExecutionsRequestBody'
-        description: Execution metrics to submit
+        description: Individual or aggregated execution metrics to submit
         required: true
       responses:
         "204":
@@ -684,7 +686,8 @@ paths:
           description: The tool cannot be found to submit execution metrics.
       security:
       - BEARER: []
-      summary: Submit execution metrics for a workflow that was executed on a platform.
+      summary: Submit individual or aggregated execution metrics for a tool that was
+        executed on a platform.
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
@@ -1216,8 +1219,8 @@ paths:
               items:
                 $ref: '#/components/schemas/SourceFile'
               uniqueItems: true
-        description: "Set of updated sourcefiles, add files by adding new files with\
-          \ unknown paths, delete files by including them with emptied content"
+        description: "Set of updated source files, add files by adding new files with\
+          \ unknown paths, delete files by including them with null content"
         required: true
       responses:
         default:
@@ -2393,6 +2396,30 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/updateOpenData:
+    post:
+      description: Update open data
+      operationId: updateOpenData
+      parameters:
+      - description: Whether to process all versions or only versions without open
+          data already set
+        in: query
+        name: allVersions
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+          description: Number of entries processed
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{entryId}/exportToOrcid:
     post:
       description: Export entry to ORCID. DOI is required
@@ -2638,7 +2665,7 @@ paths:
       - entries
   /events:
     get:
-      description: Optional authentication.
+      description: Requires authentication.
       operationId: getEvents
       parameters:
       - in: query
@@ -2682,7 +2709,7 @@ paths:
       - events
   /events/{userId}:
     get:
-      description: No authentication.
+      description: Optional authentication.
       operationId: getUserEvents
       parameters:
       - in: path
@@ -5370,6 +5397,7 @@ paths:
           - TOOLS
           - WORKFLOWS
           - SERVICES
+          - NOTEBOOKS
       responses:
         "200":
           content:
@@ -6104,8 +6132,8 @@ paths:
               items:
                 $ref: '#/components/schemas/SourceFile'
               uniqueItems: true
-        description: "Set of updated sourcefiles, add files by adding new files with\
-          \ unknown paths, delete files by including them with emptied content"
+        description: "Set of updated source files, add files by adding new files with\
+          \ unknown paths, delete files by including them with null content"
         required: true
       responses:
         default:
@@ -7828,6 +7856,7 @@ components:
           - ELWAZI
           - AGC
           - OTHER
+          - ALL
         supportedLanguages:
           type: array
           items:
@@ -7957,6 +7986,8 @@ components:
           type: string
         checkUrlLambdaVersion:
           type: string
+        colabImportUrl:
+          type: string
         composeSetupVersion:
           type: string
         cwlParsingLambdaVersion:
@@ -8006,6 +8037,8 @@ components:
         googleClientId:
           type: string
         googleScope:
+          type: string
+        mybinderImportUrl:
           type: string
         nextflowParsingLambdaVersion:
           type: string
@@ -8067,6 +8100,7 @@ components:
         unit:
           type: string
           description: The unit of the data points
+          readOnly: true
       required:
       - average
       - maximum
@@ -8698,8 +8732,6 @@ components:
           type: integer
           format: int32
           description: Number of successful executions
-        valid:
-          type: boolean
       required:
       - count
       - numberOfFailedExecutions
@@ -8733,6 +8765,7 @@ components:
         unit:
           type: string
           description: The unit of the data points
+          readOnly: true
       required:
       - average
       - maximum
@@ -8742,6 +8775,11 @@ components:
       type: object
       description: Request body model for executionMetricsPost
       properties:
+        aggregatedExecutions:
+          type: array
+          description: List of aggregated executions to submit
+          items:
+            $ref: '#/components/schemas/Metrics'
         runExecutions:
           type: array
           description: List of workflow run executions to submit
@@ -8753,6 +8791,7 @@ components:
           items:
             $ref: '#/components/schemas/ValidationExecution'
       required:
+      - aggregatedExecutions
       - runExecutions
       - validationExecutions
     ExtendedUserData:
@@ -9063,6 +9102,7 @@ components:
         unit:
           type: string
           description: The unit of the data points
+          readOnly: true
       required:
       - average
       - maximum
@@ -9072,6 +9112,12 @@ components:
       type: object
       description: Aggregated metrics associated with entry versions
       properties:
+        additionalAggregatedMetrics:
+          type: object
+          additionalProperties:
+            type: object
+            description: Additional aggregated metrics
+          description: Additional aggregated metrics
         cpu:
           $ref: '#/components/schemas/CpuMetric'
         executionStatusCount:
@@ -10256,51 +10302,6 @@ components:
       - isValid
       - validatorTool
       - validatorToolVersion
-    ValidationInfo:
-      type: object
-      description: Aggregated validation information
-      properties:
-        failedValidationVersions:
-          type: array
-          description: A set of validator tool versions that unsuccessfully validated
-            the workflow in its most recent run
-          items:
-            type: string
-            description: A set of validator tool versions that unsuccessfully validated
-              the workflow in its most recent run
-        mostRecentErrorMessage:
-          type: string
-          description: The error message of the most recent validation run if it failed
-        mostRecentIsValid:
-          type: boolean
-          description: The boolean isValid value from the most recent validation run
-        mostRecentVersion:
-          type: string
-          description: The version of the validator tool that was most recently executed
-        numberOfRuns:
-          type: integer
-          format: int32
-          description: The number of times the validator was executed on the workflow
-        passingRate:
-          type: number
-          format: double
-          description: A percentage representing how often the validator successfully
-            validates the workflow
-        successfulValidationVersions:
-          type: array
-          description: A set of validator tool versions that successfully validated
-            the workflow in its most recent run
-          items:
-            type: string
-            description: A set of validator tool versions that successfully validated
-              the workflow in its most recent run
-      required:
-      - failedValidationVersions
-      - mostRecentIsValid
-      - mostRecentVersion
-      - numberOfRuns
-      - passingRate
-      - successfulValidationVersions
     ValidationStatusMetric:
       type: object
       description: Aggregated metrics about workflow validation statuses
@@ -10309,10 +10310,86 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the count metrics in this webservice
-        validatorToolToIsValid:
+        validatorTools:
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/ValidationInfo'
+            $ref: '#/components/schemas/ValidatorInfo'
+          description: A map containing key-value pairs indicating whether the validator
+            tool successfully validated the workflow
+      required:
+      - validatorTools
+    ValidatorInfo:
+      type: object
+      description: Aggregated validation information for a particular validator tool
+        like miniwdl
+      properties:
+        id:
+          type: integer
+          format: int64
+        mostRecentVersionName:
+          type: string
+          description: The version of the validator tool that was most recently executed
+        numberOfRuns:
+          type: integer
+          format: int32
+          description: The number of times the validator was executed on the workflow
+          example: 1
+        passingRate:
+          type: number
+          format: double
+          description: A percentage representing how often the validator successfully
+            validated the workflow
+          example: 100.0
+        validatorVersions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidatorVersionInfo'
+      required:
+      - mostRecentVersionName
+      - numberOfRuns
+      - passingRate
+      - validatorVersions
+    ValidatorVersionInfo:
+      type: object
+      description: "Validation information for a version of a specific validator tool,\
+        \ like miniwdl v1.9.1"
+      properties:
+        dateExecuted:
+          type: string
+          description: The date and time that the validator tool was executed in ISO
+            8601 UTC date format
+          example: 2023-03-31T15:06:49.888745366Z
+        errorMessage:
+          type: string
+          description: The error message for a failed validation by the validator
+            tool
+        id:
+          type: integer
+          format: int64
+        isValid:
+          type: boolean
+          description: Boolean indicating if the workflow was validated successfully
+          example: true
+        name:
+          type: string
+          description: The version name of the validator tool
+        numberOfRuns:
+          type: integer
+          format: int32
+          description: The number of times the validator was executed on the workflow
+          example: 1
+        passingRate:
+          type: number
+          format: double
+          description: A percentage representing how often the validator successfully
+            validates the workflow
+          example: 100.0
+      required:
+      - dateExecuted
+      - isValid
+      - name
+      - numberOfRuns
+      - passingRate
     VerificationInformation:
       type: object
       properties:

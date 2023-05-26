@@ -716,6 +716,7 @@ public class WorkflowIT extends BaseIT {
         List<Validation> validations = workflowVersion.getValidations();
 
         assertEquals(1, validations.stream().filter(v -> !v.isValid() && v.getMessage() != null && v.getMessage().contains("not find main script")).count(), "should have a descriptive invalid validation");
+        assertFalse(workflowVersion.isValid());
     }
 
     @Test

@@ -17,14 +17,14 @@
 
 package io.dockstore.webservice.core.metrics;
 
-import io.dockstore.webservice.core.metrics.constraints.HasExecutions;
+import io.dockstore.webservice.core.metrics.constraints.HasExecutionsOrMetrics;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-@HasExecutions
+@HasExecutionsOrMetrics
 @Schema(name = "ExecutionsRequestBody", description = "Request body model for executionMetricsPost")
 public class ExecutionsRequestBody {
 
@@ -37,6 +37,11 @@ public class ExecutionsRequestBody {
     @Valid
     @Schema(description = "List of workflow validation executions to submit")
     private List<ValidationExecution> validationExecutions = new ArrayList<>();
+
+    @NotNull
+    @Valid
+    @Schema(description = "List of aggregated executions to submit")
+    private List<Metrics> aggregatedExecutions = new ArrayList<>();
 
     public ExecutionsRequestBody() {
     }
@@ -55,5 +60,13 @@ public class ExecutionsRequestBody {
 
     public void setValidationExecutions(List<ValidationExecution> validationExecutions) {
         this.validationExecutions = validationExecutions;
+    }
+
+    public List<Metrics> getAggregatedExecutions() {
+        return aggregatedExecutions;
+    }
+
+    public void setAggregatedExecutions(List<Metrics> aggregatedExecutions) {
+        this.aggregatedExecutions = aggregatedExecutions;
     }
 }
