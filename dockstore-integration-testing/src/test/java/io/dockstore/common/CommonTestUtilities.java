@@ -375,18 +375,26 @@ public final class CommonTestUtilities {
 
     private static boolean dumpMigratedDb(String migrationsId) {
         String path = pathOfMigratedDb(migrationsId);
-        return runPsqlCommand(String.format("pg_dump webservice_test -U dockstore > %s || rm -f %s", path, path));
+        runCommand("which pg_dump");
+        boolean success = runCommand(String.format("pg_dump webservice_test -U dockstore > %s", path));
+        if (!success) {
+            LOG.error("dump failed");
+            runCommand(String.format("rm -f %s", path));
+        }
+        return success;
     }
 
     private static boolean restoreMigratedDb(String migrationsId) {
         String path = pathOfMigratedDb(migrationsId);
         if (!new File(path).exists()) {
+            LOG.info("no dump exists");
             return false;
         }
-        return runPsqlCommand(String.format("psql webservice_test -U dockstore < %s", path));
+        runCommand("which psql");
+        return runCommand(String.format("psql webservice_test -U dockstore < %s", path));
     }
 
-    private static boolean runPsqlCommand(String command) {
+    private static boolean runCommand(String command) {
         LOG.info("running command: " + command);
         try {
             boolean success = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command}).waitFor() == 0;
