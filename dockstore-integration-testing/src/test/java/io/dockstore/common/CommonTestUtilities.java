@@ -358,10 +358,52 @@ public final class CommonTestUtilities {
 
     public static void runMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
         String configPath) {
+        String migrationsString = String.join(",", migrations);
         try {
-            application.run("db", "migrate", configPath, "--include", String.join(",", migrations));
+            // application.run("db", "migrate", configPath, "--include", migrationsString);
+            LOG.error("A");
+            if (!loadMigratedDb(migrationsString)) {
+                LOG.error("B");
+                application.run("db", "migrate", configPath, "--include", migrationsString);
+                LOG.error("C");
+                saveMigratedDb(migrationsString);
+                LOG.error("D");
+            }
         } catch (Exception e) {
             fail("database migration failed");
+        }
+    }
+
+    private static String pathOfMigratedDb(String migrationsId) {
+        return "/tmp/dockstore_dump_" + migrationsId + ".sql";
+    }
+
+    private static boolean saveMigratedDb(String migrationsId) {
+        String path = pathOfMigratedDb(migrationsId);
+                LOG.error("E");
+        runPsqlCommand("pg_dump webservice_test -U dockstore > " + path);
+                LOG.error("F");
+        return true;
+    }
+
+    private static boolean loadMigratedDb(String migrationsId) {
+        String path = pathOfMigratedDb(migrationsId);
+        if (!new File(path).exists()) {
+            return false;
+        }
+        runPsqlCommand("psql webservice_test -U dockstore < " + path);
+        return true;
+    }
+
+    private static void runPsqlCommand(String command) {
+        String dockerized = "docker exec -i postgres1 " + command;
+                LOG.error("command " + dockerized);
+        try {
+            if (Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", dockerized}).waitFor() != 0) {
+                throw new RuntimeException("command '" + dockerized + "' failed");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("command '" + dockerized + "' failed");
         }
     }
 
@@ -375,7 +417,9 @@ public final class CommonTestUtilities {
 
     public static void dropAllAndRunMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
         String configPath) {
+        LOG.error("dropping");
         dropAll(application, configPath);
+        LOG.error("dropped");
         runMigration(migrations, application, configPath);
     }
 
