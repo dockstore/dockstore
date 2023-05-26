@@ -365,18 +365,17 @@ class NotebookIT extends BaseIT {
         organizationsApi.addEntryToCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
         List<CollectionOrganization> entryCollection = entriesApi.entryCollections(notebookID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
-        category =  organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName());
-        assertEquals(1,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
-        assertEquals(0,category.getWorkflowsLength());
+        assertEquals(1, entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
 
-        assertEquals(1,category.getNotebooksLength());
+        assertEquals(1, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getNotebooksLength());
 
         //remove notebook from collection
         organizationsApi.deleteEntryFromCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
         expectedCollectionNames.remove("Collection");
         entryCollection = entriesApi.entryCollections(notebookID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
-        assertEquals(0,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(0, entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
         assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
         assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getNotebooksLength());
 
