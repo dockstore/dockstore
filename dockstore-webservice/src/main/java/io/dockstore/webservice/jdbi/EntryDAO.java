@@ -214,24 +214,24 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     public List<T> findMyEntriesPublished(long userId) {
         return (List<T>) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId", Entry.class).setParameter("userId", userId).list();
     }
-
-    public List<CollectionEntry> getCollectionWorkflows(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getCollectionWorkflows", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    public List<CollectionEntry> getAllCollectionWorkflows(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getAllCollectionWorkflows", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
-
-    public long getWorkflowsLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getWorkflowsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    public List<CollectionEntry> getCollectionBioWorkflows(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionBioWorkflows", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
-
+    public List<CollectionEntry> getCollectionAppTools(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionAppTools", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
     public List<CollectionEntry> getCollectionNotebooks(long collectionId) {
-        List<CollectionEntry> collectionWorkflows =  getCollectionWorkflows(collectionId);
-        List<CollectionEntry> collectionNotebooks = new ArrayList<>();
-        collectionWorkflows.forEach(entry -> {
-            if (entry.getEntryType().equals("notebook")) {
-                collectionNotebooks.add(entry);
-            }
-        });
-        return collectionNotebooks;
+        return this.currentSession().createNamedQuery("Entry.getCollectionNotebooks", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+
+    public long getBioWorkflowsLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    }
+    public long getAppToolsLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getAppToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
     public long getNotebooksLength(long collectionId) {
         return this.currentSession().createNamedQuery("Entry.getNotebooksLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
@@ -249,8 +249,19 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return this.currentSession().createNamedQuery("Entry.getToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
-    public List<CollectionEntry> getCollectionWorkflowsWithVersions(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getCollectionWorkflowsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    public List<CollectionEntry> getAllCollectionWorkflowsWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getAllCollectionWorkflowsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+    public List<CollectionEntry> getCollectionBioWorkflowsWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionBioWorkflowsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+
+    public List<CollectionEntry> getCollectionAppToolsWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionAppToolsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+
+    public List<CollectionEntry> getCollectionNotebooksWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionNotebooksWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public List<CollectionEntry> getCollectionServicesWithVersions(long collectionId) {

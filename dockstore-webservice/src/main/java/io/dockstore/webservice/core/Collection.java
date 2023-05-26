@@ -119,7 +119,7 @@ public class Collection implements Serializable, Aliasable {
 
     @Transient
     @JsonSerialize
-    @ApiModelProperty(value = "Number of notebooks inside this collection", position = 6)
+    @ApiModelProperty(value = "Number of notebooks inside this collection", position = 7)
     @Schema(description = "Number of notebooks inside this collection")
     private long notebooksLength;
 

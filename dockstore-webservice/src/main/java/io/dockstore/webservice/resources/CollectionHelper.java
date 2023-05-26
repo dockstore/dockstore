@@ -60,7 +60,7 @@ class CollectionHelper {
         // Ensure that entries is empty
         // This is probably unnecessary
         collection.setEntries(new HashSet<>());
-        collection.setWorkflowsLength(entryDAO.getWorkflowsLength(collection.getId()));
+        collection.setWorkflowsLength(entryDAO.getBioWorkflowsLength(collection.getId()) + entryDAO.getAppToolsLength(collection.getId()));
         collection.setToolsLength(entryDAO.getToolsLength(collection.getId()));
         collection.setNotebooksLength(entryDAO.getNotebooksLength(collection.getId()));
     }
@@ -70,20 +70,17 @@ class CollectionHelper {
     }
 
     public void evictAndAddEntries(Collection collection) {
+        Long collectionId = collection.getId();
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.evict(collection);
-        List<CollectionEntry> collectionWorkflows = entryDAO.getCollectionWorkflows(collection.getId());
-        List<CollectionEntry> collectionServices = entryDAO.getCollectionServices(collection.getId());
+        List<CollectionEntry> collectionWorkflows = entryDAO.getAllCollectionWorkflows(collectionId);
         List<CollectionEntry> collectionTools = entryDAO.getCollectionTools(collection.getId());
-        List<CollectionEntry> collectionWorkflowsWithVersions = entryDAO.getCollectionWorkflowsWithVersions(collection.getId());
-        List<CollectionEntry> collectionServicesWithVersions = entryDAO.getCollectionServicesWithVersions(collection.getId());
+        List<CollectionEntry> collectionWorkflowsWithVersions = entryDAO.getAllCollectionWorkflowsWithVersions(collectionId);
         List<CollectionEntry> collectionToolsWithVersions = entryDAO.getCollectionToolsWithVersions(collection.getId());
         List<CollectionEntry> collectionEntries = new ArrayList<>();
-        collectionEntries.addAll(collectionWorkflows);
-        collectionEntries.addAll(collectionServices);
+        collectionEntries.addAll(collectionWorkflows); //adds all AppTools, BioWorkflows, Notebooks, and Services
+        collectionEntries.addAll(collectionWorkflowsWithVersions); //adds all AppTools, BioWorkflows, Notebooks, and Services
         collectionEntries.addAll(collectionTools);
-        collectionEntries.addAll(collectionWorkflowsWithVersions);
-        collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionToolsWithVersions);
         collectionEntries.forEach(entry -> {
             List<Label> labels = entryDAO.getLabelByEntryId(entry.getId());
@@ -113,9 +110,15 @@ class CollectionHelper {
             }
         });
         collection.setCollectionEntries(collectionEntries);
+        List<CollectionEntry> collectionBioWorkflows = entryDAO.getCollectionBioWorkflows(collection.getId());
+        List<CollectionEntry> collectionAppTools = entryDAO.getCollectionAppTools(collection.getId());
         List<CollectionEntry> collectionNotebooks = entryDAO.getCollectionNotebooks(collection.getId());
-        collection.setWorkflowsLength(collectionWorkflows.size() + (long)collectionWorkflowsWithVersions.size());
+        List<CollectionEntry> collectionBioWorkflowsWithVersions = entryDAO.getCollectionBioWorkflowsWithVersions(collection.getId());
+        List<CollectionEntry> collectionAppToolsWithVersions = entryDAO.getCollectionBioWorkflowsWithVersions(collection.getId());
+        List<CollectionEntry> collectionNotebooksWithVersions = entryDAO.getCollectionBioWorkflowsWithVersions(collection.getId());
+
+        collection.setWorkflowsLength(collectionBioWorkflows.size() + collectionBioWorkflowsWithVersions.size() + collectionAppTools.size() + collectionAppToolsWithVersions.size());
         collection.setToolsLength(collectionTools.size() + (long)collectionToolsWithVersions.size());
-        collection.setNotebooksLength(collectionNotebooks.size());
+        collection.setNotebooksLength(collectionNotebooks.size() + collectionNotebooksWithVersions.size());
     }
 }
