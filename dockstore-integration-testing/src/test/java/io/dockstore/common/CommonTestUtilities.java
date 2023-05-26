@@ -66,6 +66,7 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.assertj.core.util.Files;
@@ -376,7 +377,7 @@ public final class CommonTestUtilities {
     private static boolean dumpMigratedDb(String migrationsId) {
         String path = pathOfMigratedDb(migrationsId);
         runCommand("which pg_dump");
-        boolean success = runCommand(String.format("pg_dump webservice_test -U dockstore > %s", path));
+        boolean success = runCommand(String.format("/usr/bin/pg_dump webservice_test -U dockstore > %s", path));
         if (!success) {
             LOG.error("dump failed");
             runCommand(String.format("rm -f %s", path));
@@ -391,19 +392,21 @@ public final class CommonTestUtilities {
             return false;
         }
         runCommand("which psql");
-        return runCommand(String.format("psql webservice_test -U dockstore < %s", path));
+        return runCommand(String.format("/usr/bin/psql webservice_test -U dockstore < %s", path));
     }
 
     private static boolean runCommand(String command) {
         LOG.info("running command: " + command);
         try {
-            boolean success = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command}).waitFor() == 0;
+            Process process = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
+            boolean success = process.waitFor() == 0;
             if (!success) {
                 LOG.error("command '" + command + "' failed");
+                LOG.error("stderr: " + IOUtils.toString(process.getErrorStream(), StandardCharsets.UTF_8));
             }
             return success;
         } catch (Exception e) {
-            String message = "command '" + command + "' threw";
+            String message = "exception running command '" + command + "'";
             LOG.error(message);
             throw new RuntimeException(message, e);
         }

@@ -557,6 +557,7 @@ commands:
           name: which psql
           command: |
             which psql
+            which pg_dump
       - install-git-secrets
       - run:
           name: install dockerize
