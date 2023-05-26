@@ -390,7 +390,11 @@ public final class CommonTestUtilities {
             LOG.info("no dump exists");
             return false;
         }
-        return runCommand(String.format("psql webservice_test -U postgres < %s", path));
+        boolean success = runCommand(String.format("psql webservice_test -U postgres < %s", path));
+        if (success) {
+            runCommand(String.format("echo %s >> /tmp/used_dumps.txt", path));
+        }
+        return success;
     }
 
     private static boolean runCommand(String command) {

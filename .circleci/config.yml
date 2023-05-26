@@ -593,6 +593,9 @@ commands:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
       - persist_coverage
+      - run:
+          name: show used dumps
+          command: cat /tmp/used_dumps.txt
 
   save_test_results:
     steps:
