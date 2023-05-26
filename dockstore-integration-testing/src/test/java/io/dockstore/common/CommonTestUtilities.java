@@ -387,7 +387,7 @@ public final class CommonTestUtilities {
     }
 
     private static boolean runPsqlCommand(String command) {
-        LOG.info("running command: " + dockerized);
+        LOG.info("running command: " + command);
         try {
             boolean success = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command}).waitFor() == 0;
             if (!success) {
