@@ -360,14 +360,9 @@ public final class CommonTestUtilities {
         String configPath) {
         String migrationsString = String.join(",", migrations);
         try {
-            // application.run("db", "migrate", configPath, "--include", migrationsString);
-            LOG.error("A");
             if (!restoreMigratedDb(migrationsString)) {
-                LOG.error("B");
                 application.run("db", "migrate", configPath, "--include", migrationsString);
-                LOG.error("C");
                 dumpMigratedDb(migrationsString);
-                LOG.error("D");
             }
         } catch (Exception e) {
             fail("database migration failed");
@@ -380,7 +375,6 @@ public final class CommonTestUtilities {
 
     private static boolean dumpMigratedDb(String migrationsId) {
         String path = pathOfMigratedDb(migrationsId);
-        LOG.error("E");
         return runPsqlCommand("pg_dump webservice_test -U dockstore > " + path);
     }
 
@@ -418,9 +412,7 @@ public final class CommonTestUtilities {
 
     public static void dropAllAndRunMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
         String configPath) {
-        LOG.error("dropping");
         dropAll(application, configPath);
-        LOG.error("dropped");
         runMigration(migrations, application, configPath);
     }
 
