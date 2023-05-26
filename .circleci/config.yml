@@ -59,46 +59,46 @@ workflows:
           requires:
             - build
           context: sonarcloud
-#      - bitbucket-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - language-parsing-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - localstack-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - tool-integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
+      - bitbucket-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - language-parsing-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - localstack-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - tool-integration-tests:
+          <<: *common_filters
+          requires:
+            - build
       - integration-tests:
           <<: *common_filters
           requires:
             - build
-#      - regression-integration-tests:
-#          filters:
-#            branches:
-#              only:
-#                - master
-#                - /^release.*$/
-#          requires:
-#            - build
-#      - sonar-cloud:
-#          <<: *common_filters
-#          requires:
-#            - unit_test
-#            - workflow-integration-tests
-#            - bitbucket-tests
-#            - language-parsing-tests
-#            - localstack-tests
-#            - tool-integration-tests
-#            - integration-tests
-#            - regression-integration-tests
-#          context: sonarcloud
+      - regression-integration-tests:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release.*$/
+          requires:
+            - build
+      - sonar-cloud:
+          <<: *common_filters
+          requires:
+            - unit_test
+            - workflow-integration-tests
+            - bitbucket-tests
+            - language-parsing-tests
+            - localstack-tests
+            - tool-integration-tests
+            - integration-tests
+            - regression-integration-tests
+          context: sonarcloud
 jobs:
   regression-integration-tests:
     executor: machine_integration_test_exec
@@ -559,11 +559,6 @@ commands:
           command: |
             sudo apt install openssl -y
             bash scripts/decrypt.sh
-      - run:
-          name: which psql
-          command: |
-            which psql
-            which pg_dump
       - install-git-secrets
       - run:
           name: install dockerize

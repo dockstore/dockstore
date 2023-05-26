@@ -376,7 +376,6 @@ public final class CommonTestUtilities {
 
     private static boolean dumpMigratedDb(String migrationsId) {
         String path = pathOfMigratedDb(migrationsId);
-        runCommand("which pg_dump");
         boolean success = runCommand(String.format("pg_dump webservice_test -U postgres > %s", path));
         if (!success) {
             LOG.error("dump failed");
@@ -391,7 +390,6 @@ public final class CommonTestUtilities {
             LOG.info("no dump exists");
             return false;
         }
-        runCommand("which psql");
         return runCommand(String.format("psql webservice_test -U postgres < %s", path));
     }
 
