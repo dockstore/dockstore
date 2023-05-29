@@ -118,7 +118,7 @@ class CollectionHelper {
         List<CollectionEntry> collectionNotebooksWithVersions = entryDAO.getCollectionBioWorkflowsWithVersions(collection.getId());
 
         collection.setWorkflowsLength(collectionBioWorkflows.size() + (long)collectionBioWorkflowsWithVersions.size());
-        collection.setToolsLength(collectionTools.size() + (long)collectionToolsWithVersions.size() + collectionAppTools.size() + (long)collectionAppToolsWithVersions.size());
+        collection.setToolsLength(collectionTools.size() + (long)collectionToolsWithVersions.size() + collectionAppTools.size() + collectionAppToolsWithVersions.size());
         collection.setNotebooksLength(collectionNotebooks.size() + (long)collectionNotebooksWithVersions.size());
     }
 }
