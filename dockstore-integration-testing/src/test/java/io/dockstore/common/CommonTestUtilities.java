@@ -359,11 +359,11 @@ public final class CommonTestUtilities {
 
     public static void runMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
         String configPath) {
-        String migrationsString = String.join(",", migrations);
+        String migrationsJoined = String.join(",", migrations);
         try {
-            if (!restoreMigratedDb(migrationsString)) {
-                application.run("db", "migrate", configPath, "--include", migrationsString);
-                dumpMigratedDb(migrationsString);
+            if (!restoreMigratedDb(migrationsJoined)) {
+                application.run("db", "migrate", configPath, "--include", migrationsJoined);
+                dumpMigratedDb(migrationsJoined);
             }
         } catch (Exception e) {
             fail("database migration failed");
@@ -375,8 +375,11 @@ public final class CommonTestUtilities {
     }
 
     private static boolean dumpMigratedDb(String migrationsId) {
+        if (!cacheMigrations()) {
+            return false;
+        }
         String path = pathOfMigratedDb(migrationsId);
-        boolean success = runCommand(String.format("pg_dump webservice_test -U postgres > %s", path));
+        boolean success = runCommand(dockerizeIfNecessary(String.format("pg_dump webservice_test -U postgres > %s", path)));
         if (!success) {
             LOG.error("dump failed");
             runCommand(String.format("rm -f %s", path));
@@ -385,16 +388,35 @@ public final class CommonTestUtilities {
     }
 
     private static boolean restoreMigratedDb(String migrationsId) {
+        if (!cacheMigrations()) {
+            return false;
+        }
         String path = pathOfMigratedDb(migrationsId);
         if (!new File(path).exists()) {
             LOG.info("no dump exists");
             return false;
         }
-        boolean success = runCommand(String.format("psql webservice_test -U postgres < %s", path));
+        boolean success = runCommand(dockerizeIfNecessary(String.format("psql webservice_test -U postgres < %s", path)));
         if (success) {
             runCommand(String.format("echo %s >> /tmp/used_dumps.txt", path));
         }
         return success;
+    }
+
+    private static boolean getEnvBoolean(String name) {
+        return Boolean.parseBoolean(System.getenv(name));
+    }
+
+    private static String dockerizeIfNecessary(String command) {
+        if (getEnvBoolean("DOCKSTORE_DOCKER_DB")) {
+            return "docker exec -i postgres1 " + command;
+        } else {
+            return command;
+        }
+    }
+
+    private static boolean cacheMigrations() {
+        return getEnvBoolean("DOCKSTORE_CACHE_MIGRATIONS");
     }
 
     private static boolean runCommand(String command) {
