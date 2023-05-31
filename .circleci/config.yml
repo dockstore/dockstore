@@ -355,6 +355,7 @@ jobs:
               -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"      
             fi
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
+      - setup_codecov_uploader
       - run:
           name: send coverage for non-confidential integration tests
           command: ./codecov -F unit-tests_and_non-confidential-tests
