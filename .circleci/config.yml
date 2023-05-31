@@ -217,9 +217,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
+            - dockstore-m2-
       - install-git-secrets
       - run:
           name: decrypt and expand confidential test data
@@ -281,9 +281,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
+            - dockstore-m2-
       - checkout
       - install-postgres
       - install-git-secrets
@@ -386,7 +386,7 @@ jobs:
       - save_cache: # saves the project dependencies
           paths:
             - ~/.m2
-          key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+          key: dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
       - save_cache:
           # should include non-confidential, but they should probably be split out anyway
           key: dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
@@ -439,9 +439,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
+            - dockstore-m2-
       - run:
           name: build
           command: ./mvnw clean install -DskipTests
@@ -536,9 +536,9 @@ commands:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
+            - dockstore-m2-
       - run:
           name: split up tests and create a file for cache checksum
           command: |
