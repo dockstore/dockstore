@@ -65,6 +65,7 @@ import java.util.stream.Stream;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
@@ -422,26 +423,29 @@ public final class CommonTestUtilities {
 
     private static boolean runShellCommand(String command) {
         LOG.info("running command: " + command);
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
         try {
             CommandLine commandLine = new CommandLine("/bin/sh");
             commandLine.addArgument("-c", false);
             commandLine.addArgument(command, false);
             Executor executor = new DefaultExecutor();
-            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
             executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
-            int code = executor.execute(commandLine);
-            boolean success = code == 0;
-            if (!success) {
-                LOG.error("command '" + command + "' failed");
-                LOG.error("stdout: " + stdout.toString(StandardCharsets.UTF_8));
-                LOG.error("stderr: " + stderr.toString(StandardCharsets.UTF_8));
-            }
-            return success;
+            // DefaultExecutor.execute() runs the command synchronously, and always
+            // appears to throw on failure, even if the failure is that the command
+            // ran completely but returned a non-zero error code.
+            executor.execute(commandLine);
+            return true;
         } catch (Exception e) {
-            String message = "exception running command '" + command + "'";
+            String message = "failure running command '" + command + "'";
             LOG.error(message, e);
-            throw new RuntimeException(message, e);
+            LOG.error("stdout: " + stdout.toString(StandardCharsets.UTF_8));
+            LOG.error("stderr: " + stderr.toString(StandardCharsets.UTF_8));
+            if (e instanceof ExecuteException) {
+                return false;
+            } else {
+                throw new RuntimeException(message, e);
+            }
         }
     }
 
