@@ -84,21 +84,15 @@ class CollectionHelper {
         List<CollectionEntry> collectionServicesWithVersions = entryDAO.getCollectionServicesWithVersions(collection.getId());
         List<CollectionEntry> collectionEntries = new ArrayList<>();
         collectionEntries.addAll(collectionBioWorkflows);
-        System.out.println(collectionEntries);
         collectionEntries.addAll(collectionBioWorkflowsWithVersions);
-        System.out.println(collectionEntries);
         collectionEntries.addAll(collectionAppTools);
-        System.out.println(collectionEntries);
         collectionEntries.addAll(collectionAppToolsWithVersions);
-        System.out.println(collectionEntries);
         collectionEntries.addAll(collectionNotebooks);
         collectionEntries.addAll(collectionNotebooksWithVersions);
         collectionEntries.addAll(collectionServices);
         collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionTools);
-        System.out.println(collectionEntries);
         collectionEntries.addAll(collectionToolsWithVersions);
-        System.out.println(collectionEntries);
         collectionEntries.forEach(entry -> {
             List<Label> labels = entryDAO.getLabelByEntryId(entry.getId());
             List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
