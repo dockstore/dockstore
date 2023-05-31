@@ -7782,6 +7782,10 @@ components:
           format: int64
         organizationName:
           type: string
+        servicesLength:
+          type: integer
+          format: int64
+          description: Number of services inside this collection
         toolsLength:
           type: integer
           format: int64
@@ -7910,6 +7914,10 @@ components:
           format: int64
         organizationName:
           type: string
+        servicesLength:
+          type: integer
+          format: int64
+          description: Number of services inside this collection
         toolsLength:
           type: integer
           format: int64

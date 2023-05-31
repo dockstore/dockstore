@@ -123,6 +123,12 @@ public class Collection implements Serializable, Aliasable {
     @Schema(description = "Number of notebooks inside this collection")
     private long notebooksLength;
 
+    @Transient
+    @JsonSerialize
+    @ApiModelProperty(value = "Number of services inside this collection", position = 8)
+    @Schema(description = "Number of services inside this collection")
+    private long servicesLength;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumns({
         @JoinColumn(name = "collection_id", nullable = false, columnDefinition = "bigint"),
@@ -284,6 +290,16 @@ public class Collection implements Serializable, Aliasable {
     public long getNotebooksLength() {
         return this.notebooksLength;
     }
+
+    public void setServicesLength(long servicesLength) {
+        this.servicesLength = servicesLength;
+    }
+
+    @JsonProperty
+    public long getServicesLength() {
+        return this.servicesLength;
+    }
+
 
     public long getOrganizationID() {
         return organizationID;
