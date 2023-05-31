@@ -375,7 +375,7 @@ public final class CommonTestUtilities {
     }
 
     private static boolean dumpMigratedDb(String migrationsId) {
-        if (!cacheMigrations()) {
+        if (!shouldCacheMigrations()) {
             return false;
         }
         String path = pathOfMigratedDb(migrationsId);
@@ -388,7 +388,7 @@ public final class CommonTestUtilities {
     }
 
     private static boolean restoreMigratedDb(String migrationsId) {
-        if (!cacheMigrations()) {
+        if (!shouldCacheMigrations()) {
             return false;
         }
         String path = pathOfMigratedDb(migrationsId);
@@ -415,7 +415,7 @@ public final class CommonTestUtilities {
         }
     }
 
-    private static boolean cacheMigrations() {
+    private static boolean shouldCacheMigrations() {
         return getEnvBoolean("DOCKSTORE_CACHE_MIGRATIONS");
     }
 
