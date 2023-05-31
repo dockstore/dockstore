@@ -3048,6 +3048,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals(0, entriesApi.entryCategories(id).size());
         addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(0).getId());
         assertEquals(1, entriesApi.entryCategories(id).size());
+        System.out.println(categoriesApi.getCategories("test", "entries").get(0).getEntries());
         assertEquals(1, categoriesApi.getCategories("test", "entries").get(0).getEntries().size());
         addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(1).getId());
         assertEquals(1, entriesApi.entryCategories(id).size());
