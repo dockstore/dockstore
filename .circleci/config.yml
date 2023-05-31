@@ -214,9 +214,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
+            - dockstore-m2-
       - install-git-secrets
       - run:
           name: decrypt and expand confidential test data
@@ -278,9 +278,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
+            - dockstore-m2-
       - checkout
       - install-postgres
       - install-git-secrets
@@ -328,9 +328,10 @@ jobs:
           when: always
       - store_test_results:
           path: ~/junit
+      - setup_codecov_uploader
       - run:
           name: send coverage for unit tests
-          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
+          command: ./codecov -F unit-tests_and_non-confidential-tests
       - run:
           name: run the non-confidential integration tests
           command: |
@@ -354,9 +355,10 @@ jobs:
               -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"      
             fi
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
+      - setup_codecov_uploader
       - run:
           name: send coverage for non-confidential integration tests
-          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
+          command: ./codecov -F unit-tests_and_non-confidential-tests
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
@@ -383,7 +385,7 @@ jobs:
       - save_cache: # saves the project dependencies
           paths:
             - ~/.m2
-          key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+          key: dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
       - save_cache:
           # should include non-confidential, but they should probably be split out anyway
           key: dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
@@ -436,9 +438,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
+            - dockstore-m2-
       - run:
           name: build
           command: ./mvnw clean install -DskipTests
@@ -527,9 +529,9 @@ commands:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
+            - dockstore-m2-
       - run:
           name: split up tests and create a file for cache checksum
           command: |
@@ -583,9 +585,10 @@ commands:
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
             fi
           # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
+      - setup_codecov_uploader
       - run:
           name: send coverage
-          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+          command: ./codecov -F ${TESTING_PROFILE//-}
       - persist_coverage
 
   save_test_results:
@@ -626,3 +629,15 @@ commands:
           root: .
           paths:
             - coverage
+  setup_codecov_uploader:
+    steps:
+      - run:
+          name: setup codecov uploader
+          command: |
+            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
+            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+            shasum -a 256 -c codecov.SHA256SUM
+            chmod +x codecov
