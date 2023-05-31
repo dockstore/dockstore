@@ -47,6 +47,7 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,8 +66,8 @@ import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.assertj.core.util.Files;
@@ -379,10 +380,10 @@ public final class CommonTestUtilities {
             return false;
         }
         String path = pathOfMigratedDb(migrationsId);
-        boolean success = runCommand(dockerizeIfNecessary(String.format("pg_dump webservice_test -U postgres > %s", path)));
+        boolean success = runShellCommand(dockerizeIfNecessary(String.format("pg_dump webservice_test -U postgres > %s", path)));
         if (!success) {
             LOG.error("dump failed");
-            runCommand(String.format("rm -f %s", path));
+            runShellCommand(String.format("rm -f %s", path));
         }
         return success;
     }
@@ -396,9 +397,9 @@ public final class CommonTestUtilities {
             LOG.info("no dump exists");
             return false;
         }
-        boolean success = runCommand(dockerizeIfNecessary(String.format("psql webservice_test -U postgres < %s", path)));
+        boolean success = runShellCommand(dockerizeIfNecessary(String.format("psql webservice_test -U postgres < %s", path)));
         if (success) {
-            runCommand(String.format("echo %s >> /tmp/used_dumps.txt", path));
+            runShellCommand(String.format("echo %s >> /tmp/used_dumps.txt", path));
         }
         return success;
     }
@@ -419,19 +420,27 @@ public final class CommonTestUtilities {
         return getEnvBoolean("DOCKSTORE_CACHE_MIGRATIONS");
     }
 
-    private static boolean runCommand(String command) {
+    private static boolean runShellCommand(String command) {
         LOG.info("running command: " + command);
         try {
-            Process process = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
-            boolean success = process.waitFor() == 0;
+            CommandLine commandLine = new CommandLine("/bin/sh");
+            commandLine.addArgument("-c", false);
+            commandLine.addArgument(command, false);
+            Executor executor = new DefaultExecutor();
+            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+            executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
+            int code = executor.execute(commandLine);
+            boolean success = code == 0;
             if (!success) {
                 LOG.error("command '" + command + "' failed");
-                LOG.error("stderr: " + IOUtils.toString(process.getErrorStream(), StandardCharsets.UTF_8));
+                LOG.error("stdout: " + stdout.toString(StandardCharsets.UTF_8));
+                LOG.error("stderr: " + stderr.toString(StandardCharsets.UTF_8));
             }
             return success;
         } catch (Exception e) {
             String message = "exception running command '" + command + "'";
-            LOG.error(message);
+            LOG.error(message, e);
             throw new RuntimeException(message, e);
         }
     }
