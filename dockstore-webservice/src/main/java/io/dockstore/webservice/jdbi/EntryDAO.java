@@ -237,6 +237,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return this.currentSession().createNamedQuery("Entry.getNotebooksLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
+    public long getServicesLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getServicesLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    }
+
     public List<CollectionEntry> getCollectionServices(long collectionId) {
         return this.currentSession().createNamedQuery("Entry.getCollectionServices", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }

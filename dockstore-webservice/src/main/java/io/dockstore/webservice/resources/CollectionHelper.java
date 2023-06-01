@@ -63,7 +63,7 @@ class CollectionHelper {
         collection.setWorkflowsLength(entryDAO.getBioWorkflowsLength(collection.getId()));
         collection.setToolsLength(entryDAO.getToolsLength(collection.getId()) +  entryDAO.getAppToolsLength(collection.getId()));
         collection.setNotebooksLength(entryDAO.getNotebooksLength(collection.getId()));
-        //collection.setServicesLength(entryDAO.getServicesLength(collection.getId()));
+        collection.setServicesLength(entryDAO.getServicesLength(collection.getId()));
     }
 
     public void evictAndSummarize(java.util.Collection<? extends Collection> c) {
