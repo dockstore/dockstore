@@ -21,7 +21,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
-import java.util.HashSet;
 import java.util.Set;
 
 @ApiModel(value = "Notebook", description = "This describes one notebook in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
@@ -45,7 +44,7 @@ public class Notebook extends Workflow {
 
     @Override
     public Set<Entry> getParentEntry() {
-        return new HashSet<>();
+        return null;
     }
 
     @Override
