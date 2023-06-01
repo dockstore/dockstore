@@ -21,6 +21,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import java.util.Set;
 
 @ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
@@ -40,7 +41,7 @@ public class Service extends Workflow {
     }
 
     @Override
-    public Entry getParentEntry() {
+    public Set<Entry> getParentEntry() {
         return null;
     }
 
@@ -55,7 +56,7 @@ public class Service extends Workflow {
     }
 
     @Override
-    public void setParentEntry(Entry parentEntry) {
+    public void setParentEntry(Set<Entry> parentEntry) {
         throw new UnsupportedOperationException("cannot add a checker workflow to a Service");
     }
 

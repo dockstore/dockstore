@@ -180,9 +180,9 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.getWorkflowPath();
     }
 
-    public abstract Entry getParentEntry();
+    public abstract Set<Entry> getParentEntry();
 
-    public abstract void setParentEntry(Entry parentEntry);
+    public abstract void setParentEntry(Set<Entry> parentEntry);
 
     /**
      * Copies some of the attributes of the source workflow to the target workflow

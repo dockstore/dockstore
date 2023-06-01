@@ -43,13 +43,13 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.MapKeyEnumerated;
 import jakarta.persistence.NamedNativeQueries;
 import jakarta.persistence.NamedNativeQuery;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
@@ -196,7 +196,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonIgnore
     @JoinColumn(name = "checkerid", unique = true)
-    @OneToOne(targetEntity = BioWorkflow.class, fetch = FetchType.EAGER)
+    @ManyToOne(targetEntity = BioWorkflow.class, fetch = FetchType.LAZY)
     @ApiModelProperty(value = "The id of the associated checker workflow")
     private BioWorkflow checkerWorkflow;
 

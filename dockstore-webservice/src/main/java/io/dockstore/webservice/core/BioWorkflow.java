@@ -25,8 +25,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.Set;
 
 /**
  * These represent actual workflows in terms of CWL, WDL, and other bioinformatics workflows
@@ -50,10 +51,10 @@ import jakarta.persistence.Table;
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {
 
-    @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
     @JsonIgnore
     @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
-    private Entry parentEntry;
+    private Set<Entry> parentEntry;
 
     @Column(columnDefinition = "boolean default false")
     private boolean isChecker = false;
@@ -69,12 +70,12 @@ public class BioWorkflow extends Workflow {
     }
 
     @Override
-    public Entry getParentEntry() {
+    public Set<Entry> getParentEntry() {
         return parentEntry;
     }
 
     @Override
-    public void setParentEntry(Entry parentEntry) {
+    public void setParentEntry(Set<Entry> parentEntry) {
         this.parentEntry = parentEntry;
     }
 
@@ -90,8 +91,9 @@ public class BioWorkflow extends Workflow {
 
     @JsonProperty("parent_id")
     public Long getParentId() {
-        if (parentEntry != null) {
-            return parentEntry.getId();
+        if (parentEntry != null && parentEntry.size() > 0) {
+            // TODO this is weird, but ...
+            return parentEntry.iterator().next().getId();
         } else {
             return null;
         }
