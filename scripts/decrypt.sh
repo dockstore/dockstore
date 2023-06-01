@@ -20,3 +20,5 @@ cat dockstore-integration-testing/src/test/resources/secretDockstoreTest.yml > d
 cat dockstore-integration-testing/src/test/resources/partialDockstoreTest.yml >> dockstore-integration-testing/src/test/resources/dockstoreTest.yml
 rm secrets.tar
 
+# remove any database dumps, which might have been generated from the non-confidential migrations
+rm -f /tmp/dockstore_dump_*

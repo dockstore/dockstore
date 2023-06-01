@@ -104,6 +104,7 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: regression-integration-tests
+      DOCKSTORE_DOCKER_DB: true
     steps:
       - setup_machine
       - setup_test
@@ -163,6 +164,7 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: language-parsing-tests
+      DOCKSTORE_DOCKER_DB: true
     steps:
       - setup_machine
       - install-pip-machine
@@ -199,6 +201,7 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: localstack-tests
+      DOCKSTORE_DOCKER_DB: true
     steps:
       - setup_machine
       - setup_test
@@ -499,6 +502,12 @@ commands:
       - run:
           name: setup postgres
           command: |
+            sudo apt update
+            sudo apt install -y curl gpg gnupg2 lsb-release
+            curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+            echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" | sudo tee  /etc/apt/sources.list.d/pgdg.list
+            sudo apt update
+            sudo apt install -y postgresql-client-13
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
   setup_postgres_docker:
@@ -577,6 +586,7 @@ commands:
       - run:
           name: run integration test
           command: |  # Runs normally if it is not being run in parallel
+            export DOCKSTORE_CACHE_MIGRATIONS=true
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
@@ -590,6 +600,11 @@ commands:
           name: send coverage
           command: ./codecov -F ${TESTING_PROFILE//-}
       - persist_coverage
+      - run:
+          name: Show used dumps
+          command: |
+            touch /tmp/used_dumps.txt
+            cat /tmp/used_dumps.txt
 
   save_test_results:
     steps:
