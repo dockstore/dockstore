@@ -161,7 +161,7 @@ class ServiceIT extends BaseIT {
         CreateContent createContent = new CreateContent().invoke(false);
         long serviceID = createContent.getServiceID();
 
-        //add notebook to collection
+        //add service to collection
         Set<String> expectedCollectionNames = new HashSet<>();
         expectedCollectionNames.add("Collection");
         organizationsApi.addEntryToCollection(collectionOrg.getId(), collection.getId(), serviceID, null);
@@ -171,7 +171,7 @@ class ServiceIT extends BaseIT {
         assertEquals(0, organizationsApi.getCollectionByName(collectionOrg.getName(), collection.getName()).getWorkflowsLength());
         assertEquals(1, organizationsApi.getCollectionByName(collectionOrg.getName(), collection.getName()).getServicesLength());
 
-        //remove notebook from collection
+        //remove service from collection
         organizationsApi.deleteEntryFromCollection(collectionOrg.getId(), collection.getId(), serviceID, null);
         expectedCollectionNames.remove("Collection");
         entryCollection = entriesApi.entryCollections(serviceID);
