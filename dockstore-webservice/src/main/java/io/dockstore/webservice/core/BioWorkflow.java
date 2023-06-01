@@ -91,8 +91,8 @@ public class BioWorkflow extends Workflow {
 
     @JsonProperty("parent_id")
     public Long getParentId() {
-        if (parentEntry != null && parentEntry.size() > 0) {
-            // TODO this is weird, but ...
+        if (parentEntry != null && !parentEntry.isEmpty()) {
+            // TODO this is weird, but to not break backwards compatibility for now ...
             return parentEntry.iterator().next().getId();
         } else {
             return null;
