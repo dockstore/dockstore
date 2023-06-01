@@ -106,7 +106,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(LocalStackTest.NAME)
 class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
-    private static final String DOCKSTORE_WORKFLOW_CNV_REPO = "DockstoreTestUser2/dockstore_workflow_cnv";
+    public static final String DOCKSTORE_WORKFLOW_CNV_REPO = "DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
     private static final Gson GSON = new Gson();
 
