@@ -214,6 +214,13 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     public List<T> findMyEntriesPublished(long userId) {
         return (List<T>) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId", Entry.class).setParameter("userId", userId).list();
     }
+
+    /**
+     * Retrieve a list of all workflow entries contained in a given collection. Note a workflow in this case are EntryTypes that are inherited from the Workflow class.
+     * This includes AppTools, BioWorkflows, Notebooks, and Services.
+     * @param collectionId collection ID
+     * @return a list of all workflow entries in the given collection.
+     */
     public List<CollectionEntry> getAllCollectionWorkflows(long collectionId) {
         return this.currentSession().createNamedQuery("Entry.getAllCollectionWorkflows", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
@@ -253,6 +260,12 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return this.currentSession().createNamedQuery("Entry.getToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
+    /**
+     * Retrieve a list of all workflow entries that contains versions in a given collection. Note a workflow in this case are EntryTypes that are inherited from the Workflow class.
+     * This includes AppTools, BioWorkflows, Notebooks, and Services.
+     * @param collectionId collection ID
+     * @return a list of all Workflow entries with versions in the given collection.
+     */
     public List<CollectionEntry> getAllCollectionWorkflowsWithVersions(long collectionId) {
         return this.currentSession().createNamedQuery("Entry.getAllCollectionWorkflowsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
