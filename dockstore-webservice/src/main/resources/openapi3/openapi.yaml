@@ -460,7 +460,7 @@ paths:
       responses:
         "200":
           content:
-            text/plain:
+            application/json:
               schema:
                 type: integer
                 format: int32
@@ -10706,7 +10706,10 @@ components:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
         parentEntry:
-          $ref: '#/components/schemas/Entry'
+          type: array
+          items:
+            $ref: '#/components/schemas/Entry'
+          uniqueItems: true
         path:
           type: string
         repository:
