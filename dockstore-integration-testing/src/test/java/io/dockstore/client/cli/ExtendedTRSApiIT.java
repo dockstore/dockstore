@@ -33,6 +33,10 @@ import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.Workflow;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MediaType;
+import java.util.ArrayList;
+import java.util.HashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -43,7 +47,7 @@ import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
- * Extra confidential integration tests, focuses on proposed GA4GH extensions
+ * Extra confidential integration tests, focuses on proposed GA4GH extensions.
  * {@link BaseIT}
  *
  */
@@ -51,7 +55,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
-class ExtendedTRSIT extends BaseIT {
+class ExtendedTRSApiIT extends BaseIT {
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -98,7 +102,7 @@ class ExtendedTRSIT extends BaseIT {
         DockstoreTool refresh = containersApi.refresh(githubTool.getId());
         containersApi.publish(refresh.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        // add a checker workflow to two workflows
+        // add a single checker workflow to two workflows
         testingPostgres.runUpdateStatement("update workflow set checkerid = '" + checkerWorkflow.getId() + "' where id = '" + workflow.getId() + "'");
         testingPostgres.runUpdateStatement("update tool set checkerid = '" + checkerWorkflow.getId() + "' where id = '" + refresh.getId() + "'");
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow where checkerid = " + checkerWorkflow.getId(), long.class);
@@ -107,8 +111,14 @@ class ExtendedTRSIT extends BaseIT {
 
 
         ExtendedGa4GhApi api = new ExtendedGa4GhApi(webClient);
+        // test json results
         final Integer integer = api.updateTheWorkflowsAndToolsIndices();
         assertTrue(integer > 0);
+        // test text results
+        final String textResults = webClient
+            .invokeAPI("/api/ga4gh/v2/extended/tools/index", "POST", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), MediaType.TEXT_PLAIN, MediaType.TEXT_PLAIN,
+                new String[]{"BEARER"}, new GenericType<>(String.class));
+        assertTrue(Integer.parseInt(textResults) >= 3);
     }
 
 }

@@ -464,6 +464,10 @@ paths:
               schema:
                 type: integer
                 format: int32
+            text/plain:
+              schema:
+                type: integer
+                format: int32
           description: Workflows and tools indices populated with entries.
       security:
       - BEARER: []

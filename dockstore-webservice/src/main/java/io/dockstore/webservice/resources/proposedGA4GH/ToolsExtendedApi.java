@@ -110,13 +110,13 @@ public class ToolsExtendedApi {
     @Path("/tools/index")
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @ApiOperation(value = ToolsIndexGet.SUMMARY, notes = ToolsIndexGet.DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Integer.class)
     @ApiResponses(value = {@ApiResponse(code = HttpStatus.SC_OK, message = ToolsIndexGet.OK_RESPONSE)})
     @Operation(operationId = ToolsIndexGet.SUMMARY, summary = ToolsIndexGet.SUMMARY, description = ToolsIndexGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
-            + "", description = ToolsIndexGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)))
+            + "", description = ToolsIndexGet.OK_RESPONSE, content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)), @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = Integer.class))})
     })
     public Response toolsIndexGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user, @Context SecurityContext securityContext)
         throws NotFoundException {
