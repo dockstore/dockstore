@@ -549,12 +549,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Accumulate the entry,version combos, there can be multiple different versions per entry.
         List<CollectionEntry> collectionEntries = new ArrayList<>();
-        collectionEntries.addAll(toolDAO.getCollectionWorkflows(id));
-        collectionEntries.addAll(toolDAO.getCollectionWorkflowsWithVersions(id));
+        collectionEntries.addAll(toolDAO.getAllCollectionWorkflows(id)); //adds all AppTools, BioWorkflows, Notebooks, and Services
+        collectionEntries.addAll(toolDAO.getAllCollectionWorkflowsWithVersions(id)); //adds all AppTools, BioWorkflows, Notebooks, and Services
         collectionEntries.addAll(toolDAO.getCollectionTools(id));
         collectionEntries.addAll(toolDAO.getCollectionToolsWithVersions(id));
-        collectionEntries.addAll(toolDAO.getCollectionServices(id));
-        collectionEntries.addAll(toolDAO.getCollectionServicesWithVersions(id));
 
         // Reduce to a set of entries and index.
         Set<Entry> entries = new HashSet<>();

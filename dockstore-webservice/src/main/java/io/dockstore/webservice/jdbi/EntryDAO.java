@@ -215,12 +215,37 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return (List<T>) this.currentSession().createNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId", Entry.class).setParameter("userId", userId).list();
     }
 
-    public List<CollectionEntry> getCollectionWorkflows(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getCollectionWorkflows", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    /**
+     * Retrieve a list of all workflow entries contained in a given collection. Note a workflow in this case are EntryTypes that are inherited from the Workflow class.
+     * This includes AppTools, BioWorkflows, Notebooks, and Services.
+     * @param collectionId collection ID
+     * @return a list of all workflow entries in the given collection.
+     */
+    public List<CollectionEntry> getAllCollectionWorkflows(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getAllCollectionWorkflows", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+    public List<CollectionEntry> getCollectionBioWorkflows(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionBioWorkflows", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+    public List<CollectionEntry> getCollectionAppTools(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionAppTools", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+    public List<CollectionEntry> getCollectionNotebooks(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionNotebooks", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
-    public long getWorkflowsLength(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getWorkflowsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    public long getBioWorkflowsLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getBioWorkflowsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    }
+    public long getAppToolsLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getAppToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    }
+    public long getNotebooksLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getNotebooksLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
+    }
+
+    public long getServicesLength(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getServicesLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
     public List<CollectionEntry> getCollectionServices(long collectionId) {
@@ -235,8 +260,25 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return this.currentSession().createNamedQuery("Entry.getToolsLength", Long.class).setParameter("collectionId", collectionId).getSingleResult();
     }
 
-    public List<CollectionEntry> getCollectionWorkflowsWithVersions(long collectionId) {
-        return this.currentSession().createNamedQuery("Entry.getCollectionWorkflowsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    /**
+     * Retrieve a list of all workflow entries that contains versions in a given collection. Note a workflow in this case are EntryTypes that are inherited from the Workflow class.
+     * This includes AppTools, BioWorkflows, Notebooks, and Services.
+     * @param collectionId collection ID
+     * @return a list of all Workflow entries with versions in the given collection.
+     */
+    public List<CollectionEntry> getAllCollectionWorkflowsWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getAllCollectionWorkflowsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+    public List<CollectionEntry> getCollectionBioWorkflowsWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionBioWorkflowsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+
+    public List<CollectionEntry> getCollectionAppToolsWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionAppToolsWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
+    }
+
+    public List<CollectionEntry> getCollectionNotebooksWithVersions(long collectionId) {
+        return this.currentSession().createNamedQuery("Entry.getCollectionNotebooksWithVersions", CollectionEntry.class).setParameter("collectionId", collectionId).list();
     }
 
     public List<CollectionEntry> getCollectionServicesWithVersions(long collectionId) {
