@@ -109,6 +109,8 @@ class ExtendedTRSApiIT extends BaseIT {
         workflowCount += testingPostgres.runSelectStatement("select count(*) from tool where checkerid = " + checkerWorkflow.getId(), long.class);
         assertEquals(2, workflowCount);
 
+        checkerWorkflow = workflowsApi.getWorkflow(checkerWorkflow.getId(), "");
+        assertEquals(2, checkerWorkflow.getParentEntries().size());
 
         ExtendedGa4GhApi api = new ExtendedGa4GhApi(webClient);
         // test json results

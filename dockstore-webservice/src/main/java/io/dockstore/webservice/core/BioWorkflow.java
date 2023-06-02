@@ -72,7 +72,7 @@ public class BioWorkflow extends Workflow {
 
     @Override
     public Entry getParentEntry() {
-        if (parentEntries != null) {
+        if (parentEntries != null && !parentEntries.isEmpty()) {
             return parentEntries.iterator().next();
         }
         return null;
