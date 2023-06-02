@@ -41,8 +41,13 @@ public class Service extends Workflow {
     }
 
     @Override
-    public Set<Entry> getParentEntry() {
+    public Entry getParentEntry() {
         return null;
+    }
+
+    @Override
+    public Set<Entry> getParentEntries() {
+        return Set.of();
     }
 
     @Override
@@ -56,7 +61,7 @@ public class Service extends Workflow {
     }
 
     @Override
-    public void setParentEntry(Set<Entry> parentEntry) {
+    public void setParentEntry(Entry parentEntry) {
         throw new UnsupportedOperationException("cannot add a checker workflow to a Service");
     }
 

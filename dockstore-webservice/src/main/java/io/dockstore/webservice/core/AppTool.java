@@ -55,12 +55,17 @@ public class AppTool extends Workflow {
     }
 
     @Override
-    public Set<Entry> getParentEntry() {
+    public Entry getParentEntry() {
         return null;
     }
 
     @Override
-    public void setParentEntry(Set<Entry> parentEntry) {
+    public Set<Entry> getParentEntries() {
+        return Set.of();
+    }
+
+    @Override
+    public void setParentEntry(Entry parentEntry) {
         if (parentEntry == null) {
             return;
         }

@@ -27,6 +27,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -54,7 +55,7 @@ public class BioWorkflow extends Workflow {
     @OneToMany(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
     @JsonIgnore
     @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
-    private Set<Entry> parentEntry;
+    private Set<Entry> parentEntries;
 
     @Column(columnDefinition = "boolean default false")
     private boolean isChecker = false;
@@ -70,13 +71,24 @@ public class BioWorkflow extends Workflow {
     }
 
     @Override
-    public Set<Entry> getParentEntry() {
-        return parentEntry;
+    public Entry getParentEntry() {
+        if (parentEntries != null) {
+            return parentEntries.iterator().next();
+        }
+        return null;
     }
 
     @Override
-    public void setParentEntry(Set<Entry> parentEntry) {
-        this.parentEntry = parentEntry;
+    public Set<Entry> getParentEntries() {
+        return parentEntries;
+    }
+
+    @Override
+    public void setParentEntry(Entry parentEntry) {
+        if (parentEntries == null) {
+            parentEntries = new HashSet<>();
+        }
+        this.parentEntries.add(parentEntry);
     }
 
     @Override
@@ -91,9 +103,9 @@ public class BioWorkflow extends Workflow {
 
     @JsonProperty("parent_id")
     public Long getParentId() {
-        if (parentEntry != null && !parentEntry.isEmpty()) {
+        if (parentEntries != null && !parentEntries.isEmpty()) {
             // TODO this is weird, but to not break backwards compatibility for now ...
-            return parentEntry.iterator().next().getId();
+            return parentEntries.iterator().next().getId();
         } else {
             return null;
         }
