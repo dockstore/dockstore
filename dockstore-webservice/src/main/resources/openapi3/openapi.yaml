@@ -1420,6 +1420,30 @@ paths:
           description: default response
       tags:
       - containers
+  /containers/published/{containerId}:
+    get:
+      description: Get a published tool.
+      operationId: getPublishedContainer
+      parameters:
+      - in: path
+        name: containerId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: query
+        name: include
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+          description: default response
+      tags:
+      - containers
   /containers/registerManual:
     post:
       description: "Register a tool manually, along with tags."

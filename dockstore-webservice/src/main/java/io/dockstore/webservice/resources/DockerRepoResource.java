@@ -124,6 +124,7 @@ public class DockerRepoResource
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published tools, authentication can be provided for restricted tools";
     public static final String UNABLE_TO_VERIFY_THAT_YOUR_TOOL_POINTS_AT_A_VALID_SOURCE_CONTROL_REPO = "unable to verify that your tool points at a valid source control repo";
+    private static final String GET_A_PUBLISHED_TOOL_DESC = "Get a published tool.";
 
     @Context
     private ResourceContext rc;
@@ -481,7 +482,8 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/published/{containerId}")
-    @ApiOperation(value = "Get a published tool.", notes = "NO authentication", response = Tool.class)
+    @Operation(operationId = "getPublishedContainer", description = GET_A_PUBLISHED_TOOL_DESC)
+    @ApiOperation(value = GET_A_PUBLISHED_TOOL_DESC, notes = "NO authentication", response = Tool.class)
     public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findPublishedById(containerId);
