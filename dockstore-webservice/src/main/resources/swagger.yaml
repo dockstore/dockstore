@@ -6935,11 +6935,6 @@ definitions:
         format: "int64"
         position: 5
         description: "Number of workflows inside this collection"
-      notebooksLength:
-        type: "integer"
-        format: "int64"
-        position: 6
-        description: "Number of notebooks inside this collection"
       toolsLength:
         type: "integer"
         format: "int64"
