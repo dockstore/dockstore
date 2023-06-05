@@ -7768,6 +7768,10 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        collectionEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionEntry'
         dbCreateDate:
           type: integer
           format: int64
@@ -7784,6 +7788,7 @@ components:
           pattern: "[\\w ,_\\-&()']*"
         entries:
           type: array
+          description: Return object for collections
           items:
             $ref: '#/components/schemas/CollectionEntry'
         id:
@@ -7904,6 +7909,10 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        collectionEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionEntry'
         dbCreateDate:
           type: integer
           format: int64

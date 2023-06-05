@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CascadeType;
@@ -134,6 +135,7 @@ public class Collection implements Serializable, Aliasable {
         @JoinColumn(name = "collection_id", nullable = false, columnDefinition = "bigint"),
     })
     @JsonIgnore
+    @ArraySchema(arraySchema = @Schema(name = "entryVersions"), schema = @Schema(implementation = EntryVersion.class))
     private Set<EntryVersion> entries = new HashSet<>();
 
     @JsonIgnore
@@ -200,8 +202,13 @@ public class Collection implements Serializable, Aliasable {
     }
 
     @JsonProperty("entries")
-    public List<CollectionEntry> getCollectionEntries() {
+    @ArraySchema(arraySchema = @Schema(name = "entries"), schema = @Schema(implementation = CollectionEntry.class))
+    public List<CollectionEntry> getEntries() {
         return collectionEntries.stream().sorted(Comparator.comparing(CollectionEntry::getId)).collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    public List<CollectionEntry> getCollectionEntries() {
+        return getEntries();
     }
 
     public void setEntries(Set<Entry> entries) {
