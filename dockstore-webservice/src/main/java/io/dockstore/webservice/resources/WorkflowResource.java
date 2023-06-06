@@ -822,7 +822,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         } catch (IllegalArgumentException e) {
             LOG.error("Could not get published workflows due to invalid arguments. Error is " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not get published workflows due to invalid arguments. "
-                    + "Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    + "Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
 
 
