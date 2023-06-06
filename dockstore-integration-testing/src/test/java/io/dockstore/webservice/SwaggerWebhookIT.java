@@ -1436,7 +1436,6 @@ class SwaggerWebhookIT extends BaseIT {
     void testAppToolCollections() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
@@ -1462,8 +1461,12 @@ class SwaggerWebhookIT extends BaseIT {
         final Collection createdCollection = organizationsApiAdmin.createCollection(registeredOrganization.getId(), stubCollection);
         // Add tool to collection
         organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null);
-        Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
-        assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
+
+        io.dockstore.openapi.client.ApiClient openWebClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi openOrganizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(openWebClientAdminUser);
+
+        io.dockstore.openapi.client.model.Collection collection = openOrganizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
+        assertTrue((collection.getCollectionEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
     }
 
     @Test
