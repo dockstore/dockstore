@@ -65,11 +65,11 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrgId", query = "SELECT c from Collection c WHERE c.organization.id = :organizationId AND c.deleted = FALSE"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND col.organizationID = :organizationId AND col.deleted = FALSE"),
     @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByDisplayNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.displayName) = lower(:displayName) AND col.organizationID = :organizationId AND col.deleted = FALSE"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entries entries WHERE entries.id = :entryVersionId AND c.deleted = FALSE")
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entryVersions entries WHERE entries.id = :entryVersionId AND c.deleted = FALSE")
 })
 
 @NamedNativeQueries({
-    // This is a native query since I couldn't figure out how to do a delete with a join in HQL
+    // This is a native query since I couldn't figure out how to do a DELETE with a join in HQL
     @NamedNativeQuery(name = "io.dockstore.webservice.core.Collection.deleteEntryVersionsByCollectionId", query =
         "DELETE FROM collection_entry_version WHERE collection_id = :collectionId")
 })
@@ -136,7 +136,7 @@ public class Collection implements Serializable, Aliasable {
     })
     @JsonIgnore
     @ArraySchema(arraySchema = @Schema(name = "entryVersions"), schema = @Schema(implementation = EntryVersion.class))
-    private Set<EntryVersion> entries = new HashSet<>();
+    private Set<EntryVersion> entryVersions = new HashSet<>();
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -165,6 +165,8 @@ public class Collection implements Serializable, Aliasable {
     private Timestamp dbUpdateDate;
 
     @Transient
+    @JsonProperty("collectionEntries")
+    @ArraySchema(arraySchema = @Schema(name = "collectionEntries"), schema = @Schema(implementation = CollectionEntry.class))
     private List<CollectionEntry> collectionEntries = new ArrayList<>();
 
     @JsonIgnore
@@ -201,26 +203,20 @@ public class Collection implements Serializable, Aliasable {
         this.description = description;
     }
 
-    @JsonProperty("entries")
-    @ArraySchema(arraySchema = @Schema(name = "entries"), schema = @Schema(implementation = CollectionEntry.class))
-    public List<CollectionEntry> getEntries() {
+    public List<CollectionEntry> getCollectionEntries() {
         return collectionEntries.stream().sorted(Comparator.comparing(CollectionEntry::getId)).collect(Collectors.toCollection(LinkedList::new));
     }
 
-    public List<CollectionEntry> getCollectionEntries() {
-        return getEntries();
+    public void setEntryVersions(Set<Entry> entryVersions) {
+        this.entryVersions = entryVersions.stream().map(EntryVersion::new).collect(Collectors.toSet());
     }
 
-    public void setEntries(Set<Entry> entries) {
-        this.entries = entries.stream().map(EntryVersion::new).collect(Collectors.toSet());
+    public void addEntryVersion(Entry entry, Version version) {
+        this.entryVersions.add(new EntryVersion(entry, version));
     }
 
-    public void addEntry(Entry entry, Version version) {
-        this.entries.add(new EntryVersion(entry, version));
-    }
-
-    public void removeEntry(Long entryId, Long versionId) {
-        this.entries.removeIf(entryVersion -> entryVersion.equals(entryId, versionId));
+    public void removeEntryVersion(Long entryId, Long versionId) {
+        this.entryVersions.removeIf(entryVersion -> entryVersion.equals(entryId, versionId));
     }
 
     public Organization getOrganization() {

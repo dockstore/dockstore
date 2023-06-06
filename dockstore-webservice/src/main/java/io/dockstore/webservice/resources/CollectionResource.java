@@ -243,11 +243,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
         if (versionId == null) {
             // Add the entry to the collection
-            entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), null);
+            entryAndCollection.getRight().addEntryVersion(entryAndCollection.getLeft(), null);
         } else {
             // TODO: Need to check that the version belongs to the entry
             Version version = versionDAO.findById(versionId);
-            entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), version);
+            entryAndCollection.getRight().addEntryVersion(entryAndCollection.getLeft(), version);
         }
 
         // Event for addition
@@ -298,7 +298,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Remove the entry from the organization,
         // This silently fails if the user somehow manages to give a non-existent entryId and versionId pair
-        entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft().getId(), versionId);
+        entryAndCollection.getRight().removeEntryVersion(entryAndCollection.getLeft().getId(), versionId);
 
         // Event for deletion
         Organization organization = organizationDAO.findById(organizationId);

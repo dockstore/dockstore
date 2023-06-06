@@ -7786,11 +7786,6 @@ components:
           maxLength: 50
           minLength: 3
           pattern: "[\\w ,_\\-&()']*"
-        entries:
-          type: array
-          description: Return object for collections
-          items:
-            $ref: '#/components/schemas/CollectionEntry'
         id:
           type: integer
           format: int64

@@ -33,7 +33,6 @@ import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Collection;
-import io.swagger.client.model.CollectionEntry;
 import io.swagger.client.model.CollectionOrganization;
 import io.swagger.client.model.Event;
 import io.swagger.client.model.Organization;
@@ -1744,7 +1743,12 @@ public class OrganizationIT extends BaseIT {
 
         // The collection should have an entry
         collection = organizationsApiAdmin.getCollectionById(organization.getId(), collectionId);
-        assertEquals(1, collection.getEntries().size(), "There should be one entry with the collection, there are " + collection.getEntries().size());
+
+        io.dockstore.openapi.client.ApiClient apiClient = CommonTestUtilities.getOpenAPIWebClient(true, ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi openOrgClient = new io.dockstore.openapi.client.api.OrganizationsApi(apiClient);
+        io.dockstore.openapi.client.model.Collection openCollection = openOrgClient.getCollectionById(organization.getId(), collection.getId());
+
+        assertEquals(1, openCollection.getCollectionEntries().size(), "There should be one entry with the collection, there are " + openCollection.getCollectionEntries().size());
 
         // Publish another tool
         entryId = 1;
@@ -1754,8 +1758,8 @@ public class OrganizationIT extends BaseIT {
         organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, null);
 
         // There should be two entries for collection with ID 1
-        Collection collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
-        assertEquals(2, collectionById.getEntries().size());
+        io.dockstore.openapi.client.model.Collection collectionById = openOrgClient.getCollectionById(organizationID, collectionId);
+        assertEquals(2, collectionById.getCollectionEntries().size());
 
         // There should be two ADD_TO_COLLECTION events
         final long count3 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_TO_COLLECTION'", long.class);
@@ -1766,14 +1770,14 @@ public class OrganizationIT extends BaseIT {
         containersApi.publish(entryId, unpublishRequest);
 
         // Collection should have one tool returned
-        long entryCount = organizationsApi.getCollectionById(organization.getId(), collectionId).getEntries().size();
+        long entryCount = openOrgClient.getCollectionById(organization.getId(), collectionId).getCollectionEntries().size();
         assertEquals(1, entryCount, "There should be one entry with the collection, there are " + entryCount);
 
         // Publish tool
         containersApi.publish(entryId, publishRequest);
 
         // Collection should have two tools returned
-        entryCount = organizationsApi.getCollectionById(organization.getId(), collectionId).getEntries().size();
+        entryCount = openOrgClient.getCollectionById(organization.getId(), collectionId).getCollectionEntries().size();
         assertEquals(2, entryCount, "There should be two entries with the collection, there are " + entryCount);
 
         // Remove a tool from the collection
@@ -1785,20 +1789,23 @@ public class OrganizationIT extends BaseIT {
         assertEquals(1, count4, "There should be 1 event of type REMOVE_FROM_COLLECTION, there are " + count4);
 
         // There should now be one entry for collection with ID 1
-        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
-        assertEquals(1, collectionById.getEntries().size());
+        collectionById = openOrgClient.getCollectionById(organizationID, collectionId);
+        assertEquals(1, collectionById.getCollectionEntries().size());
 
         // Try getting all collections
-        List<Collection> collections = organizationsApi.getCollectionsFromOrganization(organization.getId(), "");
+        List<io.dockstore.openapi.client.model.Collection> collections = openOrgClient.getCollectionsFromOrganization(organization.getId(), "");
         assertEquals(1, collections.size(), "There should be 1 collection associated with the Organization, there are " + collections.size());
-        assertEquals(0, collections.get(0).getEntries().size(), "There should be no entries because entries is not specified to be included " + collections.get(0).getEntries().size());
+        assertEquals(0, collections.get(0).getCollectionEntries().size(), "There should be no entries because entries is not specified to be included " + collections.get(0).getCollectionEntries().size());
 
-        collections = organizationsApi.getCollectionsFromOrganization(organization.getId(), "entries");
-        assertEquals(1, collections.get(0).getEntries().size(), "There should be 1 entry associated with the collection, there are " + collections.get(0).getEntries().size());
+        collections = openOrgClient.getCollectionsFromOrganization(organization.getId(), "entries");
+        assertEquals(1, collections.get(0).getCollectionEntries().size(), "There should be 1 entry associated with the collection, there are " + collections.get(0).getCollectionEntries().size());
 
         // Unauth user should be able to see entries
-        Collection unauthCollection = organizationsApiUnauth.getCollectionById(organization.getId(), collections.get(0).getId());
-        assertEquals(1, unauthCollection.getEntries().size(), "Should have one entry returned with the collection, there are " + unauthCollection.getEntries().size());
+        final io.dockstore.openapi.client.ApiClient openUnauthClient = CommonTestUtilities.getOpenAPIWebClient(false, "", testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi openOrganizationsApiUnauth = new io.dockstore.openapi.client.api.OrganizationsApi(openUnauthClient);
+
+        io.dockstore.openapi.client.model.Collection unauthCollection = openOrganizationsApiUnauth.getCollectionById(organization.getId(), collections.get(0).getId());
+        assertEquals(1, unauthCollection.getCollectionEntries().size(), "Should have one entry returned with the collection, there are " + unauthCollection.getCollectionEntries().size());
 
         // Test description
         Collection collectionWithDesc = organizationsApi.updateCollectionDescription(organization.getId(), collectionId, "potato");
@@ -1832,11 +1839,11 @@ public class OrganizationIT extends BaseIT {
         // entry id 1, version id 3
         // entry id 1, no version
         // entry id 2, no version
-        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
-        assertEquals(3, collectionById.getEntries().size());
-        assertTrue(collectionById.getEntries().stream().anyMatch(entry -> versionName
+        collectionById = openOrgClient.getCollectionById(organizationID, collectionId);
+        assertEquals(3, collectionById.getCollectionEntries().size());
+        assertTrue(collectionById.getCollectionEntries().stream().anyMatch(entry -> versionName
                 .equals(entry.getVersionName()) && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")), "Collection has the version-specific entry");
-        assertTrue(collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null  && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")),
+        assertTrue(collectionById.getCollectionEntries().stream().anyMatch(entry -> entry.getVersionName() == null  && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")),
             "Collection still has the non-version-specific entry");
 
         // When there's a matching entryId that has a version, but versionName parameter is something else, there should not be NPE
@@ -1848,16 +1855,16 @@ public class OrganizationIT extends BaseIT {
             assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
         }
         organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, versionName);
-        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
-        assertEquals(2, collectionById.getEntries().size(), "Two entry remains in collection");
-        assertTrue(collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")),
+        collectionById = openOrgClient.getCollectionById(organizationID, collectionId);
+        assertEquals(2, collectionById.getCollectionEntries().size(), "Two entry remains in collection");
+        assertTrue(collectionById.getCollectionEntries().stream().anyMatch(entry -> entry.getVersionName() == null && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")),
             "Collection has the non-version-specific entry even after deleting the version-specific one");
 
         // When there's a matching entryId that has a version, but versionName parameter is null, there should not be NPE
         organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, null);
 
-        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
-        assertEquals(1, collectionById.getEntries().size());
+        collectionById = openOrgClient.getCollectionById(organizationID, collectionId);
+        assertEquals(1, collectionById.getCollectionEntries().size());
 
         testVersionRemoval(organizationsApi, organization, collectionId, entryId, versionId, webClientUser2);
 
@@ -2120,7 +2127,12 @@ public class OrganizationIT extends BaseIT {
         organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), null);
 
         Collection addedCollection = organizationsApi.getCollectionByName(organization.getName(), collection.getName());
-        assertEquals(DescriptorLanguage.CWL.toString(), addedCollection.getEntries().get(0).getDescriptorTypes().get(0));
+
+        io.dockstore.openapi.client.ApiClient apiClient = CommonTestUtilities.getOpenAPIWebClient(true, ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi openOrgClient = new io.dockstore.openapi.client.api.OrganizationsApi(apiClient);
+        final io.dockstore.openapi.client.model.Collection collectionById = openOrgClient.getCollectionById(organization.getId(), addedCollection.getId());
+
+        assertEquals(DescriptorLanguage.CWL.toString(), collectionById.getCollectionEntries().get(0).getDescriptorTypes().get(0));
     }
 
     private Workflow createWorkflow1() {
@@ -2205,7 +2217,12 @@ public class OrganizationIT extends BaseIT {
 
         // test whether verified workflow info comes back
         final Collection collectionByName = organizationsApi.getCollectionByName(organization.getName(), collection.getName());
-        assertTrue(collectionByName.getEntries().stream().anyMatch(CollectionEntry::isVerified));
+
+        io.dockstore.openapi.client.ApiClient apiClient = CommonTestUtilities.getOpenAPIWebClient(true, ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi openOrgClient = new io.dockstore.openapi.client.api.OrganizationsApi(apiClient);
+        final io.dockstore.openapi.client.model.Collection collectionById = openOrgClient.getCollectionById(organization.getId(), collectionByName.getId());
+
+        assertTrue(collectionById.getCollectionEntries().stream().anyMatch(io.dockstore.openapi.client.model.CollectionEntry::isVerified));
     }
 
     /**
@@ -3015,17 +3032,17 @@ public class OrganizationIT extends BaseIT {
         io.dockstore.openapi.client.model.Category category = categoriesApi.getCategories(null, null).get(0);
 
         assertEquals(workflowCount, category.getWorkflowsLength().longValue());
-        assertEquals(0, category.getEntries().size());
+        assertEquals(0, category.getCollectionEntries().size());
 
         // Make sure the category looks right.
         category = categoriesApi.getCategories(null, "entries").get(0);
         assertEquals(workflowCount, category.getWorkflowsLength().longValue());
-        assertEquals(workflowCount, category.getEntries().size());
+        assertEquals(workflowCount, category.getCollectionEntries().size());
 
         // Make sure the category summaries in the category entries look right.
         for (int i = 0; i < workflowCount; i++) {
-            assertEquals(1, category.getEntries().get(i).getCategories().size());
-            assertEquals("test", category.getEntries().get(i).getCategories().get(0).getName());
+            assertEquals(1, category.getCollectionEntries().get(i).getCategories().size());
+            assertEquals("test", category.getCollectionEntries().get(i).getCategories().get(0).getName());
         }
     }
 
@@ -3048,10 +3065,10 @@ public class OrganizationIT extends BaseIT {
         assertEquals(0, entriesApi.entryCategories(id).size());
         addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(0).getId());
         assertEquals(1, entriesApi.entryCategories(id).size());
-        assertEquals(1, categoriesApi.getCategories("test", "entries").get(0).getEntries().size());
+        assertEquals(1, categoriesApi.getCategories("test", "entries").get(0).getCollectionEntries().size());
         addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(1).getId());
         assertEquals(1, entriesApi.entryCategories(id).size());
-        assertEquals(2, categoriesApi.getCategories("test", "entries").get(0).getEntries().size());
+        assertEquals(2, categoriesApi.getCategories("test", "entries").get(0).getCollectionEntries().size());
     }
 
     /**
@@ -3121,6 +3138,6 @@ public class OrganizationIT extends BaseIT {
         assertEquals(0, categoriesApi.getCategories("test", null).size());
         assertEquals(1, categoriesApi.getCategories("test2", null).size());
         assertEquals(1, entriesApi.entryCategories(workflow.getId()).size());
-        assertEquals(1, categoriesApi.getCategories("test2", "entries").get(0).getEntries().get(0).getCategories().size());
+        assertEquals(1, categoriesApi.getCategories("test2", "entries").get(0).getCollectionEntries().get(0).getCategories().size());
     }
 }

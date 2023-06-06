@@ -59,7 +59,7 @@ class CollectionHelper {
         currentSession.evict(collection);
         // Ensure that entries is empty
         // This is probably unnecessary
-        collection.setEntries(new HashSet<>());
+        collection.setEntryVersions(new HashSet<>());
         collection.setWorkflowsLength(entryDAO.getBioWorkflowsLength(collection.getId()));
         collection.setToolsLength(entryDAO.getToolsLength(collection.getId()) +  entryDAO.getAppToolsLength(collection.getId()));
         collection.setNotebooksLength(entryDAO.getNotebooksLength(collection.getId()));
