@@ -182,6 +182,9 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public abstract Entry getParentEntry();
 
+    @JsonProperty
+    public abstract Set<Entry> getParentEntries();
+
     public abstract void setParentEntry(Entry parentEntry);
 
     /**

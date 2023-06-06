@@ -460,6 +460,10 @@ paths:
       responses:
         "200":
           content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
             text/plain:
               schema:
                 type: integer
@@ -10744,6 +10748,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+          uniqueItems: true
+        parentEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Entry'
           uniqueItems: true
         parentEntry:
           $ref: '#/components/schemas/Entry'

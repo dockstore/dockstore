@@ -25,8 +25,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * These represent actual workflows in terms of CWL, WDL, and other bioinformatics workflows
@@ -50,10 +52,10 @@ import jakarta.persistence.Table;
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {
 
-    @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
     @JsonIgnore
     @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
-    private Entry parentEntry;
+    private Set<Entry> parentEntries;
 
     @Column(columnDefinition = "boolean default false")
     private boolean isChecker = false;
@@ -70,12 +72,23 @@ public class BioWorkflow extends Workflow {
 
     @Override
     public Entry getParentEntry() {
-        return parentEntry;
+        if (parentEntries != null && !parentEntries.isEmpty()) {
+            return parentEntries.iterator().next();
+        }
+        return null;
+    }
+
+    @Override
+    public Set<Entry> getParentEntries() {
+        return parentEntries;
     }
 
     @Override
     public void setParentEntry(Entry parentEntry) {
-        this.parentEntry = parentEntry;
+        if (parentEntries == null) {
+            parentEntries = new HashSet<>();
+        }
+        this.parentEntries.add(parentEntry);
     }
 
     @Override
@@ -90,8 +103,9 @@ public class BioWorkflow extends Workflow {
 
     @JsonProperty("parent_id")
     public Long getParentId() {
-        if (parentEntry != null) {
-            return parentEntry.getId();
+        if (parentEntries != null && !parentEntries.isEmpty()) {
+            // TODO this is weird, but to not break backwards compatibility for now ...
+            return parentEntries.iterator().next().getId();
         } else {
             return null;
         }

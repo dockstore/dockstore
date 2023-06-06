@@ -21,6 +21,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import java.util.Set;
 
 @ApiModel(value = "Notebook", description = "This describes one notebook in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
@@ -44,6 +45,11 @@ public class Notebook extends Workflow {
     @Override
     public Entry getParentEntry() {
         return null;
+    }
+
+    @Override
+    public Set<Entry> getParentEntries() {
+        return Set.of();
     }
 
     @Override
