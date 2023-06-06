@@ -203,6 +203,7 @@ public class Collection implements Serializable, Aliasable {
         this.description = description;
     }
 
+    @JsonProperty
     public List<CollectionEntry> getCollectionEntries() {
         return collectionEntries.stream().sorted(Comparator.comparing(CollectionEntry::getId)).collect(Collectors.toCollection(LinkedList::new));
     }
