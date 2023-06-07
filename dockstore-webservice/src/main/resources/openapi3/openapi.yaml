@@ -2612,6 +2612,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Entry'
           description: Successfully deleted the entry
+        "400":
+          description: The specified entry is not deletable.
       security:
       - BEARER: []
       tags:
@@ -8231,7 +8233,7 @@ components:
           type: string
         default_wdl_path:
           type: string
-        deleteable:
+        deletable:
           type: boolean
         description:
           type: string
@@ -8411,7 +8413,7 @@ components:
           format: int64
         defaultVersion:
           type: string
-        deleteable:
+        deletable:
           type: boolean
         description:
           type: string
@@ -8541,7 +8543,7 @@ components:
           format: int64
         defaultVersion:
           type: string
-        deleteable:
+        deletable:
           type: boolean
         description:
           type: string
@@ -10678,7 +10680,7 @@ components:
           type: string
         defaultVersion:
           type: string
-        deleteable:
+        deletable:
           type: boolean
         description:
           type: string

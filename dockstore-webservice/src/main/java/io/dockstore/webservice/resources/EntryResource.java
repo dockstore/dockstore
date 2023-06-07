@@ -245,15 +245,16 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/{id}")
     @Operation(operationId = "deleteEntry", description = "Completely remove an entry from Dockstore.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted the entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "The specified entry is not deletable.")
     public Entry deleteEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Entry to delete.", required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
         checkNotNullEntry(entry);
         checkCanWrite(user, entry);
-        if (!entry.isDeleteable()) {
-            throw new CustomWebApplicationException("The specified entry is not deleteable.", HttpStatus.SC_BAD_REQUEST);
+        if (!entry.isDeletable()) {
+            throw new CustomWebApplicationException("The specified entry is not deletable.", HttpStatus.SC_BAD_REQUEST);
         }
-        // TODO if it is/has a check workflow, do anything different?
+        // TODO if it is/has a checker workflow, do anything different?
         eventDAO.deleteEventByEntryID(entry.getId());
         // TODO the following should use the proper DAO
         ((EntryDAO)workflowDAO).delete(entry);
