@@ -28,7 +28,11 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.testing.DropwizardTestSupport;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.AfterAll;
@@ -83,6 +87,23 @@ class OpenApiIT {
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         // To prevent connection leak?
         response.readEntity(String.class);
+    }
+
+    /*
+    Tests to make sure CORS headers are NOT present on a non-GA4GH endpoint
+     */
+
+    @Test
+    void testDockstoreNoCors() {
+        final String origin = "http://mysite.org";
+        final List<String> paths = Arrays.asList("api/categories", "openapi.yaml");
+        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.add("Origin", origin);
+        paths.stream().forEach(path -> {
+            Response response = client.target(baseURL + path).request().headers(headers).get();
+            assertThat(response.getHeaders().containsKey("Access-Control-Allow-Credentials")).isFalse();
+            assertThat(response.getHeaders().containsKey("Access-Control-Allow-Origin")).isFalse();
+        });
     }
 
     @Test

@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.TestUtility;
 import io.swagger.client.model.FileWrapper;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.Tool;
@@ -29,6 +30,8 @@ import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.ToolVersion;
 import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.apache.http.HttpStatus;
@@ -165,6 +168,19 @@ class GA4GHV2BetaIT extends GA4GHIT {
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
+    }
+    /*
+    Checks the GA4GHv2 beta endpoints to make sure the CORS header is present
+     */
+    @Test
+    void testV2BetaCorsHeader() {
+        final String origin = "http://mysite.org";
+        String nginxRewrittenPath = TestUtility.mimicNginxRewrite(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json", basePath);
+        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.add("Origin", origin);
+        Response response = client.target(nginxRewrittenPath).request().headers(headers).get();
+        assertTrue(response.getHeaders().getFirst("Access-Control-Allow-Credentials").equals("true"));
+        assertTrue(response.getHeaders().getFirst("Access-Control-Allow-Origin").equals(origin));
     }
 
     @Test
