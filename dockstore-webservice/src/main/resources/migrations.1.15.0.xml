@@ -31,27 +31,27 @@
     </changeSet>
     <changeSet author="svonworl" id="add_everpublic">
         <addColumn tableName="workflow">
-            <column name="everpublic" valueBoolean="true">
+            <column name="everpublic" type="boolean" value="true">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="notebook">
-            <column name="everpublic" valueBoolean="true">
+            <column name="everpublic" type="boolean" value="true">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="tool">
-            <column name="everpublic" valueBoolean="true">
+            <column name="everpublic" type="boolean" value="true">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="apptool">
-            <column name="everpublic" valueBoolean="true">
+            <column name="everpublic" type="boolean" value="true">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="service">
-            <column name="everpublic" valueBoolean="true">
+            <column name="everpublic" type="boolean" value="true">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
