@@ -306,6 +306,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Transient
     private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
 
+    @Column(nullable = true)
+    private Date firstPublished;
+
     public enum TopicSelection {
         AUTOMATIC, MANUAL
     }
@@ -480,6 +483,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     public void setIsPublished(boolean isPublished) {
         this.isPublished = isPublished;
+        if (isPublished) {
+            Date first = getFirstPublished();
+            Date now = new Date();
+            if (first == null || now.before(first)) {
+                setFirstPublished(now);
+            }
+        }
     }
 
     /**
@@ -810,5 +820,23 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setOrcidAuthors(Set<OrcidAuthor> orcidAuthors) {
         this.orcidAuthors = orcidAuthors;
+    }
+
+    @JsonIgnore
+    public Date getFirstPublished() {
+        return firstPublished;
+    }
+
+    public void setFirstPublished(Date firstPublished) {
+        this.firstPublished = firstPublished;
+    }
+
+    public boolean hasBeenPublished() {
+        return firstPublished != null;
+    }
+
+    @JsonProperty
+    public boolean isDeleteable() {
+        return !hasBeenPublished();
     }
 }

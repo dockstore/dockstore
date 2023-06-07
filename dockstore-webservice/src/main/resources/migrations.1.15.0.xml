@@ -29,4 +29,22 @@
         <dropPrimaryKey tableName="user_entry"/>
         <addPrimaryKey columnNames="userid, entryid" constraintName="user_entry_pkey" tableName="user_entry"/>
     </changeSet>
+    <changeSet author="svonworl" id="add_firstpublished">
+        <addColumn tableName="workflow">
+            <column name="firstpublished" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column name="firstpublished" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="firstpublished" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+        <addColumn tableName="apptool">
+            <column name="firstpublished" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="firstpublished" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+        <!-- TODO set firstpublished for existing entries -->
+    </changeSet>
 </databaseChangeLog>

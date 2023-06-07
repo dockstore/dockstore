@@ -41,6 +41,8 @@ import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.TransactionHelper;
+import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -74,6 +76,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -127,6 +130,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private WorkflowDAO workflowDAO;
     private final VersionDAO<?> versionDAO;
     private final UserDAO userDAO;
+    private final EventDAO eventDAO;
     private final CollectionHelper collectionHelper;
     private final TopicsApi topicsApi;
     private final String discourseKey;
@@ -207,10 +211,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
+    public EntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, EventDAO eventDAO, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
         WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration configuration) {
         this.sessionFactory = sessionFactory;
         this.permissionsInterface = permissionsInterface;
+        this.eventDAO = eventDAO;
         this.workflowDAO = workflowDAO;
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
@@ -232,6 +237,28 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         hostName = configuration.getExternalConfig().getHostname();
         isProduction = configuration.getExternalConfig().computeIsProduction();
         topicsApi = new TopicsApi(apiClient);
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{id}")
+    @Operation(operationId = "deleteEntry", description = "Completely remove an entry from Dockstore.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted the entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
+    public Entry deleteEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @ApiParam(value = "Entry to delete.", required = true) @PathParam("id") Long id) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
+        checkNotNullEntry(entry);
+        checkCanWrite(user, entry);
+        if (!entry.isDeleteable()) {
+            throw new CustomWebApplicationException("The specified entry is not deleteable.", HttpStatus.SC_BAD_REQUEST);
+        }
+        // TODO if it is/has a check workflow, do anything different?
+        eventDAO.deleteEventByEntryID(entry.getId());
+        // TODO the following should use the proper DAO
+        ((EntryDAO)workflowDAO).delete(entry);
+        LOG.info("Deleted entry " + entry.getId());
+        return entry;
     }
 
     @POST
