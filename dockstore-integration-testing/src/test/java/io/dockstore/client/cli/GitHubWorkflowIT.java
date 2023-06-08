@@ -199,7 +199,6 @@ class GitHubWorkflowIT extends BaseIT {
     /**
      * Tests that the correct error is given when provided an invalid value for sortCol when getting all published workflows
      *
-     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     void testGetPublishedWorkflowsWithInvalidSortCol() {
@@ -219,10 +218,11 @@ class GitHubWorkflowIT extends BaseIT {
             workflowApi.allPublishedWorkflows(null, null, null, "invalid", null, false,
                     WorkflowSubClass.APPTOOL.getValue());
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("Could not get published entries due to invalid arguments."));
+            assertTrue(e.getMessage().contains("Could not get published entries due to an invalid sortCol value. Error is "));
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode(), "There should be a 400 error");
         }
     }
+
     /**
      * Tests that the info for quay images included in CWL workflows are grabbed and that the trs endpoints convert this info correctly
      */

@@ -449,6 +449,24 @@ class SwaggerClientIT extends BaseIT {
         assertTrue(containers.isEmpty());
     }
 
+    /**
+     * Tests that the correct error is given when provided an invalid value for sortCol when getting all published tools
+     *
+     */
+    @Test
+    void testGetPublishedToolsWithInvalidSortCol() {
+        ApiClient client = getWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
+        assertEquals(1, containers.size());
+        try {
+            containersApi.allPublishedContainers(null, null, "test6", "invalid", null);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Could not get published entries due to an invalid sortCol value. Error is "));
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode(), "There should be a 400 error");
+        }
+    }
+
     @Test
     void testHidingTags() throws ApiException {
         ApiClient client = getAdminWebClient();
