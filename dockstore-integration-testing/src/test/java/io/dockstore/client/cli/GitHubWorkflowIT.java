@@ -53,6 +53,8 @@ import io.swagger.model.DescriptorType;
 import jakarta.ws.rs.client.Client;
 import java.util.List;
 import java.util.Optional;
+
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -194,6 +196,33 @@ class GitHubWorkflowIT extends BaseIT {
             WorkflowSubClass.BIOWORKFLOW.getValue()).size(), "Published workflow count should be unchanged");
     }
 
+    /**
+     * Tests that the correct error is given when provided an invalid value for sortCol when getting all published workflows
+     *
+     * @throws ApiException exception used for errors coming back from the web service
+     */
+    @Test
+    void testGetPublishedWorkflowsWithInvalidSortCol() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+
+        AppToolHelper.registerAppTool(webClient);
+        Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions");
+        workflowApi.publish(appTool.getId(), publishRequest);
+
+        assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
+                WorkflowSubClass.APPTOOL.getValue()).size(), "There should be 1 app tool published");
+
+        try {
+            workflowApi.allPublishedWorkflows(null, null, null, "invalid", null, false,
+                    WorkflowSubClass.APPTOOL.getValue());
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Could not get published entries due to invalid arguments."));
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode(), "There should be a 400 error");
+        }
+    }
     /**
      * Tests that the info for quay images included in CWL workflows are grabbed and that the trs endpoints convert this info correctly
      */

@@ -792,20 +792,13 @@ public class DockerRepoResource
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
         @Context HttpServletResponse response) {
-        try {
-            int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
-            List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
-            filterContainersForHiddenTags(tools);
-            stripContent(tools);
-            response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished(Optional.of(filter))));
-            response.addHeader("Access-Control-Expose-Headers", "X-total-count");
-            return tools;
-        } catch (IllegalArgumentException e) {
-            LOG.error("Could not get published tools due to invalid arguments. Error is " + e.getMessage(), e);
-            throw new CustomWebApplicationException("Could not get published tools due to invalid arguments. "
-                    + "Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
-        }
-
+        int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
+        List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
+        filterContainersForHiddenTags(tools);
+        stripContent(tools);
+        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished(Optional.of(filter))));
+        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
+        return tools;
     }
 
     @GET
