@@ -18,7 +18,8 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.common.CommonTestUtilities.PUBLIC_CONFIG_PATH;
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
@@ -58,7 +59,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 class OpenApiIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
+            DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
     protected static jakarta.ws.rs.client.Client client;
 
     @SystemStub
@@ -84,7 +85,7 @@ class OpenApiIT {
     @Disabled("no longer generated in 1.15 with transition to jakarta")
     void testSwagger20() {
         Response response = client.target(baseURL + "swagger.json").request().get();
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        assertEquals(response.getStatus(), HttpStatus.SC_OK);
         // To prevent connection leak?
         response.readEntity(String.class);
     }
@@ -101,15 +102,15 @@ class OpenApiIT {
         headers.add("Origin", origin);
         paths.stream().forEach(path -> {
             Response response = client.target(baseURL + path).request().headers(headers).get();
-            assertThat(response.getHeaders().containsKey("Access-Control-Allow-Credentials")).isFalse();
-            assertThat(response.getHeaders().containsKey("Access-Control-Allow-Origin")).isFalse();
+            assertFalse(response.getHeaders().containsKey("Access-Control-Allow-Credentials"));
+            assertFalse(response.getHeaders().containsKey("Access-Control-Allow-Origin"));
         });
     }
 
     @Test
     void testOpenApi30() {
         Response response = client.target(baseURL + "openapi.yaml").request().get();
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        assertEquals(response.getStatus(), HttpStatus.SC_OK);
         // To prevent connection leak?
         response.readEntity(String.class);
     }
