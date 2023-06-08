@@ -29,4 +29,28 @@
         <dropPrimaryKey tableName="user_entry"/>
         <addPrimaryKey columnNames="userid, entryid" constraintName="user_entry_pkey" tableName="user_entry"/>
     </changeSet>
+    <changeSet id="unique_checker_ids" author="coverbeck">
+        <sql dbms="postgresql">
+            UPDATE tool SET checkerid=NULL where checkerid in (SELECT checkerid from workflow);
+            UPDATE apptool SET checkerid=NULL where checkerid in (SELECT checkerid from workflow);
+            UPDATE notebook SET checkerid=NULL where checkerid in (SELECT checkerid from workflow);
+            UPDATE service SET checkerid=NULL where checkerid in (SELECT checkerid from workflow);
+        </sql>
+        <sql dbms="postgresql">
+            CREATE OR REPLACE FUNCTION check_checker_id_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
+            BEGIN
+                RETURN
+                    NOT EXISTS(
+                        SELECT checkerid from workflow where checkerid = _checkerid
+                    );
+            END
+            $$ LANGUAGE PLPGSQL;
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE apptool ADD CONSTRAINT check_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
+            ALTER TABLE tool ADD CONSTRAINT check_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
+            ALTER TABLE notebook ADD CONSTRAINT check_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
+            ALTER TABLE service ADD CONSTRAINT check_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
+        </sql>
+    </changeSet>
 </databaseChangeLog>
