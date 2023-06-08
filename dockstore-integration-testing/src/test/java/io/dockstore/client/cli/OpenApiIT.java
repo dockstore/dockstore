@@ -85,7 +85,7 @@ class OpenApiIT {
     @Disabled("no longer generated in 1.15 with transition to jakarta")
     void testSwagger20() {
         Response response = client.target(baseURL + "swagger.json").request().get();
-        assertEquals(response.getStatus(), HttpStatus.SC_OK);
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
         // To prevent connection leak?
         response.readEntity(String.class);
     }
@@ -110,7 +110,7 @@ class OpenApiIT {
     @Test
     void testOpenApi30() {
         Response response = client.target(baseURL + "openapi.yaml").request().get();
-        assertEquals(response.getStatus(), HttpStatus.SC_OK);
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
         // To prevent connection leak?
         response.readEntity(String.class);
     }

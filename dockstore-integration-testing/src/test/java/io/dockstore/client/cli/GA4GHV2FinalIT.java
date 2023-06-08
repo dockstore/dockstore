@@ -292,8 +292,8 @@ class GA4GHV2FinalIT extends GA4GHIT {
         MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
         headers.add("Origin", origin);
         Response response = client.target(nginxRewrittenPath).request().headers(headers).get();
-        assertTrue(response.getHeaders().getFirst("Access-Control-Allow-Credentials").equals("true"));
-        assertTrue(response.getHeaders().getFirst("Access-Control-Allow-Origin").equals(origin));
+        assertEquals(response.getHeaders().getFirst("Access-Control-Allow-Credentials"), "true");
+        assertEquals(response.getHeaders().getFirst("Access-Control-Allow-Origin"), origin);
     }
 
     /**
