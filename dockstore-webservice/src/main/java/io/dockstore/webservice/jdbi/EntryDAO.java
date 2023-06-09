@@ -410,8 +410,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                         predicates.add(sortPath.isNotNull());
                     }
                 } catch (IllegalArgumentException e) {
-                    LOG.warn("Could not get published entries due to an invalid sortCol value. Error is ", e);
-                    throw new CustomWebApplicationException("Could not get published entries due to an invalid sortCol value. Error is "
+                    LOG.warn("Could not process query due to the invalid sortCol value. Error is ", e);
+                    throw new CustomWebApplicationException("Could not process query due to the invalid sortCol value. Error is "
                             + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
                 }
             }
