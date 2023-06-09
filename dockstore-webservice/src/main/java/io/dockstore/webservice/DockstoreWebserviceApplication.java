@@ -475,7 +475,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
             filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
             filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
-                    "Authorization, X-Auth-Username, X-Auth-Password, X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
+                    "Accept-Encoding,Authorization,X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
         });
 
 
