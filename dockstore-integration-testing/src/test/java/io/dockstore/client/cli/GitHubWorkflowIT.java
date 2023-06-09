@@ -17,12 +17,7 @@
 package io.dockstore.client.cli;
 
 import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT.TestStatus;
@@ -212,13 +207,10 @@ class GitHubWorkflowIT extends BaseIT {
         assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
                 WorkflowSubClass.APPTOOL.getValue()).size(), "There should be 1 app tool published");
 
-        try {
-            workflowApi.allPublishedWorkflows(null, null, null, "invalid", null, false,
-                    WorkflowSubClass.APPTOOL.getValue());
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("Could not get published entries due to an invalid sortCol value. Error is "));
-            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode(), "There should be a 400 error");
-        }
+        ApiException exception = assertThrows(ApiException.class, () -> workflowApi.allPublishedWorkflows(null, null, null, "invalid", null, false,
+                    WorkflowSubClass.APPTOOL.getValue()));
+        assertTrue(exception.getMessage().contains("Could not get published entries due to an invalid sortCol value. Error is "));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "There should be a 400 error");
     }
 
     /**

@@ -459,12 +459,9 @@ class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
         assertEquals(1, containers.size());
-        try {
-            containersApi.allPublishedContainers(null, null, "test6", "invalid", null);
-        } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("Could not get published entries due to an invalid sortCol value. Error is "));
-            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode(), "There should be a 400 error");
-        }
+        ApiException exception = assertThrows(ApiException.class, () -> containersApi.allPublishedContainers(null, null, "test6", "invalid", null));
+        assertTrue(exception.getMessage().contains("Could not get published entries due to an invalid sortCol value. Error is "));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "There should be a 400 error");
     }
 
     @Test
