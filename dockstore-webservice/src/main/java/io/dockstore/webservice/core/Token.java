@@ -264,11 +264,9 @@ public class Token implements Comparable<Token> {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Token)) {
+        if (!(o instanceof Token that)) {
             return false;
         }
-
-        final Token that = (Token)o;
 
         return Objects.equals(id, that.id) && Objects.equals(tokenSource, that.tokenSource) && Objects.equals(content, that.content);
     }

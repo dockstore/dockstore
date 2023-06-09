@@ -143,10 +143,9 @@ public final class ToolsImplCommon {
             tool.setName(returnName);
             tool.setOrganization(castedContainer.getNamespace());
             inputVersions = castedContainer.getWorkflowVersions();
-        } else if (container instanceof Workflow) {
+        } else if (container instanceof Workflow workflow) {
             isDockstoreTool = false;
             // workflow specific
-            Workflow workflow = (Workflow)container;
 
             // The name is composed of the repository name and then the optional toolname split with a '/'
             String name = workflow.getRepository();

@@ -559,8 +559,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @SuppressWarnings("checkstyle:ParameterNumber")
     private Entry<?, ?> filterOldSchool(Entry<?, ?> entry, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker) {
-        if (entry instanceof Tool) {
-            Tool tool = (Tool) entry;
+        if (entry instanceof Tool tool) {
             if (registry != null && (tool.getRegistry() == null || !tool.getRegistry().contains(registry))) {
                 return null;
             }
@@ -666,8 +665,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             final Optional<ToolVersion> convertedToolVersion = convertedTool.getVersions().stream()
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
             Optional<? extends Version<?>> entryVersion;
-            if (entry instanceof Tool) {
-                Tool toolEntry = (Tool)entry;
+            if (entry instanceof Tool toolEntry) {
                 entryVersion = toolEntry.getWorkflowVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
                     .findFirst();
             } else {
@@ -866,8 +864,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         try {
             versionDAO.enableNameFilter(versionId);
 
-            if (entry instanceof Workflow) {
-                Workflow workflow = (Workflow) entry;
+            if (entry instanceof Workflow workflow) {
                 Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
                 Optional<WorkflowVersion> first = workflowVersions.stream()
                     .filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
@@ -884,8 +881,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 } else {
                     return Response.noContent().build();
                 }
-            } else if (entry instanceof Tool) {
-                Tool tool = (Tool) entry;
+            } else if (entry instanceof Tool tool) {
                 Set<Tag> versions = tool.getWorkflowVersions();
                 Optional<Tag> first = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
                 if (first.isPresent()) {

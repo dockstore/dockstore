@@ -152,9 +152,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     Object objectDoc = map.get("doc");
                     if (objectDoc instanceof String) {
                         doc = (String)objectDoc;
-                    } else if (objectDoc instanceof List) {
+                    } else if (objectDoc instanceof List docList) {
                         // arrays for "doc:" added in CWL 1.1
-                        List docList = (List)objectDoc;
                         doc = String.join(System.getProperty("line.separator"), docList);
                     }
                 }
@@ -885,8 +884,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
         RequirementOrHintState sum = new RequirementOrHintState(existing);
         adds.forEach(add -> {
-            if (add instanceof Map) {
-                Map map = (Map)add;
+            if (add instanceof Map map) {
                 if ("DockerRequirement".equals(map.get("class"))) {
                     Object value = map.get("dockerPull");
                     if (value instanceof String) {
@@ -1337,8 +1335,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             // Expand "run: <file>", leaving it unchanged if the file does not exist
             runValue = cwl.get("run");
-            if (runValue instanceof String) {
-                String runPath = (String)runValue;
+            if (runValue instanceof String runPath) {
                 cwl.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), runPath, version, depth));
             }
         }

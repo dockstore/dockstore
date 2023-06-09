@@ -29,8 +29,7 @@ public class AdminPrivilegesFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext) {
         if (requestContext != null) {
             final Principal principal = requestContext.getSecurityContext().getUserPrincipal();
-            if (principal instanceof User) {
-                final User user = (User)principal;
+            if (principal instanceof User user) {
                 if (user.getIsAdmin() && requestRequiresAdminRole()) {
                     final String logMessage = MessageFormat.format("Admin {0} id {1} making {2} privileged request at {3}",
                             user.getUsername(), Long.toString(user.getId()), requestContext.getMethod(), requestContext.getUriInfo().getPath());
