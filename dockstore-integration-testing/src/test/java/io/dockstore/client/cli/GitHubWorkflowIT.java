@@ -53,7 +53,6 @@ import io.swagger.model.DescriptorType;
 import jakarta.ws.rs.client.Client;
 import java.util.List;
 import java.util.Optional;
-
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -204,7 +203,6 @@ class GitHubWorkflowIT extends BaseIT {
     void testGetPublishedWorkflowsWithInvalidSortCol() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
 
         AppToolHelper.registerAppTool(webClient);
