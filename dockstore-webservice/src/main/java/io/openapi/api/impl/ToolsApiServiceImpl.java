@@ -781,7 +781,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
         List<Checksum> trsChecksums = new ArrayList<>();
         if (sourceFile.getChecksums() != null && !sourceFile.getChecksums().isEmpty()) {
-            sourceFile.getChecksums().stream().forEach(checksum -> {
+            sourceFile.getChecksums().forEach(checksum -> {
                 Checksum trsChecksum = new Checksum();
                 trsChecksum.setType(DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS);
                 trsChecksum.setChecksum(checksum.getChecksum());
@@ -945,7 +945,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         // Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL or NFL)
         final DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
         List<SourceFile> filteredSourceFiles = sourceFiles.stream()
-            .filter(sourceFile -> descriptorLanguage.isRelevantFileType(sourceFile.getType())).collect(Collectors.toList());
+            .filter(sourceFile -> descriptorLanguage.isRelevantFileType(sourceFile.getType())).toList();
 
         final Path path = Paths.get("/" + workingDirectory);
         return filteredSourceFiles.stream().map(file -> {

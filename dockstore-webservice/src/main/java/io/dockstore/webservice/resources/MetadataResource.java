@@ -487,7 +487,7 @@ public class MetadataResource {
         } else {
             List<String> invalidNames = include.stream()
                     .filter(name -> !healthCheckRegistry.getNames().contains(name))
-                    .collect(Collectors.toList());
+                    .toList();
             if (!invalidNames.isEmpty()) {
                 String invalidNamesMessage = invalidNames.stream()
                         .map(name -> String.format("'%s'", name))

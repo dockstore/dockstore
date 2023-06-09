@@ -247,8 +247,7 @@ class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         if (version.isEmpty()) {
             fail("wdl_import version should exist");
         }
-        assertTrue(fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
-            .findFirst().isPresent());
+        assertTrue(fileDAO.findSourceFilesByVersion(version.get().getId()).stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl")));
     }
 
     @Test
