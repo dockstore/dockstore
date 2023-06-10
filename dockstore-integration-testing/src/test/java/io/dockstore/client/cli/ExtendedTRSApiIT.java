@@ -18,8 +18,8 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.client.cli.ExtendedMetricsTRSOpenApiIT.DOCKSTORE_WORKFLOW_CNV_REPO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
@@ -103,17 +103,19 @@ class ExtendedTRSApiIT extends BaseIT {
         DockstoreTool refresh = containersApi.refresh(githubTool.getId());
         containersApi.publish(refresh.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        // Try to  a single checker workflow to two workflows
+        // Try to set a single checker workflow to two entries
         testingPostgres.runUpdateStatement("update workflow set checkerid = '" + checkerWorkflow.getId() + "' where id = '" + workflow.getId() + "'");
-        final int updatedCount = testingPostgres.runUpdateStatement("update tool set checkerid = '" + checkerWorkflow.getId() + "' where id = '"
-                + refresh.getId() + "'");
-        assertEquals(0, updatedCount, "DB constraint should not allow the same checker for two entries");
+        try {
+            testingPostgres.runUpdateStatement("update tool set checkerid = '" + checkerWorkflow.getId() + "' where id = '"
+                    + refresh.getId() + "'");
+            fail("Should have had a constraint violation");
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("violates check constraint \"check_tool_checkerid_globally_unique\""));
+        }
+        testingPostgres.runUpdateStatement("update workflow set checkerid = '" + checkerWorkflow.getId() + "' where id = '" + workflow.getId() + "'");
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow where checkerid = " + checkerWorkflow.getId(), long.class);
         workflowCount += testingPostgres.runSelectStatement("select count(*) from tool where checkerid = " + checkerWorkflow.getId(), long.class);
         assertEquals(1, workflowCount);
-
-        checkerWorkflow = workflowsApi.getWorkflow(checkerWorkflow.getId(), "");
-        assertNotNull(checkerWorkflow.getParentEntry());
 
         ExtendedGa4GhApi api = new ExtendedGa4GhApi(webClient);
         // test json results

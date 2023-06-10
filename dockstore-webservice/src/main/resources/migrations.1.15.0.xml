@@ -47,10 +47,10 @@
             $$ LANGUAGE PLPGSQL;
         </sql>
         <sql dbms="postgresql">
-            ALTER TABLE apptool ADD CONSTRAINT check_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
-            ALTER TABLE tool ADD CONSTRAINT check_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
-            ALTER TABLE notebook ADD CONSTRAINT check_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
-            ALTER TABLE service ADD CONSTRAINT check_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
+            ALTER TABLE apptool ADD CONSTRAINT check_apptool_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
+            ALTER TABLE tool ADD CONSTRAINT check_tool_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
+            ALTER TABLE notebook ADD CONSTRAINT check_notebook_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
+            ALTER TABLE service ADD CONSTRAINT check_service_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
         </sql>
     </changeSet>
 </databaseChangeLog>
