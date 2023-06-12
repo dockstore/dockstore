@@ -460,7 +460,7 @@ class SwaggerClientIT extends BaseIT {
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
         assertEquals(1, containers.size());
         ApiException exception = assertThrows(ApiException.class, () -> containersApi.allPublishedContainers(null, null, "test6", "invalid", null));
-        assertTrue(exception.getMessage().contains("Could not process query due to the invalid sortCol value. Error is "));
+        assertTrue(exception.getMessage().contains("Could not process query due to the invalid sortCol value."));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "There should be a 400 error");
     }
 

@@ -209,7 +209,7 @@ class GitHubWorkflowIT extends BaseIT {
 
         ApiException exception = assertThrows(ApiException.class, () -> workflowApi.allPublishedWorkflows(null, null, null, "invalid", null, false,
                     WorkflowSubClass.APPTOOL.getValue()));
-        assertTrue(exception.getMessage().contains("Could not process query due to the invalid sortCol value. Error is "));
+        assertTrue(exception.getMessage().contains("Could not process query due to the invalid sortCol value."));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "There should be a 400 error");
     }
 
