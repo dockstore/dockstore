@@ -45,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import jakarta.persistence.metamodel.Attribute;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
@@ -403,7 +405,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                 boolean hasSortCol = entry.getModel()
                         .getAttributes()
                         .stream()
-                        .map(attribute -> attribute.getName())
+                        .map(Attribute::getName)
                         .anyMatch(sortCol::equals);
 
                 if (!hasSortCol) {
