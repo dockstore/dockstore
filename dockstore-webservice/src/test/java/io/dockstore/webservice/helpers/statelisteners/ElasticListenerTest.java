@@ -100,11 +100,9 @@ class ElasticListenerTest {
     }
 
     private void initEntry(Entry entry) {
-        if (entry instanceof Tool) {
-            Tool toolEntry = (Tool)entry;
+        if (entry instanceof Tool toolEntry) {
             toolEntry.setDescriptorType(List.of(DescriptorLanguage.WDL.toString()));
-        } else if (entry instanceof Workflow) {
-            Workflow workflowOrAppTool = (Workflow)entry;
+        } else if (entry instanceof Workflow workflowOrAppTool) {
             workflowOrAppTool.setDescriptorType(DescriptorLanguage.WDL);
             workflowOrAppTool.setSourceControl(SourceControl.GITHUB);
             workflowOrAppTool.setOrganization("potato");

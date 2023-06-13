@@ -166,7 +166,7 @@ public final class DockerRegistryAPIHelper {
         } else { // multi-arch image
             // The manifest list is only supported in schema version 2, don't need to check schema version
             DockerManifestList manifestList = GSON.fromJson(manifestJson, DockerManifestList.class);
-            List<DockerPlatformManifest> manifests = Arrays.asList(manifestList.getManifests());
+            DockerPlatformManifest[] manifests = manifestList.getManifests();
 
             for (DockerPlatformManifest manifest : manifests) {
                 String manifestDigest = manifest.getDigest();

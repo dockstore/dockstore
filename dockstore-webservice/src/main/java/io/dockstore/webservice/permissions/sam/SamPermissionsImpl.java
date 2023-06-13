@@ -149,11 +149,11 @@ public class SamPermissionsImpl implements PermissionsInterface {
                     encodedPath);
             final List<AccessPolicyResponseEntry> policiesNewUserBelongsTo = resourcePolicies
                     .stream().filter(entry -> entry.getPolicy().getMemberEmails().contains(permission.getEmail()))
-                    .collect(Collectors.toList());
+                    .toList();
             final String samPolicyName = permissionSamMap.get(permission.getRole());
             ensurePolicyExists(resourcePolicies, samPolicyName, encodedPath, resourcesApi);
             // If the email does not already belong to the policy, add it.
-            if (!policiesNewUserBelongsTo.stream().anyMatch(entry -> entry.getPolicyName().equals(samPolicyName))) {
+            if (policiesNewUserBelongsTo.stream().noneMatch(entry -> entry.getPolicyName().equals(samPolicyName))) {
                 resourcesApi.addUserToPolicy(SamConstants.RESOURCE_TYPE, encodedPath, samPolicyName,
                         permission.getEmail());
             }
@@ -499,7 +499,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
                 LOG.error(MessageFormat.format("Error getting resource policies for {}", resourceId), e);
                 throw new CustomWebApplicationException("Error getting resource policies", e.getCode());
             }
-            if (!entries.stream().noneMatch(entry -> {
+            if (entries.stream().anyMatch(entry -> {
                 if (entry.getPolicyName().equals(SamConstants.OWNER_POLICY)) {
                     return entry.getPolicy().getMemberEmails().size() > 1; // There should be one owner
                 } else {
@@ -622,7 +622,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
     List<Permission> removeDuplicateEmails(List<Permission> permissionList) {
         // A map of email to permissions.
         final Map<String, Permission> map = new HashMap<>();
-        permissionList.stream().forEach(permission -> {
+        permissionList.forEach(permission -> {
             final Permission existing = map.get(permission.getEmail());
             if (existing == null || existing.getRole().ordinal() > permission.getRole().ordinal()) {
                 map.put(permission.getEmail(), permission);

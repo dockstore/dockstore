@@ -1736,9 +1736,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         String workflowName;
 
         // Grab information if tool
-        if (entry instanceof Tool) {
+        if (entry instanceof Tool tool) {
             // Get tool
-            Tool tool = (Tool) entry;
 
             // Generate workflow name
             workflowName = MoreObjects.firstNonNull(tool.getToolname(), "");
@@ -1775,9 +1774,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             // Determine last updated
             lastUpdated = tool.getLastUpdated();
 
-        } else if (entry instanceof Workflow) {
+        } else if (entry instanceof Workflow workflow) {
             // Get workflow
-            Workflow workflow = (Workflow) entry;
 
             // Copy over common attributes
             defaultTestParameterPath = workflow.getDefaultTestParameterFilePath();

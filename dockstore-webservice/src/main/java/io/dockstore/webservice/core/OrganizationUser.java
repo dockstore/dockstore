@@ -177,8 +177,7 @@ public class OrganizationUser implements Serializable {
 
         @Override
         public boolean equals(Object object) {
-            if (object instanceof OrganizationUserId) {
-                OrganizationUserId otherId = (OrganizationUserId) object;
+            if (object instanceof OrganizationUserId otherId) {
                 return (otherId.userId.equals(this.userId)) && (otherId.organizationId.equals(this.organizationId));
             }
             return false;

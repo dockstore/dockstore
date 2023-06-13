@@ -446,7 +446,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private boolean isGitHubRateLimitError(Exception ex) {
-        if (ex instanceof final CustomWebApplicationException customWebAppEx) {
+        if (ex instanceof CustomWebApplicationException customWebAppEx) {
             final String errorMessage = customWebAppEx.getErrorMessage();
             return errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT);
         }
@@ -454,7 +454,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private boolean isServerError(Exception ex) {
-        if (ex instanceof final CustomWebApplicationException customWebAppEx) {
+        if (ex instanceof CustomWebApplicationException customWebAppEx) {
             final int code = customWebAppEx.getResponse().getStatus();
             return code >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
