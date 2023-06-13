@@ -30,27 +30,47 @@
         <addPrimaryKey columnNames="userid, entryid" constraintName="user_entry_pkey" tableName="user_entry"/>
     </changeSet>
     <changeSet id="unique_checker_ids" author="coverbeck">
+        <comment>One tool and one workflow in prod currently share the same checker workflow. The constraints later in this migration will
+            disallow that. Null out any duplicate checkers so the constraints can be created. When there are duplicates, prefer the
+            workflow table, then the apptool table, for the table that "keeps" the checker.
+        </comment>
         <sql dbms="postgresql">
-            UPDATE tool SET checkerid=NULL where checkerid in (SELECT checkerid from workflow);
-            UPDATE apptool SET checkerid=NULL where checkerid in (SELECT checkerid from workflow);
-            UPDATE notebook SET checkerid=NULL where checkerid in (SELECT checkerid from workflow);
-            UPDATE service SET checkerid=NULL where checkerid in (SELECT checkerid from workflow);
+            UPDATE tool SET checkerid=NULL where checkerid in (SELECT checkerid FROM workflow UNION SELECT checkerid FROM apptool);
+            UPDATE apptool SET checkerid=NULL where checkerid in (SELECT checkerid FROM workflow UNION SELECT checkerid FROM tool);
         </sql>
         <sql dbms="postgresql">
-            CREATE OR REPLACE FUNCTION check_checker_id_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
+            CREATE OR REPLACE FUNCTION check_apptool_checkerid_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
             BEGIN
                 RETURN
                     NOT EXISTS(
-                        SELECT checkerid from workflow where checkerid = _checkerid
+                        SELECT checkerid FROM workflow WHERE checkerid = _checkerid
+                        UNION SELECT checkerid FROM tool WHERE checkerid = _checkerid
                     );
+            END
+            $$ LANGUAGE PLPGSQL;
+            CREATE OR REPLACE FUNCTION check_tool_checker_id_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
+            BEGIN
+            RETURN
+                NOT EXISTS(
+                    SELECT checkerid FROM workflow WHERE checkerid = _checkerid
+                    UNION SELECT checkerid FROM apptool WHERE checkerid = _checkerid
+                );
+            END
+            $$ LANGUAGE PLPGSQL;
+            CREATE OR REPLACE FUNCTION check_workflow_checker_id_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
+            BEGIN
+            RETURN
+                NOT EXISTS(
+                    SELECT checkerid FROM apptool WHERE checkerid = _checkerid
+                    UNION SELECT checkerid FROM tool WHERE checkerid = _checkerid
+                );
             END
             $$ LANGUAGE PLPGSQL;
         </sql>
         <sql dbms="postgresql">
-            ALTER TABLE apptool ADD CONSTRAINT check_apptool_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
-            ALTER TABLE tool ADD CONSTRAINT check_tool_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
-            ALTER TABLE notebook ADD CONSTRAINT check_notebook_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
-            ALTER TABLE service ADD CONSTRAINT check_service_checkerid_globally_unique CHECK(check_checker_id_is_unique(checkerid));
+            ALTER TABLE apptool ADD CONSTRAINT check_apptool_checkerid_globally_unique CHECK(check_apptool_checkerid_is_unique(checkerid));
+            ALTER TABLE tool ADD CONSTRAINT check_tool_checkerid_globally_unique CHECK(check_tool_checker_id_is_unique(checkerid));
+            ALTER TABLE workflow ADD CONSTRAINT check_workflow_checkerid_globally_unique CHECK(check_workflow_checker_id_is_unique(checkerid));
         </sql>
     </changeSet>
 </databaseChangeLog>

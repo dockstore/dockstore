@@ -586,6 +586,7 @@ commands:
       - run:
           name: run integration test
           command: |  # Runs normally if it is not being run in parallel
+            # Caching migrations is causing PR to fail, see https://github.com/dockstore/dockstore/issues/5548
             # export DOCKSTORE_CACHE_MIGRATIONS=true
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
