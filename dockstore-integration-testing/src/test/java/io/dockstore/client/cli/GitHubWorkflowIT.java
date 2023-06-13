@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli;
 
+import static io.dockstore.webservice.jdbi.EntryDAO.INVALID_SORTCOL_MESSAGE;
 import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -215,7 +216,7 @@ class GitHubWorkflowIT extends BaseIT {
 
         ApiException exception = assertThrows(ApiException.class, () -> workflowApi.allPublishedWorkflows(null, null, null, "invalid", null, false,
                     WorkflowSubClass.APPTOOL.getValue()));
-        assertTrue(exception.getMessage().contains("Could not process query due to the invalid sortCol value."));
+        assertTrue(exception.getMessage().contains(INVALID_SORTCOL_MESSAGE));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "There should be a 400 error");
     }
 

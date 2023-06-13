@@ -18,6 +18,7 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.webservice.TokenResourceIT.GITHUB_ACCOUNT_USERNAME;
+import static io.dockstore.webservice.jdbi.EntryDAO.INVALID_SORTCOL_MESSAGE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -460,7 +461,7 @@ class SwaggerClientIT extends BaseIT {
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
         assertEquals(1, containers.size());
         ApiException exception = assertThrows(ApiException.class, () -> containersApi.allPublishedContainers(null, null, "test6", "invalid", null));
-        assertTrue(exception.getMessage().contains("Could not process query due to the invalid sortCol value."));
+        assertTrue(exception.getMessage().contains(INVALID_SORTCOL_MESSAGE));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "There should be a 400 error");
     }
 

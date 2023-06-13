@@ -71,6 +71,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     private Class<T> typeOfT;
 
+    public static final String INVALID_SORTCOL_MESSAGE="Could not process query due to the invalid sortCol value.";
+
     EntryDAO(SessionFactory factory) {
         super(factory);
         /*
@@ -409,19 +411,18 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                         .anyMatch(sortCol::equals);
 
                 if (!hasSortCol) {
-                    LOG.warn("Could not process query due to the invalid sortCol value.");
-                    throw new CustomWebApplicationException("Could not process query due to the invalid sortCol value.",
+                    LOG.error(INVALID_SORTCOL_MESSAGE);
+                    throw new CustomWebApplicationException(INVALID_SORTCOL_MESSAGE,
                             HttpStatus.SC_BAD_REQUEST);
 
                 } else {
                     Path<Object> sortPath = entry.get(sortCol);
                     if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
                         query.orderBy(cb.desc(sortPath), cb.desc(entry.get("id")));
-                        predicates.add(sortPath.isNotNull());
                     } else {
                         query.orderBy(cb.asc(sortPath), cb.desc(entry.get("id")));
-                        predicates.add(sortPath.isNotNull());
                     }
+                    predicates.add(sortPath.isNotNull());
                 }
             }
         }
