@@ -71,7 +71,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     private Class<T> typeOfT;
 
-    public static final String INVALID_SORTCOL_MESSAGE="Could not process query due to the invalid sortCol value.";
+    public static final String INVALID_SORTCOL_MESSAGE = "Could not process query due to the invalid sortCol value.";
 
     EntryDAO(SessionFactory factory) {
         super(factory);
