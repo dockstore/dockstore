@@ -473,7 +473,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         CORS_ENDPOINTS.stream().forEach(urlContext -> {
             FilterHolder filterHolder = environment.getApplicationContext().addFilter(CrossOriginFilter.class, urlContext, EnumSet.of(REQUEST));
 
-            filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
+            filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, "GET,HEAD,POST,DELETE,PUT,OPTIONS,PATCH");
             filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
             filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
             filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
