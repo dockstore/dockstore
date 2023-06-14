@@ -18,6 +18,7 @@ package io.dockstore.client.cli;
 import static io.dockstore.common.FixtureUtility.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -33,6 +34,7 @@ import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import java.util.Arrays;
 import java.util.List;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
@@ -181,6 +183,23 @@ class GA4GHV2BetaIT extends GA4GHIT {
         Response response = client.target(nginxRewrittenPath).request().headers(headers).get();
         assertEquals("true", response.getHeaders().getFirst("Access-Control-Allow-Credentials"));
         assertEquals(origin, response.getHeaders().getFirst("Access-Control-Allow-Origin"));
+    }
+
+    /*
+    Checks to make sure the CORS header is not applied to the extended endpoints
+     */
+
+    @Test
+    void testV2BetaExtendedNoCorsHeader() {
+        final String origin = "http://mysite.org";
+        final List<String> paths = Arrays.asList("extended/organizations", "extended/tools/index");
+        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.add("Origin", origin);
+        paths.stream().forEach(path -> {
+            Response response = client.target(baseURL + path).request().headers(headers).get();
+            assertFalse(response.getHeaders().containsKey("Access-Control-Allow-Credentials"));
+            assertFalse(response.getHeaders().containsKey("Access-Control-Allow-Origin"));
+        });
     }
 
     @Test
