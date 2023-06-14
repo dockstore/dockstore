@@ -307,7 +307,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
 
     @Column(nullable = false)
-    private boolean everPublic;
+    private boolean wasEverPublic;
 
     public enum TopicSelection {
         AUTOMATIC, MANUAL
@@ -484,7 +484,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public void setIsPublished(boolean isPublished) {
         this.isPublished = isPublished;
         if (isPublished) {
-            setEverPublic(true);
+            setWasEverPublic(true);
         }
     }
 
@@ -819,16 +819,16 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonIgnore
-    public boolean getEverPublic() {
-        return everPublic;
+    public boolean getWasEverPublic() {
+        return wasEverPublic;
     }
 
-    public void setEverPublic(boolean everPublic) {
-        this.everPublic = everPublic;
+    public void setWasEverPublic(boolean wasEverPublic) {
+        this.wasEverPublic = wasEverPublic;
     }
 
     @JsonProperty
     public boolean isDeletable() {
-        return !getEverPublic() && !getIsPublished();
+        return !getWasEverPublic();
     }
 }

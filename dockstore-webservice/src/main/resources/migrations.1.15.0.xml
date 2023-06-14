@@ -29,31 +29,38 @@
         <dropPrimaryKey tableName="user_entry"/>
         <addPrimaryKey columnNames="userid, entryid" constraintName="user_entry_pkey" tableName="user_entry"/>
     </changeSet>
-    <changeSet author="svonworl" id="add_everpublic">
+    <changeSet author="svonworl" id="add_waseverpublic">
         <addColumn tableName="workflow">
-            <column name="everpublic" type="boolean" value="true">
-                <constraints nullable="false"/>
-            </column>
-        </addColumn>
-        <addColumn tableName="notebook">
-            <column name="everpublic" type="boolean" value="true">
+            <column name="waseverpublic" type="boolean" value="true">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="tool">
-            <column name="everpublic" type="boolean" value="true">
+            <column name="waseverpublic" type="boolean" value="true">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="apptool">
-            <column name="everpublic" type="boolean" value="true">
+            <column name="waseverpublic" type="boolean" value="true">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="service">
-            <column name="everpublic" type="boolean" value="true">
+            <column name="waseverpublic" type="boolean" value="true">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addColumn tableName="notebook">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql dbms="postgresql">
+            ALTER TABLE workflow ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE tool ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE apptool ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE service ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE notebook ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+        </sql>
     </changeSet>
 </databaseChangeLog>
