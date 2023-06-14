@@ -807,25 +807,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to get a service or workflow") @DefaultValue("false") @QueryParam("services") boolean services,
         @ApiParam(value = "Which workflow subclass to retrieve. If present takes precedence over services parameter") @QueryParam("subclass") WorkflowSubClass subclass,
         @Context HttpServletResponse response) {
-        try {
-            // delete the next line if GUI pagination is not working by 1.5.0 release
-            int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
-            final Class<Workflow> workflowClass = (Class<Workflow>) workflowSubClass(services, subclass);
-            List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder,
-                    workflowClass);
-            filterContainersForHiddenTags(workflows);
-            stripContent(workflows);
-            EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
-            response.addHeader("X-total-count", String.valueOf(entryDAO.countAllPublished(Optional.of(filter), workflowClass)));
-            response.addHeader("Access-Control-Expose-Headers", "X-total-count");
-            return workflows;
-        } catch (IllegalArgumentException e) {
-            LOG.error("Could not get published workflows due to invalid arguments. Error is " + e.getMessage(), e);
-            throw new CustomWebApplicationException("Could not get published workflows due to invalid arguments. "
-                    + "Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-
-
+        int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
+        final Class<Workflow> workflowClass = (Class<Workflow>) workflowSubClass(services, subclass);
+        List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder,
+                workflowClass);
+        filterContainersForHiddenTags(workflows);
+        stripContent(workflows);
+        EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
+        response.addHeader("X-total-count", String.valueOf(entryDAO.countAllPublished(Optional.of(filter), workflowClass)));
+        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
+        return workflows;
     }
 
     @GET

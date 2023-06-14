@@ -18,6 +18,7 @@ package io.dockstore.webservice.jdbi;
 
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionEntry;
@@ -44,7 +45,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import jakarta.persistence.metamodel.Attribute;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -66,6 +70,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     final int entryNameIndex = 3;
 
     private Class<T> typeOfT;
+
+    public static final String INVALID_SORTCOL_MESSAGE = "Could not process query due to the invalid sortCol value.";
 
     EntryDAO(SessionFactory factory) {
         super(factory);
@@ -398,12 +404,24 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                     query.orderBy(cb.asc(cb.size(entry.<Collection>get("starredUsers"))), cb.desc(entry.get("id")));
                 }
             } else {
-                Path<Object> sortPath = entry.get(sortCol);
-                if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
-                    query.orderBy(cb.desc(sortPath), cb.desc(entry.get("id")));
-                    predicates.add(sortPath.isNotNull());
+                boolean hasSortCol = entry.getModel()
+                        .getAttributes()
+                        .stream()
+                        .map(Attribute::getName)
+                        .anyMatch(sortCol::equals);
+
+                if (!hasSortCol) {
+                    LOG.error(INVALID_SORTCOL_MESSAGE);
+                    throw new CustomWebApplicationException(INVALID_SORTCOL_MESSAGE,
+                            HttpStatus.SC_BAD_REQUEST);
+
                 } else {
-                    query.orderBy(cb.asc(sortPath), cb.desc(entry.get("id")));
+                    Path<Object> sortPath = entry.get(sortCol);
+                    if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
+                        query.orderBy(cb.desc(sortPath), cb.desc(entry.get("id")));
+                    } else {
+                        query.orderBy(cb.asc(sortPath), cb.desc(entry.get("id")));
+                    }
                     predicates.add(sortPath.isNotNull());
                 }
             }
