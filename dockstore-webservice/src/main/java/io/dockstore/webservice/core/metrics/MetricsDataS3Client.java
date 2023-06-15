@@ -17,6 +17,7 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import io.dockstore.common.metrics.MetricsData;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.helpers.S3ClientHelper;

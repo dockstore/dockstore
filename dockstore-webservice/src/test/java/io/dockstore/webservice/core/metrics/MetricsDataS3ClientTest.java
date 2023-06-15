@@ -19,6 +19,7 @@ package io.dockstore.webservice.core.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import io.dockstore.common.metrics.MetricsData;
 import io.dockstore.webservice.helpers.S3ClientHelper;
 import org.junit.jupiter.api.Test;
 

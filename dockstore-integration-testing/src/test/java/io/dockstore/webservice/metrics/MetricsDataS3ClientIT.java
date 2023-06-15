@@ -42,7 +42,7 @@ import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Partner;
-import io.dockstore.webservice.core.metrics.MetricsData;
+import io.dockstore.common.metrics.MetricsData;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;

@@ -74,7 +74,7 @@ import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
-import io.dockstore.webservice.core.metrics.MetricsData;
+import io.dockstore.common.metrics.MetricsData;
 import io.dockstore.webservice.core.metrics.MetricsDataMetadata;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
 import java.io.IOException;
