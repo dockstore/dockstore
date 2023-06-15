@@ -21,6 +21,7 @@ import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_REGISTRY_RESPON
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
+import io.dockstore.common.S3ClientHelper;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -37,7 +38,6 @@ import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.MetricsDataS3Client;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
-import io.dockstore.webservice.helpers.S3ClientHelper;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;

@@ -20,6 +20,7 @@ package io.dockstore.webservice.helpers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.dockstore.common.S3ClientHelper;
 import java.io.UnsupportedEncodingException;
 import org.junit.jupiter.api.Test;
 
