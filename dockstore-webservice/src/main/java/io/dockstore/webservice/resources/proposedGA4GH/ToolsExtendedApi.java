@@ -17,8 +17,8 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
+import io.dockstore.common.Partner;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.core.Partner;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.Metrics;

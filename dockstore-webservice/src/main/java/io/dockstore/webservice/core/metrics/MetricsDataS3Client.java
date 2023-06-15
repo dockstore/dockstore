@@ -17,10 +17,10 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import io.dockstore.common.Partner;
 import io.dockstore.common.S3ClientHelper;
 import io.dockstore.common.metrics.MetricsData;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Partner;
 import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URISyntaxException;
