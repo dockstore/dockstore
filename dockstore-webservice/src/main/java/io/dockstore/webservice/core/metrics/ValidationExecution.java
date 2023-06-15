@@ -22,18 +22,12 @@ import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
-import java.util.Date;
-import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This is an object to encapsulate an execution that validates a workflow in an entity. Does not need to be stored in the database.
  */
 @Schema(name = "ValidationExecution", description = "Metrics of a workflow validated on a platform", allOf = Execution.class)
 public class ValidationExecution extends Execution {
-    private static final Logger LOG = LoggerFactory.getLogger(ValidationExecution.class);
 
     @NotNull
     @JsonProperty(required = true)
@@ -105,20 +99,6 @@ public class ValidationExecution extends Execution {
 
     public void setDateExecuted(String dateExecuted) {
         this.dateExecuted = dateExecuted;
-    }
-
-    /**
-     * Check that the execution time is in ISO-8601 format by parsing it into a Duration.
-     * @param executionDate ISO 8601 execution date
-     * @return Date parsed from the ISO 8601 execution date
-     */
-    public static Optional<Date> checkExecutionDateISO8601Format(String executionDate) {
-        try {
-            return Optional.of(Date.from(Instant.parse(executionDate)));
-        } catch (Exception e) {
-            LOG.warn("Execution date {} is not in ISO 8601 date format and could not be parsed to a Date", executionDate, e);
-            return Optional.empty();
-        }
     }
 
     /**
