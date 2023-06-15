@@ -1,9 +1,6 @@
 package io.dockstore.webservice.helpers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import java.util.Map;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
@@ -15,19 +12,24 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.DepositMetadata;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class ZenodoHelperTest {
 
     @Test
     void testBasicFunctionality() {
         ApiClient zenodoClient = new ApiClient();
-        String zenodoUrlApi = "https://sandbox.zenodo.org" + "/api";
+        String zenodoUrlApi = "https://sandbox.zenodo.org/api";
         zenodoClient.setBasePath(zenodoUrlApi);
         PreviewApi previewApi = new PreviewApi(zenodoClient);
         final Map map = (Map) previewApi.listLicenses();
-        // this is just a basic sanity check, the licenses api is one of the apis that does not require an access token, but it returns what looks like an elasticsearch object where the types don't match teh documentation
+        // this is just a basic sanity check, the licenses api is one of the apis that does not require an access token, but it returns what
+        // looks like an elasticsearch object, this does not match the documentation. Ironically, we have this too for search. 
         assertTrue(map.size() > 0);
     }
 
