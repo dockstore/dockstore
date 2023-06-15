@@ -1,6 +1,9 @@
 package io.dockstore.webservice.helpers;
 
-import java.util.Map;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
@@ -12,12 +15,8 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.DepositMetadata;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 class ZenodoHelperTest {
 
