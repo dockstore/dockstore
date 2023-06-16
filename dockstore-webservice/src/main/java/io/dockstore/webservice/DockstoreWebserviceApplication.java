@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
 import com.google.common.base.Joiner;
@@ -205,6 +206,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
      * use this to detect whether we're running on CircleCI. Definitely not kosher, use sparingly and only as required.
      */
     public static final String CIRCLE_SHA_1 = "CIRCLE_SHA1";
+    public static final String EMAIL_FILTER = "emailFilter";
+    public static final String SLIM_COLLECTION_FILTER = "slimCollectionFilter";
+    public static final String SLIM_ORGANIZATION_FILTER = "slimOrganizationFilter";
+    public static final String SLIM_WORKFLOW_FILTER = "slimWorkflowFilter";
+    public static final String SLIM_VERSION_FILTER = "slimVersionFilter";
+
+    public static final String SLIM_USER_FILTER = "slimUserFilter";
+
 
     private static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
@@ -337,7 +346,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));
 
         // try to set a filter
-        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter("emailFilter", new EmailPropertyFilter()));
+        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(EMAIL_FILTER, new EmailPropertyFilter())
+            .addFilter(SLIM_ORGANIZATION_FILTER, SimpleBeanPropertyFilter.serializeAllExcept("users", "collections"))
+            .addFilter(SLIM_USER_FILTER, SimpleBeanPropertyFilter.serializeAllExcept("organizations", "entries", "starredEntries"))
+            .addFilter(SLIM_WORKFLOW_FILTER, SimpleBeanPropertyFilter.serializeAllExcept("workflowVersions"))
+            .addFilter(SLIM_COLLECTION_FILTER, SimpleBeanPropertyFilter.serializeAllExcept("entries"))
+            .addFilter(SLIM_VERSION_FILTER, SimpleBeanPropertyFilter.serializeAllExcept("sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images", "versionEditor"))
+        );
     }
 
     public static File getFilePluginLocation(DockstoreWebserviceConfiguration configuration) {

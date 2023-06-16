@@ -1,6 +1,10 @@
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_COLLECTION_FILTER;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_VERSION_FILTER;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_WORKFLOW_FILTER;
+
+import com.fasterxml.jackson.annotation.JsonFilter;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -66,31 +70,31 @@ public class Event {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "toolId", referencedColumnName = "id")
     @ApiModelProperty(value = "Tool that the event is acting on.", position = 3)
-    @JsonIgnoreProperties({ "workflowVersions" })
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
     private Tool tool;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workflowId", referencedColumnName = "id")
     @ApiModelProperty(value = "Workflow that the event is acting on.", position = 4)
-    @JsonIgnoreProperties({ "workflowVersions" })
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
     private BioWorkflow workflow;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "apptoolId", referencedColumnName = "id")
     @ApiModelProperty(value = "(github) apps tool that the event is acting on.", position = 9)
-    @JsonIgnoreProperties({ "workflowVersions" })
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
     private AppTool apptool;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notebookId", referencedColumnName = "id")
     @ApiModelProperty(value = "Notebook that the event is acting on.", position = 10)
-    @JsonIgnoreProperties({ "workflowVersions" })
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
     private Notebook notebook;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collectionId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "Collection that the event is acting on.", position = 5)
-    @JsonIgnoreProperties({ "entries" })
+    @JsonFilter(SLIM_COLLECTION_FILTER)
     private Collection collection;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -101,7 +105,7 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "versionId", referencedColumnName = "id")
     @ApiModelProperty(value = "Version associated with the event.", position = 8)
-    @JsonIgnoreProperties({"sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images", "versionEditor"})
+    @JsonFilter(SLIM_VERSION_FILTER)
     private Version version;
 
     @Column

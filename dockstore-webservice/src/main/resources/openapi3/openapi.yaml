@@ -7922,6 +7922,10 @@ components:
           maxLength: 50
           minLength: 3
           pattern: "[\\w ,_\\-&()']*"
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionEntry'
         id:
           type: integer
           format: int64
@@ -9292,6 +9296,11 @@ components:
           - HIDDEN
         topic:
           type: string
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationUser'
+          uniqueItems: true
     OrganizationUpdateTime:
       type: object
       properties:
