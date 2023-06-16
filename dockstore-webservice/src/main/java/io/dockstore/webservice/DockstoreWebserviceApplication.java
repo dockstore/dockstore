@@ -161,6 +161,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -190,6 +191,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String GA4GH_API_PATH_V2_BETA = "/api/ga4gh/v2";
     public static final String GA4GH_API_PATH_V2_FINAL = "/ga4gh/trs/v2";
     public static final String GA4GH_API_PATH_V1 = "/api/ga4gh/v1";
+    private static final List<String> CORS_ENDPOINTS = Arrays.asList(
+            GA4GH_API_PATH_V2_BETA + "/metadata/*",
+            GA4GH_API_PATH_V2_BETA + "/tools/*",
+            GA4GH_API_PATH_V2_BETA + "/toolClasses/*",
+            GA4GH_API_PATH_V2_FINAL + "/*",
+            GA4GH_API_PATH_V1 + "/*");
     public static final String DOCKSTORE_WEB_CACHE = "/tmp/dockstore-web-cache";
     public static final String DOCKSTORE_WEB_CACHE_MISS_LOG_FILE = "/tmp/dockstore-web-cache.misses.log";
     public static final File CACHE_MISS_LOG_FILE = new File(DOCKSTORE_WEB_CACHE_MISS_LOG_FILE);
@@ -463,13 +470,17 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // optional CORS support
         // Enable CORS headers
         // final FilterRegistration.Dynamic cors = environment.servlets().addFilter("CORS", CrossOriginFilter.class);
-        final FilterHolder filterHolder = environment.getApplicationContext().addFilter(CrossOriginFilter.class, "/*", EnumSet.of(REQUEST));
+        final String methods = "GET,HEAD,POST,DELETE,PUT,OPTIONS,PATCH";
+        CORS_ENDPOINTS.stream().forEach(urlContext -> {
+            FilterHolder filterHolder = environment.getApplicationContext().addFilter(CrossOriginFilter.class, urlContext, EnumSet.of(REQUEST));
 
-        filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
-        filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
-        filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
-        filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
-                "Authorization, X-Auth-Username, X-Auth-Password, X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
+            filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, methods);
+            filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
+            filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, methods);
+            filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
+                    "Accept-Encoding,Authorization,X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
+        });
+
 
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
