@@ -41,6 +41,10 @@
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.github.zafarkhaja</groupId>
             <artifactId>java-semver</artifactId>
         </dependency>
@@ -318,7 +322,10 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>auth</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sdk-core</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.mockito</groupId>
