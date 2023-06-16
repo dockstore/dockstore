@@ -110,7 +110,8 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
     @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
     @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
-    @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL")
+    @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL"),
+    @NamedQuery(name = "Entry.findDistinctGitHubRepos", query = "SELECT DISTINCT e.gitUrl from Entry e")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -305,6 +306,28 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Schema(description = "ORCID authors for the entry, retrieved from the default version")
     @Transient
     private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
+
+    @JsonIgnore
+    @Column(nullable = true, columnDefinition = "varchar(32)")
+    @Schema(description = "The visibility of the Git repo")
+    @Enumerated(EnumType.STRING)
+    private GitVisibility gitVisibility;
+
+
+    public enum GitVisibility {
+        /**
+         * A private repo
+         */
+        PRIVATE,
+        /**
+         * A public repo
+         */
+        PUBLIC,
+        /**
+         * Unable to determine visibility
+         */
+        UNKNOWN
+    }
 
     public enum TopicSelection {
         AUTOMATIC, MANUAL
@@ -810,5 +833,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setOrcidAuthors(Set<OrcidAuthor> orcidAuthors) {
         this.orcidAuthors = orcidAuthors;
+    }
+
+    public GitVisibility getGitVisibility() {
+        return gitVisibility;
+    }
+
+    public void setGitVisibility(final GitVisibility gitVisibility) {
+        this.gitVisibility = gitVisibility;
     }
 }

@@ -221,4 +221,20 @@ class WebhookIT extends BaseIT {
         assertTrue(foobar.getWorkflowVersions().stream().allMatch(v -> "/README2.md".equals(v.getReadMePath()) && v.getDescription().contains("an 'X' in it")));
         assertTrue(foobar2.getWorkflowVersions().stream().allMatch(v -> "/docs/README.md".equals(v.getReadMePath()) && v.getDescription().contains("a '🙃' in it")));
     }
+
+    @Test
+    void testGitVisibility() {
+        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowClient = new WorkflowsApi(webClient);
+
+        workflowClient.handleGitHubRelease("refs/tags/0.7", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This creates 2 workflows
+        assertEquals(2, getPublicVisibilityCount(), "Two workflows created should both have PUBLIC github visiblity");
+        workflowClient.handleGitHubRelease("refs/tags/0.5", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This creates 2 workflows
+        assertEquals(2, getPublicVisibilityCount(), "Updated workflows should still both have PUBLIC github visiblity");
+    }
+
+    private Long getPublicVisibilityCount() {
+        return testingPostgres.runSelectStatement(
+            "select count(*) from workflow where gitvisibility = 'PUBLIC'", long.class);
+    }
 }

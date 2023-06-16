@@ -374,6 +374,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return this.currentSession().createNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic", Entry.class).list();
     }
 
+    public List<String> findAllGitUrls() {
+        return this.currentSession().createNamedQuery("Entry.findDistinctGitHubRepos").list();
+    }
+
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
         List<Predicate> predicates = new ArrayList<>();
         if (!Strings.isNullOrEmpty(filter)) {

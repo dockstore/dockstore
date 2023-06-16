@@ -90,4 +90,22 @@
         </addColumn>
         <addForeignKeyConstraint baseColumnNames="serviceid" baseTableName="event" constraintName="fkServiceId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="service"/>
     </changeSet>
+
+    <changeSet id="gitVisibility" author="coverbeck">
+        <addColumn tableName="tool">
+            <column name="gitvisibility" type="varchar(32 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="gitvisibility" type="varchar(32 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="apptool">
+            <column name="gitvisibility" type="varchar(32 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="gitvisibility" type="varchar(32 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column name="gitvisibility" type="varchar(32 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
