@@ -15,4 +15,8 @@
  *
  */
 
+/**
+ * This package contains classes related to creating or retrieving Metrics objects in S3 that are used by the metrics aggregator in the dockstore-support repository.
+ * Add to this package if the metrics aggregator in dockstore-support uses it. Otherwise, add it to the io.dockstore.webservice.core.metrics package.
+ */
 package io.dockstore.common.metrics;
