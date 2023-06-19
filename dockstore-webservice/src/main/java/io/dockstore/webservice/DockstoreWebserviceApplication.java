@@ -27,7 +27,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
 import com.google.common.base.Joiner;
@@ -65,6 +64,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.VersionMetadata;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -347,11 +347,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // try to set a filter
         objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(EMAIL_FILTER, new EmailPropertyFilter())
-            .addFilter(SLIM_ORGANIZATION_FILTER, SimpleBeanPropertyFilter.serializeAllExcept("users", "collections"))
-            .addFilter(SLIM_USER_FILTER, SimpleBeanPropertyFilter.serializeAllExcept("organizations", "entries", "starredEntries"))
-            .addFilter(SLIM_WORKFLOW_FILTER, SimpleBeanPropertyFilter.serializeAllExcept("workflowVersions"))
-            .addFilter(SLIM_COLLECTION_FILTER, SimpleBeanPropertyFilter.serializeAllExcept("entries"))
-            .addFilter(SLIM_VERSION_FILTER, SimpleBeanPropertyFilter.serializeAllExcept("sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images", "versionEditor"))
+            .addFilter(SLIM_ORGANIZATION_FILTER, Organization.SLIM_FILTER)
+            .addFilter(SLIM_USER_FILTER, User.SLIM_FILTER)
+            .addFilter(SLIM_WORKFLOW_FILTER, Workflow.SLIM_FILTER)
+            .addFilter(SLIM_COLLECTION_FILTER, Collection.SLIM_FILTER)
+            .addFilter(SLIM_VERSION_FILTER, Version.SLIM_FILTER)
         );
     }
 
