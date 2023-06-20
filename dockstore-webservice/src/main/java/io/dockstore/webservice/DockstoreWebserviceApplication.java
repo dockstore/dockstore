@@ -178,7 +178,6 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
@@ -533,22 +532,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             } else {
                 LOG.info("Elasticsearch indices already exist");
             }
-        });
-
-        environment.lifecycle().addServerLifecycleListener(event -> {
-            final Session session = hibernate.getSessionFactory().openSession();
-            ManagedSessionContext.bind(session);
-            final Transaction transaction = session.beginTransaction();
-            try {
-                final List<String> gitUrls = workflowDAO.findAllGitUrls();
-                System.out.println("gitUrls = " + gitUrls);
-            } catch (Exception ex) {
-                LOG.error("Could not");
-            } finally {
-                transaction.commit();
-                ManagedSessionContext.unbind(hibernate.getSessionFactory());
-            }
-
         });
     }
 

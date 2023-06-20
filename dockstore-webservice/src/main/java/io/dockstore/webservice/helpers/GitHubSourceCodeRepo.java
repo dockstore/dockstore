@@ -204,7 +204,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRepository repository = github.getRepository(repositoryId);
             return repository.isPrivate() ? GitVisibility.PRIVATE : GitVisibility.PUBLIC;
         } catch (IOException e) {
-            LOG.error(String.format("Could not determine GitHub visibility: %s", repositoryId, e));
+            LOG.error(String.format("Could not determine GitHub visibility for %s", repositoryId), e);
             return GitVisibility.UNKNOWN;
         }
     }
