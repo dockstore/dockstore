@@ -64,6 +64,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.VersionMetadata;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -205,6 +206,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
      * use this to detect whether we're running on CircleCI. Definitely not kosher, use sparingly and only as required.
      */
     public static final String CIRCLE_SHA_1 = "CIRCLE_SHA1";
+    public static final String EMAIL_FILTER = "emailFilter";
+    public static final String SLIM_COLLECTION_FILTER = "slimCollectionFilter";
+    public static final String SLIM_ORGANIZATION_FILTER = "slimOrganizationFilter";
+    public static final String SLIM_WORKFLOW_FILTER = "slimWorkflowFilter";
+    public static final String SLIM_VERSION_FILTER = "slimVersionFilter";
+
+    public static final String SLIM_USER_FILTER = "slimUserFilter";
+
 
     private static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
@@ -337,7 +346,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));
 
         // try to set a filter
-        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter("emailFilter", new EmailPropertyFilter()));
+        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(EMAIL_FILTER, new EmailPropertyFilter())
+            .addFilter(SLIM_ORGANIZATION_FILTER, Organization.SLIM_FILTER)
+            .addFilter(SLIM_USER_FILTER, User.SLIM_FILTER)
+            .addFilter(SLIM_WORKFLOW_FILTER, Workflow.SLIM_FILTER)
+            .addFilter(SLIM_COLLECTION_FILTER, Collection.SLIM_FILTER)
+            .addFilter(SLIM_VERSION_FILTER, Version.SLIM_FILTER)
+        );
     }
 
     public static File getFilePluginLocation(DockstoreWebserviceConfiguration configuration) {

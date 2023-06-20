@@ -3,6 +3,7 @@ package io.dockstore.webservice.core;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -74,6 +75,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Collection implements Serializable, Aliasable {
+
+    public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("entries");
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "collection_id_seq")
     @SequenceGenerator(name = "collection_id_seq", sequenceName = "collection_id_seq", allocationSize = 1)

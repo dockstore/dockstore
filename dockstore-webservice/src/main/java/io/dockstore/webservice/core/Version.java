@@ -18,6 +18,7 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -101,6 +102,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
     public static final String CANNOT_FREEZE_VERSIONS_WITH_NO_FILES = "cannot freeze versions with no files";
+    public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images",
+        "versionEditor");
     private static final Gson GSON = new Gson();
 
     /**

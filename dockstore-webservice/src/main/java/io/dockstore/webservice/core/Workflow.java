@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
@@ -98,6 +99,7 @@ import org.hibernate.annotations.Filter;
     @JsonSubTypes.Type(value = Notebook.class, name = "Notebook")})
 public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
+    public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("workflowVersions");
     static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
 
     @Column(nullable = false, columnDefinition = "Text default 'STUB'")

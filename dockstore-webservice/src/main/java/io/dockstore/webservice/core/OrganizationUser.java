@@ -1,6 +1,9 @@
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_ORGANIZATION_FILTER;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_USER_FILTER;
+
+import com.fasterxml.jackson.annotation.JsonFilter;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
@@ -28,12 +31,12 @@ public class OrganizationUser implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "userId", insertable = false, updatable = false)
-    @JsonIgnoreProperties({ "organizations", "entries", "starredEntries" })
+    @JsonFilter(SLIM_USER_FILTER)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizationId", insertable = false, updatable = false)
-    @JsonIgnoreProperties({ "users", "collections" })
+    @JsonFilter(SLIM_ORGANIZATION_FILTER)
     private Organization organization;
 
     public enum Role {
