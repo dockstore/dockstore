@@ -199,6 +199,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    /**
+     *  Indicates if a GitHub repository is public or private; returns <code>GitVisiblity.UNKNOWN</code>
+     *  if unable to determine the visibility. It could fail to determine the visibility due
+     *  to permissions issues or due to the repo not existing.
+     * @param repositoryId
+     * @return
+     */
     public GitVisibility getGitVisibility(String repositoryId) {
         try {
             GHRepository repository = github.getRepository(repositoryId);
