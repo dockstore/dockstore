@@ -73,4 +73,15 @@
             ALTER TABLE workflow ADD CONSTRAINT check_workflow_checkerid_globally_unique CHECK(check_workflow_checker_id_is_unique(checkerid));
         </sql>
     </changeSet>
+    <changeSet author="dyuen (generated)" id="drop_old_accepted_column">
+        <sql dbms="postgresql">
+            DROP TRIGGER insert_organization_user_sync_status_trigger ON organization_user;
+            DROP FUNCTION insert_organization_user_sync_status_func;
+        </sql>
+        <sql dbms="postgresql">
+            DROP TRIGGER update_organization_user_sync_status_trigger ON organization_user;
+            DROP FUNCTION update_organization_user_sync_status_func;
+        </sql>
+        <dropColumn columnName="accepted" tableName="organization_user"/>
+    </changeSet>
 </databaseChangeLog>
