@@ -74,8 +74,14 @@
         </sql>
     </changeSet>
     <changeSet author="dyuen (generated)" id="drop_old_accepted_column">
-        <sql>DROP TRIGGER insert_organization_user_sync_status_trigger ON organization_user;</sql>
-        <sql>DROP TRIGGER update_organization_user_sync_status_trigger ON organization_user;</sql>
+        <sql dbms="postgresql">
+            DROP TRIGGER insert_organization_user_sync_status_trigger ON organization_user;
+            DROP FUNCTION insert_organization_user_sync_status_func;
+        </sql>
+        <sql dbms="postgresql">
+            DROP TRIGGER update_organization_user_sync_status_trigger ON organization_user;
+            DROP FUNCTION update_organization_user_sync_status_func;
+        </sql>
         <dropColumn columnName="accepted" tableName="organization_user"/>
     </changeSet>
 </databaseChangeLog>
