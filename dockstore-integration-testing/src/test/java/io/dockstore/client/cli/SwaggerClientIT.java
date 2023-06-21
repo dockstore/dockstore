@@ -18,6 +18,7 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.webservice.TokenResourceIT.GITHUB_ACCOUNT_USERNAME;
+import static io.dockstore.webservice.jdbi.EntryDAO.INVALID_SORTCOL_MESSAGE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -66,6 +67,7 @@ import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,7 +80,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.ws.rs.core.UriBuilder;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -449,6 +450,21 @@ class SwaggerClientIT extends BaseIT {
         assertTrue(containers.isEmpty());
     }
 
+    /**
+     * Tests that the correct error is given when provided an invalid value for sortCol when getting all published tools
+     *
+     */
+    @Test
+    void testGetPublishedToolsWithInvalidSortCol() {
+        ApiClient client = getWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
+        assertEquals(1, containers.size());
+        ApiException exception = assertThrows(ApiException.class, () -> containersApi.allPublishedContainers(null, null, "test6", "invalid", null));
+        assertTrue(exception.getMessage().contains(INVALID_SORTCOL_MESSAGE));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "There should be a 400 error");
+    }
+
     @Test
     void testHidingTags() throws ApiException {
         ApiClient client = getAdminWebClient();
@@ -612,6 +628,23 @@ class SwaggerClientIT extends BaseIT {
         assertEquals(1, starredUsers.size());
         starredUsers.forEach(user -> assertNull(user.getUserProfiles(), "User profile is not lazy loaded in starred users"));
         assertThrows(ApiException.class,  () ->  workflowsApi.starEntry(workflowId, STAR_REQUEST));
+    }
+
+    /**
+     * This tests if a proper response is returned on a "miss"
+     *
+     * @throws ApiException
+     */
+    @Test
+    void testNotFoundWorkflow() throws ApiException {
+        ApiClient client = getWebClient();
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        try {
+            workflowsApi.getPublishedWorkflow(47L, null);
+            fail("Should've got an error getting an unknown workflow");
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode(), "Should've gotten a status message");
+        }
     }
 
     /**

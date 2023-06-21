@@ -12,10 +12,25 @@ import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.swagger.zenodo.client.ApiClient;
+import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.DepositMetadata;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class ZenodoHelperTest {
+
+    @Test
+    void testBasicFunctionality() {
+        ApiClient zenodoClient = new ApiClient();
+        String zenodoUrlApi = "https://sandbox.zenodo.org/api";
+        zenodoClient.setBasePath(zenodoUrlApi);
+        PreviewApi previewApi = new PreviewApi(zenodoClient);
+        final Map map = (Map) previewApi.listLicenses();
+        // this is just a basic sanity check, the licenses api is one of the apis that does not require an access token, but it returns what
+        // looks like an elasticsearch object, this does not match the documentation. Ironically, we have this too for search. 
+        assertTrue(map.size() > 0);
+    }
 
     @Test
     void testcreateWorkflowTrsUrl() {

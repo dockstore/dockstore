@@ -52,9 +52,12 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
+import jakarta.ws.rs.client.Client;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.client.Client;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -128,6 +131,54 @@ class ServiceIT extends BaseIT {
 
         assertTrue(byId != null && byId1 == null);
         session.close();
+    }
+
+    @Test
+    void checkServiceInCollection() {
+
+        final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientAdminUser);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
+
+        io.dockstore.openapi.client.model.Organization organization = new io.dockstore.openapi.client.model.Organization();
+        organization.setName("serviceOrg");
+        organization.setDisplayName("serviceOrg");
+        organization.setEmail("test@email.com");
+        organization.setDescription("service service service");
+        organization.setTopic("This is a short topic");
+        io.dockstore.openapi.client.model.Organization collectionOrg =  organizationsApi.createOrganization(organization);
+
+        //approve organizations
+        collectionOrg = organizationsApi.approveOrganization(collectionOrg.getId());
+
+        //create collection
+        io.dockstore.openapi.client.model.Collection collection = new io.dockstore.openapi.client.model.Collection();
+        collection.setName("Collection");
+        collection.setDisplayName("Collection");
+        collection.setDescription("A collection of notebooks");
+        collection = organizationsApi.createCollection(collection, collectionOrg.getId());
+
+        CreateContent createContent = new CreateContent().invoke(false);
+        long serviceID = createContent.getServiceID();
+
+        //add service to collection
+        Set<String> expectedCollectionNames = new HashSet<>();
+        expectedCollectionNames.add("Collection");
+        organizationsApi.addEntryToCollection(collectionOrg.getId(), collection.getId(), serviceID, null);
+        List<io.dockstore.openapi.client.model.CollectionOrganization> entryCollection = entriesApi.entryCollections(serviceID);
+        assertEquals(expectedCollectionNames,  entryCollection.stream().map(io.dockstore.openapi.client.model.CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
+        assertEquals(1, entryCollection.stream().map(io.dockstore.openapi.client.model.CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(0, organizationsApi.getCollectionByName(collectionOrg.getName(), collection.getName()).getWorkflowsLength());
+        assertEquals(1, organizationsApi.getCollectionByName(collectionOrg.getName(), collection.getName()).getServicesLength());
+
+        //remove service from collection
+        organizationsApi.deleteEntryFromCollection(collectionOrg.getId(), collection.getId(), serviceID, null);
+        expectedCollectionNames.remove("Collection");
+        entryCollection = entriesApi.entryCollections(serviceID);
+        assertEquals(expectedCollectionNames,  entryCollection.stream().map(io.dockstore.openapi.client.model.CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
+        assertEquals(0, entryCollection.stream().map(io.dockstore.openapi.client.model.CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(0, organizationsApi.getCollectionByName(collectionOrg.getName(), collection.getName()).getWorkflowsLength());
+        assertEquals(0, organizationsApi.getCollectionByName(collectionOrg.getName(), collection.getName()).getServicesLength());
     }
 
     @Test

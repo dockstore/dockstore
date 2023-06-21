@@ -17,7 +17,7 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory.getToolsExtendedApi;
-import static javax.servlet.DispatcherType.REQUEST;
+import static jakarta.servlet.DispatcherType.REQUEST;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
@@ -28,9 +28,8 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
 import com.google.common.base.Joiner;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import io.dockstore.common.LanguagePluginManager;
 import io.dockstore.language.CompleteLanguageInterface;
@@ -65,6 +64,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.VersionMetadata;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -130,21 +130,21 @@ import io.dockstore.webservice.resources.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
-import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.client.HttpClientBuilder;
+import io.dropwizard.core.Application;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.forms.MultiPartBundle;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.migrations.MigrationsBundle;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.MetadataApi;
 import io.swagger.api.MetadataApiV1;
@@ -152,31 +152,29 @@ import io.swagger.api.ToolClassesApi;
 import io.swagger.api.ToolClassesApiV1;
 import io.swagger.api.ToolsApi;
 import io.swagger.api.ToolsApiV1;
-import io.swagger.jaxrs.config.BeanConfig;
-import io.swagger.jaxrs.listing.ApiListingResource;
-import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.v3.jaxrs2.SwaggerSerializers;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import javax.ws.rs.core.Response;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
-import org.eclipse.jetty.util.component.LifeCycle;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.hibernate.Session;
@@ -194,6 +192,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String GA4GH_API_PATH_V2_BETA = "/api/ga4gh/v2";
     public static final String GA4GH_API_PATH_V2_FINAL = "/ga4gh/trs/v2";
     public static final String GA4GH_API_PATH_V1 = "/api/ga4gh/v1";
+    private static final List<String> CORS_ENDPOINTS = Arrays.asList(
+            GA4GH_API_PATH_V2_BETA + "/metadata/*",
+            GA4GH_API_PATH_V2_BETA + "/tools/*",
+            GA4GH_API_PATH_V2_BETA + "/toolClasses/*",
+            GA4GH_API_PATH_V2_FINAL + "/*",
+            GA4GH_API_PATH_V1 + "/*");
     public static final String DOCKSTORE_WEB_CACHE = "/tmp/dockstore-web-cache";
     public static final String DOCKSTORE_WEB_CACHE_MISS_LOG_FILE = "/tmp/dockstore-web-cache.misses.log";
     public static final File CACHE_MISS_LOG_FILE = new File(DOCKSTORE_WEB_CACHE_MISS_LOG_FILE);
@@ -202,6 +206,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
      * use this to detect whether we're running on CircleCI. Definitely not kosher, use sparingly and only as required.
      */
     public static final String CIRCLE_SHA_1 = "CIRCLE_SHA1";
+    public static final String EMAIL_FILTER = "emailFilter";
+    public static final String SLIM_COLLECTION_FILTER = "slimCollectionFilter";
+    public static final String SLIM_ORGANIZATION_FILTER = "slimOrganizationFilter";
+    public static final String SLIM_WORKFLOW_FILTER = "slimWorkflowFilter";
+    public static final String SLIM_VERSION_FILTER = "slimVersionFilter";
+
+    public static final String SLIM_USER_FILTER = "slimUserFilter";
+
 
     private static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
@@ -324,7 +336,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private static void configureMapper(ObjectMapper objectMapper) {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        objectMapper.registerModule(new Hibernate5Module());
+        objectMapper.registerModule(new Hibernate5JakartaModule());
         objectMapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
         objectMapper.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
         // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
@@ -334,7 +346,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));
 
         // try to set a filter
-        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter("emailFilter", new EmailPropertyFilter()));
+        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(EMAIL_FILTER, new EmailPropertyFilter())
+            .addFilter(SLIM_ORGANIZATION_FILTER, Organization.SLIM_FILTER)
+            .addFilter(SLIM_USER_FILTER, User.SLIM_FILTER)
+            .addFilter(SLIM_WORKFLOW_FILTER, Workflow.SLIM_FILTER)
+            .addFilter(SLIM_COLLECTION_FILTER, Collection.SLIM_FILTER)
+            .addFilter(SLIM_VERSION_FILTER, Version.SLIM_FILTER)
+        );
     }
 
     public static File getFilePluginLocation(DockstoreWebserviceConfiguration configuration) {
@@ -348,13 +366,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     @Override
     @SuppressWarnings("checkstyle:MethodLength")
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
-        BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setSchemes(new String[] { configuration.getExternalConfig().getScheme() });
-        String portFragment = configuration.getExternalConfig().getPort() == null ? "" : ":" + configuration.getExternalConfig().getPort();
-        beanConfig.setHost(configuration.getExternalConfig().getHostname() + portFragment);
-        beanConfig.setBasePath(MoreObjects.firstNonNull(configuration.getExternalConfig().getBasePath(), "/"));
-        beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api,io.openapi.api");
-        beanConfig.setScan(true);
 
         restrictSourceFiles(configuration);
 
@@ -399,7 +410,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
         environment.jersey().register(new ConstraintExceptionMapper());
-
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
@@ -475,54 +485,52 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // optional CORS support
         // Enable CORS headers
         // final FilterRegistration.Dynamic cors = environment.servlets().addFilter("CORS", CrossOriginFilter.class);
-        final FilterHolder filterHolder = environment.getApplicationContext().addFilter(CrossOriginFilter.class, "/*", EnumSet.of(REQUEST));
+        final String methods = "GET,HEAD,POST,DELETE,PUT,OPTIONS,PATCH";
+        CORS_ENDPOINTS.stream().forEach(urlContext -> {
+            FilterHolder filterHolder = environment.getApplicationContext().addFilter(CrossOriginFilter.class, urlContext, EnumSet.of(REQUEST));
 
-        filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
-        filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
-        filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
-        filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
-                "Authorization, X-Auth-Username, X-Auth-Password, X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
+            filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, methods);
+            filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
+            filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, methods);
+            filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
+                    "Accept-Encoding,Authorization,X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
+        });
+
 
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());
 
-        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-            // Register connection pool health check after server starts so the environment has dropwizard metrics
-            @Override
-            public void lifeCycleStarted(LifeCycle event) {
-                final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
-                environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
-                metadataResource.setHealthCheckRegistry(environment.healthChecks());
-            }
+        // Register connection pool health check after server starts so the environment has dropwizard metrics
+        environment.lifecycle().addServerLifecycleListener(server -> {
+            final ConnectionPoolHealthCheck connectionPoolHealthCheck = new ConnectionPoolHealthCheck(configuration.getDataSourceFactory().getMaxSize(), environment.metrics().getGauges());
+            environment.healthChecks().register("connectionPool", connectionPoolHealthCheck);
+            metadataResource.setHealthCheckRegistry(environment.healthChecks());
         });
 
-        environment.lifecycle().addLifeCycleListener(new LifeCycle.Listener() {
-            // Indexes Elasticsearch if mappings don't exist when the application is started
-            @Override
-            public void lifeCycleStarted(LifeCycle event) {
-                if (!ElasticSearchHelper.doMappingsExist()) {
-                    // A lock is used to prevent concurrent indexing requests in a deployment where multiple webservices start at the same time
-                    if (ElasticSearchHelper.acquireLock()) {
-                        try {
-                            LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
-                            Session session = hibernate.getSessionFactory().openSession();
-                            ManagedSessionContext.bind(session);
-                            Response response = getToolsExtendedApi().toolsIndexGet(null);
-                            session.close();
-                            if (response.getStatus() == HttpStatus.SC_OK) {
-                                LOG.info("Indexed Elasticsearch");
-                            } else {
-                                LOG.error("Error indexing Elasticsearch with status code {}", response.getStatus());
-                            }
-                        } catch (Exception e) {
-                            LOG.error("Could not index Elasticsearch", e);
-                        } finally {
-                            ElasticSearchHelper.releaseLock();
+        // Indexes Elasticsearch if mappings don't exist when the application is started
+        environment.lifecycle().addServerLifecycleListener(event -> {
+            if (!ElasticSearchHelper.doMappingsExist()) {
+                // A lock is used to prevent concurrent indexing requests in a deployment where multiple webservices start at the same time
+                if (ElasticSearchHelper.acquireLock()) {
+                    try {
+                        LOG.info("Elasticsearch indices don't exist. Indexing Elasticsearch...");
+                        Session session = hibernate.getSessionFactory().openSession();
+                        ManagedSessionContext.bind(session);
+                        Response response = getToolsExtendedApi().toolsIndexGet(null);
+                        session.close();
+                        if (response.getStatus() == HttpStatus.SC_OK) {
+                            LOG.info("Indexed Elasticsearch");
+                        } else {
+                            LOG.error("Error indexing Elasticsearch with status code {}", response.getStatus());
                         }
+                    } catch (Exception e) {
+                        LOG.error("Could not index Elasticsearch", e);
+                    } finally {
+                        ElasticSearchHelper.releaseLock();
                     }
-                } else {
-                    LOG.info("Elasticsearch indices already exist");
                 }
+            } else {
+                LOG.info("Elasticsearch indices already exist");
             }
         });
     }
@@ -554,7 +562,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new UsernameRenameRequiredFilter());
 
         // Swagger providers
-        environment.jersey().register(ApiListingResource.class);
         environment.jersey().register(SwaggerSerializers.class);
     }
 

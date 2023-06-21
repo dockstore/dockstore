@@ -15,7 +15,7 @@
  */
 package io.dockstore.client.cli;
 
-import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static io.dockstore.common.FixtureUtility.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.TestUtility;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolDockerfile;
@@ -30,9 +31,11 @@ import io.swagger.client.model.ToolTestsV1;
 import io.swagger.client.model.ToolV1;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.model.ToolDescriptor;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
@@ -225,6 +228,21 @@ class GA4GHV1IT extends GA4GHIT {
         // note: v1 really does expect only one item
         ToolDockerfile responseObject = response.readEntity(ToolDockerfile.class);
         assertTrue(!responseObject.getDockerfile().isEmpty() && !responseObject.getUrl().isEmpty());
+    }
+
+    /*
+    Checks the GA4GHv1 endpoints to make sure the CORS header is present
+     */
+
+    @Test
+    void testV1CorsHeader() {
+        final String origin = "http://mysite.org";
+        String nginxRewrittenPath = TestUtility.mimicNginxRewrite(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/dockerfile", basePath);
+        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.add("Origin", origin);
+        Response response = client.target(nginxRewrittenPath).request().headers(headers).get();
+        assertEquals("true", response.getHeaders().getFirst("Access-Control-Allow-Credentials"));
+        assertEquals(origin, response.getHeaders().getFirst("Access-Control-Allow-Origin"));
     }
 
     @Override

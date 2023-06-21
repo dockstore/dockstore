@@ -87,7 +87,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
-import io.swagger.jaxrs.PATCH;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -97,6 +96,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -113,22 +127,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.annotation.security.RolesAllowed;
-import javax.validation.constraints.NotBlank;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -430,7 +430,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
 
     // We don't delete the LambdaEvent because it is useful for other users
     private void deleteSelfFromLambdaEvents(User user) {
-        lambdaEventDAO.findByUser(user).stream().forEach(lambdaEvent -> lambdaEvent.setUser(null));
+        lambdaEventDAO.findByUser(user).forEach(lambdaEvent -> lambdaEvent.setUser(null));
     }
 
     @PUT
@@ -820,6 +820,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (type == null || type == EntrySearchType.SERVICES) {
             entriesLite.addAll(serviceDAO.findEntryVersions(userId));
         }
+        if (type == null || type == EntrySearchType.NOTEBOOKS) {
+            entriesLite.addAll(notebookDAO.findEntryVersions(userId));
+        }
 
         //cleanup fields for UI: filter(if applicable), sort, and limit by count(if applicable)
         List<EntryUpdateTime> filteredEntries = entriesLite
@@ -1068,7 +1071,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         user.setHostedEntryCountLimit(limits.getHostedEntryCountLimit());
         user.setHostedEntryVersionsLimit(limits.getHostedEntryVersionLimit());
         // User could be cached by Dockstore or Google token -- invalidate all
-        tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+        tokenDAO.findByUserId(user.getId()).forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
         return limits;
     }
 
@@ -1108,13 +1111,12 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             throw new CustomWebApplicationException("The user id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
         }
         // Ignore hosted workflows
-        List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
-                Collectors.toList());
+        List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).toList();
 
         List<Token> scTokens = getAndRefreshBitbucketTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
-                .collect(Collectors.toList());
+                .toList();
 
         scTokens.forEach(token -> {
             final SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);

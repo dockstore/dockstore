@@ -54,7 +54,7 @@ class GA4GHV2CwltoolIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,
             ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
-    protected static javax.ws.rs.client.Client client;
+    protected static jakarta.ws.rs.client.Client client;
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();

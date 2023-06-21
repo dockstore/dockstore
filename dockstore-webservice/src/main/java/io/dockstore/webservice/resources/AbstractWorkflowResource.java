@@ -78,8 +78,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -446,7 +446,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private boolean isGitHubRateLimitError(Exception ex) {
-        if (ex instanceof final CustomWebApplicationException customWebAppEx) {
+        if (ex instanceof CustomWebApplicationException customWebAppEx) {
             final String errorMessage = customWebAppEx.getErrorMessage();
             return errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT);
         }
@@ -454,7 +454,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private boolean isServerError(Exception ex) {
-        if (ex instanceof final CustomWebApplicationException customWebAppEx) {
+        if (ex instanceof CustomWebApplicationException customWebAppEx) {
             final int code = customWebAppEx.getResponse().getStatus();
             return code >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }

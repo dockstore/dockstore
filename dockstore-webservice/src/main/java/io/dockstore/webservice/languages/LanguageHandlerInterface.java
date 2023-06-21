@@ -66,6 +66,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -185,7 +186,7 @@ public interface LanguageHandlerInterface {
         Map<String, String> validationMessageObject = new HashMap<>();
         for (SourceFile sourcefile : sourcefiles) {
             if (Objects.equals(sourcefile.getType(), fileType)) {
-                Yaml yaml = new Yaml(new SafeConstructor());
+                Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
                 try {
                     yaml.load(sourcefile.getContent());
                 } catch (YAMLException e) {
@@ -396,7 +397,7 @@ public interface LanguageHandlerInterface {
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
             StringBuilder errorMessage = new StringBuilder(String.format(
-                    "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.",
+                    "Snapshot for version %s failed because not all images are specified using a digest nor a valid tag.",
                     versionName));
 
             if (parameterImages.size() > 1) {

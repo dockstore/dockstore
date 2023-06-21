@@ -861,6 +861,12 @@ public class OrganizationIT extends BaseIT {
         // Approve request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
 
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+        // lockdown that organizations are aware of users in openapi yaml (see https://github.com/dockstore/dockstore/issues/4422 )
+        // note that it is still empty, presumably since they're lazily loaded
+        final io.dockstore.openapi.client.model.Organization organizationById = organizationsApi.getOrganizationById(orgId);
+        assertNull(organizationById.getUsers());
+
         // Should still exist in the users membership list
         memberships = usersOtherUser.getUserMemberships();
         assertEquals(1, memberships.size(), "Should have one membership, has " + memberships.size());
@@ -1467,7 +1473,7 @@ public class OrganizationIT extends BaseIT {
         final UsersApi usersApi = new UsersApi(webClientUser2);
         final List<Organization> starredOrganizations = usersApi.getStarredOrganizations();
         assertEquals(1, starredOrganizations.size());
-        final long starredOrgNumberOfCollections = starredOrganizations.get(0).getCollectionsLength().longValue();
+        final long starredOrgNumberOfCollections = starredOrganizations.get(0).getCollectionsLength();
         assertEquals(1, starredOrgNumberOfCollections);
     }
 
@@ -2346,6 +2352,10 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
         assertEquals(1, entriesApi.entryCollections(entryId).size());
 
+        // lockdown that collections have entries in openapi yaml (see https://github.com/dockstore/dockstore/issues/4422 )
+        final io.dockstore.openapi.client.model.Collection collectionById = organizationsApi.getCollectionById(organizationId, collectionId);
+        assertTrue(collectionById.getEntries().size() > 0);
+
         // Test various combos of nonexistent IDs
         testDeleteCollectionFail(organizationsApi, NONEXISTENT_ID, NONEXISTENT_ID, HttpStatus.SC_NOT_FOUND);
         assertTrue(existsCollection(organizationId, collectionId));
@@ -2547,95 +2557,6 @@ public class OrganizationIT extends BaseIT {
 
         assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED, organization.getStatus());
         assertEquals("testname", organization.getName());
-    }
-
-    /**
-     * Tests the database trigger that syncs the organization_user status and accepted columns.
-     * This test should be removed when the organization_user accepted DB column and trigger are removed.
-     */
-    @Test
-    void testSyncOrganizationUserStatusAndAcceptedColumns() {
-        final io.dockstore.openapi.client.ApiClient webClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiUser2 = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser2);
-        io.dockstore.openapi.client.api.UsersApi usersApiUser2 = new io.dockstore.openapi.client.api.UsersApi(webClientUser2);
-
-        // Setup other user
-        final io.dockstore.openapi.client.ApiClient webClientOtherUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiOtherUser = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOtherUser);
-        io.dockstore.openapi.client.api.UsersApi usersApiOtherUser = new io.dockstore.openapi.client.api.UsersApi(webClientOtherUser);
-        io.dockstore.openapi.client.model.User otherUser = usersApiOtherUser.getUser();
-
-        // Create organization
-        io.dockstore.openapi.client.model.Organization organization = createOpenAPIOrg(organizationsApiUser2);
-        long orgId = organization.getId();
-        long otherUserId = otherUser.getId();
-
-        // Check that the user who created the organization has the status and accepted columns synced
-        assertSyncMembershipStatusAndAccepted(usersApiUser2, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
-
-        // Add an organization user with accepted=false provided, but no status. This mimics a pre-1.14.0 webservice inviting a user to an organization
-        testingPostgres.runUpdateStatement(String.format("delete from organization_user where organizationid = %s and userid = %s", orgId, otherUserId));
-        testingPostgres.runUpdateStatement(String.format("insert into organization_user (organizationid, userid, accepted, role) values (%s, %s, false, 'MEMBER')", orgId, otherUserId));
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
-        // Update accepted to true
-        testingPostgres.runUpdateStatement(String.format("update organization_user set accepted = true where organizationid = %s and userid = %s", orgId, otherUserId));
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
-
-        // Add an organization user with accepted=true provided, but no status. This mimics a pre-1.14.0 webservice inviting a user to an organization
-        testingPostgres.runUpdateStatement(String.format("delete from organization_user where organizationid = %s and userid = %s", orgId, otherUserId));
-        testingPostgres.runUpdateStatement(String.format("insert into organization_user (organizationid, userid, accepted, role) values (%s, %s, true, 'MEMBER')", orgId, otherUserId));
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
-        // Update accepted to false
-        testingPostgres.runUpdateStatement(String.format("update organization_user set accepted = false where organizationid = %s and userid = %s", orgId, otherUserId));
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
-
-        // Add an organization user with status='PENDING' provided, but no accepted
-        testingPostgres.runUpdateStatement(String.format("delete from organization_user where organizationid = %s and userid = %s", orgId, otherUserId));
-        testingPostgres.runUpdateStatement(String.format("insert into organization_user (organizationid, userid, status, role) values (%s, %s, 'PENDING', 'MEMBER')", orgId, otherUserId));
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
-        // Update status to 'ACCEPTED'
-        testingPostgres.runUpdateStatement(String.format("update organization_user set status = 'ACCEPTED' where organizationid = %s and userid = %s", orgId, otherUserId));
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
-
-        // Add an organization user with status='ACCEPTED' provided, but no accepted
-        testingPostgres.runUpdateStatement(String.format("delete from organization_user where organizationid = %s and userid = %s", orgId, otherUserId));
-        testingPostgres.runUpdateStatement(String.format("insert into organization_user (organizationid, userid, status, role) values (%s, %s, 'ACCEPTED', 'MEMBER')", orgId, otherUserId));
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
-        // Update status to 'REJECTED'
-        testingPostgres.runUpdateStatement(String.format("update organization_user set status = 'REJECTED' where organizationid = %s and userid = %s", orgId, otherUserId));
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.REJECTED, false);
-        // Update status to 'PENDING'
-        testingPostgres.runUpdateStatement(String.format("update organization_user set status = 'PENDING' where organizationid = %s and userid = %s", orgId, otherUserId));
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
-
-        // Delete organization user and invite them using the API
-        testingPostgres.runUpdateStatement(String.format("delete from organization_user where organizationid = %s and userid = %s", orgId, otherUserId));
-        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), otherUserId, orgId, "");
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
-        // Organization user rejects the invitation
-        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, false);
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.REJECTED, false);
-        // Re-invite organization user
-        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), otherUserId, orgId, "");
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.PENDING, false);
-        // Organization user accepts the invitation
-        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
-        assertSyncMembershipStatusAndAccepted(usersApiOtherUser, orgId, io.dockstore.openapi.client.model.OrganizationUser.StatusEnum.ACCEPTED, true);
-    }
-
-    /**
-     * Asserts that the status and accepted columns are synced correctly
-     * @param usersApi UsersApi with the credentials of the user that we're checking organization membership for
-     * @param orgId Organization ID of the organization that the user belongs to
-     * @param expectedStatus The modified status
-     */
-    private void assertSyncMembershipStatusAndAccepted(io.dockstore.openapi.client.api.UsersApi usersApi, long orgId,
-            io.dockstore.openapi.client.model.OrganizationUser.StatusEnum expectedStatus, boolean expectedAccepted) {
-        Optional<io.dockstore.openapi.client.model.OrganizationUser> organizationUser = usersApi.getUserMemberships().stream().filter(orgUser -> orgUser.getOrganization().getId() == orgId).findFirst();
-        assertTrue(organizationUser.isPresent());
-        assertEquals(expectedStatus, organizationUser.get().getStatus());
-        final boolean accepted = testingPostgres.runSelectStatement(String.format("select accepted from organization_user where organizationid = %s and userid = %s", orgId, usersApi.getUser().getId()), boolean.class);
-        assertEquals(expectedAccepted, accepted);
     }
 
     /**

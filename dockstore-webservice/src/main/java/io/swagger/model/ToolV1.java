@@ -15,7 +15,7 @@
  */
 package io.swagger.model;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import java.lang.reflect.InvocationTargetException;
@@ -27,10 +27,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+@jakarta.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class ToolV1 {
-    private static final Logger LOG = LoggerFactory.getLogger(ToolVersionV1.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ToolV1.class);
 
     private String url = null;
 
@@ -48,7 +48,7 @@ public class ToolV1 {
 
     private String metaVersion = null;
 
-    private List<String> contains = new ArrayList<String>();
+    private List<String> contains = new ArrayList<>();
 
     private Boolean verified = null;
 
@@ -56,15 +56,15 @@ public class ToolV1 {
 
     private Boolean signed = null;
 
-    private List<ToolVersionV1> versions = new ArrayList<ToolVersionV1>();
+    private List<ToolVersionV1> versions;
 
 
     public ToolV1(Tool tool) {
         try {
             BeanUtils.copyProperties(this, tool);
             // looks like BeanUtils has issues due to https://issues.apache.org/jira/browse/BEANUTILS-321 and https://github.com/swagger-api/swagger-codegen/issues/7764
-            this.verified = tool.isVerified().booleanValue();
-            this.signed = tool.isSigned().booleanValue();
+            this.verified = tool.isVerified();
+            this.signed = tool.isSigned();
 
             // convert versions now
             versions = new ArrayList<>();
@@ -110,24 +110,22 @@ public class ToolV1 {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("class ToolV1 {\n");
 
-        sb.append("    url: ").append(toIndentedString(url)).append("\n");
-        sb.append("    id: ").append(toIndentedString(id)).append("\n");
-        sb.append("    organization: ").append(toIndentedString(organization)).append("\n");
-        sb.append("    toolname: ").append(toIndentedString(toolname)).append("\n");
-        sb.append("    toolclass: ").append(toIndentedString(toolclass)).append("\n");
-        sb.append("    description: ").append(toIndentedString(description)).append("\n");
-        sb.append("    author: ").append(toIndentedString(author)).append("\n");
-        sb.append("    metaVersion: ").append(toIndentedString(metaVersion)).append("\n");
-        sb.append("    contains: ").append(toIndentedString(contains)).append("\n");
-        sb.append("    verified: ").append(toIndentedString(verified)).append("\n");
-        sb.append("    verifiedSource: ").append(toIndentedString(verifiedSource)).append("\n");
-        sb.append("    signed: ").append(toIndentedString(signed)).append("\n");
-        sb.append("    versions: ").append(toIndentedString(versions)).append("\n");
-        sb.append("}");
-        return sb.toString();
+        return "class ToolV1 {\n"
+            + "    url: " + toIndentedString(url) + "\n"
+            + "    id: " + toIndentedString(id) + "\n"
+            + "    organization: " + toIndentedString(organization) + "\n"
+            + "    toolname: " + toIndentedString(toolname) + "\n"
+            + "    toolclass: " + toIndentedString(toolclass) + "\n"
+            + "    description: " + toIndentedString(description) + "\n"
+            + "    author: " + toIndentedString(author) + "\n"
+            + "    metaVersion: " + toIndentedString(metaVersion) + "\n"
+            + "    contains: " + toIndentedString(contains) + "\n"
+            + "    verified: " + toIndentedString(verified) + "\n"
+            + "    verifiedSource: " + toIndentedString(verifiedSource) + "\n"
+            + "    signed: " + toIndentedString(signed) + "\n"
+            + "    versions: " + toIndentedString(versions) + "\n"
+            + "}";
     }
 
     /**

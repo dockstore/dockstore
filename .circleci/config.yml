@@ -104,6 +104,7 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: regression-integration-tests
+      DOCKSTORE_DOCKER_DB: true
     steps:
       - setup_machine
       - setup_test
@@ -163,6 +164,7 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: language-parsing-tests
+      DOCKSTORE_DOCKER_DB: true
     steps:
       - setup_machine
       - install-pip-machine
@@ -199,6 +201,7 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: localstack-tests
+      DOCKSTORE_DOCKER_DB: true
     steps:
       - setup_machine
       - setup_test
@@ -214,9 +217,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
+            - dockstore-m2-
       - install-git-secrets
       - run:
           name: decrypt and expand confidential test data
@@ -241,9 +244,6 @@ jobs:
             # skip swagger validation because of difficult-to-fix operationId duplications
             # java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
             java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
-      - run:
-          name: copy m2 manually
-          command: cp -r ~/.m2 .
       - persist_to_workspace:
           root: .
           paths:
@@ -281,12 +281,9 @@ jobs:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
-      - run:
-          name: manually copy back .m2
-          command: cp -r .m2 ~/.m2
+            - dockstore-m2-
       - checkout
       - install-postgres
       - install-git-secrets
@@ -315,7 +312,7 @@ jobs:
             - dockstore-web-cache-
       - run:
           name: run the actual tests
-          command: |            
+          command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp \
@@ -334,9 +331,10 @@ jobs:
           when: always
       - store_test_results:
           path: ~/junit
+      - setup_codecov_uploader
       - run:
           name: send coverage for unit tests
-          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
+          command: ./codecov -F unit-tests_and_non-confidential-tests
       - run:
           name: run the non-confidential integration tests
           command: |
@@ -360,9 +358,10 @@ jobs:
               -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"      
             fi
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
+      - setup_codecov_uploader
       - run:
           name: send coverage for non-confidential integration tests
-          command: bash <(curl -s https://codecov.io/bash) -F unit-tests_and_non-confidential-tests || echo "Codecov did not collect coverage reports"
+          command: ./codecov -F unit-tests_and_non-confidential-tests
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
@@ -389,7 +388,7 @@ jobs:
       - save_cache: # saves the project dependencies
           paths:
             - ~/.m2
-          key: dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+          key: dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
       - save_cache:
           # should include non-confidential, but they should probably be split out anyway
           key: dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
@@ -436,23 +435,23 @@ jobs:
     docker: # run the steps with Docker
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps:
-    - attach_workspace:
-        at: .
-    - restore_cache:
-        keys:
-          # Find a cache corresponding to this specific licenses file checksum
-          # when this file is changed, this key will fail
-          - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
-          # Find the most recent cache used from any branch
-          - dockstore-java-
-    - run:
-        name: build
-        command: ./mvnw clean install -DskipTests
-    - run:
-        name: SonarCloud scan - coverage
-        command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
-    - store_artifacts:
-        path: misses
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys:
+            # Find a cache corresponding to this specific licenses file checksum
+            # when this file is changed, this key will fail
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            # Find the most recent cache used from any branch
+            - dockstore-m2-
+      - run:
+          name: build
+          command: ./mvnw clean install -DskipTests
+      - run:
+          name: SonarCloud scan - coverage
+          command: ./mvnw -Dsonar.coverage.jacoco.xmlReportPaths=../coverage/* sonar:sonar
+      - store_artifacts:
+          path: misses
 
 commands:
   install-postgres:
@@ -503,6 +502,12 @@ commands:
       - run:
           name: setup postgres
           command: |
+            sudo apt update
+            sudo apt install -y curl gpg gnupg2 lsb-release
+            curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+            echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" | sudo tee  /etc/apt/sources.list.d/pgdg.list
+            sudo apt update
+            sudo apt install -y postgresql-client-13
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
   setup_postgres_docker:
@@ -533,12 +538,9 @@ commands:
           keys:
             # Find a cache corresponding to this specific licenses file checksum
             # when this file is changed, this key will fail
-            - dockstore-java-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
+            - dockstore-m2-{{ checksum "THIRD-PARTY-LICENSES.txt" }}
             # Find the most recent cache used from any branch
-            - dockstore-java-
-      - run:
-          name: manually copy back .m2
-          command: cp -r .m2 ~/.m2
+            - dockstore-m2-
       - run:
           name: split up tests and create a file for cache checksum
           command: |
@@ -584,6 +586,8 @@ commands:
       - run:
           name: run integration test
           command: |  # Runs normally if it is not being run in parallel
+            # Caching migrations is causing PR to fail, see https://github.com/dockstore/dockstore/issues/5548
+            # export DOCKSTORE_CACHE_MIGRATIONS=true
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
@@ -592,10 +596,16 @@ commands:
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
             fi
           # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
+      - setup_codecov_uploader
       - run:
           name: send coverage
-          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+          command: ./codecov -F ${TESTING_PROFILE//-}
       - persist_coverage
+      - run:
+          name: Show used dumps
+          command: |
+            touch /tmp/used_dumps.txt
+            cat /tmp/used_dumps.txt
 
   save_test_results:
     steps:
@@ -634,5 +644,16 @@ commands:
       - persist_to_workspace:
           root: .
           paths:
-          - coverage
-
+            - coverage
+  setup_codecov_uploader:
+    steps:
+      - run:
+          name: setup codecov uploader
+          command: |
+            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
+            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+            shasum -a 256 -c codecov.SHA256SUM
+            chmod +x codecov

@@ -25,22 +25,22 @@ import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.MapKeyColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -55,7 +55,7 @@ import org.apache.commons.io.FilenameUtils;
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
     @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName", query = "select v FROM WorkflowVersion v WHERE v.parent.id = :id And v.name = :name"),
-    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId", query = "FROM WorkflowVersion v WHERE v.parent.id = :id ORDER by lastmodified DESC")
+    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId", query = "FROM WorkflowVersion v WHERE v.parent.id = :id ORDER by lastModified DESC")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")

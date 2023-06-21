@@ -31,45 +31,6 @@
     <build>
         <plugins>
             <plugin>
-                <!-- this is terrible and due to 1.6.0 backwards compatibility https://github.com/dockstore/dockstore/issues/2860 -->
-                <!-- remove when 1.6.0 clients age out -->
-                <groupId>com.google.code.maven-replacer-plugin</groupId>
-                <artifactId>replacer</artifactId>
-                <version>1.5.3</version>
-                <executions>
-                    <execution>
-                        <id>replace1</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>replace</goal>
-                        </goals>
-                    </execution>
-                    <!-- not sure why swagger-codegen-maven-plugin runs in two phases -->
-                    <execution>
-                        <id>replace2</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>replace</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <file>${project.basedir}/src/main/resources/api.yaml</file>
-                    <regex>true</regex>
-                    <regexFlags>MULTILINE</regexFlags>
-                    <replacements>
-                        <replacement>
-                            <token>- cwl$</token>
-                            <value />
-                        </replacement>
-                        <replacement>
-                            <token>- wdl$</token>
-                            <value />
-                        </replacement>
-                    </replacements>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>io.swagger.codegen.v3</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
                 <executions>
@@ -96,6 +57,105 @@
                                 <modelPackage>io.dockstore.openapi.client.model</modelPackage>
                                 <apiPackage>io.dockstore.openapi.client.api</apiPackage>
                             </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- this is terrible and due to 1.6.0 backwards compatibility https://github.com/dockstore/dockstore/issues/2860 -->
+                <!-- remove when 1.6.0 clients age out -->
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>replacer</artifactId>
+                <version>1.5.3</version>
+                <executions>
+                    <execution>
+                        <id>replace1</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                        <configuration>
+                            <file>${project.basedir}/src/main/resources/api.yaml</file>
+                            <regex>true</regex>
+                            <regexFlags>MULTILINE</regexFlags>
+                            <replacements>
+                                <replacement>
+                                    <token>- cwl$</token>
+                                    <value />
+                                </replacement>
+                                <replacement>
+                                    <token>- wdl$</token>
+                                    <value />
+                                </replacement>
+                            </replacements>
+                        </configuration>
+                    </execution>
+                    <!-- not sure why swagger-codegen-maven-plugin runs in two phases -->
+                    <execution>
+                        <id>replace2</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                        <configuration>
+                            <file>${project.basedir}/src/main/resources/api.yaml</file>
+                            <regex>true</regex>
+                            <regexFlags>MULTILINE</regexFlags>
+                            <replacements>
+                                <replacement>
+                                    <token>- cwl$</token>
+                                    <value />
+                                </replacement>
+                                <replacement>
+                                    <token>- wdl$</token>
+                                    <value />
+                                </replacement>
+                            </replacements>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>replace-jakarta</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>${project.basedir}/target/generated-sources/swagger/src/gen/java/**/*.java</include>
+                                <include>${project.basedir}/target/generated-sources/swagger/src/main/java/**/*.java</include>
+                            </includes>
+                            <regex>false</regex>
+                            <replacements>
+                                <!-- for these jakarta replacements, we can do better after https://github.com/swagger-api/swagger-codegen/issues/11797 -->
+                                <replacement>
+                                    <token>javax.annotation</token>
+                                    <value>jakarta.annotation</value>
+                                </replacement>
+                                <replacement>
+                                    <token>@javax.annotation</token>
+                                    <value>@jakarta.annotation</value>
+                                </replacement>
+                                <replacement>
+                                    <token>javax.validation</token>
+                                    <value>jakarta.validation</value>
+                                </replacement>
+                                <replacement>
+                                    <token>javax.ws</token>
+                                    <value>jakarta.ws</value>
+                                </replacement>
+                                <replacement>
+                                    <token>javax.servlet</token>
+                                    <value>jakarta.servlet</value>
+                                </replacement>
+                                <replacement>
+                                    <token>javax.xml.bind</token>
+                                    <value>jakarta.xml.bind</value>
+                                </replacement>
+                                <replacement>
+                                    <token>javax.xml.bind</token>
+                                    <value>jakarta.xml.bind</value>
+                                </replacement>
+                            </replacements>
                         </configuration>
                     </execution>
                 </executions>
@@ -266,7 +326,7 @@
     <dependencies>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
             <version>${openapi-annotations-version}</version>
         </dependency>
 

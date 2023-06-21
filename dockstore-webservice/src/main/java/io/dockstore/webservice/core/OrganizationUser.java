@@ -1,20 +1,24 @@
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_ORGANIZATION_FILTER;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_USER_FILTER;
+
+import com.fasterxml.jackson.annotation.JsonFilter;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.io.Serializable;
 import java.sql.Timestamp;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -27,12 +31,12 @@ public class OrganizationUser implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "userId", insertable = false, updatable = false)
-    @JsonIgnoreProperties({ "organizations", "entries", "starredEntries" })
+    @JsonFilter(SLIM_USER_FILTER)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizationId", insertable = false, updatable = false)
-    @JsonIgnoreProperties({ "users", "collections" })
+    @JsonFilter(SLIM_ORGANIZATION_FILTER)
     private Organization organization;
 
     public enum Role {
@@ -50,7 +54,7 @@ public class OrganizationUser implements Serializable {
     @Column(nullable = false, columnDefinition = "text")
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "The status of the organization invitation", required = true)
-    @Schema(description = "The status of the organization invitation", required = true)
+    @Schema(description = "The status of the organization invitation", requiredMode = RequiredMode.REQUIRED)
     private InvitationStatus status;
 
     @Column(updatable = false)
@@ -176,8 +180,7 @@ public class OrganizationUser implements Serializable {
 
         @Override
         public boolean equals(Object object) {
-            if (object instanceof OrganizationUserId) {
-                OrganizationUserId otherId = (OrganizationUserId) object;
+            if (object instanceof OrganizationUserId otherId) {
                 return (otherId.userId.equals(this.userId)) && (otherId.organizationId.equals(this.organizationId));
             }
             return false;

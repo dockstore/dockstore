@@ -45,6 +45,7 @@ import io.dockstore.openapi.client.model.CollectionOrganization;
 import io.dockstore.openapi.client.model.EntryType;
 import io.dockstore.openapi.client.model.EntryTypeMetadata;
 import io.dockstore.openapi.client.model.Organization;
+import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Workflow;
@@ -154,6 +155,7 @@ class NotebookIT extends BaseIT {
         assertEquals(Set.of("Author One", "Author Two"), version.getAuthors().stream().map(Author::getName).collect(Collectors.toSet()));
         List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
         assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
+        assertEquals(List.of("4.0"), version.getVersionMetadata().getDescriptorTypeVersions());
     }
 
     @Test
@@ -168,6 +170,23 @@ class NotebookIT extends BaseIT {
         WorkflowVersion version = notebook.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
         assertEquals(Set.of("/notebook.ipynb", "/.dockstore.yml", "/info.txt", "/data/a.txt", "/data/b.txt", "/requirements.txt", "/.binder/runtime.txt"), sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet()));
+    }
+
+    @Test
+    void testRegisterOldNotebook() {
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        workflowsApi.handleGitHubRelease("refs/tags/old-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        // Check a few fields to make sure we registered successfully
+        String path = simpleRepoPath + "/old";
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        assertEquals(EntryType.NOTEBOOK, notebook.getEntryType());
+        assertEquals(Workflow.DescriptorTypeEnum.JUPYTER, notebook.getDescriptorType());
+        assertEquals(Workflow.DescriptorTypeSubclassEnum.PYTHON, notebook.getDescriptorTypeSubclass());
+        assertEquals(1, notebook.getWorkflowVersions().size());
+        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        assertTrue(version.isValid());
+        assertEquals(List.of("3.0"), version.getVersionMetadata().getDescriptorTypeVersions());
     }
 
     @Test
@@ -220,6 +239,30 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
+    void testSnapshot() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        workflowsApi.handleGitHubRelease("refs/tags/with-tagged-kernel-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        WorkflowVersion version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        // Publish the notebook
+        PublishRequest publishRequest = new PublishRequest();
+        publishRequest.setPublish(true);
+        workflowsApi.publish1(notebook.getId(), publishRequest);
+        assertFalse(version.isFrozen());
+        assertEquals(0, testingPostgres.runSelectStatement("select count(*) from entry_version_image where versionid = " + version.getId(), long.class));
+        // Snapshot the notebook
+        version.setFrozen(true);
+        workflowsApi.updateWorkflowVersion(notebook.getId(), List.of(version));
+        // Confirm that the version is frozen and the Image is stored
+        notebook = workflowsApi.getWorkflow(notebook.getId(), null);
+        version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        assertTrue(version.isFrozen());
+        assertEquals(1, testingPostgres.runSelectStatement("select count(*) from entry_version_image where versionid = " + version.getId(), long.class));
+    }
+
+    @Test
     void testMetadata() {
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
@@ -259,6 +302,7 @@ class NotebookIT extends BaseIT {
         assertEquals(0, notebook.getStarredUsers().size());
         assertEquals(0, usersApi.getStarredNotebooks().size());
     }
+
     @Test
     void testNotebookRSSFeedAndSitemap() {
         ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
@@ -280,6 +324,7 @@ class NotebookIT extends BaseIT {
         String sitemap = metadataApi.sitemap();
         assertTrue(sitemap.contains("http://localhost/notebooks/github.com/hydra/hydra_repo"), "Sitemap with testing data should have 1 notebook");
     }
+
     @Test
     void testNotebookToCollectionCategory() {
         final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -320,17 +365,18 @@ class NotebookIT extends BaseIT {
         organizationsApi.addEntryToCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
         List<CollectionOrganization> entryCollection = entriesApi.entryCollections(notebookID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
-        assertEquals(1,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
-        assertEquals(1, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
-
+        assertEquals(1, entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
+        assertEquals(1, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getNotebooksLength());
 
         //remove notebook from collection
         organizationsApi.deleteEntryFromCollection(nonCategorizerOrg.getId(), collection.getId(), notebookID, null);
         expectedCollectionNames.remove("Collection");
         entryCollection = entriesApi.entryCollections(notebookID);
         assertEquals(expectedCollectionNames,  entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()));
-        assertEquals(0,   entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
+        assertEquals(0, entryCollection.stream().map(CollectionOrganization::getCollectionName).collect(Collectors.toSet()).size());
         assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getWorkflowsLength());
+        assertEquals(0, organizationsApi.getCollectionByName(nonCategorizerOrg.getName(), collection.getName()).getNotebooksLength());
 
         //add notebook to category
         Set<String> expectedCategoryNames = new HashSet<>();
@@ -339,7 +385,9 @@ class NotebookIT extends BaseIT {
         List<Category> entryCategory = entriesApi.entryCategories(notebookID);
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
         assertEquals(1,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
-        assertEquals(1, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
+        assertEquals(0, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
+        assertEquals(1, categoriesApi.getCategoryById(category.getId()).getNotebooksLength());
+
 
         //remove notebook from category
         organizationsApi.deleteEntryFromCollection(categorizerOrg.getId(), category.getId(), notebookID, null);
@@ -348,6 +396,7 @@ class NotebookIT extends BaseIT {
         assertEquals(expectedCategoryNames,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()));
         assertEquals(0,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
         assertEquals(0, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
+        assertEquals(0, categoriesApi.getCategoryById(category.getId()).getNotebooksLength());
     }
 
     private Organization createTestOrganization(String name, boolean categorizer) {

@@ -46,6 +46,9 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
@@ -61,9 +64,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -369,12 +369,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         Optional<? extends Version<?>> versionOptional;
 
-        if (entry instanceof Workflow) {
-            Workflow workflow = (Workflow)entry;
+        if (entry instanceof Workflow workflow) {
             Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
             versionOptional = workflowVersions.stream().filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
-        } else if (entry instanceof Tool) {
-            Tool tool = (Tool)entry;
+        } else if (entry instanceof Tool tool) {
             Set<Tag> versions = tool.getWorkflowVersions();
             versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
         } else {

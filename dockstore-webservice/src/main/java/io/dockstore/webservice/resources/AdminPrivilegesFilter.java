@@ -2,15 +2,15 @@ package io.dockstore.webservice.resources;
 
 import io.dockstore.webservice.SimpleAuthorizer;
 import io.dockstore.webservice.core.User;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.ext.Provider;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.text.MessageFormat;
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.ResourceInfo;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.ext.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +29,7 @@ public class AdminPrivilegesFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext) {
         if (requestContext != null) {
             final Principal principal = requestContext.getSecurityContext().getUserPrincipal();
-            if (principal instanceof User) {
-                final User user = (User)principal;
+            if (principal instanceof User user) {
                 if (user.getIsAdmin() && requestRequiresAdminRole()) {
                     final String logMessage = MessageFormat.format("Admin {0} id {1} making {2} privileged request at {3}",
                             user.getUsername(), Long.toString(user.getId()), requestContext.getMethod(), requestContext.getUriInfo().getPath());

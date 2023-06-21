@@ -8,15 +8,15 @@ import io.dockstore.webservice.core.Event.EventType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dropwizard.hibernate.AbstractDAO;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -135,13 +135,13 @@ public class EventDAO extends AbstractDAO<Event> {
 
     public void delete(Event event) {
         Session session = currentSession();
-        session.delete(event);
+        session.remove(event);
         session.flush();
     }
 
     public void deleteEventByEntryID(long entryId) {
         currentSession().flush();
-        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.deleteByEntryId");
+        Query<Event> query = this.currentSession().createNamedQuery("io.dockstore.webservice.core.Event.deleteByEntryId");
         query.setParameter("entryId", entryId);
         query.executeUpdate();
         currentSession().flush();

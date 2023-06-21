@@ -20,12 +20,12 @@ import static io.dockstore.webservice.Constants.USERNAME_CHANGE_REQUIRED;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.User;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.ext.Provider;
 import java.security.Principal;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.ResourceInfo;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.ext.Provider;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +43,7 @@ public class UsernameRenameRequiredFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext) {
         if (requestContext != null) {
             final Principal principal = requestContext.getSecurityContext().getUserPrincipal();
-            if (principal instanceof User) {
-                final User user = (User)principal;
+            if (principal instanceof User user) {
                 if (user.isUsernameChangeRequired()) {
                     throw new CustomWebApplicationException(USERNAME_CHANGE_REQUIRED, HttpStatus.SC_UNAUTHORIZED);
                 }

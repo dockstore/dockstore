@@ -28,10 +28,10 @@ import io.swagger.model.ToolTestsV1;
 import io.swagger.model.ToolV1;
 import io.swagger.model.ToolVersion;
 import io.swagger.model.ToolVersionV1;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 
 /**
  * Converts between the V2-beta version of the GA4GH TRS to V1
@@ -47,11 +47,9 @@ public final class ApiV1VersionConverter {
             List<Object> arrayList = (List<Object>)object;
             List<Object> newArrayList = new ArrayList<>();
             for (Object innerObject : arrayList) {
-                if (innerObject instanceof Tool) {
-                    Tool tool = (Tool)innerObject;
+                if (innerObject instanceof Tool tool) {
                     newArrayList.add(new ToolV1(tool));
-                } else if (innerObject instanceof ToolVersion) {
-                    ToolVersion toolVersion = (ToolVersion)innerObject;
+                } else if (innerObject instanceof ToolVersion toolVersion) {
                     newArrayList.add(new ToolVersionV1(toolVersion));
                 } else if (innerObject instanceof ExtendedFileWrapper) {
                     // v1 annoying expects a 1 Dockerfile list to be returned unwrapped
@@ -69,12 +67,10 @@ public final class ApiV1VersionConverter {
             ToolVersion toolVersion = (ToolVersion)object;
             ToolVersionV1 toolVersionV1 =  new ToolVersionV1(toolVersion);
             return getResponse(toolVersionV1, response.getHeaders());
-        } else if (object instanceof Tool) {
-            Tool tool = (Tool)object;
+        } else if (object instanceof Tool tool) {
             ToolV1 toolV1 = new ToolV1(tool);
             return getResponse(toolV1, response.getHeaders());
-        } else if (object instanceof Metadata) {
-            Metadata metadata = (Metadata)object;
+        } else if (object instanceof Metadata metadata) {
             MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1, response.getHeaders());
         } else if (object instanceof FileWrapper) {

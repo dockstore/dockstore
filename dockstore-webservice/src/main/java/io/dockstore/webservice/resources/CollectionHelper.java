@@ -60,8 +60,10 @@ class CollectionHelper {
         // Ensure that entries is empty
         // This is probably unnecessary
         collection.setEntries(new HashSet<>());
-        collection.setWorkflowsLength(entryDAO.getWorkflowsLength(collection.getId()));
-        collection.setToolsLength(entryDAO.getToolsLength(collection.getId()));
+        collection.setWorkflowsLength(entryDAO.getBioWorkflowsLength(collection.getId()));
+        collection.setToolsLength(entryDAO.getToolsLength(collection.getId()) +  entryDAO.getAppToolsLength(collection.getId()));
+        collection.setNotebooksLength(entryDAO.getNotebooksLength(collection.getId()));
+        collection.setServicesLength(entryDAO.getServicesLength(collection.getId()));
     }
 
     public void evictAndSummarize(java.util.Collection<? extends Collection> c) {
@@ -71,18 +73,26 @@ class CollectionHelper {
     public void evictAndAddEntries(Collection collection) {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.evict(collection);
-        List<CollectionEntry> collectionWorkflows = entryDAO.getCollectionWorkflows(collection.getId());
+        List<CollectionEntry> collectionBioWorkflows = entryDAO.getCollectionBioWorkflows(collection.getId());
+        List<CollectionEntry> collectionAppTools = entryDAO.getCollectionAppTools(collection.getId());
+        List<CollectionEntry> collectionNotebooks = entryDAO.getCollectionNotebooks(collection.getId());
         List<CollectionEntry> collectionServices = entryDAO.getCollectionServices(collection.getId());
         List<CollectionEntry> collectionTools = entryDAO.getCollectionTools(collection.getId());
-        List<CollectionEntry> collectionWorkflowsWithVersions = entryDAO.getCollectionWorkflowsWithVersions(collection.getId());
-        List<CollectionEntry> collectionServicesWithVersions = entryDAO.getCollectionServicesWithVersions(collection.getId());
         List<CollectionEntry> collectionToolsWithVersions = entryDAO.getCollectionToolsWithVersions(collection.getId());
+        List<CollectionEntry> collectionBioWorkflowsWithVersions = entryDAO.getCollectionBioWorkflowsWithVersions(collection.getId());
+        List<CollectionEntry> collectionAppToolsWithVersions = entryDAO.getCollectionAppToolsWithVersions(collection.getId());
+        List<CollectionEntry> collectionNotebooksWithVersions = entryDAO.getCollectionNotebooksWithVersions(collection.getId());
+        List<CollectionEntry> collectionServicesWithVersions = entryDAO.getCollectionServicesWithVersions(collection.getId());
         List<CollectionEntry> collectionEntries = new ArrayList<>();
-        collectionEntries.addAll(collectionWorkflows);
+        collectionEntries.addAll(collectionBioWorkflows);
+        collectionEntries.addAll(collectionBioWorkflowsWithVersions);
+        collectionEntries.addAll(collectionAppTools);
+        collectionEntries.addAll(collectionAppToolsWithVersions);
+        collectionEntries.addAll(collectionNotebooks);
+        collectionEntries.addAll(collectionNotebooksWithVersions);
         collectionEntries.addAll(collectionServices);
-        collectionEntries.addAll(collectionTools);
-        collectionEntries.addAll(collectionWorkflowsWithVersions);
         collectionEntries.addAll(collectionServicesWithVersions);
+        collectionEntries.addAll(collectionTools);
         collectionEntries.addAll(collectionToolsWithVersions);
         collectionEntries.forEach(entry -> {
             List<Label> labels = entryDAO.getLabelByEntryId(entry.getId());
@@ -107,12 +117,18 @@ class CollectionHelper {
                 entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
                 entry.setEntryType("notebook");
                 break;
+            case "service":
+                entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
+                entry.setEntryType("service");
+                break;
             default:
                 throw new UnsupportedOperationException("unexpected entry type when constructing collection");
             }
         });
         collection.setCollectionEntries(collectionEntries);
-        collection.setWorkflowsLength(collectionWorkflows.size() + (long)collectionWorkflowsWithVersions.size());
-        collection.setToolsLength(collectionTools.size() + (long)collectionToolsWithVersions.size());
+        collection.setWorkflowsLength(collectionBioWorkflows.size() + (long)collectionBioWorkflowsWithVersions.size());
+        collection.setToolsLength(collectionTools.size() + (long)collectionToolsWithVersions.size() + collectionAppTools.size() + collectionAppToolsWithVersions.size());
+        collection.setNotebooksLength(collectionNotebooks.size() + (long)collectionNotebooksWithVersions.size());
+        collection.setServicesLength(collectionServices.size() + (long)collectionServicesWithVersions.size());
     }
 }

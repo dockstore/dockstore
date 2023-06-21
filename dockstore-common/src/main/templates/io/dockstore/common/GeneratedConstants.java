@@ -16,7 +16,7 @@
 
 package io.dockstore.common;
 
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 
 /**
  * WARNING: This is a generated file, do not edit directly.

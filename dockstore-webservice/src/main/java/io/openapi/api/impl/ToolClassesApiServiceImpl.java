@@ -19,12 +19,12 @@ package io.openapi.api.impl;
 import io.dockstore.webservice.core.User;
 import io.openapi.api.ToolClassesApiService;
 import io.openapi.model.ToolClass;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 
 // TODO: this is copied from v2 beta, make this better
 public class ToolClassesApiServiceImpl extends ToolClassesApiService {

@@ -25,7 +25,7 @@ import java.util.Objects;
  * Used for backwards compatibility with V1
  */
 @ApiModel(description = "A tool document that describes how to test with one or more sample test JSON.")
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2018-07-18T11:25:19.861-04:00")
+@jakarta.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2018-07-18T11:25:19.861-04:00")
 public class ToolTestsV1   {
     @JsonProperty("test")
     private String test = null;

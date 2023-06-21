@@ -24,16 +24,16 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.persistence.NoResultException;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -61,7 +61,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     public List<String> getAllPublishedOrganizations() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.getPublishedOrganizations"));
+        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Workflow.getPublishedOrganizations", String.class).list();
     }
 
     /**
@@ -179,7 +179,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         final List<T> filteredWorkflows  = workflows.stream()
                 .filter(workflow -> workflow.getClass().equals(clazz))
                 .map(clazz::cast)
-                .collect(Collectors.toList());
+                .toList();
         if (filteredWorkflows.size() > 1) {
             // DB constraints should never let this happen, I think
             throw new CustomWebApplicationException("Entries with the same path exist", HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -199,7 +199,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         final List<Workflow> workflows = findByPath(path, false);
         final List<Workflow> filteredWorkflows = workflows.stream()
             .filter(workflow -> workflow.getClass() == BioWorkflow.class || workflow.getClass() == AppTool.class)
-            .collect(Collectors.toList());
+            .toList();
 
         if (filteredWorkflows.size() > 0) {
             String workflowType;
@@ -302,7 +302,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     public List<Workflow> findByOrganizationsWithoutUser(SourceControl sourceControl, List<String> organizations, User user) {
         return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationsWithoutUser")
-            .setParameter("organizations", organizations.stream().map(o -> o.toLowerCase()).collect(Collectors.toList()))
+            .setParameter("organizations", organizations.stream().map(String::toLowerCase).collect(Collectors.toList()))
             .setParameter("user", user)
             .setParameter("sourceControl", sourceControl));
     }
@@ -312,7 +312,8 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     public List<Workflow> findAllWorkflows(int offset, int pageSize) {
-        return (List<Workflow>) namedQuery("io.dockstore.webservice.core.Workflow.findAllWorkflows")
+        return namedTypedQuery(
+            "io.dockstore.webservice.core.Workflow.findAllWorkflows")
             .setMaxResults(pageSize)
             .setFirstResult(offset)
             .list();

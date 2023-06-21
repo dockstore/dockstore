@@ -1,0 +1,87 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2022 OICR and UCSC
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.15.0">
+    <changeSet author="circleci (generated)" id="jakarta_migration">
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="cloudinstance_supportedlanguages"/>
+        <addDefaultValue columnDataType="timestamp" columnName="dbcreatedate" defaultValueComputed="now()" tableName="parsed_information"/>
+        <!-- liquibase seems to now care about the order of keys in a primary key index :shrug: -->
+        <dropPrimaryKey tableName="starred_organizations"/>
+        <addPrimaryKey columnNames="organizationid, userid" constraintName="starred_organizations_pkey" tableName="starred_organizations"/>
+        <dropPrimaryKey tableName="starred"/>
+        <addPrimaryKey columnNames="userid, entryid" constraintName="starred_pkey" tableName="starred"/>
+        <dropPrimaryKey tableName="user_entry"/>
+        <addPrimaryKey columnNames="userid, entryid" constraintName="user_entry_pkey" tableName="user_entry"/>
+    </changeSet>
+    <changeSet id="unique_checker_ids" author="coverbeck">
+        <comment>One tool and one workflow in prod currently share the same checker workflow. The constraints later in this migration will
+            disallow that. Null out any duplicate checkers so the constraints can be created. When there are duplicates, prefer the
+            workflow table, then the apptool table, for the table that "keeps" the checker.
+        </comment>
+        <sql dbms="postgresql">
+            UPDATE tool SET checkerid=NULL where checkerid in (SELECT checkerid FROM workflow UNION SELECT checkerid FROM apptool);
+            UPDATE apptool SET checkerid=NULL where checkerid in (SELECT checkerid FROM workflow UNION SELECT checkerid FROM tool);
+        </sql>
+        <sql dbms="postgresql">
+            CREATE OR REPLACE FUNCTION check_apptool_checkerid_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
+            BEGIN
+                RETURN
+                    NOT EXISTS(
+                        SELECT checkerid FROM workflow WHERE checkerid = _checkerid
+                        UNION SELECT checkerid FROM tool WHERE checkerid = _checkerid
+                    );
+            END
+            $$ LANGUAGE PLPGSQL;
+            CREATE OR REPLACE FUNCTION check_tool_checker_id_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
+            BEGIN
+            RETURN
+                NOT EXISTS(
+                    SELECT checkerid FROM workflow WHERE checkerid = _checkerid
+                    UNION SELECT checkerid FROM apptool WHERE checkerid = _checkerid
+                );
+            END
+            $$ LANGUAGE PLPGSQL;
+            CREATE OR REPLACE FUNCTION check_workflow_checker_id_is_unique(_checkerid BIGINT) RETURNS BOOLEAN AS $$
+            BEGIN
+            RETURN
+                NOT EXISTS(
+                    SELECT checkerid FROM apptool WHERE checkerid = _checkerid
+                    UNION SELECT checkerid FROM tool WHERE checkerid = _checkerid
+                );
+            END
+            $$ LANGUAGE PLPGSQL;
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE apptool ADD CONSTRAINT check_apptool_checkerid_globally_unique CHECK(check_apptool_checkerid_is_unique(checkerid));
+            ALTER TABLE tool ADD CONSTRAINT check_tool_checkerid_globally_unique CHECK(check_tool_checker_id_is_unique(checkerid));
+            ALTER TABLE workflow ADD CONSTRAINT check_workflow_checkerid_globally_unique CHECK(check_workflow_checker_id_is_unique(checkerid));
+        </sql>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="drop_old_accepted_column">
+        <sql dbms="postgresql">
+            DROP TRIGGER insert_organization_user_sync_status_trigger ON organization_user;
+            DROP FUNCTION insert_organization_user_sync_status_func;
+        </sql>
+        <sql dbms="postgresql">
+            DROP TRIGGER update_organization_user_sync_status_trigger ON organization_user;
+            DROP FUNCTION update_organization_user_sync_status_func;
+        </sql>
+        <dropColumn columnName="accepted" tableName="organization_user"/>
+    </changeSet>
+</databaseChangeLog>

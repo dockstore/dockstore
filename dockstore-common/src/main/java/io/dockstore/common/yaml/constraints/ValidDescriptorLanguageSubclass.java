@@ -17,12 +17,12 @@
 package io.dockstore.common.yaml.constraints;
 
 import io.dockstore.common.EntryType;
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import javax.validation.Constraint;
-import javax.validation.Payload;
 
 /**
  * Defines the `ValidDescriptorLanguageSubclass` constraint annotation, which

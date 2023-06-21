@@ -18,8 +18,8 @@
 package io.dockstore.webservice.core.metrics.constraints;
 
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * Validates that ExecutionsRequestBody has executions or metrics.

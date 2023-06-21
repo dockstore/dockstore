@@ -3,7 +3,6 @@ package io.dockstore.common;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.dropwizard.testing.FixtureHelpers;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Map;
@@ -14,8 +13,8 @@ import wom.executable.WomBundle;
 
 class WdlBridgeTest {
 
-    private static final String DOCKER_IMAGES_WDL_10 = FixtureHelpers.fixture("fixtures/dockerImages10.wdl");
-    private static final String DOCKER_IMAGES_WDL_PRE_10 = FixtureHelpers.fixture("fixtures/dockerImagesPre10.wdl");
+    private static final String DOCKER_IMAGES_WDL_10 = FixtureUtility.fixture("fixtures/dockerImages10.wdl");
+    private static final String DOCKER_IMAGES_WDL_PRE_10 = FixtureUtility.fixture("fixtures/dockerImagesPre10.wdl");
 
     @Test
     void testGetCallsToDockerMapWdl10() {
