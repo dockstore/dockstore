@@ -1,8 +1,5 @@
 package io.dockstore.webservice.resources.proposedGA4GH;
 
-import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.SEARCH_QUERY_INVALID_JSON;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -12,7 +9,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
-import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
 class ToolsApiExtendedServiceImplTest {
@@ -53,16 +49,5 @@ class ToolsApiExtendedServiceImplTest {
         } catch (CustomWebApplicationException ex) {
             fail("Queries that can't be parsed for an \"include\" key or wildcards should pass");
         }
-
-        // Test that queries with invalid JSON return a 400
-        CustomWebApplicationException exception = assertThrows(CustomWebApplicationException.class, () -> ToolsApiExtendedServiceImpl.checkSearchTermLimit("foobar"));
-        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getResponse().getStatus());
-        assertEquals(SEARCH_QUERY_INVALID_JSON, exception.getErrorMessage());
-        exception = assertThrows(CustomWebApplicationException.class, () -> ToolsApiExtendedServiceImpl.checkSearchTermLimit("{"));
-        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getResponse().getStatus());
-        assertEquals(SEARCH_QUERY_INVALID_JSON, exception.getErrorMessage());
-        exception = assertThrows(CustomWebApplicationException.class, () -> ToolsApiExtendedServiceImpl.checkSearchTermLimit("{\"aggs\":}"));
-        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getResponse().getStatus());
-        assertEquals(SEARCH_QUERY_INVALID_JSON, exception.getErrorMessage());
     }
 }

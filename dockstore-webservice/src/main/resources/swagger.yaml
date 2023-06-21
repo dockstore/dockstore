@@ -523,6 +523,8 @@ paths:
       description: "This endpoint searches the indices for all published tools and\
         \ workflows. Used by utilities that expect to talk to an elastic search endpoint."
       operationId: "toolsIndexSearch"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
