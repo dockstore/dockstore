@@ -254,11 +254,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         if (!entry.isDeletable()) {
             throw new CustomWebApplicationException("The specified entry is not deletable.", HttpStatus.SC_BAD_REQUEST);
         }
-        // TODO if it is/has a checker workflow, do anything different?
+        // Remove the events associated with the entry
         eventDAO.deleteEventByEntryID(entry.getId());
-        // TODO the following should use the proper DAO
+        // Delete the entry using an arbitrary EntryDAO.
+        // This works, but isn't the "purest" approach.
+        // Later, we may create a helper class to select the appropriate
+        // DAO for a given entry, and we should use it here...
         ((EntryDAO)workflowDAO).delete(entry);
-        LOG.info("Deleted entry " + entry.getId());
+        LOG.info("Deleted entry {}", entry.getName());
         return entry;
     }
 

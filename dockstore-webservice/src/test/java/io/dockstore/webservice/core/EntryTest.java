@@ -15,6 +15,8 @@ abstract class EntryTest {
         assertFalse(entry.getIsPublished());
         assertFalse(entry.getWasEverPublic());
         assertTrue(entry.isDeletable());
+        // Publish, unpublish, and confirm the expected values.
+        // Cycle a few times to detect some of the weirder possible bugs.
         for (int i = 0; i < 3; i++) {
             entry.setIsPublished(true);
             assertTrue(entry.getIsPublished());
