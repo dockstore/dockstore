@@ -90,7 +90,7 @@ public class TestingPostgres {
      */
     public int addUnpublishedWorkflow(SourceControl sourceControl, String organization, String repository, DescriptorLanguage descriptorLanguage) {
         final String sql = String.format(
-            "INSERT INTO workflow (id, sourcecontrol, organization, repository, descriptortype, dbcreatedate, dbupdatedate, ispublished) VALUES (%s, '%s', '%s', '%s', '%s', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, false)",
+            "INSERT INTO workflow (id, sourcecontrol, organization, repository, descriptortype, dbcreatedate, dbupdatedate, ispublished, waseverpublic) VALUES (%s, '%s', '%s', '%s', '%s', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, false, false)",
             entryId++, sourceControl.toString(), organization, repository, descriptorLanguage.getShortName());
         return runUpdateStatement(sql);
     }
