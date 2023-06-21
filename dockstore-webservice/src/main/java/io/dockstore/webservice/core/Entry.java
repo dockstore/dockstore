@@ -829,6 +829,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonProperty
     public boolean isDeletable() {
-        return !getWasEverPublic();
+        return !getWasEverPublic() && !hasChecker();
     }
 }
