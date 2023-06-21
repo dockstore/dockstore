@@ -30,7 +30,13 @@ import static io.dockstore.common.Hoverfly.getFakeCode;
 import static io.dockstore.common.Hoverfly.getFakeExistingDockstoreToken;
 import static io.dockstore.common.Hoverfly.getSatellizer;
 import static io.dockstore.webservice.resources.TokenResource.INVALID_JSON;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
