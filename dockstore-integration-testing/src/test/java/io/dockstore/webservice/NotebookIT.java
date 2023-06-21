@@ -22,6 +22,7 @@ import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
@@ -397,6 +398,78 @@ class NotebookIT extends BaseIT {
         assertEquals(0,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
         assertEquals(0, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
         assertEquals(0, categoriesApi.getCategoryById(category.getId()).getNotebooksLength());
+    }
+
+    @Test
+    void testDeletabilityAndDeletion() {
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        EntriesApi entriesApi = new EntriesApi(apiClient);
+
+        // Create a new notebook
+        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+
+        // Make sure the initial state is as expected
+        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        assertFalse(notebook.isIsPublished());
+        assertTrue(notebook.isDeletable());
+
+        // Delete the notebook and confirm that it no longer exists
+        entriesApi.deleteEntry(notebook.getId());
+        try {
+            notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+            fail("Should throw because the notebook has been deleted");
+        } catch (Exception e) { // TODO fix exception type
+            // this space intentionally left blank
+        }
+
+        // Create the notebook again
+        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+
+        // Unpublish the notebook and check the state
+        // Nothing should change, since the notebook is not currently published
+        workflowsApi.publish1(notebook.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
+        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        assertFalse(notebook.isIsPublished());
+        assertTrue(notebook.isDeletable());
+
+        // Publish the notebook and confirm expected state
+        workflowsApi.publish1(notebook.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        assertTrue(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
+
+        // Attempt to delete, which should fail because wasEverPublic is now true
+        try {
+            entriesApi.deleteEntry(notebook.getId());
+            fail("Should throw on failed delete");
+        } catch (Exception e) {
+            // this space intentionally left blank
+        }
+        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        assertTrue(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
+
+        // Unpublish and confirm expected state
+        workflowsApi.publish1(notebook.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
+        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        assertFalse(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
+
+        // Attempt to delete, which should fail because wasEverPublic is now true
+        try {
+            entriesApi.deleteEntry(notebook.getId());
+            fail("Should throw on failed delete");
+        } catch (Exception e) {
+            // this space intentionally left blank
+        }
+
+        // Confirm that the notebook still exists
+        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        assertFalse(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
     }
 
     private Organization createTestOrganization(String name, boolean categorizer) {
