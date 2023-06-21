@@ -261,7 +261,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         // Later, we may create a helper class to select the appropriate
         // DAO for a given entry, and we should use it here...
         ((EntryDAO)workflowDAO).delete(entry);
-        LOG.info("Deleted entry {}", entry.getName());
+        LOG.info("Deleted entry {}", entry.getEntryPath());
         return entry;
     }
 
