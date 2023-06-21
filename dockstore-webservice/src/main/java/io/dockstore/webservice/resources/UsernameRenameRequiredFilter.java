@@ -43,8 +43,7 @@ public class UsernameRenameRequiredFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext) {
         if (requestContext != null) {
             final Principal principal = requestContext.getSecurityContext().getUserPrincipal();
-            if (principal instanceof User) {
-                final User user = (User)principal;
+            if (principal instanceof User user) {
                 if (user.isUsernameChangeRequired()) {
                     throw new CustomWebApplicationException(USERNAME_CHANGE_REQUIRED, HttpStatus.SC_UNAUTHORIZED);
                 }

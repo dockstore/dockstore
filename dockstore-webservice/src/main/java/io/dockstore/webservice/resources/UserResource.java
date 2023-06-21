@@ -430,7 +430,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
 
     // We don't delete the LambdaEvent because it is useful for other users
     private void deleteSelfFromLambdaEvents(User user) {
-        lambdaEventDAO.findByUser(user).stream().forEach(lambdaEvent -> lambdaEvent.setUser(null));
+        lambdaEventDAO.findByUser(user).forEach(lambdaEvent -> lambdaEvent.setUser(null));
     }
 
     @PUT
@@ -1071,7 +1071,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         user.setHostedEntryCountLimit(limits.getHostedEntryCountLimit());
         user.setHostedEntryVersionsLimit(limits.getHostedEntryVersionLimit());
         // User could be cached by Dockstore or Google token -- invalidate all
-        tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+        tokenDAO.findByUserId(user.getId()).forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
         return limits;
     }
 
@@ -1111,13 +1111,12 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             throw new CustomWebApplicationException("The user id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
         }
         // Ignore hosted workflows
-        List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
-                Collectors.toList());
+        List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).toList();
 
         List<Token> scTokens = getAndRefreshBitbucketTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
-                .collect(Collectors.toList());
+                .toList();
 
         scTokens.forEach(token -> {
             final SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);

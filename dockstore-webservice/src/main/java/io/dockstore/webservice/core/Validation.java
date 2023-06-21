@@ -159,10 +159,9 @@ public class Validation implements Comparable<Validation> {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof Validation)) {
+        if (!(obj instanceof Validation validation)) {
             return false;
         }
-        Validation validation = (Validation)obj;
         return Objects.equals(validation.getType(), getType());
     }
 }

@@ -22,7 +22,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
-import java.util.Set;
 
 @ApiModel(value = "AppTool", description = "This describes one app tool in dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
@@ -57,11 +56,6 @@ public class AppTool extends Workflow {
     @Override
     public Entry getParentEntry() {
         return null;
-    }
-
-    @Override
-    public Set<Entry> getParentEntries() {
-        return Set.of();
     }
 
     @Override

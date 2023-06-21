@@ -861,6 +861,12 @@ public class OrganizationIT extends BaseIT {
         // Approve request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
 
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+        // lockdown that organizations are aware of users in openapi yaml (see https://github.com/dockstore/dockstore/issues/4422 )
+        // note that it is still empty, presumably since they're lazily loaded
+        final io.dockstore.openapi.client.model.Organization organizationById = organizationsApi.getOrganizationById(orgId);
+        assertNull(organizationById.getUsers());
+
         // Should still exist in the users membership list
         memberships = usersOtherUser.getUserMemberships();
         assertEquals(1, memberships.size(), "Should have one membership, has " + memberships.size());
@@ -2345,6 +2351,10 @@ public class OrganizationIT extends BaseIT {
         // Make sure the tool is in the collection.
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
         assertEquals(1, entriesApi.entryCollections(entryId).size());
+
+        // lockdown that collections have entries in openapi yaml (see https://github.com/dockstore/dockstore/issues/4422 )
+        final io.dockstore.openapi.client.model.Collection collectionById = organizationsApi.getCollectionById(organizationId, collectionId);
+        assertTrue(collectionById.getEntries().size() > 0);
 
         // Test various combos of nonexistent IDs
         testDeleteCollectionFail(organizationsApi, NONEXISTENT_ID, NONEXISTENT_ID, HttpStatus.SC_NOT_FOUND);

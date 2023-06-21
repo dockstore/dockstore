@@ -68,17 +68,14 @@ public final class ApiV2BetaVersionConverter {
             List<Object> arrayList = (List<Object>)object;
             List<Object> newArrayList = new ArrayList<>();
             for (Object innerObject : arrayList) {
-                if (innerObject instanceof io.openapi.model.Tool) {
-                    io.openapi.model.Tool tool = (io.openapi.model.Tool)innerObject;
+                if (innerObject instanceof io.openapi.model.Tool tool) {
                     newArrayList.add(getTool(tool));
-                } else if (innerObject instanceof io.openapi.model.ToolVersion) {
-                    io.openapi.model.ToolVersion toolVersion = (io.openapi.model.ToolVersion)innerObject;
+                } else if (innerObject instanceof io.openapi.model.ToolVersion toolVersion) {
                     newArrayList.add(getToolVersion(toolVersion));
                 } else if (innerObject instanceof io.openapi.model.ExtendedFileWrapper) {
                     Object extendedWrapperConverted = getWrapper((io.openapi.model.ExtendedFileWrapper)innerObject);
                     newArrayList.add(extendedWrapperConverted);
-                } else if (innerObject instanceof io.openapi.model.ToolFile) {
-                    io.openapi.model.ToolFile toolFile = (io.openapi.model.ToolFile) innerObject;
+                } else if (innerObject instanceof io.openapi.model.ToolFile toolFile) {
                     final ToolFile oldToolFile = getOldToolFile(toolFile);
                     newArrayList.add(oldToolFile);
                 } else {
@@ -90,12 +87,10 @@ public final class ApiV2BetaVersionConverter {
             io.openapi.model.ToolVersion toolVersion = (io.openapi.model.ToolVersion)object;
             ToolVersion betaToolVersion = getToolVersion(toolVersion);
             return getResponse(betaToolVersion, response.getHeaders());
-        } else if (object instanceof io.openapi.model.Tool) {
-            io.openapi.model.Tool tool = (io.openapi.model.Tool)object;
+        } else if (object instanceof io.openapi.model.Tool tool) {
             Tool betaTool = getTool(tool);
             return getResponse(betaTool, response.getHeaders());
-        } else if (object instanceof Metadata) {
-            Metadata metadata = (Metadata)object;
+        } else if (object instanceof Metadata metadata) {
             MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1, response.getHeaders());
         } else if (object instanceof io.openapi.model.FileWrapper) {

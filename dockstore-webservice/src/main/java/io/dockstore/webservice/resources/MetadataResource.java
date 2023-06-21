@@ -289,14 +289,12 @@ public class MetadataResource {
         for (Entry<?, ?> dbEntry : dbEntries) {
             RSSEntry entry = new RSSEntry();
             // AppTools, BioWorkflows, Services, and Notebooks are all subclasses of Workflows
-            if (dbEntry instanceof Workflow) {
-                Workflow workflow = (Workflow)dbEntry;
+            if (dbEntry instanceof Workflow workflow) {
                 entry.setTitle(workflow.getWorkflowPath());
                 String workflowURL = createWorkflowURL(workflow);
                 entry.setGuid(workflowURL);
                 entry.setLink(workflowURL);
-            } else if (dbEntry instanceof Tool) {
-                Tool tool = (Tool)dbEntry;
+            } else if (dbEntry instanceof Tool tool) {
                 entry.setTitle(tool.getPath());
                 String toolURL = createToolURL(tool);
                 entry.setGuid(toolURL);
@@ -489,7 +487,7 @@ public class MetadataResource {
         } else {
             List<String> invalidNames = include.stream()
                     .filter(name -> !healthCheckRegistry.getNames().contains(name))
-                    .collect(Collectors.toList());
+                    .toList();
             if (!invalidNames.isEmpty()) {
                 String invalidNamesMessage = invalidNames.stream()
                         .map(name -> String.format("'%s'", name))

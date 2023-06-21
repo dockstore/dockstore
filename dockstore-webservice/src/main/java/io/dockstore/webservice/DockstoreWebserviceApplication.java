@@ -64,6 +64,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.VersionMetadata;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -161,6 +162,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -190,6 +192,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String GA4GH_API_PATH_V2_BETA = "/api/ga4gh/v2";
     public static final String GA4GH_API_PATH_V2_FINAL = "/ga4gh/trs/v2";
     public static final String GA4GH_API_PATH_V1 = "/api/ga4gh/v1";
+    private static final List<String> CORS_ENDPOINTS = Arrays.asList(
+            GA4GH_API_PATH_V2_BETA + "/metadata/*",
+            GA4GH_API_PATH_V2_BETA + "/tools/*",
+            GA4GH_API_PATH_V2_BETA + "/toolClasses/*",
+            GA4GH_API_PATH_V2_FINAL + "/*",
+            GA4GH_API_PATH_V1 + "/*");
     public static final String DOCKSTORE_WEB_CACHE = "/tmp/dockstore-web-cache";
     public static final String DOCKSTORE_WEB_CACHE_MISS_LOG_FILE = "/tmp/dockstore-web-cache.misses.log";
     public static final File CACHE_MISS_LOG_FILE = new File(DOCKSTORE_WEB_CACHE_MISS_LOG_FILE);
@@ -198,6 +206,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
      * use this to detect whether we're running on CircleCI. Definitely not kosher, use sparingly and only as required.
      */
     public static final String CIRCLE_SHA_1 = "CIRCLE_SHA1";
+    public static final String EMAIL_FILTER = "emailFilter";
+    public static final String SLIM_COLLECTION_FILTER = "slimCollectionFilter";
+    public static final String SLIM_ORGANIZATION_FILTER = "slimOrganizationFilter";
+    public static final String SLIM_WORKFLOW_FILTER = "slimWorkflowFilter";
+    public static final String SLIM_VERSION_FILTER = "slimVersionFilter";
+
+    public static final String SLIM_USER_FILTER = "slimUserFilter";
+
 
     private static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
@@ -330,7 +346,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));
 
         // try to set a filter
-        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter("emailFilter", new EmailPropertyFilter()));
+        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(EMAIL_FILTER, new EmailPropertyFilter())
+            .addFilter(SLIM_ORGANIZATION_FILTER, Organization.SLIM_FILTER)
+            .addFilter(SLIM_USER_FILTER, User.SLIM_FILTER)
+            .addFilter(SLIM_WORKFLOW_FILTER, Workflow.SLIM_FILTER)
+            .addFilter(SLIM_COLLECTION_FILTER, Collection.SLIM_FILTER)
+            .addFilter(SLIM_VERSION_FILTER, Version.SLIM_FILTER)
+        );
     }
 
     public static File getFilePluginLocation(DockstoreWebserviceConfiguration configuration) {
@@ -463,13 +485,17 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // optional CORS support
         // Enable CORS headers
         // final FilterRegistration.Dynamic cors = environment.servlets().addFilter("CORS", CrossOriginFilter.class);
-        final FilterHolder filterHolder = environment.getApplicationContext().addFilter(CrossOriginFilter.class, "/*", EnumSet.of(REQUEST));
+        final String methods = "GET,HEAD,POST,DELETE,PUT,OPTIONS,PATCH";
+        CORS_ENDPOINTS.stream().forEach(urlContext -> {
+            FilterHolder filterHolder = environment.getApplicationContext().addFilter(CrossOriginFilter.class, urlContext, EnumSet.of(REQUEST));
 
-        filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
-        filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
-        filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
-        filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
-                "Authorization, X-Auth-Username, X-Auth-Password, X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
+            filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, methods);
+            filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
+            filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, methods);
+            filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
+                    "Accept-Encoding,Authorization,X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
+        });
+
 
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager.initCache(configuration.getGitHubAppId(), configuration.getGitHubAppPrivateKeyFile());

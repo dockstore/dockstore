@@ -415,8 +415,7 @@ public abstract class SourceCodeRepoInterface {
             return;
         }
 
-        if (entry instanceof Tool) {
-            Tool tool = (Tool)entry;
+        if (entry instanceof Tool tool) {
             tool.getWorkflowVersions().forEach(tag -> {
                 String filePath;
                 if (type == DescriptorLanguage.CWL) {
@@ -429,8 +428,7 @@ public abstract class SourceCodeRepoInterface {
                 updateVersionMetadata(filePath, tag, type, repositoryId);
             });
         }
-        if (entry instanceof Workflow) {
-            Workflow workflow = (Workflow)entry;
+        if (entry instanceof Workflow workflow) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> {
                 String filePath = workflowVersion.getWorkflowPath();
                 // Don't update metadata for versions that have not changed
@@ -692,8 +690,7 @@ public abstract class SourceCodeRepoInterface {
             } else {
                 fileName = specificPath;
             }
-        } else if (version instanceof Tag) {
-            Tag tag = (Tag)version;
+        } else if (version instanceof Tag tag) {
             // Add for new descriptor types
             if (fileType == DescriptorLanguage.FileType.DOCKERFILE) {
                 fileName = tag.getDockerfilePath();
@@ -708,8 +705,7 @@ public abstract class SourceCodeRepoInterface {
                 }
                 fileName = tag.getWdlPath();
             }
-        } else if (version instanceof WorkflowVersion) {
-            WorkflowVersion workflowVersion = (WorkflowVersion)version;
+        } else if (version instanceof WorkflowVersion workflowVersion) {
             fileName = workflowVersion.getWorkflowPath();
         }
 

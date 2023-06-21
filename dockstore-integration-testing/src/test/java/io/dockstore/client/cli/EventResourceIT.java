@@ -113,6 +113,20 @@ class EventResourceIT extends BaseIT {
         }
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), null, null);
         assertEquals(10, events.size(), "Should have used the default limit");
+
+        // test in openapi and whether jsonfilters work
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.EventsApi openEventsApi = new io.dockstore.openapi.client.api.EventsApi(webClient);
+        final List<io.dockstore.openapi.client.model.Event> openEvents = openEventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT, 0);
+        // getting the versions though events leads to null versions (i.e. grabbing an event that links to a tool, shouldn't grab all versions too)
+        assertTrue(openEvents.size() > 10);
+        assertTrue(openEvents.stream().allMatch(event -> event.getTool().getWorkflowVersions() == null));
+        // but getting them normally should not be (i.e. we should be able to get versions normally)
+        io.dockstore.openapi.client.api.ContainertagsApi openTagApi = new io.dockstore.openapi.client.api.ContainertagsApi(webClient);
+        openEvents.forEach(e -> {
+            final List<io.dockstore.openapi.client.model.Tag> tagsByPath = openTagApi.getTagsByPath(e.getTool().getId());
+            assertTrue(tagsByPath.size() > 0);
+        });
     }
 
     private List<Tag> getRandomTags(String name) {

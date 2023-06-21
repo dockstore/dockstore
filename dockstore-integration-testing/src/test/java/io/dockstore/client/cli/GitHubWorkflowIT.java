@@ -16,12 +16,14 @@
 
 package io.dockstore.client.cli;
 
+import static io.dockstore.webservice.jdbi.EntryDAO.INVALID_SORTCOL_MESSAGE;
 import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.Lists;
@@ -53,6 +55,7 @@ import io.swagger.model.DescriptorType;
 import jakarta.ws.rs.client.Client;
 import java.util.List;
 import java.util.Optional;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -192,6 +195,29 @@ class GitHubWorkflowIT extends BaseIT {
 
         assertEquals(publishedWorkflowsCount, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
             WorkflowSubClass.BIOWORKFLOW.getValue()).size(), "Published workflow count should be unchanged");
+    }
+
+    /**
+     * Tests that the correct error is given when provided an invalid value for sortCol when getting all published workflows
+     *
+     */
+    @Test
+    void testGetPublishedWorkflowsWithInvalidSortCol() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+
+        AppToolHelper.registerAppTool(webClient);
+        Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions");
+        workflowApi.publish(appTool.getId(), publishRequest);
+
+        assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
+                WorkflowSubClass.APPTOOL.getValue()).size(), "There should be 1 app tool published");
+
+        ApiException exception = assertThrows(ApiException.class, () -> workflowApi.allPublishedWorkflows(null, null, null, "invalid", null, false,
+                    WorkflowSubClass.APPTOOL.getValue()));
+        assertTrue(exception.getMessage().contains(INVALID_SORTCOL_MESSAGE));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode(), "There should be a 400 error");
     }
 
     /**
