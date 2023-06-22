@@ -15,7 +15,7 @@
  */
 package io.dockstore.webservice.resources.proposedGA4GH;
 
-import io.dockstore.webservice.core.Partner;
+import io.dockstore.common.Partner;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.Metrics;
