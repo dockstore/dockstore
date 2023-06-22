@@ -402,6 +402,15 @@ class NotebookIT extends BaseIT {
         assertEquals(0, categoriesApi.getCategoryById(category.getId()).getNotebooksLength());
     }
 
+    private void shouldThrow(Runnable runnable, String whyMessage, int throwCode) {
+        try {
+            runnable.run();
+            fail("Should have thrown an ApiException because: " + whyMessage);
+        } catch (ApiException e) {
+            assertEquals(throwCode, e.getCode());
+        }
+    }
+
     @Test
     void testDeletabilityAndDeletion() {
         ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
@@ -410,83 +419,59 @@ class NotebookIT extends BaseIT {
 
         // Create a new notebook
         workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
-        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        Workflow notebookA = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        long idA = notebookA.getId();
 
         // Make sure the initial state is as expected
-        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        Workflow notebook = workflowsApi.getWorkflow(idA, "");
         assertFalse(notebook.isIsPublished());
         assertTrue(notebook.isDeletable());
 
         // Try to delete the notebook as a user without write access
         ApiClient otherClient = getOpenAPIWebClient(BasicIT.OTHER_USERNAME, testingPostgres);
         EntriesApi otherEntriesApi = new EntriesApi(otherClient);
-        try {
-            otherEntriesApi.deleteEntry(notebook.getId());
-        } catch (ApiException e) {
-            assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
-        }
+        shouldThrow(() -> otherEntriesApi.deleteEntry(idA), "the user didn't have write access", HttpStatus.SC_FORBIDDEN);
 
         // Delete the notebook and confirm that it no longer exists
-        entriesApi.deleteEntry(notebook.getId());
-        try {
-            workflowsApi.getWorkflow(notebook.getId(), "");
-            fail("Should throw because the notebook has been deleted");
-        } catch (ApiException e) {
-            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
-        }
+        entriesApi.deleteEntry(idA);
+        shouldThrow(() -> workflowsApi.getWorkflow(idA, ""), "the notebook has been deleted", HttpStatus.SC_NOT_FOUND);
 
         // Attempt to again delete the now-nonexistent notebook
-        try {
-            entriesApi.deleteEntry(notebook.getId());
-            fail("Should throw because the notebook does not exist");
-        } catch (ApiException e) {
-            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
-        }
+        shouldThrow(() -> entriesApi.deleteEntry(idA), "the notebook has been deleted", HttpStatus.SC_NOT_FOUND);
 
         // Create the notebook again
         workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
-        notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        Workflow notebookB = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        long idB = notebookB.getId();
 
         // Unpublish the notebook
         // Nothing should change, since the notebook is currently unpublished
-        workflowsApi.publish1(notebook.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
-        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        workflowsApi.publish1(idB, CommonTestUtilities.createOpenAPIPublishRequest(false));
+        notebook = workflowsApi.getWorkflow(idB, "");
         assertFalse(notebook.isIsPublished());
         assertTrue(notebook.isDeletable());
 
         // Publish the notebook
-        workflowsApi.publish1(notebook.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
-        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        workflowsApi.publish1(idB, CommonTestUtilities.createOpenAPIPublishRequest(true));
+        notebook = workflowsApi.getWorkflow(idB, "");
         assertTrue(notebook.isIsPublished());
         assertFalse(notebook.isDeletable());
 
         // Attempt to delete, which should fail because the notebook was previously published
-        try {
-            entriesApi.deleteEntry(notebook.getId());
-            fail("Should throw on failed delete");
-        } catch (ApiException e) {
-            assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
-        }
-        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        shouldThrow(() -> entriesApi.deleteEntry(idB), "the notebook was previously published", HttpStatus.SC_FORBIDDEN);
+        notebook = workflowsApi.getWorkflow(idB, "");
         assertTrue(notebook.isIsPublished());
         assertFalse(notebook.isDeletable());
 
-        // Unpublish and confirm expected state
-        workflowsApi.publish1(notebook.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
-        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        // Unpublish
+        workflowsApi.publish1(idB, CommonTestUtilities.createOpenAPIPublishRequest(false));
+        notebook = workflowsApi.getWorkflow(idB, "");
         assertFalse(notebook.isIsPublished());
         assertFalse(notebook.isDeletable());
 
         // Attempt to delete, which should fail because the notebook was previously published
-        try {
-            entriesApi.deleteEntry(notebook.getId());
-            fail("Should throw on failed delete");
-        } catch (ApiException e) {
-            assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
-        }
-
-        // Confirm that the notebook still exists
-        notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+        shouldThrow(() -> entriesApi.deleteEntry(idB), "the notebook was previously published", HttpStatus.SC_FORBIDDEN);
+        notebook = workflowsApi.getWorkflow(idB, "");
         assertFalse(notebook.isIsPublished());
         assertFalse(notebook.isDeletable());
     }
