@@ -33,6 +33,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.CategoriesApi;
 import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.MetadataApi;
@@ -60,6 +61,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -415,13 +417,30 @@ class NotebookIT extends BaseIT {
         assertFalse(notebook.isIsPublished());
         assertTrue(notebook.isDeletable());
 
+        // Try to delete the notebook as an unrelated user
+        ApiClient otherClient = getOpenAPIWebClient(BasicIT.OTHER_USERNAME, testingPostgres);
+        EntriesApi otherEntriesApi = new EntriesApi(otherClient);
+        try {
+            otherEntriesApi.deleteEntry(notebook.getId());
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
+        }
+
         // Delete the notebook and confirm that it no longer exists
         entriesApi.deleteEntry(notebook.getId());
         try {
-            notebook = workflowsApi.getWorkflow(notebook.getId(), "");
+            workflowsApi.getWorkflow(notebook.getId(), "");
             fail("Should throw because the notebook has been deleted");
-        } catch (Exception e) { // TODO fix exception type
-            // this space intentionally left blank
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
+        }
+
+        // Attempt to delete the now-nonexistent notebook again
+        try {
+            entriesApi.deleteEntry(notebook.getId());
+            fail("Should throw because the notebook does not exist");
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
         }
 
         // Create the notebook again
@@ -445,8 +464,8 @@ class NotebookIT extends BaseIT {
         try {
             entriesApi.deleteEntry(notebook.getId());
             fail("Should throw on failed delete");
-        } catch (Exception e) {
-            // this space intentionally left blank
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
         }
         notebook = workflowsApi.getWorkflow(notebook.getId(), "");
         assertTrue(notebook.isIsPublished());
@@ -462,8 +481,8 @@ class NotebookIT extends BaseIT {
         try {
             entriesApi.deleteEntry(notebook.getId());
             fail("Should throw on failed delete");
-        } catch (Exception e) {
-            // this space intentionally left blank
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
         }
 
         // Confirm that the notebook still exists

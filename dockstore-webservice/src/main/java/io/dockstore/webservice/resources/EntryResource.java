@@ -121,6 +121,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public static final String VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE = "Version does not belong to entry";
     public static final String ENTRY_NO_DOI_ERROR_MESSAGE = "Entry does not have a concept DOI associated with it";
     public static final String VERSION_NO_DOI_ERROR_MESSAGE = "Version does not have a DOI url associated with it";
+    public static final String ENTRY_NOT_DELETABLE_MESSAGE = "The specified entry is not deletable.";
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
     private static final int PROCESSOR_PAGE_SIZE = 25;
 
@@ -245,14 +246,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/{id}")
     @Operation(operationId = "deleteEntry", description = "Completely remove an entry from Dockstore.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted the entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "The specified entry is not deletable.")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = ENTRY_NOT_DELETABLE_MESSAGE)
     public Entry deleteEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Entry to delete.", required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
         checkNotNullEntry(entry);
         checkCanWrite(user, entry);
         if (!entry.isDeletable()) {
-            throw new CustomWebApplicationException("The specified entry is not deletable.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(ENTRY_NOT_DELETABLE_MESSAGE, HttpStatus.SC_FORBIDDEN);
         }
         // Remove the events associated with the entry
         eventDAO.deleteEventByEntryID(entry.getId());

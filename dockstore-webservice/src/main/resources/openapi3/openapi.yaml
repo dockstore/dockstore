@@ -2612,7 +2612,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Entry'
           description: Successfully deleted the entry
-        "400":
+        "403":
           description: The specified entry is not deletable.
       security:
       - BEARER: []
