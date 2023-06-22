@@ -11,9 +11,9 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.CurationApi;
 import io.swagger.client.model.Notification;
-import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.List;
+import javax.ws.rs.core.Response.Status;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

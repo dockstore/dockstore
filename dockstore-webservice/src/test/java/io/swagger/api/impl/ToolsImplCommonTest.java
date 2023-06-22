@@ -51,6 +51,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -534,7 +535,7 @@ class ToolsImplCommonTest {
         toolVersion.setImages(new ArrayList<>());
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
         assertEquals(2, toolVersion.getImages().size(), "There should be the same amount of images as the Tag");
-        List<Long> sortedSizes = toolVersion.getImages().stream().map(ImageData::getSize).sorted().toList();
+        List<Long> sortedSizes = toolVersion.getImages().stream().map(ImageData::getSize).sorted().collect(Collectors.toList());
         assertEquals(Long.valueOf(1L), sortedSizes.get(0));
         assertEquals(Long.valueOf(2L), sortedSizes.get(1));
         toolVersion = new io.openapi.model.ToolVersion();

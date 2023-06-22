@@ -32,8 +32,6 @@ import io.dockstore.webservice.core.docker.DockerManifestList;
 import io.dockstore.webservice.core.docker.DockerPlatform;
 import io.dockstore.webservice.core.docker.DockerPlatformManifest;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response.Status.Family;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -44,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response.Status.Family;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -166,7 +166,7 @@ public final class DockerRegistryAPIHelper {
         } else { // multi-arch image
             // The manifest list is only supported in schema version 2, don't need to check schema version
             DockerManifestList manifestList = GSON.fromJson(manifestJson, DockerManifestList.class);
-            DockerPlatformManifest[] manifests = manifestList.getManifests();
+            List<DockerPlatformManifest> manifests = Arrays.asList(manifestList.getManifests());
 
             for (DockerPlatformManifest manifest : manifests) {
                 String manifestDigest = manifest.getDigest();

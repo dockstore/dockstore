@@ -28,12 +28,12 @@ import org.slf4j.LoggerFactory;
  * primitive will immediately throw an exception.
  *
  * <p> For more information on Hibernate transactions, see:
- * <a href="https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html#transactions">...</a>
+ * https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html#transactions
  */
 public final class TransactionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(TransactionHelper.class);
-    private final Session session;
+    private Session session;
     private RuntimeException thrown;
 
     public TransactionHelper(Session session) {

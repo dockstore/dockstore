@@ -20,11 +20,11 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.database.WorkflowPath;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import java.util.List;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
 /**
@@ -63,6 +63,6 @@ public class ServiceDAO extends EntryDAO<Service> {
     }
 
     public List<WorkflowPath> findAllPublishedPaths() {
-        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.Service.findAllPublishedPaths", WorkflowPath.class).list();
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Service.findAllPublishedPaths"));
     }
 }

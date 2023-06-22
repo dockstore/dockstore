@@ -15,7 +15,7 @@
  */
 package io.swagger.model;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -26,8 +26,8 @@ import java.util.Objects;
  * Now used only by TRS V1
  */
 @ApiModel(description = "A tool dockerfile is a document that describes how to build a particular Docker image.")
-@jakarta.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class ToolDockerfile {
     private String dockerfile = null;
 

@@ -22,20 +22,19 @@ import io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.MapKeyColumn;
-import jakarta.persistence.MapKeyEnumerated;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotEmpty;
 import java.util.EnumMap;
 import java.util.Map;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.MapKeyEnumerated;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.validation.constraints.NotEmpty;
 import org.hibernate.annotations.BatchSize;
 
 @Entity
@@ -56,7 +55,7 @@ public class ValidationStatusCountMetric extends CountMetric<ValidatorTool, Vali
     @MapKeyEnumerated(EnumType.STRING)
     @BatchSize(size = 25)
     @ApiModelProperty(value = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true)
-    @Schema(description = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow", required = true)
     private Map<ValidatorTool, ValidatorInfo> count = new EnumMap<>(ValidatorTool.class);
 
 

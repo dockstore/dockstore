@@ -15,7 +15,8 @@
  */
 package io.dockstore.webservice.resources;
 
-import io.swagger.v3.jaxrs2.Reader;
+import io.swagger.jaxrs.Reader;
+import io.swagger.models.Swagger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,10 @@ public final class SwaggerTester {
     }
 
     public static void main(String[] args) {
-        Reader reader = new Reader();
-        reader.read(AbstractHostedEntryResource.class);
+        Swagger swagger = new Swagger();
+        Reader reader = new Reader(swagger);
+        Swagger read = reader.read(AbstractHostedEntryResource.class);
+        System.out.println();
+
     }
 }

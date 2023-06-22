@@ -41,7 +41,7 @@ authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10s
 
 server:
   applicationConnectors:
-    - type: custom-http
+    - type: http
       port: 8080
   adminConnectors:
     - type: http
@@ -72,7 +72,7 @@ database:
   # any properties specific to your JDBC driver:
   properties:
     charSet: UTF-8
-    hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate.dialect: org.hibernate.dialect.PostgreSQL10Dialect
     # create database as needed, disable in production
     hibernate.hbm2ddl.auto: validate
     # suppress session log to reduce verbosity

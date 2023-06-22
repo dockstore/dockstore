@@ -17,7 +17,7 @@ package io.dockstore.common.yaml;
 
 import io.dockstore.common.yaml.constraints.AuthorHasNameOrOrcid;
 import io.dockstore.common.yaml.constraints.Orcid;
-import jakarta.validation.constraints.Email;
+import javax.validation.constraints.Email;
 
 @AuthorHasNameOrOrcid
 public class YamlAuthor {

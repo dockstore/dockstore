@@ -40,7 +40,6 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
-import jakarta.validation.constraints.NotNull;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,6 +54,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -415,7 +415,8 @@ public abstract class SourceCodeRepoInterface {
             return;
         }
 
-        if (entry instanceof Tool tool) {
+        if (entry instanceof Tool) {
+            Tool tool = (Tool)entry;
             tool.getWorkflowVersions().forEach(tag -> {
                 String filePath;
                 if (type == DescriptorLanguage.CWL) {
@@ -428,7 +429,8 @@ public abstract class SourceCodeRepoInterface {
                 updateVersionMetadata(filePath, tag, type, repositoryId);
             });
         }
-        if (entry instanceof Workflow workflow) {
+        if (entry instanceof Workflow) {
+            Workflow workflow = (Workflow)entry;
             workflow.getWorkflowVersions().forEach(workflowVersion -> {
                 String filePath = workflowVersion.getWorkflowPath();
                 // Don't update metadata for versions that have not changed
@@ -690,7 +692,8 @@ public abstract class SourceCodeRepoInterface {
             } else {
                 fileName = specificPath;
             }
-        } else if (version instanceof Tag tag) {
+        } else if (version instanceof Tag) {
+            Tag tag = (Tag)version;
             // Add for new descriptor types
             if (fileType == DescriptorLanguage.FileType.DOCKERFILE) {
                 fileName = tag.getDockerfilePath();
@@ -705,7 +708,8 @@ public abstract class SourceCodeRepoInterface {
                 }
                 fileName = tag.getWdlPath();
             }
-        } else if (version instanceof WorkflowVersion workflowVersion) {
+        } else if (version instanceof WorkflowVersion) {
+            WorkflowVersion workflowVersion = (WorkflowVersion)version;
             fileName = workflowVersion.getWorkflowPath();
         }
 

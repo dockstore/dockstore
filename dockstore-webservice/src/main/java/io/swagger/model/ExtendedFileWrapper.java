@@ -45,9 +45,10 @@ public class ExtendedFileWrapper extends FileWrapper  {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof FileWrapper fileWrapper)) {
+        if (!(o instanceof FileWrapper)) {
             return false;
         }
+        FileWrapper fileWrapper = (FileWrapper)o;
         return Objects.equals(super.getContent(), fileWrapper.getContent()) && Objects.equals(super.getUrl(), fileWrapper.getUrl());
     }
 }

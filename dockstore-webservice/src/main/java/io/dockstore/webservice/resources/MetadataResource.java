@@ -80,15 +80,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -111,6 +102,15 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.IOUtils;
@@ -289,12 +289,14 @@ public class MetadataResource {
         for (Entry<?, ?> dbEntry : dbEntries) {
             RSSEntry entry = new RSSEntry();
             // AppTools, BioWorkflows, Services, and Notebooks are all subclasses of Workflows
-            if (dbEntry instanceof Workflow workflow) {
+            if (dbEntry instanceof Workflow) {
+                Workflow workflow = (Workflow)dbEntry;
                 entry.setTitle(workflow.getWorkflowPath());
                 String workflowURL = createWorkflowURL(workflow);
                 entry.setGuid(workflowURL);
                 entry.setLink(workflowURL);
-            } else if (dbEntry instanceof Tool tool) {
+            } else if (dbEntry instanceof Tool) {
+                Tool tool = (Tool)dbEntry;
                 entry.setTitle(tool.getPath());
                 String toolURL = createToolURL(tool);
                 entry.setGuid(toolURL);
@@ -487,7 +489,7 @@ public class MetadataResource {
         } else {
             List<String> invalidNames = include.stream()
                     .filter(name -> !healthCheckRegistry.getNames().contains(name))
-                    .toList();
+                    .collect(Collectors.toList());
             if (!invalidNames.isEmpty()) {
                 String invalidNamesMessage = invalidNames.stream()
                         .map(name -> String.format("'%s'", name))

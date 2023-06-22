@@ -20,14 +20,14 @@ import io.dockstore.common.DescriptorLanguage;
 import io.openapi.model.DescriptorType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
+import javax.validation.constraints.NotNull;
 
 /**
  * A tool descriptor is a metadata document that describes one or more tools.
  */
 @ApiModel(description = "A tool descriptor is a metadata document that describes one or more tools.")
-@jakarta.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2018-08-10T11:24:21.540-04:00")
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2018-08-10T11:24:21.540-04:00")
 public class ToolDescriptor {
     @JsonProperty("type")
     private DescriptorType type = null;

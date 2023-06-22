@@ -1,6 +1,6 @@
 package io.dockstore.models;
 
-import static io.dockstore.common.FixtureUtility.fixture;
+import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.core.JsonProcessingException;

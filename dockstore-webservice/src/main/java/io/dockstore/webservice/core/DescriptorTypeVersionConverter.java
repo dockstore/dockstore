@@ -1,6 +1,6 @@
 package io.dockstore.webservice.core;
 
-import jakarta.persistence.Converter;
+import javax.persistence.Converter;
 
 @Converter(autoApply = true)
 public class DescriptorTypeVersionConverter extends DelimitedValuesConverter {

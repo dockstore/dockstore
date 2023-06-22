@@ -28,8 +28,6 @@ import io.swagger.model.Tool;
 import io.swagger.model.ToolClass;
 import io.swagger.model.ToolFile;
 import io.swagger.model.ToolVersion;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,6 +36,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
@@ -68,14 +68,17 @@ public final class ApiV2BetaVersionConverter {
             List<Object> arrayList = (List<Object>)object;
             List<Object> newArrayList = new ArrayList<>();
             for (Object innerObject : arrayList) {
-                if (innerObject instanceof io.openapi.model.Tool tool) {
+                if (innerObject instanceof io.openapi.model.Tool) {
+                    io.openapi.model.Tool tool = (io.openapi.model.Tool)innerObject;
                     newArrayList.add(getTool(tool));
-                } else if (innerObject instanceof io.openapi.model.ToolVersion toolVersion) {
+                } else if (innerObject instanceof io.openapi.model.ToolVersion) {
+                    io.openapi.model.ToolVersion toolVersion = (io.openapi.model.ToolVersion)innerObject;
                     newArrayList.add(getToolVersion(toolVersion));
                 } else if (innerObject instanceof io.openapi.model.ExtendedFileWrapper) {
                     Object extendedWrapperConverted = getWrapper((io.openapi.model.ExtendedFileWrapper)innerObject);
                     newArrayList.add(extendedWrapperConverted);
-                } else if (innerObject instanceof io.openapi.model.ToolFile toolFile) {
+                } else if (innerObject instanceof io.openapi.model.ToolFile) {
+                    io.openapi.model.ToolFile toolFile = (io.openapi.model.ToolFile) innerObject;
                     final ToolFile oldToolFile = getOldToolFile(toolFile);
                     newArrayList.add(oldToolFile);
                 } else {
@@ -87,10 +90,12 @@ public final class ApiV2BetaVersionConverter {
             io.openapi.model.ToolVersion toolVersion = (io.openapi.model.ToolVersion)object;
             ToolVersion betaToolVersion = getToolVersion(toolVersion);
             return getResponse(betaToolVersion, response.getHeaders());
-        } else if (object instanceof io.openapi.model.Tool tool) {
+        } else if (object instanceof io.openapi.model.Tool) {
+            io.openapi.model.Tool tool = (io.openapi.model.Tool)object;
             Tool betaTool = getTool(tool);
             return getResponse(betaTool, response.getHeaders());
-        } else if (object instanceof Metadata metadata) {
+        } else if (object instanceof Metadata) {
+            Metadata metadata = (Metadata)object;
             MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1, response.getHeaders());
         } else if (object instanceof io.openapi.model.FileWrapper) {

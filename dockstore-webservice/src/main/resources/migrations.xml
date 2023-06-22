@@ -46,5 +46,4 @@
     <include file="migrations.1.13.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.14.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.add_notebook_1.14.0.xml" relativeToChangelogFile="true"/>
-    <include file="migrations.1.15.0.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

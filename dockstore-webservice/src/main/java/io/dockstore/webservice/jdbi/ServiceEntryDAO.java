@@ -17,9 +17,9 @@ package io.dockstore.webservice.jdbi;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Service;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Root;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
 /**

@@ -1,28 +1,24 @@
 package io.dockstore.webservice.core;
 
-import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_COLLECTION_FILTER;
-import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_VERSION_FILTER;
-import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_WORKFLOW_FILTER;
-
-import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
 import java.sql.Timestamp;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -70,31 +66,31 @@ public class Event {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "toolId", referencedColumnName = "id")
     @ApiModelProperty(value = "Tool that the event is acting on.", position = 3)
-    @JsonFilter(SLIM_WORKFLOW_FILTER)
+    @JsonIgnoreProperties({ "workflowVersions" })
     private Tool tool;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workflowId", referencedColumnName = "id")
     @ApiModelProperty(value = "Workflow that the event is acting on.", position = 4)
-    @JsonFilter(SLIM_WORKFLOW_FILTER)
+    @JsonIgnoreProperties({ "workflowVersions" })
     private BioWorkflow workflow;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "apptoolId", referencedColumnName = "id")
     @ApiModelProperty(value = "(github) apps tool that the event is acting on.", position = 9)
-    @JsonFilter(SLIM_WORKFLOW_FILTER)
+    @JsonIgnoreProperties({ "workflowVersions" })
     private AppTool apptool;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notebookId", referencedColumnName = "id")
     @ApiModelProperty(value = "Notebook that the event is acting on.", position = 10)
-    @JsonFilter(SLIM_WORKFLOW_FILTER)
+    @JsonIgnoreProperties({ "workflowVersions" })
     private Notebook notebook;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collectionId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "Collection that the event is acting on.", position = 5)
-    @JsonFilter(SLIM_COLLECTION_FILTER)
+    @JsonIgnoreProperties({ "entries" })
     private Collection collection;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -105,7 +101,7 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "versionId", referencedColumnName = "id")
     @ApiModelProperty(value = "Version associated with the event.", position = 8)
-    @JsonFilter(SLIM_VERSION_FILTER)
+    @JsonIgnoreProperties({"sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images", "versionEditor"})
     private Version version;
 
     @Column

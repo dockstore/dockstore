@@ -63,7 +63,6 @@ import io.swagger.client.model.Workflow.ModeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.client.model.WorkflowVersion.ReferenceTypeEnum;
 import io.swagger.model.DescriptorType;
-import jakarta.ws.rs.core.GenericType;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -79,6 +78,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import javax.ws.rs.core.GenericType;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -760,7 +760,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", false);
-        String errorMessage = "Snapshot for version %s failed because not all images are specified using a digest nor a valid tag.";
+        String errorMessage = "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.";
 
         // Test that the snapshot fails for a workflow version containing an image with no tag
         try {

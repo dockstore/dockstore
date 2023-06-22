@@ -23,11 +23,11 @@ import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.core.database.WorkflowPath;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import java.util.List;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
 /**
@@ -58,15 +58,15 @@ public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
     }
 
     public List<WorkflowPath> findAllPublishedPaths() {
-        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths", WorkflowPath.class).list();
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths"));
     }
 
     public List<RSSWorkflowPath> findAllPublishedPathsOrderByDbupdatedate() {
-        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate", RSSWorkflowPath.class).setMaxResults(
-                RSS_ENTRY_LIMIT).list();
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(
+                RSS_ENTRY_LIMIT));
     }
 
     public List<MyWorkflows> findUserBioWorkflows(long userId) {
-        return this.currentSession().createNamedQuery("io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows", MyWorkflows.class).setParameter("userId", userId).list();
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows").setParameter("userId", userId));
     }
 }

@@ -74,7 +74,6 @@ import org.apache.http.HttpStatus;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -152,8 +151,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     Object objectDoc = map.get("doc");
                     if (objectDoc instanceof String) {
                         doc = (String)objectDoc;
-                    } else if (objectDoc instanceof List docList) {
+                    } else if (objectDoc instanceof List) {
                         // arrays for "doc:" added in CWL 1.1
+                        List docList = (List)objectDoc;
                         doc = String.join(System.getProperty("line.separator"), docList);
                     }
                 }
@@ -884,7 +884,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
         RequirementOrHintState sum = new RequirementOrHintState(existing);
         adds.forEach(add -> {
-            if (add instanceof Map map) {
+            if (add instanceof Map) {
+                Map map = (Map)add;
                 if ("DockerRequirement".equals(map.get("class"))) {
                     Object value = map.get("dockerPull");
                     if (value instanceof String) {
@@ -1149,7 +1150,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         if (isJsonObject(yamlOrJson)) {
             return new Gson().fromJson(yamlOrJson, Map.class);
         } else {
-            new Yaml(new SafeConstructor(new LoaderOptions())).load(yamlOrJson);
+            new Yaml(new SafeConstructor()).load(yamlOrJson);
             return new Yaml().load(yamlOrJson);
         }
     }
@@ -1335,7 +1336,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             // Expand "run: <file>", leaving it unchanged if the file does not exist
             runValue = cwl.get("run");
-            if (runValue instanceof String runPath) {
+            if (runValue instanceof String) {
+                String runPath = (String)runValue;
                 cwl.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), runPath, version, depth));
             }
         }

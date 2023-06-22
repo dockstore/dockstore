@@ -20,13 +20,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
 
 /**
  * These represent actual workflows in terms of CWL, WDL, and other bioinformatics workflows
@@ -50,7 +50,7 @@ import jakarta.persistence.Table;
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {
 
-    @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
     @JsonIgnore
     @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
     private Entry parentEntry;

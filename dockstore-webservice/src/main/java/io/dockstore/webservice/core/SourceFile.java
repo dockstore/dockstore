@@ -29,30 +29,6 @@ import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embeddable;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.MapKeyColumn;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import jakarta.validation.constraints.NotNull;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -61,6 +37,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
+import javax.persistence.PrimaryKeyJoinColumn;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.NotNull;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
@@ -121,7 +120,7 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
-    @Schema(description = "Enumerates the type of file", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Enumerates the type of file", required = true)
     private DescriptorLanguage.FileType type;
 
     @Column(columnDefinition = "TEXT")
@@ -130,12 +129,12 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
-    @Schema(description = "Path to sourcefile relative to its parent", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Path to sourcefile relative to its parent", required = true)
     private String path;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
-    @Schema(description = "Absolute path of sourcefile in git repo", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Absolute path of sourcefile in git repo", required = true)
     private String absolutePath;
 
     @Column(columnDefinition = "boolean default false")
@@ -327,9 +326,11 @@ public class SourceFile implements Comparable<SourceFile> {
 
         // database timestamps
         @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
+        @CreationTimestamp
         private Timestamp dbCreateDate;
 
         @Column()
+        @UpdateTimestamp
         private Timestamp dbUpdateDate;
     }
 }

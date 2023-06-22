@@ -44,24 +44,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.validation.Valid;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.SecurityContext;
-import jakarta.ws.rs.core.UriInfo;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.security.RolesAllowed;
+import javax.validation.Valid;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.UriInfo;
 import org.apache.http.HttpStatus;
 
 /**
@@ -110,13 +110,13 @@ public class ToolsExtendedApi {
     @Path("/tools/index")
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
-    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Produces({MediaType.TEXT_PLAIN})
     @ApiOperation(value = ToolsIndexGet.SUMMARY, notes = ToolsIndexGet.DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Integer.class)
     @ApiResponses(value = {@ApiResponse(code = HttpStatus.SC_OK, message = ToolsIndexGet.OK_RESPONSE)})
     @Operation(operationId = ToolsIndexGet.SUMMARY, summary = ToolsIndexGet.SUMMARY, description = ToolsIndexGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
-            + "", description = ToolsIndexGet.OK_RESPONSE, content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)), @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = Integer.class))})
+            + "", description = ToolsIndexGet.OK_RESPONSE, content = @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = Integer.class)))
     })
     public Response toolsIndexGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user, @Context SecurityContext securityContext)
         throws NotFoundException {

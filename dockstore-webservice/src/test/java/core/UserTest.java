@@ -16,10 +16,10 @@
 
 package core;
 
+import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.dockstore.common.FixtureUtility;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.jackson.Jackson;
 import org.junit.jupiter.api.Test;
@@ -41,14 +41,14 @@ class UserTest {
     @Test
     void serializesToJson() throws Exception {
         final User user = getUser();
-        final String expected = MAPPER.writeValueAsString(MAPPER.readValue(FixtureUtility.fixture("fixtures/user.json"), User.class));
+        final String expected = MAPPER.writeValueAsString(MAPPER.readValue(fixture("fixtures/user.json"), User.class));
         assertThat(MAPPER.writeValueAsString(user)).isEqualTo(expected);
     }
 
     @Test
     void deserializesFromJSON() throws Exception {
         final User user = getUser();
-        assertThat(MAPPER.readValue(FixtureUtility.fixture("fixtures/user.json"), User.class)).isEqualTo(user);
+        assertThat(MAPPER.readValue(fixture("fixtures/user.json"), User.class)).isEqualTo(user);
     }
 
 }

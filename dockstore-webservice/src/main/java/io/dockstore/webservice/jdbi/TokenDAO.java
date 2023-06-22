@@ -45,7 +45,7 @@ public class TokenDAO extends AbstractDAO<Token> {
 
     public void delete(Token token) {
         Session session = currentSession();
-        session.remove(token);
+        session.delete(token);
         session.flush();
     }
 

@@ -20,11 +20,10 @@ package io.dockstore.webservice.core.metrics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
-import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
+import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,17 +36,17 @@ public class ValidationExecution extends Execution {
 
     @NotNull
     @JsonProperty(required = true)
-    @Schema(description = "The validator tool used to validate the workflow", requiredMode = RequiredMode.REQUIRED, example = "miniwdl")
+    @Schema(description = "The validator tool used to validate the workflow", required = true, example = "miniwdl")
     private ValidatorTool validatorTool;
 
     @NotNull
     @JsonProperty(required = true)
-    @Schema(description = "The version of the validator tool", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The version of the validator tool", required = true)
     private String validatorToolVersion;
 
     @NotNull
     @JsonProperty(required = true)
-    @Schema(description = "Boolean indicating if the workflow was validated successfully", requiredMode = RequiredMode.REQUIRED, example = "true")
+    @Schema(description = "Boolean indicating if the workflow was validated successfully", required = true, example = "true")
     private Boolean isValid;
 
     @Schema(description = "The error message for a failed validation by the validator tool")
@@ -56,7 +55,7 @@ public class ValidationExecution extends Execution {
     @NotNull
     @ISO8601ExecutionDate
     @JsonProperty(required = true)
-    @Schema(description = "The date and time that the validator tool was executed in ISO 8601 UTC date format", requiredMode = RequiredMode.REQUIRED, example = "2023-03-31T15:06:49.888745366Z")
+    @Schema(description = "The date and time that the validator tool was executed in ISO 8601 UTC date format", required = true, example = "2023-03-31T15:06:49.888745366Z")
     private String dateExecuted;
 
     public ValidationExecution() {

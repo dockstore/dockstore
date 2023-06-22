@@ -1,6 +1,5 @@
 package io.dockstore.webservice.languages;
 
-import static io.dockstore.common.FixtureUtility.fixture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -11,6 +10,7 @@ import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.DockerParameter;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dropwizard.testing.FixtureHelpers;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,20 +28,11 @@ class NextflowHandlerTest {
         assertEquals("modules/rnaseq.nf", NextflowHandler.getRelativeImportPathFromLine("include { RNASEQ } from './modules/rnaseq'", "/main.nf"));
         assertEquals("modules/rnaseq.nf", NextflowHandler.getRelativeImportPathFromLine("include { RNASEQ } from './modules/rnaseq.nf'", "/main.nf"));
         // TODO: Replace with Java 12's http://openjdk.java.net/jeps/326
-        assertEquals("modules.nf", NextflowHandler.getRelativeImportPathFromLine("""
-            include {\s
-              PREPARE_GENOME_SAMTOOLS;
-              PREPARE_GENOME_PICARD;\s
-              PREPARE_STAR_GENOME_INDEX;
-              PREPARE_VCF_FILE;
-              RNASEQ_MAPPING_STAR;
-              RNASEQ_GATK_SPLITNCIGAR;\s
-              RNASEQ_GATK_RECALIBRATE;
-              RNASEQ_CALL_VARIANTS;
-              POST_PROCESS_VCF;
-              PREPARE_VCF_FOR_ASE;
-              ASE_KNOWNSNPS;
-              group_per_sample } from './modules.nf'""", "/main.nf"));
+        assertEquals("modules.nf", NextflowHandler.getRelativeImportPathFromLine("include { \n"
+                + "  PREPARE_GENOME_SAMTOOLS;\n" + "  PREPARE_GENOME_PICARD; \n" + "  PREPARE_STAR_GENOME_INDEX;\n"
+                + "  PREPARE_VCF_FILE;\n" + "  RNASEQ_MAPPING_STAR;\n" + "  RNASEQ_GATK_SPLITNCIGAR; \n" + "  RNASEQ_GATK_RECALIBRATE;\n"
+                + "  RNASEQ_CALL_VARIANTS;\n" + "  POST_PROCESS_VCF;\n" + "  PREPARE_VCF_FOR_ASE;\n" + "  ASE_KNOWNSNPS;\n"
+                + "  group_per_sample } from './modules.nf'", "/main.nf"));
     }
 
     @Test
@@ -59,7 +50,7 @@ class NextflowHandlerTest {
     @Test
     void testDockerImageReference() {
         NextflowHandler nextflowHandler = new NextflowHandler();
-        final String dockerImagesNextflow = fixture("fixtures/dockerImages.nf");
+        final String dockerImagesNextflow = FixtureHelpers.fixture("fixtures/dockerImages.nf");
         final Map<String, DockerParameter> callsToDockerMap = nextflowHandler.getCallsToDockerMap(dockerImagesNextflow, "");
 
         callsToDockerMap.entrySet().stream().forEach(entry -> {
@@ -103,9 +94,9 @@ class NextflowHandlerTest {
     @Test
     void testParseWorkflowContent() {
         final NextflowHandler nextflowHandler = new NextflowHandler();
-        final String config = fixture("fixtures/nextflow.config");
+        final String config = FixtureHelpers.fixture("fixtures/nextflow.config");
         final WorkflowVersion version = new WorkflowVersion();
-        final String mainContent = fixture("fixtures/main.nf");
+        final String mainContent = FixtureHelpers.fixture("fixtures/main.nf");
         final SourceFile mainSourceFile = new SourceFile();
         mainSourceFile.setContent(mainContent);
         mainSourceFile.setPath("main.nf");

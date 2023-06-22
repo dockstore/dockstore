@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.jakarta.rs.json.JacksonXmlBindJsonProvider;
+import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
@@ -34,12 +34,6 @@ import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.core.GenericType;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -47,6 +41,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -95,7 +95,7 @@ class AdvancedIndexingBenchmarkIT extends BaseIT {
     private ArrayList<String> fixedOrganization;
     private List<Long> indexTimes;
     private SessionFactory sessionFactory;
-    private jakarta.ws.rs.client.Client client;
+    private javax.ws.rs.client.Client client;
 
     /** do nothing, do not load sample data */
     @BeforeEach
@@ -119,7 +119,7 @@ class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     @BeforeEach
     public void setUp() {
-        JacksonXmlBindJsonProvider jacksonJsonProvider = (JacksonXmlBindJsonProvider)new JacksonXmlBindJsonProvider()
+        com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         client = ClientBuilder.newClient();
         client.register(jacksonJsonProvider);

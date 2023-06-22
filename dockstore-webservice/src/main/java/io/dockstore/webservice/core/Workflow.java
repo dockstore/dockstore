@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
@@ -29,20 +28,6 @@ import io.dockstore.common.ValidationConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.Hidden;
-import jakarta.persistence.AttributeConverter;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.validation.constraints.Size;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Objects;
@@ -50,6 +35,21 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import javax.persistence.AttributeConverter;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.OrderBy;
+import javax.persistence.Table;
+import javax.validation.constraints.Size;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
@@ -99,7 +99,6 @@ import org.hibernate.annotations.Filter;
     @JsonSubTypes.Type(value = Notebook.class, name = "Notebook")})
 public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
-    public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("workflowVersions");
     static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
 
     @Column(nullable = false, columnDefinition = "Text default 'STUB'")
@@ -145,6 +144,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
+    @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @BatchSize(size = 25)
     @Filter(name = "versionNameFilter")

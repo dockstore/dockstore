@@ -19,26 +19,25 @@ package io.dockstore.webservice.core.languageparsing;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import java.util.List;
 import java.util.Objects;
 
 @Schema(description = "Request sent to the external language parsing service")
 public class LanguageParsingRequest {
 
-    @Schema(description = "The Git URI", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The Git URI", required = true)
     private String uri;
 
-    @Schema(description = "The Git branch/tag", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The Git branch/tag", required = true)
     private String branch;
 
-    @Schema(description = "The relative path to the primary descriptor (relative to the base in Git)", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The relative path to the primary descriptor (relative to the base in Git)", required = true)
     private String descriptorRelativePathInGit;
 
-    @Schema(description = "Id of the Dockstore entry", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Id of the Dockstore entry", required = true)
     private long entryId;
 
-    @Schema(description = "Id of the Dockstore entry's workflowVersion", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Id of the Dockstore entry's workflowVersion", required = true)
     private long versionId;
 
     @Schema(description = "List of SourceFiles that will be required for parsing hosted entries from Dockstore")

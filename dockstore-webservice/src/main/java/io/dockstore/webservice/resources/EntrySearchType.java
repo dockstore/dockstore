@@ -21,6 +21,5 @@ public enum EntrySearchType {
      */
     TOOLS,
     WORKFLOWS,
-    SERVICES,
-    NOTEBOOKS
+    SERVICES
 }

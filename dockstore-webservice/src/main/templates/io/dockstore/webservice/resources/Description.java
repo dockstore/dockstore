@@ -16,20 +16,26 @@
 
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
+import javax.annotation.Generated;
+import javax.ws.rs.ext.Provider;
 
-import io.swagger.v3.jaxrs2.ReaderListener;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.Contact;
+import io.swagger.annotations.ExternalDocs;
+import io.swagger.annotations.Info;
+import io.swagger.annotations.License;
+import io.swagger.annotations.SecurityDefinition;
+import io.swagger.annotations.SwaggerDefinition;
+import io.swagger.annotations.Tag;
+import io.swagger.jaxrs.Reader;
+import io.swagger.jaxrs.config.ReaderListener;
+import io.swagger.models.Swagger;
+import io.swagger.models.auth.ApiKeyAuthDefinition;
+import io.swagger.models.auth.In;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.info.Contact;
-import io.swagger.v3.oas.annotations.info.Info;
-import io.swagger.v3.oas.annotations.info.License;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.servers.Server;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.integration.api.OpenApiReader;
-import io.swagger.v3.oas.models.OpenAPI;
-import jakarta.annotation.Generated;
-import jakarta.ws.rs.ext.Provider;
+
+import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * This is a dummy class used to describe the swagger API as a whole.
@@ -39,30 +45,32 @@ import jakarta.ws.rs.ext.Provider;
  * @author dyuen
  */
 @Generated("maven resources template")
-@Tag(name = "tools")
+@Api("tools")
 @Provider
-@OpenAPIDefinition(
-    tags = {@Tag (name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS), @Tag(name = "entries", description = ResourceConstants.ENTRIES),
-        @Tag(name = "containers", description = ResourceConstants.CONTAINERS),
-        @Tag(name = "aliases", description = ResourceConstants.ALIASES),
-        @Tag(name = "containertags", description = ResourceConstants.CONTAINERTAGS),
-        @Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1),
-        @Tag(name = "GA4GH", description = ResourceConstants.GA4GH),
-        @Tag(name = "GA4GHV20", description = ResourceConstants.GA4GHV20),
-        @Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH),
-        @Tag(name = "tokens", description = ResourceConstants.TOKENS),
-        @Tag(name = "workflows", description = ResourceConstants.WORKFLOWS),
-        @Tag(name = "organizations", description = ResourceConstants.ORGANIZATIONS),
-        @Tag(name = "toolTester", description = ResourceConstants.TOOLTESTER),
-        @Tag(name = "curation", description = ResourceConstants.CURATION),
-        @Tag(name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS),
-        @Tag(name = "hosted", description = ResourceConstants.HOSTED),
-        @Tag(name = "users", description = ResourceConstants.USERS),
-        @Tag(name = "metadata", description = ResourceConstants.METADATA)},
-    security = {@SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME)},
-    servers = {@Server(url = "/api", description = "Current server when hosted on AWS"), @Server(url = "/", description = "When working locally"), @Server(url = "https://dockstore.org/api", description = "Production server"), @Server(url = "https://staging.dockstore.org/api", description = "Staging server"), @Server(url = "https://dev.dockstore.net/api", description = "Nightly build server")},
-    info = @Info(description = Description.DESCRIPTION, version = "1.15.0-SNAPSHOT", title = "Dockstore API", contact = @Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = Description.TOS_LOCATION)
+//TODO clean this up, preferably by destroying swagger
+@OpenAPIDefinition(tags = {@io.swagger.v3.oas.annotations.tags.Tag (name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS)}, servers = {@Server(url = "/api", description = "Current server when hosted on AWS"), @Server(url = "/", description = "When working locally"), @Server(url = "https://dockstore.org/api", description = "Production server"), @Server(url = "https://staging.dockstore.org/api", description = "Staging server"), @Server(url = "https://dev.dockstore.net/api", description = "Nightly build server")},
+    info = @io.swagger.v3.oas.annotations.info.Info(description = Description.DESCRIPTION, version = "${project.version}", title = "Dockstore API", contact = @io.swagger.v3.oas.annotations.info.Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @io.swagger.v3.oas.annotations.info.License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = Description.TOS_LOCATION)
 )
+@SwaggerDefinition(info = @Info(description =
+    Description.DESCRIPTION, version = "${project.version}", title = "Dockstore API", contact = @Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = "TBD"), tags = {
+    @Tag(name = "entries", description = ResourceConstants.ENTRIES),
+    @Tag(name = "containers", description = ResourceConstants.CONTAINERS),
+    @Tag(name = "aliases", description = ResourceConstants.ALIASES),
+    @Tag(name = "containertags", description = ResourceConstants.CONTAINERTAGS),
+    @Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1),
+    @Tag(name = "GA4GH", description = ResourceConstants.GA4GH),
+    @Tag(name = "GA4GHV20", description = ResourceConstants.GA4GHV20),
+    @Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH),
+    @Tag(name = "tokens", description = ResourceConstants.TOKENS),
+    @Tag(name = "workflows", description = ResourceConstants.WORKFLOWS),
+    @Tag(name = "organizations", description = ResourceConstants.ORGANIZATIONS),
+    @Tag(name = "toolTester", description = ResourceConstants.TOOLTESTER),
+    @Tag(name = "curation", description = ResourceConstants.CURATION),
+    @Tag(name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS),
+    @Tag(name = "hosted", description = ResourceConstants.HOSTED),
+    @Tag(name = "users", description = ResourceConstants.USERS),
+    @Tag(name = "metadata", description = ResourceConstants.METADATA) }, externalDocs = @ExternalDocs(value = "Dockstore documentation", url = "https://www.dockstore.org/docs/getting-started"), securityDefinition = @SecurityDefinition(apiKeyAuthDefinitions = {
+    @io.swagger.annotations.ApiKeyAuthDefinition(key = JWT_SECURITY_DEFINITION_NAME, in = io.swagger.annotations.ApiKeyAuthDefinition.ApiKeyLocation.HEADER, name = "Authorization") }))
 public class Description implements ReaderListener {
 
     public static final String DESCRIPTION = "This describes the dockstore API, a webservice that manages pairs of Docker images and associated metadata such as CWL documents and Dockerfiles used to build those images. Explore swagger.json for a Swagger 2.0 description of our API and explore openapi.yaml for OpenAPI 3.0 descriptions.";
@@ -74,12 +82,12 @@ public class Description implements ReaderListener {
     public static final String TOS_LOCATION = "https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf";
 
     @Override
-    public void beforeScan(OpenApiReader reader, OpenAPI openAPI) {
-        // intentionally left empty
+    public void beforeScan(Reader reader, Swagger swagger) {
+
     }
 
     @Override
-    public void afterScan(OpenApiReader reader, OpenAPI openAPI) {
-        // intentionally left empty
+    public void afterScan(Reader reader, Swagger swagger) {
+        swagger.addSecurityDefinition(JWT_SECURITY_DEFINITION_NAME, new ApiKeyAuthDefinition("Authorization", In.HEADER));
     }
 }

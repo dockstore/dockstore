@@ -18,8 +18,8 @@
 package io.dockstore.webservice.core.metrics.constraints;
 
 import io.dockstore.webservice.core.metrics.RunExecution;
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
 
 /**
  * Validates that execution time is in ISO 8601 duration format

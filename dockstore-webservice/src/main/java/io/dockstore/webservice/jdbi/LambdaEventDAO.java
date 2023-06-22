@@ -4,14 +4,14 @@ import com.google.common.base.MoreObjects;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.hibernate.AbstractDAO;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -35,7 +35,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
 
     public void delete(LambdaEvent lambdaEvent) {
         Session session = currentSession();
-        session.remove(lambdaEvent);
+        session.delete(lambdaEvent);
         session.flush();
     }
 

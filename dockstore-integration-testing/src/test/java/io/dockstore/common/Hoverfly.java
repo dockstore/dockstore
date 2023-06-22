@@ -16,7 +16,7 @@
 
 package io.dockstore.common;
 
-import static io.dockstore.common.FixtureUtility.fixture;
+import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
 import static io.specto.hoverfly.junit.dsl.HoverflyDsl.response;
 import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
@@ -36,7 +36,7 @@ import io.dockstore.webservice.core.TokenType;
 import io.specto.hoverfly.junit.core.SimulationSource;
 import io.specto.hoverfly.junit.core.model.RequestFieldMatcher;
 import io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers;
-import jakarta.ws.rs.core.MediaType;
+import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 
 /**

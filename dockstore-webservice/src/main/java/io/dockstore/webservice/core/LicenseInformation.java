@@ -1,6 +1,6 @@
 package io.dockstore.webservice.core;
 
-import jakarta.persistence.Embeddable;
+import javax.persistence.Embeddable;
 
 @Embeddable
 public class LicenseInformation {

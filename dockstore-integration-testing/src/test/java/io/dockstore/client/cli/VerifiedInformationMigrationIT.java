@@ -6,7 +6,7 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.core.Application;
+import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.util.Arrays;
 import java.util.List;

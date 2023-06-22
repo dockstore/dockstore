@@ -41,22 +41,22 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
@@ -549,10 +549,12 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Accumulate the entry,version combos, there can be multiple different versions per entry.
         List<CollectionEntry> collectionEntries = new ArrayList<>();
-        collectionEntries.addAll(toolDAO.getAllCollectionWorkflows(id)); //adds all AppTools, BioWorkflows, Notebooks, and Services
-        collectionEntries.addAll(toolDAO.getAllCollectionWorkflowsWithVersions(id)); //adds all AppTools, BioWorkflows, Notebooks, and Services
+        collectionEntries.addAll(toolDAO.getCollectionWorkflows(id));
+        collectionEntries.addAll(toolDAO.getCollectionWorkflowsWithVersions(id));
         collectionEntries.addAll(toolDAO.getCollectionTools(id));
         collectionEntries.addAll(toolDAO.getCollectionToolsWithVersions(id));
+        collectionEntries.addAll(toolDAO.getCollectionServices(id));
+        collectionEntries.addAll(toolDAO.getCollectionServicesWithVersions(id));
 
         // Reduce to a set of entries and index.
         Set<Entry> entries = new HashSet<>();

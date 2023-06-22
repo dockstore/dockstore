@@ -16,6 +16,7 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.common.CommonTestUtilities.restartElasticsearch;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -25,15 +26,15 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.MuteForSuccessfulTests;
-import io.dockstore.openapi.client.ApiClient;
-import io.dockstore.openapi.client.ApiException;
-import io.dockstore.openapi.client.api.EntriesApi;
-import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
-import io.dockstore.openapi.client.api.MetadataApi;
-import io.dockstore.openapi.client.api.WorkflowsApi;
-import io.dockstore.openapi.client.model.Workflow;
-import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.helpers.AppToolHelper;
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.ApiResponse;
+import io.swagger.client.api.EntriesApi;
+import io.swagger.client.api.ExtendedGa4GhApi;
+import io.swagger.client.api.MetadataApi;
+import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Workflow;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,7 +83,7 @@ class SearchResourceIT extends BaseIT {
                 if (counter > 5) {
                     fail(s + " does not have the correct amount of hits");
                 } else {
-                    long sleepTime = 1000L * counter;
+                    long sleepTime = 1000 * counter;
                     Thread.sleep(sleepTime);
                     waitForIndexRefresh(hit, extendedGa4GhApi, counter + 1, esQuery);
                 }
@@ -92,28 +93,30 @@ class SearchResourceIT extends BaseIT {
         }
     }
 
-    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi) {
-        waitForIndexRefresh(hit, extendedGa4GhApi, 0, exampleESQuery);
+    private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter) {
+        waitForIndexRefresh(hit, extendedGa4GhApi, counter, exampleESQuery);
     }
 
     @Test
     void testSearchOperations() throws ApiException {
-        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         EntriesApi entriesApi = new EntriesApi(webClient);
         // update the search index
-        extendedGa4GhApi.updateTheWorkflowsAndToolsIndices();
-        waitForIndexRefresh(0, extendedGa4GhApi);
+        ApiResponse<Void> voidApiResponse = extendedGa4GhApi.toolsIndexGetWithHttpInfo();
+        int statusCode = voidApiResponse.getStatusCode();
+        assertEquals(200, statusCode);
+        waitForIndexRefresh(0, extendedGa4GhApi, 0);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi
-            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflow = workflowApi.refresh1(workflowByPathGithub.getId(), false);
-        entriesApi.addAliases1(workflow.getId(), "potatoAlias");
-        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
-        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
-        waitForIndexRefresh(1, extendedGa4GhApi);
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
+        entriesApi.addAliases(workflow.getId(), "potatoAlias");
+        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
+        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        waitForIndexRefresh(1, extendedGa4GhApi,  0);
         // after publication index should include workflow
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
         assertTrue(s.contains("\"aliases\":{\"potatoAlias\":{}}"), s + " should've contained potatoAlias");
@@ -126,11 +129,11 @@ class SearchResourceIT extends BaseIT {
     }
 
     @Test
-    void testNotebook() {
+    void testNotebook() throws ApiException {
         // register a simple published notebook
-        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        workflowApi.handleGitHubRelease("refs/tags/simple-published-v1", AppToolHelper.INSTALLATION_ID, "dockstore-testing/simple-notebook", USER_2_USERNAME);
+        workflowApi.handleGitHubRelease("dockstore-testing/simple-notebook", USER_2_USERNAME, "refs/tags/simple-published-v1", AppToolHelper.INSTALLATION_ID);
 
         // wait until the notebook is indexed
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
@@ -155,7 +158,7 @@ class SearchResourceIT extends BaseIT {
      */
     @Test
     void testElasticSearchHealthCheck() {
-        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         MetadataApi metadataApi = new MetadataApi(webClient);
 
@@ -167,8 +170,8 @@ class SearchResourceIT extends BaseIT {
         }
 
         // Update the search index
-        extendedGa4GhApi.updateTheWorkflowsAndToolsIndices();
-        waitForIndexRefresh(0, extendedGa4GhApi);
+        extendedGa4GhApi.toolsIndexGet();
+        waitForIndexRefresh(0, extendedGa4GhApi,  0);
         try {
             metadataApi.checkElasticSearch();
             fail("Should fail even with index because there's no hits");
@@ -180,13 +183,13 @@ class SearchResourceIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi
-            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflow = workflowApi.refresh1(workflowByPathGithub.getId(), false);
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
-        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
-        waitForIndexRefresh(1, extendedGa4GhApi);
+        waitForIndexRefresh(1, extendedGa4GhApi,  0);
 
         // Should not fail since a workflow exists in index
         try {

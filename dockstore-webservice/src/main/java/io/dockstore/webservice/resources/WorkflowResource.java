@@ -29,7 +29,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
-import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -87,6 +86,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.api.impl.ToolsImplCommon;
+import io.swagger.jaxrs.PATCH;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -98,24 +98,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.FormParam;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PATCH;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -132,10 +114,27 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -807,10 +806,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Should only be used by Dockstore versions < 1.14.0. Indicates whether to get a service or workflow") @DefaultValue("false") @QueryParam("services") boolean services,
         @ApiParam(value = "Which workflow subclass to retrieve. If present takes precedence over services parameter") @QueryParam("subclass") WorkflowSubClass subclass,
         @Context HttpServletResponse response) {
+        // delete the next line if GUI pagination is not working by 1.5.0 release
         int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
         final Class<Workflow> workflowClass = (Class<Workflow>) workflowSubClass(services, subclass);
         List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder,
-                workflowClass);
+            workflowClass);
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
         EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
@@ -1368,12 +1368,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     }
 
                     if (toolsJSONTable.isPresent()) {
-                        checkAndAddImages(existingTag, toolsJSONTable.get(), lInterface);
-                    }
+                        // Check that a snapshot can occur (all images are referenced by tag or digest)
+                        lInterface.checkSnapshotImages(existingTag.getName(), toolsJSONTable.get());
 
-                    // If there is a notebook kernel image, attempt to snapshot it.
-                    if (existingTag.getKernelImagePath() != null) {
-                        checkAndAddImages(existingTag, convertImageToToolsJson(existingTag.getKernelImagePath(), lInterface), lInterface);
+                        Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable.get());
+                        existingTag.getImages().addAll(images);
                     }
 
                     // store dag
@@ -1392,22 +1391,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotNullEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
-    }
-
-    private void checkAndAddImages(WorkflowVersion version, String toolsJson, LanguageHandlerInterface languageHandler) {
-        // Check that a snapshot can occur (all images are referenced by tag or digest).
-        languageHandler.checkSnapshotImages(version.getName(), toolsJson);
-        // Retrieve the images.
-        Set<Image> images = languageHandler.getImagesFromRegistry(toolsJson);
-        // Add them to the version.
-        version.getImages().addAll(images);
-    }
-
-    private String convertImageToToolsJson(String image, LanguageHandlerInterface languageHandler) {
-        LanguageHandlerInterface.DockerSpecifier specifier = LanguageHandlerInterface.determineImageSpecifier(image, DockerImageReference.LITERAL);
-        String url = languageHandler.getURLFromEntry(image, toolDAO, specifier);
-        LanguageHandlerInterface.DockerInfo info = new LanguageHandlerInterface.DockerInfo("", image, url, specifier);
-        return languageHandler.getJSONTableToolContent(Map.of("", info));
     }
 
     @GET
@@ -1727,8 +1710,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         String workflowName;
 
         // Grab information if tool
-        if (entry instanceof Tool tool) {
+        if (entry instanceof Tool) {
             // Get tool
+            Tool tool = (Tool) entry;
 
             // Generate workflow name
             workflowName = MoreObjects.firstNonNull(tool.getToolname(), "");
@@ -1765,8 +1749,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             // Determine last updated
             lastUpdated = tool.getLastUpdated();
 
-        } else if (entry instanceof Workflow workflow) {
+        } else if (entry instanceof Workflow) {
             // Get workflow
+            Workflow workflow = (Workflow) entry;
 
             // Copy over common attributes
             defaultTestParameterPath = workflow.getDefaultTestParameterFilePath();

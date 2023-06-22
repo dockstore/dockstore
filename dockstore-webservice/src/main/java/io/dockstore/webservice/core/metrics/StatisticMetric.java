@@ -21,17 +21,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Inheritance;
-import jakarta.persistence.InheritanceType;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.validation.constraints.NotNull;
 import java.sql.Timestamp;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.SequenceGenerator;
+import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -49,25 +48,25 @@ public abstract class StatisticMetric {
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The minimum value from the data points", required = true)
-    @Schema(description = "The minimum value from the data points", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The minimum value from the data points", required = true)
     private Double minimum;
 
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The maximum value from the data points", required = true)
-    @Schema(description = "The maximum value from the data points", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The maximum value from the data points", required = true)
     private Double maximum;
 
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The average value from the data points", required = true)
-    @Schema(description = "The average value from the data points", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The average value from the data points", required = true)
     private Double average;
 
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The number of data points used to calculate the average", required = true)
-    @Schema(description = "The number of data points used to calculate the average", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "The number of data points used to calculate the average", required = true)
     private Integer numberOfDataPointsForAverage;
 
     @Column

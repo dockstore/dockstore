@@ -21,20 +21,19 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.MapKeyColumn;
-import jakarta.persistence.MapKeyEnumerated;
-import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotEmpty;
 import java.util.EnumMap;
 import java.util.Map;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.MapKeyEnumerated;
+import javax.persistence.Table;
+import javax.validation.constraints.NotEmpty;
 import org.hibernate.annotations.BatchSize;
 
 @Entity
@@ -52,7 +51,7 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     @CollectionTable(name = "execution_status_count", joinColumns = @JoinColumn(name = "executionstatusid", referencedColumnName = "id"))
     @BatchSize(size = 25)
     @ApiModelProperty(value = "A map containing the count for each key")
-    @Schema(description = "A map containing the count for each key", requiredMode = RequiredMode.REQUIRED, example = """
+    @Schema(description = "A map containing the count for each key", required = true, example = """
             {
                 "SUCCESSFUL": 5,
                 "FAILED_RUNTIME_INVALID": 1,
@@ -62,11 +61,11 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     private Map<ExecutionStatus, Integer> count = new EnumMap<>(ExecutionStatus.class);
 
     @Column(nullable = false)
-    @Schema(description = "Number of successful executions", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Number of successful executions", required = true)
     private int numberOfSuccessfulExecutions;
 
     @Column(nullable = false)
-    @Schema(description = "Number of failed executions. An execution may have failed because it was semantically or runtime invalid", requiredMode = RequiredMode.REQUIRED)
+    @Schema(description = "Number of failed executions. An execution may have failed because it was semantically or runtime invalid", required = true)
     private int numberOfFailedExecutions;
 
     public ExecutionStatusCountMetric() {

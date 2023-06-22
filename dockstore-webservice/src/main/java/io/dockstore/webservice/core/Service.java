@@ -17,10 +17,10 @@ package io.dockstore.webservice.core;
 
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
-import jakarta.persistence.Entity;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.Table;
+import javax.persistence.Entity;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 
 @ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity

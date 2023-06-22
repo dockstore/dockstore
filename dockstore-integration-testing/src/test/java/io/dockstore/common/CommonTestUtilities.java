@@ -39,15 +39,10 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dropwizard.core.Application;
+import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.core.GenericType;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,12 +57,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
-import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
@@ -87,7 +84,7 @@ public final class CommonTestUtilities {
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
     public static final String OLD_DOCKSTORE_VERSION = "1.13.0";
     public static final List<String> COMMON_MIGRATIONS = List.of("1.3.0.generated", "1.3.1.consistency", "1.4.0", "1.5.0", "1.6.0", "1.7.0",
-            "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0");
+            "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0");
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
     public static final String PUBLIC_CONFIG_PATH = getUniversalResourceFileAbsolutePath("dockstore.yml").orElse(null);
@@ -361,91 +358,10 @@ public final class CommonTestUtilities {
 
     public static void runMigration(List<String> migrations, Application<DockstoreWebserviceConfiguration> application,
         String configPath) {
-        String migrationsJoined = String.join(",", migrations);
         try {
-            if (!restoreMigratedDb(migrationsJoined)) {
-                application.run("db", "migrate", configPath, "--include", migrationsJoined);
-                dumpMigratedDb(migrationsJoined);
-            }
+            application.run("db", "migrate", configPath, "--include", String.join(",", migrations));
         } catch (Exception e) {
             fail("database migration failed");
-        }
-    }
-
-    private static String pathOfMigratedDb(String migrationsId) {
-        return "/tmp/dockstore_dump_" + migrationsId + ".sql";
-    }
-
-    private static boolean dumpMigratedDb(String migrationsId) {
-        if (!shouldCacheMigrations()) {
-            return false;
-        }
-        String path = pathOfMigratedDb(migrationsId);
-        boolean success = runShellCommand(dockerizeIfNecessary(String.format("pg_dump webservice_test -U postgres > %s", path)));
-        if (!success) {
-            LOG.error("dump failed");
-            runShellCommand(String.format("rm -f %s", path));
-        }
-        return success;
-    }
-
-    private static boolean restoreMigratedDb(String migrationsId) {
-        if (!shouldCacheMigrations()) {
-            return false;
-        }
-        String path = pathOfMigratedDb(migrationsId);
-        if (!new File(path).exists()) {
-            LOG.info("no dump exists");
-            return false;
-        }
-        boolean success = runShellCommand(dockerizeIfNecessary(String.format("psql webservice_test -U postgres < %s", path)));
-        if (success) {
-            runShellCommand(String.format("echo %s >> /tmp/used_dumps.txt", path));
-        }
-        return success;
-    }
-
-    private static boolean getEnvBoolean(String name) {
-        return Boolean.parseBoolean(System.getenv(name));
-    }
-
-    private static String dockerizeIfNecessary(String command) {
-        if (getEnvBoolean("DOCKSTORE_DOCKER_DB")) {
-            return "docker exec -i postgres1 " + command;
-        } else {
-            return command;
-        }
-    }
-
-    private static boolean shouldCacheMigrations() {
-        return getEnvBoolean("DOCKSTORE_CACHE_MIGRATIONS");
-    }
-
-    private static boolean runShellCommand(String command) {
-        LOG.info("running command: " + command);
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
-        try {
-            CommandLine commandLine = new CommandLine("/bin/sh");
-            commandLine.addArgument("-c", false);
-            commandLine.addArgument(command, false);
-            Executor executor = new DefaultExecutor();
-            executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
-            // DefaultExecutor.execute() runs the command synchronously, and always
-            // appears to throw on failure, even if the failure is that the command
-            // ran completely but returned a non-zero error code.
-            executor.execute(commandLine);
-            return true;
-        } catch (Exception e) {
-            String message = "failure running command '" + command + "'";
-            LOG.error(message, e);
-            LOG.error("stdout: " + stdout.toString(StandardCharsets.UTF_8));
-            LOG.error("stderr: " + stderr.toString(StandardCharsets.UTF_8));
-            if (e instanceof ExecuteException) {
-                return false;
-            } else {
-                throw new RuntimeException(message, e);
-            }
         }
     }
 
