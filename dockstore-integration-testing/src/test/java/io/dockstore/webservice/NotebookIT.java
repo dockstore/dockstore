@@ -417,13 +417,13 @@ class NotebookIT extends BaseIT {
         assertFalse(notebook.isIsPublished());
         assertTrue(notebook.isDeletable());
 
-        // Try to delete the notebook as an unrelated user
+        // Try to delete the notebook as a user without write access
         ApiClient otherClient = getOpenAPIWebClient(BasicIT.OTHER_USERNAME, testingPostgres);
         EntriesApi otherEntriesApi = new EntriesApi(otherClient);
         try {
             otherEntriesApi.deleteEntry(notebook.getId());
         } catch (ApiException e) {
-            assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
+            assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
         }
 
         // Delete the notebook and confirm that it no longer exists
@@ -435,7 +435,7 @@ class NotebookIT extends BaseIT {
             assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
         }
 
-        // Attempt to delete the now-nonexistent notebook again
+        // Attempt to again delete the now-nonexistent notebook
         try {
             entriesApi.deleteEntry(notebook.getId());
             fail("Should throw because the notebook does not exist");
@@ -447,20 +447,20 @@ class NotebookIT extends BaseIT {
         workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
         notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
 
-        // Unpublish the notebook and check the state
-        // Nothing should change, since the notebook is not currently published
+        // Unpublish the notebook
+        // Nothing should change, since the notebook is currently unpublished
         workflowsApi.publish1(notebook.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
         notebook = workflowsApi.getWorkflow(notebook.getId(), "");
         assertFalse(notebook.isIsPublished());
         assertTrue(notebook.isDeletable());
 
-        // Publish the notebook and confirm expected state
+        // Publish the notebook
         workflowsApi.publish1(notebook.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
         notebook = workflowsApi.getWorkflow(notebook.getId(), "");
         assertTrue(notebook.isIsPublished());
         assertFalse(notebook.isDeletable());
 
-        // Attempt to delete, which should fail because wasEverPublic is now true
+        // Attempt to delete, which should fail because the notebook was previously published
         try {
             entriesApi.deleteEntry(notebook.getId());
             fail("Should throw on failed delete");
@@ -477,7 +477,7 @@ class NotebookIT extends BaseIT {
         assertFalse(notebook.isIsPublished());
         assertFalse(notebook.isDeletable());
 
-        // Attempt to delete, which should fail because wasEverPublic is now true
+        // Attempt to delete, which should fail because the notebook was previously published
         try {
             entriesApi.deleteEntry(notebook.getId());
             fail("Should throw on failed delete");
