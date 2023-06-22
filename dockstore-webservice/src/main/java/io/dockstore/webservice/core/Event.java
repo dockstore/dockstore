@@ -86,6 +86,12 @@ public class Event {
     private AppTool apptool;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "serviceId", referencedColumnName = "id")
+    @ApiModelProperty(value = "Service that the event is acting on.", position = 11)
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
+    private Service service;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notebookId", referencedColumnName = "id")
     @ApiModelProperty(value = "Notebook that the event is acting on.", position = 10)
     @JsonFilter(SLIM_WORKFLOW_FILTER)
@@ -316,8 +322,10 @@ public class Event {
             Event event = new Event();
             event.user = this.user;
             event.organization = this.organization;
-            event.tool = this.tool;
             event.apptool = this.appTool;
+            event.tool = this.tool;
+            event.notebook = this.notebook;
+            event.service = this.service;
             event.workflow = this.bioWorkflow;
             event.collection = this.collection;
             event.initiatorUser = this.initiatorUser;

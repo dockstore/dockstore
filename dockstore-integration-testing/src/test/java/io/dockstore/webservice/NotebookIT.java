@@ -282,6 +282,18 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
+    void testEvents() {
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+
+        EventsApi eventsApi = new EventsApi(apiClient);
+        assertEquals(1, testingPostgres.runSelectStatement(String.format("select count(*) from event where notebookid = %d", notebook.getId()), long.class));
+    }
+
+    @Test
     void testStarringNotebook() {
         ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);

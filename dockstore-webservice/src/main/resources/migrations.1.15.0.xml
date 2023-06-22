@@ -84,4 +84,9 @@
         </sql>
         <dropColumn columnName="accepted" tableName="organization_user"/>
     </changeSet>
+    <changeSet author="svonworl" id="fixServiceEvents">
+        <addColumn tableName="event">
+            <column name="serviceid" type="int8"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
