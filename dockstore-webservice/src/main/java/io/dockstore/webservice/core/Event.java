@@ -182,6 +182,22 @@ public class Event {
         this.workflow = workflow;
     }
 
+    public Service getService() {
+        return service;
+    }
+
+    public void setService(Service service) {
+        this.service = service;
+    }
+
+    public Notebook getNotebook() {
+        return notebook;
+    }
+
+    public void setNotebook(Notebook notebook) {
+        this.notebook = notebook;
+    }
+
     public Collection getCollection() {
         return collection;
     }
@@ -283,11 +299,6 @@ public class Event {
             return this;
         }
 
-        public Builder withService(Service service) {
-            this.service = service;
-            return this;
-        }
-
         public Builder withBioWorkflow(BioWorkflow workflow) {
             this.bioWorkflow = workflow;
             return this;
@@ -295,6 +306,11 @@ public class Event {
 
         public Builder withAppTool(AppTool appTool) {
             this.appTool = appTool;
+            return this;
+        }
+
+        public Builder withService(Service service) {
+            this.service = service;
             return this;
         }
 
@@ -322,11 +338,11 @@ public class Event {
             Event event = new Event();
             event.user = this.user;
             event.organization = this.organization;
-            event.apptool = this.appTool;
             event.tool = this.tool;
-            event.notebook = this.notebook;
-            event.service = this.service;
             event.workflow = this.bioWorkflow;
+            event.apptool = this.appTool;
+            event.service = this.service;
+            event.notebook = this.notebook;
             event.collection = this.collection;
             event.initiatorUser = this.initiatorUser;
             event.type = this.type;

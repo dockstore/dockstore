@@ -34,6 +34,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.CategoriesApi;
 import io.dockstore.openapi.client.api.EntriesApi;
+import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.UsersApi;

@@ -8692,8 +8692,12 @@ components:
           format: int64
         initiatorUser:
           $ref: '#/components/schemas/User'
+        notebook:
+          $ref: '#/components/schemas/Notebook'
         organization:
           $ref: '#/components/schemas/Organization'
+        service:
+          $ref: '#/components/schemas/Service'
         tool:
           $ref: '#/components/schemas/DockstoreTool'
         type:
