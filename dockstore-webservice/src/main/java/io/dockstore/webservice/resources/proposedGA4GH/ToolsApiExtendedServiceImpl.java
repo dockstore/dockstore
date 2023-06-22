@@ -323,6 +323,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             try {
                 json = new JSONObject(query);
             } catch (JSONException ex) {
+                LOG.error(SEARCH_QUERY_INVALID_JSON, ex);
                 throw new CustomWebApplicationException(SEARCH_QUERY_INVALID_JSON, HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
             }
 
