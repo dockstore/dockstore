@@ -16,6 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
+import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.throwIf;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
@@ -252,15 +253,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
         checkNotNullEntry(entry);
         checkCanWrite(user, entry);
-        if (!entry.isDeletable()) {
-            throw new CustomWebApplicationException(ENTRY_NOT_DELETABLE_MESSAGE, HttpStatus.SC_FORBIDDEN);
-        }
+        throwIf(!entry.isDeletable(), ENTRY_NOT_DELETABLE_MESSAGE, HttpStatus.SC_FORBIDDEN);
         // Remove the events associated with the entry
         eventDAO.deleteEventByEntryID(entry.getId());
-        // Delete the entry using an arbitrary EntryDAO.
-        // This works, but isn't the "purest" approach.
-        // Later, we may create a helper class to select the appropriate
-        // DAO for a given entry, and we should use it here...
+        // Delete the entry using an arbitrary EntryDAO, which works, but isn't the "purest" approach.
+        // Later, we may create a helper class to select the appropriate // DAO for a given entry, and we should use it here...
         ((EntryDAO)workflowDAO).delete(entry);
         LOG.info("Deleted entry {}", entry.getEntryPath());
         return entry;
