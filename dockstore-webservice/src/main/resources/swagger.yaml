@@ -1370,6 +1370,8 @@ paths:
       summary: "Allow satellizer to post a new Google token to Dockstore."
       description: "A post method is required by satellizer to send the Google token"
       operationId: "addGoogleToken"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
