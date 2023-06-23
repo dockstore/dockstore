@@ -437,7 +437,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         try {
             element = gson.fromJson(satellizerJson, JsonElement.class);
         } catch (JsonSyntaxException ex) {
-            LOG.warn("Invalid JSON provided");
+            LOG.warn(INVALID_JSON);
             throw new CustomWebApplicationException(INVALID_JSON, HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
         JsonObject satellizerObject = element.getAsJsonObject();
