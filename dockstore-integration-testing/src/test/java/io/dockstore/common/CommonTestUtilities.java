@@ -32,6 +32,7 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Workflow;
@@ -41,8 +42,6 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.core.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.swagger.client.ApiClient;
-import io.swagger.client.model.PublishRequest;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -179,12 +178,7 @@ public final class CommonTestUtilities {
      * @return
      */
     public static ApiClient getWebClient(boolean authenticated, String username, TestingPostgres testingPostgres) {
-        ApiClient client = new ApiClient();
-        client.setBasePath(getBasePath());
-        if (authenticated) {
-            client.addDefaultHeader("Authorization", getDockstoreToken(testingPostgres, username));
-        }
-        return client;
+        return getOpenAPIWebClient(authenticated, username, testingPostgres);
     }
 
     /**
@@ -192,8 +186,8 @@ public final class CommonTestUtilities {
      * TODO: Somehow merge it with the method above, they are nearly identical
      * @return
      */
-    public static io.dockstore.openapi.client.ApiClient getOpenAPIWebClient(boolean authenticated, String username, TestingPostgres testingPostgres) {
-        io.dockstore.openapi.client.ApiClient client = new io.dockstore.openapi.client.ApiClient();
+    public static ApiClient getOpenAPIWebClient(boolean authenticated, String username, TestingPostgres testingPostgres) {
+        ApiClient client = new io.dockstore.openapi.client.ApiClient();
         client.setBasePath(getBasePath());
         if (authenticated) {
             client.addDefaultHeader("Authorization", getDockstoreToken(testingPostgres, username));
@@ -653,8 +647,8 @@ public final class CommonTestUtilities {
      * @param bool
      * @return
      */
-    public static PublishRequest createPublishRequest(Boolean bool) {
-        PublishRequest publishRequest = new PublishRequest();
+    public static io.dockstore.openapi.client.model.PublishRequest createPublishRequest(Boolean bool) {
+        io.dockstore.openapi.client.model.PublishRequest publishRequest = new io.dockstore.openapi.client.model.PublishRequest();
         publishRequest.setPublish(bool);
         return publishRequest;
     }
@@ -665,16 +659,16 @@ public final class CommonTestUtilities {
         return publishRequest;
     }
 
-    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client, String acceptType) {
+    public static <T> T getArbitraryURL(String url, GenericType<T> type, io.dockstore.openapi.client.ApiClient client, String acceptType) {
         return client
             .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), acceptType, "application/zip",
-                new String[] { "BEARER" }, type).getData();
+                new String[] { "BEARER" }, type);
     }
 
     /**
      * Get an arbitrary URL with the accept type defaulting to "application/zip".
      */
-    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
+    public static <T> T getArbitraryURL(String url, GenericType<T> type, io.dockstore.openapi.client.ApiClient client) {
         return getArbitraryURL(url, type, client, "application/zip");
     }
 

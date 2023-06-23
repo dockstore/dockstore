@@ -248,7 +248,7 @@ class NotebookIT extends BaseIT {
         WorkflowVersion version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
         // Publish the notebook
         PublishRequest publishRequest = new PublishRequest();
-        publishRequest.setPublish(true);
+        publishRequest.publish(true);
         workflowsApi.publish1(notebook.getId(), publishRequest);
         assertFalse(version.isFrozen());
         assertEquals(0, testingPostgres.runSelectStatement("select count(*) from entry_version_image where versionid = " + version.getId(), long.class));

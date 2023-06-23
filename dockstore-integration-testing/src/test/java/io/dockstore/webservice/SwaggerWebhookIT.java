@@ -44,11 +44,28 @@ import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ValidationConstants;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
+import io.dockstore.openapi.client.api.MetadataApi;
+import io.dockstore.openapi.client.api.OrganizationsApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Collection;
+import io.dockstore.openapi.client.model.LambdaEvent;
 import io.dockstore.openapi.client.model.OrcidAuthorInformation;
+import io.dockstore.openapi.client.model.Organization;
+import io.dockstore.openapi.client.model.PublishRequest;
+import io.dockstore.openapi.client.model.SourceFile.TypeEnum;
+import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Tool;
+import io.dockstore.openapi.client.model.Validation;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum;
+import io.dockstore.openapi.client.model.Workflow.ModeEnum;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
@@ -57,22 +74,6 @@ import io.dockstore.webservice.languages.WDLHandler;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.swagger.api.impl.ToolsImplCommon;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.MetadataApi;
-import io.swagger.client.api.OrganizationsApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Collection;
-import io.swagger.client.model.LambdaEvent;
-import io.swagger.client.model.Organization;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.Validation;
-import io.swagger.client.model.Validation.TypeEnum;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.Workflow.DescriptorTypeEnum;
-import io.swagger.client.model.Workflow.ModeEnum;
-import io.swagger.client.model.WorkflowVersion;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -162,7 +163,7 @@ class SwaggerWebhookIT extends BaseIT {
         AppToolHelper.registerAppTool(webClient);
         workflowApi.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
         Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + taggedToolRepoPath, APPTOOL, "versions");
-        workflowApi.publish(appTool.getId(), publishRequest);
+        workflowApi.publish1(appTool.getId(), publishRequest);
 
         // There should be 1 apptool.
         assertEquals(1, appToolDAO.findAllPublishedPaths().size());
@@ -189,7 +190,7 @@ class SwaggerWebhookIT extends BaseIT {
                 DescriptorLanguage.CWL.getShortName(), "/test.json");
 
         // Refresh should work
-        workflow = workflowApi.refresh(workflow.getId(), false);
+        workflow = workflowApi.refresh1(workflow.getId(), false);
         assertEquals(ModeEnum.FULL, workflow.getMode(), "Workflow should be FULL mode");
         assertTrue(workflow.getWorkflowVersions().stream().allMatch(WorkflowVersion::isLegacyVersion), "All versions should be legacy");
 
@@ -201,7 +202,7 @@ class SwaggerWebhookIT extends BaseIT {
 
         // Refresh should now no longer work
         try {
-            workflowApi.refresh(workflow.getId(), false);
+            workflowApi.refresh1(workflow.getId(), false);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should not be able to refresh a dockstore.yml workflow.");
@@ -272,8 +273,8 @@ class SwaggerWebhookIT extends BaseIT {
     @Test
     void testAddUserToDockstoreWorkflows() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
 
         registerWorkflowsForDiscoverTests(webClient);
 
@@ -570,9 +571,9 @@ class SwaggerWebhookIT extends BaseIT {
     }
 
     private void testDefaultVersion(io.dockstore.openapi.client.api.WorkflowsApi client) {
-        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
+        Workflow workflow2 = getFoobar2Workflow(client);
         assertNull(workflow2.getDefaultVersion());
-        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
+        Workflow workflow = getFoobar1Workflow(client);
         assertNull(workflow.getDefaultVersion());
         client.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         workflow2 = getFoobar2Workflow(client);
@@ -582,12 +583,8 @@ class SwaggerWebhookIT extends BaseIT {
 
     }
 
-    private io.dockstore.openapi.client.model.Workflow getFoobar1Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
-        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
-    }
-
     private Workflow getFoobar1Workflow(WorkflowsApi client) {
-        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "versions");
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
     }
 
     private io.dockstore.openapi.client.model.Workflow getFoobar2Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
@@ -622,32 +619,32 @@ class SwaggerWebhookIT extends BaseIT {
 
         // Add 1.0 tag and set as default version
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
-        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
+        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(1, workflow.getWorkflowVersions().size(), "should have 1 version");
         assertNull(workflow.getDefaultVersion(), "should have no default version until set");
-        workflow = client.updateWorkflowDefaultVersion(workflow.getId(), workflow.getWorkflowVersions().get(0).getName());
+        workflow = client.updateDefaultVersion1(workflow.getId(), workflow.getWorkflowVersions().get(0).getName());
         assertNotNull(workflow.getDefaultVersion(), "should have a default version after setting");
 
         // Add 2.0 tag
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/2.0", installationId);
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(2, workflow.getWorkflowVersions().size(), "should have 2 versions");
 
         // Delete 1.0 tag, should reassign 2.0 as the default version
         client.handleGitHubBranchDeletion(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(1, workflow.getWorkflowVersions().size(), "should have 1 version after deletion");
         assertNotNull(workflow.getDefaultVersion(), "should have reassigned the default version during deletion");
 
         // Publish workflow
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        client.publish(workflow.getId(), publishRequest);
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
+        client.publish1(workflow.getId(), publishRequest);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertTrue(workflow.isIsPublished());
 
         // Delete 2.0 tag, unset default version
         client.handleGitHubBranchDeletion(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/2.0", installationId);
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "versions");
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(0, workflow.getWorkflowVersions().size(), "should have 0 versions after deletion");
         assertNull(workflow.getDefaultVersion(), "should have no default version after final version is deleted");
         assertFalse(workflow.isIsPublished(), "should not be published if it has 0 versions");
@@ -680,7 +677,7 @@ class SwaggerWebhookIT extends BaseIT {
 
         // Refresh
         try {
-            client.refresh(workflow.getId(), false);
+            client.refresh1(workflow.getId(), false);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should not be able to refresh a dockstore.yml workflow.");
@@ -759,7 +756,7 @@ class SwaggerWebhookIT extends BaseIT {
             assertEquals("Cannot change descriptor type of a valid workflow", e.getMessage());
         }
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        client.publish(workflow.getId(), publishRequest);
+        client.publish1(workflow.getId(), publishRequest);
         try {
             workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.WDL.toString());
             fail("Should also not be able to change the descriptor type of a workflow that is published");
@@ -1217,8 +1214,8 @@ class SwaggerWebhookIT extends BaseIT {
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
         testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
-        client.publish(appTool.getId(), publishRequest);
-        client.publish(workflow.getId(), publishRequest);
+        client.publish1(appTool.getId(), publishRequest);
+        client.publish1(workflow.getId(), publishRequest);
         assertFalse(systemOut.getText().contains("Could not submit index to elastic search"));
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
@@ -1234,8 +1231,8 @@ class SwaggerWebhookIT extends BaseIT {
         assertEquals("Workflow", trsWorkflow.getToolclass().getDescription());
 
         publishRequest.setPublish(false);
-        client.publish(appTool.getId(), publishRequest);
-        client.publish(workflow.getId(), publishRequest);
+        client.publish1(appTool.getId(), publishRequest);
+        client.publish1(workflow.getId(), publishRequest);
         assertFalse(systemOut.getText().contains("Could not submit index to elastic search"));
     }
 
@@ -1252,7 +1249,7 @@ class SwaggerWebhookIT extends BaseIT {
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
         testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
-        client.publish(appTool.getId(), publishRequest);
+        client.publish1(appTool.getId(), publishRequest);
 
         // snapshot the version
         validVersion.setFrozen(true);
@@ -1279,7 +1276,7 @@ class SwaggerWebhookIT extends BaseIT {
         Workflow appTool = client.getWorkflowByPath("github.com/" + taggedToolRepoPath, APPTOOL, "versions,validations");
 
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        client.publish(appTool.getId(), publishRequest);
+        client.publish1(appTool.getId(), publishRequest);
 
         String newTopic = "this is a new topic";
         appTool.setTopicManual(newTopic);
@@ -1297,7 +1294,7 @@ class SwaggerWebhookIT extends BaseIT {
         io.dockstore.openapi.client.model.Workflow appTool = client.getWorkflowByPath("github.com/" + taggedToolRepoPath, WorkflowSubClass.APPTOOL, "versions,validations");
 
         io.dockstore.openapi.client.model.PublishRequest publishRequest = new io.dockstore.openapi.client.model.PublishRequest();
-        publishRequest.publish(true);
+        publishRequest.setPublish(true);
 
         client.publish1(appTool.getId(), publishRequest);
 
@@ -1321,18 +1318,18 @@ class SwaggerWebhookIT extends BaseIT {
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
         testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
-        client.publish(appTool.getId(), publishRequest);
+        client.publish1(appTool.getId(), publishRequest);
 
         List<io.dockstore.openapi.client.model.Entry> pre = usersApi.getStarredTools();
         assertEquals(0, pre.stream().filter(e -> e.getId().equals(appTool.getId())).count());
-        assertEquals(0, client.getStarredUsers(appTool.getId()).size());
+        assertEquals(0, client.getStarredUsers1(appTool.getId()).size());
 
-        client.starEntry(appTool.getId(), new io.swagger.client.model.StarRequest().star(true));
+        client.starEntry1(appTool.getId(), new StarRequest().star(true));
 
         List<io.dockstore.openapi.client.model.Entry> post = usersApi.getStarredTools();
         assertEquals(1, post.stream().filter(e -> e.getId().equals(appTool.getId())).count());
         assertEquals(pre.size() + 1, post.size());
-        assertEquals(1, client.getStarredUsers(appTool.getId()).size());
+        assertEquals(1, client.getStarredUsers1(appTool.getId()).size());
     }
 
     @Test
@@ -1346,13 +1343,13 @@ class SwaggerWebhookIT extends BaseIT {
         client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
         client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalid-workflow", installationId);
         client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidTool", installationId);
-        Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions,validations");
-        Workflow workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions,validations");        // publish endpoint updates elasticsearch index
+        Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, WorkflowSubClass.APPTOOL, "versions,validations");
+        Workflow workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, WorkflowSubClass.BIOWORKFLOW, "versions,validations");        // publish endpoint updates elasticsearch index
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
         testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
-        client.publish(appTool.getId(), publishRequest);
-        client.publish(workflow.getId(), publishRequest);
+        client.publish1(appTool.getId(), publishRequest);
+        client.publish1(workflow.getId(), publishRequest);
 
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
@@ -1373,7 +1370,7 @@ class SwaggerWebhookIT extends BaseIT {
         tools = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, false, null, null);
         // the apptool is a commandline tool and not a workflow
         assertEquals(1, tools.size());
-        tools = ga4Ghv20Api.toolsGet(null, null, SERVICE, null, null, null, null, null, null, null, false, null, null);
+        tools = ga4Ghv20Api.toolsGet(null, null, SERVICE.toString(), null, null, null, null, null, null, null, false, null, null);
         // neither are services
         assertEquals(0, tools.size());
         tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.SERVICE.getShortName(), null, null, null, null, null, null, false, null, null);
@@ -1445,7 +1442,7 @@ class SwaggerWebhookIT extends BaseIT {
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
         testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
-        client.publish(appTool.getId(), publishRequest);
+        client.publish1(appTool.getId(), publishRequest);
 
         // Setup admin. admin: true, curator: false
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
@@ -1459,7 +1456,7 @@ class SwaggerWebhookIT extends BaseIT {
         stubCollection.setName("hcacollection");
 
         // Attach collection
-        final Collection createdCollection = organizationsApiAdmin.createCollection(registeredOrganization.getId(), stubCollection);
+        final Collection createdCollection = organizationsApiAdmin.createCollection(stubCollection, registeredOrganization.getId());
         // Add tool to collection
         organizationsApiAdmin.addEntryToCollection(registeredOrganization.getId(), createdCollection.getId(), appTool.getId(), null);
         Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());

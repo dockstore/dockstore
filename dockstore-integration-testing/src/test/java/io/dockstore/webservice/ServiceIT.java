@@ -33,6 +33,11 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -45,13 +50,6 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.swagger.api.impl.ToolsImplCommon;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.Ga4GhApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.Tool;
 import jakarta.ws.rs.client.Client;
 import java.util.HashSet;
 import java.util.List;
@@ -186,8 +184,8 @@ class ServiceIT extends BaseIT {
     void testTRSOutputOfService() {
         new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
-        Ga4GhApi client = new Ga4GhApi(webClient);
-        final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null);
+        Ga4Ghv20Api client = new Ga4Ghv20Api(webClient);
+        final List<Tool> tools = client.toolsGet(null,null,null, null, null, null, null, null, null, null, null, null, null);
         assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("workflow")).count() >= 1);
         // TODO: change boolean once services are exposed
         boolean servicesExposedInTRS = false;
@@ -201,8 +199,8 @@ class ServiceIT extends BaseIT {
         final CreateContent invoke = new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
         WorkflowsApi client = new WorkflowsApi(webClient);
-        final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true, null);
-        final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false, null);
+        final List<io.dockstore.openapi.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true, null);
+        final List<io.dockstore.openapi.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false, null);
         assertTrue(workflows.size() >= 2 && workflows.stream()
             .noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
         Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
@@ -212,11 +210,11 @@ class ServiceIT extends BaseIT {
             .allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
 
         // try some standard things we would like services to be able to do
-        client.starEntry(invoke.getServiceID(), new StarRequest().star(true));
-        client.updateLabels(invoke.getServiceID(), "foo,batman,chicken", "");
+        client.starEntry1(invoke.getServiceID(), new StarRequest().star(true));
+        client.updateLabels1(invoke.getServiceID(), "foo,batman,chicken", "");
 
         // did it happen?
-        final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
+        final io.dockstore.openapi.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
         assertFalse(workflow.getStarredUsers().isEmpty());
         assertTrue(workflow.getLabels().stream().anyMatch(label -> "batman".equals(label.getValue())));
     }
@@ -227,7 +225,7 @@ class ServiceIT extends BaseIT {
         final ApiClient webClient = getWebClient(true, false);
         WorkflowsApi client = new WorkflowsApi(webClient);
         // did it happen?
-        final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
+        final io.dockstore.openapi.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
     }
 
     /**
@@ -273,7 +271,7 @@ class ServiceIT extends BaseIT {
 
         // Should not be able to refresh service
         try {
-            client.refresh(services.get(0).getId(), false);
+            client.refresh1(services.get(0).getId(), false);
             fail("Should not be able refresh a service");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should fail since you cannot refresh services.");
@@ -419,7 +417,7 @@ class ServiceIT extends BaseIT {
         io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, SERVICE, "");
         // io.swagger.client.model.Workflow service = services.get(0);
         try {
-            client.refresh(service.getId(), false);
+            client.refresh1(service.getId(), false);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should not be able to refresh a dockstore.yml service.");

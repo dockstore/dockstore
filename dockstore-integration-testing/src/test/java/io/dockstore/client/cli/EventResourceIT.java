@@ -10,18 +10,18 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.ToolTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
+import io.dockstore.openapi.client.api.EventsApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Event;
+import io.dockstore.openapi.client.model.Event.TypeEnum;
+import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.Tag;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.resources.EventSearchType;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.EventsApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Event;
-import io.swagger.client.model.Event.TypeEnum;
-import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.Tag;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -77,7 +77,7 @@ class EventResourceIT extends BaseIT {
 
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
-        toolsApi.starEntry(tool.getId(), starRequest);
+        toolsApi.starEntry(starRequest, tool.getId());
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0)
             .stream().filter(e -> e.getType() != TypeEnum.PUBLISH_ENTRY && e.getType() != TypeEnum.UNPUBLISH_ENTRY)
             .collect(Collectors.toList());

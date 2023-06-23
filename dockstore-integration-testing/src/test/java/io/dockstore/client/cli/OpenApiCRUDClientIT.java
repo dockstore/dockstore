@@ -134,7 +134,7 @@ class OpenApiCRUDClientIT extends BaseIT {
         for (DockstoreTool tool : dockstoreTools) {
             // Publish tool
             PublishRequest pub = CommonTestUtilities.createOpenAPIPublishRequest(false);
-            containersApi.publish(tool.getId(), pub);
+            containersApi.publish1(tool.getId(), pub);
         }
 
         // create  a pile of workflows to test with
@@ -166,7 +166,7 @@ class OpenApiCRUDClientIT extends BaseIT {
             api.editHostedTool(Lists.newArrayList(descriptorFile, file2, dockerfile), hostedTool.getId());
             // Publish tool
             PublishRequest pub = CommonTestUtilities.createOpenAPIPublishRequest(true);
-            containersApi.publish(hostedTool.getId(), pub);
+            containersApi.publish1(hostedTool.getId(), pub);
         }
 
 
@@ -216,7 +216,7 @@ class OpenApiCRUDClientIT extends BaseIT {
         assertEquals(1, hostedTool.getDescriptorType().size());
         assertEquals(DescriptorLanguage.CWL.toString(), hostedTool.getDescriptorType().get(0));
         // Should not be able to publish a hosted tool without valid versions
-        ApiException exception = assertThrows(ApiException.class, () -> containersApi.publish(hostedTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true)));
+        ApiException exception = assertThrows(ApiException.class, () -> containersApi.publish1(hostedTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true)));
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getCode());
 
         // Add a version to the hosted tool and publish
@@ -232,6 +232,6 @@ class OpenApiCRUDClientIT extends BaseIT {
         dockerfile.setPath("/Dockerfile");
         dockerfile.setAbsolutePath("/Dockerfile");
         DockstoreTool dockstoreTool = api.editHostedTool(Lists.newArrayList(descriptorFile, dockerfile), hostedTool.getId());
-        containersApi.publish(dockstoreTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        containersApi.publish1(dockstoreTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
     }
 }

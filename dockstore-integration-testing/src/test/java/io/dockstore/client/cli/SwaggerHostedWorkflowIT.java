@@ -27,15 +27,15 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.testing.ResourceHelpers;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.HostedApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
 import java.io.File;
 import java.io.IOException;
@@ -109,7 +109,7 @@ class SwaggerHostedWorkflowIT extends BaseIT {
 
         // using hosted apis to edit normal workflow should fail
         try {
-            hostedApi.editHostedWorkflow(workflow.getId(), new ArrayList<>());
+            hostedApi.editHostedWorkflow(new ArrayList<>(), workflow.getId());
             Assertions.fail("Should throw API exception");
         } catch (ApiException e) {
             Assertions.assertTrue(e.getMessage().contains("cannot modify non-hosted entries this way"));
@@ -123,14 +123,14 @@ class SwaggerHostedWorkflowIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
 
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
         WorkflowVersion version = workflowVersions.stream().filter(w -> w.getReference().equals("testBoth")).findFirst().get();
         version.setHidden(true);
         workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
 
         try {
-            workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), version.getName());
+            workflow = workflowsApi.updateDefaultVersion1(workflow.getId(), version.getName());
             Assertions.fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
             Assertions.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
@@ -139,7 +139,7 @@ class SwaggerHostedWorkflowIT extends BaseIT {
         // Set the default version to a non-hidden version
         version.setHidden(false);
         workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
-        workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), version.getName());
+        workflow = workflowsApi.updateDefaultVersion1(workflow.getId(), version.getName());
 
         // Should not be able to hide a default version
         version.setHidden(true);
@@ -157,7 +157,7 @@ class SwaggerHostedWorkflowIT extends BaseIT {
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
-        hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
 
         WorkflowVersion hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
         hostedVersion.setHidden(true);
@@ -172,13 +172,13 @@ class SwaggerHostedWorkflowIT extends BaseIT {
             cwlVersion: v1.0
 
             class: Workflow""");
-        hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        hostedWorkflow = hostedApi.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
         hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).stream().filter(v -> v.getName().equals("1")).findFirst().get();
         hostedVersion.setHidden(true);
         workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
 
         try {
-            workflowsApi.updateWorkflowDefaultVersion(hostedWorkflow.getId(), hostedVersion.getName());
+            workflowsApi.updateDefaultVersion1(hostedWorkflow.getId(), hostedVersion.getName());
             Assertions.fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
             Assertions.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
@@ -232,13 +232,13 @@ class SwaggerHostedWorkflowIT extends BaseIT {
         source2.setContent("foo");
         source2.setAbsolutePath("/revtool.cwl");
         source2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+        hostedApi.editHostedWorkflow(Lists.newArrayList(source, source1, source2), hostedWorkflow.getId());
 
         source.setContent("cwlVersion: v1.0\nclass: Workflow");
         source1.setContent("food");
         source2.setContent("food");
         final Workflow updatedHostedWorkflow = hostedApi
-            .editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+            .editHostedWorkflow(Lists.newArrayList(source, source1, source2), hostedWorkflow.getId());
         Assertions.assertNotNull(updatedHostedWorkflow.getLastModifiedDate());
         Assertions.assertNotNull(updatedHostedWorkflow.getLastUpdated());
 
@@ -249,7 +249,7 @@ class SwaggerHostedWorkflowIT extends BaseIT {
             FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/sorttool.cwl")), StandardCharsets.UTF_8));
         source2.setContent(
             FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/revtool.cwl")), StandardCharsets.UTF_8));
-        Workflow workflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+        Workflow workflow = hostedApi.editHostedWorkflow(Lists.newArrayList(source, source1, source2), hostedWorkflow.getId());
         Assertions.assertFalse(workflow.getInputFileFormats().isEmpty());
         Assertions.assertFalse(workflow.getOutputFileFormats().isEmpty());
     }

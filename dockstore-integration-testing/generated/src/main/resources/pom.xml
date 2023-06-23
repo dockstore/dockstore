@@ -71,12 +71,6 @@
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
-      <artifactId>swagger-java-client</artifactId>
-      <version>1.15.0-SNAPSHOT</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.dockstore</groupId>
       <artifactId>dockstore-common</artifactId>
       <version>1.15.0-SNAPSHOT</version>
       <scope>compile</scope>

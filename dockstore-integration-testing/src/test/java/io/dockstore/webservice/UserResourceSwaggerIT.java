@@ -32,21 +32,20 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.OrganizationsApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.model.Collection;
+import io.dockstore.openapi.client.model.EntryType;
+import io.dockstore.openapi.client.model.EntryUpdateTime;
+import io.dockstore.openapi.client.model.Organization;
+import io.dockstore.openapi.client.model.OrganizationUpdateTime;
+import io.dockstore.openapi.client.model.Profile;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.helpers.AppToolHelper;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.HostedApi;
-import io.swagger.client.api.OrganizationsApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Collection;
-import io.swagger.client.model.EntryUpdateTime;
-import io.swagger.client.model.EntryUpdateTime.EntryTypeEnum;
-import io.swagger.client.model.Organization;
-import io.swagger.client.model.OrganizationUpdateTime;
-import io.swagger.client.model.Profile;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
 import java.util.List;
 import java.util.Objects;
 import org.apache.http.HttpStatus;
@@ -91,14 +90,14 @@ class UserResourceSwaggerIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
-        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
+        io.dockstore.openapi.client.api.WorkflowsApi workflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
                 DescriptorLanguage.WDL.getShortName(), "");
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
                 DescriptorLanguage.WDL.getShortName(), "");
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
                 DescriptorLanguage.NEXTFLOW.getShortName(), "");
-        Workflow workflow1 = workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        io.dockstore.openapi.client.model.Workflow workflow1 = workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         Long id = workflow1.getId();
         List<io.dockstore.openapi.client.model.Workflow> workflows = userApi.addUserToDockstoreWorkflows(userApi.getUser().getId(), "");
 
@@ -126,10 +125,10 @@ class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    void testChangingNameFail2() throws ApiException {
+    void testChangingNameFail2() throws io.dockstore.openapi.client.ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
-        UsersApi userApi = new UsersApi(client);
-        assertThrows(ApiException.class, () -> userApi.changeUsername("foo@gmail.com"));
+        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
+        assertThrows(io.dockstore.openapi.client.ApiException.class, () -> userApi.changeUsername("foo@gmail.com"));
     }
 
     @Test
@@ -155,8 +154,8 @@ class UserResourceSwaggerIT extends BaseIT {
         assertEquals("foo", userApi.getUser().getUsername());
 
         // Add hosted workflow, should use new username
-        HostedApi userHostedApi = new HostedApi(client);
-        Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
+        io.dockstore.openapi.client.api.HostedApi userHostedApi = new io.dockstore.openapi.client.api.HostedApi(client);
+        io.dockstore.openapi.client.model.Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
         assertEquals("foo", hostedWorkflow.getOrganization(), "Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization());
     }
 
@@ -245,10 +244,10 @@ class UserResourceSwaggerIT extends BaseIT {
         // use a real account
         client = getWebClient(USER_2_USERNAME, testingPostgres);
         userApi = new UsersApi(client);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
         final ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
 
-        final WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminWebClient);
+        final io.dockstore.openapi.client.api.WorkflowsApi adminWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(adminWebClient);
 
         User user = userApi.getUser();
         assertNotNull(user);
@@ -258,13 +257,13 @@ class UserResourceSwaggerIT extends BaseIT {
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getShortName(), "");
         workflowsApi.handleGitHubRelease(SERVICE_REPO, USER_2_USERNAME, "refs/tags/1.0", INSTALLATION_ID);
 
-        final Workflow workflowByPath = workflowsApi
-            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
+        final io.dockstore.openapi.client.model.Workflow workflowByPath = workflowsApi
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
         // refresh targeted
-        workflowsApi.refresh(workflowByPath.getId(), false);
+        workflowsApi.refresh1(workflowByPath.getId(), false);
 
         // publish one
-        workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowsApi.publish1(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(true));
 
         assertFalse(userApi.getExtendedUserData().isCanChangeUsername());
 
@@ -276,7 +275,7 @@ class UserResourceSwaggerIT extends BaseIT {
         }
         assertTrue(expectedFailToDelete);
         // then unpublish them
-        workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(false));
+        workflowsApi.publish1(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(false));
         assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
         assertTrue(userApi.selfDestruct(null));
         //TODO need to test that profiles are cascaded to and cleared
@@ -284,7 +283,7 @@ class UserResourceSwaggerIT extends BaseIT {
         // Verify that self-destruct also deleted the workflow
         boolean expectedAdminAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
+            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
 
         } catch (ApiException e) {
             assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
@@ -295,7 +294,7 @@ class UserResourceSwaggerIT extends BaseIT {
         // Verify that self-destruct also deleted the service
         boolean expectedAdminServiceAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, SERVICE, null);
+            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, WorkflowSubClass.SERVICE, null);
         } catch (ApiException e) {
             assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
             expectedAdminServiceAccessToFail = true;
@@ -388,7 +387,7 @@ class UserResourceSwaggerIT extends BaseIT {
     void testGetUserEntries() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
 
         workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
 
@@ -401,7 +400,7 @@ class UserResourceSwaggerIT extends BaseIT {
         AppToolHelper.registerAppTool(client);
         final List<EntryUpdateTime> tools = userApi.getUserEntries(10, null, "TOOLS");
         assertEquals(5, tools.size());
-        assertEquals(1L, tools.stream().filter(t -> t.getEntryType() == EntryTypeEnum.APPTOOL).count());
+        assertEquals(1L, tools.stream().filter(t -> t.getEntryType() == EntryType.APPTOOL).count());
     }
 
     /**
@@ -411,7 +410,7 @@ class UserResourceSwaggerIT extends BaseIT {
     void testLoggedInHomepageEndpoints() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
 
         workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
 
@@ -421,8 +420,8 @@ class UserResourceSwaggerIT extends BaseIT {
         assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("dockstore-workflow-md5sum-unified")));
 
         // Update an entry
-        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", BIOWORKFLOW, null);
-        Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId(), false);
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", WorkflowSubClass.BIOWORKFLOW, null);
+        Workflow refreshedWorkflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // Develop branch doesn't have a descriptor with the default Dockstore.cwl, it should pull from README instead
         assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));
@@ -444,7 +443,7 @@ class UserResourceSwaggerIT extends BaseIT {
 
         // Add collection to foobar2
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
-        organizationsApi.createCollection(foobarOrgTwo.getId(), createCollection());
+        organizationsApi.createCollection(createCollection(), foobarOrgTwo.getId());
 
         // foobar2 should be the most recent
         organizations = userApi.getUserDockstoreOrganizations(10, null);

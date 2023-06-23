@@ -26,13 +26,13 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.jdbi.FileDAO;
-import io.swagger.client.ApiClient;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
 import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -96,7 +96,7 @@ class ExtendedNextflowIT extends BaseIT {
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, BIOWORKFLOW, null);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
+        final Workflow refreshGithub = workflowApi.refresh1(workflowByPathGithub.getId(), false);
 
         // Tests that nf-core nextflow.config files can be parsed
         List<io.dockstore.webservice.core.SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("nfcore")).findFirst().get().getId());

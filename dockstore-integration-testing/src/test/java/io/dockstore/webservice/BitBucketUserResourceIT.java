@@ -28,14 +28,15 @@ import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.BioWorkflow;
+import io.dockstore.openapi.client.model.Repository;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.resources.WorkflowResource;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.BioWorkflow;
-import io.swagger.client.model.Repository;
-import io.swagger.client.model.Workflow;
+import io.swagger.quay.client.api.UserApi;
 import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
@@ -123,7 +124,7 @@ class BitBucketUserResourceIT extends BaseIT {
 
         // Try making a repo undeletable
         ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
-        workflowsApi.refresh(ghWorkflow.getId(), false);
+        workflowsApi.refresh1(ghWorkflow.getId(), false);
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
         assertTrue(repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent() && !repo.isCanDelete()));

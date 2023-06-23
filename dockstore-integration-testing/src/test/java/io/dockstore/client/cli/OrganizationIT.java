@@ -15,33 +15,31 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
+import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.EventsApi;
+import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.OrganizationsApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Collection;
+import io.dockstore.openapi.client.model.CollectionOrganization;
+import io.dockstore.openapi.client.model.Organization;
+import io.dockstore.openapi.client.model.Organization.StatusEnum;
+import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.SourceFile.TypeEnum;
+import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.resources.EventSearchType;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.EntriesApi;
-import io.swagger.client.api.ExtendedGa4GhApi;
-import io.swagger.client.api.OrganizationsApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Collection;
-import io.swagger.client.model.CollectionEntry;
-import io.swagger.client.model.CollectionOrganization;
-import io.swagger.client.model.Event;
-import io.swagger.client.model.Organization;
-import io.swagger.client.model.Organization.StatusEnum;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1718,7 +1716,7 @@ public class OrganizationIT extends BaseIT {
         long entryId = 2;
         ContainersApi containersApi = new ContainersApi(webClientUser2);
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        containersApi.publish(entryId, publishRequest);
+        containersApi.publish1(entryId, publishRequest);
 
         // Able to retrieve the collection and organization an entry is part of, even if there aren't any
         EntriesApi entriesApi = new EntriesApi(webClientUser2);
@@ -1754,7 +1752,7 @@ public class OrganizationIT extends BaseIT {
 
         // Publish another tool
         entryId = 1;
-        containersApi.publish(entryId, publishRequest);
+        containersApi.publish1(entryId, publishRequest);
 
         // Add tool to collection
         organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, null);
@@ -1769,14 +1767,14 @@ public class OrganizationIT extends BaseIT {
 
         // Unpublish tool
         PublishRequest unpublishRequest = CommonTestUtilities.createPublishRequest(false);
-        containersApi.publish(entryId, unpublishRequest);
+        containersApi.publish1(entryId, unpublishRequest);
 
         // Collection should have one tool returned
         long entryCount = organizationsApi.getCollectionById(organization.getId(), collectionId).getEntries().size();
         assertEquals(1, entryCount, "There should be one entry with the collection, there are " + entryCount);
 
         // Publish tool
-        containersApi.publish(entryId, publishRequest);
+        containersApi.publish1(entryId, publishRequest);
 
         // Collection should have two tools returned
         entryCount = organizationsApi.getCollectionById(organization.getId(), collectionId).getEntries().size();
@@ -2106,8 +2104,8 @@ public class OrganizationIT extends BaseIT {
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
                 "/workflows/dnaseq/transform.cwl.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", BIOWORKFLOW, null);
-        Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
-        workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        Workflow workflow = workflowApi.refresh1(workflowByPathGithub.getId(), true);
+        workflow = workflowApi.publish1(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // Create the Organization and collection
         Organization organization = createOrg(organizationsApi);
@@ -2137,8 +2135,8 @@ public class OrganizationIT extends BaseIT {
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
                 "/workflows/dnaseq/transform.cwl.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", BIOWORKFLOW, null);
-        Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
-        workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        Workflow workflow = workflowApi.refresh1(workflowByPathGithub.getId(), true);
+        workflow = workflowApi.publish1(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         assertEquals(2, workflow.getWorkflowVersions().size());
 
         ExtendedGa4GhApi ga4ghApi = new ExtendedGa4GhApi(webClient);
@@ -2157,8 +2155,8 @@ public class OrganizationIT extends BaseIT {
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
                         "");
         final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", BIOWORKFLOW, null);
-        workflowApi.refresh(workflowByPathGithub2.getId(), false);
-        workflowApi.publish(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.refresh1(workflowByPathGithub2.getId(), false);
+        workflowApi.publish1(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
 
         return workflow2;
     }
@@ -2244,7 +2242,7 @@ public class OrganizationIT extends BaseIT {
         long entryId = 2;
         ContainersApi containersApi = new ContainersApi(webClientUser2);
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        containersApi.publish(entryId, publishRequest);
+        containersApi.publish1(entryId, publishRequest);
 
         // Add tool to collection
         organizationsApi.addEntryToCollection(orgId, collectionId, entryId, null);
@@ -2276,10 +2274,10 @@ public class OrganizationIT extends BaseIT {
         stubCollectionTwo.setDisplayName("another name");
 
         // Attach collections
-        Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
+        Collection collection = organizationsApi.createCollection(stubCollection, organization.getId());
         long collectionId = collection.getId();
 
-        Collection collectionTwo = organizationsApi.createCollection(organization.getId(), stubCollectionTwo);
+        Collection collectionTwo = organizationsApi.createCollection(stubCollectionTwo, organization.getId());
         long collectionTwoId = collectionTwo.getId();
 
         // Update description of collection
@@ -2429,7 +2427,7 @@ public class OrganizationIT extends BaseIT {
 
         // Should only be able to star approved organizations
         try {
-            organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
+            organizationsApi.starOrganization(STAR_REQUEST, organization.getId());
             fail();
         } catch (ApiException ex) {
             assertEquals("Organization not found", ex.getMessage());
@@ -2437,24 +2435,24 @@ public class OrganizationIT extends BaseIT {
 
         // Approve organization and star it
         organizationsApiAdmin.approveOrganization(organization.getId());
-        organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
+        organizationsApi.starOrganization(STAR_REQUEST, organization.getId());
 
         assertEquals(1, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
         assertEquals(USER_2_USERNAME, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).get(0).getUsername());
 
         // Should not be able to star twice
         try {
-            organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
+            organizationsApi.starOrganization(STAR_REQUEST, organization.getId());
             fail();
         } catch (ApiException ex) {
             assertTrue(ex.getMessage().contains("You cannot star the organization"));
         }
 
-        organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);
+        organizationsApi.starOrganization(UNSTAR_REQUEST, organization.getId());
         assertEquals(0, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
         // Should not be able to unstar twice
         try {
-            organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);
+            organizationsApi.starOrganization(UNSTAR_REQUEST, organization.getId());
             fail();
         } catch (ApiException ex) {
             assertTrue(ex.getMessage().contains("You cannot unstar the organization"));

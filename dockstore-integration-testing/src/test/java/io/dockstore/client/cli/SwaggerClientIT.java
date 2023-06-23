@@ -29,44 +29,44 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
+import com.typesafe.sslconfig.ssl.FakeChainedKeyStore.User$;
+import io.circe.generic.util.macros.DerivationMacros;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
+import io.dockstore.openapi.client.api.Ga4Ghv1Api;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.MetadataApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Config;
+import io.dockstore.openapi.client.model.DescriptorLanguageBean;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Entry;
+import io.dockstore.openapi.client.model.Permission;
+import io.dockstore.openapi.client.model.Permission.RoleEnum;
+import io.dockstore.openapi.client.model.PublishRequest;
+import io.dockstore.openapi.client.model.RegistryBean;
+import io.dockstore.openapi.client.model.SharedWorkflows;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.TokenUser;
+import io.dockstore.openapi.client.model.ToolVersionV1;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.Ga4Ghv1Api;
-import io.swagger.client.api.HostedApi;
-import io.swagger.client.api.MetadataApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Config;
-import io.swagger.client.model.DescriptorLanguageBean;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Entry;
-import io.swagger.client.model.MetadataV1;
-import io.swagger.client.model.Permission;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.RegistryBean;
-import io.swagger.client.model.SharedWorkflows;
-import io.swagger.client.model.SharedWorkflows.RoleEnum;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.TokenUser;
-import io.swagger.client.model.ToolDescriptor;
-import io.swagger.client.model.ToolDockerfile;
-import io.swagger.client.model.ToolVersionV1;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
+import io.swagger.model.MetadataV1;
 import jakarta.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -171,7 +171,7 @@ class SwaggerClientIT extends BaseIT {
         long containerId = container.getId();
 
         PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
-        assertThrows(ApiException.class,  () ->  containersApi.publish(containerId, pub));
+        assertThrows(ApiException.class,  () ->  containersApi.publish1(containerId, pub));
     }
 
     @Test
@@ -423,7 +423,7 @@ class SwaggerClientIT extends BaseIT {
 
         PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
 
-        container = containersApi.publish(containerId, pub);
+        container = containersApi.publish1(containerId, pub);
         assertTrue(container.isIsPublished());
 
         containers = containersApi.allPublishedContainers(null, null, null, null, null);
@@ -431,7 +431,7 @@ class SwaggerClientIT extends BaseIT {
 
         pub = CommonTestUtilities.createPublishRequest(false);
 
-        container = containersApi.publish(containerId, pub);
+        container = containersApi.publish1(containerId, pub);
         assertFalse(container.isIsPublished());
     }
 
@@ -508,7 +508,7 @@ class SwaggerClientIT extends BaseIT {
         try {
             // should not be able to star unpublished entries as a different user
             ContainersApi otherContainersApi = new ContainersApi(otherWebClient);
-            otherContainersApi.starEntry(containerId, STAR_REQUEST);
+            otherContainersApi.starEntry(STAR_REQUEST, containerId);
         } catch (ApiException e) {
             expectedFailure = true;
         }
@@ -525,14 +525,14 @@ class SwaggerClientIT extends BaseIT {
         ApiClient apiClient = getWebClient();
         ContainersApi containersApi = new ContainersApi(apiClient);
         try {
-            containersApi.starEntry(1L, STAR_REQUEST);
+            containersApi.starEntry(STAR_REQUEST, 1L);
             fail("Should've encountered problems for trying to star an unpublished tool");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Forbidden"), "Should've gotten a forbidden message");
             assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode(), "Should've gotten a status message");
         }
         try {
-            containersApi.starEntry(1L, UNSTAR_REQUEST);
+            containersApi.starEntry(UNSTAR_REQUEST, 1L);
             fail("Should've encountered problems for trying to unstar an unpublished tool");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("cannot unstar"), "Should've gotten a forbidden message");
@@ -552,16 +552,16 @@ class SwaggerClientIT extends BaseIT {
         ApiClient adminApiClient = getAdminWebClient();
         WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminApiClient);
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(false);
-        adminWorkflowsApi.publish(11L, publishRequest);
+        adminWorkflowsApi.publish1(11L, publishRequest);
         try {
-            workflowsApi.starEntry(11L, STAR_REQUEST);
+            workflowsApi.starEntry1(11L, STAR_REQUEST);
             fail("Should've encountered problems for trying to star an unpublished workflow");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Forbidden"), "Should've gotten a forbidden message");
             assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode(), "Should've gotten a status message");
         }
         try {
-            workflowsApi.starEntry(11L, UNSTAR_REQUEST);
+            workflowsApi.starEntry1(11L, UNSTAR_REQUEST);
             fail("Should've encountered problems for trying to unstar an unpublished workflow");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("cannot unstar"), "Should've gotten a forbidden message");
@@ -819,7 +819,7 @@ class SwaggerClientIT extends BaseIT {
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
-            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, BIOWORKFLOW, null);
+            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, WorkflowSubClass.BIOWORKFLOW, null);
             fail("User 2 should not have rights to hosted workflow");
         } catch (ApiException e) {
             assertEquals(403, e.getCode());
@@ -837,12 +837,12 @@ class SwaggerClientIT extends BaseIT {
         assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
-        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, BIOWORKFLOW, null);
+        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, WorkflowSubClass.BIOWORKFLOW, null);
         user2WorkflowsApi.getWorkflow(hostedWorkflow1.getId(), null);
 
         // But User 2 cannot edit the hosted workflow
         try {
-            user2HostedApi.editHostedWorkflow(hostedWorkflow1.getId(), Collections.emptyList());
+            user2HostedApi.editHostedWorkflow(Collections.emptyList(), hostedWorkflow1.getId());
             fail("User 2 can unexpectedly edit a readonly workflow");
         } catch (ApiException ex) {
             assertEquals(403, ex.getCode());
@@ -852,17 +852,17 @@ class SwaggerClientIT extends BaseIT {
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath1, Permission.RoleEnum.WRITER);
         // Edit should now work!
         final Workflow workflow = user2HostedApi
-            .editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
+            .editHostedWorkflow(Collections.singletonList(createCwlWorkflow()), hostedWorkflow1.getId());
         List<WorkflowVersion> workflowVersions = user2WorkflowsApi.getWorkflowVersions(workflow.getId());
 
         // Deleting the version should not fail
-        Workflow deleteVersionFromWorkflow1 = user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflowVersions.get(0).getName());
+        final Entry deleteVersionFromWorkflow1 = user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflowVersions.get(0).getName());
         assertEquals(0, deleteVersionFromWorkflow1.getWorkflowVersions().size());
 
         // Publishing the workflow should fail
         final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         try {
-            user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
+            user2WorkflowsApi.publish1(hostedWorkflow1.getId(), publishRequest);
             fail("User 2 can unexpectedly publish a read/write workflow");
         } catch (ApiException ex) {
             assertEquals(403, ex.getCode());
@@ -872,8 +872,8 @@ class SwaggerClientIT extends BaseIT {
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath1, Permission.RoleEnum.OWNER);
 
         // Should be able to publish after adding a version
-        user2HostedApi.editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
-        user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
+        user2HostedApi.editHostedWorkflow(Collections.singletonList(createCwlWorkflow()), hostedWorkflow1.getId());
+        user2WorkflowsApi.publish1(hostedWorkflow1.getId(), publishRequest);
         checkAnonymousUser(anonWorkflowsApi, hostedWorkflow1);
 
         // Next, User 1 shares a second workflow with user 2 as a reader only
@@ -899,12 +899,12 @@ class SwaggerClientIT extends BaseIT {
         final Permission permission = new Permission();
         permission.setEmail(user);
         permission.setRole(role);
-        workflowsApi.addWorkflowPermission(path, permission, BIOWORKFLOW);
+        workflowsApi.addWorkflowPermission(WorkflowSubClass.BIOWORKFLOW, path, permission);
     }
 
     private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
         try {
-            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), BIOWORKFLOW, null);
+            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), WorkflowSubClass.BIOWORKFLOW, null);
             fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
         } catch (ApiException ex) {
             assertEquals(401, ex.getCode());
@@ -923,7 +923,7 @@ class SwaggerClientIT extends BaseIT {
     private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi) throws ApiException {
         containerIds.forEach(containerId -> {
             try {
-                containersApi.starEntry(containerId, STAR_REQUEST);
+                containersApi.starEntry(STAR_REQUEST, containerId);
             } catch (ApiException e) {
                 fail("Couldn't star entry");
             }
@@ -935,7 +935,7 @@ class SwaggerClientIT extends BaseIT {
         }
         containerIds.parallelStream().forEach(containerId -> {
             try {
-                containersApi.starEntry(containerId, UNSTAR_REQUEST);
+                containersApi.starEntry(UNSTAR_REQUEST, containerId);
             } catch (ApiException e) {
                 fail("Couldn't unstar entry");
             }

@@ -27,11 +27,11 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.DockstoreTool;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -213,7 +213,7 @@ class BitBucketGitHubBasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath(toolPath, "");
         try {
-            toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
+            toolsApi.publish1(tool.getId(), CommonTestUtilities.createPublishRequest(true));
             fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
@@ -290,7 +290,7 @@ class BitBucketGitHubBasicIT extends BaseIT {
         assertEquals(1, count, "there should be 1 entries, there are " + count);
 
         // Unpublish
-        tool = toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(false));
+        tool = toolsApi.publish1(tool.getId(), CommonTestUtilities.createPublishRequest(false));
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
 

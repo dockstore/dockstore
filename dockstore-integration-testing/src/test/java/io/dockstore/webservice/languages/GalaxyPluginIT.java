@@ -15,7 +15,6 @@
  */
 package io.dockstore.webservice.languages;
 
-import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -32,20 +31,21 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.MetadataApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DescriptorLanguageBean;
 import io.dockstore.openapi.client.model.Tool;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.swagger.client.ApiClient;
-import io.swagger.client.api.MetadataApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DescriptorLanguageBean;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -166,10 +166,10 @@ class GalaxyPluginIT {
         Workflow galaxyWorkflow = workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/galaxy-workflow-dockstore-example-1", "/Dockstore.gxwf.yml",
                         "", DescriptorLanguage.GXFORMAT2.getShortName(), "");
-        workflowApi.refresh(wdlWorkflow.getId(), false);
-        workflowApi.refresh(galaxyWorkflow.getId(), false);
-        workflowApi.publish(wdlWorkflow.getId(), CommonTestUtilities.createPublishRequest(true));
-        workflowApi.publish(galaxyWorkflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.refresh1(wdlWorkflow.getId(), false);
+        workflowApi.refresh1(galaxyWorkflow.getId(), false);
+        workflowApi.publish1(wdlWorkflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.publish1(galaxyWorkflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         io.dockstore.openapi.client.ApiClient newWebClient = new io.dockstore.openapi.client.ApiClient();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
@@ -194,7 +194,7 @@ class GalaxyPluginIT {
         String galaxyWorkflowRepo = "DockstoreTestUser2/workflow-testing-repo";
         String installationId = "1179416";
         workflowApi.handleGitHubRelease(galaxyWorkflowRepo, BaseIT.USER_2_USERNAME, "refs/heads/validTestParameterFiles", installationId);
-        Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + galaxyWorkflowRepo + "/COVID-19-variation-analysis-on-Illumina-metagenomic-data", BaseIT.BIOWORKFLOW, "versions");
+        Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + galaxyWorkflowRepo + "/COVID-19-variation-analysis-on-Illumina-metagenomic-data", WorkflowSubClass.BIOWORKFLOW, "versions");
         WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")), "Test file should have the expected path");
@@ -202,7 +202,7 @@ class GalaxyPluginIT {
 
     @Test
     void testSnapshotWorkflow() {
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
         final String validVersion = "0.1";
 

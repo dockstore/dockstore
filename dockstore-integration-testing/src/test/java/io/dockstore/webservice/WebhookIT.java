@@ -74,7 +74,7 @@ class WebhookIT extends BaseIT {
         WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
         testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
         final PublishRequest publishRequest = new PublishRequest();
-        publishRequest.publish(true);
+        publishRequest.setPublish(true);
         client.publish1(appTool.getId(), publishRequest);
 
         // Setup admin. admin: true, curator: false

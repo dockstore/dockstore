@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.typesafe.sslconfig.ssl.FakeChainedKeyStore.User$;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -32,24 +33,24 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
+import io.dockstore.openapi.client.api.EventsApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Event;
+import io.dockstore.openapi.client.model.Event.TypeEnum;
+import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.StarRequest;
+import io.dockstore.openapi.client.model.Tag;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.resources.EventSearchType;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.EventsApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Event;
-import io.swagger.client.model.Event.TypeEnum;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -121,7 +122,7 @@ public class BasicIT extends BaseIT {
         // refresh a specific workflow
         Workflow workflow = workflowsApi
                 .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", BIOWORKFLOW, "");
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
         assertFalse(workflow.getWorkflowVersions().isEmpty());
     }
 
@@ -162,14 +163,14 @@ public class BasicIT extends BaseIT {
         // refresh a specific workflow
         Workflow workflow = workflowsApi
             .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", BIOWORKFLOW, "");
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // artificially create an invalid version
         testingPostgres.runUpdateStatement("update workflowversion set name = 'test'");
         testingPostgres.runUpdateStatement("update workflowversion set reference = 'test'");
 
         // refresh individual workflow
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // check that the version was deleted
         final long updatedWorkflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
@@ -192,7 +193,7 @@ public class BasicIT extends BaseIT {
 
         // refresh without github token
         try {
-            workflow = workflowsApi.refresh(workflow.getId(), false);
+            workflow = workflowsApi.refresh1(workflow.getId(), false);
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("No GitHub or Google token found"));
         }
@@ -215,7 +216,7 @@ public class BasicIT extends BaseIT {
         assertTrue(events.isEmpty(), "No starred entries, so there should be no events returned");
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
-        toolsApi.starEntry(tool.getId(), starRequest);
+        toolsApi.starEntry(starRequest, tool.getId());
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0).stream()
             .filter(e -> e.getType() != TypeEnum.PUBLISH_ENTRY).collect(Collectors.toList());
         assertTrue(events.isEmpty(), "Should not be an event for the non-tag version that was automatically created for the newly registered tool");
@@ -280,7 +281,7 @@ public class BasicIT extends BaseIT {
         // Star the tool that was registered above
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
-        toolsApi.starEntry(tool.getId(), starRequest);
+        toolsApi.starEntry(starRequest, tool.getId());
 
         // create some more events so we can test ordering
         PublishRequest publishRequest = new PublishRequest();
@@ -543,7 +544,7 @@ public class BasicIT extends BaseIT {
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
         assertEquals("latest", tool.getDefaultVersion(), "manualRegisterAndPublish does a refresh, it should automatically set the default version");
-        tool = toolsApi.updateToolDefaultVersion(tool.getId(), "test");
+        tool = toolsApi.updateDefaultVersion(tool.getId(), "test");
         assertEquals("test", tool.getDefaultVersion(), "Should be able to overwrite previous default version");
         tool = toolsApi.refresh(tool.getId());
         assertEquals("test", tool.getDefaultVersion(), "Refresh should not have set it back to the automatic one");
@@ -715,7 +716,7 @@ public class BasicIT extends BaseIT {
         List<String> toRemove = new ArrayList<>();
         toRemove.add("notreal.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
+        toolsApi.addTestParameterFiles(existingTool.getId(), "" ,toAdd, "master", "cwl");
         try {
             toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
             fail("Should've have thrown an error when deleting non-existent file");
@@ -734,7 +735,7 @@ public class BasicIT extends BaseIT {
         toRemove = new ArrayList<>();
         toRemove.add("test2.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
+        toolsApi.addTestParameterFiles(existingTool.getId(), "" ,toAdd, "master", "cwl");
         toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
         toolsApi.refresh(existingTool.getId());
 
@@ -745,7 +746,7 @@ public class BasicIT extends BaseIT {
         toAdd = new ArrayList<>();
         toAdd.add("test.wdl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "wdl", "", "wdltest");
+        toolsApi.addTestParameterFiles(existingTool.getId(), "", toAdd, "wdltest", "wdl");
         toolsApi.refresh(existingTool.getId());
 
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", long.class);
@@ -754,7 +755,7 @@ public class BasicIT extends BaseIT {
         toAdd = new ArrayList<>();
         toAdd.add("test.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "wdltest");
+        toolsApi.addTestParameterFiles(existingTool.getId(), "", toAdd, "wdltest", "cwl");
         toolsApi.refresh(existingTool.getId());
         final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
         assertEquals(2, count5, "there should be two sourcefiles that are test parameter files, there are " + count5);
@@ -794,16 +795,15 @@ public class BasicIT extends BaseIT {
         boolean shouldFail = false;
         try {
             final ContainersApi containersApi1 = new ContainersApi(otherWebClient);
-            containersApi1.addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"),
-                DescriptorType.CWL.toString(), "", "master");
+            containersApi1.addTestParameterFiles(containerByToolPath.getId(), "", Collections.singletonList("/test2.cwl.json"),
+                "master", DescriptorType.CWL.toString());
         } catch (Exception e) {
             shouldFail = true;
         }
         assertTrue(shouldFail);
 
         containersApi
-            .addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"), DescriptorType.CWL.toString(),
-                "", "master");
+            .addTestParameterFiles(containerByToolPath.getId(), "", Collections.singletonList("/test2.cwl.json"), "master", DescriptorType.CWL.toString());
 
         final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         assertEquals(2, count3, "there should be one sourcefile that is a test parameter file, there are " + count3);

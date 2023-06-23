@@ -29,18 +29,19 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Tag;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.ModeEnum;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.jdbi.FileDAO;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.Workflow.ModeEnum;
-import io.swagger.client.model.WorkflowVersion;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -140,7 +141,7 @@ class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         updateWorkflowVersion.setWorkflowPath("/Dockstoredirty.cwl");
         workflowVersions.add(updateWorkflowVersion);
         workflowVersions = workflowsApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // There should be on dirty bit
         final long count1 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
@@ -149,7 +150,7 @@ class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         // Update default cwl
         workflow.setWorkflowPath("/Dockstoreclean.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflowsApi.refresh(workflow.getId(), false);
+        workflowsApi.refresh1(workflow.getId(), false);
 
         // There should be 3 versions with new cwl
         final long count2 = testingPostgres
@@ -173,7 +174,7 @@ class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.BITBUCKET + "/dockstore_testuser2/dockstore-workflow", BIOWORKFLOW, "");
+            .getWorkflowByPath(SourceControl.BITBUCKET + "/dockstore_testuser2/dockstore-workflow", WorkflowSubClass.BIOWORKFLOW, "");
 
         // Update workflow path
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
@@ -183,13 +184,13 @@ class BitBucketGeneralWorkflowIT extends GeneralWorkflowBaseIT {
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
 
         // Refresh workflow
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // Publish workflow
-        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflow = workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // Unpublish workflow
-        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
+        workflow = workflowsApi.publish1(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
 
         // Restub
         workflow = workflowsApi.restub(workflow.getId());

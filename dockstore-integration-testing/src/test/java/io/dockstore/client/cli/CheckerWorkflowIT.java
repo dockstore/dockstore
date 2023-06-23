@@ -31,15 +31,15 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Entry;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.Workflow.ModeEnum;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
+import io.dockstore.openapi.client.model.Entry;
+import io.dockstore.openapi.client.model.PublishRequest;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.ModeEnum;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.http.HttpStatus;
@@ -121,7 +121,7 @@ class CheckerWorkflowIT extends BaseIT {
 
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-tool.cwl", githubTool.getId(), "cwl", null);
+        workflowApi.registerCheckerWorkflow(githubTool.getId(), "cwl", "/checker-workflow-wrapping-tool.cwl", null);
 
         // Refresh workflow
         DockstoreTool refreshedEntry = containersApi.refresh(githubTool.getId());
@@ -175,7 +175,7 @@ class CheckerWorkflowIT extends BaseIT {
         assertEquals(0, count9, "the tool should not be published, there are " + count9);
 
         try {
-            workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
+            workflowApi.publish1(refreshedEntry.getCheckerId(), publishRequest);
             fail("Should not be able to directly publish the checker");
         } catch (ApiException e) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
@@ -229,7 +229,7 @@ class CheckerWorkflowIT extends BaseIT {
             assertEquals("Apache License 2.0", githubWorkflow.getLicenseInformation().getLicenseName(), "Should be able to get license after manual register");
             // Clear license name to mimic old workflow that does not have a license associated with it
             testingPostgres.runUpdateStatement("update workflow set licensename=null");
-            Workflow refreshedWorkflow = workflowApi.refresh(githubWorkflow.getId(), false);
+            Workflow refreshedWorkflow = workflowApi.refresh1(githubWorkflow.getId(), false);
             assertEquals("Apache License 2.0", refreshedWorkflow.getLicenseInformation().getLicenseName(), "Should be able to get license after refresh");
             // Refresh the workflow
             baseEntryId = refreshedWorkflow.getId();
@@ -255,7 +255,7 @@ class CheckerWorkflowIT extends BaseIT {
 
         // Add checker workflow
         final Entry checkerWorkflowBase = workflowApi
-            .registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", baseEntryId, "cwl", null);
+            .registerCheckerWorkflow(baseEntryId, "cwl", "/checker-workflow-wrapping-workflow.cwl", null);
         final Workflow stubCheckerWorkflow = workflowApi.getWorkflow(checkerWorkflowBase.getCheckerId(), null);
         assertSame(ModeEnum.STUB, stubCheckerWorkflow.getMode());
 
@@ -273,12 +273,12 @@ class CheckerWorkflowIT extends BaseIT {
                 .manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json"));
         if (all) {
             for (Workflow workflowItem : workflows) {
-                workflowApi.refresh(workflowItem.getId(), false);
+                workflowApi.refresh1(workflowItem.getId(), false);
             }
         } else {
             for (Workflow workflowItem : workflows) {
                 if (workflowItem.getOrganization().equalsIgnoreCase(stubCheckerWorkflow.getOrganization())) {
-                    workflowApi.refresh(workflowItem.getId(), false);
+                    workflowApi.refresh1(workflowItem.getId(), false);
                 }
             }
         }
@@ -311,17 +311,17 @@ class CheckerWorkflowIT extends BaseIT {
         assertEquals(0, count, "No workflows are in full mode, there are " + count);
 
         // Refresh the workflow
-        workflowApi.refresh(githubWorkflow.getId(), false);
+        workflowApi.refresh1(githubWorkflow.getId(), false);
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals(1, count2, "One workflow should be full, there are " + count2);
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);
+        workflowApi.registerCheckerWorkflow(githubWorkflow.getId(), "cwl", "/checker-workflow-wrapping-workflow.cwl", null);
 
         // Refresh workflow
-        Workflow refreshedEntry = workflowApi.refresh(githubWorkflow.getId(), false);
+        Workflow refreshedEntry = workflowApi.refresh1(githubWorkflow.getId(), false);
 
         // Should be able to download zip for first version
         Workflow checkerWorkflow = workflowApi.getWorkflow(refreshedEntry.getCheckerId(), null);
@@ -351,7 +351,7 @@ class CheckerWorkflowIT extends BaseIT {
         // Publish workflow
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
         assertEquals(0, count6, "No workflows should be published, there are " + count6);
-        workflowApi.publish(githubWorkflow.getId(), publishRequest);
+        workflowApi.publish1(githubWorkflow.getId(), publishRequest);
 
         // Checker workflow should publish
         final long count7 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
@@ -361,7 +361,7 @@ class CheckerWorkflowIT extends BaseIT {
         workflowApi.getWorkflowZip(checkerWorkflow.getId(), checkerWorkflow.getWorkflowVersions().get(0).getId());
 
         // Unpublish workflow
-        workflowApi.publish(githubWorkflow.getId(), unpublishRequest);
+        workflowApi.publish1(githubWorkflow.getId(), unpublishRequest);
 
         // Checker workflow should unpublish
         final long count8 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
@@ -369,7 +369,7 @@ class CheckerWorkflowIT extends BaseIT {
 
         // Should not be able to directly publish the checker
         try {
-            workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
+            workflowApi.publish1(refreshedEntry.getCheckerId(), publishRequest);
             fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
@@ -403,17 +403,17 @@ class CheckerWorkflowIT extends BaseIT {
         assertEquals(0, count, "No workflows are in full mode, there are " + count);
 
         // Refresh the workflow
-        workflowApi.refresh(githubWorkflow.getId(), false);
+        workflowApi.refresh1(githubWorkflow.getId(), false);
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals(1, count2, "One workflow should be full, there are " + count2);
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.wdl", githubWorkflow.getId(), "wdl", null);
+        workflowApi.registerCheckerWorkflow(githubWorkflow.getId(), "wdl", "/checker-workflow-wrapping-workflow.wdl", null);
 
         // Refresh workflow
-        workflowApi.refresh(githubWorkflow.getId(), false);
+        workflowApi.refresh1(githubWorkflow.getId(), false);
 
         // Checker workflow should refresh
         final long count3 = testingPostgres
@@ -434,14 +434,14 @@ class CheckerWorkflowIT extends BaseIT {
         // Publish workflow
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
         assertEquals(0, count6, "No workflows should be published, there are " + count6);
-        workflowApi.publish(githubWorkflow.getId(), publishRequest);
+        workflowApi.publish1(githubWorkflow.getId(), publishRequest);
 
         // Checker workflow should publish
         final long count7 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
         assertEquals(2, count7, "Two workflows should be published (one being the checker), there are " + count7);
 
         // Unpublish workflow
-        workflowApi.publish(githubWorkflow.getId(), unpublishRequest);
+        workflowApi.publish1(githubWorkflow.getId(), unpublishRequest);
 
         // Checker workflow should unpublish
         final long count8 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
@@ -469,7 +469,7 @@ class CheckerWorkflowIT extends BaseIT {
         assertEquals(0, count, "No workflows are in full mode, there are " + count);
 
         // Add checker workflow
-        assertThrows(ApiException.class, () ->  workflowApi.registerCheckerWorkflow("checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null));
+        assertThrows(ApiException.class, () ->  workflowApi.registerCheckerWorkflow(githubWorkflow.getId(), "cwl", "checker-workflow-wrapping-workflow.cwl", null));
     }
 
     /**

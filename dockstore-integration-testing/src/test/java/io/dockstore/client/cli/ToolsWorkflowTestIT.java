@@ -26,10 +26,10 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.WorkflowTest;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -73,7 +73,7 @@ class ToolsWorkflowTestIT extends BaseIT {
         assertEquals(testWorkflowName, githubWorkflow.getWorkflowName());
 
         // Publish github workflow
-        Workflow refresh = workflowApi.refresh(githubWorkflow.getId(), false);
+        Workflow refresh = workflowApi.refresh1(githubWorkflow.getId(), false);
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
         assertEquals(testWorkflowName, refresh.getWorkflowName());

@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import io.circe.generic.util.macros.DerivationMacros;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -44,33 +45,31 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.ContainertagsApi;
+import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.DockstoreTool.ModeEnum;
 import io.dockstore.openapi.client.model.FileWrapper;
+import io.dockstore.openapi.client.model.PublishRequest;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.SourceFile.TypeEnum;
+import io.dockstore.openapi.client.model.Tag;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.VersionVerifiedPlatform;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.languages.WDLHandler;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.EntriesApi;
-import io.swagger.client.api.HostedApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.DockstoreTool.TopicSelectionEnum;
-import io.swagger.client.model.Entry;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.SourceFile.TypeEnum;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.Tag.DoiStatusEnum;
-import io.swagger.client.model.Workflow;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -399,7 +398,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         verifySourcefileChecksums(tags);
 
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        toolApi.publish(tool.getId(), publishRequest);
+        toolApi.publish1(tool.getId(), publishRequest);
         // Dockerfile
         List<FileWrapper> fileWrappers = ga4Ghv20Api.toolsIdVersionsVersionIdContainerfileGet("quay.io/dockstoretestuser2/quayandgithub/alternate", "master");
         verifyTRSSourceFileConversion(fileWrappers);
@@ -430,8 +429,8 @@ class GeneralIT extends GeneralWorkflowBaseIT {
      */
     @Test
     void testWDLToolLanguageVersion() {
-        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(client);
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(client);
 
         io.dockstore.openapi.client.model.DockstoreTool tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithubwdl", null);
         tool = containersApi.refresh(tool.getId());
@@ -468,7 +467,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         Workflow workflow = workflowApi
                 .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
 
-        workflow = workflowApi.refresh(workflow.getId(), false);
+        workflow = workflowApi.refresh1(workflow.getId(), false);
         long workflowVersionId = workflow.getWorkflowVersions().stream().filter(w -> w.getReference().equals("testBoth")).findFirst().get().getId();
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersionId);
         List<VersionVerifiedPlatform> versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
@@ -501,7 +500,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         // verified platforms can be viewed by others once published
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        workflowApi.publish(workflow.getId(), publishRequest);
+        workflowApi.publish1(workflow.getId(), publishRequest);
         versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
         assertEquals(1, versionsVerified.size());
     }
@@ -555,7 +554,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         sourceFile.setPath("/Dockstore.wdl");
         sourceFile.setAbsolutePath("/Dockstore.wdl");
 
-        workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile));
+        workflow = hostedApi.editHostedWorkflow(Lists.newArrayList(sourceFile), workflow.getId());
         io.dockstore.openapi.client.model.WorkflowVersion workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId()).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
         List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(1, fileTypes.size());
@@ -567,7 +566,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         testFile.setPath("/test.wdl.json");
         testFile.setAbsolutePath("/test.wdl.json");
 
-        workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile, testFile));
+        workflow = hostedApi.editHostedWorkflow(Lists.newArrayList(sourceFile, testFile), workflow.getId());
         workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId()).stream().filter(wv -> wv.getName().equals("2")).findFirst().get();
         fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(2, fileTypes.size());
@@ -589,7 +588,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         testcwl.setContent("{}");
         testcwl.setPath("/test.cwl.json");
         testcwl.setAbsolutePath("/test.cwl.json");
-        tool = hostedApi.editHostedTool(tool.getId(), Lists.newArrayList(sourceFile, testFile, cwl, testcwl, dockerfile));
+        tool = hostedApi.editHostedTool(Lists.newArrayList(sourceFile, testFile, cwl, testcwl, dockerfile), tool.getId());
 
         fileTypes = entriesApi.getVersionsFileTypes(tool.getId(), tool.getWorkflowVersions().get(0).getId());
         assertEquals(5, fileTypes.size());
@@ -610,7 +609,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         // file types can be viewed by others once published
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        workflowApi.publish(workflow.getId(), publishRequest);
+        workflowApi.publish1(workflow.getId(), publishRequest);
         fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(2, fileTypes.size());
         assertNotSame(fileTypes.get(0), fileTypes.get(1));
@@ -716,7 +715,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         cwl.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         cwl.setPath("/Dockstore.cwl");
         cwl.setAbsolutePath("/Dockstore.cwl");
-        hostedTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(cwl, dockerfile));
+        hostedTool = hostedApi.editHostedTool(Lists.newArrayList(cwl, dockerfile), hostedTool.getId());
 
         Tag hostedTag = hostedTool.getWorkflowVersions().get(0);
         hostedTag.setHidden(true);
@@ -728,7 +727,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         }
 
         cwl.setContent("class: CommandLineTool\n\ncwlVersion: v1.0");
-        hostedTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(cwl, dockerfile));
+        hostedTool = hostedApi.editHostedTool(Lists.newArrayList(cwl, dockerfile), hostedTool.getId());
         hostedTag = hostedTool.getWorkflowVersions().stream().filter(v -> v.getName().equals("1")).findFirst().get();
         hostedTag.setHidden(true);
         toolTagsApi.updateTags(hostedTool.getId(), Collections.singletonList(hostedTag));
@@ -1131,7 +1130,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         tool = toolApi.refresh(tool.getId());
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        toolApi.publish(tool.getId(), publishRequest);
+        toolApi.publish1(tool.getId(), publishRequest);
         Tool ga4ghatool = ga4Ghv20Api.toolsIdGet("quay.io/dockstoretestuser2/quayandgithub");
 
         final Response.ResponseBuilder responseBuilder = Response.ok(ga4ghatool);
@@ -1584,7 +1583,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         DockstoreTool refresh = containersApi.refresh(tool.getId());
 
         // Add alias
-        Entry entry = entryApi.addAliases(refresh.getId(), "foobar");
+        DerivationMacros.Members.Entry$ entry = entryApi.addAliases(refresh.getId(), "foobar");
         assertTrue(entry.getAliases().containsKey("foobar"), "Should have alias foobar");
 
         // check that dates are present
@@ -1666,7 +1665,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         // Register and refresh tool
         DockstoreTool tool = ownerContainersApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
-        DockstoreTool refresh = ownerContainersApi.refresh(tool.getId());
+        DockstoreTool refresh = ownercontainersApi.refresh(tool.getId());
         Long toolId = refresh.getId();
         Tag tag = refresh.getWorkflowVersions().get(0);
         Long versionId = tag.getId();
@@ -1695,7 +1694,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         // Publish
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        ownerContainersApi.publish(toolId, publishRequest);
+        ownerContainersApi.publish1(toolId, publishRequest);
 
         // Try downloading published
         // Owner: Should pass

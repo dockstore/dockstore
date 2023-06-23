@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.common.ConfidentialTest;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.CurationApi;
-import io.swagger.client.model.Notification;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.CurationApi;
+import io.dockstore.openapi.client.model.Notification;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.List;

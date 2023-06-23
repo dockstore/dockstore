@@ -30,24 +30,26 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.UsersApi;
+import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.FileWrapper;
+import io.dockstore.openapi.client.model.PublishRequest;
+import io.dockstore.openapi.client.model.User;
+import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.ModeEnum;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
+import io.dockstore.openapi.client.model.WorkflowVersion.ReferenceTypeEnum;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.Ga4GhApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.FileWrapper;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.Workflow.ModeEnum;
-import io.swagger.client.model.WorkflowVersion;
-import io.swagger.client.model.WorkflowVersion.ReferenceTypeEnum;
+import io.swagger.api.ToolsApi;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -135,7 +137,7 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
      * @throws IOException
      * @throws URISyntaxException
      */
-    private void checkForRelativeFile(Ga4GhApi ga4Ghv2Api, String dockstoreTestUser2RelativeImportsTool, String reference, String filename)
+    private void checkForRelativeFile(Ga4Ghv20Api ga4Ghv2Api, String dockstoreTestUser2RelativeImportsTool, String reference, String filename)
         throws IOException, URISyntaxException {
         FileWrapper toolDescriptor;
         String content;
@@ -169,10 +171,10 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
         }
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
-        final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
-        final Workflow refreshBitbucket = workflowApi.refresh(workflowByPathBitbucket.getId(), false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
+        final Workflow refreshGithub = workflowApi.refresh1(workflowByPathGithub.getId(), false);
+        final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
+        final Workflow refreshBitbucket = workflowApi.refresh1(workflowByPathBitbucket.getId(), false);
 
         // tests for reference type for bitbucket workflows
         assertTrue(refreshBitbucket.getWorkflowVersions().stream()
@@ -200,8 +202,8 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
                     .filter(WorkflowVersion::isValid).count());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(CommonTestUtilities.getWebClient(false, null, testingPostgres));
-        Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(webClient);
+        Ga4Ghv20Api anonymousGa4Ghv2Api = new Ga4Ghv20Api(CommonTestUtilities.getWebClient(false, null, testingPostgres));
+        Ga4Ghv20Api adminGa4Ghv2Api = new Ga4Ghv20Api(webClient);
         boolean exceptionThrown = false;
         try {
             anonymousGa4Ghv2Api
@@ -214,7 +216,7 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL");
         assertTrue(adminToolDescriptor != null && !adminToolDescriptor.getContent().isEmpty(), "could not get content via optional auth");
 
-        workflowApi.publish(refreshGithub.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.publish1(refreshGithub.getId(), CommonTestUtilities.createPublishRequest(true));
         // check on URLs for workflows via ga4gh calls
         FileWrapper toolDescriptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL");
@@ -258,8 +260,8 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
         assertEquals(2, count2, "There should be two workflows with name altname, there are " + count2);
 
         // Publish github workflow
-        Workflow refreshedWorkflow = workflowApi.refresh(githubWorkflow.getId(), false);
-        workflowApi.publish(githubWorkflow.getId(), publishRequest);
+        Workflow refreshedWorkflow = workflowApi.refresh1(githubWorkflow.getId(), false);
+        workflowApi.publish1(githubWorkflow.getId(), publishRequest);
 
         // Tag with a valid descriptor (but no description) and a recognizable README
         final String tagName = "1.0.0";
@@ -271,8 +273,8 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
         // Intentionally mess up description to test if refresh fixes it
         testingPostgres.runUpdateStatement("update version_metadata set description='bad_potato'");
 
-        refreshedWorkflow = workflowApi.refresh(githubWorkflow.getId(), true);
-        workflowApi.publish(githubWorkflow.getId(), publishRequest);
+        refreshedWorkflow = workflowApi.refresh1(githubWorkflow.getId(), true);
+        workflowApi.publish1(githubWorkflow.getId(), publishRequest);
 
         testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(tagName)).findFirst();
         assertTrue(testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"), "A workflow version that had a README description should get updated");
@@ -286,9 +288,9 @@ class BitBucketGitHubWorkflowIT extends BaseIT {
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid = 't'", long.class);
         assertTrue(2 <= count4, "There should be at least 2 valid version tags, there are " + count4);
 
-        workflowApi.refresh(bitbucketWorkflow.getId(), false);
+        workflowApi.refresh1(bitbucketWorkflow.getId(), false);
         // Publish bitbucket workflow, will fail now since the workflow test case is actually invalid now
-        assertThrows(ApiException.class, () -> workflowApi.publish(bitbucketWorkflow.getId(), publishRequest));
+        assertThrows(ApiException.class, () -> workflowApi.publish1(bitbucketWorkflow.getId(), publishRequest));
 
     }
 

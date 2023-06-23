@@ -137,7 +137,6 @@
         <module>dockstore-common</module>
         <module>dockstore-language-plugin-parent</module>
         <module>dockstore-webservice</module>
-        <module>swagger-java-client</module>
         <module>openapi-java-client</module>
         <module>dockstore-integration-testing</module>
         <module>reports</module>

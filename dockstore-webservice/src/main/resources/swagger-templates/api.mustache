@@ -41,7 +41,7 @@ import jakarta.validation.constraints.*;
 {{#hasConsumes}}@Consumes({ {{#consumes}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/consumes}} }){{/hasConsumes}}
 {{#hasProduces}}@Produces({ {{#produces}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/produces}} }){{/hasProduces}}
 @io.swagger.annotations.Api(description = "the {{{baseName}}} API")
-@io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GH", description = ResourceConstants.GA4GH)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GHV2BETA", description = ResourceConstants.GA4GHV2BETA)
 {{>generatedAnnotation}}
 {{#operations}}
 public class {{classname}}  {

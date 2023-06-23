@@ -47,7 +47,7 @@ import jakarta.ws.rs.ext.Provider;
         @Tag(name = "aliases", description = ResourceConstants.ALIASES),
         @Tag(name = "containertags", description = ResourceConstants.CONTAINERTAGS),
         @Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1),
-        @Tag(name = "GA4GH", description = ResourceConstants.GA4GH),
+        @Tag(name = "GA4GHV2BETA", description = ResourceConstants.GA4GHV2BETA),
         @Tag(name = "GA4GHV20", description = ResourceConstants.GA4GHV20),
         @Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH),
         @Tag(name = "tokens", description = ResourceConstants.TOKENS),
