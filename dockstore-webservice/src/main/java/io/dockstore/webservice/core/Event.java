@@ -86,6 +86,12 @@ public class Event {
     private AppTool apptool;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "serviceId", referencedColumnName = "id")
+    @ApiModelProperty(value = "Service that the event is acting on.", position = 11)
+    @JsonFilter(SLIM_WORKFLOW_FILTER)
+    private Service service;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notebookId", referencedColumnName = "id")
     @ApiModelProperty(value = "Notebook that the event is acting on.", position = 10)
     @JsonFilter(SLIM_WORKFLOW_FILTER)
@@ -174,6 +180,22 @@ public class Event {
 
     public void setWorkflow(BioWorkflow workflow) {
         this.workflow = workflow;
+    }
+
+    public Service getService() {
+        return service;
+    }
+
+    public void setService(Service service) {
+        this.service = service;
+    }
+
+    public Notebook getNotebook() {
+        return notebook;
+    }
+
+    public void setNotebook(Notebook notebook) {
+        this.notebook = notebook;
     }
 
     public Collection getCollection() {
@@ -277,11 +299,6 @@ public class Event {
             return this;
         }
 
-        public Builder withService(Service service) {
-            this.service = service;
-            return this;
-        }
-
         public Builder withBioWorkflow(BioWorkflow workflow) {
             this.bioWorkflow = workflow;
             return this;
@@ -289,6 +306,11 @@ public class Event {
 
         public Builder withAppTool(AppTool appTool) {
             this.appTool = appTool;
+            return this;
+        }
+
+        public Builder withService(Service service) {
+            this.service = service;
             return this;
         }
 
@@ -317,8 +339,10 @@ public class Event {
             event.user = this.user;
             event.organization = this.organization;
             event.tool = this.tool;
-            event.apptool = this.appTool;
             event.workflow = this.bioWorkflow;
+            event.apptool = this.appTool;
+            event.service = this.service;
+            event.notebook = this.notebook;
             event.collection = this.collection;
             event.initiatorUser = this.initiatorUser;
             event.type = this.type;
