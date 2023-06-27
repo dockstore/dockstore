@@ -314,6 +314,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public enum GitVisibility {
         /**
+         * There was a failed attempt to determine visibility
+         */
+        UNKNOWN,
+        /**
          * A private repo
          */
         PRIVATE,

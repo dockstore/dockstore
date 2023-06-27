@@ -200,9 +200,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     *  Indicates if a GitHub repository is public or private; returns <code>GitVisiblity.UNKNOWN</code>
-     *  if unable to determine the visibility. It could fail to determine the visibility due
-     *  to permissions issues or due to the repo not existing.
+     * Determines the visibility of a GitHub repo.
      * @param repositoryId
      * @return
      */
@@ -210,9 +208,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRepository repository = github.getRepository(repositoryId);
             return repository.isPrivate() ? GitVisibility.PRIVATE : GitVisibility.PUBLIC;
-        } catch (IOException e) {
-            LOG.error(String.format("Could not determine GitHub visibility for %s", repositoryId), e);
+        } catch (GHFileNotFoundException e) {
+            LOG.error(String.format("Repository %s not found checking for visibility", repositoryId), e);
+            // We don't know if it's not found because it doesn't exist, or because it's private and we don't have access to it
             return GitVisibility.PRIVATE_OR_NON_EXISTENT;
+        } catch (IOException e) {
+            LOG.error(String.format("Unknown error checking visibility for %s", repositoryId), e);
+            return GitVisibility.UNKNOWN;
         }
     }
 
