@@ -212,7 +212,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             return repository.isPrivate() ? GitVisibility.PRIVATE : GitVisibility.PUBLIC;
         } catch (IOException e) {
             LOG.error(String.format("Could not determine GitHub visibility for %s", repositoryId), e);
-            return GitVisibility.UNKNOWN;
+            return GitVisibility.PRIVATE_OR_NON_EXISTENT;
         }
     }
 
@@ -535,8 +535,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setLastUpdated(new Date());
         workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
-        workflow.setTopicAutomatic(this.getTopic(repositoryId));
-        workflow.setGitVisibility(this.getGitVisibility(repositoryId));
+        workflow.setTopicAutomatic(getTopic(repositoryId));
+        workflow.setGitVisibility(getGitVisibility(repositoryId));
         this.setLicenseInformation(workflow, repositoryId);
 
 

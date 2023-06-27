@@ -308,7 +308,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonIgnore
     @Column(nullable = true, columnDefinition = "varchar(32)")
-    @Schema(description = "The visibility of the Git repo")
     @Enumerated(EnumType.STRING)
     private GitVisibility gitVisibility;
 
@@ -323,9 +322,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
          */
         PUBLIC,
         /**
-         * Unable to determine visibility
+         * The Git repo is either private or does not exist, but we cannot tell which.
          */
-        UNKNOWN
+        PRIVATE_OR_NON_EXISTENT
     }
 
     public enum TopicSelection {
