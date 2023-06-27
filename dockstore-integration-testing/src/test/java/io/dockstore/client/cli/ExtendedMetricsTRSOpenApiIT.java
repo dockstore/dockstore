@@ -678,6 +678,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             execution.setExecutionTime("PT5M");
             execution.setCpuRequirements(2);
             execution.setMemoryRequirementsGB(2.0);
+            execution.setCostUSD(9.99);
+            execution.setRegion("us-central1");
             Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
             execution.setAdditionalProperties(additionalProperties);
             executions.add(execution);

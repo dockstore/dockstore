@@ -33,6 +33,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.metrics.CostStatisticMetric;
 import io.dockstore.webservice.core.metrics.CpuStatisticMetric;
 import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
@@ -184,6 +185,10 @@ class MetricsIT extends BaseIT {
         // The minimum CPU used was 1GB, the maximum was 4GB, and the average was 2G. 10 data points were used to calculate the average
         MemoryStatisticMetric memoryStatisticMetric = new MemoryStatisticMetric(1.0, 4.0, 2.5, 10);
         metrics.setMemory(memoryStatisticMetric);
+
+        // Add aggregated information about the cost of the workflow run
+        CostStatisticMetric costStatisticMetric = new CostStatisticMetric(1.00, 4.00, 2.50, 10);
+        metrics.setCost(costStatisticMetric);
 
         // Add aggregated information about validation
         // Add a successful miniwdl validation

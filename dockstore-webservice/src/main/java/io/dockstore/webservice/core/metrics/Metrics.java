@@ -80,6 +80,13 @@ public class Metrics {
 
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "cost", referencedColumnName = "id")
+    @ApiModelProperty(value = "Aggregated cost metrics in USD")
+    @Schema(description = "Aggregated cost metrics in USD")
+    private CostStatisticMetric cost;
+
+    @Valid
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "validationstatus", referencedColumnName = "id")
     @ApiModelProperty(value = "Aggregated validation status metrics")
     @Schema(description = "Aggregated validation status metrics")
@@ -147,6 +154,14 @@ public class Metrics {
 
     public void setCpu(CpuStatisticMetric cpu) {
         this.cpu = cpu;
+    }
+
+    public CostStatisticMetric getCost() {
+        return cost;
+    }
+
+    public void setCost(CostStatisticMetric cost) {
+        this.cost = cost;
     }
 
     public ValidationStatusCountMetric getValidationStatus() {
