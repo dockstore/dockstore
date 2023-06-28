@@ -11,7 +11,9 @@ import io.dockstore.client.cli.BasicIT;
 import io.dockstore.client.cli.OrganizationIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.OrganizationsApi;
@@ -227,14 +229,33 @@ class WebhookIT extends BaseIT {
         final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowClient = new WorkflowsApi(webClient);
 
+        final String manualWorkflowPath = "DockstoreTestUser/dockstore-whalesay-wdl";
+        workflowClient.manualRegister(SourceControl.GITHUB.name(), manualWorkflowPath, "/dockstore.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+        final Workflow manualWorkflow = workflowClient.getWorkflowByPath(SourceControl.GITHUB.toString() + "/" + manualWorkflowPath,
+            WorkflowSubClass.BIOWORKFLOW, "");
+        workflowClient.refresh1(manualWorkflow.getId(), false);
+        assertEquals(1, getNullVisibilityCount(), "Git visibility is null for manually registered workflows");
+
         workflowClient.handleGitHubRelease("refs/tags/0.7", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This creates 2 workflows
-        assertEquals(2, getPublicVisibilityCount(), "Two workflows created should both have PUBLIC github visiblity");
-        workflowClient.handleGitHubRelease("refs/tags/0.5", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This creates 2 workflows
-        assertEquals(2, getPublicVisibilityCount(), "Updated workflows should still both have PUBLIC github visiblity");
+        assertEquals(2, getPublicVisibilityCount(), "Two workflows created should both have PUBLIC git visiblity");
+        workflowClient.handleGitHubRelease("refs/tags/0.5", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This updates the 2 workflows
+        assertEquals(2, getPublicVisibilityCount(), "Updated workflows should still both have PUBLIC git visiblity");
+        assertEquals(1, getNullVisibilityCount(), "Git visibility should still be null for manually registered workflows");
+
+        // Simulate transitioning a private repo to a public repo
+        testingPostgres.runUpdateStatement("update workflow set gitvisibility = 'PRIVATE' where gitvisibility is not null;");
+        assertEquals(0, getPublicVisibilityCount());
+        workflowClient.handleGitHubRelease("refs/tags/0.4", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This updates the 2 workflows
+        assertEquals(2, getPublicVisibilityCount(), "Private visibility should have changed to public");
     }
 
     private Long getPublicVisibilityCount() {
         return testingPostgres.runSelectStatement(
             "select count(*) from workflow where gitvisibility = 'PUBLIC'", long.class);
+    }
+
+    private Long getNullVisibilityCount() {
+        return testingPostgres.runSelectStatement(
+            "select count(*) from workflow where gitvisibility is null", long.class);
     }
 }

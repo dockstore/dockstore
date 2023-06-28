@@ -580,6 +580,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public void updateWorkflowInfo(final Workflow workflow, final String repositoryId) {
         setLicenseInformation(workflow, repositoryId);
         workflow.setTopicAutomatic(getTopic(repositoryId));
+        workflow.setGitVisibility(getGitVisibility(repositoryId));
     }
 
     @Override
