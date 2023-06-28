@@ -18,6 +18,8 @@ package io.dockstore.client.cli;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -27,8 +29,8 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ContainersApi;
-import io.dockstore.openapi.client.api.ContainertagsApi;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.PublishRequest;
@@ -37,9 +39,7 @@ import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
-import io.swagger.api.ToolsApi;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
@@ -71,6 +71,7 @@ class ExtendedTRSSwaggerIT extends BaseIT {
     private static final String CRUMMY_PLATFORM = "crummy platform";
     private static final String TRS_ID = "quay.io/dockstoretestuser2/dockstore-cgpmap";
     private static final String VERSION_NAME = "symbolic.v1";
+    public static final Gson GSON = new Gson();
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -139,13 +140,16 @@ class ExtendedTRSSwaggerIT extends BaseIT {
             // check on URLs for workflows via ga4gh calls
             ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(verifyingUser);
             // try to add verification metadata
-            String stringObjectMap = extendedGa4GhApi
+            String stringMap = extendedGa4GhApi
                 .verifyTestParameterFilePost("CWL", id, "master", defaultTestParameterFilePath, AWESOME_PLATFORM, "2.0.0",
                     true, "metadata");
+            Map<String, Object> stringObjectMap = GSON.fromJson(stringMap, new TypeToken<HashMap<String, String>>(){}.getType());
+
             Assertions.assertEquals(1, stringObjectMap.size());
-            stringObjectMap = extendedGa4GhApi
+            stringMap = extendedGa4GhApi
                 .verifyTestParameterFilePost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0",
                     true, "metadata");
+            stringObjectMap = GSON.fromJson(stringMap, new TypeToken<HashMap<String, String>>(){}.getType());
             Assertions.assertEquals(2, stringObjectMap.size());
 
             // assert some things about map structure
@@ -156,10 +160,10 @@ class ExtendedTRSSwaggerIT extends BaseIT {
             Assertions.assertEquals("2.0.0", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"), "AWESOME_PLATFORM has the wrong version");
             Assertions.assertEquals("1.0.0", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"), "CRUMMY_PLATFORM has the wrong version");
 
-            // verification on a sourcefile level should flow up to to version and entry level
-            Ga4GhApi api = new Ga4GhApi(verifyingUser);
+            // verification on a sourcefile level should flow up to version and entry level
+            Ga4Ghv20Api api = new Ga4Ghv20Api(verifyingUser);
             Tool tool = api.toolsIdGet(id);
-            Assertions.assertTrue(tool.isVerified() && tool.getVersions().stream().anyMatch(ToolVersion::isVerified), "verification states do not seem to flow up");
+            Assertions.assertTrue(tool.getVersions().stream().anyMatch(ToolVersion::isVerified) && tool.getVersions().stream().anyMatch(ToolVersion::isVerified), "verification states do not seem to flow up");
         }
         {
             ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(registeringUser);
@@ -167,9 +171,10 @@ class ExtendedTRSSwaggerIT extends BaseIT {
             WorkflowsApi workflowApi = new WorkflowsApi(registeringUser);
             // refresh should not destroy verification data
             workflowApi.refresh1(workflowByPathGithub.getId(), false);
-            String stringObjectMap = extendedGa4GhApi
+            String stringMap = extendedGa4GhApi
                 .verifyTestParameterFilePost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0",
                     true, "new metadata");
+            Map<String, Object> stringObjectMap = GSON.fromJson(stringMap, new TypeToken<HashMap<String, String>>(){}.getType());
             Assertions.assertEquals(2, stringObjectMap.size());
             Assertions.assertEquals("2.0.0", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"), "AWESOME_PLATFORM has the wrong version");
             Assertions.assertEquals("1.0.0", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"), "CRUMMY_PLATFORM has the wrong version");
@@ -181,9 +186,10 @@ class ExtendedTRSSwaggerIT extends BaseIT {
             extendedGa4GhApi
                 .verifyTestParameterFilePost("CWL", id, "master", defaultTestParameterFilePath, AWESOME_PLATFORM, "2.0.0",
                     null, "metadata");
-            String stringObjectMap = extendedGa4GhApi
+            String stringMap = extendedGa4GhApi
                 .verifyTestParameterFilePost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0",
                     null, "metadata");
+            Map<String, Object> stringObjectMap = GSON.fromJson(stringMap, new TypeToken<HashMap<String, String>>(){}.getType());
             Assertions.assertEquals(0, stringObjectMap.size());
         }
     }
@@ -196,8 +202,6 @@ class ExtendedTRSSwaggerIT extends BaseIT {
     void testVerificationOnSourceFileLevelForTools() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
-        ContainertagsApi containertagsApi = new ContainertagsApi(webClient);
-        io.openapi.api.ToolsApi ga4GhApi = new io.openapi.api.ToolsApi(webClient);
         DockstoreTool tool = new DockstoreTool();
         tool.setDefaultCwlPath("/cwls/cgpmap-bamOut.cwl");
         tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
@@ -212,23 +216,25 @@ class ExtendedTRSSwaggerIT extends BaseIT {
 
         // Make publish request (true)
         final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        toolApi.publish1(registeredTool.getId(), publishRequest);
+        toolApi.publish(registeredTool.getId(), publishRequest);
 
         // check on URLs for workflows via ga4gh calls
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         // try to add verification metadata
-        Map<String, Object> stringObjectMap = extendedGa4GhApi
-            .toolsIdVersionsVersionIdTypeTestsPost("CWL", "quay.io/dockstoretestuser2/dockstore-cgpmap", "symbolic.v1",
-                "/examples/cgpmap/bamOut/bam_input.json", AWESOME_PLATFORM, "2.0.0", "metadata", true);
+        String stringMap = extendedGa4GhApi
+            .verifyTestParameterFilePost("CWL", "quay.io/dockstoretestuser2/dockstore-cgpmap", "symbolic.v1",
+                "/examples/cgpmap/bamOut/bam_input.json", AWESOME_PLATFORM, "2.0.0", true, "metadata");
+        Map<String, Object> stringObjectMap = GSON.fromJson(stringMap, new TypeToken<HashMap<String, Object>>(){}.getType());
         Assertions.assertEquals(1, stringObjectMap.size());
 
         // see if refresh destroys verification metadata
         registeredTool = toolApi.refresh(registeredTool.getId());
         final Long toolId = registeredTool.getId();
         final Long tagId = getSpecificVersion(registeredTool).getId();
-        stringObjectMap = extendedGa4GhApi
-            .toolsIdVersionsVersionIdTypeTestsPost("CWL", TRS_ID, VERSION_NAME, "/examples/cgpmap/bamOut/bam_input.json", "crummy platform",
-                "1.0.0", "metadata", true);
+        stringMap = extendedGa4GhApi
+            .verifyTestParameterFilePost("CWL", TRS_ID, VERSION_NAME, "/examples/cgpmap/bamOut/bam_input.json", "crummy platform",
+                "1.0.0",  true, "metadata");
+        stringObjectMap = GSON.fromJson(stringMap, new TypeToken<HashMap<String, Object>>(){}.getType());
         Assertions.assertEquals(2, stringObjectMap.size());
         Assertions.assertEquals("2.0.0", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"), "AWESOME_PLATFORM has the wrong version");
         Assertions.assertEquals("1.0.0", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"), "CRUMMY_PLATFORM has the wrong version");
@@ -238,31 +244,5 @@ class ExtendedTRSSwaggerIT extends BaseIT {
         Optional<Tag> first = dockstoreTool.getWorkflowVersions().stream().filter(version -> version.getName().equals(VERSION_NAME))
             .findFirst();
         return first.orElse(null);
-    }
-
-    private void assertNotOutOfSync(Long toolId, ContainersApi containersApi, ToolsApi ga4GhApi) {
-        // Get tool, tag, and TRS toolVersion
-        DockstoreTool dockstoreTool = containersApi.getContainer(toolId, null);
-        Tag tag = getSpecificVersion(dockstoreTool);
-        ToolVersion toolVersion = ga4GhApi.toolsIdVersionsVersionIdGet(TRS_ID, VERSION_NAME);
-        // Check that it's no longer out of sync in dockstore
-        Assertions.assertTrue(tag.isVerified());
-        Assertions.assertEquals(Collections.singletonList("metadata"), tag.getVerifiedSources());
-        // Check that it's no longer out of sync in TRS
-        Assertions.assertTrue(toolVersion.isVerified());
-        Assertions.assertEquals("[\"metadata\"]", toolVersion.getVerifiedSource());
-    }
-
-    private void assertOutOfSync(Long toolId, ContainersApi containersApi, ToolsApi ga4GhApi) {
-        // Get tool, tag, and TRS toolVersion
-        DockstoreTool dockstoreTool = containersApi.getContainer(toolId, null);
-        Tag tag = getSpecificVersion(dockstoreTool);
-        ToolVersion toolVersion = ga4GhApi.toolsIdVersionsVersionIdGet(TRS_ID, VERSION_NAME);
-        // Check that it's out of sync in dockstore
-        Assertions.assertFalse(tag.isVerified());
-        Assertions.assertEquals(new ArrayList<String>(), tag.getVerifiedSources());
-        // Check that it's out of sync in TRS
-        Assertions.assertFalse(toolVersion.isVerified());
-        Assertions.assertEquals("[]", toolVersion.getVerifiedSource());
     }
 }

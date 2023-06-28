@@ -49,7 +49,6 @@ import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
-import io.swagger.api.ToolsApi;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;

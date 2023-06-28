@@ -7,6 +7,7 @@ import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.PipHelper;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.Pair;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,9 +31,9 @@ class MetadataIT extends BaseIT {
 
     public ApiClient apiClient = getWebClient();
 
-    public ApiResponse<Object> get_request(String endpoint, List<Pair> queryParams) {
+    public Object get_request(String endpoint, List<Pair> queryParams) {
         return apiClient.invokeAPI(endpoint, "GET", queryParams, null, new HashMap<>(), new HashMap<>(), "application/json",
-                "application/json", new String[] { "BEARER" }, null);
+            "application/json", new String[]{"BEARER"}, null);
 
     }
 
@@ -49,8 +50,8 @@ class MetadataIT extends BaseIT {
         String endpoint = "/metadata/runner_dependencies";
         List<Pair> queryParams = this.queryParams();
         queryParams.addAll(apiClient.parameterToPairs("", "client_version", "1.13.0"));
-        ApiResponse<Object> response = this.get_request(endpoint, queryParams);
-        assertEquals(HttpStatus.OK_200, response.getStatusCode());
+        this.get_request(endpoint, queryParams);
+        assertEquals(HttpStatus.OK_200, apiClient.getStatusCode());
     }
 
     @Test
@@ -58,8 +59,8 @@ class MetadataIT extends BaseIT {
         String endpoint = "/metadata/runner_dependencies";
         List<Pair> queryParams = this.queryParams();
         queryParams.addAll(apiClient.parameterToPairs("", "client_version", "1.13.0-alpha.7"));
-        ApiResponse<Object> response = this.get_request(endpoint, queryParams);
-        assertEquals(HttpStatus.OK_200, response.getStatusCode());
+        this.get_request(endpoint, queryParams);
+        assertEquals(HttpStatus.OK_200, apiClient.getStatusCode());
     }
 
     @Test
@@ -67,8 +68,8 @@ class MetadataIT extends BaseIT {
         String endpoint = "/metadata/runner_dependencies";
         List<Pair> queryParams = this.queryParams();
         queryParams.addAll(apiClient.parameterToPairs("", "client_version", PipHelper.DEV_SEM_VER));
-        ApiResponse<Object> response = this.get_request(endpoint, queryParams);
-        assertEquals(HttpStatus.OK_200, response.getStatusCode());
+        this.get_request(endpoint, queryParams);
+        assertEquals(HttpStatus.OK_200, apiClient.getStatusCode());
     }
 
     @Test

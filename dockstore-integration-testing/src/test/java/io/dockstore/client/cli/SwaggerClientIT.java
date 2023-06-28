@@ -29,8 +29,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
-import com.typesafe.sslconfig.ssl.FakeChainedKeyStore.User$;
-import io.circe.generic.util.macros.DerivationMacros;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -171,7 +169,7 @@ class SwaggerClientIT extends BaseIT {
         long containerId = container.getId();
 
         PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
-        assertThrows(ApiException.class,  () ->  containersApi.publish1(containerId, pub));
+        assertThrows(ApiException.class,  () ->  containersApi.publish(containerId, pub));
     }
 
     @Test
@@ -195,22 +193,22 @@ class SwaggerClientIT extends BaseIT {
         WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
         WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
 
-        Workflow workflow = userApi1.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
+        Workflow workflow = userApi1.getPublishedWorkflowByPath("github.com/A/l", WorkflowSubClass.BIOWORKFLOW, null, null);
         assertTrue(workflow.isIsPublished());
 
         long containerId = workflow.getId();
 
         // Note db workflow seems to have no owner. Only owner should be able to update label, regardless of whether user is admin
-        assertThrows(ApiException.class,  () ->  userApi1.updateLabels(containerId, "foo,spam,phone", ""));
+        assertThrows(ApiException.class,  () ->  userApi1.updateLabels1(containerId, "", "foo,spam,phone"));
 
         // make one user the owner to test updating label
         testingPostgres.runUpdateStatement("INSERT INTO user_entry(userid, entryid) VALUES (" + 1 + ", " + workflow.getId() + ")");
-        userApi1.updateLabels(containerId, "foo,spam,phone", "");
+        userApi1.updateLabels1(containerId, "", "foo,spam,phone");
 
         // updating label should fail since user is not owner
-        workflow = userApi1.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
+        workflow = userApi1.getPublishedWorkflowByPath("github.com/A/l", WorkflowSubClass.BIOWORKFLOW, null, null);
         assertEquals(3, workflow.getLabels().size());
-        assertThrows(ApiException.class,  () ->  userApi2.updateLabels(containerId, "foobar", ""));
+        assertThrows(ApiException.class,  () ->  userApi2.updateLabels1(containerId, "", "foobar"));
     }
 
     @Test
@@ -281,7 +279,7 @@ class SwaggerClientIT extends BaseIT {
     void testGA4GHMetadata() throws ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
-        final MetadataV1 metadata = toolApi.metadataGet();
+        final MetadataV1 metadata = toolApi.metadataGet1();
         assertTrue(metadata.getFriendlyName().contains("Dockstore"));
     }
 
@@ -620,7 +618,7 @@ class SwaggerClientIT extends BaseIT {
     void testStarStarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", WorkflowSubClass.BIOWORKFLOW, null, null);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         workflowsApi.starEntry(workflowId, STAR_REQUEST);
@@ -657,7 +655,7 @@ class SwaggerClientIT extends BaseIT {
     void testUnstarUnstarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(client);
-        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", WorkflowSubClass.BIOWORKFLOW, null, null);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         assertThrows(ApiException.class,  () -> workflowApi.starEntry(11L, UNSTAR_REQUEST));

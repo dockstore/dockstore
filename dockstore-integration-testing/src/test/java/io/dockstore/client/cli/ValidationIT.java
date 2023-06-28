@@ -304,7 +304,7 @@ class ValidationIT extends BaseIT {
         // Add invalid json cwl - should be invalid
         List<String> testParameterFiles = new ArrayList<>();
         testParameterFiles.add("/invalidJson.json");
-        toolsApi.addTestParameterFiles(tool.getId(), "", testParameterFiles,"master", "CWL");
+        toolsApi.addTestParameterFiles(tool.getId(), "", testParameterFiles, "master", "CWL");
         tool = toolsApi.refresh(tool.getId());
         assertFalse(isTagValid(tool, "master"));
         toolsApi.deleteTestParameterFiles(tool.getId(), testParameterFiles, "CWL", "master");

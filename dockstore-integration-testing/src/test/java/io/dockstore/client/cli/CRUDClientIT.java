@@ -43,6 +43,7 @@ import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Author;
 import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.DockstoreTool.ModeEnum;
+import io.dockstore.openapi.client.model.Entry;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.Tag;
@@ -148,7 +149,7 @@ class CRUDClientIT extends BaseIT {
         dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
         dockerfile.setPath("/Dockerfile");
         dockerfile.setAbsolutePath("/Dockerfile");
-        DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
+        DockstoreTool dockstoreTool = api.editHostedTool(Lists.newArrayList(descriptorFile, dockerfile), hostedTool.getId());
         Optional<Tag> first = dockstoreTool.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
@@ -161,7 +162,7 @@ class CRUDClientIT extends BaseIT {
         file2.setPath("/test.json");
         file2.setAbsolutePath("/test.json");
         // add one file and include the old one implicitly
-        dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file2));
+        dockstoreTool = api.editHostedTool(Lists.newArrayList(file2), hostedTool.getId());
         first = dockstoreTool.getWorkflowVersions().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertEquals(3, fileDAO.findSourceFilesByVersion(first.get().getId()).size(), "correct number of source files");
         String revisionWithTestFile = first.get().getName();
@@ -169,18 +170,18 @@ class CRUDClientIT extends BaseIT {
         // delete a file
         file2.setContent(null);
 
-        dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, file2, dockerfile));
+        dockstoreTool = api.editHostedTool(Lists.newArrayList(descriptorFile, file2, dockerfile), hostedTool.getId());
         first = dockstoreTool.getWorkflowVersions().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertEquals(2, fileDAO.findSourceFilesByVersion(first.get().getId()).size(), "correct number of source files");
 
         // Default version automatically updated to the latest version (3).
-        dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "3");
-        assertEquals("2", dockstoreTool.getDefaultVersion(), "Default version should have updated to the next newest one");
-        assertEquals(2, dockstoreTool.getWorkflowVersions().size(), "should only be two revisions");
+        final Entry dockstoreEntry = api.deleteHostedToolVersion(hostedTool.getId(), "3");
+        assertEquals("2", dockstoreEntry.getDefaultVersion(), "Default version should have updated to the next newest one");
+        assertEquals(2, dockstoreEntry.getWorkflowVersions().size(), "should only be two revisions");
 
         //check that all revisions have editing users
-        long count = dockstoreTool.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
-        assertEquals(count, dockstoreTool.getWorkflowVersions().size(), "all versions do not seem to have editors");
+        long count = dockstoreEntry.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
+        assertEquals(count, dockstoreEntry.getWorkflowVersions().size(), "all versions do not seem to have editors");
 
         // ensure that we cannot retrieve files until publication, important for hosted workflows which don't exist publicly
         ContainersApi otherUserApi = new ContainersApi(getWebClient(USER_1_USERNAME, testingPostgres));
@@ -198,7 +199,7 @@ class CRUDClientIT extends BaseIT {
         // Publish tool
         ContainersApi containersApi = new ContainersApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
-        containersApi.publish1(dockstoreTool.getId(), pub);
+        containersApi.publish(dockstoreTool.getId(), pub);
 
         // files should be visible afterwards
         List<SourceFile> files = otherUserApi
@@ -244,7 +245,7 @@ class CRUDClientIT extends BaseIT {
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
-        Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        Workflow dockstoreWorkflow = api.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId()).stream()
                 .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
@@ -257,7 +258,7 @@ class CRUDClientIT extends BaseIT {
         file2.setPath("/arguments.cwl");
         file2.setAbsolutePath("/arguments.cwl");
         // add one file and include the old one implicitly
-        dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file2));
+        dockstoreWorkflow = api.editHostedWorkflow(Lists.newArrayList(file2), hostedWorkflow.getId());
         first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId()).stream()
             .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
@@ -269,7 +270,7 @@ class CRUDClientIT extends BaseIT {
         file3.setPath("/tar-param.cwl");
         file3.setAbsolutePath("/tar-param.cwl");
         // add one file and include the old one implicitly
-        dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
+        dockstoreWorkflow = api.editHostedWorkflow(Lists.newArrayList(file3), hostedWorkflow.getId());
         first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId()).stream()
             .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
@@ -277,7 +278,7 @@ class CRUDClientIT extends BaseIT {
         assertEquals("3", first.get().getName(), "Name of the version that was just created should be 3");
         // Delete the workflow version and recreate it
         api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "3");
-        dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
+        dockstoreWorkflow = api.editHostedWorkflow(Lists.newArrayList(file3), hostedWorkflow.getId());
         first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId()).stream()
             .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertEquals("4", first.get().getName(), "Version name should've skipped 3 because it was previously deleted");
@@ -285,14 +286,14 @@ class CRUDClientIT extends BaseIT {
         // delete a file
         file2.setContent(null);
 
-        dockstoreWorkflow = api.editHostedWorkflow(dockstoreWorkflow.getId(), Lists.newArrayList(file, file2));
+        dockstoreWorkflow = api.editHostedWorkflow(Lists.newArrayList(file, file2), dockstoreWorkflow.getId());
         first = openApiWorkflowsApi.getWorkflowVersions(dockstoreWorkflow.getId()).stream()
             .max(Comparator.comparingInt((io.dockstore.openapi.client.model.WorkflowVersion t) -> Integer.parseInt(t.getName())));
         sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
         assertEquals(2, sourceFiles.size(), "correct number of source files");
 
-        dockstoreWorkflow = api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "1");
-        assertEquals(3, dockstoreWorkflow.getWorkflowVersions().size(), "should only be three revisions");
+        final Entry entry = api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "1");
+        assertEquals(3, entry.getWorkflowVersions().size(), "should only be three revisions");
 
         //check that all revisions have editing users
         long count = dockstoreWorkflow.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
@@ -302,20 +303,20 @@ class CRUDClientIT extends BaseIT {
         WorkflowsApi otherUserApi = new WorkflowsApi(getWebClient(USER_1_USERNAME, testingPostgres));
         boolean thrownException = false;
         try {
-            otherUserApi.primaryDescriptor(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
+            otherUserApi.primaryDescriptor1(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
         } catch (ApiException e) {
             thrownException = true;
         }
         assertTrue(thrownException);
 
-        assertNotNull(workflowsApi.primaryDescriptor(dockstoreWorkflow.getId(), first.get().getName(), CWL.toString()).getId(), "The owner can still get their own entry");
+        assertNotNull(workflowsApi.primaryDescriptor1(dockstoreWorkflow.getId(), first.get().getName(), CWL.toString()).getId(), "The owner can still get their own entry");
 
         // Publish workflow
         PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
         workflowsApi.publish1(dockstoreWorkflow.getId(), pub);
 
         // files should be visible afterwards
-        file = otherUserApi.primaryDescriptor(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
+        file = otherUserApi.primaryDescriptor1(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
         assertFalse(file.getContent().isEmpty());
 
         // Check that absolute file gets set if not explicitly set
@@ -325,7 +326,7 @@ class CRUDClientIT extends BaseIT {
         String absPathTest = "/no-absolute-path.cwl";
         file4.setPath(absPathTest);
         file4.setAbsolutePath(null); // Redundant, but clarifies intent of test
-        dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file4));
+        dockstoreWorkflow = api.editHostedWorkflow(Lists.newArrayList(file4), hostedWorkflow.getId());
         Optional<WorkflowVersion> firstVersion = dockstoreWorkflow.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         Optional<io.dockstore.webservice.core.SourceFile> msf = fileDAO.findSourceFilesByVersion(firstVersion.get().getId()).stream().filter(sf -> absPathTest.equals(sf.getPath())).findFirst();
@@ -343,7 +344,7 @@ class CRUDClientIT extends BaseIT {
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
-        hostedWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        hostedWorkflow = api.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
 
         WorkflowVersion frozenVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
         frozenVersion.setFrozen(true);
@@ -368,7 +369,7 @@ class CRUDClientIT extends BaseIT {
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
-        Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        Workflow dockstoreWorkflow = api.editHostedWorkflow(Lists.newArrayList(file), hostedWorkflow.getId());
         // Workflow only has one author (who also has an email)
         assertEquals(1, dockstoreWorkflow.getAuthors().size());
         Author author = dockstoreWorkflow.getAuthors().get(0);
@@ -570,8 +571,8 @@ class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
-        assertThrows(ApiException.class,  () -> containersApi
-            .addTestParameterFiles(hostedTool.getId(), "",new ArrayList<>(), "1", DescriptorLanguage.CWL.toString().toLowerCase()));
+        assertThrows(ApiException.class, () -> containersApi
+            .addTestParameterFiles(hostedTool.getId(), "", new ArrayList<>(), "1", DescriptorLanguage.CWL.toString().toLowerCase()));
     }
 
     /**

@@ -1883,7 +1883,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (subClass != null) {
             return subClass.getTargetClass();
         }
-        return (services != null && services.booleanValue()) ? Service.class : BioWorkflow.class;
+        return (services != null && services) ? Service.class : BioWorkflow.class;
     }
 
     @Override

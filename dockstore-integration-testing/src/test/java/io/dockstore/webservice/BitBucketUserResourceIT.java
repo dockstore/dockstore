@@ -36,7 +36,6 @@ import io.dockstore.openapi.client.model.BioWorkflow;
 import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.resources.WorkflowResource;
-import io.swagger.quay.client.api.UserApi;
 import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;

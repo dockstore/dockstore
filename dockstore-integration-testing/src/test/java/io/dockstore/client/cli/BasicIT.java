@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.typesafe.sslconfig.ssl.FakeChainedKeyStore.User$;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -49,6 +48,7 @@ import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Tag;
 import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.swagger.model.DescriptorType;
@@ -121,7 +121,7 @@ public class BasicIT extends BaseIT {
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
-                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", BIOWORKFLOW, "");
+                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", WorkflowSubClass.BIOWORKFLOW, "");
         workflow = workflowsApi.refresh1(workflow.getId(), false);
         assertFalse(workflow.getWorkflowVersions().isEmpty());
     }
@@ -162,7 +162,7 @@ public class BasicIT extends BaseIT {
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", BIOWORKFLOW, "");
+            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", WorkflowSubClass.BIOWORKFLOW, "");
         workflow = workflowsApi.refresh1(workflow.getId(), false);
 
         // artificially create an invalid version
@@ -630,7 +630,7 @@ public class BasicIT extends BaseIT {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         try {
-            workflowsApi.getWorkflowByPath("potato", BIOWORKFLOW, "potato");
+            workflowsApi.getWorkflowByPath("potato", WorkflowSubClass.BIOWORKFLOW, "potato");
             fail("Should've not been able to get an entry that does not exist");
         } catch (ApiException e) {
             assertEquals("Entry not found.", e.getMessage());
@@ -716,7 +716,7 @@ public class BasicIT extends BaseIT {
         List<String> toRemove = new ArrayList<>();
         toRemove.add("notreal.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), "" ,toAdd, "master", "cwl");
+        toolsApi.addTestParameterFiles(existingTool.getId(), "", toAdd, "master", "cwl");
         try {
             toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
             fail("Should've have thrown an error when deleting non-existent file");
@@ -735,7 +735,7 @@ public class BasicIT extends BaseIT {
         toRemove = new ArrayList<>();
         toRemove.add("test2.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), "" ,toAdd, "master", "cwl");
+        toolsApi.addTestParameterFiles(existingTool.getId(), "", toAdd, "master", "cwl");
         toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
         toolsApi.refresh(existingTool.getId());
 
@@ -789,8 +789,8 @@ public class BasicIT extends BaseIT {
         assertEquals(0, count, "there should be no sourcefiles that are test parameter files, there are " + count);
 
         containersApi
-            .addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), DescriptorType.CWL.toString(), "",
-                "master");
+            .addTestParameterFiles(containerByToolPath.getId(), "", Collections.singletonList("/test.json"),
+                "master", DescriptorType.CWL.toString());
 
         boolean shouldFail = false;
         try {

@@ -34,10 +34,13 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Tool;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -185,7 +188,7 @@ class ServiceIT extends BaseIT {
         new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
         Ga4Ghv20Api client = new Ga4Ghv20Api(webClient);
-        final List<Tool> tools = client.toolsGet(null,null,null, null, null, null, null, null, null, null, null, null, null);
+        final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
         assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("workflow")).count() >= 1);
         // TODO: change boolean once services are exposed
         boolean servicesExposedInTRS = false;
@@ -246,7 +249,7 @@ class ServiceIT extends BaseIT {
         client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/tags/1.0", installationId);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
-        io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, SERVICE, "versions");
+        io.dockstore.openapi.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, WorkflowSubClass.SERVICE, "versions");
 
         assertNotNull(service);
         assertEquals(1, service.getWorkflowVersions().size(), "Should have a new version");
@@ -264,8 +267,8 @@ class ServiceIT extends BaseIT {
         // Test user endpoints
         UsersApi usersApi = new UsersApi(webClient);
         final long userId = testingPostgres.runSelectStatement("select userid from user_entry where entryid = '" + service.getId() + "'", long.class);
-        List<io.swagger.client.model.Workflow> services = usersApi.userServices(userId);
-        List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(userId);
+        final List<io.dockstore.openapi.client.model.Workflow> services = usersApi.userServices(userId);
+        final List<io.dockstore.openapi.client.model.Workflow> workflows = usersApi.userWorkflows(userId);
         assertEquals(1, services.size(), "There should be one service");
         assertEquals(0, workflows.size(), "There should be no workflows");
 
@@ -325,7 +328,7 @@ class ServiceIT extends BaseIT {
         assertEquals(1, workflowCount);
 
         // Add workflow with same path as service
-        final io.swagger.client.model.Workflow workflow = client
+        final io.dockstore.openapi.client.model.Workflow workflow = client
             .manualRegister("github", serviceRepo, "/Dockstore.cwl", "", "cwl", "/test.json");
         assertNotNull(workflow);
 
@@ -334,12 +337,12 @@ class ServiceIT extends BaseIT {
         testingPostgres.runUpdateStatement("update service set ispublished = 't'");
 
         // test retrieval
-        final io.swagger.client.model.Workflow returnedWorkflow = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, BIOWORKFLOW, "",  null);
-        final io.swagger.client.model.Workflow returnedService = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, SERVICE, "",  null);
+        final io.dockstore.openapi.client.model.Workflow returnedWorkflow = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, WorkflowSubClass.BIOWORKFLOW, "", null);
+        final io.dockstore.openapi.client.model.Workflow returnedService = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, WorkflowSubClass.SERVICE, "", null);
         assertNotSame(returnedWorkflow.getId(), returnedService.getId());
 
         // test GA4GH retrieval
-        Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
+        Ga4Ghv20Api ga4GhApi = new Ga4Ghv20Api(webClient);
         final Tool tool1 = ga4GhApi.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/" + github + "/" + serviceRepo);
         final Tool tool2 = ga4GhApi.toolsIdGet(ToolsImplCommon.SERVICE_PREFIX + "/" + github + "/" + serviceRepo);
         assertNotSame(tool1.getId(), tool2.getId());
@@ -414,7 +417,7 @@ class ServiceIT extends BaseIT {
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
 
-        io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, SERVICE, "");
+        final io.dockstore.openapi.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, WorkflowSubClass.SERVICE, "");
         // io.swagger.client.model.Workflow service = services.get(0);
         try {
             client.refresh1(service.getId(), false);

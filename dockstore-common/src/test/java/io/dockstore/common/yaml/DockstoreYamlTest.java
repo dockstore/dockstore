@@ -333,7 +333,7 @@ class DockstoreYamlTest {
     }
 
     @Test
-    void testDifferentCaseForWorkflowSubclass() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testDifferentCaseForWorkflowSubClass() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE12_YAML);
         final List<YamlWorkflow> workflows = dockstoreYaml12.getWorkflows();
         assertEquals(3, workflows.size());
@@ -520,7 +520,7 @@ class DockstoreYamlTest {
     }
 
     @Test
-    void testWorkflowSubclass() throws DockstoreYamlHelper.DockstoreYamlException {
+    void testWorkflowSubClass() throws DockstoreYamlHelper.DockstoreYamlException {
         DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replace("subclass: wdl", "subclass: WDL"), true);
         try {
             DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML.replace("subclass: wdl", "subclass: BogusWL"), true);

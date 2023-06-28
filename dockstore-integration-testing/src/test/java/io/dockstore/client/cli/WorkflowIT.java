@@ -587,7 +587,7 @@ public class WorkflowIT extends BaseIT {
                 "test", "cwl", null);
         Workflow refresh = workflowApi.refresh1(workflow.getId(), false);
         assertFalse(refresh.isIsPublished());
-        workflowApi.registerCheckerWorkflow(workflow.getId(), "cwl","checker-workflow-wrapping-workflow.cwl", "checker-input-cwl.json");
+        workflowApi.registerCheckerWorkflow(workflow.getId(), "cwl", "checker-workflow-wrapping-workflow.cwl", "checker-input-cwl.json");
         workflowApi.refresh1(workflow.getId(), false);
 
         final String fileWithIncorrectCredentials = ResourceHelpers.resourceFilePath("config_file.txt");

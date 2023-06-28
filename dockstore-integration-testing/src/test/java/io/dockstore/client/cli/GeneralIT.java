@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import io.circe.generic.util.macros.DerivationMacros;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -56,6 +55,7 @@ import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.DockstoreTool.ModeEnum;
+import io.dockstore.openapi.client.model.Entry;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
@@ -683,7 +683,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
 
         try {
-            tool = toolApi.updateToolDefaultVersion(tool.getId(), tag.getName());
+            tool = toolApi.updateDefaultVersion(tool.getId(), tag.getName());
             fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
             assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
@@ -692,7 +692,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         // Set the default version to a non-hidden version
         tag.setHidden(false);
         toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
-        tool = toolApi.updateToolDefaultVersion(tool.getId(), tag.getName());
+        tool = toolApi.updateDefaultVersion(tool.getId(), tag.getName());
 
         // Should not be able to hide a default version
         tag.setHidden(true);
@@ -733,7 +733,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         toolTagsApi.updateTags(hostedTool.getId(), Collections.singletonList(hostedTag));
 
         try {
-            toolApi.updateToolDefaultVersion(hostedTool.getId(), hostedTag.getName());
+            toolApi.updateDefaultVersion(hostedTool.getId(), hostedTag.getName());
             fail("Shouldn't be able to set the default version to one that is hidden.");
         } catch (ApiException ex) {
             assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
@@ -1130,7 +1130,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         tool = toolApi.refresh(tool.getId());
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        toolApi.publish1(tool.getId(), publishRequest);
+        toolApi.publish(tool.getId(), publishRequest);
         Tool ga4ghatool = ga4Ghv20Api.toolsIdGet("quay.io/dockstoretestuser2/quayandgithub");
 
         final Response.ResponseBuilder responseBuilder = Response.ok(ga4ghatool);
@@ -1282,7 +1282,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
         master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
         assertEquals(DUMMY_DOI, master.getDoiURL());
-        assertEquals(DoiStatusEnum.REQUESTED, master.getDoiStatus());
+        assertEquals(Tag.DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // try modifying sourcefiles
         // cannot modify sourcefiles for a frozen version
@@ -1583,7 +1583,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         DockstoreTool refresh = containersApi.refresh(tool.getId());
 
         // Add alias
-        DerivationMacros.Members.Entry$ entry = entryApi.addAliases(refresh.getId(), "foobar");
+        Entry entry = entryApi.addAliases1(refresh.getId(), "foobar");
         assertTrue(entry.getAliases().containsKey("foobar"), "Should have alias foobar");
 
         // check that dates are present
@@ -1665,7 +1665,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         // Register and refresh tool
         DockstoreTool tool = ownerContainersApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
-        DockstoreTool refresh = ownercontainersApi.refresh(tool.getId());
+        DockstoreTool refresh = ownerContainersApi.refresh(tool.getId());
         Long toolId = refresh.getId();
         Tag tag = refresh.getWorkflowVersions().get(0);
         Long versionId = tag.getId();
@@ -1694,7 +1694,7 @@ class GeneralIT extends GeneralWorkflowBaseIT {
 
         // Publish
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        ownerContainersApi.publish1(toolId, publishRequest);
+        ownerContainersApi.publish(toolId, publishRequest);
 
         // Try downloading published
         // Owner: Should pass

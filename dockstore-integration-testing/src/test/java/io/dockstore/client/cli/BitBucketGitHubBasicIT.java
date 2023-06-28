@@ -213,7 +213,7 @@ class BitBucketGitHubBasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath(toolPath, "");
         try {
-            toolsApi.publish1(tool.getId(), CommonTestUtilities.createPublishRequest(true));
+            toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
             fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
@@ -290,7 +290,7 @@ class BitBucketGitHubBasicIT extends BaseIT {
         assertEquals(1, count, "there should be 1 entries, there are " + count);
 
         // Unpublish
-        tool = toolsApi.publish1(tool.getId(), CommonTestUtilities.createPublishRequest(false));
+        tool = toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(false));
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
 

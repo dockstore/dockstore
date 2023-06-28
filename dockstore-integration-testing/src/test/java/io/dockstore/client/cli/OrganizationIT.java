@@ -28,6 +28,7 @@ import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.CollectionOrganization;
+import io.dockstore.openapi.client.model.Event;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.Organization.StatusEnum;
 import io.dockstore.openapi.client.model.PublishRequest;
@@ -615,10 +616,10 @@ public class OrganizationIT extends BaseIT {
         stubCollection.setName("hcacollection");
 
         // Attach collection
-        organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+        organisationsApiUser2.createCollection(stubCollection, organisation.getId());
         stubCollection.setName("HCAcollection");
         Organization finalOrganisation = organisation;
-        assertThrows(ApiException.class,  () -> organisationsApiUser2.createCollection(finalOrganisation.getId(), stubCollection));
+        assertThrows(ApiException.class,  () -> organisationsApiUser2.createCollection(stubCollection, finalOrganisation.getId()));
     }
 
     /**
@@ -638,7 +639,7 @@ public class OrganizationIT extends BaseIT {
         Collection stubCollection = stubCollectionObject();
 
         // Attach collection
-        organisationsApiUser2.createCollection(createdOrganization.getId(), stubCollection);
+        organisationsApiUser2.createCollection(stubCollection, createdOrganization.getId());
 
         // Create another collection with a different name and display name
         stubCollection.setName("testcollection2");
@@ -2103,7 +2104,7 @@ public class OrganizationIT extends BaseIT {
         //manually register and then publish the workflow
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
                 "/workflows/dnaseq/transform.cwl.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", BIOWORKFLOW, null);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", WorkflowSubClass.BIOWORKFLOW, null);
         Workflow workflow = workflowApi.refresh1(workflowByPathGithub.getId(), true);
         workflow = workflowApi.publish1(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
@@ -2134,7 +2135,7 @@ public class OrganizationIT extends BaseIT {
         //manually register and then publish the first workflow
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
                 "/workflows/dnaseq/transform.cwl.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", BIOWORKFLOW, null);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", WorkflowSubClass.BIOWORKFLOW, null);
         Workflow workflow = workflowApi.refresh1(workflowByPathGithub.getId(), true);
         workflow = workflowApi.publish1(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         assertEquals(2, workflow.getWorkflowVersions().size());
@@ -2154,7 +2155,7 @@ public class OrganizationIT extends BaseIT {
         Workflow workflow2 = workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
                         "");
-        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", BIOWORKFLOW, null);
+        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", WorkflowSubClass.BIOWORKFLOW, null);
         workflowApi.refresh1(workflowByPathGithub2.getId(), false);
         workflowApi.publish1(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
 
