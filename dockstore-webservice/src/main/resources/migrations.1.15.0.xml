@@ -84,6 +84,12 @@
         </sql>
         <dropColumn columnName="accepted" tableName="organization_user"/>
     </changeSet>
+    <changeSet author="svonworl" id="fixServiceEvents">
+        <addColumn tableName="event">
+            <column name="serviceid" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="serviceid" baseTableName="event" constraintName="fkServiceId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="service"/>
+    </changeSet>
     <changeSet author="ktran (generated)" id="addCostMetric">
         <createTable tableName="cost_metric">
             <column name="id" type="BIGINT">

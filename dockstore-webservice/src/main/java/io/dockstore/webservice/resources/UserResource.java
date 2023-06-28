@@ -243,22 +243,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("/{userId}")
-    @Operation(operationId = "getSpecificUser", description = "Get user by id.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A user with the specified userId", content = @Content(schema = @Schema(implementation = User.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
-    @ApiOperation(nickname = "getSpecificUser", value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUserId(authUser, userId);
-        User user = userDAO.findById(userId);
-        checkNotNullUser(user);
-        return user;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
     @Path("/user")
     @Operation(operationId = "getUser", description = "Get the logged-in user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "The logged-in user", content = @Content(schema = @Schema(implementation = User.class)))

@@ -34,6 +34,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.CategoriesApi;
 import io.dockstore.openapi.client.api.EntriesApi;
+import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.UsersApi;
@@ -44,6 +45,7 @@ import io.dockstore.openapi.client.model.Collection;
 import io.dockstore.openapi.client.model.CollectionOrganization;
 import io.dockstore.openapi.client.model.EntryType;
 import io.dockstore.openapi.client.model.EntryTypeMetadata;
+import io.dockstore.openapi.client.model.Event;
 import io.dockstore.openapi.client.model.Organization;
 import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
@@ -55,8 +57,10 @@ import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.resources.EventSearchType;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.hibernate.Session;
@@ -279,6 +283,19 @@ class NotebookIT extends BaseIT {
         assertEquals("notebooks", metadata.getSitePath());
         assertEquals(true, metadata.isTrsSupported());
         assertEquals("#notebook/", metadata.getTrsPrefix());
+    }
+
+    @Test
+    void testEvents() {
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        workflowsApi.handleGitHubRelease("refs/tags/simple-published-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+
+        EventsApi eventsApi = new EventsApi(apiClient);
+        List<Event> events = eventsApi.getEvents(EventSearchType.PROFILE.toString(), null, null);
+        assertTrue(events.stream().anyMatch(e -> e.getNotebook() != null && Objects.equals(e.getNotebook().getId(), notebook.getId())));
     }
 
     @Test
