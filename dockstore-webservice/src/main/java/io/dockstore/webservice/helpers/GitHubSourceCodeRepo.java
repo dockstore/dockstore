@@ -43,6 +43,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.GitVisibility;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Service;
@@ -195,6 +196,25 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (IOException e) {
             LOG.error(String.format("Could not get topic from: %s", repositoryId, e));
             return null;
+        }
+    }
+
+    /**
+     * Determines the visibility of a GitHub repo.
+     * @param repositoryId
+     * @return
+     */
+    public GitVisibility getGitVisibility(String repositoryId) {
+        try {
+            GHRepository repository = github.getRepository(repositoryId);
+            return repository.isPrivate() ? GitVisibility.PRIVATE : GitVisibility.PUBLIC;
+        } catch (GHFileNotFoundException e) {
+            LOG.error(String.format("Repository %s not found checking for visibility", repositoryId), e);
+            // We don't know if it's not found because it doesn't exist, or because it's private and we don't have access to it
+            return GitVisibility.PRIVATE_OR_NON_EXISTENT;
+        } catch (IOException e) {
+            LOG.error(String.format("Unknown error checking visibility for %s", repositoryId), e);
+            return GitVisibility.UNKNOWN;
         }
     }
 
@@ -517,8 +537,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setLastUpdated(new Date());
         workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
-        workflow.setTopicAutomatic(this.getTopic(repositoryId));
+        workflow.setTopicAutomatic(getTopic(repositoryId));
+        workflow.setGitVisibility(getGitVisibility(repositoryId));
         this.setLicenseInformation(workflow, repositoryId);
+
 
         // The checks/catches in the following blocks are all backups, they should not fail in normal operation.
         // Thus, the error messages are more technical and less user-friendly.
@@ -558,6 +580,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public void updateWorkflowInfo(final Workflow workflow, final String repositoryId) {
         setLicenseInformation(workflow, repositoryId);
         workflow.setTopicAutomatic(getTopic(repositoryId));
+        workflow.setGitVisibility(getGitVisibility(repositoryId));
     }
 
     @Override
