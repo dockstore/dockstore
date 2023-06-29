@@ -14,6 +14,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
@@ -220,5 +221,36 @@ class WebhookIT extends BaseIT {
         foobar2 = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertTrue(foobar.getWorkflowVersions().stream().allMatch(v -> "/README2.md".equals(v.getReadMePath()) && v.getDescription().contains("an 'X' in it")));
         assertTrue(foobar2.getWorkflowVersions().stream().allMatch(v -> "/docs/README.md".equals(v.getReadMePath()) && v.getDescription().contains("a '🙃' in it")));
+    }
+
+    @Test
+    void testCheckingUserLambdaEventsAsAdmin() {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
+        final ApiClient userClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi userWorkflowsClient = new WorkflowsApi(userClient);
+        UsersApi usersApi = new UsersApi(userClient);
+
+        long userid = usersApi.getUser().getId();
+
+        userWorkflowsClient.handleGitHubRelease("refs/tags/1.0", installationId, taggedToolRepo, BasicIT.USER_2_USERNAME);
+
+        // Setup admin
+        final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClientAdminUser);
+
+        System.out.println(lambdaEventsApi.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100));
+        List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100);
+        assertEquals( 1, lambdaEvents.size());
+
+        //verify nonadmins cannot use this endpoint
+        final ApiClient user1Client = getOpenAPIWebClient(BasicIT.OTHER_USERNAME, testingPostgres);
+        LambdaEventsApi lambdaEventsUser1Api = new LambdaEventsApi(user1Client);
+        try {
+            lambdaEventsUser1Api.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100);
+            fail("Should have thrown");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("Only an administrator or curator can use this endpoint.", ex.getMessage());
+        }
+
     }
 }

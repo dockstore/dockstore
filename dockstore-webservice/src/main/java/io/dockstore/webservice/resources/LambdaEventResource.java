@@ -72,6 +72,33 @@ public class LambdaEventResource {
         return lambdaEventDAO.findByOrganization(organization, offset, limit, authorizedRepos);
     }
 
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{userid}/{organization}")
+    @Operation(operationId = "getUserLambdaEventsByOrganization", description = "Get all of the Lambda Events for the given user and GitHub organization.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "See OpenApi for details")
+    public List<LambdaEvent> getUserLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
+           @ApiParam(value = "userid", required = true) @PathParam("userid") long userid,
+           @ApiParam(value = "organization", required = true) @PathParam("organization") String organization,
+           @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
+           @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+        final User loggedInUser = userDAO.findById(authUser.getId());
+        if (loggedInUser.getIsAdmin() || loggedInUser.isCurator()) {
+            final List<Token> githubTokens = tokenDAO.findGithubByUserId(userid);
+            if (githubTokens.isEmpty()) {
+                throw new CustomWebApplicationException("The user does not have GitHub connected to their account.", HttpStatus.SC_BAD_REQUEST);
+            }
+            final Token githubToken = githubTokens.get(0);
+            final Optional<List<String>> authorizedRepos = authorizedRepos(organization, githubToken);
+            return lambdaEventDAO.findByOrganization(organization, offset, limit, authorizedRepos);
+        } else {
+            String msg = "Only an administrator or curator can use this endpoint.";
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+        }
+
+    }
+
     /**
      * Returns an Optional list of the repositories in the organization the user has access to. If
      * the user is an organization member and has access to all repositories in the organization,

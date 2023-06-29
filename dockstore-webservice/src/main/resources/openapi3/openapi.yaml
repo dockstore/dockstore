@@ -3388,6 +3388,46 @@ paths:
       - BEARER: []
       tags:
       - lambdaEvents
+  /lambdaEvents/{userid}/{organization}:
+    get:
+      description: Get all of the Lambda Events for the given user and GitHub organization.
+      operationId: getUserLambdaEventsByOrganization
+      parameters:
+      - in: path
+        name: userid
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: path
+        name: organization
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          type: string
+          default: "0"
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 100
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LambdaEvent'
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - lambdaEvents
   /metadata/cli-info:
     get:
       description: Get Dockstore CLI information. NO authentication
