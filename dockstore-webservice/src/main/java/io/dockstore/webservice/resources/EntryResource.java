@@ -257,7 +257,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         // Remove the events associated with the entry
         eventDAO.deleteEventByEntryID(entry.getId());
         // Delete the entry using an arbitrary EntryDAO, which works, but isn't the "purest" approach.
-        // Later, we may create a helper class to select the appropriate // DAO for a given entry, and we should use it here...
+        // Later, we may create a helper class to select the appropriate DAO for a given entry, and we should use it here...
         ((EntryDAO)workflowDAO).delete(entry);
         LOG.info("Deleted entry {}", entry.getEntryPath());
         return entry;
