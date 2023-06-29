@@ -21,8 +21,8 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIM
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
@@ -74,6 +74,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -419,13 +420,9 @@ class NotebookIT extends BaseIT {
         assertEquals(0, categoriesApi.getCategoryById(category.getId()).getNotebooksLength());
     }
 
-    private void shouldThrow(Runnable runnable, String whyMessage, int throwCode) {
-        try {
-            runnable.run();
-            fail("Should have thrown an ApiException because: " + whyMessage);
-        } catch (ApiException e) {
-            assertEquals(throwCode, e.getCode());
-        }
+    private void shouldThrow(Executable executable, String whyMessage, int expectedCode) {
+        ApiException e = assertThrows(ApiException.class, executable, "Should have thrown an ApiException because: " + whyMessage);
+        assertEquals(expectedCode, e.getCode());
     }
 
     @Test
