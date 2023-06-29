@@ -248,7 +248,7 @@ class WebhookIT extends BaseIT {
         try {
             lambdaEventsUser1Api.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100);
             fail("Should have thrown");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
+        } catch (ApiException ex) {
             assertEquals("Only an administrator or curator can use this endpoint.", ex.getMessage());
         }
 

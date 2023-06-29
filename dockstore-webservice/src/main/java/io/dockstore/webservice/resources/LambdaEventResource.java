@@ -76,7 +76,8 @@ public class LambdaEventResource {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userid}/{organization}")
-    @Operation(operationId = "getUserLambdaEventsByOrganization", description = "Get all of the Lambda Events for the given user and GitHub organization.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getUserLambdaEventsByOrganization", description = "Get all of the Lambda Events for the given user and GitHub organization.",
+            security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getUserLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
            @ApiParam(value = "userid", required = true) @PathParam("userid") long userid,
