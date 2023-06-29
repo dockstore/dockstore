@@ -240,7 +240,7 @@ class WebhookIT extends BaseIT {
 
         System.out.println(lambdaEventsApi.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100));
         List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100);
-        assertEquals( 1, lambdaEvents.size());
+        assertEquals(1, lambdaEvents.size());
 
         //verify nonadmins cannot use this endpoint
         final ApiClient user1Client = getOpenAPIWebClient(BasicIT.OTHER_USERNAME, testingPostgres);
