@@ -15,11 +15,10 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics;
+package io.dockstore.common.metrics;
 
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Partner;
-import io.dockstore.webservice.helpers.S3ClientHelper;
+import io.dockstore.common.Partner;
+import io.dockstore.common.S3ClientHelper;
 import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -29,8 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -70,10 +67,6 @@ public class MetricsDataS3Client {
      * @param metricsData The metrics data in JSON format
      */
     public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData) {
-        if (StringUtils.isBlank(metricsData)) {
-            throw new CustomWebApplicationException("Execution metrics data must be provided", HttpStatus.SC_BAD_REQUEST);
-        }
-
         String key = generateKey(toolId, versionName, platform, fileName);
         Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
                 ObjectMetadata.DESCRIPTION.toString(), description == null ? "" : description);

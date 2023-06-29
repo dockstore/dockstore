@@ -15,11 +15,11 @@
  *
  */
 
-package io.dockstore.webservice.core.metrics;
+package io.dockstore.common.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.dockstore.webservice.helpers.S3ClientHelper;
+import io.dockstore.common.S3ClientHelper;
 import org.junit.jupiter.api.Test;
 
 class MetricsDataS3ClientTest {

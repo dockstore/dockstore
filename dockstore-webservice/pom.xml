@@ -782,10 +782,6 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>regions</artifactId>
         </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>auth</artifactId>
-        </dependency>
         <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-encryption-sdk-java -->
         <dependency>
             <groupId>com.amazonaws</groupId>
