@@ -5509,32 +5509,6 @@ paths:
       - BEARER: []
       tags:
       - users
-  /users/{userId}:
-    get:
-      description: Get user by id.
-      operationId: getSpecificUser
-      parameters:
-      - in: path
-        name: userId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: A user with the specified userId
-        "403":
-          description: Forbidden
-        "404":
-          description: User not found
-      security:
-      - BEARER: []
-      tags:
-      - users
   /users/{userId}/appTools:
     get:
       description: List all appTools owned by the authenticated user.
@@ -8732,8 +8706,12 @@ components:
           format: int64
         initiatorUser:
           $ref: '#/components/schemas/User'
+        notebook:
+          $ref: '#/components/schemas/Notebook'
         organization:
           $ref: '#/components/schemas/Organization'
+        service:
+          $ref: '#/components/schemas/Service'
         tool:
           $ref: '#/components/schemas/DockstoreTool'
         type:

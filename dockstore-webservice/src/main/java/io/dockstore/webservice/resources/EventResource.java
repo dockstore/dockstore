@@ -178,6 +178,8 @@ public class EventResource {
             Hibernate.initialize(event.getCollection());
             Hibernate.initialize(event.getInitiatorUser());
             Hibernate.initialize(event.getApptool());
+            Hibernate.initialize(event.getService());
+            Hibernate.initialize(event.getNotebook());
         });
     }
 }
