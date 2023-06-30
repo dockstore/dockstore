@@ -1197,7 +1197,7 @@
                         <package>io.dockstore.webservice.resources.proposedGA4GH</package>
                     </resourcePackages>
                     <objectMapperProcessorClass>io.swagger.OrderedObjectMapperProcessor</objectMapperProcessorClass>
-                    <readAllResources>false</readAllResources>
+                    <readAllResources>true</readAllResources>
                     <sortOutput>true</sortOutput>
                 </configuration>
                 <executions>
@@ -1209,12 +1209,11 @@
                     </execution>
                 </executions>
             </plugin>
+            <!--
             <plugin>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
                 <configuration>
-                    <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
-                    <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
                     <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.6-smk-gxformat2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs</language>
                     <configOptions>
@@ -1246,42 +1245,76 @@
                     </execution>
                 </executions>
             </plugin>
+    -       -->
             <plugin>
                 <groupId>io.swagger.codegen.v3</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
-                <configuration>
-                    <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
-                    <!-- <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
-                    <!-- Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
-		    <!-- note that the version of the TRS api in our fork is badly named and is not in sync with the main repo -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.7-beta.1-notebooks/openapi/openapi.yaml</inputSpec>
-                    <language>jaxrs-jersey</language>
-                    <configOptions>
-                        <dateLibrary>java11</dateLibrary>
-                        <java8>true</java8>
-                        <java11>true</java11>
-                        <useRuntimeException>true</useRuntimeException>
-                        <modelPackage>io.openapi.model</modelPackage>
-                        <apiPackage>io.openapi.api</apiPackage>
-                    </configOptions>
-                    <generateApis>true</generateApis>
-                    <generateApiTests>false</generateApiTests>
-                    <generateApiDocumentation>false</generateApiDocumentation>
-                    <generateModels>true</generateModels>
-                    <generateModelTests>false</generateModelTests>
-                    <generateModelDocumentation>false</generateModelDocumentation>
-                    <generateSupportingFiles>true</generateSupportingFiles>
-                    <withXml>true</withXml>
-                    <library>jersey2</library>
-                    <ignoreFileOverride>${pom.basedir}/src/main/resources/openapi-templates/swagger-codegen-ignore</ignoreFileOverride>
-                    <templateDirectory>${pom.basedir}/src/main/resources/openapi-templates</templateDirectory>
-                </configuration>
                 <executions>
+                    <execution>
+                        <id>v2-beta</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
+                            <!-- <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
+                            <!-- Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
+                            <!-- note that the version of the TRS api in our fork is badly named and is not in sync with the main repo -->
+                            <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.6-smk-gxformat2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
+                            <language>jaxrs-jersey</language>
+                            <configOptions>
+                                <dateLibrary>java11</dateLibrary>
+                                <java8>true</java8>
+                                <java11>true</java11>
+                                <useRuntimeException>true</useRuntimeException>
+                                <modelPackage>io.swagger.model</modelPackage>
+                                <apiPackage>io.swagger.api</apiPackage>
+                            </configOptions>
+                            <generateApis>true</generateApis>
+                            <generateApiTests>false</generateApiTests>
+                            <generateApiDocumentation>false</generateApiDocumentation>
+                            <generateModels>true</generateModels>
+                            <generateModelTests>false</generateModelTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <generateSupportingFiles>true</generateSupportingFiles>
+                            <withXml>true</withXml>
+                            <library>jersey2</library>
+                            <ignoreFileOverride>${pom.basedir}/src/main/resources/openapi-templates/trsv20beta/swagger-codegen-ignore</ignoreFileOverride>
+                            <templateDirectory>${pom.basedir}/src/main/resources/openapi-templates/trsv20beta</templateDirectory>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>v2-final</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
+                        <configuration>
+                            <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
+                            <!-- <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
+                            <!-- Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
+                            <!-- note that the version of the TRS api in our fork is badly named and is not in sync with the main repo -->
+                            <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.7-beta.1-notebooks/openapi/openapi.yaml</inputSpec>
+                            <language>jaxrs-jersey</language>
+                            <configOptions>
+                                <dateLibrary>java11</dateLibrary>
+                                <java8>true</java8>
+                                <java11>true</java11>
+                                <useRuntimeException>true</useRuntimeException>
+                                <modelPackage>io.openapi.model</modelPackage>
+                                <apiPackage>io.openapi.api</apiPackage>
+                            </configOptions>
+                            <generateApis>true</generateApis>
+                            <generateApiTests>false</generateApiTests>
+                            <generateApiDocumentation>false</generateApiDocumentation>
+                            <generateModels>true</generateModels>
+                            <generateModelTests>false</generateModelTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <generateSupportingFiles>true</generateSupportingFiles>
+                            <withXml>true</withXml>
+                            <library>jersey2</library>
+                            <ignoreFileOverride>${pom.basedir}/src/main/resources/openapi-templates/trsv20final/swagger-codegen-ignore</ignoreFileOverride>
+                            <templateDirectory>${pom.basedir}/src/main/resources/openapi-templates/trsv20final</templateDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
