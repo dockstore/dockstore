@@ -90,7 +90,6 @@
         </addColumn>
         <addForeignKeyConstraint baseColumnNames="serviceid" baseTableName="event" constraintName="fkServiceId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="service"/>
     </changeSet>
-
     <changeSet id="gitVisibility" author="coverbeck">
         <addColumn tableName="tool">
             <column name="gitvisibility" type="varchar(32 BYTE)"/>
@@ -107,5 +106,54 @@
         <addColumn tableName="notebook">
             <column name="gitvisibility" type="varchar(32 BYTE)"/>
         </addColumn>
+    </changeSet>
+    <changeSet author="svonworl" id="add_waseverpublic">
+        <addColumn tableName="workflow">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="apptool">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column name="waseverpublic" type="boolean" value="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql dbms="postgresql">
+            ALTER TABLE workflow ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE tool ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE apptool ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE service ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+            ALTER TABLE notebook ADD CONSTRAINT published_is_public CHECK (CASE WHEN ispublished THEN waseverpublic END);
+        </sql>
+        <sql dbms="postgresql">
+            <!--
+            For existing workflows, tools, and apptools, we set `waseverpublic` to true, and false otherwise, if:
+            the entry is published, or
+            the entry was created before 1/Apr/2022 (first full day that publish events are present in the prod db), or
+            publish/unpublish events exist for the entry
+            -->
+            UPDATE workflow w SET waseverpublic = (ispublished OR dbcreatedate &lt; '2022-04-01'::timestamp OR EXISTS (SELECT FROM event WHERE workflowid = w.id AND (type = 'PUBLISH_ENTRY' OR type = 'UNPUBLISH_ENTRY')));
+            UPDATE tool t SET waseverpublic = (ispublished OR dbcreatedate &lt; '2022-04-01'::timestamp OR EXISTS (SELECT FROM event WHERE toolid = t.id AND (type = 'PUBLISH_ENTRY' OR type = 'UNPUBLISH_ENTRY')));
+            UPDATE apptool a SET waseverpublic = (ispublished OR dbcreatedate &lt; '2022-04-01'::timestamp OR EXISTS (SELECT FROM event WHERE apptoolid = a.id AND (type = 'PUBLISH_ENTRY' OR type = 'UNPUBLISH_ENTRY')));
+            <!--
+            As of this writing, the `event` table doesn't contain a `serviceid` column, and the webservice is not populating the `notebookid` column correctly 
+            So, for existing services and notebooks, we don't apply the more sophisticated algorithm to determine `waseverpublic` and leave it set to `true`
+            -->
+        </sql>
     </changeSet>
 </databaseChangeLog>

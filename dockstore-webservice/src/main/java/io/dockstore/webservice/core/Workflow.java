@@ -377,6 +377,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public abstract void setIsChecker(boolean isChecker);
 
+    @Override
+    public boolean isDeletable() {
+        return super.isDeletable() && !isIsChecker();
+    }
+
     public static class DescriptorLanguageConverter implements AttributeConverter<DescriptorLanguage, String> {
 
         @Override
