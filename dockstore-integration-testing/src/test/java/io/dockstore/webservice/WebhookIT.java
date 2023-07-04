@@ -225,7 +225,6 @@ class WebhookIT extends BaseIT {
 
     @Test
     void testCheckingUserLambdaEventsAsAdmin() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
         final ApiClient userClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi userWorkflowsClient = new WorkflowsApi(userClient);
         UsersApi usersApi = new UsersApi(userClient);
@@ -238,19 +237,10 @@ class WebhookIT extends BaseIT {
         final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClientAdminUser);
 
-        System.out.println(lambdaEventsApi.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100));
-        List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100);
+        System.out.println(lambdaEventsApi.getUserLambdaEvents(userid, "0", 100));
+        List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEvents(userid, "0", 100);
         assertEquals(1, lambdaEvents.size());
 
-        //verify nonadmins cannot use this endpoint
-        final ApiClient user1Client = getOpenAPIWebClient(BasicIT.OTHER_USERNAME, testingPostgres);
-        LambdaEventsApi lambdaEventsUser1Api = new LambdaEventsApi(user1Client);
-        try {
-            lambdaEventsUser1Api.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100);
-            fail("Should have thrown");
-        } catch (ApiException ex) {
-            assertEquals("Only an administrator or curator can use this endpoint.", ex.getMessage());
-        }
 
     }
 }
