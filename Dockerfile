@@ -27,7 +27,6 @@ RUN wget -P /root/.dockstore/language-plugins https://artifacts.oicr.on.ca/artif
 RUN apt-get purge -y -- \
     *python* \
     wget \
-    *curl* \
     bzip2 \
     fonts-dejavu-core \
     fontconfig* \
