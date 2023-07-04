@@ -16,6 +16,7 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
@@ -257,5 +258,25 @@ class WebhookIT extends BaseIT {
     private Long getNullVisibilityCount() {
         return testingPostgres.runSelectStatement(
             "select count(*) from workflow where gitvisibility is null", long.class);
+    }
+    @Test
+    void testCheckingUserLambdaEventsAsAdmin() {
+        final ApiClient userClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi userWorkflowsClient = new WorkflowsApi(userClient);
+        UsersApi usersApi = new UsersApi(userClient);
+
+        long userid = usersApi.getUser().getId();
+
+        userWorkflowsClient.handleGitHubRelease("refs/tags/1.0", installationId, taggedToolRepo, BasicIT.USER_2_USERNAME);
+
+        // Setup admin
+        final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClientAdminUser);
+
+        System.out.println(lambdaEventsApi.getUserLambdaEvents(userid, "0", 100));
+        List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEvents(userid, "0", 100);
+        assertEquals(1, lambdaEvents.size());
+
+
     }
 }

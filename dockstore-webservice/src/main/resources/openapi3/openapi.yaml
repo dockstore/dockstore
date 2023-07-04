@@ -3412,10 +3412,10 @@ paths:
       - BEARER: []
       tags:
       - lambdaEvents
-  /lambdaEvents/{userid}/{organization}:
+  /lambdaEvents/{userid}:
     get:
       description: Get all of the Lambda Events for the given user and GitHub organization.
-      operationId: getUserLambdaEventsByOrganization
+      operationId: getUserLambdaEvents
       parameters:
       - in: path
         name: userid
@@ -3423,11 +3423,6 @@ paths:
         schema:
           type: integer
           format: int64
-      - in: path
-        name: organization
-        required: true
-        schema:
-          type: string
       - in: query
         name: offset
         schema:
