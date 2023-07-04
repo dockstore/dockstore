@@ -11,10 +11,11 @@ import io.dockstore.client.cli.BasicIT;
 import io.dockstore.client.cli.OrganizationIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
-import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
@@ -224,33 +225,37 @@ class WebhookIT extends BaseIT {
     }
 
     @Test
-    void testCheckingUserLambdaEventsAsAdmin() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final ApiClient userClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        WorkflowsApi userWorkflowsClient = new WorkflowsApi(userClient);
-        UsersApi usersApi = new UsersApi(userClient);
+    void testGitVisibility() {
+        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowClient = new WorkflowsApi(webClient);
 
-        long userid = usersApi.getUser().getId();
+        final String manualWorkflowPath = "DockstoreTestUser/dockstore-whalesay-wdl";
+        workflowClient.manualRegister(SourceControl.GITHUB.name(), manualWorkflowPath, "/dockstore.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+        final Workflow manualWorkflow = workflowClient.getWorkflowByPath(SourceControl.GITHUB.toString() + "/" + manualWorkflowPath,
+            WorkflowSubClass.BIOWORKFLOW, "");
+        workflowClient.refresh1(manualWorkflow.getId(), false);
+        assertEquals(1, getNullVisibilityCount(), "Git visibility is null for manually registered workflows");
 
-        userWorkflowsClient.handleGitHubRelease("refs/tags/1.0", installationId, taggedToolRepo, BasicIT.USER_2_USERNAME);
+        workflowClient.handleGitHubRelease("refs/tags/0.7", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This creates 2 workflows
+        assertEquals(2, getPublicVisibilityCount(), "Two workflows created should both have PUBLIC git visiblity");
+        workflowClient.handleGitHubRelease("refs/tags/0.5", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This updates the 2 workflows
+        assertEquals(2, getPublicVisibilityCount(), "Updated workflows should still both have PUBLIC git visiblity");
+        assertEquals(1, getNullVisibilityCount(), "Git visibility should still be null for manually registered workflows");
 
-        // Setup admin
-        final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClientAdminUser);
+        // Simulate transitioning a private repo to a public repo
+        testingPostgres.runUpdateStatement("update workflow set gitvisibility = 'PRIVATE' where gitvisibility is not null;");
+        assertEquals(0, getPublicVisibilityCount());
+        workflowClient.handleGitHubRelease("refs/tags/0.4", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This updates the 2 workflows
+        assertEquals(2, getPublicVisibilityCount(), "Private visibility should have changed to public");
+    }
 
-        System.out.println(lambdaEventsApi.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100));
-        List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100);
-        assertEquals( 1, lambdaEvents.size());
+    private Long getPublicVisibilityCount() {
+        return testingPostgres.runSelectStatement(
+            "select count(*) from workflow where gitvisibility = 'PUBLIC'", long.class);
+    }
 
-        //verify nonadmins cannot use this endpoint
-        final ApiClient user1Client = getOpenAPIWebClient(BasicIT.OTHER_USERNAME, testingPostgres);
-        LambdaEventsApi lambdaEventsUser1Api = new LambdaEventsApi(user1Client);
-        try {
-            lambdaEventsUser1Api.getUserLambdaEventsByOrganization(userid, "dockstore-testing", "0", 100);
-            fail("Should have thrown");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals("Only an administrator or curator can use this endpoint.", ex.getMessage());
-        }
-
+    private Long getNullVisibilityCount() {
+        return testingPostgres.runSelectStatement(
+            "select count(*) from workflow where gitvisibility is null", long.class);
     }
 }

@@ -1,8 +1,5 @@
 FROM eclipse-temurin:17.0.3_7-jdk-focal
 
-# Wipe them out, all of them, to reduce CVEs
-RUN apt-get purge -y -- *python*  && apt-get -y autoremove
-
 # Update the APT cache
 # Prepare for Java download
 RUN apt-get update \
@@ -25,6 +22,20 @@ ARG galaxy_plugin_version=0.0.8
 RUN apt-get install -y wget
 RUN mkdir -p /root/.dockstore/language-plugins
 RUN wget -P /root/.dockstore/language-plugins https://artifacts.oicr.on.ca/artifactory/collab-release/com/github/galaxyproject/dockstore-galaxy-interface/dockstore-galaxy-interface/${galaxy_plugin_version}/dockstore-galaxy-interface-${galaxy_plugin_version}.jar
+
+# Wipe them out, all of them, to reduce CVEs
+RUN apt-get purge -y -- \
+    *python* \
+    wget \
+    *curl* \
+    bzip2 \
+    fonts-dejavu-core \
+    fontconfig* \
+    binutils* \
+    cpio \
+    *ssh* \
+    && \
+    apt-get -y autoremove
 
 # Install aide, file integrity verification
 RUN apt install cron aide aide-common -y --no-install-recommends && aideinit

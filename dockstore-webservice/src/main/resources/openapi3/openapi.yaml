@@ -2594,6 +2594,30 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/{id}:
+    delete:
+      description: Completely remove an entry from Dockstore.
+      operationId: deleteEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully deleted the entry
+        "403":
+          description: The specified entry is not deletable.
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{id}/aliases:
     post:
       description: Add aliases linked to a entry in Dockstore.
@@ -8227,6 +8251,8 @@ components:
           type: string
         default_wdl_path:
           type: string
+        deletable:
+          type: boolean
         description:
           type: string
         descriptorType:
@@ -8405,6 +8431,8 @@ components:
           format: int64
         defaultVersion:
           type: string
+        deletable:
+          type: boolean
         description:
           type: string
         email:
@@ -8533,6 +8561,8 @@ components:
           format: int64
         defaultVersion:
           type: string
+        deletable:
+          type: boolean
         description:
           type: string
         email:
@@ -10677,6 +10707,8 @@ components:
           type: string
         defaultVersion:
           type: string
+        deletable:
+          type: boolean
         description:
           type: string
         descriptorType:

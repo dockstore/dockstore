@@ -1604,7 +1604,7 @@ public class OrganizationIT extends BaseIT {
         final Long id = organization.getId();
         Collection collection = organizationsApi.createCollection(id, stubCollection);
         long collectionId = collection.getId();
-        testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true WHERE id = 2");
+        testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true, waseverpublic = true WHERE id = 2");
 
         organizationsApi.addEntryToCollection(id, collectionId, 2L, 8L);
         long collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);

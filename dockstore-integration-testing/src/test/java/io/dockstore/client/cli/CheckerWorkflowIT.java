@@ -17,6 +17,7 @@
 package io.dockstore.client.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -282,6 +283,18 @@ class CheckerWorkflowIT extends BaseIT {
                 }
             }
         }
+
+        // Neither the checked or checker entries should be deletable, even if they haven't been published
+        // Must use OpenAPI calls here, isDeletable() is new and thus not exposed in the swagger API
+        io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi openWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        io.dockstore.openapi.client.api.ContainersApi openContainersApi = new io.dockstore.openapi.client.api.ContainersApi(openApiClient);
+        if (workflow) {
+            assertFalse(openWorkflowsApi.getWorkflow(baseEntryId, "").isDeletable());
+        } else {
+            assertFalse(openContainersApi.getContainer(baseEntryId, "").isDeletable());
+        }
+        assertFalse(openWorkflowsApi.getWorkflow(checkerWorkflowBase.getCheckerId(), "").isDeletable());
     }
 
     /**

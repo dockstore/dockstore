@@ -306,6 +306,34 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Transient
     private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
 
+    @Column(nullable = false)
+    private boolean wasEverPublic;
+
+    @JsonIgnore
+    @Column(nullable = true, columnDefinition = "varchar(32)")
+    @Enumerated(EnumType.STRING)
+    private GitVisibility gitVisibility;
+
+
+    public enum GitVisibility {
+        /**
+         * There was a failed attempt to determine visibility
+         */
+        UNKNOWN,
+        /**
+         * A private repo
+         */
+        PRIVATE,
+        /**
+         * A public repo
+         */
+        PUBLIC,
+        /**
+         * The Git repo is either private or does not exist, but we cannot tell which.
+         */
+        PRIVATE_OR_NON_EXISTENT
+    }
+
     public enum TopicSelection {
         AUTOMATIC, MANUAL
     }
@@ -480,6 +508,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     public void setIsPublished(boolean isPublished) {
         this.isPublished = isPublished;
+        if (isPublished) {
+            setWasEverPublic(true);
+        }
     }
 
     /**
@@ -810,5 +841,27 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setOrcidAuthors(Set<OrcidAuthor> orcidAuthors) {
         this.orcidAuthors = orcidAuthors;
+    }
+
+    @JsonIgnore
+    public boolean getWasEverPublic() {
+        return wasEverPublic;
+    }
+
+    public void setWasEverPublic(boolean wasEverPublic) {
+        this.wasEverPublic = wasEverPublic;
+    }
+
+    @JsonProperty
+    public boolean isDeletable() {
+        return !getWasEverPublic() && !hasChecker();
+    }
+
+    public GitVisibility getGitVisibility() {
+        return gitVisibility;
+    }
+
+    public void setGitVisibility(final GitVisibility gitVisibility) {
+        this.gitVisibility = gitVisibility;
     }
 }
