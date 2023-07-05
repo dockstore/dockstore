@@ -129,6 +129,28 @@ paths:
       - BEARER: []
       tags:
       - aliases
+  /api/ga4gh/v1/metadata:
+    get:
+      operationId: metadataGet_1
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GHV1
+  /api/ga4gh/v1/tool-classes:
+    get:
+      operationId: toolClassesGet_2
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GHV1
   /api/ga4gh/v1/tools:
     get:
       description: This endpoint returns all tools available or a filtered subset
@@ -761,6 +783,277 @@ paths:
         on particular platforms plus metadata
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/metadata:
+    get:
+      operationId: metadataGet
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
+  /api/ga4gh/v2/toolClasses:
+    get:
+      operationId: toolClassesGet_1
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
+  /api/ga4gh/v2/tools:
+    get:
+      operationId: toolsGet_1
+      parameters:
+      - in: query
+        name: id
+        schema:
+          type: string
+      - in: query
+        name: alias
+        schema:
+          type: string
+      - in: query
+        name: registry
+        schema:
+          type: string
+      - in: query
+        name: organization
+        schema:
+          type: string
+      - in: query
+        name: name
+        schema:
+          type: string
+      - in: query
+        name: toolname
+        schema:
+          type: string
+      - in: query
+        name: description
+        schema:
+          type: string
+      - in: query
+        name: author
+        schema:
+          type: string
+      - in: query
+        name: checker
+        schema:
+          type: boolean
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 1000
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
+  /api/ga4gh/v2/tools/{id}:
+    get:
+      operationId: toolsIdGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
+  /api/ga4gh/v2/tools/{id}/versions:
+    get:
+      operationId: toolsIdVersionsGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}:
+    get:
+      operationId: toolsIdVersionsVersionIdGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/containerfile:
+    get:
+      operationId: toolsIdVersionsVersionIdContainerfileGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
+    get:
+      operationId: toolsIdVersionsVersionIdTypeDescriptorGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
+    get:
+      operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: relative_path
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/files:
+    get:
+      operationId: toolsIdVersionsVersionIdTypeFilesGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/tests:
+    get:
+      operationId: toolsIdVersionsVersionIdTypeTestsGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GH
   /auth/tokens/bitbucket.org:
     get:
       description: "Add a new bitbucket.org token, used by quay.io redirect."
