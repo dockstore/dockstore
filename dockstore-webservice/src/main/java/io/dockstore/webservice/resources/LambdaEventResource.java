@@ -77,19 +77,19 @@ public class LambdaEventResource {
     @Timed
     @UnitOfWork(readOnly = true)
     @RolesAllowed({ "admin", "curator"})
-    @Path("/{userid}")
+    @Path("/user/{userid}")
     @Operation(operationId = "getUserLambdaEvents", description = "Get all of the Lambda Events for the given user and GitHub organization.",
             security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     public List<LambdaEvent> getUserLambdaEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
            @PathParam("userid") long userid,
            @QueryParam("offset") @DefaultValue("0") String offset,
            @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
-        final User loggedInUser = userDAO.findById(authUser.getId());
+        final User user = userDAO.findById(userid);
         final List<Token> githubTokens = tokenDAO.findGithubByUserId(userid);
         if (githubTokens.isEmpty()) {
             throw new CustomWebApplicationException("The user does not have GitHub connected to their account.", HttpStatus.SC_BAD_REQUEST);
         }
-        return lambdaEventDAO.findByUser(loggedInUser, offset, limit);
+        return lambdaEventDAO.findByUser(user, offset, limit);
     }
 
     /**

@@ -242,6 +242,7 @@ class WebhookIT extends BaseIT {
         System.out.println(lambdaEventsApi.getUserLambdaEvents(userid, "0", 100));
         List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEvents(userid, "0", 100);
         assertEquals(1, lambdaEvents.size());
+        assertEquals("refs/tags/1.0", lambdaEvents.get(0).getReference());
     }
         
     @Test

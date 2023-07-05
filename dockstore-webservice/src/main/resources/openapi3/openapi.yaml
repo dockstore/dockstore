@@ -3378,16 +3378,17 @@ paths:
       summary: Get a list of test JSONs
       tags:
       - GA4GHV20
-  /lambdaEvents/{organization}:
+  /lambdaEvents/user/{userid}:
     get:
-      description: Get all of the Lambda Events for the given GitHub organization.
-      operationId: getLambdaEventsByOrganization
+      description: Get all of the Lambda Events for the given user and GitHub organization.
+      operationId: getUserLambdaEvents
       parameters:
       - in: path
-        name: organization
+        name: userid
         required: true
         schema:
-          type: string
+          type: integer
+          format: int64
       - in: query
         name: offset
         schema:
@@ -3412,17 +3413,16 @@ paths:
       - BEARER: []
       tags:
       - lambdaEvents
-  /lambdaEvents/{userid}:
+  /lambdaEvents/{organization}:
     get:
-      description: Get all of the Lambda Events for the given user and GitHub organization.
-      operationId: getUserLambdaEvents
+      description: Get all of the Lambda Events for the given GitHub organization.
+      operationId: getLambdaEventsByOrganization
       parameters:
       - in: path
-        name: userid
+        name: organization
         required: true
         schema:
-          type: integer
-          format: int64
+          type: string
       - in: query
         name: offset
         schema:
