@@ -83,7 +83,7 @@ public class LambdaEventResource {
     public List<LambdaEvent> getUserLambdaEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
            @PathParam("userid") long userid,
            @QueryParam("offset") @DefaultValue("0") String offset,
-           @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+           @DefaultValue("1000") @QueryParam("limit") Integer limit) {
         final User user = userDAO.findById(userid);
         final List<Token> githubTokens = tokenDAO.findGithubByUserId(userid);
         if (githubTokens.isEmpty()) {
