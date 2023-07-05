@@ -239,7 +239,6 @@ class WebhookIT extends BaseIT {
         final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClientAdminUser);
 
-        System.out.println(lambdaEventsApi.getUserLambdaEvents(userid, "0", 100));
         List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEvents(userid, "0", 100);
         assertEquals(1, lambdaEvents.size());
         assertEquals("refs/tags/1.0", lambdaEvents.get(0).getReference());
