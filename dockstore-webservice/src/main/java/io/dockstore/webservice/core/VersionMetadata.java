@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CollectionTable;
@@ -74,6 +75,7 @@ public class VersionMetadata {
     @Enumerated(EnumType.STRING)
     protected Version.DOIStatus doiStatus;
 
+    @JsonIgnore
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     @Schema(description = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
