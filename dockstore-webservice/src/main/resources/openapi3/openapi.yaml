@@ -10566,7 +10566,7 @@ components:
         signed:
           type: boolean
         toolclass:
-          $ref: '#/components/schemas/ToolClass'
+          $ref: '#/components/schemas/ToolClassV20beta'
         toolname:
           type: string
         url:

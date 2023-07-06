@@ -17,10 +17,14 @@ package io.swagger.api.impl;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
+import io.swagger.api.impl.ApiV2BetaVersionConverter.DescriptorTypeConverter;
+import io.swagger.api.impl.ApiV2BetaVersionConverter.ToolClassConverter;
+import io.swagger.model.DescriptorTypeV20beta;
 import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapperV20beta;
 import io.swagger.model.MetadataV1;
 import io.swagger.model.MetadataV20beta;
+import io.swagger.model.ToolClassV20beta;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolTestsV1;
@@ -32,6 +36,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.beanutils.ConvertUtils;
 
 /**
  * Converts between the V2-beta version of the GA4GH TRS to V1
@@ -39,6 +44,12 @@ import java.util.List;
  * @since 21/12/17
  */
 public final class ApiV1VersionConverter {
+
+    static {
+        ConvertUtils.register(new ToolClassConverter(), ToolClassV20beta.class);
+        ConvertUtils.register(new DescriptorTypeConverter(), DescriptorTypeV20beta.class);
+    }
+    
     private ApiV1VersionConverter() { }
 
     public static Response convertToVersion(Response response) {

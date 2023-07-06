@@ -17,7 +17,6 @@ package io.swagger.model;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import io.openapi.model.ToolClass;
 import io.swagger.annotations.ApiModel;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -41,7 +40,7 @@ public class ToolV1 {
 
     private String toolname = null;
 
-    private ToolClass toolclass = null;
+    private ToolClassV20beta toolclass = null;
 
     private String description = null;
 
@@ -172,11 +171,11 @@ public class ToolV1 {
         this.toolname = toolname;
     }
 
-    public ToolClass getToolclass() {
+    public ToolClassV20beta getToolclass() {
         return toolclass;
     }
 
-    public void setToolclass(ToolClass toolclass) {
+    public void setToolclass(ToolClassV20beta toolclass) {
         this.toolclass = toolclass;
     }
 
