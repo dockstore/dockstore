@@ -7469,7 +7469,7 @@ paths:
       description: Return first 200 versions in an entry
       operationId: getWorkflowVersions
       parameters:
-      - description: id of the worflow
+      - description: id of the workflow
         in: path
         name: workflowId
         required: true
@@ -10576,10 +10576,6 @@ components:
     VersionMetadata:
       type: object
       properties:
-        description:
-          type: string
-          description: "This is a human-readable description of this container and\
-            \ what it is trying to accomplish, required GA4GH"
         descriptorTypeVersions:
           type: array
           items:

@@ -442,7 +442,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
     public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "workflowID", required = true) @Parameter(name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
+        @ApiParam(value = "workflowID", required = true) @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
         checkCanExamine(user, workflow);
