@@ -85,9 +85,8 @@ public class LambdaEventResource {
            @QueryParam("offset") @DefaultValue("0") Integer offset,
            @DefaultValue("1000") @QueryParam("limit") Integer limit) {
         final User user = userDAO.findById(userid);
-        final List<Token> githubTokens = tokenDAO.findGithubByUserId(userid);
-        if (githubTokens.isEmpty()) {
-            throw new CustomWebApplicationException("The user does not have GitHub connected to their account.", HttpStatus.SC_BAD_REQUEST);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
         }
         return lambdaEventDAO.findByUser(user, offset, limit);
     }
