@@ -35,7 +35,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.swagger.model.Error;
+import io.openapi.model.Error;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Set;

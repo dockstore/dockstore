@@ -33,7 +33,7 @@ public class ToolTestsV1   {
     @JsonProperty("url")
     private String url = null;
 
-    public ToolTestsV1(FileWrapper containerfile) {
+    public ToolTestsV1(FileWrapperV20beta containerfile) {
         this.test = containerfile.getContent();
         this.url = containerfile.getUrl();
     }

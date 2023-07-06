@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.webservice.resources.WorkflowResource.YOUR_USER_DOES_NOT_HAVE_ACCESS_TO_THIS_ORGANIZATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -46,6 +47,7 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.WDLHandler;
 import io.dropwizard.testing.ResourceHelpers;
+import io.openapi.model.DescriptorType;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.AliasesApi;
@@ -62,7 +64,6 @@ import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.Workflow.ModeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.client.model.WorkflowVersion.ReferenceTypeEnum;
-import io.swagger.model.DescriptorType;
 import jakarta.ws.rs.core.GenericType;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -238,7 +239,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow cwlWorkflow = workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "CWL",
-                        DescriptorLanguage.CWL.toString(), "/test.json");
+                        CWL.toString(), "/test.json");
         Long cwlId = cwlWorkflow.getId();
         workflowApi.refresh(cwlId, false);
         Workflow workflow = workflowApi.getWorkflow(cwlId, null);
@@ -254,7 +255,7 @@ public class WorkflowIT extends BaseIT {
         assertTrue(parsedInformationHTTP.isHasHTTPImports());
         Workflow cwlChecker = workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/checker-workflow-wrapping-workflow.cwl", "CWLChecker",
-                        DescriptorLanguage.CWL.toString(), "/test.json");
+                        CWL.toString(), "/test.json");
         Long id = cwlChecker.getId();
         workflowApi.refresh(id, false);
         workflow = workflowApi.getWorkflow(id, null);
@@ -362,7 +363,7 @@ public class WorkflowIT extends BaseIT {
         assertNull(branchToolJson);
 
         // Test freezing versions (uses a different workflow that has versioned images)
-        workflow = manualRegisterAndPublish(workflowApi, "dockstore-testing/hello_world", "", DescriptorType.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
+        workflow = manualRegisterAndPublish(workflowApi, "dockstore-testing/hello_world", "", CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
         WorkflowVersion frozenVersion = snapshotWorkflowVersion(workflowApi, workflow, "1.0.1");
         String frozenDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", frozenVersion.getId()), String.class);
         String frozenToolTableJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", frozenVersion.getId()), String.class);
@@ -914,14 +915,14 @@ public class WorkflowIT extends BaseIT {
 
         // test out methods to access secondary files
         final List<SourceFile> masterImports = workflowApi
-            .secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
+            .secondaryDescriptors(workflow.getId(), "master", CWL.toString());
         assertEquals(2, masterImports.size(), "should find 2 imports, found " + masterImports.size());
-        final SourceFile master = workflowApi.primaryDescriptor(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
+        final SourceFile master = workflowApi.primaryDescriptor(workflow.getId(), "master", CWL.toString());
         assertTrue(master.getContent().contains("untar") && master.getContent().contains("compile"), "master content incorrect");
 
         // get secondary files by path
         SourceFile argumentsTool = workflowApi
-            .secondaryDescriptorPath(workflow.getId(), "arguments.cwl", "master", DescriptorLanguage.CWL.toString());
+            .secondaryDescriptorPath(workflow.getId(), "arguments.cwl", "master", CWL.toString());
         assertTrue(argumentsTool.getContent().contains("Example trivial wrapper for Java 7 compiler"), "argumentstool content incorrect");
     }
 

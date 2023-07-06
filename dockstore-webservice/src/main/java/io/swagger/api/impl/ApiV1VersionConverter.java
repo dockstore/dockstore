@@ -18,16 +18,16 @@ package io.swagger.api.impl;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
 import io.swagger.model.ExtendedFileWrapper;
-import io.swagger.model.FileWrapper;
-import io.swagger.model.Metadata;
+import io.swagger.model.FileWrapperV20beta;
 import io.swagger.model.MetadataV1;
-import io.swagger.model.Tool;
+import io.swagger.model.MetadataV20beta;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolTestsV1;
 import io.swagger.model.ToolV1;
-import io.swagger.model.ToolVersion;
+import io.swagger.model.ToolV20beta;
 import io.swagger.model.ToolVersionV1;
+import io.swagger.model.ToolVersionV20beta;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -47,9 +47,9 @@ public final class ApiV1VersionConverter {
             List<Object> arrayList = (List<Object>)object;
             List<Object> newArrayList = new ArrayList<>();
             for (Object innerObject : arrayList) {
-                if (innerObject instanceof Tool tool) {
+                if (innerObject instanceof ToolV20beta tool) {
                     newArrayList.add(new ToolV1(tool));
-                } else if (innerObject instanceof ToolVersion toolVersion) {
+                } else if (innerObject instanceof ToolVersionV20beta toolVersion) {
                     newArrayList.add(new ToolVersionV1(toolVersion));
                 } else if (innerObject instanceof ExtendedFileWrapper) {
                     // v1 annoying expects a 1 Dockerfile list to be returned unwrapped
@@ -63,17 +63,17 @@ public final class ApiV1VersionConverter {
                 }
             }
             return getResponse(newArrayList, response.getHeaders());
-        } else if (object instanceof ToolVersion) {
-            ToolVersion toolVersion = (ToolVersion)object;
+        } else if (object instanceof ToolVersionV20beta) {
+            ToolVersionV20beta toolVersion = (ToolVersionV20beta)object;
             ToolVersionV1 toolVersionV1 =  new ToolVersionV1(toolVersion);
             return getResponse(toolVersionV1, response.getHeaders());
-        } else if (object instanceof Tool tool) {
+        } else if (object instanceof ToolV20beta tool) {
             ToolV1 toolV1 = new ToolV1(tool);
             return getResponse(toolV1, response.getHeaders());
-        } else if (object instanceof Metadata metadata) {
+        } else if (object instanceof MetadataV20beta metadata) {
             MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1, response.getHeaders());
-        } else if (object instanceof FileWrapper) {
+        } else if (object instanceof FileWrapperV20beta) {
             if (object instanceof ExtendedFileWrapper) {
                 return getResponse(getExtendedWrapperConverted((ExtendedFileWrapper)object), response.getHeaders());
             }

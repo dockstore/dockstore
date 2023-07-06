@@ -20,7 +20,7 @@ import static io.dockstore.common.PipHelper.DEV_SEM_VER;
 
 import io.dockstore.webservice.core.User;
 import io.swagger.api.MetadataApiService;
-import io.swagger.model.Metadata;
+import io.swagger.model.MetadataV20beta;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -29,7 +29,7 @@ import java.util.Optional;
 public class MetadataApiServiceImpl extends MetadataApiService {
     @Override
     public Response metadataGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) {
-        Metadata metadata = new Metadata();
+        MetadataV20beta metadata = new MetadataV20beta();
         metadata.setCountry("CAN");
         metadata.setApiVersion("2.0.0");
         metadata.setFriendlyName("Dockstore");

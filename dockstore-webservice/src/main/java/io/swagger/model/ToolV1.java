@@ -17,6 +17,7 @@ package io.swagger.model;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.openapi.model.ToolClass;
 import io.swagger.annotations.ApiModel;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class ToolV1 {
     private List<ToolVersionV1> versions;
 
 
-    public ToolV1(Tool tool) {
+    public ToolV1(ToolV20beta tool) {
         try {
             BeanUtils.copyProperties(this, tool);
             // looks like BeanUtils has issues due to https://issues.apache.org/jira/browse/BEANUTILS-321 and https://github.com/swagger-api/swagger-codegen/issues/7764
@@ -68,7 +69,7 @@ public class ToolV1 {
 
             // convert versions now
             versions = new ArrayList<>();
-            for (ToolVersion version : tool.getVersions()) {
+            for (ToolVersionV20beta version : tool.getVersions()) {
                 ToolVersionV1 oldVersion = new ToolVersionV1(version);
                 versions.add(oldVersion);
             }

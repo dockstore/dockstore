@@ -792,10 +792,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Metadata'
+                $ref: '#/components/schemas/MetadataV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/Metadata'
+                $ref: '#/components/schemas/MetadataV20beta'
           description: A Metadata object describing this service.
       summary: Return some metadata that is useful for describing this registry
       tags:
@@ -811,12 +811,12 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolClass'
+                  $ref: '#/components/schemas/ToolClassV20beta'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolClass'
+                  $ref: '#/components/schemas/ToolClassV20beta'
           description: A list of potential tool classes.
       summary: List all tool types
       tags:
@@ -880,12 +880,12 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/ToolV20beta'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/ToolV20beta'
           description: An array of Tools that match the filter.
       summary: List all tools
       tags:
@@ -906,19 +906,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/ToolV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/ToolV20beta'
           description: A tool.
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
           description: The tool can not be found.
       summary: "List one specific tool, acts as an anchor for self references"
       tags:
@@ -940,12 +940,12 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolVersion'
+                  $ref: '#/components/schemas/ToolVersionV20beta'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolVersion'
+                  $ref: '#/components/schemas/ToolVersionV20beta'
           description: An array of tool versions
       summary: List versions of a tool
       tags:
@@ -970,19 +970,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ToolVersion'
+                $ref: '#/components/schemas/ToolVersionV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/ToolVersion'
+                $ref: '#/components/schemas/ToolVersionV20beta'
           description: A tool version.
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
           description: The tool can not be found.
       summary: "List one specific tool version, acts as an anchor for self references"
       tags:
@@ -1012,21 +1012,21 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FileWrapper'
+                  $ref: '#/components/schemas/FileWrapperV20beta'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FileWrapper'
+                  $ref: '#/components/schemas/FileWrapperV20beta'
           description: The tool payload.
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
           description: There are no container specifications for this tool
       summary: Get the container specification(s) for the specified image.
       tags:
@@ -1057,19 +1057,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileWrapper'
+                $ref: '#/components/schemas/FileWrapperV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/FileWrapper'
+                $ref: '#/components/schemas/FileWrapperV20beta'
           description: The tool descriptor.
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
           description: The tool descriptor can not be found.
       summary: Get the tool descriptor for the specified tool
       tags:
@@ -1110,19 +1110,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileWrapper'
+                $ref: '#/components/schemas/FileWrapperV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/FileWrapper'
+                $ref: '#/components/schemas/FileWrapperV20beta'
           description: The tool descriptor.
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
           description: The tool can not be output in the specified type.
       summary: Get additional tool descriptor files relative to the main file
       tags:
@@ -1156,21 +1156,21 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolFile'
+                  $ref: '#/components/schemas/ToolFileV20beta'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolFile'
+                  $ref: '#/components/schemas/ToolFileV20beta'
           description: The array of File JSON responses.
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
           description: The tool can not be output in the specified type.
       summary: Get a list of objects that contain the relative path and file type
       tags:
@@ -1203,21 +1203,21 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FileWrapper'
+                  $ref: '#/components/schemas/FileWrapperV20beta'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FileWrapper'
+                  $ref: '#/components/schemas/FileWrapperV20beta'
           description: The tool test JSON response.
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
             text/plain:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorV20beta'
           description: The tool can not be output in the specified type.
       summary: Get a list of test JSONs
       tags:
@@ -9139,6 +9139,16 @@ components:
           type: string
       required:
       - code
+    ErrorV20beta:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+      - code
     Event:
       type: object
       properties:
@@ -9314,6 +9324,38 @@ components:
         value:
           type: string
     FileWrapper:
+      type: object
+      description: 'A file provides content for one of - A tool descriptor is a metadata
+        document that describes one or more tools. - A tool document that describes
+        how to test with one or more sample test JSON. - A containerfile is a document
+        that describes how to build a particular container image. Examples include
+        Dockerfiles for creating Docker images and Singularity recipes for Singularity
+        images '
+      properties:
+        checksum:
+          type: array
+          description: "A production (immutable) tool version is required to have\
+            \ a hashcode. Not required otherwise, but might be useful to detect changes. "
+          example:
+          - checksum: ea2a5db69bd20a42976838790bc29294df3af02b
+            type: sha1
+          items:
+            $ref: '#/components/schemas/Checksum'
+        content:
+          type: string
+          description: The content of the file itself. One of url or content is required.
+        image_type:
+          $ref: '#/components/schemas/OneOfFileWrapperImageType'
+        url:
+          type: string
+          description: "Optional url to the underlying content, should include version\
+            \ information, and can include a git hash.  Note that this URL should\
+            \ resolve to the raw unwrapped content that would otherwise be available\
+            \ in content. One of url or content is required."
+          example: "{\"descriptorfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\"\
+            },\"containerfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile\"\
+            }}"
+    FileWrapperV20beta:
       type: object
       properties:
         content:
@@ -9592,7 +9634,7 @@ components:
       - maximum
       - minimum
       - numberOfDataPointsForAverage
-    Metadata:
+    MetadataV20beta:
       type: object
       properties:
         api_version:
@@ -10340,53 +10382,81 @@ components:
           type: string
     Tool:
       type: object
+      description: "A tool (or described tool) is defined as a tuple of a descriptor\
+        \ file (which potentially consists of multiple files), a set of container\
+        \ images, and a set of instructions for creating those images."
       properties:
         aliases:
           type: array
+          description: Support for this parameter is optional for tool registries
+            that support aliases. A list of strings that can be used to identify this
+            tool which could be  straight up URLs.  This can be used to expose alternative
+            ids (such as GUIDs) for a tool for registries. Can be used to match tools
+            across registries.
           items:
             type: string
-        author:
-          type: string
+            description: Support for this parameter is optional for tool registries
+              that support aliases. A list of strings that can be used to identify
+              this tool which could be  straight up URLs.  This can be used to expose
+              alternative ids (such as GUIDs) for a tool for registries. Can be used
+              to match tools across registries.
         checker_url:
           type: string
-        contains:
-          type: array
-          items:
-            type: string
+          description: Optional url to the checker tool that will exit successfully
+            if this tool produced the expected result given test data.
         description:
           type: string
+          description: The description of the tool.
         has_checker:
           type: boolean
+          description: Whether this tool has a checker tool associated with it.
         id:
           type: string
+          description: "A unique identifier of the tool, scoped to this registry."
+          example: "123456"
         meta_version:
           type: string
+          description: "The version of this tool in the registry. Iterates when fields\
+            \ like the description, author, etc. are updated."
+        name:
+          type: string
+          description: The name of the tool.
         organization:
           type: string
-        signed:
-          type: boolean
+          description: The organization that published the image.
         toolclass:
           $ref: '#/components/schemas/ToolClass'
-        toolname:
-          type: string
         url:
           type: string
-        verified:
-          type: boolean
-        verified_source:
-          type: string
+          description: The URL for this tool in this registry.
+          example: http://agora.broadinstitute.org/tools/123456
         versions:
           type: array
+          description: A list of versions for this tool.
           items:
             $ref: '#/components/schemas/ToolVersion'
       required:
-      - author
       - id
       - organization
       - toolclass
       - url
       - versions
     ToolClass:
+      type: object
+      description: "Describes a class (type) of tool allowing us to categorize workflows,\
+        \ tasks, and maybe even other entities (such as services) separately."
+      properties:
+        description:
+          type: string
+          description: A longer explanation of what this class is and what it can
+            accomplish.
+        id:
+          type: string
+          description: The unique identifier for the class.
+        name:
+          type: string
+          description: A short friendly name for the class.
+    ToolClassV20beta:
       type: object
       properties:
         description:
@@ -10422,6 +10492,23 @@ components:
         url:
           type: string
     ToolFile:
+      type: object
+      properties:
+        checksum:
+          $ref: '#/components/schemas/Checksum'
+        file_type:
+          type: string
+          enum:
+          - TEST_FILE
+          - PRIMARY_DESCRIPTOR
+          - SECONDARY_DESCRIPTOR
+          - CONTAINERFILE
+          - OTHER
+        path:
+          type: string
+          description: "Relative path of the file.  A descriptor's path can be used\
+            \ with the GA4GH .../{type}/descriptor/{relative_path : .+} endpoint."
+    ToolFileV20beta:
       type: object
       properties:
         file_type:
@@ -10492,7 +10579,214 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ToolVersionV1'
+    ToolV20beta:
+      type: object
+      properties:
+        aliases:
+          type: array
+          items:
+            type: string
+        author:
+          type: string
+        checker_url:
+          type: string
+        contains:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          type: string
+        meta_version:
+          type: string
+        organization:
+          type: string
+        signed:
+          type: boolean
+        toolclass:
+          $ref: '#/components/schemas/ToolClassV20beta'
+        toolname:
+          type: string
+        url:
+          type: string
+        verified:
+          type: boolean
+        verified_source:
+          type: string
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolVersionV20beta'
+      required:
+      - author
+      - id
+      - organization
+      - toolclass
+      - url
+      - versions
     ToolVersion:
+      type: object
+      description: A tool version describes a particular iteration of a tool as described
+        by a reference to a specific image and/or documents.
+      properties:
+        author:
+          type: array
+          description: Contact information for the author of this version of the tool
+            in the registry. (More complex authorship information is handled by the
+            descriptor).
+          items:
+            type: string
+            description: Contact information for the author of this version of the
+              tool in the registry. (More complex authorship information is handled
+              by the descriptor).
+        containerfile:
+          type: boolean
+          description: "Reports if this tool has a containerfile available. (For Docker-based\
+            \ tools, this would indicate the presence of a Dockerfile)"
+        descriptor_type:
+          type: array
+          description: The type (or types) of descriptors available.
+          items:
+            type: string
+            description: The type (or types) of descriptors available.
+            enum:
+            - CWL
+            - WDL
+            - NFL
+            - GALAXY
+            - SMK
+            - SERVICE
+            - JUPYTER
+        descriptor_type_version:
+          type: object
+          additionalProperties:
+            type: array
+            description: "A map providing information about the language versions\
+              \ used in this tool. The keys should be the same values used in the\
+              \ `descriptor_type` field, and the value should be an array of all the\
+              \ language versions used for the given `descriptor_type`. Depending\
+              \ on the `descriptor_type` (e.g. CWL) multiple version values may be\
+              \ used in a single tool."
+            example:
+              CWL:
+              - v1.0.2
+              NFL:
+              - DSL2
+              WDL:
+              - "1.0"
+              - "1.0"
+            items:
+              type: string
+              description: "A map providing information about the language versions\
+                \ used in this tool. The keys should be the same values used in the\
+                \ `descriptor_type` field, and the value should be an array of all\
+                \ the language versions used for the given `descriptor_type`. Depending\
+                \ on the `descriptor_type` (e.g. CWL) multiple version values may\
+                \ be used in a single tool."
+              example: "{\"WDL\":[\"1.0\",\"1.0\"],\"CWL\":[\"v1.0.2\"],\"NFL\":[\"\
+                DSL2\"]}"
+          description: "A map providing information about the language versions used\
+            \ in this tool. The keys should be the same values used in the `descriptor_type`\
+            \ field, and the value should be an array of all the language versions\
+            \ used for the given `descriptor_type`. Depending on the `descriptor_type`\
+            \ (e.g. CWL) multiple version values may be used in a single tool."
+          example:
+            CWL:
+            - v1.0.2
+            NFL:
+            - DSL2
+            WDL:
+            - "1.0"
+            - "1.0"
+        id:
+          type: string
+          description: An identifier of the version of this tool for this particular
+            tool registry.
+          example: v1
+        images:
+          type: array
+          description: "All known docker images (and versions/hashes) used by this\
+            \ tool. If the tool has to evaluate any of the docker images strings at\
+            \ runtime, those ones cannot be reported here."
+          items:
+            $ref: '#/components/schemas/ImageData'
+        included_apps:
+          type: array
+          description: An array of IDs for the applications that are stored inside
+            this tool.
+          example:
+          - https://bio.tools/tool/mytum.de/SNAP2/1
+          - https://bio.tools/bioexcel_seqqc
+          items:
+            type: string
+            description: An array of IDs for the applications that are stored inside
+              this tool.
+            example: "[\"https://bio.tools/tool/mytum.de/SNAP2/1\",\"https://bio.tools/bioexcel_seqqc\"\
+              ]"
+        is_production:
+          type: boolean
+          description: "This version of a tool is guaranteed to not change over time\
+            \ (for example, a  tool built from a tag in git as opposed to a branch).\
+            \ A production quality tool  is required to have a checksum"
+        meta_version:
+          type: string
+          description: "The version of this tool version in the registry. Iterates\
+            \ when fields like the description, author, etc. are updated."
+        name:
+          type: string
+          description: The name of the version.
+        signed:
+          type: boolean
+          description: Reports whether this version of the tool has been signed.
+        url:
+          type: string
+          description: The URL for this tool version in this registry.
+          example: http://agora.broadinstitute.org/tools/123456/versions/1
+        verified:
+          type: boolean
+          description: Reports whether this tool has been verified by a specific organization
+            or individual.
+        verified_source:
+          type: array
+          description: "Source of metadata that can support a verified tool, such\
+            \ as an email or URL."
+          items:
+            type: string
+            description: "Source of metadata that can support a verified tool, such\
+              \ as an email or URL."
+      required:
+      - id
+      - url
+    ToolVersionV1:
+      type: object
+      properties:
+        descriptor-type:
+          type: array
+          items:
+            type: string
+            enum:
+            - CWL
+            - WDL
+        dockerfile:
+          type: boolean
+        id:
+          type: string
+        image:
+          type: string
+        meta-version:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+        verified:
+          type: boolean
+        verified-source:
+          type: string
+    ToolVersionV20beta:
       type: object
       properties:
         containerfile:
@@ -10529,32 +10823,6 @@ components:
       required:
       - id
       - url
-    ToolVersionV1:
-      type: object
-      properties:
-        descriptor-type:
-          type: array
-          items:
-            type: string
-            enum:
-            - CWL
-            - WDL
-        dockerfile:
-          type: boolean
-        id:
-          type: string
-        image:
-          type: string
-        meta-version:
-          type: string
-        name:
-          type: string
-        url:
-          type: string
-        verified:
-          type: boolean
-        verified-source:
-          type: string
     User:
       type: object
       properties:

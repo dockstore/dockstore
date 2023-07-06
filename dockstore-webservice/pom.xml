@@ -1232,6 +1232,7 @@
                     <generateModelTests>false</generateModelTests>
                     <generateModelDocumentation>false</generateModelDocumentation>
                     <generateSupportingFiles>true</generateSupportingFiles>
+                    <modelNameSuffix>v20beta</modelNameSuffix>
                     <withXml>true</withXml>
                     <library>jersey2</library>
                     <ignoreFileOverride>${pom.basedir}/src/main/resources/swagger-templates/swagger-codegen-ignore</ignoreFileOverride>

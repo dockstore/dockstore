@@ -11,7 +11,7 @@ class ToolV1Test {
      */
     @Test
     void checkToolV1URL() {
-        Tool tool = new Tool();
+        ToolV20beta tool = new ToolV20beta();
         tool.setVerified(true);
         tool.setSigned(true);
         tool.setUrl("https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.7");
@@ -24,7 +24,7 @@ class ToolV1Test {
      */
     @Test
     void checkToolV1Null() {
-        Tool tool = new Tool();
+        ToolV20beta tool = new ToolV20beta();
         tool.setVerified(true);
         tool.setSigned(true);
         ToolV1 toolV1 = new ToolV1(tool);
