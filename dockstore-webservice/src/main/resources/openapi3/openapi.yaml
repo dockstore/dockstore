@@ -7619,7 +7619,7 @@ paths:
       responses:
         "200":
           content:
-            application/json:
+            text/plain:
               schema:
                 type: string
           description: Retrieve a workflow version's description

@@ -475,7 +475,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork(readOnly = true)
     @Operation(operationId = "getWorkflowVersionDescription", description = "Retrieve a workflow version's description", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Retrieve a workflow version's description", content = @Content(
-        mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class)))
+        mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = String.class)))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
     public String getWorkflowVersionDescription(@Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
