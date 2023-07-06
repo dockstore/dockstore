@@ -474,13 +474,11 @@ class SwaggerWebhookIT extends BaseIT {
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = workflow.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
         assertEquals("Test User", masterVersion.get().getAuthor(), "Should have author set");
         assertEquals("test@dockstore.org", masterVersion.get().getEmail(), "Should have email set");
-        assertEquals("This is a description", masterVersion.get().getDescription(), "Should have email set");
 
         masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
         assertEquals("Test User", masterVersion.get().getAuthor(), "Should have author set");
         assertTrue(masterVersion.get().isValid(), "Should be valid");
         assertEquals("test@dockstore.org", masterVersion.get().getEmail(), "Should have email set");
-        assertEquals("This is a description", masterVersion.get().getDescription(), "Should have email set");
 
         boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(
                 io.dockstore.openapi.client.model.WorkflowVersion::isLegacyVersion);
@@ -1643,7 +1641,6 @@ class SwaggerWebhookIT extends BaseIT {
         assertTrue(defaultVersion.isPresent());
         assertEquals("Test User", defaultVersion.get().getAuthor(), "Version should have author set");
         assertEquals("test@dockstore.org", defaultVersion.get().getEmail(), "Version should have email set");
-        assertEquals("This is a description", defaultVersion.get().getDescription(), "Version should have email set");
 
         // Check that the workflow metadata is the same as the default version's metadata
         checkWorkflowMetadataWithDefaultVersionMetadata(workflow, defaultVersion.get());
@@ -1696,7 +1693,6 @@ class SwaggerWebhookIT extends BaseIT {
         assertEquals(1, defaultVersion.getAuthors().size());
         assertEquals(defaultVersion.getAuthors().size(), workflow.getAuthors().size());
         assertEquals(defaultVersion.getAuthors().get(0), workflow.getAuthors().get(0), "Workflow author should equal default version author");
-        assertEquals(defaultVersion.getDescription(), workflow.getDescription(), "Workflow description should equal default version description");
     }
 
     /**

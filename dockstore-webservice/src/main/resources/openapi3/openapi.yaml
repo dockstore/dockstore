@@ -7597,6 +7597,38 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/description:
+    get:
+      description: Retrieve a workflow version's description
+      operationId: getWorkflowVersionDescription
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: id of the workflow version
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Retrieve a workflow version's description
+        "400":
+          description: Bad Request
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors:
     get:
       description: Retrieve ORCID author information for a workflow version
@@ -9745,8 +9777,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        description:
-          type: string
         descriptionSource:
           type: string
           enum:
@@ -10504,8 +10534,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        description:
-          type: string
         descriptionSource:
           type: string
           enum:
@@ -10613,10 +10641,6 @@ components:
     VersionMetadata:
       type: object
       properties:
-        description:
-          type: string
-          description: "This is a human-readable description of this container and\
-            \ what it is trying to accomplish, required GA4GH"
         descriptorTypeVersions:
           type: array
           items:
@@ -10894,8 +10918,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        description:
-          type: string
         descriptionSource:
           type: string
           enum:
