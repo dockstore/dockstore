@@ -62,6 +62,7 @@ import io.dockstore.openapi.client.api.ContainersApi;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Cost;
 import io.dockstore.openapi.client.model.CpuMetric;
 import io.dockstore.openapi.client.model.ExecutionStatusMetric;
 import io.dockstore.openapi.client.model.ExecutionTimeMetric;
@@ -678,7 +679,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             execution.setExecutionTime("PT5M");
             execution.setCpuRequirements(2);
             execution.setMemoryRequirementsGB(2.0);
-            execution.setCostUSD(9.99);
+            execution.setCost(new Cost().value(9.99));
             execution.setRegion("us-central1");
             Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
             execution.setAdditionalProperties(additionalProperties);

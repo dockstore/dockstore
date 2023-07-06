@@ -8086,6 +8086,20 @@ components:
           type: string
         zenodoScope:
           type: string
+    Cost:
+      type: object
+      description: Cost represents a monetary amount in USD
+      properties:
+        currency:
+          type: string
+          default: USD
+          description: The currency of the cost value
+          readOnly: true
+        value:
+          type: number
+          format: double
+          description: The numerical value of the cost
+          example: 5.99
     CostMetric:
       type: object
       description: This describes aggregated cost metrics for workflow executions
@@ -8114,6 +8128,7 @@ components:
           description: The number of data points used to calculate the average
         unit:
           type: string
+          default: USD
           description: The unit of the data points
           readOnly: true
       required:
@@ -8817,6 +8832,7 @@ components:
           description: The number of data points used to calculate the average
         unit:
           type: string
+          default: s
           description: The unit of the data points
           readOnly: true
       required:
@@ -9154,6 +9170,7 @@ components:
           description: The number of data points used to calculate the average
         unit:
           type: string
+          default: GB
           description: The unit of the data points
           readOnly: true
       required:
@@ -9466,11 +9483,8 @@ components:
       - $ref: '#/components/schemas/Execution'
       - type: object
         properties:
-          costUSD:
-            type: number
-            format: double
-            description: The cost of the execution in USD
-            example: 5.99
+          cost:
+            $ref: '#/components/schemas/Cost'
           cpuRequirements:
             type: integer
             format: int32

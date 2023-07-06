@@ -45,4 +45,10 @@ public class ExecutionTimeStatisticMetric extends StatisticMetric {
             @JsonProperty("numberOfDataPointsForAverage") int numberOfDataPointsForAverage) {
         super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT);
     }
+
+    @Override
+    @Schema(description = "The unit of the data points", defaultValue = UNIT) // Override schema to provide a default value
+    public String getUnit() {
+        return super.getUnit();
+    }
 }

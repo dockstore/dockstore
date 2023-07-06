@@ -51,8 +51,8 @@ public class RunExecution extends Execution {
     private Integer cpuRequirements;
 
     @JsonProperty
-    @Schema(description = "The cost of the execution in USD", example = "5.99")
-    private Double costUSD;
+    @Schema(description = "The cost of the execution in USD")
+    private Cost cost;
 
     /**
      * Recording the region because cloud services may cost different amounts in different regions.
@@ -101,12 +101,12 @@ public class RunExecution extends Execution {
         this.cpuRequirements = cpuRequirements;
     }
 
-    public Double getCostUSD() {
-        return costUSD;
+    public Cost getCost() {
+        return cost;
     }
 
-    public void setCostUSD(Double costUSD) {
-        this.costUSD = costUSD;
+    public void setCost(Cost cost) {
+        this.cost = cost;
     }
 
     public String getRegion() {
