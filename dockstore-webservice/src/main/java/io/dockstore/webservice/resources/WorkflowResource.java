@@ -477,10 +477,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Retrieve a workflow version's description", content = @Content(
         mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = String.class)))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
-    public String getWorkflowVersionDescription(@Parameter(hidden = true, name = "user") @Auth User user,
+    public String getWorkflowVersionDescription(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId) {
-        final WorkflowVersion workflowVersion = getWorkflowVersion(user, workflowId, workflowVersionId);
+        final WorkflowVersion workflowVersion = getWorkflowVersion(user.orElse(null), workflowId, workflowVersionId);
         return workflowVersion.getDescription();
     }
 
@@ -1565,7 +1565,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private WorkflowVersion getWorkflowVersion(final User user, final Long workflowId,  final Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkNotNullEntry(workflow);
-        checkCanExamine(user, workflow);
+        if (!workflow.getIsPublished()) {
+            checkCanExamine(user, workflow);
+        }
 
         WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {

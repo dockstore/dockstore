@@ -1991,6 +1991,36 @@ paths:
       - BEARER: []
       tags:
       - containertags
+  /containers/{containerId}/tags/{tagId}/description:
+    get:
+      description: Retrieve a tag's description
+      operationId: getTagDescription
+      parameters:
+      - description: Container to retrieve the version from
+        in: path
+        name: containerId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Tag to retrieve the description from
+        in: path
+        name: tagId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - containertags
   /containers/{containerId}/tags/{tagId}/sourcefiles:
     get:
       description: Retrieve sourcefiles for a container's version

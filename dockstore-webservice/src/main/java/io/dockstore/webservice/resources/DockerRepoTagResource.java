@@ -28,6 +28,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -305,5 +306,26 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
             @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
         return getVersionSourceFiles(containerId, tagId, fileTypes, user, fileDAO, versionDAO);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("{containerId}/tags/{tagId}/description")
+    @Operation(operationId = "getTagDescription", description = "Retrieve a tag's description", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getTagDescription(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+        @Parameter(name = "containerId", description = "Container to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,
+        @Parameter(name = "tagId", description = "Tag to retrieve the description from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId) {
+        final Tool tool = toolDAO.findById(containerId);
+        checkNotNullEntry(tool);
+        if (!tool.getIsPublished()) {
+            checkCanExamine(user.orElse(null), tool);
+        }
+        final Version version = versionDAO.findVersionInEntry(containerId, tagId);
+        if (version == null) {
+            throw new CustomWebApplicationException("Tag " + tagId + " does not exist for container " + containerId, HttpStatus.SC_NOT_FOUND);
+        }
+        return version.getDescription();
     }
 }
