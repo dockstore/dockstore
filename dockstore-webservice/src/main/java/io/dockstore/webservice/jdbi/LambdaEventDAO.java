@@ -57,7 +57,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         return list(query);
     }
 
-    public List<LambdaEvent> findByUser(User user, String offset, Integer limit) {
+    public List<LambdaEvent> findByUser(User user, Integer offset, Integer limit) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<LambdaEvent> query = criteriaQuery();
         Root<LambdaEvent> event = query.from(LambdaEvent.class);
@@ -69,7 +69,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
 
         query.select(event);
 
-        int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
+        int primitiveOffset = (offset != null) ? offset : 0;
         TypedQuery<LambdaEvent> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
         return typedQuery.getResultList();
     }

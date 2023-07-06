@@ -3380,7 +3380,7 @@ paths:
       - GA4GHV20
   /lambdaEvents/user/{userid}:
     get:
-      description: Get all of the Lambda Events for the given user and GitHub organization.
+      description: Get all of the Lambda Events for the given user.
       operationId: getUserLambdaEvents
       parameters:
       - in: path
@@ -3392,14 +3392,15 @@ paths:
       - in: query
         name: offset
         schema:
-          type: string
-          default: "0"
+          type: integer
+          format: int32
+          default: 0
       - in: query
         name: limit
         schema:
           type: integer
           format: int32
-          default: 100
+          default: 1000
       responses:
         default:
           content:
@@ -4955,7 +4956,8 @@ paths:
       - in: query
         name: offset
         schema:
-          type: string
+          type: integer
+          format: int32
       - in: query
         name: limit
         schema:

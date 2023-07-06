@@ -118,7 +118,7 @@ class WebhookIT extends BaseIT {
             workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-CWL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
             fail("should have thrown");
         } catch (ApiException ex) {
-            List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+            List<LambdaEvent> events = usersApi.getUserGitHubEvents(0, 10);
             LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
             String message = event.getMessage().toLowerCase();
             assertTrue(message.contains("descriptor language"));
@@ -239,7 +239,7 @@ class WebhookIT extends BaseIT {
         final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClientAdminUser);
 
-        List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEvents(userid, "0", 100);
+        List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEvents(userid, 0, 100);
         assertEquals(1, lambdaEvents.size());
         assertEquals("refs/tags/1.0", lambdaEvents.get(0).getReference());
     }

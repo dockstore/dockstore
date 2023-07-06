@@ -78,11 +78,11 @@ public class LambdaEventResource {
     @UnitOfWork(readOnly = true)
     @RolesAllowed({ "admin", "curator"})
     @Path("/user/{userid}")
-    @Operation(operationId = "getUserLambdaEvents", description = "Get all of the Lambda Events for the given user and GitHub organization.",
+    @Operation(operationId = "getUserLambdaEvents", description = "Get all of the Lambda Events for the given user.",
             security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
-    public List<LambdaEvent> getUserLambdaEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
+    public List<LambdaEvent> getUserLambdaEvents(@Parameter(hidden = true, name = "user")@Auth User authUser,
            @PathParam("userid") long userid,
-           @QueryParam("offset") @DefaultValue("0") String offset,
+           @QueryParam("offset") @DefaultValue("0") Integer offset,
            @DefaultValue("1000") @QueryParam("limit") Integer limit) {
         final User user = userDAO.findById(userid);
         final List<Token> githubTokens = tokenDAO.findGithubByUserId(userid);
