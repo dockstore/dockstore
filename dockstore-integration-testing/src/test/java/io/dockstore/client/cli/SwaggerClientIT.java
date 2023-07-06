@@ -579,7 +579,7 @@ class SwaggerClientIT extends BaseIT {
     void testStarStarredTool() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        testingPostgres.runUpdateStatement("update tool set ispublished = true;");
+        testingPostgres.runUpdateStatement("update tool set ispublished = true, waseverpublic = true;");
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2", null);
         assertTrue(container.getUsers().size() > 0, "There should be at least one user of the workflow");
         assertNotNull(container.getUsers(), "Upon checkUser(), a container with lazy loaded users should still get users");

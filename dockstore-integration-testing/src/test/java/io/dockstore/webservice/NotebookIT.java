@@ -21,6 +21,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIM
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
@@ -32,6 +33,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.CategoriesApi;
 import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.EventsApi;
@@ -63,6 +65,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -71,6 +74,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
@@ -414,6 +418,76 @@ class NotebookIT extends BaseIT {
         assertEquals(0,  entryCategory.stream().map(Category::getName).collect(Collectors.toSet()).size());
         assertEquals(0, categoriesApi.getCategoryById(category.getId()).getWorkflowsLength());
         assertEquals(0, categoriesApi.getCategoryById(category.getId()).getNotebooksLength());
+    }
+
+    private void shouldThrow(Executable executable, String whyMessage, int expectedCode) {
+        ApiException e = assertThrows(ApiException.class, executable, "Should have thrown an ApiException because: " + whyMessage);
+        assertEquals(expectedCode, e.getCode());
+    }
+
+    @Test
+    void testDeletabilityAndDeletion() {
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        EntriesApi entriesApi = new EntriesApi(apiClient);
+
+        // Create a new notebook
+        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        Workflow notebookA = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        long idA = notebookA.getId();
+
+        // Make sure the initial state is as expected
+        Workflow notebook = workflowsApi.getWorkflow(idA, "");
+        assertFalse(notebook.isIsPublished());
+        assertTrue(notebook.isDeletable());
+
+        // Try to delete the notebook as a user without write access
+        ApiClient otherClient = getOpenAPIWebClient(BasicIT.OTHER_USERNAME, testingPostgres);
+        EntriesApi otherEntriesApi = new EntriesApi(otherClient);
+        shouldThrow(() -> otherEntriesApi.deleteEntry(idA), "the user didn't have write access", HttpStatus.SC_FORBIDDEN);
+
+        // Delete the notebook and confirm that it no longer exists
+        entriesApi.deleteEntry(idA);
+        shouldThrow(() -> workflowsApi.getWorkflow(idA, ""), "the notebook has been deleted", HttpStatus.SC_NOT_FOUND);
+
+        // Attempt to again delete the now-nonexistent notebook
+        shouldThrow(() -> entriesApi.deleteEntry(idA), "the notebook has been deleted", HttpStatus.SC_NOT_FOUND);
+
+        // Create the notebook again
+        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        Workflow notebookB = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        long idB = notebookB.getId();
+
+        // Unpublish the notebook
+        // Nothing should change, since the notebook is currently unpublished
+        workflowsApi.publish1(idB, CommonTestUtilities.createOpenAPIPublishRequest(false));
+        notebook = workflowsApi.getWorkflow(idB, "");
+        assertFalse(notebook.isIsPublished());
+        assertTrue(notebook.isDeletable());
+
+        // Publish the notebook
+        workflowsApi.publish1(idB, CommonTestUtilities.createOpenAPIPublishRequest(true));
+        notebook = workflowsApi.getWorkflow(idB, "");
+        assertTrue(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
+
+        // Attempt to delete, which should fail because the notebook was previously published
+        shouldThrow(() -> entriesApi.deleteEntry(idB), "the notebook was previously published", HttpStatus.SC_FORBIDDEN);
+        notebook = workflowsApi.getWorkflow(idB, "");
+        assertTrue(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
+
+        // Unpublish
+        workflowsApi.publish1(idB, CommonTestUtilities.createOpenAPIPublishRequest(false));
+        notebook = workflowsApi.getWorkflow(idB, "");
+        assertFalse(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
+
+        // Attempt to delete, which should fail because the notebook was previously published
+        shouldThrow(() -> entriesApi.deleteEntry(idB), "the notebook was previously published", HttpStatus.SC_FORBIDDEN);
+        notebook = workflowsApi.getWorkflow(idB, "");
+        assertFalse(notebook.isIsPublished());
+        assertFalse(notebook.isDeletable());
     }
 
     private Organization createTestOrganization(String name, boolean categorizer) {
