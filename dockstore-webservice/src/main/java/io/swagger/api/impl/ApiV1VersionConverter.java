@@ -49,7 +49,7 @@ public final class ApiV1VersionConverter {
         ConvertUtils.register(new ToolClassConverter(), ToolClassV20beta.class);
         ConvertUtils.register(new DescriptorTypeConverter(), DescriptorTypeV20beta.class);
     }
-    
+
     private ApiV1VersionConverter() { }
 
     public static Response convertToVersion(Response response) {
@@ -74,8 +74,7 @@ public final class ApiV1VersionConverter {
                 }
             }
             return getResponse(newArrayList, response.getHeaders());
-        } else if (object instanceof ToolVersionV20beta) {
-            ToolVersionV20beta toolVersion = (ToolVersionV20beta)object;
+        } else if (object instanceof ToolVersionV20beta toolVersion) {
             ToolVersionV1 toolVersionV1 =  new ToolVersionV1(toolVersion);
             return getResponse(toolVersionV1, response.getHeaders());
         } else if (object instanceof ToolV20beta tool) {
