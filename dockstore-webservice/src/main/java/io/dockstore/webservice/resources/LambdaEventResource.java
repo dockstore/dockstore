@@ -83,7 +83,7 @@ public class LambdaEventResource {
     public List<LambdaEvent> getUserLambdaEvents(@Parameter(hidden = true, name = "user")@Auth User authUser,
            @PathParam("userid") long userid,
            @QueryParam("offset") @DefaultValue("0") Integer offset,
-           @DefaultValue("1000") @QueryParam("limit") Integer limit) {
+           @QueryParam("limit") @DefaultValue("1000") Integer limit) {
         final User user = userDAO.findById(userid);
         if (user == null) {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
