@@ -16,6 +16,7 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.dockstore.openapi.client.api.OrganizationsApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
@@ -117,7 +118,7 @@ class WebhookIT extends BaseIT {
             workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-CWL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
             fail("should have thrown");
         } catch (ApiException ex) {
-            List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+            List<LambdaEvent> events = usersApi.getUserGitHubEvents(0, 10);
             LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
             String message = event.getMessage().toLowerCase();
             assertTrue(message.contains("descriptor language"));
@@ -224,6 +225,25 @@ class WebhookIT extends BaseIT {
         assertTrue(foobar2.getWorkflowVersions().stream().allMatch(v -> "/docs/README.md".equals(v.getReadMePath()) && v.getDescription().contains("a '🙃' in it")));
     }
 
+    @Test
+    void testCheckingUserLambdaEventsAsAdmin() {
+        final ApiClient userClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi userWorkflowsClient = new WorkflowsApi(userClient);
+        UsersApi usersApi = new UsersApi(userClient);
+
+        long userid = usersApi.getUser().getId();
+
+        userWorkflowsClient.handleGitHubRelease("refs/tags/1.0", installationId, taggedToolRepo, BasicIT.USER_2_USERNAME);
+
+        // Setup admin
+        final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClientAdminUser);
+
+        List<LambdaEvent> lambdaEvents = lambdaEventsApi.getUserLambdaEvents(userid, 0, 100);
+        assertEquals(1, lambdaEvents.size());
+        assertEquals("refs/tags/1.0", lambdaEvents.get(0).getReference());
+    }
+        
     @Test
     void testGitVisibility() {
         final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);

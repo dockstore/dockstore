@@ -496,20 +496,20 @@ class SwaggerWebhookIT extends BaseIT {
             "Should not have a 0.2 version.");
 
         // Add version that doesn't exist
-        long failedCount = usersApi.getUserGitHubEvents("0", 10).stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count();
+        long failedCount = usersApi.getUserGitHubEvents(0, 10).stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count();
         try {
             client.handleGitHubRelease("refs/heads/idonotexist", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
             fail("Should fail and not reach this point");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals(failedCount + 1, usersApi.getUserGitHubEvents("0", 10).stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be one more unsuccessful event than before");
+            assertEquals(failedCount + 1, usersApi.getUserGitHubEvents(0, 10).stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be one more unsuccessful event than before");
         }
 
         // There should be 7 successful lambda events
-        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents(0, 10);
         assertEquals(7, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be 7 successful events");
 
         // Test pagination for user github events
-        events = usersApi.getUserGitHubEvents("2", 2);
+        events = usersApi.getUserGitHubEvents(2, 2);
         assertEquals(2, events.size(), "There should be 2 events (id 8 and 9)");
         assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(8L, lambdaEvent.getId())), "Should have event with ID 8");
         assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(9L, lambdaEvent.getId())), "Should have event with ID 9");
@@ -1156,7 +1156,7 @@ class SwaggerWebhookIT extends BaseIT {
             workflowsApi.handleGitHubRelease("refs/heads/invalidWorkflowName", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals(LAMBDA_ERROR, ex.getCode(), "Should not be able to add a workflow with an invalid name");
-            List<io.dockstore.openapi.client.model.LambdaEvent> failEvents = usersApi.getUserGitHubEvents("0", 10);
+            List<io.dockstore.openapi.client.model.LambdaEvent> failEvents = usersApi.getUserGitHubEvents(0, 10);
             assertEquals(1, failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be 1 unsuccessful event");
             assertTrue(failEvents.get(0).getMessage().contains(ValidationConstants.ENTRY_NAME_REGEX_MESSAGE));
         }
@@ -1481,7 +1481,7 @@ class SwaggerWebhookIT extends BaseIT {
             workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-CWL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
             fail("should have thrown");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents(0, 10);
             io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
             String message = event.getMessage().toLowerCase();
             assertTrue(message.contains("descriptor language"));
@@ -1718,7 +1718,7 @@ class SwaggerWebhookIT extends BaseIT {
             fail("should have thrown");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // Confirm that the release failed and was logged correctly.
-            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents(0, 10);
             assertEquals(1, events.size(), "There should be one event");
             assertEquals(0, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be no successful events");
             assertTrue(events.get(0).getMessage().contains(WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT), "Event message should indicate the problem");

@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -70,6 +71,24 @@ public class LambdaEventResource {
         final Token githubToken = githubTokens.get(0);
         final Optional<List<String>> authorizedRepos = authorizedRepos(organization, githubToken);
         return lambdaEventDAO.findByOrganization(organization, offset, limit, authorizedRepos);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @RolesAllowed({ "admin", "curator"})
+    @Path("/user/{userid}")
+    @Operation(operationId = "getUserLambdaEvents", description = "Get all of the Lambda Events for the given user.",
+            security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    public List<LambdaEvent> getUserLambdaEvents(@Parameter(hidden = true, name = "user")@Auth User authUser,
+           @PathParam("userid") long userid,
+           @QueryParam("offset") @DefaultValue("0") Integer offset,
+           @QueryParam("limit") @DefaultValue("1000") Integer limit) {
+        final User user = userDAO.findById(userid);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
+        }
+        return lambdaEventDAO.findByUser(user, offset, limit);
     }
 
     /**

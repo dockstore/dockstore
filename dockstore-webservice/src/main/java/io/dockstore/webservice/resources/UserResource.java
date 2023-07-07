@@ -20,8 +20,6 @@ import static io.dockstore.webservice.Constants.USERNAME_CONTAINS_KEYWORD_PATTER
 import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -1192,8 +1190,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             + "", description = "A list of GitHub Events for the logged in user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = LambdaEvent.class))))
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") String offset,
-            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+            @QueryParam("offset") Integer offset,
+            @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
         final User user = userDAO.findById(authUser.getId());
         checkNotNullUser(user);
         return lambdaEventDAO.findByUser(user, offset, limit);
