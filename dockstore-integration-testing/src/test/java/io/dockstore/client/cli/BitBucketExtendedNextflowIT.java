@@ -96,6 +96,9 @@ class BitBucketExtendedNextflowIT extends BaseIT {
     void testBitbucketNextflowWorkflow() {
         final ApiClient webClient = getWebClient(USER_4_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowsApi =
+            new io.dockstore.openapi.client.api.WorkflowsApi(
+                getOpenAPIWebClient(USER_4_USERNAME, testingPostgres));
         // get workflow stubs
         Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), DOCKSTORE_TEST_USER_4 + "/ampa-nf", "/nextflow.config", "",
                 DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
@@ -113,8 +116,8 @@ class BitBucketExtendedNextflowIT extends BaseIT {
         // There are 3 versions: master, v1.0, and v2.0
         // master and v2.0 has a nextflow.config file that has description and author, v1.0 does not
         // v1.0 will pull description from README instead but the others will use nextflow.config. v1.0 also does not have a valid descriptor (or any sourcefiles)
-        testWorkflowVersionMetadata(bitbucketWorkflow);
-        testWorkflowVersionMetadata(byPathWorkflow);
+        testWorkflowVersionMetadata(bitbucketWorkflow, openApiWorkflowsApi);
+        testWorkflowVersionMetadata(byPathWorkflow, openApiWorkflowsApi);
         // Purposely mess up the metadata to test if it can be updated through refresh
         testingPostgres.runUpdateStatement("update author set email='bad_potato'");
         testingPostgres.runUpdateStatement("update author set name='bad_potato'");
@@ -122,17 +125,21 @@ class BitBucketExtendedNextflowIT extends BaseIT {
         final Workflow refreshedBitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId(), true);
         byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, BIOWORKFLOW, "versions");
         // This tests if it can fix outdated metadata
-        testWorkflowVersionMetadata(refreshedBitbucketWorkflow);
-        testWorkflowVersionMetadata(byPathWorkflow);
+        testWorkflowVersionMetadata(refreshedBitbucketWorkflow, openApiWorkflowsApi);
+        testWorkflowVersionMetadata(byPathWorkflow, openApiWorkflowsApi);
         List<io.dockstore.webservice.core.SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get().getId());
         assertEquals(4, sourceFileList.size());
     }
 
     /**
-     * This tests the DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW metadata is correct after a refresh
-     * @param workflow  The DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW workflow
+     * This tests the DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW metadata is correct after a
+     * refresh
+     *
+     * @param workflow     The DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW workflow
+     * @param workflowsApi
      */
-    private void testWorkflowVersionMetadata(Workflow workflow) {
+    private void testWorkflowVersionMetadata(Workflow workflow,
+        final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi) {
 
         final String partialReadmeDescription = "AMPA-NF is a pipeline for assessing the antimicrobial domains of proteins,";
         final String descriptorDescription = "Fast automated prediction of protein antimicrobial regions";
@@ -142,11 +149,11 @@ class BitBucketExtendedNextflowIT extends BaseIT {
         assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.getName().equals(versionWithReadmeDescription)));
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
             if (workflowVersion.getName().equals(versionWithReadmeDescription)) {
-                assertTrue(workflowVersion.getDescription().contains(partialReadmeDescription));
+                assertTrue(workflowsApi.getWorkflowVersionDescription(workflow.getId(), workflowVersion.getId()).contains(partialReadmeDescription));
                 assertNull(workflowVersion.getAuthor());
                 assertNull(workflowVersion.getEmail());
             } else {
-                assertNotNull(workflowVersion.getDescription(), descriptorDescription);
+                assertNotNull(workflowsApi.getWorkflowVersionDescription(workflow.getId(), workflowVersion.getId()), descriptorDescription);
                 assertEquals("test.user@test.com", workflowVersion.getAuthor());
                 assertNull(workflowVersion.getEmail());
             }
