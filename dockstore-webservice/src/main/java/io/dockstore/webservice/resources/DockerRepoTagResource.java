@@ -322,7 +322,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
         if (!tool.getIsPublished()) {
             checkCanExamine(user.orElse(null), tool);
         }
-        final Version version = versionDAO.findVersionInEntry(containerId, tagId);
+        final Version<Tag> version = tagDAO.findVersionInEntry(containerId, tagId);
         if (version == null) {
             throw new CustomWebApplicationException("Tag " + tagId + " does not exist for container " + containerId, HttpStatus.SC_NOT_FOUND);
         }
