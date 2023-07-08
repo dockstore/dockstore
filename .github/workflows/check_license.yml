@@ -1,0 +1,18 @@
+on:
+  workflow_call:
+    inputs:
+      licensefile:
+        description: 'A relative path from the repository root to the 3rd party license file'
+        default: 'THIRD-PARTY-LICENSES.txt'
+        required: false
+
+jobs:
+  check_license:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Diff built license with committed license
+        run: |
+          cp ${{ inputs.licensefile }} ${{ inputs.licensefile }}.orig
+          git checkout ${{ inputs.licensefile }}
+          diff ${{ inputs.licensefile }}.orig ${{ inputs.licensefile }}
