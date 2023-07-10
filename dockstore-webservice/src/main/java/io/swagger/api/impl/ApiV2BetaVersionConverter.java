@@ -19,15 +19,15 @@ import com.google.common.collect.Lists;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.openapi.model.Checksum;
 import io.openapi.model.ImageData;
-import io.swagger.model.DescriptorType;
+import io.swagger.model.DescriptorTypeV20beta;
 import io.swagger.model.ExtendedFileWrapper;
-import io.swagger.model.FileWrapper;
-import io.swagger.model.Metadata;
+import io.swagger.model.FileWrapperV20beta;
 import io.swagger.model.MetadataV1;
-import io.swagger.model.Tool;
-import io.swagger.model.ToolClass;
-import io.swagger.model.ToolFile;
-import io.swagger.model.ToolVersion;
+import io.swagger.model.MetadataV20beta;
+import io.swagger.model.ToolClassV20beta;
+import io.swagger.model.ToolFileV20beta;
+import io.swagger.model.ToolV20beta;
+import io.swagger.model.ToolVersionV20beta;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.lang.reflect.InvocationTargetException;
@@ -54,8 +54,8 @@ public final class ApiV2BetaVersionConverter {
     private static final Logger LOG = LoggerFactory.getLogger(ApiV2BetaVersionConverter.class);
 
     static {
-        ConvertUtils.register(new ToolClassConverter(), ToolClass.class);
-        ConvertUtils.register(new DescriptorTypeConverter(), DescriptorType.class);
+        ConvertUtils.register(new ToolClassConverter(), ToolClassV20beta.class);
+        ConvertUtils.register(new DescriptorTypeConverter(), DescriptorTypeV20beta.class);
     }
 
     private ApiV2BetaVersionConverter() {
@@ -76,7 +76,7 @@ public final class ApiV2BetaVersionConverter {
                     Object extendedWrapperConverted = getWrapper((io.openapi.model.ExtendedFileWrapper)innerObject);
                     newArrayList.add(extendedWrapperConverted);
                 } else if (innerObject instanceof io.openapi.model.ToolFile toolFile) {
-                    final ToolFile oldToolFile = getOldToolFile(toolFile);
+                    final ToolFileV20beta oldToolFile = getOldToolFile(toolFile);
                     newArrayList.add(oldToolFile);
                 } else {
                     newArrayList.add(innerObject);
@@ -85,12 +85,12 @@ public final class ApiV2BetaVersionConverter {
             return getResponse(newArrayList, response.getHeaders());
         } else if (object instanceof io.openapi.model.ToolVersion) {
             io.openapi.model.ToolVersion toolVersion = (io.openapi.model.ToolVersion)object;
-            ToolVersion betaToolVersion = getToolVersion(toolVersion);
+            ToolVersionV20beta betaToolVersion = getToolVersion(toolVersion);
             return getResponse(betaToolVersion, response.getHeaders());
         } else if (object instanceof io.openapi.model.Tool tool) {
-            Tool betaTool = getTool(tool);
+            ToolV20beta betaTool = getTool(tool);
             return getResponse(betaTool, response.getHeaders());
-        } else if (object instanceof Metadata metadata) {
+        } else if (object instanceof MetadataV20beta metadata) {
             MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1, response.getHeaders());
         } else if (object instanceof io.openapi.model.FileWrapper) {
@@ -102,8 +102,8 @@ public final class ApiV2BetaVersionConverter {
         return response;
     }
 
-    public static Tool getTool(io.openapi.model.Tool tool) {
-        Tool betaTool = new Tool();
+    public static ToolV20beta getTool(io.openapi.model.Tool tool) {
+        ToolV20beta betaTool = new ToolV20beta();
         try {
             BeanUtils.copyProperties(betaTool, tool);
             betaTool.setUrl(betaTool.getUrl().replace(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL, DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA));
@@ -123,7 +123,7 @@ public final class ApiV2BetaVersionConverter {
             // convert versions now
             betaTool.setVersions(new ArrayList<>());
             for (io.openapi.model.ToolVersion version : tool.getVersions()) {
-                ToolVersion oldVersion = getToolVersion(version);
+                ToolVersionV20beta oldVersion = getToolVersion(version);
                 betaTool.getVersions().add(oldVersion);
             }
             betaTool.setVerified(tool.getVersions().stream().anyMatch(io.openapi.model.ToolVersion::isVerified));
@@ -137,14 +137,14 @@ public final class ApiV2BetaVersionConverter {
         return betaTool;
     }
 
-    public static ToolVersion getToolVersion(io.openapi.model.ToolVersion toolVersion) {
-        ToolVersion betaToolVersion = new ToolVersion();
+    public static ToolVersionV20beta getToolVersion(io.openapi.model.ToolVersion toolVersion) {
+        ToolVersionV20beta betaToolVersion = new ToolVersionV20beta();
         try {
             BeanUtils.copyProperties(betaToolVersion, toolVersion);
             betaToolVersion.setUrl(betaToolVersion.getUrl().replace(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL, DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA));
             // look like it has issues converting enums
             betaToolVersion.setDescriptorType(Lists.newArrayList());
-            toolVersion.getDescriptorType().forEach(type -> betaToolVersion.getDescriptorType().add(DescriptorType.fromValue(type.name())));
+            toolVersion.getDescriptorType().forEach(type -> betaToolVersion.getDescriptorType().add(DescriptorTypeV20beta.fromValue(type.name())));
 
             // looks like BeanUtils has issues due to https://issues.apache.org/jira/browse/BEANUTILS-321 and https://github.com/swagger-api/swagger-codegen/issues/7764
             betaToolVersion.setVerified(toolVersion.isVerified());
@@ -171,16 +171,16 @@ public final class ApiV2BetaVersionConverter {
         return betaToolVersion;
     }
 
-    public static FileWrapper getOldWrapper(io.openapi.model.FileWrapper wrapper) {
-        FileWrapper oldWrapper = new FileWrapper();
+    public static FileWrapperV20beta getOldWrapper(io.openapi.model.FileWrapper wrapper) {
+        FileWrapperV20beta oldWrapper = new FileWrapperV20beta();
         oldWrapper.setContent(wrapper.getContent());
         oldWrapper.setUrl(wrapper.getUrl());
         return oldWrapper;
     }
 
-    public static ToolFile getOldToolFile(io.openapi.model.ToolFile toolFile) {
-        ToolFile oldWToolFile = new ToolFile();
-        oldWToolFile.fileType(io.swagger.model.ToolFile.FileTypeEnum.fromValue(toolFile.getFileType().toString()));
+    public static ToolFileV20beta getOldToolFile(io.openapi.model.ToolFile toolFile) {
+        ToolFileV20beta oldWToolFile = new ToolFileV20beta();
+        oldWToolFile.fileType(io.swagger.model.ToolFileV20beta.FileTypeEnum.fromValue(toolFile.getFileType().toString()));
         oldWToolFile.path(toolFile.getPath());
         return oldWToolFile;
     }
@@ -209,7 +209,7 @@ public final class ApiV2BetaVersionConverter {
     public static class DescriptorTypeConverter implements Converter {
         @Override
         public <T> T convert(Class<T> type, Object value) {
-            DescriptorType betaToolClass = DescriptorType.fromValue(value.toString());
+            DescriptorTypeV20beta betaToolClass = DescriptorTypeV20beta.fromValue(value.toString());
             return (T)betaToolClass;
         }
     }
@@ -217,7 +217,7 @@ public final class ApiV2BetaVersionConverter {
     public static class ToolClassConverter implements Converter {
         @Override
         public <T> T convert(Class<T> type, Object value) {
-            ToolClass betaToolClass = new ToolClass();
+            ToolClassV20beta betaToolClass = new ToolClassV20beta();
             try {
                 BeanUtils.copyProperties(betaToolClass, value);
             } catch (IllegalAccessException | InvocationTargetException e) {

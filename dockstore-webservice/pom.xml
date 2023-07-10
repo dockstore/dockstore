@@ -1197,7 +1197,7 @@
                         <package>io.dockstore.webservice.resources.proposedGA4GH</package>
                     </resourcePackages>
                     <objectMapperProcessorClass>io.swagger.OrderedObjectMapperProcessor</objectMapperProcessorClass>
-                    <readAllResources>false</readAllResources>
+                    <readAllResources>true</readAllResources>
                     <sortOutput>true</sortOutput>
                 </configuration>
                 <executions>
@@ -1232,6 +1232,7 @@
                     <generateModelTests>false</generateModelTests>
                     <generateModelDocumentation>false</generateModelDocumentation>
                     <generateSupportingFiles>true</generateSupportingFiles>
+                    <modelNameSuffix>v20beta</modelNameSuffix>
                     <withXml>true</withXml>
                     <library>jersey2</library>
                     <ignoreFileOverride>${pom.basedir}/src/main/resources/swagger-templates/swagger-codegen-ignore</ignoreFileOverride>

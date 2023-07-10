@@ -22,7 +22,7 @@ import java.util.Objects;
 /**
  * Used to store additional transient information about files to be returned from the GA4GH endpoints
  */
-public class ExtendedFileWrapper extends FileWrapper  {
+public class ExtendedFileWrapper extends FileWrapperV20beta  {
 
     @JsonIgnore
     private SourceFile originalFile = null;
@@ -45,7 +45,7 @@ public class ExtendedFileWrapper extends FileWrapper  {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof FileWrapper fileWrapper)) {
+        if (!(o instanceof FileWrapperV20beta fileWrapper)) {
             return false;
         }
         return Objects.equals(super.getContent(), fileWrapper.getContent()) && Objects.equals(super.getUrl(), fileWrapper.getUrl());

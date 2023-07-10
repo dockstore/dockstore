@@ -39,10 +39,10 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.ImageData;
 import io.openapi.model.ToolFile;
-import io.swagger.model.DescriptorType;
-import io.swagger.model.FileWrapper;
-import io.swagger.model.Tool;
-import io.swagger.model.ToolVersion;
+import io.swagger.model.DescriptorTypeV20beta;
+import io.swagger.model.FileWrapperV20beta;
+import io.swagger.model.ToolV20beta;
+import io.swagger.model.ToolVersionV20beta;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,8 +77,8 @@ class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapper actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.wdl", sourceFile));
-        FileWrapper expectedToolDescriptor = new FileWrapper();
+        FileWrapperV20beta actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.wdl", sourceFile));
+        FileWrapperV20beta expectedToolDescriptor = new FileWrapperV20beta();
         expectedToolDescriptor.setUrl("/Dockstore.wdl");
         expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
         assertEquals(actualToolDescriptor, expectedToolDescriptor);
@@ -92,8 +92,8 @@ class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapper actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.cwl", sourceFile));
-        FileWrapper expectedToolDescriptor = new FileWrapper();
+        FileWrapperV20beta actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.cwl", sourceFile));
+        FileWrapperV20beta expectedToolDescriptor = new FileWrapperV20beta();
         expectedToolDescriptor.setUrl("/Dockstore.cwl");
         expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
         assertEquals(actualToolDescriptor, expectedToolDescriptor);
@@ -168,7 +168,7 @@ class ToolsImplCommonTest {
         tool.setActualDefaultVersion(tag);
         tool.addWorkflowVersion(hiddenTag);
         tool.setCheckerWorkflow(null);
-        Tool expectedTool = new Tool();
+        ToolV20beta expectedTool = new ToolV20beta();
         if (toolname != null) {
             expectedTool.setUrl("http://localhost:8080/api/ga4gh/v2/tools/quay.io%2Ftest_org%2Ftest6%2Fpotato");
             expectedTool.setId("quay.io/test_org/test6/potato");
@@ -192,7 +192,7 @@ class ToolsImplCommonTest {
         expectedTool.setSigned(false);
         expectedTool.setVersions(Collections.emptyList());
         expectedTool.setVerifiedSource("[]");
-        ToolVersion expectedToolVersion = new ToolVersion();
+        ToolVersionV20beta expectedToolVersion = new ToolVersionV20beta();
         expectedToolVersion.setName("sampleTag");
         if (toolname != null) {
             expectedToolVersion.setUrl("http://localhost:8080/api/ga4gh/v2/tools/quay.io%2Ftest_org%2Ftest6%2Fpotato/versions/sampleTag");
@@ -203,8 +203,8 @@ class ToolsImplCommonTest {
         }
         // Images are grabbed on refresh, so
         expectedToolVersion.setImage("fakeChecksum");
-        List<DescriptorType> descriptorTypeList = new ArrayList<>();
-        descriptorTypeList.add(DescriptorType.CWL);
+        List<DescriptorTypeV20beta> descriptorTypeList = new ArrayList<>();
+        descriptorTypeList.add(DescriptorTypeV20beta.CWL);
         expectedToolVersion.setDescriptorType(descriptorTypeList);
         expectedToolVersion.setContainerfile(true);
         expectedToolVersion.setMetaVersion(null);
@@ -212,14 +212,14 @@ class ToolsImplCommonTest {
         expectedToolVersion.setVerifiedSource("[]");
         expectedToolVersion.setRegistryUrl("quay.io");
         expectedToolVersion.setImageName("quay.io/test_org/test6:sampleTag");
-        List<ToolVersion> expectedToolVersions = new ArrayList<>();
+        List<ToolVersionV20beta> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion);
         expectedTool.setVersions(expectedToolVersions);
-        Tool actualTool = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(tool, actualConfig, false));
+        ToolV20beta actualTool = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(tool, actualConfig, false));
         actualTool.setMetaVersion(null);
         actualTool.getVersions().parallelStream().forEach(version -> version.setMetaVersion(null));
         assertEquals(expectedTool, actualTool);
-        Tool actualToolWithHiddenVersions = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(tool, actualConfig, true));
+        ToolV20beta actualToolWithHiddenVersions = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(tool, actualConfig, true));
         assertEquals(actualTool.getVersions().size() + 1, actualToolWithHiddenVersions.getVersions().size());
     }
 
@@ -275,7 +275,7 @@ class ToolsImplCommonTest {
         workflowPaths.add("/Galaxy.ga");
         workflowVersion.setName("fakeName");
         workflow.addWorkflowVersion(workflowVersion);
-        List<ToolFile> toolFiles = ToolsApiServiceImpl.getToolFiles(sourceFiles, workflowPaths, DescriptorType.GXFORMAT2.toString(), "");
+        List<ToolFile> toolFiles = ToolsApiServiceImpl.getToolFiles(sourceFiles, workflowPaths, DescriptorTypeV20beta.GXFORMAT2.toString(), "");
         assertEquals(2, toolFiles.size());
     }
 
@@ -363,8 +363,8 @@ class ToolsImplCommonTest {
         if (workflow instanceof BioWorkflow bioWorkflow) {
             bioWorkflow.setCheckerWorkflow(bioWorkflow);
         }
-        Tool actualTool = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(workflow, actualConfig));
-        ToolVersion expectedToolVersion1 = new ToolVersion();
+        ToolV20beta actualTool = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(workflow, actualConfig));
+        ToolVersionV20beta expectedToolVersion1 = new ToolVersionV20beta();
         expectedToolVersion1.setName(reference2);
         if (toolname != null) {
 
@@ -396,11 +396,11 @@ class ToolsImplCommonTest {
             }
         }
 
-        List<DescriptorType> descriptorTypeList = new ArrayList<>();
+        List<DescriptorTypeV20beta> descriptorTypeList = new ArrayList<>();
         if (isService) {
-            descriptorTypeList.add(DescriptorType.SERVICE);
+            descriptorTypeList.add(DescriptorTypeV20beta.SERVICE);
         } else {
-            descriptorTypeList.add(DescriptorType.WDL);
+            descriptorTypeList.add(DescriptorTypeV20beta.WDL);
         }
         expectedToolVersion1.setImage("");
         expectedToolVersion1.setDescriptorType(descriptorTypeList);
@@ -412,7 +412,7 @@ class ToolsImplCommonTest {
         expectedToolVersion1.setImageName("");
         expectedToolVersion1.setRegistryUrl("");
         json = mapper.writeValueAsString(expectedToolVersion1);
-        ToolVersion expectedToolVersion2 = mapper.readValue(json, ToolVersion.class);
+        ToolVersionV20beta expectedToolVersion2 = mapper.readValue(json, ToolVersionV20beta.class);
         expectedToolVersion2.setName(reference3);
         expectedToolVersion2.setVerifiedSource("[\"chickenTesterSource\",\"potatoTesterSource\"]");
         expectedToolVersion2.setImageName("");
@@ -446,10 +446,10 @@ class ToolsImplCommonTest {
                         + reference3);
             }
         }
-        List<ToolVersion> expectedToolVersions = new ArrayList<>();
+        List<ToolVersionV20beta> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion1);
         expectedToolVersions.add(expectedToolVersion2);
-        Tool expectedTool = new Tool();
+        ToolV20beta expectedTool = new ToolV20beta();
 
         expectedTool.setOrganization("ICGC-TCGA-PanCancer");
         if (toolname != null) {
@@ -498,7 +498,7 @@ class ToolsImplCommonTest {
         actualTool.setMetaVersion(null);
 
         // Meta-version dates are currently dependant on the environment, disabling for now
-        List<ToolVersion> versions = actualTool.getVersions();
+        List<ToolVersionV20beta> versions = actualTool.getVersions();
         versions.forEach(version -> version.setMetaVersion(null));
         actualTool.setVersions(versions);
         assertEquals(expectedTool, actualTool);
@@ -512,8 +512,8 @@ class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/test.cwl.json");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapper actualToolTests = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolTests("", sourceFile));
-        FileWrapper expectedToolTests = new FileWrapper();
+        FileWrapperV20beta actualToolTests = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolTests("", sourceFile));
+        FileWrapperV20beta expectedToolTests = new FileWrapperV20beta();
         expectedToolTests.setContent(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");
         assertEquals(expectedToolTests, actualToolTests);

@@ -40,7 +40,7 @@ public class ToolV1 {
 
     private String toolname = null;
 
-    private ToolClass toolclass = null;
+    private ToolClassV20beta toolclass = null;
 
     private String description = null;
 
@@ -59,7 +59,7 @@ public class ToolV1 {
     private List<ToolVersionV1> versions;
 
 
-    public ToolV1(Tool tool) {
+    public ToolV1(ToolV20beta tool) {
         try {
             BeanUtils.copyProperties(this, tool);
             // looks like BeanUtils has issues due to https://issues.apache.org/jira/browse/BEANUTILS-321 and https://github.com/swagger-api/swagger-codegen/issues/7764
@@ -68,7 +68,7 @@ public class ToolV1 {
 
             // convert versions now
             versions = new ArrayList<>();
-            for (ToolVersion version : tool.getVersions()) {
+            for (ToolVersionV20beta version : tool.getVersions()) {
                 ToolVersionV1 oldVersion = new ToolVersionV1(version);
                 versions.add(oldVersion);
             }
@@ -171,11 +171,11 @@ public class ToolV1 {
         this.toolname = toolname;
     }
 
-    public ToolClass getToolclass() {
+    public ToolClassV20beta getToolclass() {
         return toolclass;
     }
 
-    public void setToolclass(ToolClass toolclass) {
+    public void setToolclass(ToolClassV20beta toolclass) {
         this.toolclass = toolclass;
     }
 

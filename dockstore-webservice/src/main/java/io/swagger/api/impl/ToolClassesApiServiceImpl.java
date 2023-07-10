@@ -18,7 +18,7 @@ package io.swagger.api.impl;
 
 import io.dockstore.webservice.core.User;
 import io.swagger.api.ToolClassesApiService;
-import io.swagger.model.ToolClass;
+import io.swagger.model.ToolClassV20beta;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -27,32 +27,32 @@ import java.util.List;
 import java.util.Optional;
 
 public class ToolClassesApiServiceImpl extends ToolClassesApiService {
-    static ToolClass getNotebookClass() {
-        ToolClass type2 = new ToolClass();
+    static ToolClassV20beta getNotebookClass() {
+        ToolClassV20beta type2 = new ToolClassV20beta();
         type2.setName("Notebook");
         type2.setId("3");
         type2.setDescription("Notebook");
         return type2;
     }
 
-    static ToolClass getServiceClass() {
-        ToolClass type2 = new ToolClass();
+    static ToolClassV20beta getServiceClass() {
+        ToolClassV20beta type2 = new ToolClassV20beta();
         type2.setName("Service");
         type2.setId("2");
         type2.setDescription("Service");
         return type2;
     }
 
-    static ToolClass getWorkflowClass() {
-        ToolClass type2 = new ToolClass();
+    static ToolClassV20beta getWorkflowClass() {
+        ToolClassV20beta type2 = new ToolClassV20beta();
         type2.setName("Workflow");
         type2.setId("1");
         type2.setDescription("Workflow");
         return type2;
     }
 
-    static ToolClass getCommandLineToolClass() {
-        ToolClass type1 = new ToolClass();
+    static ToolClassV20beta getCommandLineToolClass() {
+        ToolClassV20beta type1 = new ToolClassV20beta();
         type1.setName("CommandLineTool");
         type1.setId("0");
         type1.setDescription("CommandLineTool");
@@ -61,7 +61,7 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
 
     @Override
     public Response toolClassesGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) {
-        final List<ToolClass> toolTypes = new ArrayList<ToolClass>();
+        final List<ToolClassV20beta> toolTypes = new ArrayList<>();
         toolTypes.add(getCommandLineToolClass());
         toolTypes.add(getWorkflowClass());
         toolTypes.add(getServiceClass());

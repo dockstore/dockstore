@@ -19,7 +19,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.resources.ResourceConstants;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.api.factories.ToolClassesApiServiceFactory;
-import io.swagger.model.ToolClass;
+import io.swagger.model.ToolClassV20beta;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -42,10 +42,10 @@ public class ToolClassesApiV1 {
     @GET
     @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(nickname = "toolClassesGet", value = "List all tool types", notes = "This endpoint returns all tool-classes available ", response = ToolClass.class, responseContainer = "List", tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "toolClassesGet", value = "List all tool types", notes = "This endpoint returns all tool-classes available ", response = ToolClassV20beta.class, responseContainer = "List", tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = "An array of methods that match the filter.", response = ToolClassV20beta.class, responseContainer = "List") })
     public Response toolClassesGet(@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
         return delegate.toolClassesGet(securityContext, containerContext, Optional.empty());
     }

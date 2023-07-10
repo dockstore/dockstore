@@ -17,21 +17,26 @@ package io.swagger.api.impl;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
+import io.swagger.api.impl.ApiV2BetaVersionConverter.DescriptorTypeConverter;
+import io.swagger.api.impl.ApiV2BetaVersionConverter.ToolClassConverter;
+import io.swagger.model.DescriptorTypeV20beta;
 import io.swagger.model.ExtendedFileWrapper;
-import io.swagger.model.FileWrapper;
-import io.swagger.model.Metadata;
+import io.swagger.model.FileWrapperV20beta;
 import io.swagger.model.MetadataV1;
-import io.swagger.model.Tool;
+import io.swagger.model.MetadataV20beta;
+import io.swagger.model.ToolClassV20beta;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolTestsV1;
 import io.swagger.model.ToolV1;
-import io.swagger.model.ToolVersion;
+import io.swagger.model.ToolV20beta;
 import io.swagger.model.ToolVersionV1;
+import io.swagger.model.ToolVersionV20beta;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.beanutils.ConvertUtils;
 
 /**
  * Converts between the V2-beta version of the GA4GH TRS to V1
@@ -39,6 +44,12 @@ import java.util.List;
  * @since 21/12/17
  */
 public final class ApiV1VersionConverter {
+
+    static {
+        ConvertUtils.register(new ToolClassConverter(), ToolClassV20beta.class);
+        ConvertUtils.register(new DescriptorTypeConverter(), DescriptorTypeV20beta.class);
+    }
+
     private ApiV1VersionConverter() { }
 
     public static Response convertToVersion(Response response) {
@@ -47,9 +58,9 @@ public final class ApiV1VersionConverter {
             List<Object> arrayList = (List<Object>)object;
             List<Object> newArrayList = new ArrayList<>();
             for (Object innerObject : arrayList) {
-                if (innerObject instanceof Tool tool) {
+                if (innerObject instanceof ToolV20beta tool) {
                     newArrayList.add(new ToolV1(tool));
-                } else if (innerObject instanceof ToolVersion toolVersion) {
+                } else if (innerObject instanceof ToolVersionV20beta toolVersion) {
                     newArrayList.add(new ToolVersionV1(toolVersion));
                 } else if (innerObject instanceof ExtendedFileWrapper) {
                     // v1 annoying expects a 1 Dockerfile list to be returned unwrapped
@@ -63,17 +74,16 @@ public final class ApiV1VersionConverter {
                 }
             }
             return getResponse(newArrayList, response.getHeaders());
-        } else if (object instanceof ToolVersion) {
-            ToolVersion toolVersion = (ToolVersion)object;
+        } else if (object instanceof ToolVersionV20beta toolVersion) {
             ToolVersionV1 toolVersionV1 =  new ToolVersionV1(toolVersion);
             return getResponse(toolVersionV1, response.getHeaders());
-        } else if (object instanceof Tool tool) {
+        } else if (object instanceof ToolV20beta tool) {
             ToolV1 toolV1 = new ToolV1(tool);
             return getResponse(toolV1, response.getHeaders());
-        } else if (object instanceof Metadata metadata) {
+        } else if (object instanceof MetadataV20beta metadata) {
             MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1, response.getHeaders());
-        } else if (object instanceof FileWrapper) {
+        } else if (object instanceof FileWrapperV20beta) {
             if (object instanceof ExtendedFileWrapper) {
                 return getResponse(getExtendedWrapperConverted((ExtendedFileWrapper)object), response.getHeaders());
             }

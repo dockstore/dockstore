@@ -58,7 +58,7 @@ tags:
     \ repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)\
     \ . Integrators are welcome to use these endpoints but they are subject to change\
     \ based on community input."
-  name: GA4GH
+  name: GA4GHV20BETA
 - description: "A curated subset of resources proposed as a common standard for tool\
     \ repositories. Implements TRS [2.0.1](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.1)."
   name: GA4GHV20
@@ -129,6 +129,28 @@ paths:
       - BEARER: []
       tags:
       - aliases
+  /api/ga4gh/v1/metadata:
+    get:
+      operationId: metadataGet_1
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GHV1
+  /api/ga4gh/v1/tool-classes:
+    get:
+      operationId: toolClassesGet_2
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+      tags:
+      - GA4GHV1
   /api/ga4gh/v1/tools:
     get:
       description: This endpoint returns all tools available or a filtered subset
@@ -761,6 +783,445 @@ paths:
         on particular platforms plus metadata
       tags:
       - extendedGA4GH
+  /api/ga4gh/v2/metadata:
+    get:
+      description: Return some metadata that is useful for describing this registry
+      operationId: metadataGet
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MetadataV20beta'
+          description: A Metadata object describing this service.
+      summary: Return some metadata that is useful for describing this registry
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/toolClasses:
+    get:
+      description: 'This endpoint returns all tool-classes available '
+      operationId: toolClassesGet_1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolClassV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolClassV20beta'
+          description: A list of potential tool classes.
+      summary: List all tool types
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools:
+    get:
+      description: 'This endpoint returns all tools available or a filtered subset
+        using metadata query parameters. '
+      operationId: toolsGet_1
+      parameters:
+      - in: query
+        name: id
+        schema:
+          type: string
+      - in: query
+        name: alias
+        schema:
+          type: string
+      - in: query
+        name: registry
+        schema:
+          type: string
+      - in: query
+        name: organization
+        schema:
+          type: string
+      - in: query
+        name: name
+        schema:
+          type: string
+      - in: query
+        name: toolname
+        schema:
+          type: string
+      - in: query
+        name: description
+        schema:
+          type: string
+      - in: query
+        name: author
+        schema:
+          type: string
+      - in: query
+        name: checker
+        schema:
+          type: boolean
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 1000
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV20beta'
+          description: An array of Tools that match the filter.
+      summary: List all tools
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}:
+    get:
+      description: This endpoint returns one specific tool (which has ToolVersions
+        nested inside it)
+      operationId: toolsIdGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolV20beta'
+          description: A tool.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool can not be found.
+      summary: "List one specific tool, acts as an anchor for self references"
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions:
+    get:
+      description: Returns all versions of the specified tool
+      operationId: toolsIdVersionsGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersionV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersionV20beta'
+          description: An array of tool versions
+      summary: List versions of a tool
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}:
+    get:
+      description: This endpoint returns one specific tool version
+      operationId: toolsIdVersionsVersionIdGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolVersionV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolVersionV20beta'
+          description: A tool version.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool can not be found.
+      summary: "List one specific tool version, acts as an anchor for self references"
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/containerfile:
+    get:
+      description: "Returns the container specifications(s) for the specified image.\
+        \ For example, a CWL CommandlineTool can be associated with one specification\
+        \ for a container, a CWL Workflow can be associated with multiple specifications\
+        \ for containers"
+      operationId: toolsIdVersionsVersionIdContainerfileGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapperV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapperV20beta'
+          description: The tool payload.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: There are no container specifications for this tool
+      summary: Get the container specification(s) for the specified image.
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
+    get:
+      description: "Returns the descriptor for the specified tool (examples include\
+        \ CWL, WDL, or Nextflow documents)."
+      operationId: toolsIdVersionsVersionIdTypeDescriptorGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWrapperV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/FileWrapperV20beta'
+          description: The tool descriptor.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool descriptor can not be found.
+      summary: Get the tool descriptor for the specified tool
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
+    get:
+      description: 'Descriptors can often include imports that refer to additional
+        descriptors. This returns additional descriptors for the specified tool in
+        the same or other directories that can be reached as a relative path. This
+        endpoint can be useful for workflow engine implementations like cwltool to
+        programmatically download all the descriptors for a tool and run it. This
+        can optionally include other files described with FileWrappers such as test
+        parameters and containerfiles. '
+      operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: relative_path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWrapperV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/FileWrapperV20beta'
+          description: The tool descriptor.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool can not be output in the specified type.
+      summary: Get additional tool descriptor files relative to the main file
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/files:
+    get:
+      description: "Get a list of objects that contain the relative path and file\
+        \ type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path\
+        \ : .+} endpoint."
+      operationId: toolsIdVersionsVersionIdTypeFilesGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFileV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFileV20beta'
+          description: The array of File JSON responses.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool can not be output in the specified type.
+      summary: Get a list of objects that contain the relative path and file type
+      tags:
+      - GA4GHV20BETA
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/tests:
+    get:
+      description: Get a list of test JSONs (these allow you to execute the tool successfully)
+        suitable for use with this descriptor type.
+      operationId: toolsIdVersionsVersionIdTypeTestsGet_1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapperV20beta'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapperV20beta'
+          description: The tool test JSON response.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorV20beta'
+          description: The tool can not be output in the specified type.
+      summary: Get a list of test JSONs
+      tags:
+      - GA4GHV20BETA
   /auth/tokens/bitbucket.org:
     get:
       description: "Add a new bitbucket.org token, used by quay.io redirect."
@@ -8715,6 +9176,16 @@ components:
           type: string
       required:
       - code
+    ErrorV20beta:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+      - code
     Event:
       type: object
       properties:
@@ -8921,6 +9392,13 @@ components:
           example: "{\"descriptorfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\"\
             },\"containerfile\":{\"url\":\"https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile\"\
             }}"
+    FileWrapperV20beta:
+      type: object
+      properties:
+        content:
+          type: string
+        url:
+          type: string
     HealthCheckResult:
       type: object
       properties:
@@ -9193,6 +9671,20 @@ components:
       - maximum
       - minimum
       - numberOfDataPointsForAverage
+    MetadataV20beta:
+      type: object
+      properties:
+        api_version:
+          type: string
+        country:
+          type: string
+        friendly_name:
+          type: string
+        version:
+          type: string
+      required:
+      - api_version
+      - version
     Metrics:
       type: object
       description: Aggregated metrics associated with entry versions
@@ -9988,6 +10480,21 @@ components:
       - versions
     ToolClass:
       type: object
+      description: "Describes a class (type) of tool allowing us to categorize workflows,\
+        \ tasks, and maybe even other entities (such as services) separately."
+      properties:
+        description:
+          type: string
+          description: A longer explanation of what this class is and what it can
+            accomplish.
+        id:
+          type: string
+          description: The unique identifier for the class.
+        name:
+          type: string
+          description: A short friendly name for the class.
+    ToolClassV20beta:
+      type: object
       properties:
         description:
           type: string
@@ -10038,6 +10545,19 @@ components:
           type: string
           description: "Relative path of the file.  A descriptor's path can be used\
             \ with the GA4GH .../{type}/descriptor/{relative_path : .+} endpoint."
+    ToolFileV20beta:
+      type: object
+      properties:
+        file_type:
+          type: string
+          enum:
+          - TEST_FILE
+          - PRIMARY_DESCRIPTOR
+          - SECONDARY_DESCRIPTOR
+          - CONTAINERFILE
+          - OTHER
+        path:
+          type: string
     ToolTesterLog:
       type: object
       properties:
@@ -10083,7 +10603,7 @@ components:
         signed:
           type: boolean
         toolclass:
-          $ref: '#/components/schemas/ToolClass'
+          $ref: '#/components/schemas/ToolClassV20beta'
         toolname:
           type: string
         url:
@@ -10096,6 +10616,54 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ToolVersionV1'
+    ToolV20beta:
+      type: object
+      properties:
+        aliases:
+          type: array
+          items:
+            type: string
+        author:
+          type: string
+        checker_url:
+          type: string
+        contains:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          type: string
+        meta_version:
+          type: string
+        organization:
+          type: string
+        signed:
+          type: boolean
+        toolclass:
+          $ref: '#/components/schemas/ToolClassV20beta'
+        toolname:
+          type: string
+        url:
+          type: string
+        verified:
+          type: boolean
+        verified_source:
+          type: string
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolVersionV20beta'
+      required:
+      - author
+      - id
+      - organization
+      - toolclass
+      - url
+      - versions
     ToolVersion:
       type: object
       description: A tool version describes a particular iteration of a tool as described
@@ -10255,6 +10823,43 @@ components:
           type: boolean
         verified-source:
           type: string
+    ToolVersionV20beta:
+      type: object
+      properties:
+        containerfile:
+          type: boolean
+        descriptor_type:
+          type: array
+          items:
+            type: string
+            enum:
+            - SMK
+            - CWL
+            - WDL
+            - NFL
+            - SERVICE
+            - GXFORMAT2
+        id:
+          type: string
+        image:
+          type: string
+        image_name:
+          type: string
+        meta_version:
+          type: string
+        name:
+          type: string
+        registry_url:
+          type: string
+        url:
+          type: string
+        verified:
+          type: boolean
+        verified_source:
+          type: string
+      required:
+      - id
+      - url
     User:
       type: object
       properties:
