@@ -34,9 +34,9 @@ public class CostStatisticMetric extends StatisticMetric {
 
     @JsonCreator
     public CostStatisticMetric(
-            @JsonProperty("minimum") Double minimum,
-            @JsonProperty("maximum") Double maximum,
-            @JsonProperty("average") Double average,
+            @JsonProperty("minimum") double minimum,
+            @JsonProperty("maximum") double maximum,
+            @JsonProperty("average") double average,
             @JsonProperty("numberOfDataPointsForAverage") int numberOfDataPointsForAverage) {
         super(minimum, maximum, average, numberOfDataPointsForAverage, UNIT);
     }

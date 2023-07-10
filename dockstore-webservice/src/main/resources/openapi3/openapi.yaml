@@ -8802,6 +8802,13 @@ components:
             '@context':
               schema: https://schema.org
             schema:actionStatus: CompletedActionStatus
+        dateExecuted:
+          type: string
+          description: The date and time that the execution occurred in ISO 8601 UTC
+            date format
+          example: 2023-03-31T15:06:49.888745366Z
+      required:
+      - dateExecuted
     ExecutionStatusMetric:
       type: object
       description: Aggregated metrics about workflow execution statuses
@@ -9543,6 +9550,7 @@ components:
             example: us-central1
       description: Metrics of a workflow execution on a platform
       required:
+      - dateExecuted
       - executionStatus
     Service:
       type: object
@@ -10383,11 +10391,6 @@ components:
       - $ref: '#/components/schemas/Execution'
       - type: object
         properties:
-          dateExecuted:
-            type: string
-            description: The date and time that the validator tool was executed in
-              ISO 8601 UTC date format
-            example: 2023-03-31T15:06:49.888745366Z
           errorMessage:
             type: string
             description: The error message for a failed validation by the validator
