@@ -120,6 +120,14 @@
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.javamoney.moneta</groupId>
+            <artifactId>moneta-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.money</groupId>
+            <artifactId>money-api</artifactId>
+        </dependency>
 
 
         <!-- broad - cromwell stuff -->
@@ -407,6 +415,7 @@
 
                             <usedDependencies>
                                 <usedDependency>jakarta.annotation:jakarta.annotation-api</usedDependency>
+                                <usedDependency>org.javamoney.moneta:moneta-core</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>

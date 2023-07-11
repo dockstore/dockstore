@@ -156,4 +156,30 @@
             -->
         </sql>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addCostMetric">
+        <createTable tableName="cost_metric">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="cost_metric_pkey"/>
+            </column>
+            <column name="average" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="maximum" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="minimum" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numberofdatapointsforaverage" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unit" type="VARCHAR(255)"/>
+        </createTable>
+        <addColumn tableName="metrics">
+            <column name="cost" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="cost" baseTableName="metrics" constraintName="fk_cost_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cost_metric"/>
+    </changeSet>
 </databaseChangeLog>

@@ -8608,6 +8608,56 @@ components:
           type: string
         zenodoScope:
           type: string
+    Cost:
+      type: object
+      description: Cost represents a monetary amount in USD
+      properties:
+        currency:
+          type: string
+          default: USD
+          description: The currency of the cost value
+          readOnly: true
+        value:
+          type: number
+          format: double
+          description: The numerical value of the cost
+          example: 5.99
+    CostMetric:
+      type: object
+      description: This describes aggregated cost metrics for workflow executions
+        in USD.
+      properties:
+        average:
+          type: number
+          format: double
+          description: The average value from the data points
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for statistical metrics in this
+            webservice
+        maximum:
+          type: number
+          format: double
+          description: The maximum value from the data points
+        minimum:
+          type: number
+          format: double
+          description: The minimum value from the data points
+        numberOfDataPointsForAverage:
+          type: integer
+          format: int32
+          description: The number of data points used to calculate the average
+        unit:
+          type: string
+          default: USD
+          description: The unit of the data points
+          readOnly: true
+      required:
+      - average
+      - maximum
+      - minimum
+      - numberOfDataPointsForAverage
     CpuMetric:
       type: object
       description: This describes aggregated CPU metrics for workflow executions.
@@ -9260,6 +9310,13 @@ components:
             '@context':
               schema: https://schema.org
             schema:actionStatus: CompletedActionStatus
+        dateExecuted:
+          type: string
+          description: The date and time that the execution occurred in ISO 8601 UTC
+            date format
+          example: 2023-03-31T15:06:49.888745366Z
+      required:
+      - dateExecuted
     ExecutionStatusMetric:
       type: object
       description: Aggregated metrics about workflow execution statuses
@@ -9320,6 +9377,7 @@ components:
           description: The number of data points used to calculate the average
         unit:
           type: string
+          default: s
           description: The unit of the data points
           readOnly: true
       required:
@@ -9664,6 +9722,7 @@ components:
           description: The number of data points used to calculate the average
         unit:
           type: string
+          default: GB
           description: The unit of the data points
           readOnly: true
       required:
@@ -9695,6 +9754,8 @@ components:
             type: object
             description: Additional aggregated metrics
           description: Additional aggregated metrics
+        cost:
+          $ref: '#/components/schemas/CostMetric'
         cpu:
           $ref: '#/components/schemas/CpuMetric'
         executionStatusCount:
@@ -9988,6 +10049,8 @@ components:
       - $ref: '#/components/schemas/Execution'
       - type: object
         properties:
+          cost:
+            $ref: '#/components/schemas/Cost'
           cpuRequirements:
             type: integer
             format: int32
@@ -10010,8 +10073,13 @@ components:
             format: double
             description: Memory requirements for the execution in GB
             example: 2
+          region:
+            type: string
+            description: The region the workflow was executed in
+            example: us-central1
       description: Metrics of a workflow execution on a platform
       required:
+      - dateExecuted
       - executionStatus
     Service:
       type: object
@@ -10965,11 +11033,6 @@ components:
       - $ref: '#/components/schemas/Execution'
       - type: object
         properties:
-          dateExecuted:
-            type: string
-            description: The date and time that the validator tool was executed in
-              ISO 8601 UTC date format
-            example: 2023-03-31T15:06:49.888745366Z
           errorMessage:
             type: string
             description: The error message for a failed validation by the validator

@@ -50,25 +50,25 @@ public abstract class StatisticMetric {
     @NotNull
     @ApiModelProperty(value = "The minimum value from the data points", required = true)
     @Schema(description = "The minimum value from the data points", requiredMode = RequiredMode.REQUIRED)
-    private Double minimum;
+    private double minimum;
 
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The maximum value from the data points", required = true)
     @Schema(description = "The maximum value from the data points", requiredMode = RequiredMode.REQUIRED)
-    private Double maximum;
+    private double maximum;
 
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The average value from the data points", required = true)
     @Schema(description = "The average value from the data points", requiredMode = RequiredMode.REQUIRED)
-    private Double average;
+    private double average;
 
     @Column(nullable = false)
     @NotNull
     @ApiModelProperty(value = "The number of data points used to calculate the average", required = true)
     @Schema(description = "The number of data points used to calculate the average", requiredMode = RequiredMode.REQUIRED)
-    private Integer numberOfDataPointsForAverage;
+    private int numberOfDataPointsForAverage;
 
     @Column
     @ApiModelProperty(value = "The unit of the data points")
@@ -90,11 +90,11 @@ public abstract class StatisticMetric {
     protected StatisticMetric() {
     }
 
-    protected StatisticMetric(Double minimum, Double maximum, Double average, Integer numberOfDataPointsForAverage) {
+    protected StatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage) {
         this(minimum, maximum, average, numberOfDataPointsForAverage, null);
     }
 
-    protected StatisticMetric(Double minimum, Double maximum, Double average, Integer numberOfDataPointsForAverage, String unit) {
+    protected StatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage, String unit) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.average = average;
@@ -110,27 +110,27 @@ public abstract class StatisticMetric {
         this.id = id;
     }
 
-    public Double getMinimum() {
+    public double getMinimum() {
         return minimum;
     }
 
-    public void setMinimum(Double minimum) {
+    public void setMinimum(double minimum) {
         this.minimum = minimum;
     }
 
-    public Double getMaximum() {
+    public double getMaximum() {
         return maximum;
     }
 
-    public void setMaximum(Double maximum) {
+    public void setMaximum(double maximum) {
         this.maximum = maximum;
     }
 
-    public Double getAverage() {
+    public double getAverage() {
         return average;
     }
 
-    public void setAverage(Double average) {
+    public void setAverage(double average) {
         this.average = average;
     }
 

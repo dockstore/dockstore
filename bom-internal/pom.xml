@@ -82,6 +82,7 @@ POM as their parent.
         <docker-client.version>3.3.0</docker-client.version>
         <system-stubs.version>2.0.1</system-stubs.version>
         <jjwt.suite.version>0.11.5</jjwt.suite.version>
+        <moneta.version>1.4.2</moneta.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
@@ -727,6 +728,24 @@ POM as their parent.
                 <groupId>javax.annotation</groupId>
                 <artifactId>javax.annotation-api</artifactId>
                 <version>1.3.2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.javamoney</groupId>
+                <artifactId>moneta</artifactId>
+                <version>${moneta.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.javamoney.moneta</groupId>
+                <artifactId>moneta-core</artifactId>
+                <version>${moneta.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.money</groupId>
+                <artifactId>money-api</artifactId>
+                <version>1.1</version>
             </dependency>
 
             <!-- mocking dependencies -->

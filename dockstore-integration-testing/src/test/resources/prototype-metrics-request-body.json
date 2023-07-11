@@ -2,6 +2,7 @@
   "runExecutions": [
     {
       "executionStatus": "SUCCESSFUL",
+      "dateExecuted": "2023-03-31T15:06:49.888745366Z",
       "totalTime": "PT5m",
       "additionalProperties": {
         "@context": {

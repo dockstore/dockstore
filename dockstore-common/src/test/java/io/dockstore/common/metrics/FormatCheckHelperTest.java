@@ -41,4 +41,11 @@ class FormatCheckHelperTest {
         assertTrue(FormatCheckHelper.checkExecutionDateISO8601Format("2023-03-31T15:06:49Z").isPresent());
         assertFalse(FormatCheckHelper.checkExecutionDateISO8601Format("2023-03-31T15:06:49").isPresent(), "Should fail because it's not in UTC");
     }
+
+    @Test
+    void testIsValidCurrencyCode() {
+        assertTrue(FormatCheckHelper.isValidCurrencyCode("USD"));
+        assertTrue(FormatCheckHelper.isValidCurrencyCode("CAD"));
+        assertFalse(FormatCheckHelper.isValidCurrencyCode("ABC"));
+    }
 }

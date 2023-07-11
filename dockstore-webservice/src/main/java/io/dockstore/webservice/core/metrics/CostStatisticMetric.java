@@ -19,23 +19,21 @@ package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "memory_metric")
-@ApiModel(value = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions in GB.")
-@Schema(name = "MemoryMetric", description = "This describes aggregated memory metrics for workflow executions in GB.")
-public class MemoryStatisticMetric extends StatisticMetric {
-    public static final String UNIT = "GB";
+@Table(name = "cost_metric")
+@Schema(name = "CostMetric", description = "This describes aggregated cost metrics for workflow executions in USD.")
+public class CostStatisticMetric extends StatisticMetric {
+    public static final String UNIT = "USD";
 
-    public MemoryStatisticMetric() {
+    public CostStatisticMetric() {
     }
 
     @JsonCreator
-    public MemoryStatisticMetric(
+    public CostStatisticMetric(
             @JsonProperty("minimum") double minimum,
             @JsonProperty("maximum") double maximum,
             @JsonProperty("average") double average,
