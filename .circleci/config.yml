@@ -42,6 +42,7 @@ common_filters: &common_filters
     branches:
       ignore:
         - gh-pages
+        - feature/seab-5634/checklicenses
 
 
 workflows:
