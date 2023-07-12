@@ -9,6 +9,7 @@ Lists of 366 third-party dependencies.
      (Apache License 2.0) Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.18 - https://metrics.dropwizard.io/metrics-annotation)
      (The BSD License) ANTLR 4 Runtime (org.antlr:antlr4-runtime:4.10.1 - http://www.antlr.org/antlr4-runtime)
      (EPL 2.0) (GPL2 w/ CPE) aopalliance version 1.0 repackaged as a module (org.glassfish.hk2.external:aopalliance-repackaged:3.0.3 - https://github.com/eclipse-ee4j/glassfish-hk2/external/aopalliance-repackaged)
+     (Apache License, Version 2.0) Apache Avro (org.apache.avro:avro:1.9.1 - https://avro.apache.org)
      (Apache License, Version 2.0) Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
      (Apache License, Version 2.0) Apache Commons Codec (commons-codec:commons-codec:1.15 - https://commons.apache.org/proper/commons-codec/)
      (Apache License, Version 2.0) Apache Commons Collections (commons-collections:commons-collections:3.2.2 - http://commons.apache.org/collections/)
