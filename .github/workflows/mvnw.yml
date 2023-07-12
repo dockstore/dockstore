@@ -40,7 +40,7 @@ jobs:
         run: ./mvnw clean install
 
       - name: Check license file
-        uses: dockstore/workflow-actions/check-license-action@feature/seab-5634/checklicense
+        uses: dockstore/workflow-actions/.github/actions/check-license-action@feature/seab-5634/checklicense
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2          
