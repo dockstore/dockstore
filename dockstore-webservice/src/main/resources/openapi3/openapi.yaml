@@ -4704,7 +4704,7 @@ paths:
           format: int64
       - description: Version ID.
         in: query
-        name: versionId
+        name: versionName
         schema:
           type: string
       responses:
