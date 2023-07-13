@@ -455,6 +455,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
+    @JsonIgnore
     @ApiModelProperty(position = 22)
     public String getDescription() {
         return this.getVersionMetadata().description;

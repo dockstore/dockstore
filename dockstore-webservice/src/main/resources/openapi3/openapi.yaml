@@ -2452,6 +2452,36 @@ paths:
       - BEARER: []
       tags:
       - containertags
+  /containers/{containerId}/tags/{tagId}/description:
+    get:
+      description: Retrieve a tag's description
+      operationId: getTagDescription
+      parameters:
+      - description: Container to retrieve the version from
+        in: path
+        name: containerId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Tag to retrieve the description from
+        in: path
+        name: tagId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: default response
+      security:
+      - BEARER: []
+      tags:
+      - containertags
   /containers/{containerId}/tags/{tagId}/sourcefiles:
     get:
       description: Retrieve sourcefiles for a container's version
@@ -8058,6 +8088,38 @@ paths:
       - BEARER: []
       tags:
       - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/description:
+    get:
+      description: Retrieve a workflow version's description
+      operationId: getWorkflowVersionDescription
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: id of the workflow version
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: Retrieve a workflow version's description
+        "400":
+          description: Bad Request
+      security:
+      - BEARER: []
+      tags:
+      - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors:
     get:
       description: Retrieve ORCID author information for a workflow version
@@ -10305,8 +10367,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        description:
-          type: string
         descriptionSource:
           type: string
           enum:
@@ -11172,8 +11232,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        description:
-          type: string
         descriptionSource:
           type: string
           enum:
@@ -11281,10 +11339,6 @@ components:
     VersionMetadata:
       type: object
       properties:
-        description:
-          type: string
-          description: "This is a human-readable description of this container and\
-            \ what it is trying to accomplish, required GA4GH"
         descriptorTypeVersions:
           type: array
           items:
@@ -11562,8 +11616,6 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        description:
-          type: string
         descriptionSource:
           type: string
           enum:

@@ -504,13 +504,16 @@ class GitHubWorkflowIT extends BaseIT {
     void cwlVersion11() {
         final ApiClient userApiClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi userWorkflowsApi = new WorkflowsApi(userApiClient);
+        final io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowsApi =
+            new io.dockstore.openapi.client.api.WorkflowsApi(
+                getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         userWorkflowsApi.manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/metadata.cwl", "metadata", "cwl",
             "/cwl/v1.1/cat-job.json");
         final Workflow workflowByPathGithub = userWorkflowsApi
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", BIOWORKFLOW, null);
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId(), true);
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
-            assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflowVersion.getDescription());
+            assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", openApiWorkflowsApi.getWorkflowVersionDescription(workflow.getId(), workflowVersion.getId()));
             assertEquals(1, workflowVersion.getAuthors().size());
             assertEquals("Peter Amstutz", workflowVersion.getAuthors().get(0).getName());
             assertEquals("peter.amstutz@curoverse.com", workflowVersion.getAuthors().get(0).getEmail());
