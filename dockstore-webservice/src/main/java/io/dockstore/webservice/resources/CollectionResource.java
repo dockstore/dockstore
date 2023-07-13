@@ -280,7 +280,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
         @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
-        @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionName") String versionName) {
+        @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionId") String versionName) {
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
 
