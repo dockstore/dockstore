@@ -3809,7 +3809,7 @@ paths:
         format: "int64"
       - name: "versionName"
         in: "query"
-        description: "Version ID"
+        description: "Version Name"
         required: false
         type: "string"
       responses:

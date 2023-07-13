@@ -4702,7 +4702,7 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: Version ID.
+      - description: Version Name.
         in: query
         name: versionName
         schema:
