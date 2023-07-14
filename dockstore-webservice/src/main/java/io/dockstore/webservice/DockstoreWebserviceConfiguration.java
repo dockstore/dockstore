@@ -808,8 +808,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String deployVersion;
 
-        private String composeSetupVersion;
-
         private String cwlParsingLambdaVersion;
         private String wdlParsingLambdaVersion;
         private String nextflowParsingLambdaVersion;
@@ -1063,14 +1061,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setDeployVersion(final String deployVersion) {
             this.deployVersion = deployVersion;
-        }
-
-        public String getComposeSetupVersion() {
-            return composeSetupVersion;
-        }
-
-        public void setComposeSetupVersion(final String composeSetupVersion) {
-            this.composeSetupVersion = composeSetupVersion;
         }
 
         public String getFeaturedNewsUrl() {
