@@ -19,11 +19,11 @@ public class ConnectionPoolHealthCheck extends HealthCheck  {
 
     @Override
     protected Result check() throws Exception {
-        final int size = (int)metricGauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.size").getValue();
-        if (size == maxConnections) {
-            final int active = (int)metricGauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
+        final int activeConnections = (int)metricGauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
+        if (activeConnections == maxConnections) {
+            final int size = (int)metricGauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.size").getValue();
             final int idle = (int)metricGauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle").getValue();
-            LOG.info("size: {}, active: {}, idle: {}", size, active, idle);
+            LOG.info("size: {}, active: {}, idle: {}", size, activeConnections, idle);
             return Result.unhealthy("No database connections available");
         } else {
             return Result.healthy();

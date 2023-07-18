@@ -582,11 +582,11 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        Organization oldOrganization = organizationDAO.findById(id);
+        final Organization oldOrganization = organizationDAO.findById(id);
 
         // Ensure that the user is an admin or maintainer of the organization
         if (!user.isCurator() && !user.getIsAdmin()) {
-            boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(organization, user.getId());
+            final boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(oldOrganization, user.getId());
             if (!isUserAdminOrMaintainer) {
                 String msg = "You do not have permissions to update the organization.";
                 LOG.info(msg);

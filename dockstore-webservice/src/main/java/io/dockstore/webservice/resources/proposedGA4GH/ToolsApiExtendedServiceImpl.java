@@ -93,6 +93,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static final String INVALID_PLATFORM = "Invalid platform. Please select an individual platform.";
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
+    public static final String SEARCH_QUERY_INVALID_JSON = "Search payload request is not valid JSON";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
@@ -318,7 +319,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
      */
     protected static void checkSearchTermLimit(String query) {
         if (query != null) {
-            JSONObject json = new JSONObject(query);
+            JSONObject json;
+            try {
+                json = new JSONObject(query);
+            } catch (JSONException ex) {
+                LOG.error(SEARCH_QUERY_INVALID_JSON, ex);
+                throw new CustomWebApplicationException(SEARCH_QUERY_INVALID_JSON, HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+            }
 
             try {
                 String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");

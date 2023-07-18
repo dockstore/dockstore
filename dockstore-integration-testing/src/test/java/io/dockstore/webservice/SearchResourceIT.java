@@ -16,8 +16,10 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.common.CommonTestUtilities.restartElasticsearch;
+import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.SEARCH_QUERY_INVALID_JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -36,6 +38,7 @@ import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -197,5 +200,24 @@ class SearchResourceIT extends BaseIT {
         } catch (ApiException ex) {
             fail("Should not fail");
         }
+    }
+
+    /**
+     * Tests that a search request with an invalid JSON request body returns a 415 error.
+     */
+    @Test
+    void testSearchJsonRequestBody() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.ExtendedGa4GhApi extendedGa4GhApi = new io.dockstore.openapi.client.api.ExtendedGa4GhApi(webClient);
+        // Test that queries with invalid JSON return a 415 code
+        io.dockstore.openapi.client.ApiException exception = assertThrows(io.dockstore.openapi.client.ApiException.class, () -> extendedGa4GhApi.toolsIndexSearch("foobar"));
+        assertEquals(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, exception.getCode());
+        assertEquals(SEARCH_QUERY_INVALID_JSON, exception.getMessage());
+        exception = assertThrows(io.dockstore.openapi.client.ApiException.class, () -> extendedGa4GhApi.toolsIndexSearch("{"));
+        assertEquals(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, exception.getCode());
+        assertEquals(SEARCH_QUERY_INVALID_JSON, exception.getMessage());
+        exception = assertThrows(io.dockstore.openapi.client.ApiException.class, () -> extendedGa4GhApi.toolsIndexSearch("{\"aggs\":}"));
+        assertEquals(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, exception.getCode());
+        assertEquals(SEARCH_QUERY_INVALID_JSON, exception.getMessage());
     }
 }
