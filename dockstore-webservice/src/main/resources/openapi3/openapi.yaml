@@ -462,7 +462,7 @@ paths:
       operationId: toolsIndexSearch
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: string
       responses:
@@ -1333,7 +1333,7 @@ paths:
       operationId: addGoogleToken
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: string
       responses:
