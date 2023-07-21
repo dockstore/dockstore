@@ -4732,9 +4732,9 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: Version ID.
+      - description: Version Name.
         in: query
-        name: versionId
+        name: versionName
         schema:
           type: string
       responses:
