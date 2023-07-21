@@ -174,11 +174,7 @@ jobs:
       - run:
           name: build sam-cli
           command: |
-            # workaround https://github.com/aws/aws-sam-cli/issues/3791#issuecomment-1096604840
-            pip3 install Jinja2==2.11.3
-            pip3 install wheel \
-            && pip3 install --no-build-isolation "Cython<3" "pyyaml==5.4.1"
-            pip3 install aws-sam-cli==1.52.0 
+            pip3 install aws-sam-cli==1.93.0 
             sudo apt install unzip
             wget -O wdl-parsing.zip https://github.com/dockstore/lambda/releases/download/0.1.6-SNAPSHOT/wdl-parsing3.zip
             unzip wdl-parsing.zip
