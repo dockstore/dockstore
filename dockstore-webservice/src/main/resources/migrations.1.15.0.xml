@@ -182,4 +182,9 @@
         </addColumn>
         <addForeignKeyConstraint baseColumnNames="cost" baseTableName="metrics" constraintName="fk_cost_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cost_metric"/>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addEntryNamesToLambdaEvent">
+        <addColumn tableName="lambdaevent">
+            <column name="entrynames" type="text"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

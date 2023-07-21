@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -21,6 +22,8 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -80,6 +83,11 @@ public class LambdaEvent {
     @ApiModelProperty(value = "User that the event is acting on (if exists in Dockstore).", position = 8)
     @JsonIgnore
     private User user;
+
+    @Column(columnDefinition = "TEXT")
+    @Convert(converter = EntryNamesConverter.class)
+    @Schema(description = "The names of the entries associated with the event. An empty string indicates an entry with no name specified")
+    private List<String> entryNames = new ArrayList<>();
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -166,6 +174,20 @@ public class LambdaEvent {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public List<String> getEntryNames() {
+        return entryNames;
+    }
+
+    public void setEntryNames(List<String> entryNames) {
+        this.entryNames = entryNames;
+    }
+
+    public LambdaEvent combine(LambdaEvent other) {
+        entryNames.addAll(other.getEntryNames());
+        success = success && other.isSuccess();
+        return this;
     }
 
     public enum LambdaEventType {

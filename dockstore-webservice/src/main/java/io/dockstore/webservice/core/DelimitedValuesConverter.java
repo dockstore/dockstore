@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +53,7 @@ public abstract class DelimitedValuesConverter implements AttributeConverter<Lis
 
     @Override
     public List<String> convertToEntityAttribute(String string) {
-        if (StringUtils.isEmpty(string)) {
+        if (string == null) { // The database column may intentionally store an empty string
             return new ArrayList<>();
         }
         return Arrays.asList(string.split(delimiter));
