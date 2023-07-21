@@ -299,7 +299,6 @@ class WebhookIT extends BaseIT {
         final String foobarWorkflowName = "foobar";
         final String foobar2WorkflowName = "foobar2";
 
-
         // Track install event
         workflowsApi.handleGitHubInstallation(installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
         List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
