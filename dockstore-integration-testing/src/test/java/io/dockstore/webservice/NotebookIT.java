@@ -491,7 +491,7 @@ class NotebookIT extends BaseIT {
     }
 
     private long countEvents(long notebookId) {
-        return testingPostgres.runSelectStatement("select count(*) from events where notebookid = " + notebookId, long.class);
+        return testingPostgres.runSelectStatement("select count(*) from event where notebookid = " + notebookId, long.class);
     }
 
     @Test
@@ -508,7 +508,7 @@ class NotebookIT extends BaseIT {
         // Count the events referencing the notebook
         long unpublishedCount = countEvents(id);
 
-        // Publish notebook, which will add PUBLISH_EVENT referencing the notebook
+        // Publish notebook, which will add a PUBLISH_EVENT referencing the notebook
         workflowsApi.publish1(id, CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         // Count the events referencing the notebook, should be greater than before
@@ -518,7 +518,7 @@ class NotebookIT extends BaseIT {
         workflowsApi.publish1(id, CommonTestUtilities.createOpenAPIPublishRequest(false));
         usersApi.selfDestruct(1L);
 
-        // Retrieve the events referencing the notebook, they should all have been deleted
+        // Count the events referencing the notebook, there should be none, they should have all been deleted
         assertEquals(0, countEvents(id));
     }
 
