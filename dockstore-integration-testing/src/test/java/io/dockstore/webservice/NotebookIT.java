@@ -490,6 +490,38 @@ class NotebookIT extends BaseIT {
         assertFalse(notebook.isDeletable());
     }
 
+    private long countEvents(long notebookId) {
+        return testingPostgres.runSelectStatement("select count(*) from events where notebookid = " + notebookId, long.class);
+    }
+
+    @Test
+    void testEventDeletion() {
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        EntriesApi entriesApi = new EntriesApi(apiClient);
+        UsersApi usersApi = new UsersApi(apiClient);
+
+        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        long id = notebook.getId();
+
+        // Count the events referencing the notebook
+        long unpublishedCount = countEvents(id);
+
+        // Publish notebook, which will add PUBLISH_EVENT referencing the notebook
+        workflowsApi.publish1(id, CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // Count the events referencing the notebook, should be greater than before
+        assertTrue(countEvents(id) > unpublishedCount);
+
+        // Delete the user, which in the process will delete the Events referencing the notebook
+        workflowsApi.publish1(id, CommonTestUtilities.createOpenAPIPublishRequest(false));
+        usersApi.selfDestruct(1L);
+
+        // Retrieve the events referencing the notebook, they should all have been deleted
+        assertEquals(0, countEvents(id));
+    }
+
     private Organization createTestOrganization(String name, boolean categorizer) {
         final ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
