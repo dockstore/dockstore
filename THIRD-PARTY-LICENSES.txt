@@ -1,5 +1,5 @@
 
-Lists of 363 third-party dependencies.
+Lists of 366 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.13:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.13:2.5.32 - https://akka.io/)
@@ -213,6 +213,7 @@ Lists of 363 third-party dependencies.
      (The Apache Software License, Version 2.0) java-diff-utils (io.github.java-diff-utils:java-diff-utils:4.12 - https://github.com/java-diff-utils/java-diff-utils/java-diff-utils)
      (CDDL/GPLv2+CE) JavaBeans Activation Framework (com.sun.activation:javax.activation:1.2.0 - http://java.net/all/javax.activation/)
      (Apache License 2.0) (LGPL 2.1) (MPL 1.1) Javassist (org.javassist:javassist:3.29.2-GA - http://www.javassist.org/)
+     (CDDL + GPLv2 with classpath exception) javax.annotation API (javax.annotation:javax.annotation-api:1.3.2 - http://jcp.org/en/jsr/detail?id=250)
      (Eclipse Distribution License - v 1.0) JAXB Core (org.glassfish.jaxb:jaxb-core:3.0.2 - https://eclipse-ee4j.github.io/jaxb-ri/)
      (Eclipse Distribution License - v 1.0) JAXB Runtime (org.glassfish.jaxb:jaxb-runtime:3.0.2 - https://eclipse-ee4j.github.io/jaxb-ri/)
      (Apache License, version 2.0) JBoss Logging 3 (org.jboss.logging:jboss-logging:3.4.3.Final - http://www.jboss.org)
@@ -251,6 +252,7 @@ Lists of 363 third-party dependencies.
      (Apache License, Version 2.0) Joda-Time (joda-time:joda-time:2.12.5 - https://www.joda.org/joda-time/)
      (Public Domain) JSON in Java (org.json:json:20230227 - https://github.com/douglascrockford/JSON-java)
      (Revised BSD License) JSONLD Java :: Core (com.github.jsonld-java:jsonld-java:0.8.3 - http://github.com/jsonld-java/jsonld-java/jsonld-java/)
+     (Apache License, Version 2.0) JSR 354 (Money and Currency API) (javax.money:money-api:1.1 - https://javamoney.github.io/)
      (MIT License) JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.7 - http://www.slf4j.org)
      (Eclipse Public License v2.0) JUnit Jupiter (Aggregator) (org.junit.jupiter:junit-jupiter:5.9.2 - https://junit.org/junit5/)
      (Eclipse Public License v2.0) JUnit Jupiter API (org.junit.jupiter:junit-jupiter-api:5.9.2 - https://junit.org/junit5/)
@@ -289,6 +291,7 @@ Lists of 363 third-party dependencies.
      (Eclipse Distribution License - v 1.0) MIME streaming extension (org.jvnet.mimepull:mimepull:1.9.15 - https://github.com/eclipse-ee4j/metro-mimepull)
      (The MIT License) mockito-core (org.mockito:mockito-core:3.12.4 - https://github.com/mockito/mockito)
      (The MIT License) mockito-inline (org.mockito:mockito-inline:3.12.4 - https://github.com/mockito/mockito)
+     (Apache 2 License) Moneta Core (org.javamoney.moneta:moneta-core:1.4.2 - http://javamoney.org)
      (MIT license) mouse (org.typelevel:mouse_2.13:1.0.10 - https://typelevel.org/mouse)
      (Apache License, Version 2.0) Netty Reactive Streams HTTP support (com.typesafe.netty:netty-reactive-streams-http:2.0.5 - https://github.com/playframework/netty-reactive-streams/netty-reactive-streams-http)
      (Apache License, Version 2.0) Netty Reactive Streams Implementation (com.typesafe.netty:netty-reactive-streams:2.0.5 - https://github.com/playframework/netty-reactive-streams/netty-reactive-streams)

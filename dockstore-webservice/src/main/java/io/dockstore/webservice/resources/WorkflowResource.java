@@ -463,16 +463,25 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
         @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
         @Parameter(name = "include", description = VERSION_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @QueryParam("include") String include) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkNotNullEntry(workflow);
-        checkCanExamine(user, workflow);
-
-        WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
-        if (workflowVersion == null) {
-            throw new CustomWebApplicationException("Version " + workflowVersionId + " does not exist for this workflow", HttpStatus.SC_NOT_FOUND);
-        }
+        WorkflowVersion workflowVersion =
+            getWorkflowVersion(user, workflowId, workflowVersionId);
         initializeAdditionalFields(include, workflowVersion);
         return workflowVersion;
+    }
+
+    @GET
+    @Path("/{workflowId}/workflowVersions/{workflowVersionId}/description")
+    @Produces(MediaType.TEXT_PLAIN)
+    @UnitOfWork(readOnly = true)
+    @Operation(operationId = "getWorkflowVersionDescription", description = "Retrieve a workflow version's description", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Retrieve a workflow version's description", content = @Content(
+        mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = String.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    public String getWorkflowVersionDescription(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+        @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId) {
+        final WorkflowVersion workflowVersion = getWorkflowVersion(user.orElse(null), workflowId, workflowVersionId);
+        return workflowVersion.getDescription();
     }
 
     @PUT
@@ -1552,6 +1561,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         return workflowVersion;
     }
+
+    private WorkflowVersion getWorkflowVersion(final User user, final Long workflowId,  final Long workflowVersionId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkNotNullEntry(workflow);
+        if (!workflow.getIsPublished()) {
+            checkCanExamine(user, workflow);
+        }
+
+        WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
+        if (workflowVersion == null) {
+            throw new CustomWebApplicationException("Version " + workflowVersionId + " does not exist for this workflow", HttpStatus.SC_NOT_FOUND);
+        }
+        return workflowVersion;
+    }
+
 
     /**
      * This method will find the main descriptor file based on the workflow version passed in the parameter

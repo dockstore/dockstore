@@ -18,7 +18,6 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.NotNull;
@@ -46,12 +45,6 @@ public class ValidationExecution extends Execution {
 
     @Schema(description = "The error message for a failed validation by the validator tool")
     private String errorMessage;
-
-    @NotNull
-    @ISO8601ExecutionDate
-    @JsonProperty(required = true)
-    @Schema(description = "The date and time that the validator tool was executed in ISO 8601 UTC date format", requiredMode = RequiredMode.REQUIRED, example = "2023-03-31T15:06:49.888745366Z")
-    private String dateExecuted;
 
     public ValidationExecution() {
     }
@@ -91,14 +84,6 @@ public class ValidationExecution extends Execution {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
-    }
-
-    public String getDateExecuted() {
-        return dateExecuted;
-    }
-
-    public void setDateExecuted(String dateExecuted) {
-        this.dateExecuted = dateExecuted;
     }
 
     /**

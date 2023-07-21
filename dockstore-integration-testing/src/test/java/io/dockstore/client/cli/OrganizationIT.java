@@ -369,6 +369,7 @@ public class OrganizationIT extends BaseIT {
         newOrganization = organizationsApiUser2.getOrganizationById(organization.getId());
         String link = "http://www.anothersite.com";
         newOrganization.setLink(link);
+        newOrganization.setUsers(null); // It's null when the UI fetches the org. A little unclear why it's not already null in this test. See https://github.com/dockstore/dockstore/issues/5559
         organization = organizationsApiUser2.updateOrganization(newOrganization, organization.getId());
 
         // There should be two MODIFY_ORG events

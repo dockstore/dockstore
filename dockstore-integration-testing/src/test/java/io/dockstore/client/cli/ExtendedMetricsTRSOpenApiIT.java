@@ -62,6 +62,7 @@ import io.dockstore.openapi.client.api.ContainersApi;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Cost;
 import io.dockstore.openapi.client.model.CpuMetric;
 import io.dockstore.openapi.client.model.ExecutionStatusMetric;
 import io.dockstore.openapi.client.model.ExecutionTimeMetric;
@@ -207,9 +208,13 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
 
         // Send validation metrics data to S3 for the same workflow version, but different platform
-        List<io.dockstore.openapi.client.model.ValidationExecution> validationExecutions = List.of(new io.dockstore.openapi.client.model.ValidationExecution().isValid(true).validatorTool(
-                ValidationExecution.ValidatorToolEnum.MINIWDL).validatorToolVersion("v1.9.1").dateExecuted(
-                Instant.now().toString())); // This workflow version successfully validated with miniwdl
+        // This workflow version successfully validated with miniwdl
+        ValidationExecution validationExecution = new ValidationExecution();
+        validationExecution.setIsValid(true);
+        validationExecution.setValidatorTool(ValidationExecution.ValidatorToolEnum.MINIWDL);
+        validationExecution.setValidatorToolVersion("v1.9.1");
+        validationExecution.setDateExecuted(Instant.now().toString());
+        List<io.dockstore.openapi.client.model.ValidationExecution> validationExecutions = List.of(validationExecution);
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform2, workflowId, workflowVersionId, description);
         metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
         metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform2, String.format(workflowExpectedS3KeyPrefixFormat, platform2));
@@ -290,6 +295,13 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if ExecutionStatus is missing");
         assertTrue(exception.getMessage().contains("executionStatus") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if ExecutionStatus is missing");
 
+        // Test that the response body must contain dateExecuted for RunExecution
+        List<RunExecution> runExecutionsWithMissingDate = createRunExecutions(1);
+        runExecutionsWithMissingDate.forEach(execution -> execution.setDateExecuted(null));
+        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithMissingDate), platform, id, versionId, description));
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if dateExecuted is missing");
+        assertTrue(exception.getMessage().contains("dateExecuted") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if dateExecuted is missing");
+
         // Test that malformed ExecutionTimes for RunExecution throw an exception
         List<RunExecution> malformedExecutionTimes = List.of(
                 new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("1 second"),
@@ -308,8 +320,11 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertTrue(exception.getMessage().contains("isValid") && exception.getMessage().contains("validatorTool") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if required fields for ValidationExecution are missing");
 
         // Test that malformed dateExecuteds for ValidationExecution throw an exception
-        List<ValidationExecution> malformedDateExecuteds = List.of(new ValidationExecution().dateExecuted("March 23, 2023").isValid(true).validatorTool(
-                ValidationExecution.ValidatorToolEnum.MINIWDL));
+        ValidationExecution validationExecution = new ValidationExecution();
+        validationExecution.setIsValid(true);
+        validationExecution.setValidatorTool(ValidationExecution.ValidatorToolEnum.MINIWDL);
+        validationExecution.setDateExecuted("March 23, 2023");
+        List<ValidationExecution> malformedDateExecuteds = List.of(validationExecution);
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(malformedDateExecuteds), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if dateExecuted is malformed");
         assertTrue(exception.getMessage().contains(EXECUTION_DATE_FORMAT_ERROR));
@@ -675,9 +690,12 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             // A successful execution that ran for 5 minutes, requires 2 CPUs and 2 GBs of memory
             RunExecution execution = new RunExecution();
             execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
+            execution.setDateExecuted(Instant.now().toString());
             execution.setExecutionTime("PT5M");
             execution.setCpuRequirements(2);
             execution.setMemoryRequirementsGB(2.0);
+            execution.setCost(new Cost().value(9.99));
+            execution.setRegion("us-central1");
             Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
             execution.setAdditionalProperties(additionalProperties);
             executions.add(execution);

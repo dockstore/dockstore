@@ -39,5 +39,8 @@ jobs:
       - name: Build with mvnw
         run: ./mvnw clean install
 
+      - name: Check license file
+        uses: dockstore/workflow-actions/.github/actions/check-license@main
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2          

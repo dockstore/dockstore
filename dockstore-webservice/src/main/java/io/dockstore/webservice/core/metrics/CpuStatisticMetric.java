@@ -30,7 +30,7 @@ public class CpuStatisticMetric extends StatisticMetric {
     public CpuStatisticMetric() {
     }
 
-    public CpuStatisticMetric(Double minimum, Double maximum, Double average, int numberOfDataPointsForAverage) {
+    public CpuStatisticMetric(double minimum, double maximum, double average, int numberOfDataPointsForAverage) {
         super(minimum, maximum, average, numberOfDataPointsForAverage);
     }
 }

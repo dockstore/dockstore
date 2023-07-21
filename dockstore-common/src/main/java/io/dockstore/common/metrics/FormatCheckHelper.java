@@ -17,6 +17,8 @@
 
 package io.dockstore.common.metrics;
 
+import static javax.money.Monetary.isCurrencyAvailable;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -58,5 +60,13 @@ public final class FormatCheckHelper {
             LOG.warn("Execution date {} is not in ISO 8601 date format and could not be parsed to a Date", executionDate, e);
             return Optional.empty();
         }
+    }
+
+    /**
+     * Check that the Currency Code is valid by using the Java Money library.
+     * @param currencyCode Currency code to check
+     */
+    public static boolean isValidCurrencyCode(String currencyCode) {
+        return isCurrencyAvailable(currencyCode);
     }
 }

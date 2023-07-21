@@ -37,6 +37,7 @@ import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -70,6 +71,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -131,6 +133,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
     private static final String TOKEN_NOT_FOUND_DESCRIPTION = "Token not found";
     private static final String USER_NOT_FOUND_MESSAGE = "User not found";
+    public static final String INVALID_JSON = "Invalid JSON provided";
 
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
@@ -417,6 +420,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/google")
+    @Consumes(MediaType.APPLICATION_JSON)
     @JsonView(TokenViews.Auth.class)
     @Operation(operationId = "addGoogleToken", description = "Allow satellizer to post a new Google token to Dockstore.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully posted a new Google token to Dockstore", content = @Content(schema = @Schema(implementation = Token.class)))
@@ -429,7 +433,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "A post method is required by satellizer to send the Google token", response = Token.class)
     public Token addGoogleToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> authUser, @ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
-        JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
+        JsonElement element;
+        try {
+            element = gson.fromJson(satellizerJson, JsonElement.class);
+        } catch (JsonSyntaxException ex) {
+            LOG.warn(INVALID_JSON);
+            throw new CustomWebApplicationException(INVALID_JSON, HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+        }
         JsonObject satellizerObject = element.getAsJsonObject();
         final String code = getCodeFromSatellizerObject(satellizerObject);
         final String redirectUri = getRedirectURIFromSatellizerObject(satellizerObject);

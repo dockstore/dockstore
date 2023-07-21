@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice;
 
+import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME1;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME2;
@@ -28,10 +29,12 @@ import static io.dockstore.common.Hoverfly.SUFFIX4;
 import static io.dockstore.common.Hoverfly.getFakeCode;
 import static io.dockstore.common.Hoverfly.getFakeExistingDockstoreToken;
 import static io.dockstore.common.Hoverfly.getSatellizer;
+import static io.dockstore.webservice.resources.TokenResource.INVALID_JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -142,6 +145,24 @@ public class TokenResourceIT {
         Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
         initialTokenCount = testingPostgres.runSelectStatement("select count(*) from token", long.class);
+    }
+
+    /**
+     * Tests that an invalid JSON request body returns a 415 error for the google token endpoint.
+     */
+    @Test
+    void testInvalidJsonRequestForGoogle() {
+        io.dockstore.openapi.client.api.TokensApi tokensApi = new io.dockstore.openapi.client.api.TokensApi(getOpenAPIWebClient(false, "nn", testingPostgres));
+        // Test that queries with invalid JSON return a 415 code
+        io.dockstore.openapi.client.ApiException exception = assertThrows(io.dockstore.openapi.client.ApiException.class, () -> tokensApi.addGoogleToken("non a json"));
+        assertEquals(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, exception.getCode());
+        assertEquals(INVALID_JSON, exception.getMessage());
+        exception = assertThrows(io.dockstore.openapi.client.ApiException.class, () -> tokensApi.addGoogleToken("{"));
+        assertEquals(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, exception.getCode());
+        assertEquals(INVALID_JSON, exception.getMessage());
+        exception = assertThrows(io.dockstore.openapi.client.ApiException.class, () -> tokensApi.addGoogleToken("{\"abcde\":}"));
+        assertEquals(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, exception.getCode());
+        assertEquals(INVALID_JSON, exception.getMessage());
     }
 
     /**

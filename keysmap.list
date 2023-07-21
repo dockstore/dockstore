@@ -29,7 +29,9 @@ org.kohsuke:github-api:pom:1.123                                    = badSig
 com.spotify:docker-client:pom:8.16.0                                = badSig
 org.eclipse.jetty.toolchain:jetty-servlet-api:pom:4.0.6                              = badSig
 org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:pom:5.0.2     = badSig
-
+org.javamoney:moneta:pom:1.4.2                                      = badSig
+org.javamoney.moneta:moneta-core:pom:1.4.2                          = badSig
+javax.money:money-api:pom:1.1                                       = badSig
 
 * 									                                = noSig
 *									                                = any

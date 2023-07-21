@@ -50,6 +50,18 @@ public class RunExecution extends Execution {
     @Schema(description = "Number of CPUs required for the execution", example = "2")
     private Integer cpuRequirements;
 
+    @JsonProperty
+    @Schema(description = "The cost of the execution in USD")
+    private Cost cost;
+
+    /**
+     * Recording the region because cloud services may cost different amounts in different regions.
+     * For now, the region is only recorded and is not used when aggregating the cost metric.
+     */
+    @JsonProperty
+    @Schema(description = "The region the workflow was executed in", example = "us-central1")
+    private String region;
+
     public RunExecution() {
     }
 
@@ -87,5 +99,21 @@ public class RunExecution extends Execution {
 
     public void setCpuRequirements(Integer cpuRequirements) {
         this.cpuRequirements = cpuRequirements;
+    }
+
+    public Cost getCost() {
+        return cost;
+    }
+
+    public void setCost(Cost cost) {
+        this.cost = cost;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
     }
 }
