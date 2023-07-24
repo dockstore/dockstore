@@ -320,24 +320,30 @@ class WebhookIT extends BaseIT {
         // Delete events should have the names of workflows that had a version deleted
         assertEntryNamesInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.DELETE, null, foobarWorkflowName, foobar2WorkflowName);
 
-        // Release refs/branch/invalidDockstoreYml where the foobar workflow description in the .dockstore.yml is missing the 'subclass' property
+        // Release refs/heads/invalidDockstoreYml where the foobar workflow description in the .dockstore.yml is missing the 'subclass' property
         assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(branchInvalidDockstoreYml, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME));
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         // Should only have 'foobar' because that's the only workflow with an error
         assertEntryNamesInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchInvalidDockstoreYml, foobarWorkflowName);
 
-        // Release refs/branch/differentLanguagesWithSameWorkflowName where two workflows have the same workflow name
+        // Release refs/heads/differentLanguagesWithSameWorkflowName where two workflows have the same workflow name
         assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(branchDifferentLanguagesWithSameWorkflowName, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME));
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         // Should only have no entry names because the error is for the whole .dockstore.yml
         assertEntryNamesInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchDifferentLanguagesWithSameWorkflowName);
 
-        // Release using a repository that contains a .dockstore.yml that publishes a workflow
+        // Release using the repository "dockstore-testing/test-workflows-and-tools" which registers 1 unpublished tool and 1 published workflow
         final String tag10 = "refs/tags/1.0";
         workflowsApi.handleGitHubRelease(tag10, installationId, testWorkflowsAndToolsRepo, BasicIT.USER_2_USERNAME);
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 15);
         assertEntryNamesInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "", "md5sum");
         assertEntryNamesInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUBLISH, tag10, "");
+
+        // Release refs/heads/invalidToolName. There is one successful workflow and one failed tool with an invalid name
+        final String invalidToolNameBranch = "refs/heads/invalidToolName";
+        assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(invalidToolNameBranch, installationId, testWorkflowsAndToolsRepo, BasicIT.USER_2_USERNAME));
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 15);
+        assertEntryNamesInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, "md5sum/with/slashes");
     }
 
     private void assertEntryNamesInNewestLambdaEvent(List<LambdaEvent> lambdaEvents, LambdaEvent.TypeEnum lambdaEventType, String gitReference, String... expectedEntryNames) {

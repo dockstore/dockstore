@@ -184,9 +184,24 @@ public class LambdaEvent {
         this.entryNames = entryNames;
     }
 
+    /**
+     * Combines two intermediate lambda events into one by modifying the success and entryNames fields so that entryNames only contain the entry names associated with the success status.
+     * Successful events should show all entry names because all entries successfully completed the lambda event.
+     * Failed events should only show entry names for entries that failed to complete the lambda event.
+     * @param other
+     * @return
+     */
     public LambdaEvent combine(LambdaEvent other) {
-        entryNames.addAll(other.getEntryNames());
-        success = success && other.isSuccess();
+        if (success == other.success) {
+            // If both are successful or both failed, then combine the entry names
+            entryNames.addAll(other.entryNames);
+        } else if (!other.success) {
+            // If 'this' is successful and 'other' failed, the only take the 'other' entry names
+            entryNames.clear();
+            entryNames.addAll(other.entryNames);
+        } // Unspecified else case: 'this' failed and 'other' is success - keep the entry names of 'this'
+
+        success = success && other.success;
         return this;
     }
 

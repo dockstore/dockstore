@@ -388,6 +388,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
 
             // Process the service (if present) and the lists of workflows and apptools.
+            // The intermediate lambda events from processing each entry type are combined into one lambda event
             List<Service12> services = dockstoreYaml12.getService() != null ? List.of(dockstoreYaml12.getService()) : List.of();
             lambdaEvent.combine(createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter));
             lambdaEvent.combine(createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter));
