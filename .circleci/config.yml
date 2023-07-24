@@ -303,8 +303,9 @@ jobs:
             then
               cat temp/test-lists/unit/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             else
-              echo $(cat temp/test-lists/unit/all.txt) > /tmp/tests-to-run.txt
+              cat temp/test-lists/unit/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose
             fi
+            cat /tmp/tests-to-run.txt
       - restore_cache:
           keys:
             - dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
@@ -341,7 +342,7 @@ jobs:
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
-              cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/non-confidential-tests-to-run.txt xargs echo" --split-by=timings --time-default=0.1s
+              cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/non-confidential-tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             
               # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
               /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
@@ -540,9 +541,9 @@ commands:
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ]
             then
-              cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --split-by=timings --time-default=0.1s
+              cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             else
-              echo $(cat temp/test-lists/IT/all.txt) > /tmp/tests-to-run.txt
+              cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose
             fi
       - restore_cache:
           keys:
