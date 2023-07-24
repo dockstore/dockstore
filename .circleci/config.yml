@@ -301,11 +301,10 @@ jobs:
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ]
             then
-              TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
+              cat temp/test-lists/unit/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             else
-              TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | tr '\n' ',')
+              echo $(cat temp/test-lists/unit/all.txt) > /tmp/tests-to-run.txt
             fi
-            echo $TESTS_TO_RUN > /tmp/tests-to-run.txt
       - restore_cache:
           keys:
             - dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
@@ -318,7 +317,7 @@ jobs:
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp \
-              -Dtest=`cat /tmp/tests-to-run.txt` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+              -Dtest=`cat /tmp/tests-to-run.txt | tr '\n' ','` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
             else 
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
             fi
@@ -342,8 +341,7 @@ jobs:
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
-              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
-              echo $TESTS_TO_RUN
+              cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/non-confidential-tests-to-run.txt xargs echo" --split-by=timings --time-default=0.1s
             
               # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
               /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
@@ -354,7 +352,7 @@ jobs:
               fi
             
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore \
-              -Dtest=$TESTS_TO_RUN -DfailIfNoTests=false -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"         
+              -Dtest=`cat /tmp/non-confidential-tests-to-run.txt | tr '\n' ','` -DfailIfNoTests=false -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"         
             else 
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore \
               -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"      
@@ -542,11 +540,10 @@ commands:
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ]
             then
-              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
+              cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --split-by=timings --time-default=0.1s
             else
-              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt| tr '\n' ',')
+              echo $(cat temp/test-lists/IT/all.txt) > /tmp/tests-to-run.txt
             fi
-            echo $TESTS_TO_RUN > /tmp/tests-to-run.txt
       - restore_cache:
           keys:
             - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
@@ -587,7 +584,7 @@ commands:
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
-              clean verify -Dit.test=`cat /tmp/tests-to-run.txt` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+              clean verify -Dit.test=`cat /tmp/tests-to-run.txt | tr '\n' ','` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
             else 
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
             fi
