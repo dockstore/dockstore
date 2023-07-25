@@ -1,7 +1,7 @@
 argcomplete==2.0.0
 bagit==1.8.1
 CacheControl==0.12.11
-certifi==2022.12.7
+certifi==2023.7.22
 chardet==4.0.0
 charset-normalizer==3.0.1
 coloredlogs==15.0.1
