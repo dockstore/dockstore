@@ -625,6 +625,7 @@ commands:
             do
               xmlstarlet ed --inplace --rename '//testsuite/testcase/rerunFailure' -v 'failure' $file
             done
+          when: always
       - store_test_results:
           path: ~/test-results
       - store_artifacts:
@@ -673,3 +674,4 @@ commands:
             do
               xmlstarlet ed --inplace --rename '//testsuite/testcase/rerunFailure' -v 'failure' $file
             done
+          when: always
