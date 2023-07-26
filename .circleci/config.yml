@@ -329,8 +329,9 @@ jobs:
           name: Save test results
           command: |
             mkdir -p ~/junit/
-            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/junit/ \;
+            find . -type f -regex ".*/target/.*-reports/TEST-*.*xml" -exec cp {} ~/junit/ \;
           when: always
+      - fix-non-compliant-xml-reports
       - store_test_results:
           path: ~/junit
       - setup_codecov_uploader
@@ -393,8 +394,9 @@ jobs:
           name: Save test results
           command: |
             mkdir -p ~/junit/
-            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/junit/ \;
+            find . -type f -regex ".*/target/.*-reports/TEST-*.*xml" -exec cp {} ~/junit/ \;
           when: always
+      - fix-non-compliant-xml-reports
       - store_test_results:
           path: ~/junit
       - store_artifacts:
@@ -612,8 +614,9 @@ commands:
           name: Save test results
           command: |
             mkdir -p ~/test-results/junit/
-            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/test-results/junit/ \;
+            find . -type f -regex ".*/target/.*-reports/TEST-.*xml" -exec cp {} ~/test-results/junit/ \;
           when: always
+      - fix-non-compliant-xml-reports
       - store_test_results:
           path: ~/test-results
       - store_artifacts:
@@ -651,3 +654,15 @@ commands:
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
             chmod +x codecov
+  fix-non-compliant-xml-reports:
+    steps:
+      - run:
+          name: Fix formatting of test results
+          command: |
+            sudo apt update
+            sudo apt install -y xmlstarlet
+            TEST_RESULTS="~/junit/**/*"
+            for file in $TEST_RESULTS
+            do
+              xmlstarlet ed --inplace --rename '//testsuite/testcase/rerunFailure' -v 'failure' $file
+            done
