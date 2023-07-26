@@ -661,7 +661,7 @@ commands:
           command: |
             sudo apt update
             sudo apt install -y xmlstarlet
-            TEST_RESULTS="~/junit/**/*"
+            TEST_RESULTS="~/junit/*"
             for file in $TEST_RESULTS
             do
               xmlstarlet ed --inplace --rename '//testsuite/testcase/rerunFailure' -v 'failure' $file
