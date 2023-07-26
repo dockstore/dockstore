@@ -123,6 +123,8 @@ public class EventDAO extends AbstractDAO<Event> {
             list.add(event.get("tool").in(entryIds));
             list.add(event.get("workflow").in(entryIds));
             list.add(event.get("apptool").in(entryIds));
+            list.add(event.get("service").in(entryIds));
+            list.add(event.get("notebook").in(entryIds));
         }
         query.where(cb.or(list.toArray(new Predicate[0])));
         query.orderBy(cb.desc(event.get("id")));

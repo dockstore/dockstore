@@ -523,6 +523,8 @@ paths:
       description: "This endpoint searches the indices for all published tools and\
         \ workflows. Used by utilities that expect to talk to an elastic search endpoint."
       operationId: "toolsIndexSearch"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1368,6 +1370,8 @@ paths:
       summary: "Allow satellizer to post a new Google token to Dockstore."
       description: "A post method is required by satellizer to send the Google token"
       operationId: "addGoogleToken"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3809,7 +3813,7 @@ paths:
         format: "int64"
       - name: "versionName"
         in: "query"
-        description: "Version ID"
+        description: "Version Name"
         required: false
         type: "string"
       responses:
