@@ -616,7 +616,15 @@ commands:
             mkdir -p ~/test-results/junit/
             find . -type f -regex ".*/target/.*-reports/TEST-.*xml" -exec cp {} ~/test-results/junit/ \;
           when: always
-      - fix-non-compliant-xml-reports
+      - run:
+          name: Fix non-compliant test results
+          command: |
+            sudo apt update
+            sudo apt install -y xmlstarlet
+            for file in ~/test-results/**/*
+            do
+              xmlstarlet ed --inplace --rename '//testsuite/testcase/rerunFailure' -v 'failure' $file
+            done
       - store_test_results:
           path: ~/test-results
       - store_artifacts:
