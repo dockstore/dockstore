@@ -9618,19 +9618,19 @@ components:
     LambdaEvent:
       type: object
       properties:
-        entryNames:
-          type: array
-          description: The names of the entries associated with the event. An empty
-            string indicates an entry with no name specified
-          items:
-            type: string
-            description: The names of the entries associated with the event. An empty
-              string indicates an entry with no name specified
+        entryName:
+          type: string
+          description: The name of the entry associated with the event. An empty string
+            indicates an entry with no name specified
         eventDate:
           type: integer
           format: int64
         githubUsername:
           type: string
+        groupId:
+          type: string
+          description: An identifier used to group events that belong to the same
+            GitHub webhook invocation
         id:
           type: integer
           format: int64

@@ -182,9 +182,17 @@
         </addColumn>
         <addForeignKeyConstraint baseColumnNames="cost" baseTableName="metrics" constraintName="fk_cost_metrics" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cost_metric"/>
     </changeSet>
-    <changeSet author="ktran (generated)" id="addEntryNamesToLambdaEvent">
+    <changeSet author="ktran (generated)" id="addEntryNameAndGroupIdToLambdaEvent">
         <addColumn tableName="lambdaevent">
-            <column name="entrynames" type="text"/>
+            <column name="entryname" type="text"/>
         </addColumn>
+        <addColumn tableName="lambdaevent">
+            <column name="groupid" type="text"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            <comment>Prior to https://github.com/dockstore/dockstore/pull/5611, each lambda event was for one GitHub webhook event, so each lambda event should have its own group ID</comment>
+            UPDATE lambdaevent SET groupid = gen_random_uuid() WHERE groupid IS NULL;
+        </sql>
+        <addNotNullConstraint tableName="lambdaevent" columnName="groupid"/>
     </changeSet>
 </databaseChangeLog>

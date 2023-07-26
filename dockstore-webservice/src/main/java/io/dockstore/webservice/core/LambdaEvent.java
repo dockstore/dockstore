@@ -6,7 +6,6 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -22,8 +21,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -85,9 +83,12 @@ public class LambdaEvent {
     private User user;
 
     @Column(columnDefinition = "TEXT")
-    @Convert(converter = EntryNamesConverter.class)
-    @Schema(description = "The names of the entries associated with the event. An empty string indicates an entry with no name specified")
-    private List<String> entryNames = new ArrayList<>();
+    @Schema(description = "The name of the entry associated with the event. An empty string indicates an entry with no name specified")
+    private String entryName;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    @Schema(description = "An identifier used to group events that belong to the same GitHub webhook invocation")
+    private String groupId;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -176,33 +177,20 @@ public class LambdaEvent {
         this.user = user;
     }
 
-    public List<String> getEntryNames() {
-        return entryNames;
+    public String getEntryName() {
+        return entryName;
     }
 
-    public void setEntryNames(List<String> entryNames) {
-        this.entryNames = entryNames;
+    public void setEntryName(String entryName) {
+        this.entryName = entryName;
     }
 
-    /**
-     * Combines two intermediate lambda events into one by modifying the success and entryNames fields so that entryNames only contain the entry names associated with the success status.
-     * Successful events should show all entry names because all entries successfully completed the lambda event.
-     * Failed events should only show entry names for entries that failed to complete the lambda event.
-     * @param other
-     * @return
-     */
-    public LambdaEvent combine(LambdaEvent other) {
-        if (success == other.success) {
-            // If both are successful or both failed, then combine the entry names
-            entryNames.addAll(other.entryNames);
-        } else if (!other.success) {
-            // If 'this' is successful and 'other' failed, the only take the 'other' entry names
-            entryNames.clear();
-            entryNames.addAll(other.entryNames);
-        } // Unspecified else case: 'this' failed and 'other' is success - keep the entry names of 'this'
+    public String getGroupId() {
+        return groupId;
+    }
 
-        success = success && other.success;
-        return this;
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 
     public enum LambdaEventType {
@@ -212,4 +200,7 @@ public class LambdaEvent {
         PUBLISH
     }
 
+    public static String createGroupId() {
+        return UUID.randomUUID().toString();
+    }
 }
