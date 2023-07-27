@@ -8586,8 +8586,6 @@ components:
           type: string
         colabImportUrl:
           type: string
-        composeSetupVersion:
-          type: string
         cwlParsingLambdaVersion:
           type: string
         cwlVisualizerUri:
