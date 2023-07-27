@@ -325,13 +325,8 @@ jobs:
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
 
       # store these twice since non-confidential tests also do a clean install
-      - run:
-          name: Save test results
-          command: |
-            mkdir -p ~/test-results/junit/
-            find . -type f -regex ".*/target/.*-reports/TEST-*.*xml" -exec cp {} ~/test-results/junit/ \;
-          when: always
-      - fix-non-compliant-xml-reports
+      - setup_test_results
+      - fix_non_compliant_xml_reports
       - store_test_results:
           path: ~/test-results
       - setup_codecov_uploader
@@ -343,6 +338,7 @@ jobs:
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
+              touch /tmp/non-confidential-tests-to-run.txt
               cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/non-confidential-tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             
               # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
@@ -390,13 +386,8 @@ jobs:
           key: dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
           paths:
             - /tmp/dockstore-web-cache
-      - run:
-          name: Save test results
-          command: |
-            mkdir -p ~/test-results/junit/
-            find . -type f -regex ".*/target/.*-reports/TEST-*.*xml" -exec cp {} ~/test-results/junit/ \;
-          when: always
-      - fix-non-compliant-xml-reports
+      - setup_test_results
+      - fix_non_compliant_xml_reports
       - store_test_results:
           path: ~/test-results
       - store_artifacts:
@@ -541,6 +532,7 @@ commands:
       - run:
           name: split up tests and create a file for cache checksum
           command: |
+            touch /tmp/tests-to-run.txt
             if [ $CIRCLE_NODE_TOTAL != 1 ]
             then
               cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
@@ -610,22 +602,8 @@ commands:
           paths:
             - /tmp/dockstore-web-cache
             - /tmp/dockstore-bitbucket-token-cache
-      - run:
-          name: Save test results
-          command: |
-            mkdir -p ~/test-results/junit/
-            find . -type f -regex ".*/target/.*-reports/TEST-.*xml" -exec cp {} ~/test-results/junit/ \;
-          when: always
-      - run:
-          name: Fix non-compliant test results
-          command: |
-            sudo apt update
-            sudo apt install -y xmlstarlet
-            for file in ~/test-results/**/*
-            do
-              xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file
-            done
-          when: always
+      - setup_test_results
+      - fix_non_compliant_xml_reports
       - store_test_results:
           path: ~/test-results
       - store_artifacts:
@@ -663,7 +641,15 @@ commands:
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
             chmod +x codecov
-  fix-non-compliant-xml-reports:
+  setup_test_results:
+    steps:
+      - run:
+          name: Setup test results
+          command: |
+            mkdir -p ~/test-results/junit/
+            find . -type f -regex ".*/target/.*-reports/TEST-.*xml" -exec cp {} ~/test-results/junit/ \;
+          when: always
+  fix_non_compliant_xml_reports:
     steps:
       - run:
           name: Fix formatting of test results

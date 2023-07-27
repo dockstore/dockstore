@@ -16,7 +16,7 @@ class ToolV1Test {
         tool.setSigned(true);
         tool.setUrl("https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.7");
         ToolV1 toolV1 = new ToolV1(tool);
-        assertEquals("https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.7", toolV1.getUrl());
+        assertEquals("https://dockstore.org/api/api/ga4gh/v1/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.7", toolV1.getUrl());
     }
 
     /**
