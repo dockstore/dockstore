@@ -305,14 +305,14 @@ class WebhookIT extends BaseIT {
         ++numberOfWebhookInvocations;
         List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.INSTALL, true); // There should be no entry name
-        assertNumberOfUniqueGroupIds(orgEvents, numberOfWebhookInvocations);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release 0.1 on GitHub - one new wdl workflow
         workflowsApi.handleGitHubRelease(tag01, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag01, foobarWorkflowName, true);
-        assertNumberOfUniqueGroupIds(orgEvents, numberOfWebhookInvocations);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
         workflowsApi.handleGitHubRelease(tag02, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
@@ -320,7 +320,7 @@ class WebhookIT extends BaseIT {
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag02, foobarWorkflowName, true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag02, foobar2WorkflowName, true);
-        assertNumberOfUniqueGroupIds(orgEvents, numberOfWebhookInvocations);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Delete tag 0.2
         workflowsApi.handleGitHubBranchDeletion(workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME, tag02, installationId);
@@ -329,7 +329,7 @@ class WebhookIT extends BaseIT {
         // Delete events should have the names of workflows that had a version deleted
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.DELETE, tag02, foobarWorkflowName, true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.DELETE, tag02, foobar2WorkflowName, true);
-        assertNumberOfUniqueGroupIds(orgEvents, numberOfWebhookInvocations);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release refs/heads/invalidDockstoreYml where the foobar workflow description in the .dockstore.yml is missing the 'subclass' property
         assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(branchInvalidDockstoreYml, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME));
@@ -338,7 +338,7 @@ class WebhookIT extends BaseIT {
         // There should be two push events, one failed event for workflow 'foobar' and one successful event for workflow 'foobar2'
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchInvalidDockstoreYml, foobarWorkflowName, false);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchInvalidDockstoreYml, foobar2WorkflowName, true);
-        assertNumberOfUniqueGroupIds(orgEvents, numberOfWebhookInvocations);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release refs/heads/differentLanguagesWithSameWorkflowName where two workflows have the same workflow name
         assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(branchDifferentLanguagesWithSameWorkflowName, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME));
@@ -346,7 +346,7 @@ class WebhookIT extends BaseIT {
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         // Should only have no entry name because the error is for the whole .dockstore.yml
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchDifferentLanguagesWithSameWorkflowName, null, false);
-        assertNumberOfUniqueGroupIds(orgEvents, numberOfWebhookInvocations);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release using the repository "dockstore-testing/test-workflows-and-tools" which registers 1 unpublished tool and 1 published workflow
         final String tag10 = "refs/tags/1.0";
@@ -356,7 +356,7 @@ class WebhookIT extends BaseIT {
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "", true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "md5sum", true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUBLISH, tag10, "", true);
-        assertNumberOfUniqueGroupIds(orgEvents, numberOfWebhookInvocations);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release refs/heads/invalidToolName. There is one successful workflow and one failed tool with an invalid name
         final String invalidToolNameBranch = "refs/heads/invalidToolName";
@@ -368,7 +368,7 @@ class WebhookIT extends BaseIT {
         final String toolName = "md5sum/with/slashes";
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, workflowName, true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, toolName, false);
-        assertNumberOfUniqueGroupIds(orgEvents, numberOfWebhookInvocations);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
     }
 
     /**
@@ -407,12 +407,12 @@ class WebhookIT extends BaseIT {
     }
 
     /**
-     * Assert that there are the expected number of unique group IDs in the list of lambda events.
+     * Assert that there are the expected number of unique delivery IDs in the list of lambda events.
      * @param lambdaEvents
-     * @param expectedNumberOfGroupIds
+     * @param expectedNumberOfDeliveryIds
      */
-    private void assertNumberOfUniqueGroupIds(List<LambdaEvent> lambdaEvents, long expectedNumberOfGroupIds) {
-        long numberOfGroupIds = lambdaEvents.stream().map(LambdaEvent::getGroupId).distinct().count();
-        assertEquals(expectedNumberOfGroupIds, numberOfGroupIds);
+    private void assertNumberOfUniqueDeliveryIds(List<LambdaEvent> lambdaEvents, long expectedNumberOfDeliveryIds) {
+        long numberOfDeliveryIds = lambdaEvents.stream().map(LambdaEvent::getDeliveryId).distinct().count();
+        assertEquals(expectedNumberOfDeliveryIds, numberOfDeliveryIds);
     }
 }

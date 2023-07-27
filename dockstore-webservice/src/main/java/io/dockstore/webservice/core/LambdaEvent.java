@@ -87,8 +87,8 @@ public class LambdaEvent {
     private String entryName;
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    @Schema(description = "An identifier used to group events that belong to the same GitHub webhook invocation")
-    private String groupId;
+    @Schema(description = "The GitHub delivery ID, used to group events that belong to the same GitHub webhook invocation")
+    private String deliveryId;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -185,12 +185,12 @@ public class LambdaEvent {
         this.entryName = entryName;
     }
 
-    public String getGroupId() {
-        return groupId;
+    public String getDeliveryId() {
+        return deliveryId;
     }
 
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
+    public void setDeliveryId(String deliveryId) {
+        this.deliveryId = deliveryId;
     }
 
     public enum LambdaEventType {
@@ -200,7 +200,7 @@ public class LambdaEvent {
         PUBLISH
     }
 
-    public static String createGroupId() {
+    public static String createDeliveryId() {
         return UUID.randomUUID().toString();
     }
 }
