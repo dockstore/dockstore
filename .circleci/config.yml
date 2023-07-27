@@ -623,7 +623,7 @@ commands:
             sudo apt install -y xmlstarlet
             for file in ~/test-results/**/*
             do
-              xmlstarlet ed --inplace --rename '//testsuite/testcase/rerunFailure' -v 'failure' $file
+              xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file
             done
           when: always
       - store_test_results:
@@ -672,6 +672,6 @@ commands:
             sudo apt install -y xmlstarlet
             for file in ~/test-results/**/*
             do
-              xmlstarlet ed --inplace --rename '//testsuite/testcase/rerunFailure' -v 'failure' $file
+              xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file
             done
           when: always
