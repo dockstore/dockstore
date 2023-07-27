@@ -299,13 +299,13 @@ jobs:
       - run:
           name: split up tests and create a file for cache checksum
           command: |
+            touch /tmp/tests-to-run.txt
             if [ $CIRCLE_NODE_TOTAL != 1 ]
             then
               cat temp/test-lists/unit/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             else
               cat temp/test-lists/unit/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose
             fi
-            cat /tmp/tests-to-run.txt
       - restore_cache:
           keys:
             - dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
@@ -328,12 +328,12 @@ jobs:
       - run:
           name: Save test results
           command: |
-            mkdir -p ~/junit/
-            find . -type f -regex ".*/target/.*-reports/TEST-*.*xml" -exec cp {} ~/junit/ \;
+            mkdir -p ~/test-results/junit/
+            find . -type f -regex ".*/target/.*-reports/TEST-*.*xml" -exec cp {} ~/test-results/junit/ \;
           when: always
       - fix-non-compliant-xml-reports
       - store_test_results:
-          path: ~/junit
+          path: ~/test-results
       - setup_codecov_uploader
       - run:
           name: send coverage for unit tests
@@ -393,14 +393,14 @@ jobs:
       - run:
           name: Save test results
           command: |
-            mkdir -p ~/junit/
-            find . -type f -regex ".*/target/.*-reports/TEST-*.*xml" -exec cp {} ~/junit/ \;
+            mkdir -p ~/test-results/junit/
+            find . -type f -regex ".*/target/.*-reports/TEST-*.*xml" -exec cp {} ~/test-results/junit/ \;
           when: always
       - fix-non-compliant-xml-reports
       - store_test_results:
-          path: ~/junit
+          path: ~/test-results
       - store_artifacts:
-          path: ~/junit
+          path: ~/test-results
       - store_artifacts:
           path: keysmap.list
       - persist_coverage
@@ -670,7 +670,7 @@ commands:
           command: |
             sudo apt update
             sudo apt install -y xmlstarlet
-            for file in ~/junit/*
+            for file in ~/test-results/**/*
             do
               xmlstarlet ed --inplace --rename '//testsuite/testcase/rerunFailure' -v 'failure' $file
             done
