@@ -2,6 +2,9 @@
 package io.dockstore.webservice;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -30,6 +33,7 @@ import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.openapi.client.model.WorkflowVersion.DescriptionSourceEnum;
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
@@ -55,9 +59,12 @@ class WebhookIT extends BaseIT {
     public final SystemErr systemErr = new SystemErr();
 
     private final String installationId = "1179416";
+    private final String dockstoreTesting = "dockstore-testing";
     private final String taggedToolRepo = "dockstore-testing/tagged-apptool";
     private final String taggedToolRepoPath = "dockstore-testing/tagged-apptool/md5sum";
     private final String workflowDockstoreYmlRepo = "dockstore-testing/workflow-dockstore-yml";
+    private final String testWorkflowsAndToolsRepo = "dockstore-testing/test-workflows-and-tools";
+
 
     @BeforeEach
     public void cleanDB() {
@@ -277,5 +284,135 @@ class WebhookIT extends BaseIT {
     private Long getNullVisibilityCount() {
         return testingPostgres.runSelectStatement(
             "select count(*) from workflow where gitvisibility is null", long.class);
+    }
+
+    @Test
+    void testEntryNameAndGroupIdInLambdaEvents() {
+        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
+        // Constants for the "dockstore-testing/workflow-dockstore-yml" repo
+        final String tag01 = "refs/tags/0.1";
+        final String tag02 = "refs/tags/0.2";
+        final String branchInvalidDockstoreYml = "refs/heads/invalidDockstoreYml";
+        final String branchDifferentLanguagesWithSameWorkflowName = "refs/heads/differentLanguagesWithSameWorkflowName";
+        final String foobarWorkflowName = "foobar";
+        final String foobar2WorkflowName = "foobar2";
+        long numberOfWebhookInvocations = 0;
+
+        // Track install event
+        workflowsApi.handleGitHubInstallation(installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        ++numberOfWebhookInvocations;
+        List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.INSTALL, true); // There should be no entry name
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
+        // Release 0.1 on GitHub - one new wdl workflow
+        workflowsApi.handleGitHubRelease(tag01, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        ++numberOfWebhookInvocations;
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag01, foobarWorkflowName, true);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
+        // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
+        workflowsApi.handleGitHubRelease(tag02, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        ++numberOfWebhookInvocations;
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag02, foobarWorkflowName, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag02, foobar2WorkflowName, true);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
+        // Delete tag 0.2
+        workflowsApi.handleGitHubBranchDeletion(workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME, tag02, installationId);
+        ++numberOfWebhookInvocations;
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
+        // Delete events should have the names of workflows that had a version deleted
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.DELETE, tag02, foobarWorkflowName, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.DELETE, tag02, foobar2WorkflowName, true);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
+        // Release refs/heads/invalidDockstoreYml where the foobar workflow description in the .dockstore.yml is missing the 'subclass' property
+        assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(branchInvalidDockstoreYml, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME));
+        ++numberOfWebhookInvocations;
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
+        // There should be two push events, one failed event for workflow 'foobar' and one successful event for workflow 'foobar2'
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchInvalidDockstoreYml, foobarWorkflowName, false);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchInvalidDockstoreYml, foobar2WorkflowName, true);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
+        // Release refs/heads/differentLanguagesWithSameWorkflowName where two workflows have the same workflow name
+        assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(branchDifferentLanguagesWithSameWorkflowName, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME));
+        ++numberOfWebhookInvocations;
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
+        // Should only have no entry name because the error is for the whole .dockstore.yml
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchDifferentLanguagesWithSameWorkflowName, null, false);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
+        // Release using the repository "dockstore-testing/test-workflows-and-tools" which registers 1 unpublished tool and 1 published workflow
+        final String tag10 = "refs/tags/1.0";
+        workflowsApi.handleGitHubRelease(tag10, installationId, testWorkflowsAndToolsRepo, BasicIT.USER_2_USERNAME);
+        ++numberOfWebhookInvocations;
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 15);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "", true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "md5sum", true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUBLISH, tag10, "", true);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+
+        // Release refs/heads/invalidToolName. There is one successful workflow and one failed tool with an invalid name
+        final String invalidToolNameBranch = "refs/heads/invalidToolName";
+        assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(invalidToolNameBranch, installationId, testWorkflowsAndToolsRepo, BasicIT.USER_2_USERNAME));
+        ++numberOfWebhookInvocations;
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 15);
+        // There should be two push events, one successful event for the workflow and one failed event for the tool
+        final String workflowName = "";
+        final String toolName = "md5sum/with/slashes";
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, workflowName, true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, toolName, false);
+        assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
+    }
+
+    /**
+     * Assert success and entry name for a lambda event type where gitReference and entryName isn't applicable. Example: INSTALL events
+     * @param lambdaEvents
+     * @param lambdaEventType
+     * @param expectedIsSuccess
+     */
+    private void assertEntryNameInNewestLambdaEvent(List<LambdaEvent> lambdaEvents, LambdaEvent.TypeEnum lambdaEventType, boolean expectedIsSuccess) {
+        // Filter lambda events to the ones that are applicable
+        List<LambdaEvent> filteredLambdaEvents = lambdaEvents.stream().filter(event -> lambdaEventType == event.getType()).toList();
+        assertFalse(filteredLambdaEvents.isEmpty(), String.format("Should have at least 1 %s lambda event", lambdaEventType));
+
+        LambdaEvent newestLambdaEvent = filteredLambdaEvents.get(0); // Newest one is always the first one
+        assertEquals(expectedIsSuccess, newestLambdaEvent.isSuccess());
+        assertNull(newestLambdaEvent.getEntryName(), "Should not have an entry name");
+    }
+
+    /**
+     * Assert success and entry name for the newest lambda event for a specified type, gitReference and entryName.
+     * @param lambdaEvents
+     * @param lambdaEventType
+     * @param gitReference
+     * @param entryName
+     * @param expectedIsSuccess
+     */
+    private void assertEntryNameInNewestLambdaEvent(List<LambdaEvent> lambdaEvents, LambdaEvent.TypeEnum lambdaEventType, String gitReference, String entryName, boolean expectedIsSuccess) {
+        // Filter lambda events to the ones that are applicable
+        List<LambdaEvent> filteredLambdaEvents = lambdaEvents.stream()
+                .filter(event -> lambdaEventType == event.getType() && gitReference.equals(event.getReference()) && Objects.equals(entryName, event.getEntryName()))
+                .toList();
+
+        assertFalse(filteredLambdaEvents.isEmpty(), String.format("Should have at least 1 %s lambda event with git reference %s and entry name '%s'", lambdaEventType, gitReference, entryName));
+        LambdaEvent newestLambdaEvent = filteredLambdaEvents.get(0); // Newest one is always the first one
+        assertEquals(expectedIsSuccess, newestLambdaEvent.isSuccess());
+    }
+
+    /**
+     * Assert that there are the expected number of unique delivery IDs in the list of lambda events.
+     * @param lambdaEvents
+     * @param expectedNumberOfDeliveryIds
+     */
+    private void assertNumberOfUniqueDeliveryIds(List<LambdaEvent> lambdaEvents, long expectedNumberOfDeliveryIds) {
+        long numberOfDeliveryIds = lambdaEvents.stream().map(LambdaEvent::getDeliveryId).distinct().count();
+        assertEquals(expectedNumberOfDeliveryIds, numberOfDeliveryIds);
     }
 }
