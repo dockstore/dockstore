@@ -58,6 +58,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -84,6 +85,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
+import org.jetbrains.annotations.NotNull;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
@@ -231,8 +233,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
-    private String readFileFromRepo(String fileName, String reference, GHRepository repo) {
+    private String readFileFromRepo(final String originalFileName, final String originalReference, final GHRepository originalRepo) {
         GHRateLimit startRateLimit = null;
+        boolean submoduleRedirected = false;
+        GHRepository repo = originalRepo;
+        String reference = originalReference;
+        String fileName = originalFileName;
         try {
             startRateLimit = getGhRateLimitQuietly();
 
@@ -250,7 +256,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 start.add(folders.get(i));
                 String partialPath = Joiner.on("/").join(start);
                 try {
-                    Pair<GHContent, String> innerContent = getContentAndMetadataForFileName(partialPath, reference, repo);
+                    Pair<GHContent, String> innerContent = getContentAndMetadataForFileName(partialPath, reference, repo, submoduleRedirected);
                     if (innerContent != null && innerContent.getLeft().getType().equals("symlink")) {
                         // restart the loop to look for symbolic links pointed to by symbolic links
                         List<String> newfolders = Lists.newArrayList(innerContent.getRight().split("/"));
@@ -259,6 +265,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         folders = newfolders;
                         start = new ArrayList<>();
                         i = -1;
+                    } else if (innerContent != null && innerContent.getLeft().getType().equals("submodule")) {
+                        String otherRepo = innerContent.getLeft().getGitUrl();
+                        URL otherRepoURL = new URL(otherRepo);
+                        // reassign repo and reference
+                        final String[] split = otherRepoURL.getPath().split("/");
+                        final int indexPastReposPrefix = 2;
+                        String newRepositoryId = split[indexPastReposPrefix] + "/" + split[indexPastReposPrefix + 1];
+                        String newReference = split[split.length - 1];
+                        repo = github.getRepository(newRepositoryId);
+                        reference = newReference;
+
+                        // start looking through folders in the submodule repository
+                        folders = folders.subList(i + 1, folders.size());
+                        start = new ArrayList<>();
+                        i = -1;
+                        submoduleRedirected = true;
                     }
                 } catch (IOException e) {
                     // move on if a file is not found
@@ -267,7 +289,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
             fileName = Joiner.on("/").join(folders);
 
-            Pair<GHContent, String> decodedContentAndMetadata = getContentAndMetadataForFileName(fileName, reference, repo);
+            Pair<GHContent, String> decodedContentAndMetadata = getContentAndMetadataForFileName(fileName, reference, repo, submoduleRedirected);
             if (decodedContentAndMetadata == null) {
                 return null;
             } else {
@@ -295,10 +317,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param fileName
      * @param reference
      * @param repo
+     * @parasm submoduleRedirected if the reference is a submodule, it will be a commit hash
      * @return metadata describing the type of file and its decoded content
      * @throws IOException
      */
-    private Pair<GHContent, String> getContentAndMetadataForFileName(String fileName, String reference, GHRepository repo)
+    private Pair<GHContent, String> getContentAndMetadataForFileName(String fileName, String reference, GHRepository repo,  boolean submoduleRedirected)
         throws IOException {
         // retrieval of directory content is cached as opposed to retrieving individual files
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
@@ -306,8 +329,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         GHRef[] branchesAndTags = getBranchesAndTags(repo);
 
-        if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
-            return null;
+        if (!submoduleRedirected) {
+            if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
+                return null;
+            }
         }
         // only look at github if the reference exists
         List<GHContent> directoryContent = repo.getDirectoryContent(fullPathNoEndSeparator, reference);
@@ -324,6 +349,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHContent fileContent = repo.getFileContent(content.getPath(), reference);
             // this is deprecated, but this seems to be the only way to get the actual content, rather than the content on the symbolic link
             try {
+                if (fileContent.getType().equals("submodule")) {
+                    return Pair.of(fileContent, null);
+                }
                 return Pair.of(fileContent, fileContent.getContent());
             } catch (NullPointerException ex) {
                 LOG.info("looks like we were unable to retrieve " + fileName + " at " + reference + " , possible submodule reference?", ex);
@@ -1221,7 +1249,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private List<String> getBranches(GHRepository repository, int maxRefs) throws IOException {
         return streamIterable(repository.listRefs())
             .limit(maxRefs)
-            .map(ref -> ref.getRef())
+            .map(GHRef::getRef)
             .filter(ref -> ref.startsWith(REFS_HEADS))
             .map(ref -> ref.substring(REFS_HEADS.length()))
             .toList();
@@ -1435,7 +1463,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         @Override
-        public void onError(GitHubConnectorResponse connectorResponse) {
+        public void onError(@NotNull GitHubConnectorResponse connectorResponse) {
             LOG.error(GITHUB_ABUSE_LIMIT_REACHED + " for " + username);
             throw new CustomWebApplicationException(GITHUB_ABUSE_LIMIT_REACHED, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1454,7 +1482,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         @Override
-        public void onError(GitHubConnectorResponse connectorResponse) {
+        public void onError(@NotNull GitHubConnectorResponse connectorResponse) {
             LOG.error(OUT_OF_GIT_HUB_RATE_LIMIT + " for " + username);
             throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT, HttpStatus.SC_BAD_REQUEST);
         }
