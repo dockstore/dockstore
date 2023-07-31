@@ -284,8 +284,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                             List<String> sublist = folders.subList(i + 1, folders.size());
                             newfolders.addAll(sublist);
                             folders = newfolders;
-                            start = new ArrayList<>();
-                            i = -1;
                         } else if (innerContent.getLeft().getType().equals("submodule")) {
                             String otherRepo = innerContent.getLeft().getGitUrl();
                             URL otherRepoURL = new URL(otherRepo);
@@ -299,10 +297,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                             // start looking through folders in the submodule repository
                             folders = folders.subList(i + 1, folders.size());
-                            start = new ArrayList<>();
-                            i = -1;
                             submoduleRedirected = true;
                         }
+                        start = new ArrayList<>();
+                        i = -1;
                     }
                 } catch (IOException e) {
                     // move on if a file is not found
