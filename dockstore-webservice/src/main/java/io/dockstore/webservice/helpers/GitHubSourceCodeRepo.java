@@ -349,10 +349,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         GHRef[] branchesAndTags = getBranchesAndTags(repo);
 
-        if (!submoduleRedirected) {
-            if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
-                return null;
-            }
+        if (!submoduleRedirected && Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
+            return null;
         }
         // only look at github if the reference exists
         List<GHContent> directoryContent = repo.getDirectoryContent(fullPathNoEndSeparator, reference);
