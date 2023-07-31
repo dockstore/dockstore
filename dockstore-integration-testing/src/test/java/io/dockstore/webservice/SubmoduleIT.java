@@ -57,6 +57,7 @@ class SubmoduleIT extends BaseIT {
         // these files are in a different repo entirely
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
+        assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
         assertTrue(sourcefiles.size() == 19);
     }
 
@@ -73,6 +74,8 @@ class SubmoduleIT extends BaseIT {
         // these files are in a different repo entirely
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
+        // this one is inside a different repo which points to yet a different repo
+        assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
         assertTrue(sourcefiles.size() == 19);
     }
 }
