@@ -277,30 +277,32 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 String partialPath = Joiner.on("/").join(start);
                 try {
                     Pair<GHContent, String> innerContent = getContentAndMetadataForFileName(partialPath, reference, repo, submoduleRedirected);
-                    if (innerContent != null && innerContent.getLeft().getType().equals("symlink")) {
-                        // restart the loop to look for symbolic links pointed to by symbolic links
-                        List<String> newfolders = Lists.newArrayList(innerContent.getRight().split("/"));
-                        List<String> sublist = folders.subList(i + 1, folders.size());
-                        newfolders.addAll(sublist);
-                        folders = newfolders;
-                        start = new ArrayList<>();
-                        i = -1;
-                    } else if (innerContent != null && innerContent.getLeft().getType().equals("submodule")) {
-                        String otherRepo = innerContent.getLeft().getGitUrl();
-                        URL otherRepoURL = new URL(otherRepo);
-                        // reassign repo and reference
-                        final String[] split = otherRepoURL.getPath().split("/");
-                        final int indexPastReposPrefix = 2;
-                        String newRepositoryId = split[indexPastReposPrefix] + "/" + split[indexPastReposPrefix + 1];
-                        String newReference = split[split.length - 1];
-                        repo = github.getRepository(newRepositoryId);
-                        reference = newReference;
+                    if (innerContent != null) {
+                        if (innerContent.getLeft().getType().equals("symlink")) {
+                            // restart the loop to look for symbolic links pointed to by symbolic links
+                            List<String> newfolders = Lists.newArrayList(innerContent.getRight().split("/"));
+                            List<String> sublist = folders.subList(i + 1, folders.size());
+                            newfolders.addAll(sublist);
+                            folders = newfolders;
+                            start = new ArrayList<>();
+                            i = -1;
+                        } else if (innerContent.getLeft().getType().equals("submodule")) {
+                            String otherRepo = innerContent.getLeft().getGitUrl();
+                            URL otherRepoURL = new URL(otherRepo);
+                            // reassign repo and reference
+                            final String[] split = otherRepoURL.getPath().split("/");
+                            final int indexPastReposPrefix = 2;
+                            String newRepositoryId = split[indexPastReposPrefix] + "/" + split[indexPastReposPrefix + 1];
+                            String newReference = split[split.length - 1];
+                            repo = github.getRepository(newRepositoryId);
+                            reference = newReference;
 
-                        // start looking through folders in the submodule repository
-                        folders = folders.subList(i + 1, folders.size());
-                        start = new ArrayList<>();
-                        i = -1;
-                        submoduleRedirected = true;
+                            // start looking through folders in the submodule repository
+                            folders = folders.subList(i + 1, folders.size());
+                            start = new ArrayList<>();
+                            i = -1;
+                            submoduleRedirected = true;
+                        }
                     }
                 } catch (IOException e) {
                     // move on if a file is not found
