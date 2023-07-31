@@ -57,5 +57,22 @@ class SubmoduleIT extends BaseIT {
         // these files are in a different repo entirely
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
+        assertTrue(sourcefiles.size() == 19);
+    }
+
+    @Test
+    void testSubmodulesRecursiveCase() {
+        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowClient = new WorkflowsApi(webClient);
+
+        // this tag has a submodule inside a submodule
+        workflowClient.handleGitHubRelease("refs/tags/v0.11-submodule-in-submodule", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+
+        Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
+        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), foobar.getWorkflowVersions().get(0).getId(), null);
+        // these files are in a different repo entirely
+        assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
+        assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
+        assertTrue(sourcefiles.size() == 19);
     }
 }
