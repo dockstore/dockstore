@@ -64,7 +64,7 @@ class SubmoduleIT extends BaseIT {
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
-        assertEquals(sourcefiles.size(), 19);
+        assertEquals(19, sourcefiles.size());
     }
 
     @Test
@@ -81,7 +81,7 @@ class SubmoduleIT extends BaseIT {
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
-        assertEquals(sourcefiles.size(), 19);
+        assertEquals(19, sourcefiles.size());
 
         // cannot use generated equals or toString since ids will be different
         List<String> allNormalPaths = sourcefiles.stream().map(SourceFile::getPath).sorted().toList();
@@ -94,9 +94,9 @@ class SubmoduleIT extends BaseIT {
         List<String> subNormalPaths = sourcefilesWithSubmodules.stream().map(SourceFile::getPath).sorted().toList();
         List<String> subNormalContent = sourcefilesWithSubmodules.stream().filter(s -> !s.getType().equals(TypeEnum.DOCKSTORE_YML)).map(SourceFile::getContent).sorted().toList();
         List<String> subAbsolutePaths = sourcefilesWithSubmodules.stream().map(SourceFile::getAbsolutePath).sorted().toList();
-        assertTrue(allNormalPaths.equals(subNormalPaths));
-        assertTrue(allNormalContent.equals(subNormalContent));
-        assertTrue(allAbsolutePaths.equals(subAbsolutePaths));
+        assertEquals(allNormalPaths, subNormalPaths);
+        assertEquals(allNormalContent, subNormalContent);
+        assertEquals(allAbsolutePaths, subAbsolutePaths);
     }
 
     @Test
@@ -115,7 +115,7 @@ class SubmoduleIT extends BaseIT {
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
         // this one is inside a different repo which points to yet a different repo
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
-        assertEquals(sourcefiles.size(), 19);
+        assertEquals(19, sourcefiles.size());
     }
 
     @Test

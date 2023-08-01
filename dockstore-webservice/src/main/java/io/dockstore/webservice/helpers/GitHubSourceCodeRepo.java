@@ -268,7 +268,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                             String otherRepo = innerContent.getLeft().getGitUrl();
                             if (otherRepo == null) {
                                 // likely means this submodule is not on GitHub, rest API reports it as null
-                                LOG.warn("Could not process %s at %s, is likely a submodule that is not on GitHub".formatted(originalFileName, originalReference));
+                                LOG.warn("Could not process {} at {}, is likely a submodule that is not on GitHub", originalFileName, originalReference);
                                 return null;
                             }
                             URL otherRepoURL = new URL(otherRepo);
