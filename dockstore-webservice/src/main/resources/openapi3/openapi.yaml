@@ -569,6 +569,8 @@ paths:
                 additionalProperties:
                   $ref: '#/components/schemas/Metrics'
           description: default response
+      security:
+      - BEARER: []
       summary: Get aggregated execution metrics for a tool from all platforms
       tags:
       - extendedGA4GH
