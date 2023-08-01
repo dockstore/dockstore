@@ -15,6 +15,7 @@ import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.LambdaEvent;
 import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.SourceFile.TypeEnum;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
@@ -40,7 +41,6 @@ class SubmoduleIT extends BaseIT {
     public final SystemErr systemErr = new SystemErr();
 
     private final String installationId = "1179416";
-    private final String dockstoreTesting = "dockstore-testing";
     private final String workflowDockstoreYmlRepo = "dockstore-testing/wdl-humanwgs";
 
 
@@ -65,6 +65,38 @@ class SubmoduleIT extends BaseIT {
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
         assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
         assertEquals(sourcefiles.size(), 19);
+    }
+
+    @Test
+    void testNoSubmodules() {
+        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowClient = new WorkflowsApi(webClient);
+
+        workflowClient.handleGitHubRelease("refs/tags/v0.11-no-submodule", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+
+        Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
+        final List<SourceFile> sourcefiles = workflowClient.getWorkflowVersionsSourcefiles(foobar.getId(), foobar.getWorkflowVersions().get(0).getId(), null);
+        assertTrue(foobar.getWorkflowVersions().stream().allMatch(WorkflowVersion::isValid));
+        // this test really just checks that the contents are more or less the same as when there is a submodule
+        assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/phase_vcf/phase_vcf.wdl")));
+        assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/workflows/deepvariant/deepvariant.wdl")));
+        assertTrue(sourcefiles.stream().anyMatch(f -> f.getPath().contains("../wdl-common/wdl/tasks/zip_index_vcf.wdl")));
+        assertEquals(sourcefiles.size(), 19);
+
+        // cannot use generated equals or toString since ids will be different
+        List<String> allNormalPaths = sourcefiles.stream().map(SourceFile::getPath).sorted().toList();
+        List<String> allNormalContent = sourcefiles.stream().filter(s -> !s.getType().equals(TypeEnum.DOCKSTORE_YML)).map(SourceFile::getContent).sorted().toList();
+        List<String> allAbsolutePaths = sourcefiles.stream().map(SourceFile::getAbsolutePath).sorted().toList();
+
+        workflowClient.handleGitHubRelease("refs/tags/v0.10-test", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        Workflow foobarWithSubmodules = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/wdl-humanwgs", WorkflowSubClass.BIOWORKFLOW, "versions");
+        final List<SourceFile> sourcefilesWithSubmodules = workflowClient.getWorkflowVersionsSourcefiles(foobarWithSubmodules.getId(), foobarWithSubmodules.getWorkflowVersions().get(0).getId(), null);
+        List<String> subNormalPaths = sourcefilesWithSubmodules.stream().map(SourceFile::getPath).sorted().toList();
+        List<String> subNormalContent = sourcefilesWithSubmodules.stream().filter(s -> !s.getType().equals(TypeEnum.DOCKSTORE_YML)).map(SourceFile::getContent).sorted().toList();
+        List<String> subAbsolutePaths = sourcefilesWithSubmodules.stream().map(SourceFile::getAbsolutePath).sorted().toList();
+        assertTrue(allNormalPaths.equals(subNormalPaths));
+        assertTrue(allNormalContent.equals(subNormalContent));
+        assertTrue(allAbsolutePaths.equals(subAbsolutePaths));
     }
 
     @Test
