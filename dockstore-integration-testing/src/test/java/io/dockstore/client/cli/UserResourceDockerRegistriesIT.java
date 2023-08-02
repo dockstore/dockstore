@@ -52,7 +52,7 @@ class UserResourceDockerRegistriesIT extends BaseIT {
         ApiClient client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
         List<String> actualNamespaces = usersApi.getDockerRegistriesOrganization("quay.io");
-        List<String> expectedNamespaces = Arrays.asList("dockstore", "dockstoretestuser");
+        List<String> expectedNamespaces = Arrays.asList("dockstoretestuser");
         assertEquals(expectedNamespaces, actualNamespaces, "Should have the expected namespaces");
         try {
             usersApi.getDockerRegistriesOrganization("fakeDockerRegistry");
