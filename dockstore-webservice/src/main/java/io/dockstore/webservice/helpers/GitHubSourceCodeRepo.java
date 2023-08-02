@@ -85,7 +85,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
@@ -123,11 +122,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public static final int GITHUB_MAX_CACHE_AGE_SECONDS = 30; // GitHub's default max-cache age is 60 seconds
 
     public static final String REFS_HEADS = "refs/heads/";
+    public static final String SUBMODULE = "submodule";
+    public static final String SYMLINK = "symlink";
     /**
      * each section that starts with (?!.* is excluding a specific character
      */
     public static final Pattern GIT_BRANCH_TAG_PATTERN = Pattern.compile("^refs/(tags|heads)/((?!.*//)(?!.*\\^)(?!.*:)(?!.*\\\\)(?!.*@)(?!.*\\[)(?!.*\\?)(?!.*~)(?!.*\\.\\.)[\\p{Punct}\\p{L}\\d\\-_/]+)$");
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
+
     private final GitHub github;
     private final String githubTokenUsername;
 
@@ -233,8 +235,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    /**
+     * This method appears to read files from github in a cache-aware manner, taking into account symlinks and submodules.
+     *
+     * @param originalFileName the original filename that we're looking for
+     * @param originalReference the original reference (tag, branch, commit) we're looking for
+     * @param originalRepo the original repo we're looking for the file in
+     * @return
+     */
     private String readFileFromRepo(final String originalFileName, final String originalReference, final GHRepository originalRepo) {
         GHRateLimit startRateLimit = null;
+        // when looking through submodules, we always look for a specific commit
         boolean submoduleRedirected = false;
         GHRepository repo = originalRepo;
         String reference = originalReference;
@@ -253,18 +264,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 if (i == 0 && folders.get(i).isEmpty()) {
                     continue;
                 }
+                // build up from the root and look for folders (potentially in the cache)
                 start.add(folders.get(i));
                 String partialPath = Joiner.on("/").join(start);
                 try {
                     Pair<GHContent, String> innerContent = getContentAndMetadataForFileName(partialPath, reference, repo, submoduleRedirected);
                     if (innerContent != null) {
-                        if (innerContent.getLeft().getType().equals("symlink")) {
+                        if (innerContent.getLeft().getType().equals(SYMLINK)) {
                             // restart the loop to look for symbolic links pointed to by symbolic links
                             List<String> newfolders = Lists.newArrayList(innerContent.getRight().split("/"));
                             List<String> sublist = folders.subList(i + 1, folders.size());
                             newfolders.addAll(sublist);
                             folders = newfolders;
-                        } else if (innerContent.getLeft().getType().equals("submodule")) {
+                        } else if (innerContent.getLeft().getType().equals(SUBMODULE)) {
                             String otherRepo = innerContent.getLeft().getGitUrl();
                             if (otherRepo == null) {
                                 // likely means this submodule is not on GitHub, rest API reports it as null
@@ -280,10 +292,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                             repo = github.getRepository(newRepositoryId);
                             reference = newReference;
 
-                            // start looking through folders in the submodule repository
+                            // discard the old folders we've looked at already and start looking through folders in the submodule repository
                             folders = folders.subList(i + 1, folders.size());
                             submoduleRedirected = true;
                         }
+                        // in both the case of a symbolic link or a submodule, reset the path we're looking for since the "old" path getting to the link or submodule is no longer relevant
+                        // only the path "inside" the submodule or link is what you are looking for e.g. if your path is `../foo/test/a/b` but `foo` is a submodule, you
+                        // look at the repo that `foo` corresponds to and look for the path `test/a/b` inside it
                         start = new ArrayList<>();
                         i = -1;
                     }
@@ -352,7 +367,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHContent fileContent = repo.getFileContent(content.getPath(), reference);
             // this is deprecated, but this seems to be the only way to get the actual content, rather than the content on the symbolic link
             try {
-                if (fileContent.getType().equals("submodule")) {
+                if (fileContent.getType().equals(SUBMODULE)) {
                     return Pair.of(fileContent, null);
                 }
                 return Pair.of(fileContent, fileContent.getContent());
@@ -1466,7 +1481,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         @Override
-        public void onError(@NotNull GitHubConnectorResponse connectorResponse) {
+        public void onError(GitHubConnectorResponse connectorResponse) {
             LOG.error(GITHUB_ABUSE_LIMIT_REACHED + " for " + username);
             throw new CustomWebApplicationException(GITHUB_ABUSE_LIMIT_REACHED, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1485,7 +1500,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         @Override
-        public void onError(@NotNull GitHubConnectorResponse connectorResponse) {
+        public void onError(GitHubConnectorResponse connectorResponse) {
             LOG.error(OUT_OF_GIT_HUB_RATE_LIMIT + " for " + username);
             throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT, HttpStatus.SC_BAD_REQUEST);
         }
