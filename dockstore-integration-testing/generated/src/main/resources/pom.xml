@@ -141,7 +141,7 @@
       </snapshots>
       <id>artifactory.broadinstitute.org</id>
       <name>artifactory.broadinstitute.org</name>
-      <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
+      <url>https://broadinstitute.jfrog.io/artifactory/libs-release/</url>
     </repository>
   </repositories>
 </project>
