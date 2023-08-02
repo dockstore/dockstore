@@ -277,7 +277,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                             newfolders.addAll(sublist);
                             folders = newfolders;
                         } else if (innerContent.getLeft().getType().equals(SUBMODULE)) {
-                            String otherRepo = innerContent.getLeft().getGitUrl();
+                            String otherRepo = innerContent.getRight();
                             if (otherRepo == null) {
                                 // likely means this submodule is not on GitHub, rest API reports it as null
                                 LOG.warn("Could not process {} at {}, is likely a submodule that is not on GitHub", originalFileName, originalReference);
@@ -365,11 +365,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
             // need to double-check whether this is a symlink by getting the specific file which sucks
             GHContent fileContent = repo.getFileContent(content.getPath(), reference);
-            // this is deprecated, but this seems to be the only way to get the actual content, rather than the content on the symbolic link
             try {
                 if (fileContent.getType().equals(SUBMODULE)) {
-                    return Pair.of(fileContent, null);
+                    // fileContent.getContent() assumes content to decode, but a submodule reference has no content, return the giturl instead
+                    return Pair.of(fileContent, fileContent.getGitUrl());
                 }
+                // this is deprecated, but getContent() seems to be the only way to get the actual content, rather than the content of the symbolic link
                 return Pair.of(fileContent, fileContent.getContent());
             } catch (NullPointerException ex) {
                 LOG.info("looks like we were unable to retrieve " + fileName + " at " + reference + " , possible submodule reference?", ex);
