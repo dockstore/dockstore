@@ -18,6 +18,8 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.client.cli.BaseIT.getOpenAPIWebClient;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -78,12 +80,10 @@ public class CheckUrlHelperFullIT {
         CommonTestUtilities.cleanStatePrivate2(EXT.getTestSupport(), false, testingPostgres);
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
-        final String installationId = "1179416";
 
         // Test creating new version
-        final String dockstoreTestUser2 = "DockstoreTestUser2";
         final String gitReference = "refs/tags/0.1";
-        client.handleGitHubRelease(gitReference, installationId, workflowRepo, dockstoreTestUser2);
+        handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, gitReference, USER_2_USERNAME);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(client);
         final String noFilesInJsonForInputParameters = "Should be set to false since the workflow has a file input parameter, and the JSON has no files";
@@ -94,7 +94,7 @@ public class CheckUrlHelperFullIT {
         assertNull(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Database should've reverted it to null");
 
         // Test updating existing version
-        client.handleGitHubRelease(gitReference, installationId, workflowRepo, dockstoreTestUser2);
+        handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, gitReference, USER_2_USERNAME);
         workflowVersion = getWorkflowVersion(client);
         assertFalse(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), noFilesInJsonForInputParameters);
     }

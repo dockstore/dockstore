@@ -1,6 +1,8 @@
 
 package io.dockstore.webservice;
 
+import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -10,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
-import io.dockstore.client.cli.BasicIT;
 import io.dockstore.client.cli.OrganizationIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -58,7 +59,6 @@ class WebhookIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private final String installationId = "1179416";
     private final String dockstoreTesting = "dockstore-testing";
     private final String taggedToolRepo = "dockstore-testing/tagged-apptool";
     private final String taggedToolRepoPath = "dockstore-testing/tagged-apptool/md5sum";
@@ -75,10 +75,9 @@ class WebhookIT extends BaseIT {
     @Test
     @Disabled("https://ucsc-cgl.atlassian.net/browse/DOCK-1890")
     void testAppToolCollections() throws Exception {
-        final ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(openApiClient);
-
-        client.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        handleGitHubRelease(client, INSTALLATION_ID, taggedToolRepo, "refs/tags/1.0", USER_2_USERNAME);
         Workflow appTool = client.getWorkflowByPath("github.com/" + taggedToolRepoPath, WorkflowSubClass.APPTOOL, "versions,validations");
 
         WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
@@ -111,18 +110,18 @@ class WebhookIT extends BaseIT {
 
     @Test
     void testDifferentLanguagesWithSameWorkflowName() {
-        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowClient = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
 
         // Add a WDL version of a workflow should pass.
-        workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-WDL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/heads/sameWorkflowName-WDL", USER_2_USERNAME);
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertTrue(foobar.getWorkflowVersions().stream().allMatch(v -> v.getDescriptionSource() == DescriptionSourceEnum.README));
 
         // Add a CWL version of a workflow with the same name should cause error.
         try {
-            workflowClient.handleGitHubRelease("refs/heads/sameWorkflowName-CWL", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+            handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/heads/sameWorkflowName-CWL", USER_2_USERNAME);
             fail("should have thrown");
         } catch (ApiException ex) {
             List<LambdaEvent> events = usersApi.getUserGitHubEvents(0, 10);
@@ -136,16 +135,16 @@ class WebhookIT extends BaseIT {
 
     @Test
     void testWackyBranchCreationAndDeletion() {
-        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowClient = new WorkflowsApi(webClient);
 
         // needs to be a branch to match branch deletion below
-        workflowClient.handleGitHubRelease("refs/heads/孤独のグルメ", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/heads/孤独のグルメ", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(1, foobar.getWorkflowVersions().size());
 
-        workflowClient.handleGitHubBranchDeletion(workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME, "refs/heads/孤独のグルメ", installationId);
+        workflowClient.handleGitHubBranchDeletion(workflowDockstoreYmlRepo, USER_2_USERNAME, "refs/heads/孤独のグルメ", String.valueOf(INSTALLATION_ID));
 
         foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(0, foobar.getWorkflowVersions().size());
@@ -153,10 +152,10 @@ class WebhookIT extends BaseIT {
 
     @Test
     void testNormalReadMeLocation() {
-        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowClient = new WorkflowsApi(webClient);
 
-        workflowClient.handleGitHubRelease("refs/tags/0.4", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/tags/0.4", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
         Workflow foobar2 = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
@@ -168,10 +167,10 @@ class WebhookIT extends BaseIT {
 
     @Test
     void testRootReadMeLocation() {
-        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowClient = new WorkflowsApi(webClient);
 
-        workflowClient.handleGitHubRelease("refs/tags/0.3", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/tags/0.3", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
         Workflow foobar2 = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
@@ -185,14 +184,13 @@ class WebhookIT extends BaseIT {
 
     @Test
     void testAlternateReadMeLocation() {
-        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowClient = new WorkflowsApi(webClient);
 
-        workflowClient.handleGitHubRelease("refs/tags/0.5", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/tags/0.5", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
         Workflow foobar2 = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
-
 
         assertTrue(foobar.getWorkflowVersions().stream().allMatch(v -> v.getDescriptionSource() == DescriptionSourceEnum.CUSTOM_README && workflowClient.getWorkflowVersionDescription(foobar.getId(), v.getId()).contains("an 'X' in it")));
         assertTrue(foobar2.getWorkflowVersions().stream().allMatch(v -> v.getDescriptionSource() == DescriptionSourceEnum.CUSTOM_README && workflowClient.getWorkflowVersionDescription(foobar2.getId(), v.getId()).contains("a '🙃' in it")));
@@ -200,10 +198,10 @@ class WebhookIT extends BaseIT {
 
     @Test
     void testReadMePathOverridesDescriptor() {
-        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowClient = new WorkflowsApi(webClient);
 
-        workflowClient.handleGitHubRelease("refs/tags/0.7", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/tags/0.7", USER_2_USERNAME);
 
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
         Workflow foobar2 = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
@@ -225,7 +223,7 @@ class WebhookIT extends BaseIT {
         assertTrue(foobar2A.getWorkflowVersions().stream().allMatch(v -> v.getReadMePath() == null && workflowClient.getWorkflowVersionDescription(foobar2A.getId(), v.getId()) == null));
 
         // The GitHub release should update the readmepath and description to the correct values
-        workflowClient.handleGitHubRelease("refs/tags/0.7", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/tags/0.7", USER_2_USERNAME);
         final Workflow foobarB = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
         final Workflow foobar2B = workflowClient.getWorkflowByPath("github.com/" + workflowDockstoreYmlRepo + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertTrue(foobarB.getWorkflowVersions().stream().allMatch(v -> "/README2.md".equals(v.getReadMePath()) && workflowClient.getWorkflowVersionDescription(foobarB.getId(), v.getId()).contains("an 'X' in it")));
@@ -234,13 +232,13 @@ class WebhookIT extends BaseIT {
 
     @Test
     void testCheckingUserLambdaEventsAsAdmin() {
-        final ApiClient userClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi userWorkflowsClient = new WorkflowsApi(userClient);
         UsersApi usersApi = new UsersApi(userClient);
 
         long userid = usersApi.getUser().getId();
 
-        userWorkflowsClient.handleGitHubRelease("refs/tags/1.0", installationId, taggedToolRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(userWorkflowsClient, INSTALLATION_ID, taggedToolRepo, "refs/tags/1.0", USER_2_USERNAME);
 
         // Setup admin
         final ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -253,7 +251,7 @@ class WebhookIT extends BaseIT {
         
     @Test
     void testGitVisibility() {
-        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowClient = new WorkflowsApi(webClient);
 
         final String manualWorkflowPath = "DockstoreTestUser/dockstore-whalesay-wdl";
@@ -263,16 +261,16 @@ class WebhookIT extends BaseIT {
         workflowClient.refresh1(manualWorkflow.getId(), false);
         assertEquals(1, getNullVisibilityCount(), "Git visibility is null for manually registered workflows");
 
-        workflowClient.handleGitHubRelease("refs/tags/0.7", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This creates 2 workflows
+        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/tags/0.7", USER_2_USERNAME); // This creates 2 workflows
         assertEquals(2, getPublicVisibilityCount(), "Two workflows created should both have PUBLIC git visiblity");
-        workflowClient.handleGitHubRelease("refs/tags/0.5", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This updates the 2 workflows
+        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/tags/0.5", USER_2_USERNAME); // This updates the 2 workflows
         assertEquals(2, getPublicVisibilityCount(), "Updated workflows should still both have PUBLIC git visiblity");
         assertEquals(1, getNullVisibilityCount(), "Git visibility should still be null for manually registered workflows");
 
         // Simulate transitioning a private repo to a public repo
         testingPostgres.runUpdateStatement("update workflow set gitvisibility = 'PRIVATE' where gitvisibility is not null;");
         assertEquals(0, getPublicVisibilityCount());
-        workflowClient.handleGitHubRelease("refs/tags/0.4", installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME); // This updates the 2 workflows
+        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/tags/0.4", USER_2_USERNAME); // This updates the 2 workflows
         assertEquals(2, getPublicVisibilityCount(), "Private visibility should have changed to public");
     }
 
@@ -288,7 +286,7 @@ class WebhookIT extends BaseIT {
 
     @Test
     void testEntryNameAndGroupIdInLambdaEvents() {
-        final ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
         // Constants for the "dockstore-testing/workflow-dockstore-yml" repo
@@ -301,21 +299,21 @@ class WebhookIT extends BaseIT {
         long numberOfWebhookInvocations = 0;
 
         // Track install event
-        workflowsApi.handleGitHubInstallation(installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        workflowsApi.handleGitHubInstallation(String.valueOf(INSTALLATION_ID), workflowDockstoreYmlRepo, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.INSTALL, true); // There should be no entry name
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release 0.1 on GitHub - one new wdl workflow
-        workflowsApi.handleGitHubRelease(tag01, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, INSTALLATION_ID, workflowDockstoreYmlRepo, tag01, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag01, foobarWorkflowName, true);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
-        workflowsApi.handleGitHubRelease(tag02, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, INSTALLATION_ID, workflowDockstoreYmlRepo, tag02, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag02, foobarWorkflowName, true);
@@ -323,7 +321,7 @@ class WebhookIT extends BaseIT {
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Delete tag 0.2
-        workflowsApi.handleGitHubBranchDeletion(workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME, tag02, installationId);
+        workflowsApi.handleGitHubBranchDeletion(workflowDockstoreYmlRepo, USER_2_USERNAME, tag02, String.valueOf(INSTALLATION_ID));
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         // Delete events should have the names of workflows that had a version deleted
@@ -332,7 +330,7 @@ class WebhookIT extends BaseIT {
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release refs/heads/invalidDockstoreYml where the foobar workflow description in the .dockstore.yml is missing the 'subclass' property
-        assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(branchInvalidDockstoreYml, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME));
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, INSTALLATION_ID, workflowDockstoreYmlRepo, branchInvalidDockstoreYml, USER_2_USERNAME));
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         // There should be two push events, one failed event for workflow 'foobar' and one successful event for workflow 'foobar2'
@@ -341,7 +339,7 @@ class WebhookIT extends BaseIT {
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release refs/heads/differentLanguagesWithSameWorkflowName where two workflows have the same workflow name
-        assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(branchDifferentLanguagesWithSameWorkflowName, installationId, workflowDockstoreYmlRepo, BasicIT.USER_2_USERNAME));
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, INSTALLATION_ID, workflowDockstoreYmlRepo, branchDifferentLanguagesWithSameWorkflowName, USER_2_USERNAME));
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         // Should only have no entry name because the error is for the whole .dockstore.yml
@@ -350,7 +348,7 @@ class WebhookIT extends BaseIT {
 
         // Release using the repository "dockstore-testing/test-workflows-and-tools" which registers 1 unpublished tool and 1 published workflow
         final String tag10 = "refs/tags/1.0";
-        workflowsApi.handleGitHubRelease(tag10, installationId, testWorkflowsAndToolsRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, INSTALLATION_ID, testWorkflowsAndToolsRepo, tag10, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 15);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "", true);
@@ -360,7 +358,7 @@ class WebhookIT extends BaseIT {
 
         // Release refs/heads/invalidToolName. There is one successful workflow and one failed tool with an invalid name
         final String invalidToolNameBranch = "refs/heads/invalidToolName";
-        assertThrows(ApiException.class, () -> workflowsApi.handleGitHubRelease(invalidToolNameBranch, installationId, testWorkflowsAndToolsRepo, BasicIT.USER_2_USERNAME));
+        assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, INSTALLATION_ID, testWorkflowsAndToolsRepo, invalidToolNameBranch, USER_2_USERNAME));
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 15);
         // There should be two push events, one successful event for the workflow and one failed event for the tool

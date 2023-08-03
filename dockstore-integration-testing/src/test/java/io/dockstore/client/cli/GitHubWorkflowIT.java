@@ -40,7 +40,7 @@ import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.helpers.AppToolHelper;
+import io.dockstore.webservice.helpers.GitHubAppHelper;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.openapi.model.DescriptorType;
@@ -184,7 +184,7 @@ class GitHubWorkflowIT extends BaseIT {
             WorkflowSubClass.BIOWORKFLOW.getValue()).size(), "An null subclass param defaults to services param value");
 
         // Create an app tool and publish it
-        AppToolHelper.registerAppTool(webClient);
+        GitHubAppHelper.registerAppTool(webClient);
         Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions");
         workflowApi.publish(appTool.getId(), publishRequest);
         assertEquals(1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
@@ -207,7 +207,7 @@ class GitHubWorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
 
-        AppToolHelper.registerAppTool(webClient);
+        GitHubAppHelper.registerAppTool(webClient);
         Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions");
         workflowApi.publish(appTool.getId(), publishRequest);
 

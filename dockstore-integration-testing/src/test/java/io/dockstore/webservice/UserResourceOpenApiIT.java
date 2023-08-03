@@ -16,6 +16,8 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static io.dockstore.webservice.resources.UserResource.USER_PROFILES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -66,7 +68,6 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(ConfidentialTest.NAME)
 class UserResourceOpenApiIT extends BaseIT {
     private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
-    private static final String INSTALLATION_ID = "1179416";
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -268,7 +269,7 @@ class UserResourceOpenApiIT extends BaseIT {
         final long userId = usersApi.getUser().getId();
 
         // Add service
-        workflowsApi.handleGitHubRelease("refs/tags/1.0", INSTALLATION_ID, SERVICE_REPO, USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, INSTALLATION_ID, SERVICE_REPO, "refs/tags/1.0", USER_2_USERNAME);
         assertEquals(1, usersApi.userServices(userId).size());
         assertEquals(0, usersApi.userWorkflows(userId).size());
 

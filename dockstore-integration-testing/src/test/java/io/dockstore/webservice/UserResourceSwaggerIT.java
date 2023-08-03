@@ -32,7 +32,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.helpers.AppToolHelper;
+import io.dockstore.webservice.helpers.GitHubAppHelper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.HostedApi;
@@ -398,7 +398,7 @@ class UserResourceSwaggerIT extends BaseIT {
         assertEquals(4, userApi.getUserEntries(10, null, "TOOLS").size());
 
         // Add an app tool, which should appear when specifying the TOOLS type
-        AppToolHelper.registerAppTool(client);
+        GitHubAppHelper.registerAppTool(client);
         final List<EntryUpdateTime> tools = userApi.getUserEntries(10, null, "TOOLS");
         assertEquals(5, tools.size());
         assertEquals(1L, tools.stream().filter(t -> t.getEntryType() == EntryTypeEnum.APPTOOL).count());

@@ -6563,30 +6563,20 @@ paths:
       description: Handle a release of a repository on GitHub. Will create a workflow/service
         and version when necessary.
       operationId: handleGitHubRelease
+      parameters:
+      - description: A GUID to identify the GitHub webhook delivery
+        in: header
+        name: X-GitHub-Delivery
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
-          application/x-www-form-urlencoded:
+          application/json:
             schema:
-              type: object
-              properties:
-                gitReference:
-                  type: string
-                  description: Full git reference for a GitHub branch/tag. Ex. refs/heads/master
-                    or refs/tags/v1.0
-                installationId:
-                  type: string
-                  description: GitHub installation ID
-                repository:
-                  type: string
-                  description: Repository path (ex. dockstore/dockstore-ui2)
-                username:
-                  type: string
-                  description: Username of user on GitHub who triggered action
-              required:
-              - gitReference
-              - installationId
-              - repository
-              - username
+              type: string
+        description: GitHub push event payload
+        required: true
       responses:
         default:
           content:

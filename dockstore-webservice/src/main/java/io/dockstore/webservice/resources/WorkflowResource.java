@@ -105,6 +105,7 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -116,6 +117,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -138,6 +141,8 @@ import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
+import org.kohsuke.github.GHEventPayload;
+import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -2093,22 +2098,32 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @POST
     @Path("/github/release")
     @Timed
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
     @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
-        @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-        @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
-        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
+        @RequestBody(description = "GitHub push event payload", required = true) String payload) {
+        final GHEventPayload.Push gitHubPushPayload;
+        try {
+            StringReader reader = new StringReader(payload);
+            gitHubPushPayload = GitHub.offline().parseEventPayload(reader, GHEventPayload.Push.class);
+        } catch (IOException e) {
+            LOG.error("Invalid payload", e);
+            throw new CustomWebApplicationException("Invalid payload", HttpStatus.SC_BAD_REQUEST);
+        }
+        final String repository = gitHubPushPayload.getRepository().getFullName();
+        final String username = gitHubPushPayload.getSender().getLogin();
+        final String gitReference = gitHubPushPayload.getRef();
+        final long installationId = gitHubPushPayload.getInstallation().getId();
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
-        final String deliveryId = LambdaEvent.createDeliveryId();
-        githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId), deliveryId, true);
+
+        githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, true);
     }
 
     @POST
