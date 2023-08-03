@@ -96,7 +96,7 @@
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-jdbi3</artifactId>
-      <version>4.0.0</version>
+      <version>4.0.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -114,27 +114,27 @@
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-cbor</artifactId>
-      <version>2.14.2</version>
+      <version>2.15.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.4.6</version>
+      <version>1.4.8</version>
       <scope>runtime</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.4.6</version>
+      <version>1.4.8</version>
       <scope>runtime</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
-      <version>3.1.5</version>
+      <version>3.1.6</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -159,7 +159,7 @@
       </snapshots>
       <id>artifactory.broadinstitute.org</id>
       <name>artifactory.broadinstitute.org</name>
-      <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
+      <url>https://broadinstitute.jfrog.io/artifactory/libs-release/</url>
     </repository>
   </repositories>
 </project>
