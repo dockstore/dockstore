@@ -276,7 +276,7 @@ public class ToolsExtendedApi {
         @ApiResponse(code = HttpStatus.SC_OK, message = AggregatedMetricsGet.OK_RESPONSE, response = Map.class),
         @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = AggregatedMetricsGet.NOT_FOUND_RESPONSE, response = Error.class),
         @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = AggregatedMetricsGet.UNAUTHORIZED_RESPONSE, response = Error.class)})
-    @Operation(operationId = "aggregatedMetricsGet", summary = AggregatedMetricsGet.SUMMARY, description = AggregatedMetricsGet.DESCRIPTION)
+    @Operation(operationId = "aggregatedMetricsGet", summary = AggregatedMetricsGet.SUMMARY, description = AggregatedMetricsGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     public Map<Partner, Metrics> aggregatedMetricsGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = AggregatedMetricsGet.ID_DESCRIPTION, required = true) @Parameter(description = AggregatedMetricsGet.ID_DESCRIPTION,
                 in = ParameterIn.PATH) @PathParam("id") String id,

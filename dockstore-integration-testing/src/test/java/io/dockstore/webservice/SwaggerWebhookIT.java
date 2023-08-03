@@ -468,8 +468,6 @@ class SwaggerWebhookIT extends BaseIT {
         assertTrue(workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")),
             "Should have a 0.2 version.");
 
-
-
         // Master version should have metadata set
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = workflow.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
         assertEquals("Test User", masterVersion.get().getAuthor(), "Should have author set");
@@ -502,31 +500,31 @@ class SwaggerWebhookIT extends BaseIT {
             assertEquals(failedCount + 1, usersApi.getUserGitHubEvents(0, 10).stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be one more unsuccessful event than before");
         }
 
-        // There should be 7 successful lambda events
-        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents(0, 10);
-        assertEquals(7, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be 7 successful events");
+        // There should be 13 successful lambda events
+        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents(0, 20);
+        assertEquals(13, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be 13 successful events");
 
         // Test pagination for user github events
         events = usersApi.getUserGitHubEvents(2, 2);
-        assertEquals(2, events.size(), "There should be 2 events (id 8 and 9)");
-        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(8L, lambdaEvent.getId())), "Should have event with ID 8");
-        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(9L, lambdaEvent.getId())), "Should have event with ID 9");
+        assertEquals(2, events.size(), "There should be 2 events (id 13 and 14)");
+        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(13L, lambdaEvent.getId())), "Should have event with ID 13");
+        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(14L, lambdaEvent.getId())), "Should have event with ID 14");
 
         // Test the organization events endpoint
-        List<io.dockstore.openapi.client.model.LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
-        assertEquals(10, orgEvents.size(), "There should be 10 events");
+        List<io.dockstore.openapi.client.model.LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 20);
+        assertEquals(16, orgEvents.size(), "There should be 16 events");
 
         // Test pagination
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "2", 2);
-        assertEquals(2, orgEvents.size(), "There should be 2 events (id 8 and 9)");
-        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(8L, lambdaEvent.getId())), "Should have event with ID 8");
-        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(9L, lambdaEvent.getId())), "Should have event with ID 9");
+        assertEquals(2, orgEvents.size(), "There should be 2 events (id 13 and 14)");
+        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(13L, lambdaEvent.getId())), "Should have event with ID 13");
+        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(14L, lambdaEvent.getId())), "Should have event with ID 14");
 
         // Change organization to test filter
         testingPostgres.runUpdateStatement("UPDATE lambdaevent SET repository = 'workflow-dockstore-yml', organization = 'DockstoreTestUser3' WHERE id = '1'");
 
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
-        assertEquals(10, orgEvents.size(), "There should now be 10 events");
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 20);
+        assertEquals(15, orgEvents.size(), "There should now be 15 events");
 
         try {
             lambdaEventsApi.getLambdaEventsByOrganization("IAmMadeUp", "0", 10);
@@ -558,10 +556,10 @@ class SwaggerWebhookIT extends BaseIT {
 
         assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size(), "No events at all works");
 
-        testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization) values ('whatevs', 'repo-no-access', 'DockstoreTestUser')");
+        testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization, deliveryid) values ('whatevs', 'repo-no-access', 'DockstoreTestUser', '1234')");
         assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size(), "Can't see event for repo with no access");
 
-        testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization) values ('whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser')");
+        testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization, deliveryid) values ('whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser', '1234')");
         final List<io.dockstore.openapi.client.model.LambdaEvent> events =
             lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10);
         assertEquals(1, events.size(), "Can see event for repo with access, not one without");
@@ -1607,9 +1605,11 @@ class SwaggerWebhookIT extends BaseIT {
         assertTrue(ex.getMessage().toLowerCase().contains("could not be processed"));
         assertEquals(0, countWorkflows());
         assertEquals(2, countTools());
-        LambdaEvent lambdaEvent = getLatestLambdaEvent("0", usersApi);
-        assertFalse(lambdaEvent.isSuccess(), "The event should be unsuccessful");
-        assertTrue(lambdaEvent.getMessage().toLowerCase().contains("absolute"), "Should contain the word 'absolute'");
+        List<LambdaEvent> failedLambdaEvents = usersApi.getUserGitHubEvents("0", 10).stream()
+                .filter(event -> !event.isSuccess())
+                .toList();
+        assertEquals(2, failedLambdaEvents.size(), "There should be two failed events");
+        failedLambdaEvents.forEach(event -> assertTrue(event.getMessage().toLowerCase().contains("absolute"), "Should contain the word 'absolute'"));
     }
 
     /**
