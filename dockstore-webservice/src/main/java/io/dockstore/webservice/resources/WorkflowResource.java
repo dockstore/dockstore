@@ -2107,7 +2107,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
-        githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId), true);
+        final String deliveryId = LambdaEvent.createDeliveryId();
+        githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId), deliveryId, true);
     }
 
     @POST
@@ -2126,11 +2127,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(repositories), Utilities.cleanForLogging(username)));
         }
+        Map<String, String> repositoryToLambdaEventDeliveryId = new HashMap<>();
         // record installation event as lambda event
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
         Arrays.asList(repositories.split(",")).forEach(repository -> {
+            // Unique group ID used to identify lambda events for this GitHub webhook invocation
+            final String deliveryId = LambdaEvent.createDeliveryId();
+            repositoryToLambdaEventDeliveryId.put(repository, deliveryId);
             LambdaEvent lambdaEvent = new LambdaEvent();
             String[] splitRepository = repository.split("/");
+            lambdaEvent.setDeliveryId(deliveryId);
             lambdaEvent.setOrganization(splitRepository[0]);
             lambdaEvent.setRepository(splitRepository[1]);
             lambdaEvent.setGithubUsername(username);
@@ -2147,7 +2153,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
                         Utilities.cleanForLogging(username)));
                 }
-                githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId), false);
+                githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId), repositoryToLambdaEventDeliveryId.get(repository), false);
             }
         }
         return Response.status(HttpStatus.SC_OK).build();
@@ -2169,7 +2175,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s deleted from %s", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository)));
         }
-        githubWebhookDelete(repository, gitReference, username);
+        final String deliveryId = LambdaEvent.createDeliveryId();
+        githubWebhookDelete(repository, gitReference, username, deliveryId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 

@@ -62,11 +62,10 @@ import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.swagger.annotations.Api;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -76,6 +75,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.HttpClient;
@@ -289,17 +289,17 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param username Git user who triggered the event
+     * @param deliveryId The GitHub delivery ID, used to group all lambda events created during this GitHub webhook delete
      */
-    protected void githubWebhookDelete(String repository, String gitReference, String username) {
+    protected void githubWebhookDelete(String repository, String gitReference, String username, String deliveryId) {
         // Retrieve name from gitReference
         Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
         if (gitReferenceName.isEmpty()) {
             String msg = "Reference " + Utilities.cleanForLogging(gitReference) + " is not of the valid form";
             LOG.error(msg);
             sessionFactory.getCurrentSession().clear();
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, false, deliveryId);
             lambdaEvent.setMessage(msg);
-            lambdaEvent.setSuccess(false);
             lambdaEventDAO.create(lambdaEvent);
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
@@ -319,8 +319,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         });
 
         // Delete all non-frozen versions that have the same git reference name and then update the file formats of the entry.
+        List<String> entryNamesWithDeletedVersions = new ArrayList<>();
         workflows.forEach(workflow -> {
-            workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen());
+            Predicate<WorkflowVersion> canVersionBeDeleted = workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen();
+            if (workflow.getWorkflowVersions().stream().anyMatch(canVersionBeDeleted)) {
+                entryNamesWithDeletedVersions.add(computeWorkflowName(workflow));
+            }
+            workflow.getWorkflowVersions().removeIf(canVersionBeDeleted);
             FileFormatHelper.updateEntryLevelFileFormats(workflow);
 
             // Unpublish the workflow if it was published and no longer has any versions
@@ -331,8 +336,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
             }
         });
-        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
-        lambdaEventDAO.create(lambdaEvent);
+
+        // Create lambda events for the entries that were affected by the DELETE lambda event
+        entryNamesWithDeletedVersions.forEach(entryName -> {
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, true, deliveryId, entryName);
+            lambdaEventDAO.create(lambdaEvent);
+        });
+
     }
 
     /**
@@ -361,18 +371,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param username Username of GitHub user that triggered action
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId GitHub App installation ID
+     * @param deliveryId The GitHub delivery ID, used to group all lambda events that were created during this GitHub webhook release
      * @param throwIfNotSuccessful throw if the release was not entirely successful
      * @return List of new and updated workflows
      */
-    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, boolean throwIfNotSuccessful) {
+    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, String deliveryId, boolean throwIfNotSuccessful) {
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
 
         boolean isSuccessful = true;
-
-        StringWriter stringWriter = new StringWriter();
-        PrintWriter messageWriter = new PrintWriter(stringWriter);
 
         try {
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
@@ -384,33 +392,29 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // '&=' does not short-circuit, ensuring that all of the lists are processed.
             // 'isSuccessful &= x()' is equivalent to 'isSuccessful = isSuccessful & x()'.
             List<Service12> services = dockstoreYaml12.getService() != null ? List.of(dockstoreYaml12.getService()) : List.of();
-            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter);
-            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
-            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, AppTool.class, messageWriter);
-            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getNotebooks(), repository, gitReference, installationId, username, dockstoreYml, Notebook.class, messageWriter);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, deliveryId);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, deliveryId);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, AppTool.class, deliveryId);
+            isSuccessful &= createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getNotebooks(), repository, gitReference, installationId, username, dockstoreYml, Notebook.class, deliveryId);
 
         } catch (Exception ex) {
 
             // If an exception propagates to here, log something helpful and abort .dockstore.yml processing.
             isSuccessful = false;
-            String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + generateMessageFromException(ex);
-            LOG.info(msg, ex);
-            messageWriter.println(msg);
-            messageWriter.println("Terminated processing of .dockstore.yml.");
-
-            throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
-
-        } finally {
+            String msg = "Error handling push event for repository " + repository + " and reference " + gitReference + ":\n- " + generateMessageFromException(ex) + "\nTerminated processing of .dockstore.yml";
+            LOG.info("User " + username + ": " + msg, ex);
 
             // Make an entry in the github apps logs.
-            final boolean finalIsSuccessful = isSuccessful;
             new TransactionHelper(sessionFactory).transaction(() -> {
-                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
-                lambdaEvent.setSuccess(finalIsSuccessful);
-                setEventMessage(lambdaEvent, stringWriter.toString());
+                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, false, deliveryId);
+                setEventMessage(lambdaEvent, msg);
                 lambdaEventDAO.create(lambdaEvent);
             });
 
+            if (throwIfNotSuccessful) {
+                throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
+            }
+        } finally {
             GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
         }
@@ -467,9 +471,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitReference full git reference (ex. refs/heads/master)
      * @param username Username of GitHub user who triggered the event
      * @param type Event type
+     * @param isSuccessful boolean indicating if the event was successful
+     * @param deliveryId The GitHub delivery ID, used to group lambda events that belong to the same GitHub webook invocation
      * @return New lambda event
      */
-    private LambdaEvent createBasicEvent(String repository, String gitReference, String username, LambdaEvent.LambdaEventType type) {
+    private LambdaEvent createBasicEvent(String repository, String gitReference, String username, LambdaEvent.LambdaEventType type, boolean isSuccessful, String deliveryId) {
         LambdaEvent lambdaEvent = new LambdaEvent();
         String[] repo = repository.split("/");
         lambdaEvent.setOrganization(repo[0]);
@@ -477,10 +483,29 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         lambdaEvent.setReference(gitReference);
         lambdaEvent.setGithubUsername(username);
         lambdaEvent.setType(type);
+        lambdaEvent.setSuccess(isSuccessful);
+        lambdaEvent.setDeliveryId(deliveryId);
         User user = userDAO.findByGitHubUsername(username);
         if (user != null) {
             lambdaEvent.setUser(user);
         }
+        return lambdaEvent;
+    }
+
+    /**
+     * Create a basic lambda event
+     * @param repository repository path
+     * @param gitReference full git reference (ex. refs/heads/master)
+     * @param username Username of GitHub user who triggered the event
+     * @param type Event type
+     * @param isSuccessful boolean indicating if the event was successful
+     * @param deliveryId The GitHub delivery ID, to group lambda events that belong to the same GitHub webook invocation
+     * @param entryName The entry name associated with the event
+     * @return New lambda event
+     */
+    private LambdaEvent createBasicEvent(String repository, String gitReference, String username, LambdaEvent.LambdaEventType type, boolean isSuccessful, String deliveryId, String entryName) {
+        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, type, isSuccessful, deliveryId);
+        lambdaEvent.setEntryName(entryName);
         return lambdaEvent;
     }
 
@@ -492,10 +517,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId Installation id needed to setup GitHub apps
      * @param username       Name of user that triggered action
      * @param dockstoreYml
+     * @param deliveryId The GitHub delivery ID, used to identify events that belong to the same GitHub webhook invocation
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
     private boolean createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, long installationId, String username,
-            final SourceFile dockstoreYml, Class<?> workflowType, PrintWriter messageWriter) {
+            final SourceFile dockstoreYml, Class<?> workflowType, String deliveryId) {
 
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
@@ -504,8 +530,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
 
         for (Workflowish wf : yamlWorkflows) {
-            try {
-                if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+            if (DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+                try {
                     DockstoreYamlHelper.validate(wf, true, "a " + computeTermFromClass(workflowType));
 
                     // Update the workflow version in its own database transaction.
@@ -521,32 +547,37 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, wf, gitHubSourceCodeRepo);
                         WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
-                        addValidationsToMessage(workflow, version, messageWriter);
-                        publishWorkflowAndLog(workflow, publish, user, repository, gitReference);
+                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, true, deliveryId, computeWorkflowName(wf));
+                        setEventMessage(lambdaEvent, createValidationsMessage(workflow, version));
+                        lambdaEventDAO.create(lambdaEvent);
+
+                        publishWorkflowAndLog(workflow, publish, user, repository, gitReference, deliveryId);
+                    });
+                } catch (RuntimeException | DockstoreYamlHelper.DockstoreYamlException ex) {
+                    // If there was a problem updating the workflow (an exception was thrown), either:
+                    // a) rethrow certain exceptions to abort .dockstore.yml parsing, or
+                    // b) log something helpful and move on to the next workflow.
+                    isSuccessful = false;
+                    if (ex instanceof RuntimeException) {
+                        rethrowIfFatal((RuntimeException)ex, transactionHelper);
+                    }
+                    final String message = String.format("Failed to create %s '%s':%n- %s",
+                        computeTermFromClass(workflowType), computeWorkflowName(wf), generateMessageFromException(ex));
+                    LOG.error(message, ex);
+                    transactionHelper.transaction(() -> {
+                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, false, deliveryId, computeWorkflowName(wf));
+                        setEventMessage(lambdaEvent, message);
+                        lambdaEventDAO.create(lambdaEvent);
                     });
                 }
-            } catch (RuntimeException | DockstoreYamlHelper.DockstoreYamlException ex) {
-                // If there was a problem updating the workflow (an exception was thrown), either:
-                // a) rethrow certain exceptions to abort .dockstore.yml parsing, or
-                // b) log something helpful and move on to the next workflow.
-                isSuccessful = false;
-                if (ex instanceof RuntimeException) {
-                    rethrowIfFatal((RuntimeException)ex, transactionHelper);
-                }
-                final String message = String.format("Error processing %s %s:%n%s",
-                    computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
-                LOG.error(message, ex);
-                messageWriter.println(message);
-                messageWriter.println("Entry skipped.");
             }
         }
-
         return isSuccessful;
     }
 
-    private void publishWorkflowAndLog(Workflow workflow, final Boolean publish, User user, String repository, String gitReference) {
+    private void publishWorkflowAndLog(Workflow workflow, final Boolean publish, User user, String repository, String gitReference, String deliveryId) {
         if (publish != null && workflow.getIsPublished() != publish) {
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH, true, deliveryId, computeWorkflowName(workflow));
             try {
                 publishWorkflow(workflow, publish, user);
             } catch (CustomWebApplicationException ex) {
@@ -584,29 +615,31 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return "entry";
     }
 
-    private void addValidationsToMessage(Workflow workflow, WorkflowVersion version, PrintWriter messageWriter) {
+    private String createValidationsMessage(Workflow workflow, WorkflowVersion version) {
         List<Validation> validations = version.getValidations().stream().filter(v -> !v.isValid()).toList();
+        StringBuilder stringBuilder = new StringBuilder();
         if (!validations.isEmpty()) {
-            messageWriter.printf("In version '%s' of %s '%s':%n", version.getName(), workflow.getEntryType().getTerm(), computeFullWorkflowName(workflow));
-            validations.forEach(validation -> addValidationToMessage(validation, messageWriter));
+            stringBuilder.append(String.format("Successfully created %s '%s', but encountered validation errors:%n", workflow.getEntryType().getTerm(), computeWorkflowName(workflow)));
+            validations.forEach(validation -> addValidationToMessage(validation, stringBuilder));
         }
+        return stringBuilder.toString();
     }
 
-    private void addValidationToMessage(Validation validation, PrintWriter messageWriter) {
+    private void addValidationToMessage(Validation validation, StringBuilder stringBuilder) {
         try {
             JSONObject json = new JSONObject(validation.getMessage());
-            json.keySet().forEach(key -> messageWriter.printf("- File '%s': %s%n", key, json.get(key)));
+            json.keySet().forEach(key -> stringBuilder.append(String.format("- File '%s': %s%n", key, json.get(key))));
         } catch (JSONException ex) {
             LOG.info("Exception processing validation message JSON", ex);
         }
     }
 
-    private String computeFullWorkflowName(Workflow workflow) {
-        return computeFullWorkflowName(workflow.getWorkflowName(), workflow.getRepository());
+    private String computeWorkflowName(Workflowish workflow) {
+        return workflow.getName() == null ? "" : workflow.getName();
     }
 
-    private String computeFullWorkflowName(String name, String repository) {
-        return name != null ? String.format("%s/%s", repository, name) : repository;
+    private String computeWorkflowName(Workflow workflow) {
+        return workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
     }
 
     private String generateMessageFromException(Exception ex) {

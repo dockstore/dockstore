@@ -569,6 +569,8 @@ paths:
                 additionalProperties:
                   $ref: '#/components/schemas/Metrics'
           description: default response
+      security:
+      - BEARER: []
       summary: Get aggregated execution metrics for a tool from all platforms
       tags:
       - extendedGA4GH
@@ -8586,8 +8588,6 @@ components:
           type: string
         colabImportUrl:
           type: string
-        composeSetupVersion:
-          type: string
         cwlParsingLambdaVersion:
           type: string
         cwlVisualizerUri:
@@ -9618,6 +9618,14 @@ components:
     LambdaEvent:
       type: object
       properties:
+        deliveryId:
+          type: string
+          description: "The GitHub delivery ID, used to group events that belong to\
+            \ the same GitHub webhook invocation"
+        entryName:
+          type: string
+          description: The name of the entry associated with the event. An empty string
+            indicates an entry with no name specified
         eventDate:
           type: integer
           format: int64

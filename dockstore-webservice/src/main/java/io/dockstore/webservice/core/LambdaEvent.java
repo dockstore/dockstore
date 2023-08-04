@@ -21,6 +21,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.sql.Timestamp;
+import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -80,6 +81,14 @@ public class LambdaEvent {
     @ApiModelProperty(value = "User that the event is acting on (if exists in Dockstore).", position = 8)
     @JsonIgnore
     private User user;
+
+    @Column(columnDefinition = "TEXT")
+    @Schema(description = "The name of the entry associated with the event. An empty string indicates an entry with no name specified")
+    private String entryName;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    @Schema(description = "The GitHub delivery ID, used to group events that belong to the same GitHub webhook invocation")
+    private String deliveryId;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -168,6 +177,22 @@ public class LambdaEvent {
         this.user = user;
     }
 
+    public String getEntryName() {
+        return entryName;
+    }
+
+    public void setEntryName(String entryName) {
+        this.entryName = entryName;
+    }
+
+    public String getDeliveryId() {
+        return deliveryId;
+    }
+
+    public void setDeliveryId(String deliveryId) {
+        this.deliveryId = deliveryId;
+    }
+
     public enum LambdaEventType {
         PUSH,
         DELETE,
@@ -175,4 +200,7 @@ public class LambdaEvent {
         PUBLISH
     }
 
+    public static String createDeliveryId() {
+        return UUID.randomUUID().toString();
+    }
 }

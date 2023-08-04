@@ -490,6 +490,44 @@ class NotebookIT extends BaseIT {
         assertFalse(notebook.isDeletable());
     }
 
+    private long countEvents(long notebookId) {
+        return testingPostgres.runSelectStatement("select count(*) from event where notebookid = " + notebookId, long.class);
+    }
+
+    @Test
+    void testEventDeletion() {
+        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        EntriesApi entriesApi = new EntriesApi(apiClient);
+        UsersApi usersApi = new UsersApi(apiClient);
+        EventsApi eventsApi = new EventsApi(apiClient);
+
+        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
+        long id = notebook.getId();
+
+        // Count the events referencing the notebook
+        long unpublishedCount = countEvents(id);
+
+        // Publish notebook, which will add a PUBLISH_EVENT referencing the notebook
+        workflowsApi.publish1(id, CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // Count the events referencing the notebook, should be greater than before
+        assertTrue(countEvents(id) > unpublishedCount);
+
+        // Star the notebook, then check that the getEvents endpoint returns the correct number of events
+        // getEvents(STARRED_ENTRIES, ...) uses eventDAO.findEventsByEntryIDs internally, which is what we're trying to test
+        workflowsApi.starEntry1(id, new StarRequest().star(true));
+        assertEquals(countEvents(id), eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), null, null).size());
+
+        // Delete the user, which in the process will delete the Events referencing the notebook
+        workflowsApi.publish1(id, CommonTestUtilities.createOpenAPIPublishRequest(false));
+        usersApi.selfDestruct(1L);
+
+        // Count the events referencing the notebook, there should be none, they should have all been deleted
+        assertEquals(0, countEvents(id));
+    }
+
     private Organization createTestOrganization(String name, boolean categorizer) {
         final ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
