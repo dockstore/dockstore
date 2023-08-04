@@ -653,6 +653,9 @@ commands:
     steps:
       - run:
           name: Fix formatting of test results
+          # Sometimes xml reports will have a 'rerunFailure' tag along with the 'failure' tag which CircleCI can't parse
+          # The additional element is removed so results can be uploaded properly
+          # See https://support.circleci.com/hc/en-us/articles/16386815548571-Troubleshooting-invalid-testcase-element-error-when-uploading-test-results
           command: |
             sudo apt update
             sudo apt install -y xmlstarlet
