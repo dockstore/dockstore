@@ -1,6 +1,5 @@
 package io.dockstore.client.cli;
 
-import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -418,7 +417,7 @@ class ValidationIT extends BaseIT {
         io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
 
         // Add a service with a dockstore.yml that lists a file that is missing in the repository - should be invalid
-        handleGitHubRelease(client, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_SERVICE, "refs/heads/missingFile", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/heads/missingFile", USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
         io.dockstore.openapi.client.model.Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2Repos.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");

@@ -16,7 +16,6 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
-import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static io.dockstore.webservice.resources.UserResource.USER_PROFILES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -275,7 +274,7 @@ class UserResourceOpenApiIT extends BaseIT {
         final long userId = usersApi.getUser().getId();
 
         // Add service
-        handleGitHubRelease(workflowsApi, INSTALLATION_ID, SERVICE_REPO, "refs/tags/1.0", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, SERVICE_REPO, "refs/tags/1.0", USER_2_USERNAME);
         assertEquals(1, usersApi.userServices(userId).size());
         assertEquals(0, usersApi.userWorkflows(userId).size());
 
@@ -372,7 +371,7 @@ class UserResourceOpenApiIT extends BaseIT {
         // try to delete with published workflows & service
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getShortName(), "");
-        handleGitHubRelease(workflowsApi, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
 
         final Workflow workflowByPath = workflowsApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);

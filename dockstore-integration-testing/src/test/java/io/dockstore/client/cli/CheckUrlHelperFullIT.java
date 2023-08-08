@@ -18,7 +18,6 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.client.cli.BaseIT.getOpenAPIWebClient;
-import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -83,7 +82,7 @@ public class CheckUrlHelperFullIT {
 
         // Test creating new version
         final String gitReference = "refs/tags/0.1";
-        handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, gitReference, USER_2_USERNAME);
+        handleGitHubRelease(client, workflowRepo, gitReference, USER_2_USERNAME);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(client);
         final String noFilesInJsonForInputParameters = "Should be set to false since the workflow has a file input parameter, and the JSON has no files";
@@ -94,7 +93,7 @@ public class CheckUrlHelperFullIT {
         assertNull(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), "Database should've reverted it to null");
 
         // Test updating existing version
-        handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, gitReference, USER_2_USERNAME);
+        handleGitHubRelease(client, workflowRepo, gitReference, USER_2_USERNAME);
         workflowVersion = getWorkflowVersion(client);
         assertFalse(workflowVersion.getVersionMetadata().isPublicAccessibleTestParameterFile(), noFilesInJsonForInputParameters);
     }

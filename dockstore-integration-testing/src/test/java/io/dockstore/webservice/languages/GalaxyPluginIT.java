@@ -17,7 +17,6 @@ package io.dockstore.webservice.languages;
 
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
-import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -195,7 +194,7 @@ class GalaxyPluginIT {
     void testTestParameterPaths() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        handleGitHubRelease(workflowApi, INSTALLATION_ID, DockstoreTestUser2Repos.WORKFLOW_TESTING_REPO, "refs/heads/validTestParameterFiles", BaseIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowApi, DockstoreTestUser2Repos.WORKFLOW_TESTING_REPO, "refs/heads/validTestParameterFiles", BaseIT.USER_2_USERNAME);
         io.dockstore.openapi.client.model.Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + DockstoreTestUser2Repos.WORKFLOW_TESTING_REPO + "/COVID-19-variation-analysis-on-Illumina-metagenomic-data", WorkflowSubClass.BIOWORKFLOW, "versions");
         WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());

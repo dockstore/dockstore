@@ -19,7 +19,6 @@ package io.dockstore.webservice;
 
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.DockstoreTestUser2Repos;
-import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -111,7 +110,7 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add version
-        handleGitHubRelease(client, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
         Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2Repos.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
@@ -151,7 +150,7 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add service
-        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", "iamnotarealuser"));
+        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", "iamnotarealuser"));
         assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
 
         final long count = testingPostgres.runSelectStatement(
@@ -170,7 +169,7 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add service
-        handleGitHubRelease(client, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
 
@@ -204,7 +203,7 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add version that doesn't exist
-        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0-fake", ADMIN_USERNAME));
+        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0-fake", ADMIN_USERNAME));
         assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
     }
 
@@ -217,11 +216,11 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add version that has no dockstore.yml
-        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/no-yml", ADMIN_USERNAME));
+        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/no-yml", ADMIN_USERNAME));
         assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
 
         // Add version that has invalid dockstore.yml
-        ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/invalid-yml", ADMIN_USERNAME));
+        ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/invalid-yml", ADMIN_USERNAME));
         assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
     }
 
@@ -235,7 +234,7 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add service
-        handleGitHubRelease(client, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
 
@@ -253,7 +252,7 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service-foo-bar-not-real";
-        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, INSTALLATION_ID, serviceRepo, "refs/tags/1.0", ADMIN_USERNAME));
+        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, serviceRepo, "refs/tags/1.0", ADMIN_USERNAME));
         assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
     }
 }

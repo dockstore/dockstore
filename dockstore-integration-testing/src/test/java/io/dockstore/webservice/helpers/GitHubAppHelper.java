@@ -21,19 +21,18 @@ public final class GitHubAppHelper {
 
     public static void registerAppTool(ApiClient webClient) {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        handleGitHubRelease(workflowApi, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_WORKFLOW_AND_TOOLS, "refs/heads/main", USER_2_USERNAME);
+        handleGitHubRelease(workflowApi, DockstoreTestUser2Repos.TEST_WORKFLOW_AND_TOOLS, "refs/heads/main", USER_2_USERNAME);
     }
 
     /**
      * Performs a GitHub release, using a generated X-GitHub-Delivery header
      * @param workflowsApi
-     * @param installationId GitHub installation ID
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitRef Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0
      * @param gitHubUsername Username of user on GitHub who triggered action
      */
-    public static void handleGitHubRelease(WorkflowsApi workflowsApi, Integer installationId, String repository, String gitRef, String gitHubUsername) {
-        workflowsApi.handleGitHubRelease(getGitHubWebhookPushPayload(installationId, repository, gitRef, gitHubUsername), generateXGitHubDelivery());
+    public static void handleGitHubRelease(WorkflowsApi workflowsApi, String repository, String gitRef, String gitHubUsername) {
+        workflowsApi.handleGitHubRelease(getGitHubWebhookPushPayload(INSTALLATION_ID, repository, gitRef, gitHubUsername), generateXGitHubDelivery());
     }
 
     /**
@@ -75,5 +74,8 @@ public final class GitHubAppHelper {
     public static class DockstoreTestingRepos {
         public static final String MULTI_ENTRY = "dockstore-testing/multi-entry";
         public static final String TAGGED_APPTOOL = "dockstore-testing/tagged-apptool";
+        public static final String TAGGED_APPTOOL_TOOL_PATH = TAGGED_APPTOOL + "/md5sum";
+        public static final String TEST_WORKFLOWS_AND_TOOLS = "dockstore-testing/test-workflows-and-tools";
+        public static final String WORKFLOW_DOCKSTORE_YML = "dockstore-testing/workflow-dockstore-yml";
     }
 }

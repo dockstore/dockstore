@@ -16,7 +16,6 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.common.CommonTestUtilities.restartElasticsearch;
-import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.SEARCH_QUERY_INVALID_JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -135,7 +134,7 @@ class SearchResourceIT extends BaseIT {
         // register a simple published notebook
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        handleGitHubRelease(workflowApi, INSTALLATION_ID, "dockstore-testing/simple-notebook", "refs/tags/simple-published-v1", USER_2_USERNAME);
+        handleGitHubRelease(workflowApi, "dockstore-testing/simple-notebook", "refs/tags/simple-published-v1", USER_2_USERNAME);
 
         // wait until the notebook is indexed
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
