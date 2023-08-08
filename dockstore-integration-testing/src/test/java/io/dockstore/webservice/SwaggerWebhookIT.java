@@ -19,10 +19,7 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
-import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
-import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.NOTEBOOK;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
@@ -41,22 +38,16 @@ import io.dockstore.client.cli.OrganizationIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
-import io.dockstore.common.ValidationConstants;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
-import io.dockstore.openapi.client.model.OrcidAuthorInformation;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.helpers.GitHubAppHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
-import io.dockstore.webservice.languages.WDLHandler;
-import io.specto.hoverfly.junit.core.Hoverfly;
-import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -74,10 +65,8 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.Workflow.ModeEnum;
 import io.swagger.client.model.WorkflowVersion;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -399,150 +388,6 @@ class SwaggerWebhookIT extends BaseIT {
     }
 
 
-    /**
-     * This tests the GitHub release process
-     */
-    @Test
-    void testGitHubReleaseNoWorkflowOnDockstore() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
-        LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
-
-        // Track install event
-        client.handleGitHubInstallation(installationId, workflowRepo, USER_2_USERNAME);
-
-        // Release 0.1 on GitHub - one new wdl workflow
-        handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, "refs/tags/0.1", USER_2_USERNAME);
-        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
-        assertTrue(workflowCount >= 2, "should see 2 workflows from the .dockstore.yml from the master branch");
-
-        // Ensure that new workflow is created and is what is expected
-        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
-        assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
-        assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
-        assertEquals(1, workflow.getWorkflowVersions().stream().filter(v -> v.getName().contains("0.1")).toList().size(), "Should have one version 0.1");
-        assertEquals("A repo that includes .dockstore.yml", workflow.getTopicAutomatic());
-
-        // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
-        handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, "refs/tags/0.2", USER_2_USERNAME);
-        workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
-        assertEquals(2, workflowCount);
-
-        // Ensure that existing workflow is updated
-        workflow = getFoobar1Workflow(client);
-
-        // Ensure that new workflow is created and is what is expected
-        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
-        assertEquals(io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType(), "Should be a CWL workflow");
-        assertEquals(io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode(), "Should be type DOCKSTORE_YML");
-        assertEquals(1, workflow2.getWorkflowVersions().stream().filter(v -> v.getName().contains("0.2")).toList().size(), "Should have one version 0.2");
-
-
-        // Unset the license information to simulate license change
-        testingPostgres.runUpdateStatement("update workflow set licensename=null");
-        // Unset topicAutomatic to simulate a topicAutomatic change
-        testingPostgres.runUpdateStatement("update workflow set topicAutomatic=null");
-        // Branch master on GitHub - updates two existing workflows
-        handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, "refs/heads/master", USER_2_USERNAME);
-        List<io.dockstore.openapi.client.model.Workflow> workflows = new ArrayList<>();
-        workflows.add(workflow);
-        workflows.add(workflow2);
-        assertEquals(2, workflows.size(), "Should only have two workflows");
-        workflows.forEach(workflowIndividual -> {
-            assertEquals("Apache License 2.0", workflowIndividual.getLicenseInformation().getLicenseName(), "Should be able to get license after manual GitHub App version update");
-            assertEquals("A repo that includes .dockstore.yml", workflowIndividual.getTopicAutomatic(), "Should be able to get topic from GitHub after GitHub App version update");
-        });
-
-        workflow = getFoobar1Workflow(client);
-        assertTrue(workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")),
-            "Should have a master version.");
-        assertTrue(workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")),
-            "Should have a 0.1 version.");
-        assertTrue(workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")),
-            "Should have a 0.2 version.");
-
-        workflow2 = getFoobar2Workflow(client);
-        assertTrue(workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")),
-            "Should have a master version.");
-        assertTrue(workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")),
-            "Should have a 0.2 version.");
-
-        // Master version should have metadata set
-        Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = workflow.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
-        assertEquals("Test User", masterVersion.get().getAuthor(), "Should have author set");
-        assertEquals("test@dockstore.org", masterVersion.get().getEmail(), "Should have email set");
-
-        masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
-        assertEquals("Test User", masterVersion.get().getAuthor(), "Should have author set");
-        assertTrue(masterVersion.get().isValid(), "Should be valid");
-        assertEquals("test@dockstore.org", masterVersion.get().getEmail(), "Should have email set");
-
-        boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(
-                io.dockstore.openapi.client.model.WorkflowVersion::isLegacyVersion);
-        assertFalse(hasLegacyVersion, "Workflow should not have any legacy refresh versions.");
-
-        // Delete tag 0.2
-        client.handleGitHubBranchDeletion(workflowRepo, USER_2_USERNAME, "refs/tags/0.2", installationId);
-        workflow = getFoobar1Workflow(client);
-        assertTrue(workflow.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")),
-            "Should not have a 0.2 version.");
-        workflow2 = getFoobar2Workflow(client);
-        assertTrue(workflow2.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")),
-            "Should not have a 0.2 version.");
-
-        // Add version that doesn't exist
-        long failedCount = usersApi.getUserGitHubEvents(0, 10).stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count();
-        try {
-            handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, "refs/heads/idonotexist", USER_2_USERNAME);
-            fail("Should fail and not reach this point");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals(failedCount + 1, usersApi.getUserGitHubEvents(0, 10).stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be one more unsuccessful event than before");
-        }
-
-        // There should be 13 successful lambda events
-        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents(0, 20);
-        assertEquals(13, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be 13 successful events");
-
-        // Test pagination for user github events
-        events = usersApi.getUserGitHubEvents(2, 2);
-        assertEquals(2, events.size(), "There should be 2 events (id 13 and 14)");
-        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(13L, lambdaEvent.getId())), "Should have event with ID 13");
-        assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(14L, lambdaEvent.getId())), "Should have event with ID 14");
-
-        // Test the organization events endpoint
-        List<io.dockstore.openapi.client.model.LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 20);
-        assertEquals(16, orgEvents.size(), "There should be 16 events");
-
-        // Test pagination
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "2", 2);
-        assertEquals(2, orgEvents.size(), "There should be 2 events (id 13 and 14)");
-        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(13L, lambdaEvent.getId())), "Should have event with ID 13");
-        assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(14L, lambdaEvent.getId())), "Should have event with ID 14");
-
-        // Change organization to test filter
-        testingPostgres.runUpdateStatement("UPDATE lambdaevent SET repository = 'workflow-dockstore-yml', organization = 'DockstoreTestUser3' WHERE id = '1'");
-
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 20);
-        assertEquals(15, orgEvents.size(), "There should now be 15 events");
-
-        try {
-            lambdaEventsApi.getLambdaEventsByOrganization("IAmMadeUp", "0", 10);
-            fail("Should not reach this statement");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode(), "Should fail because user cannot access org.");
-        }
-
-        // Try adding version with empty test parameter file (should work)
-        handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, "refs/heads/emptytestparameter", USER_2_USERNAME);
-        workflow2 = getFoobar2Workflow(client);
-        assertTrue(workflow2.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "emptytestparameter")).findFirst().get().isValid(),
-            "Should have emptytestparameter version that is valid");
-        testValidationUpdate(client);
-        testDefaultVersion(client);
-    }
-
     @Test
     void testLambdaEvents() {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
@@ -566,19 +411,6 @@ class SwaggerWebhookIT extends BaseIT {
         assertEquals(1, events.size(), "Can see event for repo with access, not one without");
     }
 
-    private void testDefaultVersion(io.dockstore.openapi.client.api.WorkflowsApi client) {
-        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
-        assertNull(workflow2.getDefaultVersion());
-        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
-        assertNull(workflow.getDefaultVersion());
-        handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, "refs/tags/0.4", USER_2_USERNAME);
-        workflow2 = getFoobar2Workflow(client);
-        assertEquals("0.4", workflow2.getDefaultVersion(), "The new tag says the latest tag should be the default version");
-        workflow = getFoobar1Workflow(client);
-        assertNull(workflow.getDefaultVersion());
-
-    }
-
     private io.dockstore.openapi.client.model.Workflow getFoobar1Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
         return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
     }
@@ -589,23 +421,6 @@ class SwaggerWebhookIT extends BaseIT {
 
     private io.dockstore.openapi.client.model.Workflow getFoobar2Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
         return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
-    }
-
-    /**
-     * This tests that when a version was invalid, a new GitHub release will retrigger the validation
-     * @param client    WorkflowsApi
-     */
-    private void testValidationUpdate(io.dockstore.openapi.client.api.WorkflowsApi client) {
-        testingPostgres.runUpdateStatement("update workflowversion set valid='f'");
-
-        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
-        Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
-        assertFalse(masterVersion.get().isValid(), "Master version should be invalid because it was manually changed");
-
-        handleGitHubRelease(client, INSTALLATION_ID, workflowRepo, "refs/heads/master", USER_2_USERNAME);
-        workflow2 = getFoobar2Workflow(client);
-        masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
-        assertTrue(masterVersion.get().isValid(), "Master version should be valid after GitHub App triggered again");
     }
 
     /**
@@ -1099,66 +914,6 @@ class SwaggerWebhookIT extends BaseIT {
         assertEquals(0, version.getOrcidAuthors().size());
     }
 
-    /**
-     * This test relies on Hoverfly to simulate responses from the ORCID API.
-     * In the simulation, the responses are crafted for an ORCID author with ID 0000-0002-6130-1021.
-     * ORCID authors with other IDs are considered "not found" by the simulation.
-     */
-    @Test
-    void testGetWorkflowVersionOrcidAuthors() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        io.dockstore.openapi.client.ApiClient anonymousWebClient = getAnonymousOpenAPIWebClient();
-        io.dockstore.openapi.client.api.WorkflowsApi anonymousWorkflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(anonymousWebClient);
-        String wdlWorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar");
-
-        // Workflows containing 1 descriptor author and multiple .dockstore.yml authors.
-        // If the .dockstore.yml specifies an author, then only the .dockstore.yml's authors should be saved
-        handleGitHubRelease(workflowsApi, INSTALLATION_ID, authorsRepo, "refs/heads/main", USER_2_USERNAME);
-        // WDL workflow
-        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.getWorkflowByPath(wdlWorkflowRepoPath, WorkflowSubClass.BIOWORKFLOW, "versions,authors");
-        io.dockstore.openapi.client.model.WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
-        assertEquals(2, version.getAuthors().size());
-        assertEquals(2, version.getOrcidAuthors().size());
-
-        // Hoverfly is not used as a class rule here because for some reason it's trying to intercept GitHub in both spy and simulation mode
-        try (Hoverfly hoverfly = new Hoverfly(HoverflyMode.SIMULATE)) {
-            hoverfly.start();
-            hoverfly.simulate(ORCID_SIMULATION_SOURCE);
-            List<OrcidAuthorInformation> orcidAuthorInfo = workflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
-            assertEquals(1, orcidAuthorInfo.size()); // There's 1 OrcidAuthorInfo instead of 2 because only 1 ORCID ID from the version exists on ORCID
-
-            // Publish workflow
-            io.dockstore.openapi.client.model.PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
-            workflowsApi.publish1(workflow.getId(), publishRequest);
-
-            // Check that an unauthenticated user can get the workflow version ORCID authors of a published workflow
-            anonymousWorkflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
-            assertEquals(1, orcidAuthorInfo.size());
-        }
-    }
-
-    /**
-     * Tests that the GitHub release process doesn't work for workflows with invalid names
-     */
-    @Test
-    void testDockstoreYmlInvalidWorkflowName() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
-
-        try {
-            handleGitHubRelease(workflowsApi, INSTALLATION_ID, workflowRepo, "refs/heads/invalidWorkflowName", USER_2_USERNAME);
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals(LAMBDA_ERROR, ex.getCode(), "Should not be able to add a workflow with an invalid name");
-            List<io.dockstore.openapi.client.model.LambdaEvent> failEvents = usersApi.getUserGitHubEvents(0, 10);
-            assertEquals(1, failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count(), "There should be 1 unsuccessful event");
-            assertTrue(failEvents.get(0).getMessage().contains(ValidationConstants.ENTRY_NAME_REGEX_MESSAGE));
-        }
-    }
-
     // .dockstore.yml in test repo needs to change to add a 'name' field to one of them. Should also include another branch that doesn't keep the name field
     @Test
     void testTools() {
@@ -1277,26 +1032,6 @@ class SwaggerWebhookIT extends BaseIT {
 
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         client.publish(appTool.getId(), publishRequest);
-
-        String newTopic = "this is a new topic";
-        appTool.setTopicManual(newTopic);
-        appTool = client.updateWorkflow(appTool.getId(), appTool);
-        assertEquals(newTopic, appTool.getTopicManual());
-    }
-
-    @Test
-    void testChangingAppToolTopicsOpenapi() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
-
-        handleGitHubRelease(client, INSTALLATION_ID, taggedToolRepo, "refs/tags/1.0", USER_2_USERNAME);
-        io.dockstore.openapi.client.model.Workflow appTool = client.getWorkflowByPath("github.com/" + taggedToolRepoPath, WorkflowSubClass.APPTOOL, "versions,validations");
-
-        io.dockstore.openapi.client.model.PublishRequest publishRequest = new io.dockstore.openapi.client.model.PublishRequest();
-        publishRequest.publish(true);
-
-        client.publish1(appTool.getId(), publishRequest);
 
         String newTopic = "this is a new topic";
         appTool.setTopicManual(newTopic);
@@ -1462,30 +1197,6 @@ class SwaggerWebhookIT extends BaseIT {
         Collection collection = organizationsApiAdmin.getCollectionById(registeredOrganization.getId(), createdCollection.getId());
         assertTrue((collection.getEntries().stream().anyMatch(entry -> Objects.equals(entry.getId(), appTool.getId()))));
     }
-
-    @Test
-    void testDifferentLanguagesWithSameWorkflowName() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowClient = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
-
-        // Add a WDL version of a workflow should pass.
-        handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/heads/sameWorkflowName-WDL", USER_2_USERNAME);
-
-        // Add a CWL version of a workflow with the same name should cause error.
-        try {
-            handleGitHubRelease(workflowClient, INSTALLATION_ID, workflowDockstoreYmlRepo, "refs/heads/sameWorkflowName-CWL", USER_2_USERNAME);
-            fail("should have thrown");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents(0, 10);
-            io.dockstore.openapi.client.model.LambdaEvent event = events.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).findFirst().get();
-            String message = event.getMessage().toLowerCase();
-            assertTrue(message.contains("descriptor language"));
-            assertTrue(message.contains("workflow"));
-            assertTrue(message.contains("version"));
-        }
-    }
     
     private long countTools() {
         return countTableRows("apptool");
@@ -1611,113 +1322,5 @@ class SwaggerWebhookIT extends BaseIT {
                 .toList();
         assertEquals(2, failedLambdaEvents.size(), "There should be two failed events");
         failedLambdaEvents.forEach(event -> assertTrue(event.getMessage().toLowerCase().contains("absolute"), "Should contain the word 'absolute'"));
-    }
-
-    /**
-     * Tests that the GitHub release syncs a workflow's metadata with the default version's metadata.
-     * Tests two scenarios:
-     * <li>The default version for a workflow is set using the latestTagAsDefault property from the dockstore.yml</li>
-     * <li>The default version for a workflow is set manually using the API</li>
-     */
-    @Test
-    void testSyncWorkflowMetadataWithDefaultVersion() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-
-        handleGitHubRelease(workflowsApi, INSTALLATION_ID, workflowRepo, "refs/tags/0.4", USER_2_USERNAME);
-        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(workflowsApi); // dockstore.yml for foobar doesn't have latestTagAsDefault set
-        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(workflowsApi); // dockstore.yml for foobar2 has latestTagAsDefault set
-        assertNull(workflow.getDefaultVersion());
-        assertEquals("0.4", workflow2.getDefaultVersion(), "Should have latest tag set as default version");
-
-        workflowsApi.updateDefaultVersion1(workflow.getId(), "0.4"); // Set default version for workflow that doesn't have one
-        workflow = getFoobar1Workflow(workflowsApi);
-        assertEquals("0.4", workflow.getDefaultVersion(), "Should have default version set");
-
-        // Find WorkflowVersion for default version and make sure it has metadata set
-        Optional<io.dockstore.openapi.client.model.WorkflowVersion> defaultVersion = workflow.getWorkflowVersions().stream()
-                .filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.4"))
-                .findFirst();
-        assertTrue(defaultVersion.isPresent());
-        assertEquals("Test User", defaultVersion.get().getAuthor(), "Version should have author set");
-        assertEquals("test@dockstore.org", defaultVersion.get().getEmail(), "Version should have email set");
-
-        // Check that the workflow metadata is the same as the default version's metadata
-        checkWorkflowMetadataWithDefaultVersionMetadata(workflow, defaultVersion.get());
-        checkWorkflowMetadataWithDefaultVersionMetadata(workflow2, defaultVersion.get());
-
-        // Clear workflow metadata to test the scenario where the default version metadata was updated and is now out of sync with the workflow's metadata
-        testingPostgres.runUpdateStatement(String.format("UPDATE author SET name = 'foo' where versionid = '%s'", defaultVersion.get().getId()));
-        testingPostgres.runUpdateStatement(String.format("UPDATE author SET email = 'foo' where versionid = '%s'", defaultVersion.get().getId()));
-        testingPostgres.runUpdateStatement(String.format("UPDATE workflow SET description = NULL where id = '%s'", workflow.getId()));
-        // GitHub release should sync metadata with default version
-        handleGitHubRelease(workflowsApi, INSTALLATION_ID, workflowRepo, "refs/tags/0.4", USER_2_USERNAME);
-        workflow = getFoobar1Workflow(workflowsApi);
-        workflow2 = getFoobar2Workflow(workflowsApi);
-        checkWorkflowMetadataWithDefaultVersionMetadata(workflow, defaultVersion.get());
-        checkWorkflowMetadataWithDefaultVersionMetadata(workflow2, defaultVersion.get());
-    }
-
-    /**
-     * Tests that the language version in WDL descriptor files is correct during a GitHub release
-     */
-    @Test
-    void testDockstoreYmlWorkflowLanguageVersions() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        String wdlWorkflowRepo = "dockstore-testing/dockstore-whalesay2";
-
-        handleGitHubRelease(workflowsApi, INSTALLATION_ID, wdlWorkflowRepo, "refs/heads/master", USER_2_USERNAME);
-        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.getWorkflowByPath("github.com/" + wdlWorkflowRepo, WorkflowSubClass.BIOWORKFLOW, "versions");
-        io.dockstore.openapi.client.model.WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
-        List<io.dockstore.openapi.client.model.SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(workflow.getId(), version.getId(), null);
-        assertNotNull(sourceFiles);
-        assertEquals(2, sourceFiles.size());
-        sourceFiles.forEach(sourceFile -> {
-            if ("/Dockstore.wdl".equals(sourceFile.getAbsolutePath())) {
-                assertEquals(FileType.DOCKSTORE_WDL.name(), sourceFile.getType().getValue());
-                assertEquals("1.0", sourceFile.getMetadata().getTypeVersion(), "Language version of WDL descriptor with 'version 1.0' should be 1.0");
-            } else {
-                assertEquals(FileType.DOCKSTORE_YML.name(), sourceFile.getType().getValue());
-                assertNull(sourceFile.getMetadata().getTypeVersion(), ".dockstore.yml should not have a version");
-            }
-        });
-        assertEquals(1, version.getVersionMetadata().getDescriptorTypeVersions().size(), "Should only have one language version");
-        assertTrue(version.getVersionMetadata().getDescriptorTypeVersions().contains("1.0"));
-    }
-
-    // Asserts that the workflow metadata is the same as the default version metadata
-    private void checkWorkflowMetadataWithDefaultVersionMetadata(io.dockstore.openapi.client.model.Workflow workflow, io.dockstore.openapi.client.model.WorkflowVersion defaultVersion) {
-        assertEquals(1, defaultVersion.getAuthors().size());
-        assertEquals(defaultVersion.getAuthors().size(), workflow.getAuthors().size());
-        assertEquals(defaultVersion.getAuthors().get(0), workflow.getAuthors().get(0), "Workflow author should equal default version author");
-    }
-
-    /**
-     * Tests that an attempt to register a WDL that contains recursive
-     * remote references will result in failure.
-     * <a href="https://ucsc-cgl.atlassian.net/browse/DOCK-2299">...</a>
-     */
-    @Test
-    void testRegistrationOfRecursiveWDL() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
-        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
-
-        // Attempt to process a repo containing a recursive WDL.  Internally, we use the same libraries that Cromwell does to process WDLs.
-        // The WDL processing code should throw a StackOverflowError, which is remapped to a more explanatory CustomWebApplicationException, which will trigger a typical registration failure.
-        try {
-            handleGitHubRelease(client, INSTALLATION_ID, "dockstore-testing/recursive-wdl", "refs/heads/main", USER_2_USERNAME);
-            fail("should have thrown");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            // Confirm that the release failed and was logged correctly.
-            List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents(0, 10);
-            assertEquals(1, events.size(), "There should be one event");
-            assertEquals(0, events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count(), "There should be no successful events");
-            assertTrue(events.get(0).getMessage().contains(WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT), "Event message should indicate the problem");
-        }
     }
 }

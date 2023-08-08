@@ -14,14 +14,14 @@ import org.json.JSONObject;
 public final class GitHubAppHelper {
 
     public static final Integer INSTALLATION_ID = 1179416;
-    public static final String TOOL_AND_WORKFLOW_REPO = "DockstoreTestUser2/test-workflows-and-tools";
+    public static final int LAMBDA_ERROR = 418;
 
     private GitHubAppHelper() {
     }
 
     public static void registerAppTool(ApiClient webClient) {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        workflowApi.handleGitHubRelease(TOOL_AND_WORKFLOW_REPO, USER_2_USERNAME, "refs/heads/main",
+        workflowApi.handleGitHubRelease(DockstoreTestUser2Repos.TEST_WORKFLOW_AND_TOOLS, USER_2_USERNAME, "refs/heads/main",
             String.valueOf(INSTALLATION_ID));
 
     }
@@ -61,5 +61,11 @@ public final class GitHubAppHelper {
      */
     public static String generateXGitHubDelivery() {
         return UUID.randomUUID().toString();
+    }
+
+    public static class DockstoreTestUser2Repos {
+        public static final String TEST_AUTHORS = "DockstoreTestUser2/test-authors";
+        public static final String TEST_WORKFLOW_AND_TOOLS = "DockstoreTestUser2/test-workflows-and-tools";
+        public static final String WORKFLOW_DOCKSTORE_YML = "DockstoreTestUser2/workflow-dockstore-yml";
     }
 }
