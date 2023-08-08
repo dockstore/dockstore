@@ -242,7 +242,7 @@ public class BaseIT {
         assertEquals(correctDescriptorPath, testBothVersion.getWorkflowPath(), "Workflow version path should be set");
     }
 
-    static void refreshByOrganizationReplacement(WorkflowsApi workflowApi, io.dockstore.openapi.client.ApiClient openAPIWebClient) {
+    static void refreshByOrganizationReplacement(io.dockstore.openapi.client.api.WorkflowsApi workflowApi, io.dockstore.openapi.client.ApiClient openAPIWebClient) {
         io.dockstore.openapi.client.api.UsersApi openUsersApi = new io.dockstore.openapi.client.api.UsersApi(openAPIWebClient);
         for (SourceControl control : SourceControl.values()) {
             List<String> userOrganizations = openUsersApi.getUserOrganizations(control.name());

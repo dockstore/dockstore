@@ -15,7 +15,6 @@
  */
 package io.dockstore.webservice;
 
-import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,13 +25,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
-import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.helpers.GitHubAppHelper;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.HostedApi;
@@ -41,7 +38,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.EntryUpdateTime;
-import io.swagger.client.model.EntryUpdateTime.EntryTypeEnum;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.OrganizationUpdateTime;
 import io.swagger.client.model.Profile;
@@ -229,98 +225,6 @@ class UserResourceSwaggerIT extends BaseIT {
     }
 
     @Test
-    void testSelfDestruct() throws ApiException {
-        ApiClient client = getAnonymousWebClient();
-        UsersApi userApi = new UsersApi(client);
-
-        // anon should not exist
-        boolean shouldFail = false;
-        try {
-            userApi.getUser();
-        } catch (ApiException e) {
-            shouldFail = true;
-        }
-        assertTrue(shouldFail);
-
-        // use a real account
-        client = getWebClient(USER_2_USERNAME, testingPostgres);
-        userApi = new UsersApi(client);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        final ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
-
-        final WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminWebClient);
-
-        User user = userApi.getUser();
-        assertNotNull(user);
-
-        // try to delete with published workflows & service
-        workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
-        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getShortName(), "");
-        workflowsApi.handleGitHubRelease(SERVICE_REPO, USER_2_USERNAME, "refs/tags/1.0", INSTALLATION_ID);
-
-        final Workflow workflowByPath = workflowsApi
-            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
-        // refresh targeted
-        workflowsApi.refresh(workflowByPath.getId(), false);
-
-        // publish one
-        workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(true));
-
-        assertFalse(userApi.getExtendedUserData().isCanChangeUsername());
-
-        boolean expectedFailToDelete = false;
-        try {
-            userApi.selfDestruct(null);
-        } catch (ApiException e) {
-            expectedFailToDelete = true;
-        }
-        assertTrue(expectedFailToDelete);
-        // then unpublish them
-        workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(false));
-        assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
-        assertTrue(userApi.selfDestruct(null));
-        //TODO need to test that profiles are cascaded to and cleared
-
-        // Verify that self-destruct also deleted the workflow
-        boolean expectedAdminAccessToFail = false;
-        try {
-            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
-
-        } catch (ApiException e) {
-            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
-            expectedAdminAccessToFail = true;
-        }
-        assertTrue(expectedAdminAccessToFail);
-
-        // Verify that self-destruct also deleted the service
-        boolean expectedAdminServiceAccessToFail = false;
-        try {
-            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, SERVICE, null);
-        } catch (ApiException e) {
-            assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
-            expectedAdminServiceAccessToFail = true;
-        }
-        assertTrue(expectedAdminServiceAccessToFail);
-
-        // I shouldn't be able to get info on myself after deletion
-        boolean expectedFailToGetInfo = false;
-        try {
-            userApi.getUser();
-        } catch (ApiException e) {
-            expectedFailToGetInfo = true;
-        }
-        assertTrue(expectedFailToGetInfo);
-
-        expectedFailToGetInfo = false;
-        try {
-            userApi.getExtendedUserData();
-        } catch (ApiException e) {
-            expectedFailToGetInfo = true;
-        }
-        assertTrue(expectedFailToGetInfo);
-    }
-
-    @Test
     void testAdminLevelSelfDestruct() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
@@ -381,27 +285,6 @@ class UserResourceSwaggerIT extends BaseIT {
         testingPostgres.runUpdateStatement("UPDATE deletedusername SET dbcreatedate = '2018-01-20 09:34:24.674000' WHERE username = '" + altUsername + "'");
         assertFalse(adminUserApi.checkUserExists(altUsername));
         adminUserApi.changeUsername(altUsername);
-    }
-
-
-    @Test
-    void testGetUserEntries() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
-        UsersApi userApi = new UsersApi(client);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
-
-        workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
-
-        assertEquals(1, userApi.getUserEntries(10, null, "WORKFLOWS").size());
-        assertEquals(5, userApi.getUserEntries(10, null, null).size());
-        assertEquals(0, userApi.getUserEntries(10, null, "SERVICES").size());
-        assertEquals(4, userApi.getUserEntries(10, null, "TOOLS").size());
-
-        // Add an app tool, which should appear when specifying the TOOLS type
-        GitHubAppHelper.registerAppTool(client);
-        final List<EntryUpdateTime> tools = userApi.getUserEntries(10, null, "TOOLS");
-        assertEquals(5, tools.size());
-        assertEquals(1L, tools.stream().filter(t -> t.getEntryType() == EntryTypeEnum.APPTOOL).count());
     }
 
     /**

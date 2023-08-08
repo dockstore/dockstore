@@ -3,8 +3,8 @@ package io.dockstore.webservice.helpers;
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.common.FixtureUtility.fixture;
 
-import io.swagger.client.ApiClient;
-import io.swagger.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.WorkflowsApi;
 import java.util.UUID;
 import org.json.JSONObject;
 
@@ -21,9 +21,7 @@ public final class GitHubAppHelper {
 
     public static void registerAppTool(ApiClient webClient) {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        workflowApi.handleGitHubRelease(DockstoreTestUser2Repos.TEST_WORKFLOW_AND_TOOLS, USER_2_USERNAME, "refs/heads/main",
-            String.valueOf(INSTALLATION_ID));
-
+        handleGitHubRelease(workflowApi, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_WORKFLOW_AND_TOOLS, "refs/heads/main", USER_2_USERNAME);
     }
 
     /**
@@ -34,7 +32,7 @@ public final class GitHubAppHelper {
      * @param gitRef Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0
      * @param gitHubUsername Username of user on GitHub who triggered action
      */
-    public static void handleGitHubRelease(io.dockstore.openapi.client.api.WorkflowsApi workflowsApi, Integer installationId, String repository, String gitRef, String gitHubUsername) {
+    public static void handleGitHubRelease(WorkflowsApi workflowsApi, Integer installationId, String repository, String gitRef, String gitHubUsername) {
         workflowsApi.handleGitHubRelease(getGitHubWebhookPushPayload(installationId, repository, gitRef, gitHubUsername), generateXGitHubDelivery());
     }
 
@@ -64,8 +62,18 @@ public final class GitHubAppHelper {
     }
 
     public static class DockstoreTestUser2Repos {
+        public static final String DOCKSTOREYML_GITHUB_FILTERS_TEST = "DockstoreTestUser2/dockstoreyml-github-filters-test";
         public static final String TEST_AUTHORS = "DockstoreTestUser2/test-authors";
+        public static final String TEST_SERVICE = "DockstoreTestUser2/test-service";
         public static final String TEST_WORKFLOW_AND_TOOLS = "DockstoreTestUser2/test-workflows-and-tools";
+        public static final String TEST_WORKFLOW_AND_TOOLS_TOOL_PATH = TEST_WORKFLOW_AND_TOOLS + "/md5sum";
         public static final String WORKFLOW_DOCKSTORE_YML = "DockstoreTestUser2/workflow-dockstore-yml";
+        // Contains a Galaxy workflow
+        public static final String WORKFLOW_TESTING_REPO = "DockstoreTestUser2/workflow-testing-repo";
+    }
+
+    public static class DockstoreTestingRepos {
+        public static final String MULTI_ENTRY = "dockstore-testing/multi-entry";
+        public static final String TAGGED_APPTOOL = "dockstore-testing/tagged-apptool";
     }
 }

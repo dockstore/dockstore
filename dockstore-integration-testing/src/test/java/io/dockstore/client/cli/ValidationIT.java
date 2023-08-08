@@ -1,5 +1,7 @@
 package io.dockstore.client.cli;
 
+import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -10,6 +12,8 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.webservice.helpers.GitHubAppHelper.DockstoreTestUser2Repos;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -113,6 +117,16 @@ class ValidationIT extends BaseIT {
     protected boolean isWorkflowVersionValid(Workflow workflow, String name) {
         Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream()
             .filter(version -> Objects.equals(name, version.getName())).findFirst();
+
+        if (workflowVersion.isPresent()) {
+            return workflowVersion.get().isValid();
+        }
+        return false;
+    }
+
+    protected boolean isWorkflowVersionValid(io.dockstore.openapi.client.model.Workflow workflow, String name) {
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream()
+                .filter(version -> Objects.equals(name, version.getName())).findFirst();
 
         if (workflowVersion.isPresent()) {
             return workflowVersion.get().isValid();
@@ -400,15 +414,14 @@ class ValidationIT extends BaseIT {
      */
     @Test
     void testService() {
-        WorkflowsApi client = setupWorkflowWebService();
-        String serviceRepo = "DockstoreTestUser2/test-service";
-        String installationId = "1179416";
+        io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
 
         // Add a service with a dockstore.yml that lists a file that is missing in the repository - should be invalid
-        client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/heads/missingFile", installationId);
+        handleGitHubRelease(client, INSTALLATION_ID, DockstoreTestUser2Repos.TEST_SERVICE, "refs/heads/missingFile", USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
-        Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, SERVICE, "versions");
+        io.dockstore.openapi.client.model.Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2Repos.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
         assertFalse(isWorkflowVersionValid(service, "missingFile"), "Should be invalid due to missing file in dockstore.yml");
     }
 
