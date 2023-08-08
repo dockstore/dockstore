@@ -33,7 +33,6 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
-import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -65,7 +64,9 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * @author dyuen
+ * @deprecated uses swagger client classes, prefer {@link OpenAPIServiceIT}
  */
+@Deprecated(since = "1.15")
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
@@ -81,7 +82,6 @@ class SwaggerServiceIT extends BaseIT {
     private ServiceDAO serviceDAO;
     private Session session;
     private UserDAO userDAO;
-    private FileDAO fileDAO;
 
     @BeforeEach
     public void setup() {
@@ -91,8 +91,6 @@ class SwaggerServiceIT extends BaseIT {
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
-        this.fileDAO = new FileDAO(sessionFactory);
-
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");

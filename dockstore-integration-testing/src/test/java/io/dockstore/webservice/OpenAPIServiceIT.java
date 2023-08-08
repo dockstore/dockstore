@@ -39,9 +39,6 @@ import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
-import io.dockstore.webservice.jdbi.ServiceDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.model.Tool;
 import java.util.List;
@@ -62,28 +59,20 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(BaseIT.TestStatus.class)
 @Tag(ConfidentialTest.NAME)
-public class ServiceIT extends BaseIT {
+public class OpenAPIServiceIT extends BaseIT {
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private WorkflowDAO workflowDAO;
-    private ServiceDAO serviceDAO;
     private Session session;
-    private UserDAO userDAO;
     private FileDAO fileDAO;
 
     @BeforeEach
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
-
-        this.workflowDAO = new WorkflowDAO(sessionFactory);
-        this.serviceDAO = new ServiceDAO(sessionFactory);
-        this.userDAO = new UserDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
-
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
