@@ -6521,6 +6521,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: A GUID to identify the GitHub webhook delivery
+        in: header
+        name: X-GitHub-Delivery
+        required: true
+        schema:
+          type: string
       responses:
         "418":
           description: This code tells AWS Lambda not to retry.

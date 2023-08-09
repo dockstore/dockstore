@@ -83,6 +83,10 @@ public final class GitHubAppHelper {
         return installationPayloadJson.toString();
     }
 
+    public static void handleGitHubBranchDeletion(WorkflowsApi workflowsApi, String repository, String gitRef, String gitHubUsername) {
+        workflowsApi.handleGitHubBranchDeletion(repository, gitHubUsername, gitRef, String.valueOf(INSTALLATION_ID), generateXGitHubDelivery());
+    }
+
     /**
      * Generates a random GUID to use as the X-GitHub-Delivery header.
      * @return

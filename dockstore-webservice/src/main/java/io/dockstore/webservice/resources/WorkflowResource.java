@@ -2107,11 +2107,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
         @RequestBody(description = "GitHub push event payload", required = true) String payload) {
-        final GHEventPayload.Push gitHubPushPayload = parseEventPayload(payload, GHEventPayload.Push.class);
-        final long installationId = getGitHubInstallationId(gitHubPushPayload);
-        final String username = getGitHubUsername(gitHubPushPayload);
-        final String repository = gitHubPushPayload.getRepository().getFullName();
-        final String gitReference = gitHubPushPayload.getRef();
+        final GHEventPayload.Push pushPayload = parseEventPayload(payload, GHEventPayload.Push.class);
+        final long installationId = getGitHubInstallationId(pushPayload);
+        final String username = getGitHubUsername(pushPayload);
+        final String repository = pushPayload.getRepository().getFullName();
+        final String gitReference = pushPayload.getRef();
 
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
@@ -2181,11 +2181,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
         @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @QueryParam("username") String username,
         @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
-        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId) {
+        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId,
+        @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId) {
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s deleted from %s", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository)));
         }
-        final String deliveryId = LambdaEvent.createDeliveryId();
         githubWebhookDelete(repository, gitReference, username, deliveryId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }

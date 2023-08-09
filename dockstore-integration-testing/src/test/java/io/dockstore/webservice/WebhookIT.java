@@ -4,8 +4,8 @@ package io.dockstore.webservice;
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
 import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.LAMBDA_ERROR;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubBranchDeletion;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubInstallation;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
@@ -186,7 +186,7 @@ class WebhookIT extends BaseIT {
         Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(1, foobar.getWorkflowVersions().size());
 
-        workflowClient.handleGitHubBranchDeletion(DockstoreTesting.WORKFLOW_DOCKSTORE_YML, USER_2_USERNAME, "refs/heads/孤独のグルメ", String.valueOf(INSTALLATION_ID));
+        handleGitHubBranchDeletion(workflowClient, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, USER_2_USERNAME, "refs/heads/孤独のグルメ");
 
         foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(0, foobar.getWorkflowVersions().size());
@@ -363,7 +363,7 @@ class WebhookIT extends BaseIT {
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Delete tag 0.2
-        workflowsApi.handleGitHubBranchDeletion(DockstoreTesting.WORKFLOW_DOCKSTORE_YML, USER_2_USERNAME, tag02, String.valueOf(INSTALLATION_ID));
+        handleGitHubBranchDeletion(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, USER_2_USERNAME, tag02);
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         // Delete events should have the names of workflows that had a version deleted
@@ -540,7 +540,7 @@ class WebhookIT extends BaseIT {
         assertFalse(hasLegacyVersion, "Workflow should not have any legacy refresh versions.");
 
         // Delete tag 0.2
-        client.handleGitHubBranchDeletion(DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, USER_2_USERNAME, "refs/tags/0.2", String.valueOf(INSTALLATION_ID));
+        handleGitHubBranchDeletion(client, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, USER_2_USERNAME, "refs/tags/0.2");
         workflow = getFoobar1Workflow(client);
         assertTrue(workflow.getWorkflowVersions().stream().noneMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")),
                 "Should not have a 0.2 version.");
@@ -955,7 +955,7 @@ class WebhookIT extends BaseIT {
         assertEquals(2, workflow.getWorkflowVersions().size(), "should have 2 versions");
 
         // Delete 1.0 tag, should reassign 2.0 as the default version
-        client.handleGitHubBranchDeletion(DockstoreTestUser2.DOCKSTOREYML_GITHUB_FILTERS_TEST, USER_2_USERNAME, "refs/tags/1.0", String.valueOf(INSTALLATION_ID));
+        handleGitHubBranchDeletion(client, DockstoreTestUser2.DOCKSTOREYML_GITHUB_FILTERS_TEST, USER_2_USERNAME, "refs/tags/1.0");
         workflow = client.getWorkflowByPath(filterNoneWorkflowPath, WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(1, workflow.getWorkflowVersions().size(), "should have 1 version after deletion");
         assertNotNull(workflow.getDefaultVersion(), "should have reassigned the default version during deletion");
@@ -967,7 +967,7 @@ class WebhookIT extends BaseIT {
         assertTrue(workflow.isIsPublished());
 
         // Delete 2.0 tag, unset default version
-        client.handleGitHubBranchDeletion(DockstoreTestUser2.DOCKSTOREYML_GITHUB_FILTERS_TEST, USER_2_USERNAME, "refs/tags/2.0", String.valueOf(INSTALLATION_ID));
+        handleGitHubBranchDeletion(client, DockstoreTestUser2.DOCKSTOREYML_GITHUB_FILTERS_TEST, USER_2_USERNAME, "refs/tags/2.0");
         workflow = client.getWorkflowByPath(filterNoneWorkflowPath, WorkflowSubClass.BIOWORKFLOW, "versions");
         assertEquals(0, workflow.getWorkflowVersions().size(), "should have 0 versions after deletion");
         assertNull(workflow.getDefaultVersion(), "should have no default version after final version is deleted");
