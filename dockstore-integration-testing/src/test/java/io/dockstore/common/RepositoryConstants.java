@@ -42,6 +42,7 @@ public final class RepositoryConstants {
         public static final String TAGGED_APPTOOL = "dockstore-testing/tagged-apptool";
         public static final String TAGGED_APPTOOL_TOOL_PATH = TAGGED_APPTOOL + "/md5sum";
         public static final String TEST_WORKFLOWS_AND_TOOLS = "dockstore-testing/test-workflows-and-tools";
+        public static final String WDL_HUMANWGS = "dockstore-testing/wdl-humanwgs";
         public static final String WORKFLOW_DOCKSTORE_YML = "dockstore-testing/workflow-dockstore-yml";
     }
 }
