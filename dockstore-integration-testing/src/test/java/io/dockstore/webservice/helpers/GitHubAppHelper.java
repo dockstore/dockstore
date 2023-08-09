@@ -83,8 +83,8 @@ public final class GitHubAppHelper {
         return installationPayloadJson.toString();
     }
 
-    public static void handleGitHubBranchDeletion(WorkflowsApi workflowsApi, String repository, String gitRef, String gitHubUsername) {
-        workflowsApi.handleGitHubBranchDeletion(repository, gitHubUsername, gitRef, String.valueOf(INSTALLATION_ID), generateXGitHubDelivery());
+    public static void handleGitHubBranchDeletion(WorkflowsApi workflowsApi, String repository, String gitHubUsername, String gitRef) {
+        workflowsApi.handleGitHubBranchDeletion(repository, gitHubUsername, gitRef, generateXGitHubDelivery());
     }
 
     /**

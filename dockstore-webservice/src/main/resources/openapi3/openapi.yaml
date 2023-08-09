@@ -6515,12 +6515,6 @@ paths:
         required: true
         schema:
           type: string
-      - description: GitHub installation ID
-        in: query
-        name: installationId
-        required: true
-        schema:
-          type: string
       - description: A GUID to identify the GitHub webhook delivery
         in: header
         name: X-GitHub-Delivery
