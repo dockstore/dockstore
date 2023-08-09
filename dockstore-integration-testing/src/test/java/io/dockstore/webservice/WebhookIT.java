@@ -6,6 +6,7 @@ import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.INSTALLATION_ID;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.LAMBDA_ERROR;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubInstallation;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.NOTEBOOK;
@@ -70,6 +71,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -339,7 +341,7 @@ class WebhookIT extends BaseIT {
         long numberOfWebhookInvocations = 0;
 
         // Track install event
-        workflowsApi.handleGitHubInstallation(String.valueOf(INSTALLATION_ID), DockstoreTestingRepos.WORKFLOW_DOCKSTORE_YML, USER_2_USERNAME);
+        handleGitHubInstallation(workflowsApi, List.of(DockstoreTestingRepos.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.INSTALL, true); // There should be no entry name
@@ -465,7 +467,7 @@ class WebhookIT extends BaseIT {
         LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
 
         // Track install event
-        client.handleGitHubInstallation(String.valueOf(INSTALLATION_ID), DockstoreTestUser2Repos.WORKFLOW_DOCKSTORE_YML, USER_2_USERNAME);
+        handleGitHubInstallation(client, List.of(DockstoreTestUser2Repos.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
 
         // Release 0.1 on GitHub - one new wdl workflow
         handleGitHubRelease(client, DockstoreTestUser2Repos.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.1", USER_2_USERNAME);
@@ -1764,5 +1766,52 @@ class WebhookIT extends BaseIT {
                 .toList();
         assertEquals(2, failedLambdaEvents.size(), "There should be two failed events");
         failedLambdaEvents.forEach(event -> assertTrue(event.getMessage().toLowerCase().contains("absolute"), "Should contain the word 'absolute'"));
+    }
+
+    /**
+     * This tests just the github release process for installs
+     */
+    @Test
+    void testGitHubReleaseInstallationOnly() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        // Track install event
+        handleGitHubInstallation(client, List.of(DockstoreTestUser2Repos.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
+        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertTrue(workflowCount >= 2, "should see 2 workflows from the .dockstore.yml from the master branch");
+    }
+
+    /**
+     * This tests just the github release process for installs but with a very large repo.
+     * This repo has had the .dockstore.yml added a while back (10 months)
+     */
+    @Test
+    @Disabled("this repo is huge and this test takes forever to run (but not because of the .dockstore.yml detection code), can use this for manual testing but probably do not want this on CI")
+    void testGitHubReleaseLargeInstallationOnly() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        // Track install event
+        handleGitHubInstallation(client, List.of(DockstoreTestingRepos.RODENT_OF_UNUSUAL_SIZE), USER_2_USERNAME);
+        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertTrue(workflowCount >= 12, "should see a lot of workflows from the .dockstore.yml from the master branch from some branch or another");
+    }
+
+    /**
+     * This tests just the github release process for installs but the .dockstore.yml is in a develop branch
+     * and missing from the default branch
+     */
+    @Test
+    void testGitHubReleaseFeatureBranchInstallationOnly() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        // Track install event
+        handleGitHubInstallation(client, List.of(DockstoreTestUser2Repos.DOCKSTORE_WORKFLOW_CNV), USER_2_USERNAME);
+        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(1, workflowCount, "should see a workflow from the .dockstore.yml");
+        long workflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion where reference like 'develop'", long.class);
+        assertEquals(1, workflowVersionCount, "should see a workflow from the .dockstore.yml from a specific branch");
     }
 }

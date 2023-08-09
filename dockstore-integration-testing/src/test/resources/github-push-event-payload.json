@@ -137,7 +137,7 @@
     "login": "replace_me_with_github_username",
     "id": 1234567,
     "node_id": "foobar",
-    "avatar_url": "https://avatars.githubusercontent.com/u/1730679?v=4",
+    "avatar_url": "https://avatars.githubusercontent.com/u/1234567?v=4",
     "gravatar_id": "",
     "url": "https://api.github.com/users/denis-yuen",
     "html_url": "https://github.com/denis-yuen",

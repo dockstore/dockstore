@@ -6533,26 +6533,20 @@ paths:
       description: Handle the installation of our GitHub app onto a repository or
         organization.
       operationId: handleGitHubInstallation
+      parameters:
+      - description: A GUID to identify the GitHub webhook delivery
+        in: header
+        name: X-GitHub-Delivery
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
-          application/x-www-form-urlencoded:
+          application/json:
             schema:
-              type: object
-              properties:
-                installationId:
-                  type: string
-                  description: GitHub installation ID
-                repositories:
-                  type: string
-                  description: Comma-separated repository paths (ex. dockstore/dockstore-ui2)
-                    for all repositories installed
-                username:
-                  type: string
-                  description: Username of user on GitHub who triggered action
-              required:
-              - installationId
-              - repositories
-              - username
+              type: string
+        description: GitHub App repository installation event payload
+        required: true
       responses:
         "418":
           description: This code tells AWS Lambda not to retry.

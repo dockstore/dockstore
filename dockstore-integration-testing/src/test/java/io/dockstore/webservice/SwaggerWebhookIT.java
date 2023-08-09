@@ -32,7 +32,6 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,9 +63,6 @@ class SwaggerWebhookIT extends BaseIT {
     public final SystemErr systemErr = new SystemErr();
 
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
-    private final String installationId = "1179416";
-    private final String unusualBranchWorkflowDockstoreYmlRepo = "DockstoreTestUser2/dockstore_workflow_cnv";
-    private final String largeWorkflowDockstoreYmlRepo = "dockstore-testing/rodent-of-unusual-size";
     private final String whalesay2Repo = "DockstoreTestUser/dockstore-whalesay-2";
 
     @BeforeEach
@@ -167,57 +163,6 @@ class SwaggerWebhookIT extends BaseIT {
             "User should have 3 workflows, 2 from DockstoreTestUser2 org and one from DockstoreTestUser/dockstore-whalesay-wdl");
 
     }
-
-    /**
-     * This tests just the github release process for installs
-     */
-    @Test
-    void testGitHubReleaseInstallationOnly() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-
-        // Track install event
-        client.handleGitHubInstallation(installationId, workflowRepo, USER_2_USERNAME);
-        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
-        assertTrue(workflowCount >= 2, "should see 2 workflows from the .dockstore.yml from the master branch");
-    }
-
-    /**
-     * This tests just the github release process for installs but with a very large repo.
-     * This repo has had the .dockstore.yml added a while back (10 months)
-     */
-    @Test
-    @Disabled("this repo is huge and this test takes forever to run (but not because of the .dockstore.yml detection code), can use this for manual testing but probably do not want this on CI")
-    void testGitHubReleaseLargeInstallationOnly() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-
-        // Track install event
-        client.handleGitHubInstallation(installationId, largeWorkflowDockstoreYmlRepo, USER_2_USERNAME);
-        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
-        assertTrue(workflowCount >= 12, "should see a lot of workflows from the .dockstore.yml from the master branch from some branch or another");
-    }
-
-    /**
-     * This tests just the github release process for installs but the .dockstore.yml is in a develop branch
-     * and missing from the default branch
-     */
-    @Test
-    void testGitHubReleaseFeatureBranchInstallationOnly() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-
-        // Track install event
-        client.handleGitHubInstallation(installationId, unusualBranchWorkflowDockstoreYmlRepo, USER_2_USERNAME);
-        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
-        assertEquals(1, workflowCount, "should see a workflow from the .dockstore.yml");
-        long workflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion where reference like 'develop'", long.class);
-        assertEquals(1, workflowVersionCount, "should see a workflow from the .dockstore.yml from a specific branch");
-    }
-
 
     @Test
     void testLambdaEvents() {

@@ -103,7 +103,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.PATCH;
@@ -142,6 +141,7 @@ import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.kohsuke.github.GHEventPayload;
+import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -2107,18 +2107,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
         @RequestBody(description = "GitHub push event payload", required = true) String payload) {
-        final GHEventPayload.Push gitHubPushPayload;
-        try {
-            StringReader reader = new StringReader(payload);
-            gitHubPushPayload = GitHub.offline().parseEventPayload(reader, GHEventPayload.Push.class);
-        } catch (IOException e) {
-            LOG.error("Invalid payload", e);
-            throw new CustomWebApplicationException("Invalid payload", HttpStatus.SC_BAD_REQUEST);
-        }
+        final GHEventPayload.Push gitHubPushPayload = parseEventPayload(payload, GHEventPayload.Push.class);
+        final long installationId = getGitHubInstallationId(gitHubPushPayload);
+        final String username = getGitHubUsername(gitHubPushPayload);
         final String repository = gitHubPushPayload.getRepository().getFullName();
-        final String username = gitHubPushPayload.getSender().getLogin();
         final String gitReference = gitHubPushPayload.getRef();
-        final long installationId = gitHubPushPayload.getInstallation().getId();
+
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
@@ -2129,26 +2123,27 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @POST
     @Path("/github/install")
     @Timed
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
     @Operation(description = "Handle the installation of our GitHub app onto a repository or organization.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
     @ApiOperation(value = "Handle the installation of our GitHub app onto a repository or organization.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class, responseContainer = "List")
     public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @Parameter(name = "repositories", description = "Comma-separated repository paths (ex. dockstore/dockstore-ui2) for all repositories installed", required = true) @FormParam("repositories") String repositories,
-        @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+            @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
+            @RequestBody(description = "GitHub App repository installation event payload", required = true) String payload) {
+        final GHEventPayload.InstallationRepositories installationPayload = parseEventPayload(payload, GHEventPayload.InstallationRepositories.class);
+        final long installationId = getGitHubInstallationId(installationPayload);
+        final String username = getGitHubUsername(installationPayload);
+        final List<String> repositories = installationPayload.getRepositoriesAdded().stream().map(GHRepository::getFullName).toList();
+
         if (LOG.isInfoEnabled()) {
-            LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(repositories), Utilities.cleanForLogging(username)));
+            LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(String.join(", ", repositories)), Utilities.cleanForLogging(username)));
         }
-        Map<String, String> repositoryToLambdaEventDeliveryId = new HashMap<>();
+
         // record installation event as lambda event
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
-        Arrays.asList(repositories.split(",")).forEach(repository -> {
-            // Unique group ID used to identify lambda events for this GitHub webhook invocation
-            final String deliveryId = LambdaEvent.createDeliveryId();
-            repositoryToLambdaEventDeliveryId.put(repository, deliveryId);
+        repositories.forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
             String[] splitRepository = repository.split("/");
             lambdaEvent.setDeliveryId(deliveryId);
@@ -2161,14 +2156,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         });
         // make some educated guesses whether we should try to retrospectively release some old versions
         // note that for large organizations, this loop could be quite large if many repositories are added at the same time
-        for (String repository: repositories.split(",")) {
-            final Set<String> strings = identifyGitReferencesToRelease(repository, Long.parseLong(installationId));
+        for (String repository: repositories) {
+            final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
             for (String gitReference: strings) {
                 if (LOG.isInfoEnabled()) {
                     LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
                         Utilities.cleanForLogging(username)));
                 }
-                githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId), repositoryToLambdaEventDeliveryId.get(repository), false);
+                githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, false);
             }
         }
         return Response.status(HttpStatus.SC_OK).build();
@@ -2193,6 +2188,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String deliveryId = LambdaEvent.createDeliveryId();
         githubWebhookDelete(repository, gitReference, username, deliveryId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
+    }
+
+    private <T extends GHEventPayload> T parseEventPayload(String payload, Class<T> eventType) {
+        try {
+            return GitHub.offline().parseEventPayload(new StringReader(payload), eventType);
+        } catch (IOException e) {
+            LOG.error("Could not parse GitHub webhook payload", e);
+            throw new CustomWebApplicationException("Could not parse GitHub webhook payload", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private long getGitHubInstallationId(GHEventPayload payload) {
+        return payload.getInstallation().getId();
+    }
+
+    private String getGitHubUsername(GHEventPayload payload) {
+        return payload.getSender().getLogin();
     }
 
     @GET
