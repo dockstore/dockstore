@@ -11,8 +11,8 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
+import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
-import io.dockstore.webservice.helpers.GitHubAppHelper.DockstoreTestUser2Repos;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -417,10 +417,10 @@ class ValidationIT extends BaseIT {
         io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
 
         // Add a service with a dockstore.yml that lists a file that is missing in the repository - should be invalid
-        handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/heads/missingFile", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/heads/missingFile", USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
-        io.dockstore.openapi.client.model.Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2Repos.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
+        io.dockstore.openapi.client.model.Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
         assertFalse(isWorkflowVersionValid(service, "missingFile"), "Should be invalid due to missing file in dockstore.yml");
     }
 

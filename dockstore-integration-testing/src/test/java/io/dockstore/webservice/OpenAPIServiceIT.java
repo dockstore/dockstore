@@ -17,8 +17,8 @@
 
 package io.dockstore.webservice;
 
+import static io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
-import static io.dockstore.webservice.helpers.GitHubAppHelper.DockstoreTestUser2Repos;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -99,10 +99,10 @@ public class OpenAPIServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add version
-        handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
-        Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2Repos.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
+        Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
 
         assertNotNull(service);
         assertEquals(1, service.getWorkflowVersions().size(), "Should have a new version");
@@ -139,7 +139,7 @@ public class OpenAPIServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add service
-        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", "iamnotarealuser"));
+        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", "iamnotarealuser"));
         assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
 
         final long count = testingPostgres.runSelectStatement(
@@ -158,13 +158,13 @@ public class OpenAPIServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add service
-        handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
 
         // Add workflow with same path as service
         final Workflow workflow = client
-            .manualRegister("github", DockstoreTestUser2Repos.TEST_SERVICE, "/Dockstore.cwl", "", "cwl", "/test.json");
+            .manualRegister("github", DockstoreTestUser2.TEST_SERVICE, "/Dockstore.cwl", "", "cwl", "/test.json");
         assertNotNull(workflow);
 
         // forcibly publish both for testing
@@ -172,14 +172,14 @@ public class OpenAPIServiceIT extends BaseIT {
         testingPostgres.runUpdateStatement("update service set ispublished = 't', waseverpublic = 't'");
 
         // test retrieval
-        final Workflow returnedWorkflow = client.getPublishedWorkflowByPath(SourceControl.GITHUB + "/" + DockstoreTestUser2Repos.TEST_SERVICE, WorkflowSubClass.BIOWORKFLOW, "",  null);
-        final Workflow returnedService = client.getPublishedWorkflowByPath(SourceControl.GITHUB + "/" + DockstoreTestUser2Repos.TEST_SERVICE, WorkflowSubClass.SERVICE, "",  null);
+        final Workflow returnedWorkflow = client.getPublishedWorkflowByPath(SourceControl.GITHUB + "/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.BIOWORKFLOW, "",  null);
+        final Workflow returnedService = client.getPublishedWorkflowByPath(SourceControl.GITHUB + "/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "",  null);
         assertNotSame(returnedWorkflow.getId(), returnedService.getId());
 
         // test GA4GH retrieval
         Ga4GhApi ga4GhApi = new Ga4GhApi(getWebClient(USER_2_USERNAME, testingPostgres));
-        final Tool tool1 = ga4GhApi.toolsIdGet(EntryTypeMetadata.WORKFLOW.getTrsPrefix() + "/" + SourceControl.GITHUB + "/" + DockstoreTestUser2Repos.TEST_SERVICE);
-        final Tool tool2 = ga4GhApi.toolsIdGet(EntryTypeMetadata.SERVICE.getTrsPrefix() + "/" + SourceControl.GITHUB + "/" + DockstoreTestUser2Repos.TEST_SERVICE);
+        final Tool tool1 = ga4GhApi.toolsIdGet(EntryTypeMetadata.WORKFLOW.getTrsPrefix() + "/" + SourceControl.GITHUB + "/" + DockstoreTestUser2.TEST_SERVICE);
+        final Tool tool2 = ga4GhApi.toolsIdGet(EntryTypeMetadata.SERVICE.getTrsPrefix() + "/" + SourceControl.GITHUB + "/" + DockstoreTestUser2.TEST_SERVICE);
         assertNotSame(tool1.getId(), tool2.getId());
     }
 
@@ -192,7 +192,7 @@ public class OpenAPIServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add version that doesn't exist
-        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0-fake", ADMIN_USERNAME));
+        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0-fake", ADMIN_USERNAME));
         assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
     }
 
@@ -205,11 +205,11 @@ public class OpenAPIServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add version that has no dockstore.yml
-        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/no-yml", ADMIN_USERNAME));
+        ApiException ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/no-yml", ADMIN_USERNAME));
         assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
 
         // Add version that has invalid dockstore.yml
-        ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/invalid-yml", ADMIN_USERNAME));
+        ex = assertThrows(ApiException.class, () -> handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/invalid-yml", ADMIN_USERNAME));
         assertEquals(LAMBDA_FAILURE, ex.getCode(), "Should have error code 418");
     }
 
@@ -223,11 +223,11 @@ public class OpenAPIServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Add service
-        handleGitHubRelease(client, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+        handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
 
-        Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2Repos.TEST_SERVICE, WorkflowSubClass.SERVICE, "");
+        Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "");
         ApiException ex = assertThrows(ApiException.class, () -> client.refresh1(service.getId(), false));
         assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should not be able to refresh a dockstore.yml service.");
     }

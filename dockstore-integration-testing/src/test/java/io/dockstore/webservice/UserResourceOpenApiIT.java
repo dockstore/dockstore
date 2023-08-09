@@ -33,6 +33,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
@@ -48,7 +49,6 @@ import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.helpers.GitHubAppHelper;
-import io.dockstore.webservice.helpers.GitHubAppHelper.DockstoreTestUser2Repos;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -371,7 +371,7 @@ class UserResourceOpenApiIT extends BaseIT {
         // try to delete with published workflows & service
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getShortName(), "");
-        handleGitHubRelease(workflowsApi, DockstoreTestUser2Repos.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
 
         final Workflow workflowByPath = workflowsApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);

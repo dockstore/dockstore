@@ -3,6 +3,7 @@ package io.dockstore.webservice.helpers;
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
 import static io.dockstore.common.FixtureUtility.fixture;
 
+import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import java.util.List;
@@ -23,7 +24,7 @@ public final class GitHubAppHelper {
 
     public static void registerAppTool(ApiClient webClient) {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        handleGitHubRelease(workflowApi, DockstoreTestUser2Repos.TEST_WORKFLOW_AND_TOOLS, "refs/heads/main", USER_2_USERNAME);
+        handleGitHubRelease(workflowApi, DockstoreTestUser2.TEST_WORKFLOW_AND_TOOLS, "refs/heads/main", USER_2_USERNAME);
     }
 
     /**
@@ -88,27 +89,5 @@ public final class GitHubAppHelper {
      */
     public static String generateXGitHubDelivery() {
         return UUID.randomUUID().toString();
-    }
-
-    public static class DockstoreTestUser2Repos {
-        public static final String DOCKSTORE_WORKFLOW_CNV = "DockstoreTestUser2/dockstore_workflow_cnv";
-        public static final String DOCKSTOREYML_GITHUB_FILTERS_TEST = "DockstoreTestUser2/dockstoreyml-github-filters-test";
-        public static final String TEST_AUTHORS = "DockstoreTestUser2/test-authors";
-        public static final String TEST_SERVICE = "DockstoreTestUser2/test-service";
-        public static final String TEST_WORKFLOW_AND_TOOLS = "DockstoreTestUser2/test-workflows-and-tools";
-        public static final String TEST_WORKFLOW_AND_TOOLS_TOOL_PATH = TEST_WORKFLOW_AND_TOOLS + "/md5sum";
-        public static final String WORKFLOW_DOCKSTORE_YML = "DockstoreTestUser2/workflow-dockstore-yml";
-        // Contains a Galaxy workflow
-        public static final String WORKFLOW_TESTING_REPO = "DockstoreTestUser2/workflow-testing-repo";
-    }
-
-    public static class DockstoreTestingRepos {
-        public static final String MULTI_ENTRY = "dockstore-testing/multi-entry";
-        // Repository with a large .dockstore.yml and alot of branches
-        public static final String RODENT_OF_UNUSUAL_SIZE = "dockstore-testing/rodent-of-unusual-size";
-        public static final String TAGGED_APPTOOL = "dockstore-testing/tagged-apptool";
-        public static final String TAGGED_APPTOOL_TOOL_PATH = TAGGED_APPTOOL + "/md5sum";
-        public static final String TEST_WORKFLOWS_AND_TOOLS = "dockstore-testing/test-workflows-and-tools";
-        public static final String WORKFLOW_DOCKSTORE_YML = "dockstore-testing/workflow-dockstore-yml";
     }
 }

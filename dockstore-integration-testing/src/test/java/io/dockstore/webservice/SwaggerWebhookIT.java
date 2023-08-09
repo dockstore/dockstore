@@ -28,6 +28,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
 import java.util.List;
@@ -62,7 +63,6 @@ class SwaggerWebhookIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String whalesay2Repo = "DockstoreTestUser/dockstore-whalesay-2";
 
     @BeforeEach
@@ -145,7 +145,7 @@ class SwaggerWebhookIT extends BaseIT {
         // Register 2 workflows in DockstoreTestUser2 org (user belongs to org)
         final String githubFriendlyName = SourceControl.GITHUB.getFriendlyName();
         workflowsApi
-            .manualRegister(githubFriendlyName, workflowRepo, "/Dockstore.wdl",
+            .manualRegister(githubFriendlyName, DockstoreTestUser2.WORKFLOW_DOCKSTORE_YML, "/Dockstore.wdl",
                 "foobar", "wdl", "/test.json");
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "",
             DescriptorLanguage.CWL.getShortName(), "/test.json");
