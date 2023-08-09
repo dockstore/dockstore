@@ -59,6 +59,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -122,11 +123,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public static final int GITHUB_MAX_CACHE_AGE_SECONDS = 30; // GitHub's default max-cache age is 60 seconds
 
     public static final String REFS_HEADS = "refs/heads/";
+    public static final String SUBMODULE = "submodule";
+    public static final String SYMLINK = "symlink";
     /**
      * each section that starts with (?!.* is excluding a specific character
      */
     public static final Pattern GIT_BRANCH_TAG_PATTERN = Pattern.compile("^refs/(tags|heads)/((?!.*//)(?!.*\\^)(?!.*:)(?!.*\\\\)(?!.*@)(?!.*\\[)(?!.*\\?)(?!.*~)(?!.*\\.\\.)[\\p{Punct}\\p{L}\\d\\-_/]+)$");
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
+
     private final GitHub github;
     private final String githubTokenUsername;
 
@@ -251,8 +255,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
-    private String readFileFromRepo(String fileName, String reference, GHRepository repo) {
+    /**
+     * This method appears to read files from github in a cache-aware manner, taking into account symlinks and submodules.
+     *
+     * @param originalFileName the original filename that we're looking for
+     * @param originalReference the original reference (tag, branch, commit) we're looking for
+     * @param originalRepo the original repo we're looking for the file in
+     * @return
+     */
+    private String readFileFromRepo(final String originalFileName, final String originalReference, final GHRepository originalRepo) {
         GHRateLimit startRateLimit = null;
+        // when looking through submodules, we always look for a specific commit
+        boolean submoduleRedirected = false;
+        GHRepository repo = originalRepo;
+        String reference = originalReference;
+        String fileName = originalFileName;
         try {
             startRateLimit = getGhRateLimitQuietly();
 
@@ -267,16 +284,41 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 if (i == 0 && folders.get(i).isEmpty()) {
                     continue;
                 }
+                // build up from the root and look for folders (potentially in the cache)
                 start.add(folders.get(i));
                 String partialPath = Joiner.on("/").join(start);
                 try {
-                    Pair<GHContent, String> innerContent = getContentAndMetadataForFileName(partialPath, reference, repo);
-                    if (innerContent != null && innerContent.getLeft().getType().equals("symlink")) {
-                        // restart the loop to look for symbolic links pointed to by symbolic links
-                        List<String> newfolders = Lists.newArrayList(innerContent.getRight().split("/"));
-                        List<String> sublist = folders.subList(i + 1, folders.size());
-                        newfolders.addAll(sublist);
-                        folders = newfolders;
+                    Pair<GHContent, String> innerContent = getContentAndMetadataForFileName(partialPath, reference, repo, submoduleRedirected);
+                    if (innerContent != null) {
+                        if (innerContent.getLeft().getType().equals(SYMLINK)) {
+                            // restart the loop to look for symbolic links pointed to by symbolic links
+                            List<String> newfolders = Lists.newArrayList(innerContent.getRight().split("/"));
+                            List<String> sublist = folders.subList(i + 1, folders.size());
+                            newfolders.addAll(sublist);
+                            folders = newfolders;
+                        } else if (innerContent.getLeft().getType().equals(SUBMODULE)) {
+                            String otherRepo = innerContent.getRight();
+                            if (otherRepo == null) {
+                                // likely means this submodule is not on GitHub, rest API reports it as null
+                                LOG.warn("Could not process {} at {}, is likely a submodule that is not on GitHub", originalFileName, originalReference);
+                                return null;
+                            }
+                            URL otherRepoURL = new URL(otherRepo);
+                            // reassign repo and reference
+                            final String[] split = otherRepoURL.getPath().split("/");
+                            final int indexPastReposPrefix = 2;
+                            String newRepositoryId = split[indexPastReposPrefix] + "/" + split[indexPastReposPrefix + 1];
+                            String newReference = split[split.length - 1];
+                            repo = github.getRepository(newRepositoryId);
+                            reference = newReference;
+
+                            // discard the old folders we've looked at already and start looking through folders in the submodule repository
+                            folders = folders.subList(i + 1, folders.size());
+                            submoduleRedirected = true;
+                        }
+                        // in both the case of a symbolic link or a submodule, reset the path we're looking for since the "old" path getting to the link or submodule is no longer relevant
+                        // only the path "inside" the submodule or link is what you are looking for e.g. if your path is `../foo/test/a/b` but `foo` is a submodule, you
+                        // look at the repo that `foo` corresponds to and look for the path `test/a/b` inside it
                         start = new ArrayList<>();
                         i = -1;
                     }
@@ -287,7 +329,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
             fileName = Joiner.on("/").join(folders);
 
-            Pair<GHContent, String> decodedContentAndMetadata = getContentAndMetadataForFileName(fileName, reference, repo);
+            Pair<GHContent, String> decodedContentAndMetadata = getContentAndMetadataForFileName(fileName, reference, repo, submoduleRedirected);
             if (decodedContentAndMetadata == null) {
                 return null;
             } else {
@@ -315,10 +357,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param fileName
      * @param reference
      * @param repo
+     * @parasm submoduleRedirected if the reference is a submodule, it will be a commit hash
      * @return metadata describing the type of file and its decoded content
      * @throws IOException
      */
-    private Pair<GHContent, String> getContentAndMetadataForFileName(String fileName, String reference, GHRepository repo)
+    private Pair<GHContent, String> getContentAndMetadataForFileName(String fileName, String reference, GHRepository repo,  boolean submoduleRedirected)
         throws IOException {
         // retrieval of directory content is cached as opposed to retrieving individual files
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
@@ -326,7 +369,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         GHRef[] branchesAndTags = getBranchesAndTags(repo);
 
-        if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
+        if (!submoduleRedirected && Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
         }
         // only look at github if the reference exists
@@ -342,8 +385,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
             // need to double-check whether this is a symlink by getting the specific file which sucks
             GHContent fileContent = repo.getFileContent(content.getPath(), reference);
-            // this is deprecated, but this seems to be the only way to get the actual content, rather than the content on the symbolic link
             try {
+                if (fileContent.getType().equals(SUBMODULE)) {
+                    // fileContent.getContent() assumes content to decode, but a submodule reference has no content, return the giturl instead
+                    return Pair.of(fileContent, fileContent.getGitUrl());
+                }
+                // this is deprecated, but getContent() seems to be the only way to get the actual content, rather than the content of the symbolic link
                 return Pair.of(fileContent, fileContent.getContent());
             } catch (NullPointerException ex) {
                 LOG.info("looks like we were unable to retrieve " + fileName + " at " + reference + " , possible submodule reference?", ex);
@@ -1244,7 +1291,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private List<String> getBranches(GHRepository repository, int maxRefs) throws IOException {
         return streamIterable(repository.listRefs())
             .limit(maxRefs)
-            .map(ref -> ref.getRef())
+            .map(GHRef::getRef)
             .filter(ref -> ref.startsWith(REFS_HEADS))
             .map(ref -> ref.substring(REFS_HEADS.length()))
             .toList();
