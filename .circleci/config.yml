@@ -299,13 +299,13 @@ jobs:
       - run:
           name: split up tests and create a file for cache checksum
           command: |
+            touch /tmp/tests-to-run.txt
             if [ $CIRCLE_NODE_TOTAL != 1 ]
             then
-              TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
+              cat temp/test-lists/unit/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             else
-              TESTS_TO_RUN=$(cat temp/test-lists/unit/all.txt | tr '\n' ',')
+              cat temp/test-lists/unit/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose
             fi
-            echo $TESTS_TO_RUN > /tmp/tests-to-run.txt
       - restore_cache:
           keys:
             - dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
@@ -318,21 +318,17 @@ jobs:
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp \
-              -Dtest=`cat /tmp/tests-to-run.txt` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+              -Dtest=`cat /tmp/tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
             else 
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp | grep  -v "^Running Changeset:"
             fi
             # The piping grep command is a temporary fix to this issue https://github.com/liquibase/liquibase/issues/2396
 
       # store these twice since non-confidential tests also do a clean install
-      - run:
-          name: Save test results
-          command: |
-            mkdir -p ~/junit/
-            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/junit/ \;
-          when: always
+      - setup_test_results
+      - fix_non_compliant_xml_reports
       - store_test_results:
-          path: ~/junit
+          path: ~/test-results
       - setup_codecov_uploader
       - run:
           name: send coverage for unit tests
@@ -342,8 +338,8 @@ jobs:
           command: |
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
-              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
-              echo $TESTS_TO_RUN
+              touch /tmp/non-confidential-tests-to-run.txt
+              cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/non-confidential-tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             
               # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
               /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
@@ -354,7 +350,7 @@ jobs:
               fi
             
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore \
-              -Dtest=$TESTS_TO_RUN -DfailIfNoTests=false -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"         
+              -Dtest=`cat /tmp/non-confidential-tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"         
             else 
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore \
               -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp | grep  -v "^Running Changeset:"      
@@ -390,16 +386,12 @@ jobs:
           key: dockstore-web-cache-unit-test-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
           paths:
             - /tmp/dockstore-web-cache
-      - run:
-          name: Save test results
-          command: |
-            mkdir -p ~/junit/
-            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/junit/ \;
-          when: always
+      - setup_test_results
+      - fix_non_compliant_xml_reports
       - store_test_results:
-          path: ~/junit
+          path: ~/test-results
       - store_artifacts:
-          path: ~/junit
+          path: ~/test-results
       - store_artifacts:
           path: keysmap.list
       - persist_coverage
@@ -540,13 +532,13 @@ commands:
       - run:
           name: split up tests and create a file for cache checksum
           command: |
+            touch /tmp/tests-to-run.txt
             if [ $CIRCLE_NODE_TOTAL != 1 ]
             then
-              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt | circleci tests split --split-by=timings --time-default=0.1s | tr '\n' ',')
+              cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose --split-by=timings --time-default=0.1s
             else
-              TESTS_TO_RUN=$(cat temp/test-lists/IT/all.txt| tr '\n' ',')
+              cat temp/test-lists/IT/all.txt | circleci tests run --command="> /tmp/tests-to-run.txt xargs echo" --verbose
             fi
-            echo $TESTS_TO_RUN > /tmp/tests-to-run.txt
       - restore_cache:
           keys:
             - dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/tests-to-run.txt" }}-{{ .Branch }}
@@ -587,7 +579,7 @@ commands:
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
-              clean verify -Dit.test=`cat /tmp/tests-to-run.txt` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
+              clean verify -Dit.test=`cat /tmp/tests-to-run.txt | tr ' ' ','` -DfailIfNoTests=false | grep  -v "^Running Changeset:"
             else 
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp | grep  -v "^Running Changeset:"
             fi
@@ -610,12 +602,8 @@ commands:
           paths:
             - /tmp/dockstore-web-cache
             - /tmp/dockstore-bitbucket-token-cache
-      - run:
-          name: Save test results
-          command: |
-            mkdir -p ~/test-results/junit/
-            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/test-results/junit/ \;
-          when: always
+      - setup_test_results
+      - fix_non_compliant_xml_reports
       - store_test_results:
           path: ~/test-results
       - store_artifacts:
@@ -653,3 +641,26 @@ commands:
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
             chmod +x codecov
+  setup_test_results:
+    steps:
+      - run:
+          name: Setup test results
+          command: |
+            mkdir -p ~/test-results/junit/
+            find . -type f -regex ".*/target/.*-reports/TEST-.*xml" -exec cp {} ~/test-results/junit/ \;
+          when: always
+  fix_non_compliant_xml_reports:
+    steps:
+      - run:
+          name: Fix formatting of test results
+          # Sometimes xml reports will have a 'rerunFailure' tag along with the 'failure' tag which CircleCI can't parse
+          # The additional element is removed so results can be uploaded properly
+          # See https://support.circleci.com/hc/en-us/articles/16386815548571-Troubleshooting-invalid-testcase-element-error-when-uploading-test-results
+          command: |
+            sudo apt update
+            sudo apt install -y xmlstarlet
+            for file in ~/test-results/**/*
+            do
+              xmlstarlet ed --inplace -d '//testsuite/testcase/rerunFailure' $file
+            done
+          when: always
