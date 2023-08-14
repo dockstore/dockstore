@@ -64,7 +64,7 @@ import org.hibernate.annotations.Filter;
  * @author dyuen
  */
 @ApiModel(value = "Workflow", description = Workflow.WORKFLOW_DESCRIPTION, subTypes = {BioWorkflow.class, Service.class, AppTool.class, Notebook.class}, discriminator = "type")
-@Schema(name = "Workflow", description = Workflow.WORKFLOW_DESCRIPTION, allOf = Entry.class, discriminatorProperty = "type")
+@Schema(name = "Workflow", description = Workflow.WORKFLOW_DESCRIPTION, subTypes = {BioWorkflow.class, Service.class, AppTool.class, Notebook.class}, allOf = Entry.class, discriminatorProperty = "type")
 
 @Entity
 // this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value

@@ -24,7 +24,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
 @ApiModel(value = "Notebook", description = Notebook.NOTEBOOK_DESCRIPTION, parent = Workflow.class)
-@Schema(name = "Workflow", description = Notebook.NOTEBOOK_DESCRIPTION, allOf = Workflow.class)
+@Schema(name = "Notebook", description = Notebook.NOTEBOOK_DESCRIPTION)
 
 @Entity
 @Table(name = "notebook")

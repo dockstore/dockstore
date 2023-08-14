@@ -17,12 +17,15 @@ package io.dockstore.webservice.core;
 
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
-@ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
+@ApiModel(value = "Service", description = Service.SERVICE_DESCRIPTION, parent = Workflow.class)
+@Schema(name = "Service", description = Service.SERVICE_DESCRIPTION)
+
 @Entity
 @Table(name = "service")
 @NamedQueries({
@@ -35,6 +38,8 @@ import jakarta.persistence.Table;
     @NamedQuery(name = "io.dockstore.webservice.core.Service.getEntriesByUserId", query = "SELECT s FROM Service s WHERE s.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 public class Service extends Workflow {
+
+    public static final String SERVICE_DESCRIPTION = "This describes one service in the dockstore as a special degenerate case of a workflow";
 
     public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM
     }

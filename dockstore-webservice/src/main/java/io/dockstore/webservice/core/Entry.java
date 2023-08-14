@@ -18,6 +18,8 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
@@ -82,7 +84,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore", subTypes = {Workflow.class})
+@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore", subTypes = {Workflow.class}, discriminatorProperty = "type")
 @SuppressWarnings("checkstyle:magicnumber")
 
 @NamedQueries({
@@ -129,6 +131,10 @@ import org.hibernate.annotations.UpdateTimestamp;
         "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL and ispublished = TRUE union"
             + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL and ispublished = TRUE"),
     @NamedNativeQuery(name = "Entry.hostedWorkflowCount", query = "select (select count(*) from tool t, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = t.id) + (select count(*) from workflow w, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = w.id) as count;")})
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = Workflow.class, name = "Workflow"),
+    @JsonSubTypes.Type(value = Tool.class, name = "Tool")})
 public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
 
     private static final int TOPIC_LENGTH = 150;

@@ -18,12 +18,15 @@ package io.dockstore.webservice.core;
 
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
-@ApiModel(value = "AppTool", description = "This describes one app tool in dockstore as a special degenerate case of a workflow", parent = Workflow.class)
+@ApiModel(value = "AppTool", description = AppTool.APPTOOL_DESCRIPTION, parent = Workflow.class)
+@Schema(name = "AppTool", description = AppTool.APPTOOL_DESCRIPTION)
+
 @Entity
 @Table(name = "apptool")
 @NamedQueries({
@@ -42,6 +45,8 @@ import jakarta.persistence.Table;
 
 })
 public class AppTool extends Workflow {
+
+    public static final String APPTOOL_DESCRIPTION = "This describes one app tool in dockstore as a special degenerate case of a workflow";
 
     @Override
     public EntryType getEntryType() {

@@ -33,7 +33,7 @@ import jakarta.persistence.Table;
  * These represent actual workflows in terms of CWL, WDL, and other bioinformatics workflows
  */
 @ApiModel(value = "BioWorkflow", description = BioWorkflow.BIO_WORKFLOW_DESCRIPTION, parent = Workflow.class)
-@Schema(name = "BioWorkflow", description = BioWorkflow.BIO_WORKFLOW_DESCRIPTION, allOf = Workflow.class)
+@Schema(name = "BioWorkflow", description = BioWorkflow.BIO_WORKFLOW_DESCRIPTION)
 @Entity
 @Table(name = "workflow")
 @NamedQueries({
