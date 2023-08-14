@@ -29,6 +29,8 @@ import io.dockstore.common.ValidationConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -62,6 +64,7 @@ import org.hibernate.annotations.Filter;
  * @author dyuen
  */
 @ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore", subTypes = {BioWorkflow.class, Service.class, AppTool.class, Notebook.class}, discriminator = "type")
+@Schema(name = "Workflow", description = "This describes one workflow in the dockstore", allOf = Entry.class, discriminatorProperty = "type")
 
 @Entity
 // this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value
@@ -145,6 +148,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
+    @ArraySchema(uniqueItems = true, schema = @Schema(implementation = WorkflowVersion.class))
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @BatchSize(size = 25)
     @Filter(name = "versionNameFilter")
@@ -245,6 +249,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @Override
+    @ArraySchema(uniqueItems = true, schema = @Schema(description = "foo", anyOf = {WorkflowVersion.class, Tag.class}))
     public Set<WorkflowVersion> getWorkflowVersions() {
         return this.workflowVersions;
     }

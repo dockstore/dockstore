@@ -17,12 +17,15 @@ package io.dockstore.webservice.core;
 
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
 @ApiModel(value = "Notebook", description = "This describes one notebook in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
+@Schema(name = "Workflow", description = "This describes one notebook in the dockstore as a special degenerate case of a workflow", allOf = Workflow.class)
+
 @Entity
 @Table(name = "notebook")
 
@@ -41,6 +44,7 @@ import jakarta.persistence.Table;
 
 public class Notebook extends Workflow {
 
+    @Schema(name = "Entry", description = "This describes one high-level entity in the dockstore", implementation = Entry.class)
     @Override
     public Entry getParentEntry() {
         return null;

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -32,6 +33,7 @@ import jakarta.persistence.Table;
  * These represent actual workflows in terms of CWL, WDL, and other bioinformatics workflows
  */
 @ApiModel(value = "BioWorkflow", description = "This describes one workflow in the dockstore", parent = Workflow.class)
+@Schema(name = "BioWorkflow", description = "This describes one workflow in the dockstore", allOf = Workflow.class)
 @Entity
 @Table(name = "workflow")
 @NamedQueries({

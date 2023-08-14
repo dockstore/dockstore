@@ -49,6 +49,8 @@ import org.apache.commons.io.FilenameUtils;
  * @author dyuen
  */
 @ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
+@Schema(name = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.", allOf = Version.class)
+
 @Entity
 @Table(name = "workflowversion", uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_names", columnNames = {"parentid",
     "name"}))
@@ -197,6 +199,12 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @Override
     public Version createEmptyVersion() {
         return new WorkflowVersion();
+    }
+
+    @Override
+    @JsonProperty
+    public boolean isValid() {
+        return super.isValid();
     }
 
 

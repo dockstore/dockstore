@@ -41,6 +41,8 @@ import org.apache.commons.lang3.ObjectUtils;
  * @author dyuen
  */
 @ApiModel(value = "Tag", description = "This describes one tag associated with a container.")
+@Schema(name = "Tag", description = "This describes one tag associated with a container.", allOf = Version.class)
+
 @Entity
 @SuppressWarnings("checkstyle:magicnumber")
 @Table(name = "tag", uniqueConstraints = @UniqueConstraint(name = "unique_tag_names", columnNames = { "parentid", "name" }))

@@ -67,7 +67,7 @@ import org.hibernate.annotations.Filter;
  */
 @ApiModel(value = "DockstoreTool", description =
     "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
-        + " * associated with CWL and Dockerfile documents")
+        + " * associated with CWL and Dockerfile documents", parent = Entry.class)
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(name = "ukbq5vy17y4ocaist3d3r3imcus", columnNames = {"registry", "namespace", "name", "toolname"}))
 @NamedQueries({
@@ -103,7 +103,8 @@ import org.hibernate.annotations.Filter;
 
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
-@Schema(name = "DockstoreTool")
+@Schema(name = "DockstoreTool", description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
+    + " * associated with CWL and Dockerfile documents", allOf = Entry.class)
 public class Tool extends Entry<Tool, Tag> {
 
     static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";

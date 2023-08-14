@@ -81,6 +81,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Entity
 @ApiModel(value = "Version", description = "Base class for versions of entries in the Dockstore")
+@Schema(name = "Version", description = "This describes a version of an entry in Dockstore")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 
 // Ensure that the version requested belongs to a workflow a user has access to.
@@ -129,6 +130,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parentid", nullable = false)
     @ApiModelProperty(value = "parent entry id", required = true, position = 0, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+    @Schema(implementation = Entry.class)
     private Entry<?, ?> parent;
 
 
