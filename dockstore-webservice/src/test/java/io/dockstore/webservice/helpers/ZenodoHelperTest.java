@@ -72,7 +72,7 @@ class ZenodoHelperTest {
             ZenodoHelper.createAliasUsingDoi(doi);
             fail("Was able to create an alias with an invalid prefix.");
         } catch (CustomWebApplicationException ex) {
-            assertTrue(ex.getErrorMessage().contains("Please create aliases without these prefixes"));
+            assertTrue(ex.getMessage().contains("Please create aliases without these prefixes"));
         }
     }
 
@@ -92,7 +92,7 @@ class ZenodoHelperTest {
             ZenodoHelper.setMetadataCreator(depositMetadata, bioWorkflow);
             fail("Should have failed");
         } catch (CustomWebApplicationException ex) {
-            assertEquals(ZenodoHelper.AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO, ex.getErrorMessage());
+            assertEquals(ZenodoHelper.AT_LEAST_ONE_AUTHOR_IS_REQUIRED_TO_PUBLISH_TO_ZENODO, ex.getMessage());
         }
     }
 

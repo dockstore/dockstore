@@ -19,28 +19,28 @@ class StringInputValidationHelperTest {
             StringInputValidationHelper.checkEntryName(Tool.class, "!@#$/%^&*<foo><bar>");
             fail("Entry name with special characters that are not underscores and hyphens should fail validation.");
         } catch (CustomWebApplicationException ex) {
-            assertTrue(ex.getErrorMessage().contains("Invalid tool name"));
+            assertTrue(ex.getMessage().contains("Invalid tool name"));
         }
 
         try {
             StringInputValidationHelper.checkEntryName(AppTool.class, "foo bar");
             fail("Entry name with spaces should fail validation.");
         } catch (CustomWebApplicationException ex) {
-            assertTrue(ex.getErrorMessage().contains("Invalid tool name"));
+            assertTrue(ex.getMessage().contains("Invalid tool name"));
         }
 
         try {
             StringInputValidationHelper.checkEntryName(BioWorkflow.class, "-foo-");
             fail("Entry name with external hyphens should fail validation.");
         } catch (CustomWebApplicationException ex) {
-            assertTrue(ex.getErrorMessage().contains("Invalid workflow name"));
+            assertTrue(ex.getMessage().contains("Invalid workflow name"));
         }
 
         try {
             StringInputValidationHelper.checkEntryName(Service.class, "_foo_");
             fail("Entry name with external underscores should fail validation.");
         } catch (CustomWebApplicationException ex) {
-            assertTrue(ex.getErrorMessage().contains("Invalid service name"));
+            assertTrue(ex.getMessage().contains("Invalid service name"));
         }
 
         try {
@@ -49,7 +49,7 @@ class StringInputValidationHelperTest {
             StringInputValidationHelper.checkEntryName(BioWorkflow.class, longWorkflowName);
             fail("Entry name that exceeds " + ValidationConstants.ENTRY_NAME_LENGTH_MAX + " characters should fail validation.");
         } catch (CustomWebApplicationException ex) {
-            assertTrue(ex.getErrorMessage().contains("Invalid workflow name"));
+            assertTrue(ex.getMessage().contains("Invalid workflow name"));
         }
 
         try {
