@@ -2,7 +2,6 @@ package io.dockstore.openapi.client.model;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.dockstore.openapi.client.model.DockstoreTool;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -11,7 +10,7 @@ import org.junit.jupiter.api.Test;
 public class ClientHierarchyTest {
 
     @Test
-    public void testVersionHierarchy(){
+    public void testVersionHierarchy() {
         Tag tag = new Tag();
         WorkflowVersion workflowVersion = new WorkflowVersion();
         assertTrue(tag instanceof Version);
@@ -19,7 +18,7 @@ public class ClientHierarchyTest {
     }
 
     @Test
-    public void testEntryHierarchy(){
+    public void testEntryHierarchy() {
         Workflow workflow = new Workflow();
         BioWorkflow bioWorkflow = new BioWorkflow();
         DockstoreTool tool = new DockstoreTool();

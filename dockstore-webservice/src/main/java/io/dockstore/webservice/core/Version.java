@@ -80,8 +80,8 @@ import org.hibernate.annotations.UpdateTimestamp;
  * @author dyuen
  */
 @Entity
-@ApiModel(value = "Version", description = "Base class for versions of entries in the Dockstore")
-@Schema(name = "Version", description = "This describes a version of an entry in Dockstore")
+@ApiModel(value = "Version", description = Version.VERSION_DESCRIPTION)
+@Schema(name = "Version", description = Version.VERSION_DESCRIPTION)
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 
 // Ensure that the version requested belongs to a workflow a user has access to.
@@ -107,6 +107,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images",
         "versionEditor");
     private static final Gson GSON = new Gson();
+    public static final String VERSION_DESCRIPTION = "This describes a version of an entry in Dockstore";
 
     /**
      * re-use existing generator for backwards compatibility

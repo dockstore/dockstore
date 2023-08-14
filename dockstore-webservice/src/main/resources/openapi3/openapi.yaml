@@ -9164,9 +9164,9 @@ components:
             items:
               $ref: '#/components/schemas/WorkflowVersion'
             uniqueItems: true
-      description: |-
-        This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be
-         * associated with CWL and Dockerfile documents
+      description: "This describes one entry in the dockstore. Logically, this currently\
+        \ means one tuple of registry (either quay or docker hub), organization, image\
+        \ name, and toolname which can be associated with CWL and Dockerfile documents"
     Entry:
       type: object
       description: This describes one high-level entity in the dockstore
