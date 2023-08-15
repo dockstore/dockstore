@@ -475,7 +475,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get information about tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUserId(user, userId);
         User fetchedUser = userDAO.findById(userId);
         checkNotNullUser(fetchedUser);
         return tokenDAO.findByUserId(userId);
