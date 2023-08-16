@@ -195,4 +195,16 @@
         </sql>
         <addNotNullConstraint tableName="lambdaevent" columnName="deliveryid"/>
     </changeSet>
+    <changeSet author="svonworl" id="removeProblematicCheckConstraints">
+        <sql dbms="postgresql">
+            ALTER TABLE apptool DROP CONSTRAINT check_apptool_checkerid_globally_unique;
+            ALTER TABLE tool DROP CONSTRAINT check_tool_checkerid_globally_unique;
+            ALTER TABLE workflow DROP CONSTRAINT check_workflow_checkerid_globally_unique;
+        </sql>
+        <sql>
+            DROP FUNCTION check_apptool_checkerid_is_unique;
+            DROP FUNCTION check_tool_checker_id_is_unique;
+            DROP FUNCTION check_workflow_checker_id_is_unique;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
