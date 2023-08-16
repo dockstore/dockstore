@@ -187,9 +187,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.getWorkflowPath();
     }
 
-    public abstract Entry getParentEntry();
+    @OneToOne
+    @Schema(hidden = true)
+    public abstract Entry<?, ?> getParentEntry();
 
-    public abstract void setParentEntry(Entry parentEntry);
+    @Schema(hidden = true)
+    public abstract void setParentEntry(Entry<?, ?> parentEntry);
 
     /**
      * Copies some of the attributes of the source workflow to the target workflow

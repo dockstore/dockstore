@@ -81,7 +81,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Entity
 @ApiModel(value = "Version", description = Version.VERSION_DESCRIPTION)
-@Schema(name = "Version", description = Version.VERSION_DESCRIPTION)
+@Schema(name = "Version", description = Version.VERSION_DESCRIPTION, subTypes = {WorkflowVersion.class, Tag.class})
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 
 // Ensure that the version requested belongs to a workflow a user has access to.
@@ -131,7 +131,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parentid", nullable = false)
     @ApiModelProperty(value = "parent entry id", required = true, position = 0, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
-    @Schema(implementation = Entry.class)
+    @Schema(implementation = Entry.class, hidden = true)
     private Entry<?, ?> parent;
 
 
@@ -602,6 +602,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }
 
+    @Schema(hidden = true)
     public void setParent(Entry<?, ?> parent) {
         this.parent = parent;
     }

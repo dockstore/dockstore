@@ -21,7 +21,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @ApiModel(value = "Notebook", description = Notebook.NOTEBOOK_DESCRIPTION, parent = Workflow.class)
 @Schema(name = "Notebook", description = Notebook.NOTEBOOK_DESCRIPTION)
@@ -46,9 +48,10 @@ public class Notebook extends Workflow {
 
     public static final String NOTEBOOK_DESCRIPTION = "This describes one notebook in the dockstore as a special degenerate case of a workflow";
 
-    @Schema(name = "Entry", description = "This describes one high-level entity in the dockstore", implementation = Entry.class)
     @Override
-    public Entry getParentEntry() {
+    @OneToOne
+    @Schema(hidden = true)
+    public Entry<?, ?> getParentEntry() {
         return null;
     }
 
@@ -58,6 +61,7 @@ public class Notebook extends Workflow {
     }
 
     @Override
+    @Transient
     public EntryTypeMetadata getEntryTypeMetadata() {
         return EntryTypeMetadata.NOTEBOOK;
     }
@@ -77,6 +81,7 @@ public class Notebook extends Workflow {
         throw new UnsupportedOperationException("cannot add a checker workflow to a Notebook");
     }
 
+    @Transient
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withNotebook(this);
     }

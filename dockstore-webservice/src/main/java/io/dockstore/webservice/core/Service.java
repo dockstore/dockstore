@@ -21,7 +21,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @ApiModel(value = "Service", description = Service.SERVICE_DESCRIPTION, parent = Workflow.class)
 @Schema(name = "Service", description = Service.SERVICE_DESCRIPTION)
@@ -45,7 +47,9 @@ public class Service extends Workflow {
     }
 
     @Override
-    public Entry getParentEntry() {
+    @OneToOne
+    @Schema(hidden = true)
+    public Entry<?, ?> getParentEntry() {
         return null;
     }
 
@@ -55,12 +59,13 @@ public class Service extends Workflow {
     }
 
     @Override
+    @Transient
     public EntryTypeMetadata getEntryTypeMetadata() {
         return EntryTypeMetadata.SERVICE;
     }
 
     @Override
-    public void setParentEntry(Entry parentEntry) {
+    public void setParentEntry(Entry<?, ?> parentEntry) {
         throw new UnsupportedOperationException("cannot add a checker workflow to a Service");
     }
 
@@ -74,6 +79,7 @@ public class Service extends Workflow {
         throw new UnsupportedOperationException("cannot add a checker workflow to a Service");
     }
 
+    @Transient
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withService(this);
     }

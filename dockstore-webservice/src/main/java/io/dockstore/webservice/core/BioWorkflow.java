@@ -56,7 +56,7 @@ public class BioWorkflow extends Workflow {
     @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.LAZY)
     @JsonIgnore
     @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
-    private Entry parentEntry;
+    private Entry<?, ?> parentEntry;
 
     @Column(columnDefinition = "boolean default false")
     private boolean isChecker = false;
@@ -72,12 +72,14 @@ public class BioWorkflow extends Workflow {
     }
 
     @Override
-    public Entry getParentEntry() {
+    @OneToOne
+    @Schema(hidden = true)
+    public Entry<?, ?> getParentEntry() {
         return parentEntry;
     }
 
     @Override
-    public void setParentEntry(Entry parentEntry) {
+    public void setParentEntry(Entry<?, ?> parentEntry) {
         this.parentEntry = parentEntry;
     }
 
