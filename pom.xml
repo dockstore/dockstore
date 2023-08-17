@@ -720,16 +720,30 @@
                 <configuration>
                     <outputDirectory>${project.basedir}</outputDirectory>
                     <missingFile>THIRD-PARTY-LICENSES.properties</missingFile>
-                    <thirdPartyFilename>THIRD-PARTY-LICENSES.txt</thirdPartyFilename>
                     <sortArtifactByName>true</sortArtifactByName>
                     <failOnMissing>true</failOnMissing>
                     <excludedGroups>^io\.dockstore</excludedGroups>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>distribution</id>
                         <goals>
                             <goal>aggregate-add-third-party</goal>
                         </goals>
+                        <configuration>
+                            <thirdPartyFilename>THIRD-PARTY-LICENSES.txt</thirdPartyFilename>
+                            <excludedScopes>test,system</excludedScopes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>dev</id>
+                        <goals>
+                            <goal>aggregate-add-third-party</goal>
+                        </goals>
+                        <configuration>
+                            <thirdPartyFilename>THIRD-PARTY-LICENSES.dev.txt</thirdPartyFilename>
+                            <includedScopes>test</includedScopes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
