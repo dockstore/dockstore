@@ -95,6 +95,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
     public static final String SEARCH_QUERY_INVALID_JSON = "Search payload request is not valid JSON";
+    public static final String SEARCH_QUERY_REGEX = "([.?+*#@&~\"{}()<>\\[\\]|\\\\])";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
@@ -268,6 +269,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         try {
             if (!config.getEsConfiguration().getHostname().isEmpty()) {
+                query = escapeCharactersInSearchTerm(query);
                 checkSearchTermLimit(query);
                 try {
                     RestClient restClient = ElasticSearchHelper.restClient();
@@ -311,6 +313,42 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         } finally {
             elasticSearchConcurrencyLimit.release(1);
         }
+    }
+
+    /**
+     * Certain characters need to be escaped in the search term ("include" key in request payload) or the request will fail
+     * See reserved characters here: https://www.elastic.co/guide/en/elasticsearch/reference/current/regexp-syntax.html#regexp-optional-operators
+     * @param query
+     * @return a query with the modified search term
+     */
+    protected static String escapeCharactersInSearchTerm(String query) {
+        if (query != null) {
+            JSONObject json;
+            try {
+                json = new JSONObject(query);
+            } catch (JSONException ex) {
+                LOG.error(SEARCH_QUERY_INVALID_JSON, ex);
+                throw new CustomWebApplicationException(SEARCH_QUERY_INVALID_JSON, HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+            }
+
+            try {
+                String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
+                if (include.length() > 0) {
+                    if (include.endsWith(".*")) {
+                        String escapedStr = include.replaceAll("\\.\\*$", "").replaceAll(SEARCH_QUERY_REGEX, "\\\\$1");
+                        json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").put("include", escapedStr + ".*");
+                    } else {
+                        String escapedStr = include.replaceAll(SEARCH_QUERY_REGEX, "\\\\$1");
+                        json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").put("include", escapedStr);
+                    }
+                }
+            } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
+                LOG.debug("Couldn't parse search payload request.");
+            }
+
+            return json.toString();
+        }
+        return query;
     }
 
     /**
