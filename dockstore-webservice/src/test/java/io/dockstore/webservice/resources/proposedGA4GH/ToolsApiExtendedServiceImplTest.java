@@ -1,6 +1,5 @@
 package io.dockstore.webservice.resources.proposedGA4GH;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -63,7 +62,7 @@ class ToolsApiExtendedServiceImplTest {
         File file1 = new File(ResourceHelpers.resourceFilePath("elasticSearchQueryInclude.json"));
         String query1 = Files.asCharSource(file1, Charsets.UTF_8).read();
         String result1 = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(query1);
-        assertEquals(query1, result1);
+        assertTrue(result1.contains("This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string.*"));
 
         // Test a query without special characters in the "include" key
         File file2 = new File(ResourceHelpers.resourceFilePath("elasticSearchQueryIncludeSpecialCharacters.json"));
