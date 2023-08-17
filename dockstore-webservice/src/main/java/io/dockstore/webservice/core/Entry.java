@@ -84,7 +84,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore", subTypes = {Workflow.class}, discriminatorProperty = "type")
+@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore", subTypes = {Workflow.class, Tool.class}, discriminatorProperty = "type")
 @SuppressWarnings("checkstyle:magicnumber")
 
 @NamedQueries({
@@ -134,7 +134,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({
     @JsonSubTypes.Type(value = Workflow.class, name = "Workflow"),
-    @JsonSubTypes.Type(value = Tool.class, name = "Tool")})
+    @JsonSubTypes.Type(value = Tool.class, name = "DockstoreTool")})
 public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
 
     private static final int TOPIC_LENGTH = 150;

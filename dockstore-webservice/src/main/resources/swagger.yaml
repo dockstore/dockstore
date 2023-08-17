@@ -7162,8 +7162,8 @@ definitions:
       type: # manual addition, hardcode type https://stackoverflow.com/questions/26982701/create-a-swagger-2-0-defined-property-with-a-specific-hard-coded-value
         type: string
         enum:
-          - Tool
-        default: Tool
+          - DockstoreTool
+        default: DockstoreTool
       aliases:
         type: "object"
         description: "aliases can be used as an alternate unique id for entries"
