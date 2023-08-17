@@ -9,9 +9,12 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 class ToolsApiExtendedServiceImplTest {
+
+    private final String placeholderStr = "PLACEHOLDER";
 
     /**
      * Tests that ES requests with long search terms fail.
@@ -58,17 +61,28 @@ class ToolsApiExtendedServiceImplTest {
      */
     @Test
     void testEscapeCharactersInSearchTerm() throws IOException {
+        File file = new File(ResourceHelpers.resourceFilePath("elasticSearchQueryIncludeWithPlaceholder.json"));
+        String query = Files.asCharSource(file, Charsets.UTF_8).read();
+        
         // Test a query without special characters in the "include" key
-        File file1 = new File(ResourceHelpers.resourceFilePath("elasticSearchQueryInclude.json"));
-        String query1 = Files.asCharSource(file1, Charsets.UTF_8).read();
+        String query1 = StringUtils.replace(query, placeholderStr, "This is a normal string");
         String result1 = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(query1);
-        assertTrue(result1.contains("This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string.*"));
+        assertTrue(result1.contains("This is a normal string"));
 
-        // Test a query without special characters in the "include" key
-        File file2 = new File(ResourceHelpers.resourceFilePath("elasticSearchQueryIncludeSpecialCharacters.json"));
-        String query2 = Files.asCharSource(file2, Charsets.UTF_8).read();
+        // Test a query without special characters ending with .*
+        String query2 = StringUtils.replace(query, placeholderStr, "This is a normal string.*");
         String result2 = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(query2);
-        assertTrue(result2.contains("This.str\\{i\\>ng\\(has\\#special\\]char\\@acters.*"));
+        assertTrue(result2.contains("This is a normal string.*"));
+
+        // Test a query with special characters in the "include" key
+        String query3 = StringUtils.replace(query, placeholderStr, "This.str{i>ng(has#special]char@acters.");
+        String result3 = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(query3);
+        assertTrue(result3.contains("This.str\\{i\\>ng\\(has\\#special\\]char\\@acters\\."));
+
+        // Test a query with special characters ending with .*
+        String query4 = StringUtils.replace(query, placeholderStr, "This.str{i>ng(has#special]char@acters.*");
+        String result4 = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(query4);
+        assertTrue(result4.contains("This.str\\{i\\>ng\\(has\\#special\\]char\\@acters.*"));
 
         // Test an empty query
         try {

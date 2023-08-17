@@ -3,7 +3,7 @@
       "autocomplete": {
         "terms": {
           "field": "description",
-          "include": "This.str{i>ng(has#special]char@acters.*",
+          "include": "PLACEHOLDER",
           "order": {
             "_count": "desc"
           },
