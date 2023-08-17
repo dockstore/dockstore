@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
@@ -95,7 +94,6 @@ import org.hibernate.annotations.Filter;
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
 @JsonPropertyOrder("descriptorType")
 @SuppressWarnings("checkstyle:magicnumber")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({@JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
     @JsonSubTypes.Type(value = Service.class, name = "Service"),
     @JsonSubTypes.Type(value = AppTool.class, name = "AppTool"),
