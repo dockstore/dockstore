@@ -8781,42 +8781,12 @@ components:
       - $ref: '#/components/schemas/Entry'
       - type: object
         properties:
-          aliases:
-            type: object
-            additionalProperties:
-              $ref: '#/components/schemas/Alias'
-          author:
-            type: string
-            deprecated: true
-            description: "This is the name of the author, retrieved from the default\
-              \ version"
-          authors:
-            type: array
-            description: "Non-ORCID authors for the entry, retrieved from the default\
-              \ version"
-            items:
-              $ref: '#/components/schemas/Author'
-            readOnly: true
-            uniqueItems: true
-          checker_id:
-            type: integer
-            format: int64
-          conceptDoi:
-            type: string
           custom_docker_registry_path:
             type: string
           customerDockerRegistryPath:
             type: string
             writeOnly: true
-          dbCreateDate:
-            type: integer
-            format: int64
-          dbUpdateDate:
-            type: integer
-            format: int64
           defaultCWLTestParameterFile:
-            type: string
-          defaultVersion:
             type: string
           defaultWDLTestParameterFile:
             type: string
@@ -8826,64 +8796,19 @@ components:
             type: string
           default_wdl_path:
             type: string
-          deletable:
-            type: boolean
-          description:
-            type: string
           descriptorType:
             type: array
             items:
               type: string
-          email:
-            type: string
-            deprecated: true
-            description: "This is the email of the author, retrieved from the default\
-              \ version"
-          entryType:
-            $ref: '#/components/schemas/EntryType'
-          entryTypeMetadata:
-            $ref: '#/components/schemas/EntryTypeMetadata'
           forumUrl:
             type: string
             maxLength: 256
             minLength: 0
-          gitUrl:
-            type: string
-          has_checker:
-            type: boolean
-          id:
-            type: integer
-            format: int64
-          input_file_formats:
-            type: array
-            items:
-              $ref: '#/components/schemas/FileFormat'
-            uniqueItems: true
-          is_published:
-            type: boolean
-          labels:
-            type: array
-            items:
-              $ref: '#/components/schemas/Label'
-            uniqueItems: true
           lastBuild:
             type: string
             format: date-time
-          lastUpdated:
-            type: integer
-            format: int64
-          last_modified:
-            type: integer
-            format: int32
-          last_modified_date:
-            type: integer
-            format: int64
-          licenseInformation:
-            $ref: '#/components/schemas/LicenseInformation'
           metadataFromEntry:
             $ref: '#/components/schemas/DockstoreTool'
-          metadataFromVersion:
-            $ref: '#/components/schemas/Version'
           mode:
             type: string
             enum:
@@ -8895,19 +8820,6 @@ components:
             type: string
           namespace:
             type: string
-          orcidAuthors:
-            type: array
-            description: "ORCID authors for the entry, retrieved from the default\
-              \ version"
-            items:
-              $ref: '#/components/schemas/OrcidAuthor'
-            readOnly: true
-            uniqueItems: true
-          output_file_formats:
-            type: array
-            items:
-              $ref: '#/components/schemas/FileFormat'
-            uniqueItems: true
           path:
             type: string
           private_access:
@@ -8923,11 +8835,6 @@ components:
             - GITHUB_CONTAINER_REGISTRY
           registry_string:
             type: string
-          starredUsers:
-            type: array
-            items:
-              $ref: '#/components/schemas/User'
-            uniqueItems: true
           tags:
             type: array
             items:
@@ -8941,39 +8848,6 @@ components:
             type: string
             maxLength: 256
             minLength: 0
-          topic:
-            type: string
-          topicAutomatic:
-            type: string
-            description: Short description of the entry gotten automatically
-          topicId:
-            type: integer
-            format: int64
-          topicManual:
-            type: string
-            description: Short description of the entry manually updated
-          topicSelection:
-            type: string
-            description: Which topic to display to the public users
-            enum:
-            - AUTOMATIC
-            - MANUAL
-          userIdToOrcidPutCode:
-            type: object
-            additionalProperties:
-              $ref: '#/components/schemas/OrcidPutCode'
-            description: The presence of the put code for a userid indicates the entry
-              was exported to ORCID for the corresponding Dockstore user.
-          users:
-            type: array
-            items:
-              $ref: '#/components/schemas/User'
-            uniqueItems: true
-          workflowVersions:
-            type: array
-            items:
-              $ref: '#/components/schemas/WorkflowVersion'
-            uniqueItems: true
       description: "This describes one entry in the dockstore. Logically, this currently\
         \ means one tuple of registry (either quay or docker hub), organization, image\
         \ name, and toolname which can be associated with CWL and Dockerfile documents"

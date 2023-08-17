@@ -101,7 +101,7 @@ import org.hibernate.annotations.Filter;
 
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
-@Schema(name = "DockstoreTool", description = Tool.TOOL_DESCRIPTION, allOf = Entry.class)
+@Schema(name = "DockstoreTool", description = Tool.TOOL_DESCRIPTION)
 public class Tool extends Entry<Tool, Tag> {
 
     static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";
