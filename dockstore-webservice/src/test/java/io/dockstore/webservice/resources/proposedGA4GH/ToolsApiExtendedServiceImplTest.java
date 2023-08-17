@@ -77,12 +77,12 @@ class ToolsApiExtendedServiceImplTest {
         // Test a query with special characters in the "include" key
         String query3 = StringUtils.replace(query, placeholderStr, "This.str{i>ng(has#special]char@acters.");
         String result3 = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(query3);
-        assertTrue(result3.contains("This.str\\{i\\>ng\\(has\\#special\\]char\\@acters\\."));
+        assertTrue(result3.contains("This\\.str\\{i\\>ng\\(has\\#special\\]char\\@acters\\."));
 
         // Test a query with special characters ending with .*
         String query4 = StringUtils.replace(query, placeholderStr, "This.str{i>ng(has#special]char@acters.*");
         String result4 = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(query4);
-        assertTrue(result4.contains("This.str\\{i\\>ng\\(has\\#special\\]char\\@acters.*"));
+        assertTrue(result4.contains("This\\.str\\{i\\>ng\\(has\\#special\\]char\\@acters.*"));
 
         // Test an empty query
         try {
