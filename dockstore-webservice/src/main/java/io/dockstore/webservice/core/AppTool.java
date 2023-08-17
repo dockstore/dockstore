@@ -56,7 +56,6 @@ public class AppTool extends Workflow {
     }
 
     @Override
-    @Transient
     public EntryTypeMetadata getEntryTypeMetadata() {
         return EntryTypeMetadata.APPTOOL;
     }

@@ -59,7 +59,6 @@ public class Service extends Workflow {
     }
 
     @Override
-    @Transient
     public EntryTypeMetadata getEntryTypeMetadata() {
         return EntryTypeMetadata.SERVICE;
     }

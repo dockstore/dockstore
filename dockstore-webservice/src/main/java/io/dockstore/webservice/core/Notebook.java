@@ -61,7 +61,6 @@ public class Notebook extends Workflow {
     }
 
     @Override
-    @Transient
     public EntryTypeMetadata getEntryTypeMetadata() {
         return EntryTypeMetadata.NOTEBOOK;
     }
