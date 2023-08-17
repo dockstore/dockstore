@@ -1,5 +1,6 @@
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -48,6 +49,34 @@ class ToolsApiExtendedServiceImplTest {
             ToolsApiExtendedServiceImpl.checkSearchTermLimit(emptyJson);
         } catch (CustomWebApplicationException ex) {
             fail("Queries that can't be parsed for an \"include\" key or wildcards should pass");
+        }
+    }
+
+    /**
+     * Tests that ES requests with special characters in search terms pass.
+     * Only requests with the "include" key are checked for special characters.
+     * @throws IOException
+     */
+    @Test
+    void testEscapeCharactersInSearchTerm() throws IOException {
+        // Test a query without special characters in the "include" key
+        File file1 = new File(ResourceHelpers.resourceFilePath("elasticSearchQueryInclude.json"));
+        String query1 = Files.asCharSource(file1, Charsets.UTF_8).read();
+        String result1 = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(query1);
+        assertEquals(query1, result1);
+
+        // Test a query without special characters in the "include" key
+        File file2 = new File(ResourceHelpers.resourceFilePath("elasticSearchQueryIncludeSpecialCharacters.json"));
+        String query2 = Files.asCharSource(file2, Charsets.UTF_8).read();
+        String result2 = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(query2);
+        assertTrue(result2.contains("This.str\\{i\\>ng\\(has\\#special\\]char\\@acters.*"));
+
+        // Test an empty query
+        try {
+            String emptyJson = "{}";
+            String result = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(emptyJson);
+        } catch (CustomWebApplicationException ex) {
+            fail("Queries that can't be parsed for an \"include\" key should pass");
         }
     }
 }

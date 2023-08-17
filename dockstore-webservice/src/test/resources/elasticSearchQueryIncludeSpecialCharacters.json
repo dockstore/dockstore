@@ -1,0 +1,16 @@
+{
+    "aggs": {
+      "autocomplete": {
+        "terms": {
+          "field": "description",
+          "include": "This.str{i>ng(has#special]char@acters.*",
+          "order": {
+            "_count": "desc"
+          },
+          "size": 4
+        }
+      }
+    },
+    "size": 0
+  }
+  
