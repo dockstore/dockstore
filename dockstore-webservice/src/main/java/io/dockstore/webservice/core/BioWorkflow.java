@@ -33,7 +33,7 @@ import jakarta.persistence.Table;
  * These represent actual workflows in terms of CWL, WDL, and other bioinformatics workflows
  */
 @ApiModel(value = "BioWorkflow", description = BioWorkflow.BIO_WORKFLOW_DESCRIPTION, parent = Workflow.class)
-@Schema(name = "BioWorkflow", description = BioWorkflow.BIO_WORKFLOW_DESCRIPTION)
+@Schema(name = BioWorkflow.OPENAPI_NAME, description = BioWorkflow.BIO_WORKFLOW_DESCRIPTION)
 @Entity
 @Table(name = "workflow")
 @NamedQueries({
@@ -53,6 +53,10 @@ import jakarta.persistence.Table;
 public class BioWorkflow extends Workflow {
 
     public static final String BIO_WORKFLOW_DESCRIPTION = "This describes one workflow in the dockstore";
+
+    public static final String OPENAPI_NAME = "BioWorkflow";
+
+
     @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.LAZY)
     @JsonIgnore
     @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
@@ -60,6 +64,10 @@ public class BioWorkflow extends Workflow {
 
     @Column(columnDefinition = "boolean default false")
     private boolean isChecker = false;
+
+    public BioWorkflow() {
+        super.setType(OPENAPI_NAME);
+    }
 
     @Override
     public EntryType getEntryType() {

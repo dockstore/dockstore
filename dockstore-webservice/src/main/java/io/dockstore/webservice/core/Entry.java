@@ -134,8 +134,8 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedNativeQuery(name = "Entry.hostedWorkflowCount", query = "select (select count(*) from tool t, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = t.id) + (select count(*) from workflow w, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = w.id) as count;")})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = Workflow.class, name = "Workflow"),
-    @JsonSubTypes.Type(value = Tool.class, name = "DockstoreTool")})
+    @JsonSubTypes.Type(value = Workflow.class, name = Workflow.OPENAPI_NAME),
+    @JsonSubTypes.Type(value = Tool.class, name = Tool.OPENAPI_NAME)})
 public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
 
     private static final int TOPIC_LENGTH = 150;
@@ -327,6 +327,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column(nullable = true, columnDefinition = "varchar(32)")
     @Enumerated(EnumType.STRING)
     private GitVisibility gitVisibility;
+
+    public String getType() {
+        return type;
+    }
+
+    protected void setType(String type) {
+        this.type = type;
+    }
 
 
     public enum GitVisibility {

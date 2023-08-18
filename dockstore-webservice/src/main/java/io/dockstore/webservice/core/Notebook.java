@@ -48,6 +48,12 @@ public class Notebook extends Workflow {
 
     public static final String NOTEBOOK_DESCRIPTION = "This describes one notebook in the dockstore as a special degenerate case of a workflow";
 
+    public static final String OPENAPI_NAME = "Notebook";
+
+    public Notebook() {
+        super.setType(OPENAPI_NAME);
+    }
+
     @Override
     @OneToOne
     @Schema(hidden = true)

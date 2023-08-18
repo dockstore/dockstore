@@ -63,7 +63,7 @@ import org.hibernate.annotations.Filter;
  * @author dyuen
  */
 @ApiModel(value = "Workflow", description = Workflow.WORKFLOW_DESCRIPTION, subTypes = {BioWorkflow.class, Service.class, AppTool.class, Notebook.class}, discriminator = "type")
-@Schema(name = "Workflow", description = Workflow.WORKFLOW_DESCRIPTION, subTypes = {BioWorkflow.class, Service.class, AppTool.class, Notebook.class}, allOf = Entry.class, discriminatorProperty = "type")
+@Schema(name = Workflow.OPENAPI_NAME, description = Workflow.WORKFLOW_DESCRIPTION, subTypes = {BioWorkflow.class, Service.class, AppTool.class, Notebook.class}, allOf = Entry.class, discriminatorProperty = "type")
 
 @Entity
 // this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value
@@ -94,15 +94,17 @@ import org.hibernate.annotations.Filter;
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
 @JsonPropertyOrder("descriptorType")
 @SuppressWarnings("checkstyle:magicnumber")
-@JsonSubTypes({@JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
-    @JsonSubTypes.Type(value = Service.class, name = "Service"),
-    @JsonSubTypes.Type(value = AppTool.class, name = "AppTool"),
-    @JsonSubTypes.Type(value = Notebook.class, name = "Notebook")})
+@JsonSubTypes({@JsonSubTypes.Type(value = BioWorkflow.class, name = BioWorkflow.OPENAPI_NAME),
+    @JsonSubTypes.Type(value = Service.class, name = Service.OPENAPI_NAME),
+    @JsonSubTypes.Type(value = AppTool.class, name = AppTool.OPENAPI_NAME),
+    @JsonSubTypes.Type(value = Notebook.class, name = Notebook.OPENAPI_NAME)})
 public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("workflowVersions");
     static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
     public static final String WORKFLOW_DESCRIPTION = "This describes one workflow in the dockstore";
+
+    public static final String OPENAPI_NAME = "Workflow";
 
     @Column(nullable = false, columnDefinition = "Text default 'STUB'")
     @Enumerated(EnumType.STRING)

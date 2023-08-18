@@ -101,13 +101,14 @@ import org.hibernate.annotations.Filter;
 
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
-@Schema(name = "DockstoreTool", description = Tool.TOOL_DESCRIPTION)
+@Schema(name = Tool.OPENAPI_NAME, description = Tool.TOOL_DESCRIPTION)
 public class Tool extends Entry<Tool, Tag> {
 
     static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";
 
     static final String DEFAULT_DESCRIPTOR_TYPE = DescriptorLanguage.CWL.toString();
     public static final String TOOL_DESCRIPTION = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be associated with CWL and Dockerfile documents";
+    public static final String OPENAPI_NAME = "DockstoreTool";
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
@@ -179,6 +180,7 @@ public class Tool extends Entry<Tool, Tag> {
     private Set<Tag> tags = null;
 
     public Tool() {
+        super.setType(OPENAPI_NAME);
         workflowVersions = new TreeSet<>();
     }
 

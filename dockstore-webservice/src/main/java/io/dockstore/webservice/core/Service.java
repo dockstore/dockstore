@@ -42,8 +42,14 @@ import jakarta.persistence.Transient;
 public class Service extends Workflow {
 
     public static final String SERVICE_DESCRIPTION = "This describes one service in the dockstore as a special degenerate case of a workflow";
+    public static final String OPENAPI_NAME = "Service";
+
 
     public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM
+    }
+
+    public Service() {
+        super.setType(OPENAPI_NAME);
     }
 
     @Override
