@@ -40,13 +40,14 @@ jobs:
 
       - name: Push changes if license file changed
         run: |
-          if [ -n "$(git status --porcelain | grep "THIRD-PARTY-LICENSES.txt")" ]; then
+          if [ -n "$(git status --porcelain | grep "THIRD-PARTY-LICENSES")" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add dockstore-webservice/src/main/resources/openapi3/openapi.yaml dockstore-webservice/src/main/resources/swagger.yaml **/generated/**/pom.xml
             git add THIRD-PARTY-LICENSES.txt
+            git add THIRD-PARTY-LICENSES.dev.txt
             git commit -m "Update license file"
             git push
           else
-            echo "There were no changes to THIRD-PARTY-LICENSES.txt"
+            echo "There were no changes to THIRD-PARTY-LICENSES.txt or THIRD-PARTY-LICENSES.dev.txt"
           fi
