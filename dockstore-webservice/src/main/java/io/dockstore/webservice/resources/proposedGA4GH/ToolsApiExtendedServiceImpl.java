@@ -95,6 +95,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
     public static final String SEARCH_QUERY_INVALID_JSON = "Search payload request is not valid JSON";
+    public static final String SEARCH_QUERY_NOT_PARSED = "Couldn't parse search payload request.";
     public static final String SEARCH_QUERY_REGEX = "([.?+*#@&~\"{}()<>\\[\\]|\\\\])";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
@@ -332,7 +333,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
 
             try {
-                String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
+                String include = getSearchQueryJsonIncludeKey(json);
                 if (include.length() > 0) {
                     if (include.endsWith(".*")) {
                         String escapedStr = include.replaceAll("\\.\\*$", "").replaceAll(SEARCH_QUERY_REGEX, "\\\\$1");
@@ -343,7 +344,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     }
                 }
             } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
-                LOG.debug("Couldn't parse search payload request.");
+                LOG.debug(SEARCH_QUERY_NOT_PARSED);
             }
 
             return json.toString();
@@ -367,12 +368,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
 
             try {
-                String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
+                String include = getSearchQueryJsonIncludeKey(json);
                 if (include.length() > SEARCH_TERM_LIMIT) {
                     throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
                 }
             } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
-                LOG.debug("Couldn't parse search payload request.");
+                LOG.debug(SEARCH_QUERY_NOT_PARSED);
             }
 
             try {
@@ -397,9 +398,22 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     }
                 }
             } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
-                LOG.debug("Couldn't parse search payload request.");
+                LOG.debug(SEARCH_QUERY_NOT_PARSED);
             }
         }
+    }
+
+    /**
+     * @param json
+     * @return "include" key string
+     */
+    protected static String getSearchQueryJsonIncludeKey(JSONObject json) {
+        try {
+            return json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
+        } catch (JSONException ex) {
+            LOG.debug(SEARCH_QUERY_NOT_PARSED);
+        }
+        return "";
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")

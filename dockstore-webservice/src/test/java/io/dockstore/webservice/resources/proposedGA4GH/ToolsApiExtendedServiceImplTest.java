@@ -1,5 +1,6 @@
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -10,6 +11,7 @@ import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 
 class ToolsApiExtendedServiceImplTest {
@@ -85,11 +87,27 @@ class ToolsApiExtendedServiceImplTest {
         assertTrue(result4.contains("This\\\\.str\\\\{i\\\\>ng\\\\(has\\\\#special\\\\]char\\\\@acters.*"));
 
         // Test an empty query
-        try {
-            String emptyJson = "{}";
-            String result = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(emptyJson);
-        } catch (CustomWebApplicationException ex) {
-            fail("Queries that can't be parsed for an \"include\" key should pass");
-        }
+        String query5 = "{}";
+        String result5 = ToolsApiExtendedServiceImpl.escapeCharactersInSearchTerm(query5);
+        assertEquals(query5, result5);
+    }
+
+    /**
+     * Tests that "include" key is returned from requests
+     * @throws IOException
+     */
+    @Test
+    void testGetSearchQueryJsonIncludeKey() throws IOException {
+        File file = new File(ResourceHelpers.resourceFilePath("elasticSearchQueryIncludeWithPlaceholder.json"));
+        String query = Files.asCharSource(file, Charsets.UTF_8).read();
+
+        // Test a query containing an include key
+        String testString = "This is a test string";
+        JSONObject testJson = new JSONObject(StringUtils.replace(query, placeholderStr, testString));
+        assertEquals(ToolsApiExtendedServiceImpl.getSearchQueryJsonIncludeKey(testJson), testString);
+
+        // Test an empty query (no include key)
+        JSONObject emptyJson = new JSONObject("{}");
+        assertEquals(ToolsApiExtendedServiceImpl.getSearchQueryJsonIncludeKey(emptyJson), "");
     }
 }
