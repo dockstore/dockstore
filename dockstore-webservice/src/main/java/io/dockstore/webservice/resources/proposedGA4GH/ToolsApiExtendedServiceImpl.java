@@ -270,8 +270,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         try {
             if (!config.getEsConfiguration().getHostname().isEmpty()) {
-                query = escapeCharactersInSearchTerm(query);
-                checkSearchTermLimit(query);
+                String searchQuery = escapeCharactersInSearchTerm(query);
+                checkSearchTermLimit(searchQuery);
                 try {
                     RestClient restClient = ElasticSearchHelper.restClient();
                     Map<String, String> parameters = new HashMap<>();
@@ -282,8 +282,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     }
                     // This should be using the high-level Elasticsearch client instead
                     Request request = new Request("GET", "/" + COMMA_SEPARATED_INDEXES + "/_search");
-                    if (query != null) {
-                        request.setJsonEntity(query);
+                    if (searchQuery != null) {
+                        request.setJsonEntity(searchQuery);
                     }
                     request.addParameters(parameters);
                     org.elasticsearch.client.Response get = restClient.performRequest(request);

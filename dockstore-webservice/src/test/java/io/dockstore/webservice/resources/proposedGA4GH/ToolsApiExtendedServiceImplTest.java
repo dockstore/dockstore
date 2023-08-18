@@ -93,7 +93,7 @@ class ToolsApiExtendedServiceImplTest {
     }
 
     /**
-     * Tests that "include" key is returned from requests
+     * Tests that "include" key is returned from requests.
      * @throws IOException
      */
     @Test
