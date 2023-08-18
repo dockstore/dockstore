@@ -56,6 +56,9 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
+import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
+import io.dockstore.webservice.core.webhook.PushPayload;
+import io.dockstore.webservice.core.webhook.WebhookRepository;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -116,8 +119,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
-import java.io.IOException;
-import java.io.StringReader;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -140,9 +141,6 @@ import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
-import org.kohsuke.github.GHEventPayload;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -2106,13 +2104,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
-        @RequestBody(description = "GitHub push event payload", required = true) String payload) {
-        final GHEventPayload.Push pushPayload = parseEventPayload(payload, GHEventPayload.Push.class);
-        final long installationId = getGitHubInstallationId(pushPayload);
-        final String username = getGitHubUsername(pushPayload);
-        final String repository = pushPayload.getRepository().getFullName();
-        final String gitReference = pushPayload.getRef();
+        @RequestBody(description = "GitHub push event payload", required = true) PushPayload payload) {
 
+        final long installationId = payload.getInstallation().getId();
+        final String username = payload.getSender().getLogin();
+        final String repository = payload.getRepository().getFullName();
+        final String gitReference = payload.getRef();
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
@@ -2131,11 +2128,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class, responseContainer = "List")
     public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
-            @RequestBody(description = "GitHub App repository installation event payload", required = true) String payload) {
-        final GHEventPayload.InstallationRepositories installationPayload = parseEventPayload(payload, GHEventPayload.InstallationRepositories.class);
-        final long installationId = getGitHubInstallationId(installationPayload);
-        final String username = getGitHubUsername(installationPayload);
-        final List<String> repositories = installationPayload.getRepositoriesAdded().stream().map(GHRepository::getFullName).toList();
+            @RequestBody(description = "GitHub App repository installation event payload", required = true) InstallationRepositoriesPayload payload) {
+        final long installationId = payload.getInstallation().getId();
+        final String username = payload.getSender().getLogin();
+        final List<String> repositories = payload.getRepositoriesAdded().stream().map(WebhookRepository::getFullName).toList();
 
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(String.join(", ", repositories)), Utilities.cleanForLogging(username)));
@@ -2187,23 +2183,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         githubWebhookDelete(repository, gitReference, username, deliveryId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
-    }
-
-    private <T extends GHEventPayload> T parseEventPayload(String payload, Class<T> eventType) {
-        try {
-            return GitHub.offline().parseEventPayload(new StringReader(payload), eventType);
-        } catch (IOException e) {
-            LOG.error("Could not parse GitHub webhook payload", e);
-            throw new CustomWebApplicationException("Could not parse GitHub webhook payload", HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    private long getGitHubInstallationId(GHEventPayload payload) {
-        return payload.getInstallation().getId();
-    }
-
-    private String getGitHubUsername(GHEventPayload payload) {
-        return payload.getSender().getLogin();
     }
 
     @GET

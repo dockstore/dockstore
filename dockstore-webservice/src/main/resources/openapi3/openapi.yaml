@@ -6544,7 +6544,7 @@ paths:
         content:
           application/json:
             schema:
-              type: string
+              $ref: '#/components/schemas/InstallationRepositoriesPayload'
         description: GitHub App repository installation event payload
         required: true
       responses:
@@ -6570,7 +6570,7 @@ paths:
         content:
           application/json:
             schema:
-              type: string
+              $ref: '#/components/schemas/PushPayload'
         description: GitHub push event payload
         required: true
       responses:
@@ -9591,6 +9591,40 @@ components:
         updated:
           type: string
           description: Last time the container was updated.
+    Installation:
+      type: object
+      description: The GitHub App installation
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: The installation ID
+      required:
+      - id
+    InstallationRepositoriesPayload:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Payload'
+      - type: object
+        properties:
+          repositories_added:
+            type: array
+            description: "An array of repository objects, which were added to the\
+              \ installation"
+            items:
+              $ref: '#/components/schemas/WebhookRepository'
+      description: A model for a GitHub webhook installation event
+      example:
+        sender:
+          login: string
+        installation:
+          id: 0
+        repositories_added:
+        - full_name: dockstore/dockstore-ui2
+      required:
+      - installation
+      - repositories_added
+      - sender
     Label:
       type: object
       properties:
@@ -10020,6 +10054,19 @@ components:
           type: boolean
         hasLocalImports:
           type: boolean
+    Payload:
+      type: object
+      description: Describes the common fields of all GitHub webhook payloads
+      properties:
+        installation:
+          $ref: '#/components/schemas/Installation'
+        repository:
+          $ref: '#/components/schemas/WebhookRepository'
+        sender:
+          $ref: '#/components/schemas/Sender'
+      required:
+      - installation
+      - sender
     Permission:
       type: object
       properties:
@@ -10062,6 +10109,22 @@ components:
       properties:
         publish:
           type: boolean
+    PushPayload:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Payload'
+      - type: object
+        properties:
+          ref:
+            type: string
+            description: The full git ref that was pushed
+            example: refs/heads/master OR refs/tags/v1.0
+      description: A model for a GitHub webhook push event
+      required:
+      - installation
+      - ref
+      - repository
+      - sender
     RegistryBean:
       type: object
       properties:
@@ -10135,6 +10198,15 @@ components:
       required:
       - dateExecuted
       - executionStatus
+    Sender:
+      type: object
+      description: The user that triggered the event
+      properties:
+        login:
+          type: string
+          description: GitHub username of the sender of the GitHub webhook event
+      required:
+      - login
     Service:
       type: object
       allOf:
@@ -11381,6 +11453,16 @@ components:
         versionId:
           type: integer
           format: int64
+    WebhookRepository:
+      type: object
+      description: The repository where the GitHub webhook event occurred
+      properties:
+        full_name:
+          type: string
+          description: Full name of the GitHub repository
+          example: dockstore/dockstore-ui2
+      required:
+      - full_name
     Workflow:
       type: object
       discriminator:

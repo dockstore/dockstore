@@ -1,15 +1,17 @@
 package io.dockstore.webservice.helpers;
 
 import static io.dockstore.client.cli.BaseIT.USER_2_USERNAME;
-import static io.dockstore.common.FixtureUtility.fixture;
 
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Installation;
+import io.dockstore.openapi.client.model.InstallationRepositoriesPayload;
+import io.dockstore.openapi.client.model.PushPayload;
+import io.dockstore.openapi.client.model.Sender;
+import io.dockstore.openapi.client.model.WebhookRepository;
 import java.util.List;
 import java.util.UUID;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 /**
  * A helper for GitHub App tests
@@ -35,52 +37,19 @@ public final class GitHubAppHelper {
      * @param gitHubUsername Username of user on GitHub who triggered action
      */
     public static void handleGitHubRelease(WorkflowsApi workflowsApi, String repository, String gitRef, String gitHubUsername) {
-        workflowsApi.handleGitHubRelease(getGitHubWebhookPushPayload(INSTALLATION_ID, repository, gitRef, gitHubUsername), generateXGitHubDelivery());
-    }
-
-    /**
-     * Returns a string payload of a GitHub webhook push event with the arguments substituted into the template payload.
-     * @param installationId GitHub installation ID
-     * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitRef Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0
-     * @param gitHubUsername Username of user on GitHub who triggered action
-     * @return
-     */
-    public static String getGitHubWebhookPushPayload(Integer installationId, String repository, String gitRef, String gitHubUsername) {
-        JSONObject pushPayloadJson = new JSONObject(fixture("github-push-event-payload.json"));
-        pushPayloadJson.put("ref", gitRef);
-        pushPayloadJson.getJSONObject("repository").put("full_name", repository);
-        pushPayloadJson.getJSONObject("installation").put("id", installationId);
-        pushPayloadJson.getJSONObject("sender").put("login", gitHubUsername);
-        return pushPayloadJson.toString();
+        PushPayload pushPayload = new PushPayload().ref(gitRef);
+        pushPayload.setRepository(new WebhookRepository().fullName(repository));
+        pushPayload.setSender(new Sender().login(gitHubUsername));
+        pushPayload.setInstallation(new Installation().id(INSTALLATION_ID.longValue()));
+        workflowsApi.handleGitHubRelease(pushPayload, generateXGitHubDelivery());
     }
 
     public static void handleGitHubInstallation(WorkflowsApi workflowsApi, List<String> repositories, String gitHubUsername) {
-        workflowsApi.handleGitHubInstallation(getGitHubWebhookInstallationPayload(INSTALLATION_ID, repositories, gitHubUsername), generateXGitHubDelivery());
-    }
-
-    /**
-     * Returns a string payload of a GitHub webhook installation event with the arguments substituted into the template payload.
-     * @param installationId GitHub installation ID
-     * @param repositories A list of repositories (ex. dockstore/dockstore-ui2) that installed the GitHub App
-     * @param gitHubUsername Username of user on GitHub who triggered action
-     * @return
-     */
-    public static String getGitHubWebhookInstallationPayload(Integer installationId, List<String> repositories, String gitHubUsername) {
-        JSONObject installationPayloadJson = new JSONObject(fixture("github-install-event-payload.json"));
-        installationPayloadJson.getJSONObject("installation").put("id", installationId);
-        installationPayloadJson.getJSONObject("sender").put("login", gitHubUsername);
-
-        JSONArray repositoriesAddedArray = installationPayloadJson.getJSONArray("repositories_added");
-        JSONObject repositoryAddedStub = repositoriesAddedArray.getJSONObject(0);
-        repositoriesAddedArray.clear();
-        for (String repository: repositories) {
-            JSONObject repositoryAddedObject = new JSONObject(repositoryAddedStub, JSONObject.getNames(repositoryAddedStub));
-            repositoryAddedObject.put("full_name", repository);
-            repositoriesAddedArray.put(repositoryAddedObject);
-        }
-
-        return installationPayloadJson.toString();
+        InstallationRepositoriesPayload payload = new InstallationRepositoriesPayload()
+                .repositoriesAdded(repositories.stream().map(repo -> new WebhookRepository().fullName(repo)).toList());
+        payload.setInstallation(new Installation().id(INSTALLATION_ID.longValue()));
+        payload.setSender(new Sender().login(gitHubUsername));
+        workflowsApi.handleGitHubInstallation(payload, generateXGitHubDelivery());
     }
 
     public static void handleGitHubBranchDeletion(WorkflowsApi workflowsApi, String repository, String gitHubUsername, String gitRef) {
