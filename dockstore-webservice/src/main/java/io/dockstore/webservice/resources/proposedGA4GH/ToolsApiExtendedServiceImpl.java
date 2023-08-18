@@ -335,13 +335,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             try {
                 String include = getSearchQueryJsonIncludeKey(json);
                 if (include.length() > 0) {
+                    String escapedStr = include.replaceAll("\\.\\*$", "").replaceAll(SEARCH_QUERY_REGEX, "\\\\$1");
                     if (include.endsWith(".*")) {
-                        String escapedStr = include.replaceAll("\\.\\*$", "").replaceAll(SEARCH_QUERY_REGEX, "\\\\$1");
-                        json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").put("include", escapedStr + ".*");
-                    } else {
-                        String escapedStr = include.replaceAll(SEARCH_QUERY_REGEX, "\\\\$1");
-                        json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").put("include", escapedStr);
+                        escapedStr = escapedStr + ".*";
                     }
+                    json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").put("include", escapedStr);
                 }
             } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
                 LOG.debug(SEARCH_QUERY_NOT_PARSED);

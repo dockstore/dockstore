@@ -104,10 +104,10 @@ class ToolsApiExtendedServiceImplTest {
         // Test a query containing an include key
         String testString = "This is a test string";
         JSONObject testJson = new JSONObject(StringUtils.replace(query, placeholderStr, testString));
-        assertEquals(ToolsApiExtendedServiceImpl.getSearchQueryJsonIncludeKey(testJson), testString);
+        assertEquals(testString, ToolsApiExtendedServiceImpl.getSearchQueryJsonIncludeKey(testJson));
 
         // Test an empty query (no include key)
         JSONObject emptyJson = new JSONObject("{}");
-        assertEquals(ToolsApiExtendedServiceImpl.getSearchQueryJsonIncludeKey(emptyJson), "");
+        assertEquals("", ToolsApiExtendedServiceImpl.getSearchQueryJsonIncludeKey(emptyJson));
     }
 }
