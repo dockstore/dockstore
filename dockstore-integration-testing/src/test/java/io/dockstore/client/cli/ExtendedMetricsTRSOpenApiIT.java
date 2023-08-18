@@ -230,6 +230,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         tool.setRegistryString(Registry.QUAY_IO.getDockerPath());
         tool.setDefaultVersion("symbolic.v1");
         tool.setDefaultCWLTestParameterFile("/examples/cgpmap/bamOut/bam_input.json");
+        tool.setType("DockstoreTool");
         io.dockstore.openapi.client.model.DockstoreTool registeredTool = containersApi.registerManual(tool);
         registeredTool = containersApi.refresh(registeredTool.getId());
         containersApi.publish(registeredTool.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));

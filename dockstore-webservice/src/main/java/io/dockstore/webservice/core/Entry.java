@@ -30,6 +30,7 @@ import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -147,6 +148,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @SequenceGenerator(name = "container_id_seq", sequenceName = "container_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
+
+    @JsonProperty("type")
+    @Transient
+    @Schema(requiredMode = RequiredMode.REQUIRED)
+    String type;
 
     /**
      * @deprecated since 1.14.0. Use authors instead.

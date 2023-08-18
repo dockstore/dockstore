@@ -8294,6 +8294,8 @@ components:
       - $ref: '#/components/schemas/Workflow'
       description: This describes one app tool in dockstore as a special degenerate
         case of a workflow
+      required:
+      - type
     Author:
       type: object
       properties:
@@ -8315,6 +8317,8 @@ components:
             type: integer
             format: int64
       description: This describes one workflow in the dockstore
+      required:
+      - type
     CLIInfo:
       type: object
       properties:
@@ -8851,6 +8855,8 @@ components:
       description: "This describes one entry in the dockstore. Logically, this currently\
         \ means one tuple of registry (either quay or docker hub), organization, image\
         \ name, and toolname which can be associated with CWL and Dockerfile documents"
+      required:
+      - type
     Entry:
       type: object
       description: This describes one high-level entity in the dockstore
@@ -9607,6 +9613,8 @@ components:
       - $ref: '#/components/schemas/Workflow'
       description: This describes one notebook in the dockstore as a special degenerate
         case of a workflow
+      required:
+      - type
     Notification:
       type: object
       properties:
@@ -9917,6 +9925,8 @@ components:
       - $ref: '#/components/schemas/Workflow'
       description: This describes one service in the dockstore as a special degenerate
         case of a workflow
+      required:
+      - type
     ServiceType:
       type: object
       description: Type of a GA4GH service
@@ -11123,6 +11133,8 @@ components:
       description: This describes one workflow in the dockstore
       discriminator:
         propertyName: type
+      required:
+      - type
     WorkflowSubClass:
       type: string
       enum:
