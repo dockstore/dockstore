@@ -16,25 +16,31 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static io.dockstore.webservice.resources.UserResource.USER_PROFILES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
+import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.EntryType;
+import io.dockstore.openapi.client.model.EntryUpdateTime;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.Profile;
 import io.dockstore.openapi.client.model.StarRequest;
@@ -42,6 +48,7 @@ import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.webservice.helpers.GitHubAppHelper;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -66,7 +73,6 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @Tag(ConfidentialTest.NAME)
 class UserResourceOpenApiIT extends BaseIT {
     private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
-    private static final String INSTALLATION_ID = "1179416";
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -268,7 +274,7 @@ class UserResourceOpenApiIT extends BaseIT {
         final long userId = usersApi.getUser().getId();
 
         // Add service
-        workflowsApi.handleGitHubRelease("refs/tags/1.0", INSTALLATION_ID, SERVICE_REPO, USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, SERVICE_REPO, "refs/tags/1.0", USER_2_USERNAME);
         assertEquals(1, usersApi.userServices(userId).size());
         assertEquals(0, usersApi.userWorkflows(userId).size());
 
@@ -321,5 +327,81 @@ class UserResourceOpenApiIT extends BaseIT {
         // after modification old username should be present, new one is not
         assertNotNull(userProfile.getUserProfiles().get("github.com").getUsername());
         assertNull(userProfileAfterModification.getUserProfiles().get("github.com").getUsername());
+    }
+
+    @Test
+    void testGetUserEntries() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
+
+        assertEquals(1, userApi.getUserEntries(10, null, "WORKFLOWS").size());
+        assertEquals(5, userApi.getUserEntries(10, null, null).size());
+        assertEquals(0, userApi.getUserEntries(10, null, "SERVICES").size());
+        assertEquals(4, userApi.getUserEntries(10, null, "TOOLS").size());
+
+        // Add an app tool, which should appear when specifying the TOOLS type
+        GitHubAppHelper.registerAppTool(client);
+        final List<EntryUpdateTime> tools = userApi.getUserEntries(10, null, "TOOLS");
+        assertEquals(5, tools.size());
+        assertEquals(1L, tools.stream().filter(t -> t.getEntryType() == EntryType.APPTOOL).count());
+    }
+
+    @Test
+    void testSelfDestruct() throws ApiException {
+        ApiClient client = getAnonymousOpenAPIWebClient();
+        UsersApi userApi = new UsersApi(client);
+
+        // anon should not exist
+        assertThrows(ApiException.class, userApi::getUser);
+
+        // use a real account
+        client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        userApi = new UsersApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        final ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+
+        final WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminWebClient);
+
+        User user = userApi.getUser();
+        assertNotNull(user);
+
+        // try to delete with published workflows & service
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getShortName(), "");
+        handleGitHubRelease(workflowsApi, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+
+        final Workflow workflowByPath = workflowsApi
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null);
+        // refresh targeted
+        workflowsApi.refresh1(workflowByPath.getId(), false);
+
+        // publish one
+        workflowsApi.publish1(workflowByPath.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        assertFalse(userApi.getExtendedUserData().isCanChangeUsername());
+
+        UsersApi finalUserApi = userApi;
+        assertThrows(ApiException.class, () -> finalUserApi.selfDestruct(null));
+
+        // then unpublish them
+        workflowsApi.publish1(workflowByPath.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
+        assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
+        assertTrue(userApi.selfDestruct(null));
+        //TODO need to test that profiles are cascaded to and cleared
+
+        // Verify that self-destruct also deleted the workflow
+        ApiException exception = assertThrows(ApiException.class, () -> adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, WorkflowSubClass.BIOWORKFLOW, null));
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode());
+
+        // Verify that self-destruct also deleted the service
+        exception = assertThrows(ApiException.class, () -> adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, WorkflowSubClass.SERVICE, null));
+        assertEquals(HttpStatus.SC_NOT_FOUND, exception.getCode());
+
+        // I shouldn't be able to get info on myself after deletion
+        assertThrows(ApiException.class, userApi::getUser);
+        assertThrows(ApiException.class, userApi::getExtendedUserData);
     }
 }

@@ -208,7 +208,8 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        refreshByOrganizationReplacement(workflowApi, openAPIWebClient);
+        io.dockstore.openapi.client.api.WorkflowsApi openAPIWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIWebClient);
+        refreshByOrganizationReplacement(openAPIWorkflowApi, openAPIWebClient);
 
         List<Workflow> workflows = usersApi.userWorkflows(userId);
 
