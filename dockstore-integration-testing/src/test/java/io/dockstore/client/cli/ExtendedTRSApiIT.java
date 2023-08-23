@@ -103,7 +103,7 @@ class ExtendedTRSApiIT extends BaseIT {
         containersApi.publish(refresh.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         // Try to set a single checker workflow to two entries
-        // For now, this subtest is disabled.  It will probably be
+        // TODO: For now, this subtest is disabled.  It will probably be
         // reenabled in some form as part of https://ucsc-cgl.atlassian.net/browse/SEAB-5848
         /*
         testingPostgres.runUpdateStatement("update workflow set checkerid = '" + checkerWorkflow.getId() + "' where id = '" + workflow.getId() + "'");
