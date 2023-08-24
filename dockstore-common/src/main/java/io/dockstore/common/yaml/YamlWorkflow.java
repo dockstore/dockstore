@@ -19,6 +19,8 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.yaml.constraints.EntryName;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
+import io.dockstore.common.yaml.constraints.ValidPrimaryPath;
+import io.dockstore.common.yaml.constraints.ValidTestFilesPath;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
@@ -79,6 +81,7 @@ public class YamlWorkflow implements Workflowish {
     }
 
     @NotNull
+    @ValidPrimaryPath
     public String getPrimaryDescriptorPath() {
         return primaryDescriptorPath;
     }
@@ -113,6 +116,7 @@ public class YamlWorkflow implements Workflowish {
         this.authors = authors;
     }
 
+    @ValidTestFilesPath
     public List<String> getTestParameterFiles() {
         return testParameterFiles;
     }

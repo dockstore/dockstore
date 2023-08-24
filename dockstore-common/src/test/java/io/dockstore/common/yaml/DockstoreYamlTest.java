@@ -199,6 +199,32 @@ class DockstoreYamlTest {
     }
 
     @Test
+    void testRelativePrimaryDescriptor() {
+        try {
+            final String content = DOCKSTORE12_YAML.replaceAll("primaryDescriptorPath: /", "primaryDescriptorPath: ");
+            DockstoreYamlHelper.readDockstoreYaml(content, true);
+            fail("Invalid dockstore.yml not caught");
+        } catch (DockstoreYamlHelper.DockstoreYamlException e) {
+            // check that the error message contains the name of the property and an appropriate adjective
+            assertTrue(e.getMessage().contains("primaryDescriptor"));
+            assertTrue(e.getMessage().matches(".*(the path must be an absolute path to be valid)*"));
+        }
+    }
+
+    @Test
+    void testRelativeTestDescriptorPaths() {
+        try {
+            final String content = DOCKSTORE12_YAML.replaceAll("- /", "- ");
+            DockstoreYamlHelper.readDockstoreYaml(content, true);
+            fail("Invalid dockstore.yml not caught");
+        } catch (DockstoreYamlHelper.DockstoreYamlException e) {
+            // check that the error message contains the name of the property and an appropriate adjective
+            assertTrue(e.getMessage().contains("testParameterFiles"));
+            assertTrue(e.getMessage().matches(".*(the path must be an absolute path to be valid)*"));
+        }
+    }
+
+    @Test
     void testInvalidSubclass() {
         final String content = DOCKSTORE12_YAML.replace("DOCKER_COMPOSE", "invalid sub class");
         try {
