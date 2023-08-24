@@ -16,7 +16,12 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.EntryType;
-import io.dockstore.common.yaml.constraints.*;
+import io.dockstore.common.yaml.constraints.EntryName;
+import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
+import io.dockstore.common.yaml.constraints.ValidDescriptorLanguageSubclass;
+import io.dockstore.common.yaml.constraints.ValidPrimaryPath;
+import io.dockstore.common.yaml.constraints.ValidTestFilesPath;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
