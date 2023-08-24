@@ -16,9 +16,7 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.EntryType;
-import io.dockstore.common.yaml.constraints.EntryName;
-import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
-import io.dockstore.common.yaml.constraints.ValidDescriptorLanguageSubclass;
+import io.dockstore.common.yaml.constraints.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -154,6 +152,7 @@ public class YamlNotebook implements Workflowish {
         this.authors = authors;
     }
 
+    @ValidTestFilesPath
     public List<String> getTestParameterFiles() {
         return testParameterFiles;
     }
@@ -179,6 +178,7 @@ public class YamlNotebook implements Workflowish {
         this.otherFiles = otherFiles;
     }
 
+    @ValidPrimaryPath
     public String getPrimaryDescriptorPath() {
         return getPath();
     }
