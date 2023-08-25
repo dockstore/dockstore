@@ -27,10 +27,8 @@ public class ValidTestFilePathsValidator implements ConstraintValidator<ValidTes
 
     @Override
     public boolean isValid(final List<String> paths, final ConstraintValidatorContext context) {
-        for (String path : paths) {
-            if (!path.isEmpty() && !path.startsWith("/")) {
-                return false;
-            }
+        if (paths != null) {
+            return paths.stream().noneMatch( path -> !path.isEmpty() && !path.startsWith("/"));
         }
         return true;
     }

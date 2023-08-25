@@ -21,7 +21,6 @@ import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguageSubclass;
 import io.dockstore.common.yaml.constraints.ValidPrimaryPath;
 import io.dockstore.common.yaml.constraints.ValidTestFilesPath;
-
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
