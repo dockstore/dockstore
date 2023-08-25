@@ -643,7 +643,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @return versions
      */
     @JsonProperty
-    @ArraySchema(uniqueItems = true, schema = @Schema(description = "the versions of this entry", implementation = WorkflowVersion.class))
+    @ArraySchema(uniqueItems = true, schema = @Schema(description = "the versions of this entry", implementation = WorkflowVersion.class, oneOf = {WorkflowVersion.class, Tag.class}))
     public abstract Set<T> getWorkflowVersions();
 
     @JsonProperty

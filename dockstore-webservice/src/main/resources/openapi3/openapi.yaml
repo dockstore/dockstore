@@ -8832,6 +8832,11 @@ components:
             type: string
             maxLength: 256
             minLength: 0
+          workflowVersions:
+            type: array
+            items:
+              $ref: '#/components/schemas/Tag'
+            uniqueItems: true
       description: "This describes one entry in the dockstore. Logically, this currently\
         \ means one tuple of registry (either quay or docker hub), organization, image\
         \ name, and toolname which can be associated with CWL and Dockerfile documents"
