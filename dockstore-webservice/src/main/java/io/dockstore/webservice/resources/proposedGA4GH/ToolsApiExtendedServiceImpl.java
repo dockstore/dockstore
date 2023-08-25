@@ -335,6 +335,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             try {
                 String include = getSearchQueryJsonIncludeKey(json);
                 if (include.length() > 0) {
+                    // A trailing .* is added by the ui when creating the request body with an autocomplete field
+                    // It gets removed here and added back later so the search recognizes it as a regex expression rather than literal characters
                     String escapedStr = include.replaceAll("\\.\\*$", "").replaceAll(SEARCH_QUERY_REGEX, "\\\\$1");
                     if (include.endsWith(".*")) {
                         escapedStr = escapedStr + ".*";
