@@ -20,12 +20,12 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 /**
- * Validates the primary descriptor's file path.
+ * Validates the file path is an absolute path.
  */
-public class ValidPrimaryPathValidator implements ConstraintValidator<ValidPrimaryPath, String> {
+public class AbsolutePathValidator implements ConstraintValidator<AbsolutePath, String> {
 
     @Override
     public boolean isValid(final String path, final ConstraintValidatorContext context) {
-        return path.isEmpty() || path.startsWith("/");
+        return path.startsWith("/");
     }
 }

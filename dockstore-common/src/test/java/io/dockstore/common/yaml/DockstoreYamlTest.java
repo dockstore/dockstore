@@ -207,7 +207,7 @@ class DockstoreYamlTest {
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
             // check that the error message contains the name of the property and an appropriate adjective
             assertTrue(e.getMessage().contains("primaryDescriptor"));
-            assertTrue(e.getMessage().matches(".*(the path must be an absolute path to be valid)*"));
+            assertTrue(e.getMessage().contains("the path must be an absolute path to be valid"));
         }
     }
 
@@ -220,7 +220,7 @@ class DockstoreYamlTest {
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
             // check that the error message contains the name of the property and an appropriate adjective
             assertTrue(e.getMessage().contains("testParameterFiles"));
-            assertTrue(e.getMessage().matches(".*(the path must be an absolute path to be valid)*"));
+            assertTrue(e.getMessage().contains("the path must be an absolute path to be valid"));
         }
     }
 

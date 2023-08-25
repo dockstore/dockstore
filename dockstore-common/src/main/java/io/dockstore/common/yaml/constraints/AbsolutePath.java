@@ -24,13 +24,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines the `ValidTestFilesPath` constraint annotation, which
- * checks for valid paths for the test descriptor files.
+ * Defines the `ValidPrimaryPath` constraint annotation, which
+ * checks for a valid path for the primary descriptor.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ValidTestFilePathsValidator.class)
-public @interface ValidTestFilesPath {
+@Constraint(validatedBy = AbsolutePathValidator.class)
+public @interface AbsolutePath {
 
     String message() default "the path must be an absolute path to be valid";
     Class<?>[] groups() default {};
