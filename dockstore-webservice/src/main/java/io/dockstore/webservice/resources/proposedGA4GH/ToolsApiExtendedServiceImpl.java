@@ -95,6 +95,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public static final String TOOL_NOT_FOUND_ERROR = "Tool not found";
     public static final String VERSION_NOT_FOUND_ERROR = "Version not found";
     public static final String SEARCH_QUERY_INVALID_JSON = "Search payload request is not valid JSON";
+    public static final String SEARCH_QUERY_NOT_PARSED = "Couldn't parse search payload request.";
+    public static final String SEARCH_QUERY_REGEX = "([.?+*#@&~\"{}()<>\\[\\]|\\\\])";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
     private static final ToolsApiServiceImpl TOOLS_API_SERVICE_IMPL = new ToolsApiServiceImpl();
 
@@ -268,7 +270,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         try {
             if (!config.getEsConfiguration().getHostname().isEmpty()) {
-                checkSearchTermLimit(query);
+                String searchQuery = escapeCharactersInSearchTerm(query);
+                checkSearchTermLimit(searchQuery);
                 try {
                     RestClient restClient = ElasticSearchHelper.restClient();
                     Map<String, String> parameters = new HashMap<>();
@@ -279,8 +282,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     }
                     // This should be using the high-level Elasticsearch client instead
                     Request request = new Request("GET", "/" + COMMA_SEPARATED_INDEXES + "/_search");
-                    if (query != null) {
-                        request.setJsonEntity(query);
+                    if (searchQuery != null) {
+                        request.setJsonEntity(searchQuery);
                     }
                     request.addParameters(parameters);
                     org.elasticsearch.client.Response get = restClient.performRequest(request);
@@ -314,6 +317,42 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     /**
+     * Certain characters need to be escaped in the search term ("include" key in request payload) or the request will fail
+     * See reserved characters here: https://www.elastic.co/guide/en/elasticsearch/reference/current/regexp-syntax.html#regexp-optional-operators
+     * @param query
+     * @return a query with the modified search term
+     */
+    protected static String escapeCharactersInSearchTerm(String query) {
+        if (query != null) {
+            JSONObject json;
+            try {
+                json = new JSONObject(query);
+            } catch (JSONException ex) {
+                LOG.error(SEARCH_QUERY_INVALID_JSON, ex);
+                throw new CustomWebApplicationException(SEARCH_QUERY_INVALID_JSON, HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+            }
+
+            try {
+                String include = getSearchQueryJsonIncludeKey(json);
+                if (include.length() > 0) {
+                    // A trailing .* is added by the ui when creating the request body with an autocomplete field
+                    // It gets removed here and added back later so the search recognizes it as a regex expression rather than literal characters
+                    String escapedStr = include.replaceAll("\\.\\*$", "").replaceAll(SEARCH_QUERY_REGEX, "\\\\$1");
+                    if (include.endsWith(".*")) {
+                        escapedStr = escapedStr + ".*";
+                    }
+                    json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").put("include", escapedStr);
+                }
+            } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
+                LOG.debug(SEARCH_QUERY_NOT_PARSED);
+            }
+
+            return json.toString();
+        }
+        return query;
+    }
+
+    /**
      * Performing a search on the UI sends multiple POST requests. When the search term ("value" key of a wildcard or "include" key in request payload) is large,
      * the POST requests containing these keys will fail.
      * @param query
@@ -329,12 +368,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
 
             try {
-                String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
+                String include = getSearchQueryJsonIncludeKey(json);
                 if (include.length() > SEARCH_TERM_LIMIT) {
                     throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
                 }
             } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
-                LOG.debug("Couldn't parse search payload request.");
+                LOG.debug(SEARCH_QUERY_NOT_PARSED);
             }
 
             try {
@@ -359,9 +398,22 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     }
                 }
             } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
-                LOG.debug("Couldn't parse search payload request.");
+                LOG.debug(SEARCH_QUERY_NOT_PARSED);
             }
         }
+    }
+
+    /**
+     * @param json
+     * @return "include" key string
+     */
+    protected static String getSearchQueryJsonIncludeKey(JSONObject json) {
+        try {
+            return json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
+        } catch (JSONException ex) {
+            LOG.debug(SEARCH_QUERY_NOT_PARSED);
+        }
+        return "";
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
