@@ -17,6 +17,7 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
-import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -55,7 +55,6 @@ import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
-import io.dockstore.webservice.helpers.AppToolHelper;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -91,7 +90,6 @@ class NotebookIT extends BaseIT {
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
 
-    private final String installationId = AppToolHelper.INSTALLATION_ID;
     private final String simpleRepo = "dockstore-testing/simple-notebook";
     private final String simpleRepoPath = SourceControl.GITHUB + "/" + simpleRepo;
 
@@ -146,9 +144,9 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testRegisterSimpleNotebook() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
 
         String path = SourceControl.GITHUB + "/" + simpleRepo;
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
@@ -168,9 +166,9 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testRegisterLessSimpleNotebook() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/less-simple-v2", USER_2_USERNAME);
         // Check only the values that should differ from testRegisterSimpleNotebook()
         String path = simpleRepoPath + "/simple";
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
@@ -182,9 +180,9 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testRegisterOldNotebook() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/old-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/old-v1", USER_2_USERNAME);
         // Check a few fields to make sure we registered successfully
         String path = simpleRepoPath + "/old";
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
@@ -199,9 +197,9 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testRegisterCorruptNotebook() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/corrupt-ipynb-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/corrupt-ipynb-v1", USER_2_USERNAME);
         // The update should be "successful" but there should be a negative validation on the notebook file.
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
@@ -210,9 +208,9 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testUserNotebooks() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + simpleRepo, WorkflowSubClass.NOTEBOOK, "versions");
         assertNotNull(notebook);
 
@@ -228,19 +226,18 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testPublishInDockstoreYml() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         assertEquals(0, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
-        workflowsApi.handleGitHubRelease("refs/tags/simple-published-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-published-v1", USER_2_USERNAME);
         assertEquals(1, workflowsApi.allPublishedWorkflows(null, null, null, null, null, null, WorkflowSubClass.NOTEBOOK).size());
     }
 
     @Test
     void testWithImage() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/with-kernel-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/with-kernel-v1", USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertEquals("quay.io/seqware/seqware_full/1.1", notebook.getWorkflowVersions().get(0).getKernelImagePath());
@@ -248,10 +245,9 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testSnapshot() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/with-tagged-kernel-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/with-tagged-kernel-v1", USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         WorkflowVersion version = notebook.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
         // Publish the notebook
@@ -272,9 +268,9 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testMetadata() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
 
         String path = SourceControl.GITHUB + "/" + simpleRepo;
         Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
@@ -291,9 +287,9 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testEvents() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        workflowsApi.handleGitHubRelease("refs/tags/simple-published-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-published-v1", USER_2_USERNAME);
 
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
 
@@ -304,11 +300,11 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testStarringNotebook() {
-        ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(openApiClient);
         UsersApi usersApi = new UsersApi(openApiClient);
 
-        workflowsApi.handleGitHubRelease("refs/tags/less-simple-v2", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/less-simple-v2", USER_2_USERNAME);
         Long notebookID = workflowsApi.getWorkflowByPath(simpleRepoPath + "/simple", WorkflowSubClass.NOTEBOOK, "versions").getId();
 
         //star notebook
@@ -326,7 +322,7 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testNotebookRSSFeedAndSitemap() {
-        ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient openApiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
 
         // There should be no notebooks
         assertEquals(0, notebookDAO.findAllPublishedPaths().size());
@@ -427,12 +423,12 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testDeletabilityAndDeletion() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         EntriesApi entriesApi = new EntriesApi(apiClient);
 
         // Create a new notebook
-        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
         Workflow notebookA = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         long idA = notebookA.getId();
 
@@ -442,7 +438,7 @@ class NotebookIT extends BaseIT {
         assertTrue(notebook.isDeletable());
 
         // Try to delete the notebook as a user without write access
-        ApiClient otherClient = getOpenAPIWebClient(BasicIT.OTHER_USERNAME, testingPostgres);
+        ApiClient otherClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         EntriesApi otherEntriesApi = new EntriesApi(otherClient);
         shouldThrow(() -> otherEntriesApi.deleteEntry(idA), "the user didn't have write access", HttpStatus.SC_FORBIDDEN);
 
@@ -454,7 +450,7 @@ class NotebookIT extends BaseIT {
         shouldThrow(() -> entriesApi.deleteEntry(idA), "the notebook has been deleted", HttpStatus.SC_NOT_FOUND);
 
         // Create the notebook again
-        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
         Workflow notebookB = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         long idB = notebookB.getId();
 
@@ -496,13 +492,12 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testEventDeletion() {
-        ApiClient apiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
-        EntriesApi entriesApi = new EntriesApi(apiClient);
         UsersApi usersApi = new UsersApi(apiClient);
         EventsApi eventsApi = new EventsApi(apiClient);
 
-        workflowsApi.handleGitHubRelease("refs/tags/simple-v1", installationId, simpleRepo, BasicIT.USER_2_USERNAME);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         long id = notebook.getId();
 

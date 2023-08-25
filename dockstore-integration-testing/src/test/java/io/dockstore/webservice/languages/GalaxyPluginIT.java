@@ -17,6 +17,7 @@ package io.dockstore.webservice.languages;
 
 import static io.dockstore.common.CommonTestUtilities.getOpenAPIWebClient;
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,12 +29,15 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.Tool;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.SourceFile;
@@ -45,7 +49,6 @@ import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DescriptorLanguageBean;
 import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -189,12 +192,10 @@ class GalaxyPluginIT {
 
     @Test
     void testTestParameterPaths() {
-        final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        String galaxyWorkflowRepo = "DockstoreTestUser2/workflow-testing-repo";
-        String installationId = "1179416";
-        workflowApi.handleGitHubRelease(galaxyWorkflowRepo, BaseIT.USER_2_USERNAME, "refs/heads/validTestParameterFiles", installationId);
-        Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + galaxyWorkflowRepo + "/COVID-19-variation-analysis-on-Illumina-metagenomic-data", BaseIT.BIOWORKFLOW, "versions");
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        handleGitHubRelease(workflowApi, DockstoreTestUser2.WORKFLOW_TESTING_REPO, "refs/heads/validTestParameterFiles", BaseIT.USER_2_USERNAME);
+        io.dockstore.openapi.client.model.Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + DockstoreTestUser2.WORKFLOW_TESTING_REPO + "/COVID-19-variation-analysis-on-Illumina-metagenomic-data", WorkflowSubClass.BIOWORKFLOW, "versions");
         WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")), "Test file should have the expected path");

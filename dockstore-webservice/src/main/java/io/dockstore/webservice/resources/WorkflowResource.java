@@ -56,6 +56,9 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
+import io.dockstore.webservice.core.webhook.InstallationRepositoriesPayload;
+import io.dockstore.webservice.core.webhook.PushPayload;
+import io.dockstore.webservice.core.webhook.WebhookRepository;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -103,8 +106,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -2093,47 +2096,50 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @POST
     @Path("/github/release")
     @Timed
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
     @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
-        @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-        @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
-        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
+        @RequestBody(description = "GitHub push event payload", required = true) PushPayload payload) {
+
+        final long installationId = payload.getInstallation().getId();
+        final String username = payload.getSender().getLogin();
+        final String repository = payload.getRepository().getFullName();
+        final String gitReference = payload.getRef();
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
-        final String deliveryId = LambdaEvent.createDeliveryId();
-        githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId), deliveryId, true);
+
+        githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, true);
     }
 
     @POST
     @Path("/github/install")
     @Timed
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
     @Operation(description = "Handle the installation of our GitHub app onto a repository or organization.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
     @ApiOperation(value = "Handle the installation of our GitHub app onto a repository or organization.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class, responseContainer = "List")
     public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @Parameter(name = "repositories", description = "Comma-separated repository paths (ex. dockstore/dockstore-ui2) for all repositories installed", required = true) @FormParam("repositories") String repositories,
-        @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+            @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId,
+            @RequestBody(description = "GitHub App repository installation event payload", required = true) InstallationRepositoriesPayload payload) {
+        final long installationId = payload.getInstallation().getId();
+        final String username = payload.getSender().getLogin();
+        final List<String> repositories = payload.getRepositoriesAdded().stream().map(WebhookRepository::getFullName).toList();
+
         if (LOG.isInfoEnabled()) {
-            LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(repositories), Utilities.cleanForLogging(username)));
+            LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(String.join(", ", repositories)), Utilities.cleanForLogging(username)));
         }
-        Map<String, String> repositoryToLambdaEventDeliveryId = new HashMap<>();
+
         // record installation event as lambda event
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
-        Arrays.asList(repositories.split(",")).forEach(repository -> {
-            // Unique group ID used to identify lambda events for this GitHub webhook invocation
-            final String deliveryId = LambdaEvent.createDeliveryId();
-            repositoryToLambdaEventDeliveryId.put(repository, deliveryId);
+        repositories.forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
             String[] splitRepository = repository.split("/");
             lambdaEvent.setDeliveryId(deliveryId);
@@ -2146,14 +2152,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         });
         // make some educated guesses whether we should try to retrospectively release some old versions
         // note that for large organizations, this loop could be quite large if many repositories are added at the same time
-        for (String repository: repositories.split(",")) {
-            final Set<String> strings = identifyGitReferencesToRelease(repository, Long.parseLong(installationId));
+        for (String repository: repositories) {
+            final Set<String> strings = identifyGitReferencesToRelease(repository, installationId);
             for (String gitReference: strings) {
                 if (LOG.isInfoEnabled()) {
                     LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
                         Utilities.cleanForLogging(username)));
                 }
-                githubWebhookRelease(repository, username, gitReference, Long.parseLong(installationId), repositoryToLambdaEventDeliveryId.get(repository), false);
+                githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, false);
             }
         }
         return Response.status(HttpStatus.SC_OK).build();
@@ -2171,11 +2177,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
         @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @QueryParam("username") String username,
         @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
-        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId) {
+        @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId) {
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s deleted from %s", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository)));
         }
-        final String deliveryId = LambdaEvent.createDeliveryId();
         githubWebhookDelete(repository, gitReference, username, deliveryId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }

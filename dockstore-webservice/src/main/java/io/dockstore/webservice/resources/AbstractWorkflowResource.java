@@ -451,7 +451,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     private boolean isGitHubRateLimitError(Exception ex) {
         if (ex instanceof CustomWebApplicationException customWebAppEx) {
-            final String errorMessage = customWebAppEx.getErrorMessage();
+            final String errorMessage = customWebAppEx.getMessage();
             return errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT);
         }
         return false;
@@ -649,7 +649,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         if (ex instanceof ClassCastException) {
             return "Could not parse input.";
         }
-        String message = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
+        String message = ex.getMessage();
         if (ex instanceof DockstoreYamlHelper.DockstoreYamlException) {
             message = DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML + message;
         }

@@ -294,7 +294,7 @@ class CWLHandlerTest {
             fail("Expected parsing error");
         } catch (CustomWebApplicationException e) {
             assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
-            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_ERROR);
+            assertThat(e.getMessage()).contains(CWLHandler.CWL_PARSE_ERROR);
 
         }
 
@@ -306,7 +306,7 @@ class CWLHandlerTest {
             fail("Expected cwlVersion error");
         } catch (CustomWebApplicationException e) {
             assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
-            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_VERSION_ERROR);
+            assertThat(e.getMessage()).contains(CWLHandler.CWL_VERSION_ERROR);
         }
 
         // expect error based on an undefined cwlVersion
@@ -317,7 +317,7 @@ class CWLHandlerTest {
             fail("Expected undefined cwlVersion error");
         } catch (CustomWebApplicationException e) {
             assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
-            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_NO_VERSION_ERROR);
+            assertThat(e.getMessage()).contains(CWLHandler.CWL_NO_VERSION_ERROR);
         }
 
         // expect error based on invalid JSON $import/$include
@@ -328,7 +328,7 @@ class CWLHandlerTest {
             fail("Expected parse error: value of workflow step run field should be a string, workflow, or tool");
         } catch (CustomWebApplicationException e) {
             assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
-            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);
+            assertThat(e.getMessage()).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);
         }
     }
 

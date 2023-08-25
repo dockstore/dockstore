@@ -29,7 +29,7 @@ class ToolsApiExtendedServiceImplTest {
             ToolsApiExtendedServiceImpl.checkSearchTermLimit(includeESQuery);
             fail("Should not pass search term length limit check");
         } catch (CustomWebApplicationException ex) {
-            assertTrue(ex.getErrorMessage().contains(searchRequestExceedsLimitMessage));
+            assertTrue(ex.getMessage().contains(searchRequestExceedsLimitMessage));
         }
 
         try {
@@ -40,7 +40,7 @@ class ToolsApiExtendedServiceImplTest {
             ToolsApiExtendedServiceImpl.checkSearchTermLimit(wildcardESQuery);
             fail("Should not pass search term length limit check");
         } catch (CustomWebApplicationException ex) {
-            assertTrue(ex.getErrorMessage().contains(searchRequestExceedsLimitMessage));
+            assertTrue(ex.getMessage().contains(searchRequestExceedsLimitMessage));
         }
 
         try {
