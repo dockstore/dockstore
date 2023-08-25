@@ -142,7 +142,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
-
     /**
      * @deprecated since 1.14.0. Use authors instead.
      */
@@ -316,7 +315,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column(nullable = true, columnDefinition = "varchar(32)")
     @Enumerated(EnumType.STRING)
     private GitVisibility gitVisibility;
-
 
 
     public enum GitVisibility {

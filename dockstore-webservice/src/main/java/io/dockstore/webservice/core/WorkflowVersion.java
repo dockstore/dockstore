@@ -203,12 +203,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         return new WorkflowVersion();
     }
 
-    @Override
-    @JsonProperty
-    public boolean isValid() {
-        return super.isValid();
-    }
-
 
     @Override
     public String toString() {
