@@ -574,7 +574,7 @@ commands:
       - run:
           name: run integration test
           command: |  # Runs normally if it is not being run in parallel
-            export DOCKSTORE_CACHE_MIGRATIONS=true
+            export DOCKSTORE_CACHE_MIGRATIONS=false
             if [ $CIRCLE_NODE_TOTAL != 1 ] 
             then
               ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -ntp \
