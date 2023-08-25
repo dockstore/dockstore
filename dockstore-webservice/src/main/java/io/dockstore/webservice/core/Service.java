@@ -48,10 +48,6 @@ public class Service extends Workflow {
     public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM
     }
 
-    public Service() {
-        super.setType(OPENAPI_NAME);
-    }
-
     @Override
     @OneToOne
     @Schema(hidden = true)

@@ -18,8 +18,6 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
@@ -30,7 +28,6 @@ import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -85,7 +82,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore", subTypes = {Workflow.class, Tool.class}, discriminatorProperty = "type")
+@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore", subTypes = {Workflow.class, Tool.class})
 @SuppressWarnings("checkstyle:magicnumber")
 
 @NamedQueries({
@@ -132,10 +129,6 @@ import org.hibernate.annotations.UpdateTimestamp;
         "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL and ispublished = TRUE union"
             + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL and ispublished = TRUE"),
     @NamedNativeQuery(name = "Entry.hostedWorkflowCount", query = "select (select count(*) from tool t, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = t.id) + (select count(*) from workflow w, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = w.id) as count;")})
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
-@JsonSubTypes({
-    @JsonSubTypes.Type(value = Workflow.class, name = Workflow.OPENAPI_NAME),
-    @JsonSubTypes.Type(value = Tool.class, name = Tool.OPENAPI_NAME)})
 public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
 
     private static final int TOPIC_LENGTH = 150;
@@ -149,10 +142,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
-    @JsonProperty("type")
-    @Transient
-    @Schema(requiredMode = RequiredMode.REQUIRED)
-    String type;
 
     /**
      * @deprecated since 1.14.0. Use authors instead.
@@ -328,13 +317,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Enumerated(EnumType.STRING)
     private GitVisibility gitVisibility;
 
-    public String getType() {
-        return type;
-    }
-
-    protected void setType(String type) {
-        this.type = type;
-    }
 
 
     public enum GitVisibility {
@@ -663,7 +645,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @return versions
      */
     @JsonProperty
-    @ArraySchema(uniqueItems = true, schema = @Schema(description = "foo", implementation = WorkflowVersion.class))
+    @ArraySchema(uniqueItems = true, schema = @Schema(description = "the versions of this entry", implementation = WorkflowVersion.class))
     public abstract Set<T> getWorkflowVersions();
 
     @JsonProperty

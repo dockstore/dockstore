@@ -54,9 +54,6 @@ public class AppTool extends Workflow {
     public static final String OPENAPI_NAME = "AppTool";
 
 
-    public AppTool() {
-        super.setType(OPENAPI_NAME);
-    }
 
     @Override
     public EntryType getEntryType() {

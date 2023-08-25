@@ -50,10 +50,6 @@ public class Notebook extends Workflow {
 
     public static final String OPENAPI_NAME = "Notebook";
 
-    public Notebook() {
-        super.setType(OPENAPI_NAME);
-    }
-
     @Override
     @OneToOne
     @Schema(hidden = true)

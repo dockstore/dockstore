@@ -65,9 +65,6 @@ public class BioWorkflow extends Workflow {
     @Column(columnDefinition = "boolean default false")
     private boolean isChecker = false;
 
-    public BioWorkflow() {
-        super.setType(OPENAPI_NAME);
-    }
 
     @Override
     public EntryType getEntryType() {

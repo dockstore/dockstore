@@ -180,7 +180,6 @@ public class Tool extends Entry<Tool, Tag> {
     private Set<Tag> tags = null;
 
     public Tool() {
-        super.setType(OPENAPI_NAME);
         workflowVersions = new TreeSet<>();
     }
 
