@@ -559,7 +559,6 @@ class WebhookIT extends BaseIT {
 
         // There should be 13 successful lambda events
         List<LambdaEvent> events = usersApi.getUserGitHubEvents(0, 20);
-        System.out.println(events.stream().toList());
         assertEquals(13, events.stream().filter(LambdaEvent::isSuccess).count(), "There should be 13 successful events");
 
         // Test pagination for user github events
@@ -1764,7 +1763,7 @@ class WebhookIT extends BaseIT {
         List<LambdaEvent> failedLambdaEvents = usersApi.getUserGitHubEvents(0, 10).stream()
                 .filter(event -> !event.isSuccess())
                 .toList();
-        assertEquals(4, failedLambdaEvents.size(), "There should be two failed events");
+        assertEquals(4, failedLambdaEvents.size(), "There should be four failed events");
         failedLambdaEvents.forEach(event -> assertTrue(event.getMessage().toLowerCase().contains("absolute"), "Should contain the word 'absolute'"));
     }
 

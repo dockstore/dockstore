@@ -26,7 +26,6 @@ public class ValidPrimaryPathValidator implements ConstraintValidator<ValidPrima
 
     @Override
     public boolean isValid(final String path, final ConstraintValidatorContext context) {
-        // nulls are valid, see note in BaseConstraintValidator for more.
         return path.isEmpty() || path.startsWith("/");
     }
 }
