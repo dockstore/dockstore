@@ -372,10 +372,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId GitHub App installation ID
      * @param deliveryId The GitHub delivery ID, used to group all lambda events that were created during this GitHub webhook release
+     * @param afterCommit The "after" commit hash from the lambda event, if present
      * @param throwIfNotSuccessful throw if the release was not entirely successful
      * @return List of new and updated workflows
      */
-    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, String deliveryId, boolean throwIfNotSuccessful) {
+    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, String deliveryId, Optional<String> afterCommitOptional, boolean throwIfNotSuccessful) {
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
@@ -383,6 +384,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         boolean isSuccessful = true;
 
         try {
+            if (afterCommitOptional.isPresent()) {
+                // If the repo's current head commit hash doesn't match the "after" commit hash from the event,
+                // don't process the event, because the repo has changed after the event was sent.
+                // Another event will arrive later and trigger an update corresponding to the ref's current state.
+                String afterCommit = afterCommitOptional.get();
+                String currentCommit = getHeadCommit(gitHubSourceCodeRepo, repository, gitReference);
+                LOG.info("afterCommit={} currentCommit={}", afterCommit, currentCommit);
+                if (!Objects.equals(afterCommit, currentCommit)) {
+                    LOG.info("ignoring push event");
+                    return;
+                }
+            }
+
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
@@ -463,6 +477,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             return code >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return false;
+    }
+
+    private String getHeadCommit(GitHubSourceCodeRepo repo, String repository, String ref) {
+        return repo.getCommitID(repository, ref, false);
     }
 
     /**

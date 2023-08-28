@@ -2110,11 +2110,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String username = payload.getSender().getLogin();
         final String repository = payload.getRepository().getFullName();
         final String gitReference = payload.getRef();
+        final String afterCommit = payload.getAfter();
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
 
-        githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, true);
+        githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, Optional.ofNullable(afterCommit), true);
     }
 
     @POST
@@ -2159,7 +2160,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     LOG.info(String.format("Retrospectively processing branch/tag %s in %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository),
                         Utilities.cleanForLogging(username)));
                 }
-                githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, false);
+                githubWebhookRelease(repository, username, gitReference, installationId, deliveryId, Optional.empty(), false);
             }
         }
         return Response.status(HttpStatus.SC_OK).build();

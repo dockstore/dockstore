@@ -1352,23 +1352,31 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     protected String getCommitID(String repositoryId, Version version) {
+        return getCommitID(repositoryId, version.getReference(), true);
+    }
+
+    public String getCommitID(String repositoryId, String commitReference, boolean stripped) {
         GHRepository repo;
         try {
             repo = github.getRepository(repositoryId);
             GHRef[] refs = getBranchesAndTags(repo);
 
             for (GHRef ref : refs) {
-                String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
-                if (reference.equals(version.getReference())) {
-                    return getCommitSHA(ref, repo, reference);
+                String reference = ref.getRef();
+                String strippedReference = stripReference(reference);
+                if ((stripped ? strippedReference : reference).equals(commitReference)) {
+                    return getCommitSHA(ref, repo, strippedReference);
                 }
-
             }
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
         return null;
+    }
+
+    private String stripReference(String reference) {
+        return StringUtils.removePattern(reference, "refs/.+?/");
     }
 
     private String getEmail(GHMyself myself) throws IOException {

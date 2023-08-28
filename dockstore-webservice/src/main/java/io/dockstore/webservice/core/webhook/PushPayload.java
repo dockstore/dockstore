@@ -29,6 +29,9 @@ public class PushPayload extends Payload {
     @Schema(description = "The full git ref that was pushed", requiredMode = RequiredMode.REQUIRED, example = "refs/heads/master OR refs/tags/v1.0")
     private String ref;
 
+    // The following description is directly quoted from the above github doc
+    @Schema(description = "The SHA of the most recent commit on ref after the push", requiredMode = RequiredMode.NOT_REQUIRED, example = "6d96270004515a0486bb7f76196a72b40c55a47f")
+    private String after;
 
     public PushPayload() {
     }
@@ -39,6 +42,14 @@ public class PushPayload extends Payload {
 
     public void setRef(String ref) {
         this.ref = ref;
+    }
+
+    public String getAfter() {
+        return after;
+    }
+
+    public void setAfter(String after) {
+        this.after = after;
     }
 
     @Override
