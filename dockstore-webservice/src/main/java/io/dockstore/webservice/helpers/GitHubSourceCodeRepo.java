@@ -1370,7 +1370,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage(), e);
-            throws new CustomWebApplicationException("Could not access GitHub reference", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("Could not access GitHub reference", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return null;
     }

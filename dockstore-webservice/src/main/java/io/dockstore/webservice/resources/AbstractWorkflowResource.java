@@ -376,7 +376,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param throwIfNotSuccessful throw if the release was not entirely successful
      * @return List of new and updated workflows
      */
-    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, String deliveryId, Optional<String> afterCommitOptional, boolean throwIfNotSuccessful) {
+    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, String deliveryId, String afterCommit, boolean throwIfNotSuccessful) {
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
@@ -384,24 +384,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         boolean isSuccessful = true;
 
         try {
-            if (afterCommitOptional.isPresent()) {
-                try {
-                    // If the repo's current head commit hash doesn't match the "after" commit hash from the event,
-                    // don't process the event, because the repo has changed since the event was created.
-                    // Another event will arrive later and trigger an update corresponding to the ref's current state.
-                    String afterCommit = afterCommitOptional.get();
-                    String currentCommit = getHeadCommit(gitHubSourceCodeRepo, repository, gitReference);
-                    LOG.info("afterCommit={} currentCommit={}", afterCommit, currentCommit);
-                    // If there's a current commit (indicating that the branch exists) and the after and current commits don't match, ignore this push.
-                    if (currentCommit != null && !Objects.equals(afterCommit, currentCommit)) {
-                        LOG.info("ignoring push event");
-                        return;
-                    }
-                }
-                catch (CustomWebApplicationException ex) {
-                    // If we have a problem while determining if the push needs processing, assume it does and continue.
-                    LOG.info("CustomWebApplicationException while determining whether to process push", ex);
-                }
+            if (!shouldProcessPush(gitHubSourceCodeRepo, repository, gitReference, afterCommit)) {
+                LOG.info("ignoring push event, afterCommit={}", afterCommit);
+                return;
             }
 
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
@@ -484,6 +469,30 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             return code >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return false;
+    }
+
+    private boolean shouldProcessPush(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String reference, String afterCommit) {
+        // If there's no "after" commit, process the push.
+        if (afterCommit == null) {
+            return true;
+        }
+        try {
+            // Retrieve the "current" head commit.
+            String currentCommit = getHeadCommit(gitHubSourceCodeRepo, repository, reference);
+            LOG.info("afterCommit={} currentCommit={}", afterCommit, currentCommit);
+            // If the ref doesn't exist, don't process the push.
+            if (currentCommit == null) {
+                return false;
+            }
+            // Process the push iff the "current" and "after" commit hashes are equal.
+            // If the repo's "current" hash doesn't match the event's "after" hash, the repo has changed since the event was created.
+            // Later, another event corresponding to the subsequent change will arrive and trigger an update.
+            return Objects.equals(afterCommit, currentCommit);
+        } catch (CustomWebApplicationException ex) {
+            // If there's a problem while determining if the push needs processing, assume it does.
+            LOG.info("CustomWebApplicationException while determining whether to process push", ex);
+            return true;
+        }
     }
 
     private String getHeadCommit(GitHubSourceCodeRepo repo, String repository, String ref) {
