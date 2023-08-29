@@ -385,15 +385,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         try {
             if (afterCommitOptional.isPresent()) {
-                // If the repo's current head commit hash doesn't match the "after" commit hash from the event,
-                // don't process the event, because the repo has changed after the event was sent.
-                // Another event will arrive later and trigger an update corresponding to the ref's current state.
-                String afterCommit = afterCommitOptional.get();
-                String currentCommit = getHeadCommit(gitHubSourceCodeRepo, repository, gitReference);
-                LOG.info("afterCommit={} currentCommit={}", afterCommit, currentCommit);
-                if (!Objects.equals(afterCommit, currentCommit)) {
-                    LOG.info("ignoring push event");
-                    return;
+                try {
+                    // If the repo's current head commit hash doesn't match the "after" commit hash from the event,
+                    // don't process the event, because the repo has changed since the event was created.
+                    // Another event will arrive later and trigger an update corresponding to the ref's current state.
+                    String afterCommit = afterCommitOptional.get();
+                    String currentCommit = getHeadCommit(gitHubSourceCodeRepo, repository, gitReference);
+                    LOG.info("afterCommit={} currentCommit={}", afterCommit, currentCommit);
+                    // If there's a current commit (indicating that the branch exists) and the after and current commits don't match, ignore this push.
+                    if (currentCommit != null && !Objects.equals(afterCommit, currentCommit)) {
+                        LOG.info("ignoring push event");
+                        return;
+                    }
+                }
+                catch (CustomWebApplicationException ex) {
+                    // If we have a problem while determining if the push needs processing, assume it does and continue.
+                    LOG.info("CustomWebApplicationException while determining whether to process push", ex);
                 }
             }
 
