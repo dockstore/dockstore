@@ -104,6 +104,9 @@ public class OpenAPIServiceIT extends BaseIT {
         assertEquals(1, workflowCount);
         Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
 
+        final long validFileCount = testingPostgres.runSelectStatement("select count(*) from validation where valid", long.class);
+        assertEquals(2, validFileCount, "Both the service's files should be valid");
+
         assertNotNull(service);
         assertEquals(1, service.getWorkflowVersions().size(), "Should have a new version");
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(service.getWorkflowVersions().get(0).getId());
