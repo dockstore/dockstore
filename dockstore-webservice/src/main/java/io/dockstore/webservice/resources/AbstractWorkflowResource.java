@@ -289,9 +289,26 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param username Git user who triggered the event
+     * @param installationId GitHub App installation ID
      * @param deliveryId The GitHub delivery ID, used to group all lambda events created during this GitHub webhook delete
      */
-    protected void githubWebhookDelete(String repository, String gitReference, String username, String deliveryId) {
+    protected void githubWebhookDelete(String repository, String gitReference, String username, Long installationId, String deliveryId) {
+        if (installationId != null) {
+            // create rate limited GitHubSourceCodeRepo
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
+            GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+            try {
+                if (!shouldProcessDelete(gitHubSourceCodeRepo, repository, gitReference)) {
+                    LOG.info("ignoring delete event");
+                    return;
+                }
+            } finally {
+                // close rate limited GitHubSourceCodeRepo
+                GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+                gitHubSourceCodeRepo.reportOnRateLimit("githubWebhookDelete", startRateLimit, endRateLimit);
+            }
+        }
+
         // Retrieve name from gitReference
         Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
         if (gitReferenceName.isEmpty()) {
@@ -489,8 +506,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Later, another event corresponding to the subsequent change will arrive and trigger an update.
             return Objects.equals(afterCommit, currentCommit);
         } catch (CustomWebApplicationException ex) {
-            // If there's a problem while determining if the push needs processing, assume it does.
-            LOG.info("CustomWebApplicationException while determining whether to process push", ex);
+            // If there's a problem determining if the push needs processing, assume it does.
+            LOG.info("CustomWebApplicationException determining whether to process push", ex);
+            return true;
+        }
+    }
+
+    private boolean shouldProcessDelete(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String reference) {
+        try {
+            // Process the delete if the reference does not exist (there is no head commit).
+            return getHeadCommit(gitHubSourceCodeRepo, repository, reference) == null;
+        } catch (CustomWebApplicationException ex) {
+            // If there's a problem determining if the delete needs processing, assume it does.
+            LOG.info("CustomWebApplicationException determining whether to process delete", ex);
             return true;
         }
     }

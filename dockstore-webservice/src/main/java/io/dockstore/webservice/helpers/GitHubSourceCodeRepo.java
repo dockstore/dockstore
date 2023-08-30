@@ -1352,9 +1352,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     protected String getCommitID(String repositoryId, Version version) {
-        return getCommitID(repositoryId, version.getReference(), true);
+        try {
+            return getCommitID(repositoryId, version.getReference(), true);
+        } catch (CustomWebApplicationException ex) {
+            return null;
+        }
     }
 
+    /**
+     * Get the head commit SHA of a specified reference in a particular repository.
+     * @param repositoryId name of the repository (ex 'svonworl/test-notebooks')
+     * @param commitReference reference
+     * @param stripped if true, commitReference does not include the 'refs/{types}/' prefix
+     */
     public String getCommitID(String repositoryId, String commitReference, boolean stripped) {
         GHRepository repo;
         try {

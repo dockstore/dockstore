@@ -2178,11 +2178,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
         @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @QueryParam("username") String username,
         @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
+        @Parameter(name = "installationId", description = "GitHub App installation ID", required = false) @QueryParam("installationId") Long installationId,
         @Parameter(name = "X-GitHub-Delivery", in = ParameterIn.HEADER, description = "A GUID to identify the GitHub webhook delivery", required = true) @HeaderParam(value = "X-GitHub-Delivery")  String deliveryId) {
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Branch/tag %s deleted from %s", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository)));
         }
-        githubWebhookDelete(repository, gitReference, username, deliveryId);
+        githubWebhookDelete(repository, gitReference, username, installationId, deliveryId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 

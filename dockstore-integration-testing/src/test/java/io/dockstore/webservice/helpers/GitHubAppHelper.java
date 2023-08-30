@@ -18,7 +18,7 @@ import java.util.UUID;
  */
 public final class GitHubAppHelper {
 
-    public static final Integer INSTALLATION_ID = 1179416;
+    public static final Long INSTALLATION_ID = 1179416L;
     public static final int LAMBDA_ERROR = 418;
 
     private GitHubAppHelper() {
@@ -40,20 +40,20 @@ public final class GitHubAppHelper {
         PushPayload pushPayload = new PushPayload().ref(gitRef);
         pushPayload.setRepository(new WebhookRepository().fullName(repository));
         pushPayload.setSender(new Sender().login(gitHubUsername));
-        pushPayload.setInstallation(new Installation().id(INSTALLATION_ID.longValue()));
+        pushPayload.setInstallation(new Installation().id(INSTALLATION_ID));
         workflowsApi.handleGitHubRelease(pushPayload, generateXGitHubDelivery());
     }
 
     public static void handleGitHubInstallation(WorkflowsApi workflowsApi, List<String> repositories, String gitHubUsername) {
         InstallationRepositoriesPayload payload = new InstallationRepositoriesPayload()
                 .repositoriesAdded(repositories.stream().map(repo -> new WebhookRepository().fullName(repo)).toList());
-        payload.setInstallation(new Installation().id(INSTALLATION_ID.longValue()));
+        payload.setInstallation(new Installation().id(INSTALLATION_ID));
         payload.setSender(new Sender().login(gitHubUsername));
         workflowsApi.handleGitHubInstallation(payload, generateXGitHubDelivery());
     }
 
     public static void handleGitHubBranchDeletion(WorkflowsApi workflowsApi, String repository, String gitHubUsername, String gitRef) {
-        workflowsApi.handleGitHubBranchDeletion(repository, gitHubUsername, gitRef, generateXGitHubDelivery());
+        workflowsApi.handleGitHubBranchDeletion(repository, gitHubUsername, gitRef, generateXGitHubDelivery(), INSTALLATION_ID);
     }
 
     /**
