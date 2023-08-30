@@ -131,6 +131,15 @@ public class OpenAPIServiceIT extends BaseIT {
         // Should not be able to refresh service
         ApiException ex = assertThrows(ApiException.class, () -> client.refresh1(services.get(0).getId(), false));
         assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should fail since you cannot refresh services.");
+
+        // A service with descriptortypesubclass set to "n/a" can be updated
+        testingPostgres.runUpdateStatement("update service set descriptortypesubclass = 'n/a'");
+        testingPostgres.runUpdateStatement("delete from workflowversion wv where wv.parentid in (select id from service)");
+        Workflow naService = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
+        assertEquals(0, naService.getWorkflowVersions().size(), "WorkflowVersions size should be reset to 0 via SQL");
+        handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+        naService = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
+        assertEquals(1, naService.getWorkflowVersions().size(), "WorkflowVersions size should be 1 after GitHub releease");
     }
 
     /**
