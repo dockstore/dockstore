@@ -58,8 +58,12 @@ public final class GitHubAppHelper {
         workflowsApi.handleGitHubInstallation(payload, generateXGitHubDelivery());
     }
 
+    public static void handleGitHubBranchDeletion(WorkflowsApi workflowsApi, String repository, String gitHubUsername, String gitRef, boolean passInstallationId) {
+        workflowsApi.handleGitHubBranchDeletion(repository, gitHubUsername, gitRef, generateXGitHubDelivery(), passInstallationId ? INSTALLATION_ID : null);
+    }
+
     public static void handleGitHubBranchDeletion(WorkflowsApi workflowsApi, String repository, String gitHubUsername, String gitRef) {
-        workflowsApi.handleGitHubBranchDeletion(repository, gitHubUsername, gitRef, generateXGitHubDelivery(), null); // last argument is a null installation id, which forces the branch deletion
+        handleGitHubBranchDeletion(workflowsApi, repository, gitHubUsername, gitRef, false);
     }
 
     /**

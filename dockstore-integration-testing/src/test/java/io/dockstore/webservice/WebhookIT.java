@@ -1831,27 +1831,39 @@ class WebhookIT extends BaseIT {
         String repo = "dockstore-testing/simple-notebook";
         assertEquals(0, countVersions());
         // Release from various branches with various "after" SHAs
-        // Non-existent branch
+        // Non-existent branch, should fail
         handleGitHubRelease(client, repo, "refs/tags/bogus", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
         assertEquals(0, countVersions());
-        // Branch with incorrect "after" SHA
+        // Existing branch with incorrect "after" SHA, should fail
         handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
         assertEquals(0, countVersions());
-        // Branch with correct "after" SHA
+        // Existing branch with correct "after" SHA, should succeed
         handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
         assertEquals(1, countVersions());
-        // Another branch, no "after" SHA supplied
+        // Existing branch with no "after" SHA supplied, should succeed
         handleGitHubRelease(client, repo, "refs/tags/simple-published-v1", USER_2_USERNAME);
         assertEquals(2, countVersions());
     }
 
     /**
      * Tests that the "ref inspection" feature of the GitHub App delete processing is working properly.
-     * That is, ignore the delete if the ref corresponding to the event exists, and process the delete otherwise.
+     * That is, ignore the delete if the ref corresponding to the event currently exists, and process the delete otherwise.
      */
     @Test
     void testRefInspectionDelete() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
+        String repo = "dockstore-testing/simple-notebook";
+        // Add a version corresponding to a nonexistent ref
+        testingPostgres.runUpdateStatement(String.format("insert into notebook (id, workflowname, repository, sourcecontrol, descriptortype, organization, waseverpublic, ispublished, mode, dbcreatedate, dbupdatedate) values (56789, 'bogus_name', 'simple-notebook', 'github.com', 'jupyter', 'dockstore-testing', false, false, 'DOCKSTORE_YML', now(), now())", repo, SourceControl.GITHUB.name()));
+        testingPostgres.runUpdateStatement("insert into version_metadata (id, hidden) values (12345, false)");
+        testingPostgres.runUpdateStatement("insert into workflowversion (id, name, reference, referencetype, parentid, workflowpath, valid, dbcreatedate, dbupdatedate) values (12345, 'foo', 'foo', 'TAG', 56789, 'github.com/dockstore-testing/simple-notebook', true, now(), now())");
+        long versionCount = countVersions();
+        // Delete a version corresponding to a nonexistent ref, should succeed
+        handleGitHubBranchDeletion(client, repo, USER_2_USERNAME, "refs/tags/foo", true);
+        assertEquals(versionCount - 1, countVersions());
+        // Attempt to delete a version corresponding to an existing ref, should be ignored
+        handleGitHubBranchDeletion(client, repo, USER_2_USERNAME, "refs/tags/simple-v1", true);
+        assertEquals(versionCount - 1, countVersions());
     }
 }
