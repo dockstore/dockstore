@@ -299,7 +299,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             try {
                 if (!shouldProcessDelete(gitHubSourceCodeRepo, repository, gitReference)) {
-                    LOG.info("ignoring delete event, repository={} reference={}", repository, gitReference);
+                    LOG.info("ignoring delete event, repository={}, reference={}, deliveryId={}", repository, gitReference, deliveryId);
                     return;
                 }
             } finally {
@@ -402,7 +402,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         try {
             if (!shouldProcessPush(gitHubSourceCodeRepo, repository, gitReference, afterCommit)) {
-                LOG.info("ignoring push event, repository={}, reference={}, afterCommit={}", repository, gitReference, afterCommit);
+                LOG.info("ignoring push event, repository={}, reference={}, deliveryId={}, afterCommit={}", repository, gitReference, deliveryId, afterCommit);
                 return;
             }
 
