@@ -43,6 +43,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.model.Tool;
+import java.util.List;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -55,7 +56,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.stream.SystemErr;
 import uk.org.webcompere.systemstubs.stream.SystemOut;
-import java.util.List;
 
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
