@@ -1662,6 +1662,10 @@ class WebhookIT extends BaseIT {
         return countTableRows("service");
     }
 
+    private long countVersions() {
+        return countTableRows("workflowversion");
+    }
+
     private long countTableRows(String tableName) {
         return testingPostgres.runSelectStatement("select count(*) from " + tableName, long.class);
     }
@@ -1813,5 +1817,41 @@ class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount, "should see a workflow from the .dockstore.yml");
         long workflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion where reference like 'develop'", long.class);
         assertEquals(1, workflowVersionCount, "should see a workflow from the .dockstore.yml from a specific branch");
+    }
+
+    /**
+     * Tests that the "ref inspection" feature of the GitHub App release processing is working properly.
+     * That is, ignore the release if the event's "after" commit SHA does not match the ref's current head commit SHA,
+     * and process the release otherwise.
+     */
+    @Test
+    void testRefInspectionRelease() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        String repo = "dockstore-testing/simple-notebook";
+        assertEquals(0, countVersions());
+        // Release from various branches with various "after" SHAs
+        // Non-existent branch
+        handleGitHubRelease(client, repo, "refs/tags/bogus", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
+        assertEquals(0, countVersions());
+        // Branch with incorrect "after" SHA
+        handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
+        assertEquals(0, countVersions());
+        // Branch with correct "after" SHA
+        handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
+        assertEquals(1, countVersions());
+        // Another branch, no "after" SHA supplied
+        handleGitHubRelease(client, repo, "refs/tags/simple-published-v1", USER_2_USERNAME);
+        assertEquals(2, countVersions());
+    }
+
+    /**
+     * Tests that the "ref inspection" feature of the GitHub App delete processing is working properly.
+     * That is, ignore the delete if the ref corresponding to the event exists, and process the delete otherwise.
+     */
+    @Test
+    void testRefInspectionDelete() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
     }
 }

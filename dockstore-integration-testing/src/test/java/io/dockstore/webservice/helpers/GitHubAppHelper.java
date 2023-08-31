@@ -35,13 +35,19 @@ public final class GitHubAppHelper {
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitRef Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0
      * @param gitHubUsername Username of user on GitHub who triggered action
+     * @param after commit SHA of head commit on reference
      */
-    public static void handleGitHubRelease(WorkflowsApi workflowsApi, String repository, String gitRef, String gitHubUsername) {
+    public static void handleGitHubRelease(WorkflowsApi workflowsApi, String repository, String gitRef, String gitHubUsername, String after) {
         PushPayload pushPayload = new PushPayload().ref(gitRef);
         pushPayload.setRepository(new WebhookRepository().fullName(repository));
         pushPayload.setSender(new Sender().login(gitHubUsername));
         pushPayload.setInstallation(new Installation().id(INSTALLATION_ID));
+        pushPayload.setAfter(after);
         workflowsApi.handleGitHubRelease(pushPayload, generateXGitHubDelivery());
+    }
+
+    public static void handleGitHubRelease(WorkflowsApi workflowsApi, String repository, String gitRef, String gitHubUsername) {
+        handleGitHubRelease(workflowsApi, repository, gitRef, gitHubUsername, null);
     }
 
     public static void handleGitHubInstallation(WorkflowsApi workflowsApi, List<String> repositories, String gitHubUsername) {
