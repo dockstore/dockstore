@@ -26,6 +26,7 @@ import io.dockstore.client.cli.OrganizationIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.RepositoryConstants.DockstoreTesting;
@@ -59,6 +60,8 @@ import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.helpers.GitHubAppHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.WDLHandler;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
@@ -69,6 +72,7 @@ import java.util.Optional;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -98,6 +102,9 @@ class WebhookIT extends BaseIT {
 
     private FileDAO fileDAO;
     private AppToolDAO appToolDAO;
+    private NotebookDAO notebookDAO;
+    private WorkflowVersionDAO workflowVersionDAO;
+    private Session session;
 
     @BeforeEach
     @Override
@@ -111,8 +118,10 @@ class WebhookIT extends BaseIT {
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
         this.fileDAO = new FileDAO(sessionFactory);
         this.appToolDAO = new AppToolDAO(sessionFactory);
+        this.notebookDAO = new NotebookDAO(sessionFactory);
+        this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         // used to allow us to use DAOs outside the web service
-        Session session = application.getHibernate().getSessionFactory().openSession();
+        session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
     }
 
@@ -1855,15 +1864,38 @@ class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
         String repo = "dockstore-testing/simple-notebook";
         // Add a version corresponding to a nonexistent ref
-        testingPostgres.runUpdateStatement(String.format("insert into notebook (id, workflowname, repository, sourcecontrol, descriptortype, organization, waseverpublic, ispublished, mode, dbcreatedate, dbupdatedate) values (56789, 'bogus_name', 'simple-notebook', 'github.com', 'jupyter', 'dockstore-testing', false, false, 'DOCKSTORE_YML', now(), now())", repo, SourceControl.GITHUB.name()));
-        testingPostgres.runUpdateStatement("insert into version_metadata (id, hidden) values (12345, false)");
-        testingPostgres.runUpdateStatement("insert into workflowversion (id, name, reference, referencetype, parentid, workflowpath, valid, dbcreatedate, dbupdatedate) values (12345, 'foo', 'foo', 'TAG', 56789, 'github.com/dockstore-testing/simple-notebook', true, now(), now())");
+        String nonexistentRef = "refs/tags/foo";
+        addNotebookAndVersion("dockstore-testing", "simple-notebook", "foo");
         long versionCount = countVersions();
         // Delete a version corresponding to a nonexistent ref, should succeed
-        handleGitHubBranchDeletion(client, repo, USER_2_USERNAME, "refs/tags/foo", true);
+        handleGitHubBranchDeletion(client, repo, USER_2_USERNAME, nonexistentRef, true);
         assertEquals(versionCount - 1, countVersions());
         // Attempt to delete a version corresponding to an existing ref, should be ignored
         handleGitHubBranchDeletion(client, repo, USER_2_USERNAME, "refs/tags/simple-v1", true);
         assertEquals(versionCount - 1, countVersions());
+    }
+
+    private void addNotebookAndVersion(String organization, String repo, String ref) {
+        Transaction transaction = session.beginTransaction();
+
+        io.dockstore.webservice.core.Notebook notebook = new io.dockstore.webservice.core.Notebook();
+        notebook.setOrganization(organization);
+        notebook.setRepository(repo);
+        notebook.setWorkflowName("test_name");
+        notebook.setSourceControl(SourceControl.GITHUB);
+        notebook.setDescriptorType(DescriptorLanguage.JUPYTER);
+        notebook.setDescriptorTypeSubclass(DescriptorLanguageSubclass.PYTHON);
+        notebook.setMode(io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML);
+        notebookDAO.create(notebook);
+
+        io.dockstore.webservice.core.WorkflowVersion version = new io.dockstore.webservice.core.WorkflowVersion();
+        version.setName(ref);
+        version.setReference(ref);
+        version.setReferenceType(io.dockstore.webservice.core.Version.ReferenceType.TAG);
+        version.setWorkflowPath(String.format("github.com/%s/%s", organization, ref));
+        version.setParent(notebook);
+        workflowVersionDAO.create(version);
+
+        transaction.commit();
     }
 }
