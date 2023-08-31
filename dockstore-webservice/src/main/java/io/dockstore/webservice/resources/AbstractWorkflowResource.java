@@ -299,7 +299,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             try {
                 if (!shouldProcessDelete(gitHubSourceCodeRepo, repository, gitReference)) {
-                    LOG.info("ignoring delete event");
+                    LOG.info("ignoring delete event, repository={} reference={}", repository, gitReference);
                     return;
                 }
             } finally {
@@ -402,7 +402,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         try {
             if (!shouldProcessPush(gitHubSourceCodeRepo, repository, gitReference, afterCommit)) {
-                LOG.info("ignoring push event, afterCommit={}", afterCommit);
+                LOG.info("ignoring push event, repository={}, reference={}, afterCommit={}", repository, gitReference, afterCommit);
                 return;
             }
 
@@ -497,12 +497,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Retrieve the "current" head commit.
             String currentCommit = getHeadCommit(gitHubSourceCodeRepo, repository, reference);
             LOG.info("afterCommit={} currentCommit={}", afterCommit, currentCommit);
-            // If the ref doesn't exist, don't process the push.
-            if (currentCommit == null) {
-                return false;
-            }
             // Process the push iff the "current" and "after" commit hashes are equal.
             // If the repo's "current" hash doesn't match the event's "after" hash, the repo has changed since the event was created.
+            // The "after" commit hash cannot be null here, so we'll return false (ignore the push) if the "current" commit hash is null (because the ref no longer exists).
             // Later, another event corresponding to the subsequent change will arrive and trigger an update.
             return Objects.equals(afterCommit, currentCommit);
         } catch (CustomWebApplicationException ex) {

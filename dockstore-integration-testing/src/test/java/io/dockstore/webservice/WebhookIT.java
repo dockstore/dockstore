@@ -1831,10 +1831,10 @@ class WebhookIT extends BaseIT {
         String repo = "dockstore-testing/simple-notebook";
         assertEquals(0, countVersions());
         // Release from various branches with various "after" SHAs
-        // Non-existent branch, should fail
+        // Non-existent branch, should be ignored
         handleGitHubRelease(client, repo, "refs/tags/bogus", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
         assertEquals(0, countVersions());
-        // Existing branch with incorrect "after" SHA, should fail
+        // Existing branch with incorrect "after" SHA, should be ignored
         handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
         assertEquals(0, countVersions());
         // Existing branch with correct "after" SHA, should succeed
