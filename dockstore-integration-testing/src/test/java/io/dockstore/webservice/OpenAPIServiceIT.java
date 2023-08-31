@@ -17,18 +17,12 @@
 
 package io.dockstore.webservice;
 
-import static io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
-import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
+import static io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
+import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
@@ -36,8 +30,10 @@ import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.core.SourceFile;
+import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.model.Tool;
@@ -46,6 +42,11 @@ import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -140,6 +141,16 @@ public class OpenAPIServiceIT extends BaseIT {
         handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
         naService = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
         assertEquals(1, naService.getWorkflowVersions().size(), "WorkflowVersions size should be 1 after GitHub releease");
+    }
+
+    @Test
+    void testReleaseAndPublish() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        // Test that a valid 1.2 service can be registered and published. #5636
+        handleGitHubRelease(client, DockstoreTesting.TEST_SERVICE, "refs/tags/oneTwoSchema", USER_2_USERNAME);
+        Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTesting.TEST_SERVICE, WorkflowSubClass.SERVICE, null);
+        assertTrue(service.isIsPublished(), "Service should have been published");
     }
 
     /**
