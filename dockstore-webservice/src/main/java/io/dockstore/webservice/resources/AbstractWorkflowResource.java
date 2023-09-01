@@ -738,7 +738,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     String.format("You can't add a %s version to a %s %s, the descriptor language of all versions must be the same.", update.getSubclass(), existing.getDescriptorType(), existingTerm));
             }
         } else if (existingType == EntryType.SERVICE) {
-            if (existing.getDescriptorTypeSubclass() != toDescriptorTypeSubclass(update.getSubclass().toString())) {
+            final DescriptorLanguageSubclass serviceSubClass = toDescriptorTypeSubclass(update.getSubclass().toString());
+            // Services created prior to 1.14 have the descriptorTypeSubclass value of "n/a". #5636
+            if (existing.getDescriptorTypeSubclass() != DescriptorLanguageSubclass.NOT_APPLICABLE && existing.getDescriptorTypeSubclass() != serviceSubClass) {
                 logAndThrowBadRequest(
                     String.format("You can't add a %s version to a %s service, the subclass of all versions must be the same.", update.getSubclass(), existing.getDescriptorTypeSubclass()));
             }
