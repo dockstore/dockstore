@@ -1362,7 +1362,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRef[] refs = getBranchesAndTags(repo);
 
             for (GHRef ref : refs) {
-                String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
+                String reference = stripReference(ref.getRef());
                 if (reference.equals(version.getReference())) {
                     return getCommitSHA(ref, repo, reference);
                 }
@@ -1384,7 +1384,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public String getCommitID(String repositoryId, String reference) {
         try {
             GHRepository repo = github.getRepository(repositoryId);
-            return repo.getRef(reference).getObject().getSha();
+            GHRef ref = repo.getRef(reference);
+            return getCommitSHA(ref, repo, stripReference(reference));
         } catch (GHFileNotFoundException e) {
             LOG.info("Could not find reference '{}' on repository '{}'", reference, repositoryId);
             return null;
@@ -1392,6 +1393,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.error(gitUsername + ": IOException on getCommitID " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not access GitHub reference", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Remove the 'refs/{type}/' prefix from a GitHub reference.
+     */
+    private String stripReference(String reference) {
+        return StringUtils.removePattern(reference, "refs/.+?/");
     }
 
     private String getEmail(GHMyself myself) throws IOException {
