@@ -1385,6 +1385,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRepository repo = github.getRepository(repositoryId);
             return repo.getRef(reference).getObject().getSha();
         } catch (GHFileNotFoundException e) {
+            LOG.info("Could not find reference '{}' on repository '{}'", reference, repositoryId);
             return null;
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on getCommitID " + e.getMessage(), e);
