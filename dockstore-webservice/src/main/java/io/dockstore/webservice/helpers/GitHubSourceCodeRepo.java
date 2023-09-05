@@ -576,6 +576,23 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private void setWorkflowInfo(final String repositoryId, final String type, final String typeSubclass, final String workflowName, final Workflow workflow) {
 
+        // The checks/catches in the following blocks are all backups, they should not fail in normal operation.
+        // Thus, the error messages are more technical and less user-friendly.
+        //
+        // setDescriptorType() needs to execute before setDefaultWorkflowPath(), because
+        // setDefaultWorkflowPath() is not a simple property setter, but one that adds to map
+        // where the key is getDescriptorType(). #5636
+        try {
+            DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
+            if (descriptorLanguage.getEntryTypes().contains(workflow.getEntryType())) {
+                workflow.setDescriptorType(descriptorLanguage);
+            } else {
+                logAndThrowLambdaFailure(String.format("The descriptor type %s is not supported by the %s", descriptorLanguage, workflow.getEntryType()));
+            }
+        } catch (UnsupportedOperationException ex) {
+            logAndThrowLambdaFailure(String.format("Type %s is not a valid descriptor language.", type));
+        }
+
         workflow.setWorkflowName(workflowName);
         workflow.setOrganization(repositoryId.split("/")[0]);
         workflow.setRepository(repositoryId.split("/")[1]);
@@ -588,19 +605,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setGitVisibility(getGitVisibility(repositoryId));
         this.setLicenseInformation(workflow, repositoryId);
 
-
-        // The checks/catches in the following blocks are all backups, they should not fail in normal operation.
-        // Thus, the error messages are more technical and less user-friendly.
-        try {
-            DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
-            if (descriptorLanguage.getEntryTypes().contains(workflow.getEntryType())) {
-                workflow.setDescriptorType(descriptorLanguage);
-            } else {
-                logAndThrowLambdaFailure(String.format("The descriptor type %s is not supported by the %s", descriptorLanguage, workflow.getEntryType()));
-            }
-        } catch (UnsupportedOperationException ex) {
-            logAndThrowLambdaFailure(String.format("Type %s is not a valid descriptor language.", type));
-        }
 
         try {
             DescriptorLanguageSubclass descriptorLanguageSubclass = DescriptorLanguageSubclass.convertShortNameStringToEnum(typeSubclass);

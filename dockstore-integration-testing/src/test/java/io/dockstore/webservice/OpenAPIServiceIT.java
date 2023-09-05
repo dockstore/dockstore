@@ -24,11 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
@@ -104,6 +106,9 @@ public class OpenAPIServiceIT extends BaseIT {
         assertEquals(1, workflowCount);
         Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
 
+        final long validFileCount = testingPostgres.runSelectStatement("select count(*) from validation where valid", long.class);
+        assertEquals(2, validFileCount, "Both the service's files should be valid");
+
         assertNotNull(service);
         assertEquals(1, service.getWorkflowVersions().size(), "Should have a new version");
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(service.getWorkflowVersions().get(0).getId());
@@ -128,6 +133,25 @@ public class OpenAPIServiceIT extends BaseIT {
         // Should not be able to refresh service
         ApiException ex = assertThrows(ApiException.class, () -> client.refresh1(services.get(0).getId(), false));
         assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode(), "Should fail since you cannot refresh services.");
+
+        // A service with descriptortypesubclass set to "n/a" can be updated
+        testingPostgres.runUpdateStatement("update service set descriptortypesubclass = 'n/a'");
+        testingPostgres.runUpdateStatement("delete from workflowversion wv where wv.parentid in (select id from service)");
+        Workflow naService = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
+        assertEquals(0, naService.getWorkflowVersions().size(), "WorkflowVersions size should be reset to 0 via SQL");
+        handleGitHubRelease(client, DockstoreTestUser2.TEST_SERVICE, "refs/tags/1.0", USER_2_USERNAME);
+        naService = client.getWorkflowByPath("github.com/" + DockstoreTestUser2.TEST_SERVICE, WorkflowSubClass.SERVICE, "versions");
+        assertEquals(1, naService.getWorkflowVersions().size(), "WorkflowVersions size should be 1 after GitHub releease");
+    }
+
+    @Test
+    void testReleaseAndPublish() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        // Test that a valid 1.2 service can be registered and published. #5636
+        handleGitHubRelease(client, DockstoreTesting.TEST_SERVICE, "refs/tags/oneTwoSchema", USER_2_USERNAME);
+        Workflow service = client.getWorkflowByPath("github.com/" + DockstoreTesting.TEST_SERVICE, WorkflowSubClass.SERVICE, null);
+        assertTrue(service.isIsPublished(), "Service should have been published");
     }
 
     /**
