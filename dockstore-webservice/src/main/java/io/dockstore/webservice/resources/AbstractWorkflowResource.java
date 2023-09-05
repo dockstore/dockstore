@@ -520,8 +520,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    private String getHeadCommit(GitHubSourceCodeRepo repo, String repository, String ref) {
-        return repo.getCommitID(repository, ref, false);
+    private String getHeadCommit(GitHubSourceCodeRepo repo, String repository, String reference) {
+        return repo.getCommitID(repository, reference);
     }
 
     /**
