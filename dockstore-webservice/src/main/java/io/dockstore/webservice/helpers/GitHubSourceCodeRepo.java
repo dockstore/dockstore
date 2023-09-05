@@ -1379,6 +1379,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * Get the head commit SHA of a specified reference in a particular repository.
      * @param repositoryId name of the repository (ex 'svonworl/test-notebooks')
      * @param reference full GitHub reference (ex 'refs/tags/v1.0')
+     * @return the SHA of the head commit on the reference, or null if the reference does not exist
      */
     public String getCommitID(String repositoryId, String reference) {
         try {
