@@ -1362,7 +1362,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRef[] refs = getBranchesAndTags(repo);
 
             for (GHRef ref : refs) {
-                String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
+                String reference = stripReference(ref.getRef());
                 if (reference.equals(version.getReference())) {
                     return getCommitSHA(ref, repo, reference);
                 }
@@ -1373,6 +1373,33 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // this is not so critical to warrant a http error code
         }
         return null;
+    }
+
+    /**
+     * Get the head commit SHA of a specified reference in a particular repository.
+     * @param repositoryId name of the repository (ex 'svonworl/test-notebooks')
+     * @param reference full GitHub reference (ex 'refs/tags/v1.0')
+     * @return the SHA of the head commit on the reference, or null if the reference does not exist
+     */
+    public String getCommitID(String repositoryId, String reference) {
+        try {
+            GHRepository repo = github.getRepository(repositoryId);
+            GHRef ref = repo.getRef(reference);
+            return getCommitSHA(ref, repo, stripReference(reference));
+        } catch (GHFileNotFoundException e) {
+            LOG.info("Could not find reference '{}' on repository '{}'", reference, repositoryId);
+            return null;
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on getCommitID " + e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not access GitHub reference", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Remove the 'refs/{type}/' prefix from a GitHub reference.
+     */
+    private String stripReference(String reference) {
+        return StringUtils.removePattern(reference, "refs/.+?/");
     }
 
     private String getEmail(GHMyself myself) throws IOException {

@@ -26,6 +26,7 @@ import io.dockstore.client.cli.OrganizationIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.RepositoryConstants.DockstoreTesting;
@@ -59,6 +60,8 @@ import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.helpers.GitHubAppHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.NotebookDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.WDLHandler;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
@@ -69,6 +72,7 @@ import java.util.Optional;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -98,6 +102,9 @@ class WebhookIT extends BaseIT {
 
     private FileDAO fileDAO;
     private AppToolDAO appToolDAO;
+    private NotebookDAO notebookDAO;
+    private WorkflowVersionDAO workflowVersionDAO;
+    private Session session;
 
     @BeforeEach
     @Override
@@ -111,8 +118,10 @@ class WebhookIT extends BaseIT {
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
         this.fileDAO = new FileDAO(sessionFactory);
         this.appToolDAO = new AppToolDAO(sessionFactory);
+        this.notebookDAO = new NotebookDAO(sessionFactory);
+        this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         // used to allow us to use DAOs outside the web service
-        Session session = application.getHibernate().getSessionFactory().openSession();
+        session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
     }
 
@@ -1662,6 +1671,10 @@ class WebhookIT extends BaseIT {
         return countTableRows("service");
     }
 
+    private long countVersions() {
+        return countTableRows("workflowversion");
+    }
+
     private long countTableRows(String tableName) {
         return testingPostgres.runSelectStatement("select count(*) from " + tableName, long.class);
     }
@@ -1813,5 +1826,84 @@ class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount, "should see a workflow from the .dockstore.yml");
         long workflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion where reference like 'develop'", long.class);
         assertEquals(1, workflowVersionCount, "should see a workflow from the .dockstore.yml from a specific branch");
+    }
+
+    /**
+     * Tests that the "ref inspection" feature of the GitHub App release processing is working properly.
+     * That is, ignore the release if the event's "after" commit SHA does not match the ref's current head commit SHA,
+     * and process the release otherwise.
+     */
+    @Test
+    void testRefInspectionRelease() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        String repo = "dockstore-testing/simple-notebook";
+        assertEquals(0, countVersions());
+        // Release from various tags
+        // Non-existent tag, should be ignored
+        handleGitHubRelease(client, repo, "refs/tags/bogus", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
+        assertEquals(0, countVersions());
+        // Existing tag with incorrect "after" SHA, should be ignored
+        handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
+        assertEquals(0, countVersions());
+        // Existing tag with correct "after" SHA, should succeed
+        handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
+        assertEquals(1, countVersions());
+        // Existing tag with no "after" SHA supplied, should succeed
+        handleGitHubRelease(client, repo, "refs/tags/simple-published-v1", USER_2_USERNAME);
+        assertEquals(2, countVersions());
+    }
+
+    /**
+     * Tests that the "ref inspection" feature of the GitHub App delete processing is working properly.
+     * That is, ignore the delete if the ref corresponding to the event currently exists, and process the delete otherwise.
+     */
+    @Test
+    void testRefInspectionDelete() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        String existingRepo = "dockstore-testing/simple-notebook";
+        String nonexistentRepo = "nonexistent-potatoey-repo/a-branch";
+        String nonexistentRef = "refs/tags/foo";
+        // Add versions corresponding to a nonexistent repo and ref
+        addNotebookAndVersion("dockstore-testing", "simple-notebook", "foo");
+        addNotebookAndVersion("nonexistent-potatoey-repo", "a-branch", "foo");
+        long versionCount = countVersions();
+        // Delete a version corresponding to a nonexistent repo, should succeed
+        handleGitHubBranchDeletion(client, nonexistentRepo, USER_2_USERNAME, nonexistentRef, false);
+        assertEquals(versionCount - 1, countVersions());
+        // Delete a version corresponding to a nonexistent ref, should succeed
+        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, nonexistentRef, false);
+        assertEquals(versionCount - 2, countVersions());
+        // Attempt to delete a version corresponding to an existing tag, should be ignored
+        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, "refs/tags/simple-v1", false);
+        assertEquals(versionCount - 2, countVersions());
+        // Attempt to delete a version corresponding to an existing branch, should be ignored
+        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, "refs/heads/main", false);
+        assertEquals(versionCount - 2, countVersions());
+    }
+
+    private void addNotebookAndVersion(String organization, String repo, String ref) {
+        Transaction transaction = session.beginTransaction();
+
+        io.dockstore.webservice.core.Notebook notebook = new io.dockstore.webservice.core.Notebook();
+        notebook.setOrganization(organization);
+        notebook.setRepository(repo);
+        notebook.setWorkflowName("test_name");
+        notebook.setSourceControl(SourceControl.GITHUB);
+        notebook.setDescriptorType(DescriptorLanguage.JUPYTER);
+        notebook.setDescriptorTypeSubclass(DescriptorLanguageSubclass.PYTHON);
+        notebook.setMode(io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML);
+        notebookDAO.create(notebook);
+
+        io.dockstore.webservice.core.WorkflowVersion version = new io.dockstore.webservice.core.WorkflowVersion();
+        version.setName(ref);
+        version.setReference(ref);
+        version.setReferenceType(io.dockstore.webservice.core.Version.ReferenceType.TAG);
+        version.setWorkflowPath(String.format("github.com/%s/%s", organization, ref));
+        version.setParent(notebook);
+        workflowVersionDAO.create(version);
+
+        transaction.commit();
     }
 }

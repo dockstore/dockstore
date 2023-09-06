@@ -289,9 +289,28 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param username Git user who triggered the event
+     * @param installationId GitHub App installation ID, which is used to determine if we should process this delete. If null, the delete is always processed.
      * @param deliveryId The GitHub delivery ID, used to group all lambda events created during this GitHub webhook delete
      */
-    protected void githubWebhookDelete(String repository, String gitReference, String username, String deliveryId) {
+    protected void githubWebhookDelete(String repository, String gitReference, String username, Long installationId, String deliveryId) {
+        // installationId could be null because the lambda hasn't been updated to propagate it yet,
+        // or because it was intentionally omitted during development or testing
+        if (installationId != null) {
+            // Check if we should process the delete.
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
+            GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+            try {
+                // Ignore the delete event if the ref exists.
+                if (!shouldProcessDelete(gitHubSourceCodeRepo, repository, gitReference)) {
+                    LOG.info("ignoring delete event, repository={}, reference={}, deliveryId={}", repository, gitReference, deliveryId);
+                    return;
+                }
+            } finally {
+                GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+                gitHubSourceCodeRepo.reportOnRateLimit("githubWebhookDelete", startRateLimit, endRateLimit);
+            }
+        }
+
         // Retrieve name from gitReference
         Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
         if (gitReferenceName.isEmpty()) {
@@ -372,10 +391,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId GitHub App installation ID
      * @param deliveryId The GitHub delivery ID, used to group all lambda events that were created during this GitHub webhook release
+     * @param afterCommit The "after" commit hash from the lambda event, which is used to determine if we should process this event. If null, the release is always processed.
      * @param throwIfNotSuccessful throw if the release was not entirely successful
      * @return List of new and updated workflows
      */
-    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, String deliveryId, boolean throwIfNotSuccessful) {
+    protected void githubWebhookRelease(String repository, String username, String gitReference, long installationId, String deliveryId, String afterCommit, boolean throwIfNotSuccessful) {
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
@@ -383,6 +403,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         boolean isSuccessful = true;
 
         try {
+            // Ignore the push event if the "after" hash exists and does not match the current ref head hash.
+            if (!shouldProcessPush(gitHubSourceCodeRepo, repository, gitReference, afterCommit)) {
+                LOG.info("ignoring push event, repository={}, reference={}, deliveryId={}, afterCommit={}", repository, gitReference, deliveryId, afterCommit);
+                return;
+            }
+
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
@@ -463,6 +489,44 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             return code >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return false;
+    }
+
+    private boolean shouldProcessPush(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String reference, String afterCommit) {
+        // If there's no "after" commit, process the push.
+        // The "after" commit could be missing because it was intentionally omitted to force a github release for development/testing purposes,
+        // or during the branch discovery process when the GitHub app is installed on a new repo.
+        if (afterCommit == null) {
+            return true;
+        }
+        try {
+            // Retrieve the "current" head commit.
+            String currentCommit = getHeadCommit(gitHubSourceCodeRepo, repository, reference);
+            LOG.info("afterCommit={}, currentCommit={}", afterCommit, currentCommit);
+            // Process the push iff the "current" and "after" commit hashes are equal.
+            // If the repo's "current" hash doesn't match the event's "after" hash, the repo has changed since the event was created.
+            // The "after" commit hash cannot be null here, so we'll return false (ignore the push) if the "current" commit hash is null (because the ref no longer exists).
+            // Later, another event corresponding to the subsequent change will arrive and trigger an update.
+            return Objects.equals(afterCommit, currentCommit);
+        } catch (CustomWebApplicationException ex) {
+            // If there's a problem determining if the push needs processing, assume it does.
+            LOG.info("CustomWebApplicationException determining whether to process push", ex);
+            return true;
+        }
+    }
+
+    private boolean shouldProcessDelete(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String reference) {
+        try {
+            // Process the delete if the reference does not exist (there is no head commit).
+            return getHeadCommit(gitHubSourceCodeRepo, repository, reference) == null;
+        } catch (CustomWebApplicationException ex) {
+            // If there's a problem determining if the delete needs processing, assume it does.
+            LOG.info("CustomWebApplicationException determining whether to process delete", ex);
+            return true;
+        }
+    }
+
+    private String getHeadCommit(GitHubSourceCodeRepo repo, String repository, String reference) {
+        return repo.getCommitID(repository, reference);
     }
 
     /**

@@ -6515,6 +6515,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: GitHub App installation ID
+        in: query
+        name: installationId
+        schema:
+          type: integer
+          format: int64
       - description: A GUID to identify the GitHub webhook delivery
         in: header
         name: X-GitHub-Delivery
@@ -10115,6 +10121,10 @@ components:
       - $ref: '#/components/schemas/Payload'
       - type: object
         properties:
+          after:
+            type: string
+            description: The SHA of the most recent commit on ref after the push
+            example: 6d96270004515a0486bb7f76196a72b40c55a47f
           ref:
             type: string
             description: The full git ref that was pushed
