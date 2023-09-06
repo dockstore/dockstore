@@ -1839,17 +1839,17 @@ class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
         String repo = "dockstore-testing/simple-notebook";
         assertEquals(0, countVersions());
-        // Release from various branches with various "after" SHAs
-        // Non-existent branch, should be ignored
+        // Release from various tags
+        // Non-existent tag, should be ignored
         handleGitHubRelease(client, repo, "refs/tags/bogus", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
         assertEquals(0, countVersions());
-        // Existing branch with incorrect "after" SHA, should be ignored
+        // Existing tag with incorrect "after" SHA, should be ignored
         handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc");
         assertEquals(0, countVersions());
-        // Existing branch with correct "after" SHA, should succeed
+        // Existing tag with correct "after" SHA, should succeed
         handleGitHubRelease(client, repo, "refs/tags/simple-v1", USER_2_USERNAME, "ebca52b72a5c9f9d33543648aacb10a6bc736677");
         assertEquals(1, countVersions());
-        // Existing branch with no "after" SHA supplied, should succeed
+        // Existing tag with no "after" SHA supplied, should succeed
         handleGitHubRelease(client, repo, "refs/tags/simple-published-v1", USER_2_USERNAME);
         assertEquals(2, countVersions());
     }
@@ -1862,17 +1862,25 @@ class WebhookIT extends BaseIT {
     void testRefInspectionDelete() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
-        String repo = "dockstore-testing/simple-notebook";
-        // Add a version corresponding to a nonexistent ref
+        String existingRepo = "dockstore-testing/simple-notebook";
+        String nonexistentRepo = "nonexistent-potatoey-repo/a-branch";
         String nonexistentRef = "refs/tags/foo";
+        // Add versions corresponding to a nonexistent repo and ref
         addNotebookAndVersion("dockstore-testing", "simple-notebook", "foo");
+        addNotebookAndVersion("nonexistent-potatoey-repo", "a-branch", "foo");
         long versionCount = countVersions();
+        // Delete a version corresponding to a nonexistent repo, should succeed
+        handleGitHubBranchDeletion(client, nonexistentRepo, USER_2_USERNAME, nonexistentRef, true);
+        assertEquals(versionCount - 1, countVersions());
         // Delete a version corresponding to a nonexistent ref, should succeed
-        handleGitHubBranchDeletion(client, repo, USER_2_USERNAME, nonexistentRef, true);
-        assertEquals(versionCount - 1, countVersions());
-        // Attempt to delete a version corresponding to an existing ref, should be ignored
-        handleGitHubBranchDeletion(client, repo, USER_2_USERNAME, "refs/tags/simple-v1", true);
-        assertEquals(versionCount - 1, countVersions());
+        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, nonexistentRef, true);
+        assertEquals(versionCount - 2, countVersions());
+        // Attempt to delete a version corresponding to an existing tag, should be ignored
+        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, "refs/tags/simple-v1", true);
+        assertEquals(versionCount - 2, countVersions());
+        // Attempt to delete a version corresponding to an existing branch, should be ignored
+        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, "refs/heads/main", true);
+        assertEquals(versionCount - 2, countVersions());
     }
 
     private void addNotebookAndVersion(String organization, String repo, String ref) {
