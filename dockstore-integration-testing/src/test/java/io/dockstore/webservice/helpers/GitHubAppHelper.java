@@ -35,7 +35,7 @@ public final class GitHubAppHelper {
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitRef Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0
      * @param gitHubUsername Username of user on GitHub who triggered action
-     * @param after commit SHA of head commit on reference
+     * @param after commit SHA of head commit on reference, or null to force the release
      */
     public static void handleGitHubRelease(WorkflowsApi workflowsApi, String repository, String gitRef, String gitHubUsername, String after) {
         PushPayload pushPayload = new PushPayload().ref(gitRef);
@@ -46,6 +46,9 @@ public final class GitHubAppHelper {
         workflowsApi.handleGitHubRelease(pushPayload, generateXGitHubDelivery());
     }
 
+    /**
+     * Performs a GitHub release, forcing the release to be processed
+     */
     public static void handleGitHubRelease(WorkflowsApi workflowsApi, String repository, String gitRef, String gitHubUsername) {
         handleGitHubRelease(workflowsApi, repository, gitRef, gitHubUsername, null);
     }
@@ -58,12 +61,23 @@ public final class GitHubAppHelper {
         workflowsApi.handleGitHubInstallation(payload, generateXGitHubDelivery());
     }
 
-    public static void handleGitHubBranchDeletion(WorkflowsApi workflowsApi, String repository, String gitHubUsername, String gitRef, boolean passInstallationId) {
-        workflowsApi.handleGitHubBranchDeletion(repository, gitHubUsername, gitRef, generateXGitHubDelivery(), passInstallationId ? INSTALLATION_ID : null);
+    /**
+     * Delete the workflow versions corresponding to a specified GitHub ref
+     * @param workflowsApi
+     * @param repository repository id (ex: 'dockstore-testing/simple-notebook')
+     * @param gitHubUsername user login
+     * @param gitRef full reference (ex: 'refs/tags/simple-v1')
+     * @param force force the delete to be processed, even if the "ref inspection" scheme would otherwise ignore it
+     */
+    public static void handleGitHubBranchDeletion(WorkflowsApi workflowsApi, String repository, String gitHubUsername, String gitRef, boolean force) {
+        workflowsApi.handleGitHubBranchDeletion(repository, gitHubUsername, gitRef, generateXGitHubDelivery(), force ? null : INSTALLATION_ID);
     }
 
+    /**
+     * Delete the workflow versions corresponding to a specified GitHub ref, forcing the delete to be processed
+     */
     public static void handleGitHubBranchDeletion(WorkflowsApi workflowsApi, String repository, String gitHubUsername, String gitRef) {
-        handleGitHubBranchDeletion(workflowsApi, repository, gitHubUsername, gitRef, false);
+        handleGitHubBranchDeletion(workflowsApi, repository, gitHubUsername, gitRef, true);
     }
 
     /**

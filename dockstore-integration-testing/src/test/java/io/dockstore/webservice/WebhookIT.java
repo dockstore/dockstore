@@ -1870,16 +1870,16 @@ class WebhookIT extends BaseIT {
         addNotebookAndVersion("nonexistent-potatoey-repo", "a-branch", "foo");
         long versionCount = countVersions();
         // Delete a version corresponding to a nonexistent repo, should succeed
-        handleGitHubBranchDeletion(client, nonexistentRepo, USER_2_USERNAME, nonexistentRef, true);
+        handleGitHubBranchDeletion(client, nonexistentRepo, USER_2_USERNAME, nonexistentRef, false);
         assertEquals(versionCount - 1, countVersions());
         // Delete a version corresponding to a nonexistent ref, should succeed
-        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, nonexistentRef, true);
+        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, nonexistentRef, false);
         assertEquals(versionCount - 2, countVersions());
         // Attempt to delete a version corresponding to an existing tag, should be ignored
-        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, "refs/tags/simple-v1", true);
+        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, "refs/tags/simple-v1", false);
         assertEquals(versionCount - 2, countVersions());
         // Attempt to delete a version corresponding to an existing branch, should be ignored
-        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, "refs/heads/main", true);
+        handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, "refs/heads/main", false);
         assertEquals(versionCount - 2, countVersions());
     }
 

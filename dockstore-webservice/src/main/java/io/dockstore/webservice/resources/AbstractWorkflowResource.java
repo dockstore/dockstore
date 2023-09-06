@@ -289,21 +289,23 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param username Git user who triggered the event
-     * @param installationId GitHub App installation ID
+     * @param installationId GitHub App installation ID, which is used to determine if we should process this delete. If null, the delete is always processed.
      * @param deliveryId The GitHub delivery ID, used to group all lambda events created during this GitHub webhook delete
      */
     protected void githubWebhookDelete(String repository, String gitReference, String username, Long installationId, String deliveryId) {
+        // installationId could be null because the lambda hasn't been updated to propagate it yet,
+        // or because it was intentionally omitted during development or testing
         if (installationId != null) {
-            // create rate limited GitHubSourceCodeRepo
+            // Check if we should process the delete.
             GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
             GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             try {
+                // Ignore the delete event if the ref exists.
                 if (!shouldProcessDelete(gitHubSourceCodeRepo, repository, gitReference)) {
                     LOG.info("ignoring delete event, repository={}, reference={}, deliveryId={}", repository, gitReference, deliveryId);
                     return;
                 }
             } finally {
-                // close rate limited GitHubSourceCodeRepo
                 GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
                 gitHubSourceCodeRepo.reportOnRateLimit("githubWebhookDelete", startRateLimit, endRateLimit);
             }
@@ -389,7 +391,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId GitHub App installation ID
      * @param deliveryId The GitHub delivery ID, used to group all lambda events that were created during this GitHub webhook release
-     * @param afterCommit The "after" commit hash from the lambda event, if present
+     * @param afterCommit The "after" commit hash from the lambda event, which is used to determine if we should process this event. If null, the release is always processed.
      * @param throwIfNotSuccessful throw if the release was not entirely successful
      * @return List of new and updated workflows
      */
@@ -401,6 +403,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         boolean isSuccessful = true;
 
         try {
+            // Ignore the push event if the "after" hash exists and does not match the current ref head hash.
             if (!shouldProcessPush(gitHubSourceCodeRepo, repository, gitReference, afterCommit)) {
                 LOG.info("ignoring push event, repository={}, reference={}, deliveryId={}, afterCommit={}", repository, gitReference, deliveryId, afterCommit);
                 return;
@@ -490,13 +493,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     private boolean shouldProcessPush(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String reference, String afterCommit) {
         // If there's no "after" commit, process the push.
+        // The "after" commit could be missing because it was intentionally omitted to force a github release for development/testing purposes,
+        // or during the branch discovery process when the GitHub app is installed on a new repo.
         if (afterCommit == null) {
             return true;
         }
         try {
             // Retrieve the "current" head commit.
             String currentCommit = getHeadCommit(gitHubSourceCodeRepo, repository, reference);
-            LOG.info("afterCommit={} currentCommit={}", afterCommit, currentCommit);
+            LOG.info("afterCommit={}, currentCommit={}", afterCommit, currentCommit);
             // Process the push iff the "current" and "after" commit hashes are equal.
             // If the repo's "current" hash doesn't match the event's "after" hash, the repo has changed since the event was created.
             // The "after" commit hash cannot be null here, so we'll return false (ignore the push) if the "current" commit hash is null (because the ref no longer exists).
