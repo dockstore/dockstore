@@ -216,5 +216,6 @@
             SET verifiedPlatforms = '["' || sv.source || '"]'
             FROM version_sourcefile vs, sourcefile_verified sv
             WHERE vm.id = vs.versionid AND sv.id = vs.sourcefileid AND sv.verified;
-    <changeSet>
+        </sql>
+    </changeSet>
 </databaseChangeLog>
