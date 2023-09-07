@@ -24,8 +24,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines the `ValidPrimaryPath` constraint annotation, which
- * checks for a valid path for the primary descriptor.
+ * Defines the `AbsolutePath` constraint annotation, which
+ * checks that the path is an absolute path.
  */
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)

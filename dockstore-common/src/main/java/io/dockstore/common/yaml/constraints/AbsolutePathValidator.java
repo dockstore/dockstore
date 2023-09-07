@@ -22,10 +22,10 @@ import jakarta.validation.ConstraintValidatorContext;
 /**
  * Validates the file path is an absolute path.
  */
-public class AbsolutePathValidator implements ConstraintValidator<AbsolutePath, String> {
+public class AbsolutePathValidator extends BaseConstraintValidator<AbsolutePath, String> {
 
     @Override
-    public boolean isValid(final String path, final ConstraintValidatorContext context) {
+    public boolean isValidNotNull(final String path, final ConstraintValidatorContext context) {
         return path.startsWith("/");
     }
 }
