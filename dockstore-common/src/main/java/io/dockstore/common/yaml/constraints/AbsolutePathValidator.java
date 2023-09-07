@@ -16,7 +16,6 @@
 
 package io.dockstore.common.yaml.constraints;
 
-import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 /**
