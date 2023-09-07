@@ -272,6 +272,15 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
+    @ApiModelProperty(value = "Verified platforms for the version", position = 19)
+    public String[] getVerifiedPlatforms() {
+        if (getVersionMetadata().verifiedPlatforms == null) {
+            return new String[0];
+        } else {
+            return GSON.fromJson(Strings.nullToEmpty(this.getVersionMetadata().verifiedPlatforms), String[].class);
+        }
+    }
+
     /**
      * Used to determine the "newer" version. WorkflowVersion relies on last_modified, Tag relies on last_built (hosted tools fall back to dbCreateDate).
      * @return  The date used to determine the "newer" version
@@ -400,6 +409,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public void updateVerified() {
         this.getVersionMetadata().verified = calculateVerified(this.getSourceFiles());
         this.getVersionMetadata().verifiedSource = calculateVerifiedSource(this.getSourceFiles());
+        this.getVersionMetadata().verifiedPlatforms = calculateVerifiedPlatform(this.getSourceFiles());
     }
 
     private static boolean calculateVerified(SortedSet<SourceFile> versionSourceFiles) {
@@ -418,6 +428,20 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         });
         // How strange that we're returning an array-like string
         return convertStringSetToString(verifiedSources);
+    }
+
+    private static String calculateVerifiedPlatform(SortedSet<SourceFile> versionSourceFiles) {
+        Set<String> verifiedPlatforms = new TreeSet<>();
+        versionSourceFiles.forEach(sourceFile -> {
+            Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+            for (Map.Entry<String, SourceFile.VerificationInformation> thing : verifiedBySource.entrySet()) {
+                if (thing.getValue().verified) {
+                    verifiedPlatforms.add(thing.getKey());
+                }
+            }
+        });
+        // How strange that we're returning an array-like string
+        return convertStringSetToString(verifiedPlatforms);
     }
 
     private static String convertStringSetToString(Set<String> verifiedSources) {

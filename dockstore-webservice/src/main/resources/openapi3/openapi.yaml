@@ -10540,6 +10540,10 @@ components:
           uniqueItems: true
         verified:
           type: boolean
+        verifiedPlatforms:
+          type: array
+          items:
+            type: string
         verifiedSource:
           type: string
         verifiedSources:
@@ -11395,6 +11399,10 @@ components:
           uniqueItems: true
         verified:
           type: boolean
+        verifiedPlatforms:
+          type: array
+          items:
+            type: string
         verifiedSource:
           type: string
         verifiedSources:
@@ -11799,6 +11807,10 @@ components:
           uniqueItems: true
         verified:
           type: boolean
+        verifiedPlatforms:
+          type: array
+          items:
+            type: string
         verifiedSource:
           type: string
         verifiedSources:

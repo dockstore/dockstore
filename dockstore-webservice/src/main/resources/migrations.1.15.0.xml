@@ -207,4 +207,14 @@
             DROP FUNCTION check_workflow_checker_id_is_unique;
         </sql>
     </changeSet>
+    <changeSet author="svonworl" id="addVerifiedPlatformsToVersionMetadata">
+        <addColumn tableName="version_metadata">
+            <column name="verifiedplatforms" type="text"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            UPDATE version_metadata vm
+            SET verifiedPlatforms = '["' || sv.source || '"]'
+            FROM version_sourcefile vs, sourcefile_verified sv
+            WHERE vm.id = vs.versionid AND sv.id = vs.sourcefileid AND sv.verified;
+    <changeSet>
 </databaseChangeLog>
