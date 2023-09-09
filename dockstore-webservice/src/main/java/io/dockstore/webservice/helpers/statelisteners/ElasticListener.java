@@ -353,30 +353,27 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
         objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
         objectNode.put("all_authors", MAPPER.valueToTree(allAuthors));
-        addCategoriesJson(jsonNode, entry);
+        objectNode.put("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
         return jsonNode;
     }
 
 
-    private static void addCategoriesJson(JsonNode node, Entry<?, ?> entry) {
-
-        List<Map<String, Object>> values = new ArrayList<>();
-
-        for (Category category: entry.getCategories()) {
-            Map<String, Object> value = new LinkedHashMap<>();
-            value.put("id", category.getId());
-            value.put("name", category.getName());
-            value.put("description", category.getDescription());
-            value.put("displayName", category.getDisplayName());
-            value.put("topic", category.getTopic());
-            values.add(value);
-        }
-
-        ((ObjectNode)node).put("categories", MAPPER.valueToTree(values));
+    private static List<Map<String, Object>> convertCategories(List<Category> categories) {
+        return categories.stream().map(
+            category -> {
+                Map<String, Object> map = new LinkedHashMap<>();
+                map.put("id", category.getId());
+                map.put("name", category.getName());
+                map.put("description", category.getDescription());
+                map.put("displayName", category.getDisplayName());
+                map.put("topic", category.getTopic());
+                return map;
+            }
+        ).toList();
     }
 
     /**
-     * Create a partial copy of the given entry that is detached from Hibernate and contains only the information to be indexed.
+     * Create a partial copy of an Entry that is detached from Hibernate and contains only information that should be indexed.
      * @param entry
      */
     static Entry detach(final Entry entry) {
@@ -392,7 +389,9 @@ public class ElasticListener implements StateListenerInterface {
             return detachedWorkflow;
 
         } else {
-            return entry;
+            Entry detachedEntry = entry.createBlank();
+            copyEntryProperties(detachedEntry, entry);
+            return detachedEntry;
         }
     }
 
@@ -511,8 +510,8 @@ public class ElasticListener implements StateListenerInterface {
         if (entry instanceof Tool tool && tool.getDescriptorType().size() == 1) {
             // Only set descriptor type versions if there's one descriptor type otherwise we can't tell which version belongs to which type without looking at the source files
             language = tool.getDescriptorType().get(0);
-        } else if (entry instanceof BioWorkflow || entry instanceof AppTool) {
-            language = ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(((Workflow) entry).getDescriptorType()).map(DescriptorType::toString).orElse("unsupported language");
+        } else if (entry instanceof Workflow workflow) {
+            language = ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(workflow.getDescriptorType()).map(DescriptorType::toString).orElse("unsupported language");
         } else {
             return List.of();
         }
@@ -568,7 +567,7 @@ public class ElasticListener implements StateListenerInterface {
      * @return          null if checker, entry otherwise
      */
     private static Entry filterCheckerWorkflows(Entry entry) {
-        return entry instanceof Workflow && ((Workflow)entry).isIsChecker() ? null : entry;
+        return entry instanceof Workflow workflow && workflow.isIsChecker() ? null : entry;
     }
 
     /**
@@ -577,6 +576,6 @@ public class ElasticListener implements StateListenerInterface {
      * @return          List of entries without checker workflows
      */
     public static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
-        return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow && !((Workflow)entry).isIsChecker())).collect(Collectors.toList());
+        return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow workflow && !workflow.isIsChecker())).toList();
     }
 }
