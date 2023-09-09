@@ -349,7 +349,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         starredUsers = new TreeSet<>();
     }
 
-    public abstract Entry createBlank();
+    public abstract Entry<?, ?> createBlank();
 
     @JsonIgnore
     public abstract String getEntryPath();
