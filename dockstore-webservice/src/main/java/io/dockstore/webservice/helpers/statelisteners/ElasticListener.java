@@ -342,7 +342,7 @@ public class ElasticListener implements StateListenerInterface {
         List<String> descriptorTypeVersions = getDistinctDescriptorTypeVersions(entry, workflowVersions);
         List<String> engineVersions = getDistinctEngineVersions(workflowVersions);
         Set<Author> allAuthors = getAllAuthors(entry);
-        Entry detachedEntry = removeIrrelevantProperties(entry);
+        Entry detachedEntry = detach(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         // add number of starred users to allow sorting in the UI
         final ObjectNode objectNode = (ObjectNode) jsonNode;
@@ -376,61 +376,24 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     /**
-     * Remove some stuff that should not be indexed by ES.
-     * This is not ideal, we should be including things we want indexed, not removing.
+     * Create a partial copy of the given entry that is detached from Hibernate and contains only the information to be indexed.
      * @param entry
      */
-    static Entry removeIrrelevantProperties(final Entry entry) {
-        Entry detachedEntry;
+    static Entry detach(final Entry entry) {
+
         if (entry instanceof Tool tool) {
-            Tool detachedTool = new Tool();
+            Tool detachedTool = tool.createBlank();
+            copyToolProperties(detachedTool, tool);
+            return detachedTool;
 
-            // These are for facets
-            detachedTool.setDescriptorType(tool.getDescriptorType());
-            detachedTool.setDefaultWdlPath(tool.getDefaultWdlPath());
-            detachedTool.setDefaultCwlPath(tool.getDefaultCwlPath());
-            detachedTool.setNamespace(tool.getNamespace());
-            detachedTool.setRegistry(tool.getRegistry());
-            detachedTool.setPrivateAccess(tool.isPrivateAccess());
+        } else if (entry instanceof Workflow workflow) {
+            Workflow detachedWorkflow = workflow.createBlank();
+            copyWorkflowProperties(detachedWorkflow, workflow);
+            return detachedWorkflow;
 
-            // These are for table
-            detachedTool.setGitUrl(tool.getGitUrl());
-            detachedTool.setName(tool.getName());
-            detachedTool.setToolname(tool.getToolname());
-            // This is some weird hack to always use topicAutomatic for search table
-            detachedTool.setTopicAutomatic(tool.getTopic());
-            detachedEntry = detachedTool;
-        } else if (entry instanceof BioWorkflow bioWorkflow) {
-            BioWorkflow detachedBioWorkflow = new BioWorkflow();
-            detachedEntry = detachWorkflow(detachedBioWorkflow, bioWorkflow);
-        } else if (entry instanceof AppTool appTool) {
-            AppTool detachedAppTool = new AppTool();
-            detachedEntry = detachWorkflow(detachedAppTool, appTool);
-        } else if (entry instanceof Service service) {
-            Service detachedService = new Service();
-            detachedEntry = detachWorkflow(detachedService, service);
-        } else if (entry instanceof Notebook notebook) {
-            Notebook detachedNotebook = new Notebook();
-            detachedEntry = detachWorkflow(detachedNotebook, notebook);
         } else {
             return entry;
         }
-
-        detachedEntry.setDescription(entry.getDescription());
-        detachedEntry.setAliases(entry.getAliases());
-        detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
-        detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
-        // This is some weird hack to always set the topic (which is either automatic or manual) into the ES topicAutomatic property for search table
-        // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
-        detachedEntry.setTopicAutomatic(entry.getTopic());
-        detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
-        entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
-
-        // Add the detached versions
-        Version defaultVersion = defaultVersionWithFallback(entry);
-        Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions(), defaultVersion);
-        detachedEntry.setWorkflowVersions(detachedVersions);
-        return detachedEntry;
     }
 
     /**
@@ -455,7 +418,7 @@ public class ElasticListener implements StateListenerInterface {
         }
     }
 
-    private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions, final Version defaultVersion) {
+    private static Set<Version> detachVersions(final Set<Version> originalWorkflowVersions, final Version defaultVersion) {
         Set<Version> detachedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
             Version detachedVersion = workflowVersion.createEmptyVersion();
@@ -463,6 +426,7 @@ public class ElasticListener implements StateListenerInterface {
             detachedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
             detachedVersion.setName(workflowVersion.getName());
             detachedVersion.setReference(workflowVersion.getReference());
+            // Only include the description and sourcefiles in the default version
             if (workflowVersion == defaultVersion) {
                 detachedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
                 SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
@@ -473,7 +437,45 @@ public class ElasticListener implements StateListenerInterface {
         return detachedVersions;
     }
 
-    private static Workflow detachWorkflow(Workflow detachedWorkflow, Workflow workflow) {
+    private static void copyEntryProperties(Entry detachedEntry, Entry entry) {
+        detachedEntry.setDescription(entry.getDescription());
+        detachedEntry.setAliases(entry.getAliases());
+        detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
+        detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
+        // This is some weird hack to always set the topic (which is either automatic or manual) into the ES topicAutomatic property for search table
+        // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
+        detachedEntry.setTopicAutomatic(entry.getTopic());
+        detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
+        entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
+
+        // Add the detached versions
+        Version defaultVersion = defaultVersionWithFallback(entry);
+        Set<Version> detachedVersions = detachVersions(entry.getWorkflowVersions(), defaultVersion);
+        detachedEntry.setWorkflowVersions(detachedVersions);
+    }
+
+    private static void copyToolProperties(Tool detachedTool, Tool tool) {
+        copyEntryProperties(detachedTool, tool);
+
+        // Copy tool-specified properties
+        // These are for facets
+        detachedTool.setDescriptorType(tool.getDescriptorType());
+        detachedTool.setDefaultWdlPath(tool.getDefaultWdlPath());
+        detachedTool.setDefaultCwlPath(tool.getDefaultCwlPath());
+        detachedTool.setNamespace(tool.getNamespace());
+        detachedTool.setRegistry(tool.getRegistry());
+        detachedTool.setPrivateAccess(tool.isPrivateAccess());
+
+        // These are for table
+        detachedTool.setGitUrl(tool.getGitUrl());
+        detachedTool.setName(tool.getName());
+        detachedTool.setToolname(tool.getToolname());
+    }
+
+    private static void copyWorkflowProperties(Workflow detachedWorkflow, Workflow workflow) {
+        copyEntryProperties(detachedWorkflow, workflow);
+
+        // Copy workflow-specific properties
         // These are for facets
         detachedWorkflow.setDescriptorType(workflow.getDescriptorType());
         detachedWorkflow.setSourceControl(workflow.getSourceControl());
@@ -487,9 +489,7 @@ public class ElasticListener implements StateListenerInterface {
         detachedWorkflow.setWorkflowName(workflow.getWorkflowName());
         detachedWorkflow.setRepository(workflow.getRepository());
         detachedWorkflow.setGitUrl(workflow.getGitUrl());
-        return detachedWorkflow;
     }
-
 
     private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
         /*

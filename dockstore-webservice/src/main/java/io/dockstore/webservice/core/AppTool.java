@@ -44,6 +44,11 @@ import jakarta.persistence.Table;
 public class AppTool extends Workflow {
 
     @Override
+    public AppTool createBlank() {
+        return new AppTool();
+    }
+
+    @Override
     public EntryType getEntryType() {
         return EntryType.APPTOOL;
     }
