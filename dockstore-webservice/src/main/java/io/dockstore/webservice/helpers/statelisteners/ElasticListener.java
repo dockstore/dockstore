@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.OrcidAuthorInformation;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
@@ -383,9 +384,6 @@ public class ElasticListener implements StateListenerInterface {
         Entry detachedEntry;
         if (entry instanceof Tool tool) {
             Tool detachedTool = new Tool();
-            tool.getWorkflowVersions().forEach(version -> {
-                Hibernate.initialize(version.getSourceFiles());
-            });
 
             // These are for facets
             detachedTool.setDescriptorType(tool.getDescriptorType());
@@ -408,6 +406,9 @@ public class ElasticListener implements StateListenerInterface {
         } else if (entry instanceof AppTool appTool) {
             AppTool detachedAppTool = new AppTool();
             detachedEntry = detachWorkflow(detachedAppTool, appTool);
+        } else if (entry instanceof Service service) {
+            Service detachedService = new Service();
+            detachedEntry = detachWorkflow(detachedService, service);
         } else if (entry instanceof Notebook notebook) {
             Notebook detachedNotebook = new Notebook();
             detachedEntry = detachWorkflow(detachedNotebook, notebook);
@@ -419,25 +420,16 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setAliases(entry.getAliases());
         detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
-        Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions());
-        detachedEntry.setWorkflowVersions(detachedVersions);
         // This is some weird hack to always set the topic (which is either automatic or manual) into the ES topicAutomatic property for search table
         // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
         detachedEntry.setTopicAutomatic(entry.getTopic());
         detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
-        final String defaultVersion = defaultVersionWithFallback(entry);
-        if (defaultVersion != null) {
-            // If the tool/workflow has a default version, only keep the default version (and its sourcefile contents and description)
-            Set<Version> newWorkflowVersions = detachedEntry.getWorkflowVersions();
-            newWorkflowVersions.forEach(version -> {
-                if (!defaultVersion.equals(version.getReference()) && !defaultVersion.equals(version.getName())) {
-                    version.setDescriptionAndDescriptionSource(null, null);
-                    SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
-                    sourceFiles.forEach(sourceFile -> sourceFile.setContent(""));
-                }
-            });
-        }
+
+        // Add the detached versions
+        Version defaultVersion = defaultVersionWithFallback(entry);
+        Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions(), defaultVersion);
+        detachedEntry.setWorkflowVersions(detachedVersions);
         return detachedEntry;
     }
 
@@ -447,13 +439,12 @@ public class ElasticListener implements StateListenerInterface {
      * @param entry
      * @return
      */
-    private static String defaultVersionWithFallback(Entry entry) {
+    private static Version defaultVersionWithFallback(Entry entry) {
         if (entry.getActualDefaultVersion() != null) {
-            return entry.getActualDefaultVersion().getName();
+            return entry.getActualDefaultVersion();
         }
         final Stream<Version> stream = versionStream(entry.getWorkflowVersions());
-        return stream
-            .max(Comparator.comparing(Version::getId)).map(v -> v.getName()).orElse(null);
+        return stream.max(Comparator.comparing(Version::getId)).orElse(null);
     }
 
     private static Stream<Version> versionStream(Set<Version> versions) {
@@ -464,18 +455,19 @@ public class ElasticListener implements StateListenerInterface {
         }
     }
 
-    private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions) {
+    private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions, final Version defaultVersion) {
         Set<Version> detachedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
             Version detachedVersion = workflowVersion.createEmptyVersion();
-            detachedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
             detachedVersion.setInputFileFormats(new TreeSet<>(workflowVersion.getInputFileFormats()));
             detachedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
             detachedVersion.setName(workflowVersion.getName());
             detachedVersion.setReference(workflowVersion.getReference());
-            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-            sourceFiles.forEach(sourceFile -> detachedVersion.addSourceFile(SourceFile.copy(sourceFile)));
-            detachedVersion.updateVerified();
+            if (workflowVersion == defaultVersion) {
+                detachedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
+                SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+                sourceFiles.forEach(sourceFile -> detachedVersion.addSourceFile(SourceFile.copy(sourceFile)));
+            }
             detachedVersions.add(detachedVersion);
         });
         return detachedVersions;
@@ -500,6 +492,7 @@ public class ElasticListener implements StateListenerInterface {
 
 
     private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
+        /*
         Set<String> platforms = new TreeSet<>();
         workflowVersions.forEach(workflowVersion -> {
             SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
@@ -509,6 +502,8 @@ public class ElasticListener implements StateListenerInterface {
             });
         });
         return platforms;
+        */
+        return Set.of();
     }
 
     private static List<String> getDistinctDescriptorTypeVersions(Entry entry, Set<? extends Version> workflowVersions) {
