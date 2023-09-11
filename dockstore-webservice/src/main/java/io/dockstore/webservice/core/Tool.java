@@ -191,7 +191,7 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @Override
-    public Tool createBlank() {
+    public Tool createEmptyEntry() {
         return new Tool();
     }
 

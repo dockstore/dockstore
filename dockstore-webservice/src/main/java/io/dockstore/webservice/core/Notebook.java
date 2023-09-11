@@ -47,7 +47,7 @@ public class Notebook extends Workflow {
     }
 
     @Override
-    public Notebook createBlank() {
+    public Notebook createEmptyEntry() {
         return new Notebook();
     }
 

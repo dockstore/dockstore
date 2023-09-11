@@ -59,7 +59,7 @@ public class BioWorkflow extends Workflow {
     private boolean isChecker = false;
 
     @Override
-    public BioWorkflow createBlank() {
+    public BioWorkflow createEmptyEntry() {
         return new BioWorkflow();
     }
 

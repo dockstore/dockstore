@@ -379,17 +379,17 @@ public class ElasticListener implements StateListenerInterface {
     static Entry detach(final Entry entry) {
 
         if (entry instanceof Tool tool) {
-            Tool detachedTool = tool.createBlank();
+            Tool detachedTool = tool.createEmptyEntry();
             copyToolProperties(detachedTool, tool);
             return detachedTool;
 
         } else if (entry instanceof Workflow workflow) {
-            Workflow detachedWorkflow = workflow.createBlank();
+            Workflow detachedWorkflow = workflow.createEmptyEntry();
             copyWorkflowProperties(detachedWorkflow, workflow);
             return detachedWorkflow;
 
         } else {
-            Entry detachedEntry = entry.createBlank();
+            Entry detachedEntry = entry.createEmptyEntry();
             copyEntryProperties(detachedEntry, entry);
             return detachedEntry;
         }
@@ -491,7 +491,6 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
-        /*
         Set<String> platforms = new TreeSet<>();
         workflowVersions.forEach(workflowVersion -> {
             SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
@@ -501,8 +500,6 @@ public class ElasticListener implements StateListenerInterface {
             });
         });
         return platforms;
-        */
-        return Set.of();
     }
 
     private static List<String> getDistinctDescriptorTypeVersions(Entry entry, Set<? extends Version> workflowVersions) {

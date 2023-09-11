@@ -45,7 +45,7 @@ public class Service extends Workflow {
     }
 
     @Override
-    public Service createBlank() {
+    public Service createEmptyEntry() {
         return new Service();
     }
 

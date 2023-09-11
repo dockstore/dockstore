@@ -168,7 +168,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @Override
-    public abstract Workflow createBlank();
+    public abstract Workflow createEmptyEntry();
 
     @JsonProperty
     @Override
