@@ -209,7 +209,7 @@
     </changeSet>
     <changeSet author="svonworl" id="addVerifiedPlatformsToVersionMetadata">
         <addColumn tableName="version_metadata">
-            <column name="verifiedplatforms" type="text"/>
+            <column name="verifiedplatforms" type="VARCHAR(255)"/>
         </addColumn>
         <sql dbms="postgresql">
             UPDATE version_metadata vm
