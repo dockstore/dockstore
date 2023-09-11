@@ -293,7 +293,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param deliveryId The GitHub delivery ID, used to group all lambda events created during this GitHub webhook delete
      */
     protected void githubWebhookDelete(String repository, String gitReference, String username, Long installationId, String deliveryId) {
-        // installationId could be null because the lambda hasn't been updated to propagate it yet,
+        // installationId could be null because the lambda hasn't yet been updated to propagate it,
         // or because it was intentionally omitted during development or testing
         if (installationId != null) {
             // Check if we should process the delete.
@@ -324,44 +324,65 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
-        // Find all workflows and services that are github apps and use the given repo
+        // Find all workflows and services that are github apps and use the given repo, and make a list of their ids
         List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).toList();
+        List<Long> workflowIds = workflows.stream().map(Workflow::getId()).toList();
 
-        // When the git reference to delete is the default version, set it to the next latest version
-        workflows.forEach(workflow -> {
-            if (workflow.getActualDefaultVersion() != null && workflow.getActualDefaultVersion().getName().equals(gitReferenceName.get())) {
-                Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream()
-                        .filter(v -> !Objects.equals(v.getName(), gitReferenceName.get()))
-                        .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
-                workflow.setActualDefaultVersion(max.orElse(null));
+        // Delete the version from each workflow in a separate transaction
+        // Because the Hibernate session is cleared between transactions, the number of managed entities will remain relatively small,
+        // which will prevent excessive Hibernate entity-management overhead, as happened with the prior implementation, which fetched
+        // all workflows, versions, and source files into the session without ever clearing
+
+        for (long workflowId: workflowIds) {
+
+            try {
+                TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
+                transactionHelper.transaction(() -> {
+
+                    // Retrieve the workflow
+                    workflow = workflowDAO.findById(workflowId);
+                    if (workflow == null) {
+                        LOG.info("workflow {} no longer exists", workflowId);
+                        return;
+                    }
+
+                    // If the default version is going to be deleted, select a new default version
+                    if (workflow.getActualDefaultVersion() != null && workflow.getActualDefaultVersion().getName().equals(gitReferenceName.get())) {
+                        Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream()
+                            .filter(v -> !Objects.equals(v.getName(), gitReferenceName.get()))
+                            .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
+                        workflow.setActualDefaultVersion(max.orElse(null));
+                    }
+
+                    // Delete all non-frozen versions that have the same git reference name and then update the file formats of the entry
+                    Predicate<WorkflowVersion> sameNameAndNotFrozen = workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen();
+                    boolean deleteVersion = workflow.getWorkflowVersions().stream().anyMatch(sameNameAndNotFrozen);
+
+                    workflow.getWorkflowVersions().removeIf(deleteVersion);
+                    FileFormatHelper.updateEntryLevelFileFormats(workflow);
+
+                    // Unpublish the workflow if it was published and no longer has any versions
+                    if (workflow.getIsPublished() && workflow.getWorkflowVersions().isEmpty()) {
+                        User user = GitHubHelper.findUserByGitHubUsername(tokenDAO, userDAO, username, false);
+                        publishWorkflow(workflow, false, user);
+                    } else {
+                        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
+                    }
+
+                    // If we deleted a version, create a corresponding lambda event
+                    if (deleteVersion) {
+                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, true, deliveryId, workflows );
+                        lambdaEventDAO.create(lambdaEvent);
+                    }
+                });
+            } catch (Exception e) {
+
+                // TODO handle fatal versus non-fatal exceptions
+                if (e instanceof CustomWebApplicationException) {
+                    continue;
+                }
             }
-        });
-
-        // Delete all non-frozen versions that have the same git reference name and then update the file formats of the entry.
-        List<String> entryNamesWithDeletedVersions = new ArrayList<>();
-        workflows.forEach(workflow -> {
-            Predicate<WorkflowVersion> canVersionBeDeleted = workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen();
-            if (workflow.getWorkflowVersions().stream().anyMatch(canVersionBeDeleted)) {
-                entryNamesWithDeletedVersions.add(computeWorkflowName(workflow));
-            }
-            workflow.getWorkflowVersions().removeIf(canVersionBeDeleted);
-            FileFormatHelper.updateEntryLevelFileFormats(workflow);
-
-            // Unpublish the workflow if it was published and no longer has any versions
-            if (workflow.getIsPublished() && workflow.getWorkflowVersions().isEmpty()) {
-                User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
-                publishWorkflow(workflow, false, user);
-            } else {
-                PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
-            }
-        });
-
-        // Create lambda events for the entries that were affected by the DELETE lambda event
-        entryNamesWithDeletedVersions.forEach(entryName -> {
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, true, deliveryId, entryName);
-            lambdaEventDAO.create(lambdaEvent);
-        });
-
+        }
     }
 
     /**
