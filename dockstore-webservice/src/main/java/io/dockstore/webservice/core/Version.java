@@ -265,19 +265,19 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(value = "Verified source for the version", position = 18)
     public String[] getVerifiedSources() {
-        if (this.getVersionMetadata().verifiedSource == null) {
-            return new String[0];
-        } else {
-            return GSON.fromJson(Strings.nullToEmpty(this.getVersionMetadata().verifiedSource), String[].class);
-        }
+        return convertJsonToStringArray(getVersionMetadata().verifiedSource);
     }
 
-    @ApiModelProperty(value = "Verified platforms for the version", position = 19)
+    @Schema(description = "Verified platforms for the version")
     public String[] getVerifiedPlatforms() {
-        if (getVersionMetadata().verifiedPlatforms == null) {
+        return convertJsonToStringArray(getVersionMetadata().verifiedPlatforms);
+    }
+
+    private static String[] convertJsonToStringArray(String json) {
+        if (json == null) {
             return new String[0];
         } else {
-            return GSON.fromJson(Strings.nullToEmpty(this.getVersionMetadata().verifiedPlatforms), String[].class);
+            return GSON.fromJson(json, String[].class);
         }
     }
 
@@ -409,7 +409,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public void updateVerified() {
         this.getVersionMetadata().verified = calculateVerified(this.getSourceFiles());
         this.getVersionMetadata().verifiedSource = calculateVerifiedSource(this.getSourceFiles());
-        this.getVersionMetadata().verifiedPlatforms = calculateVerifiedPlatform(this.getSourceFiles());
+        this.getVersionMetadata().verifiedPlatforms = calculateVerifiedPlatforms(this.getSourceFiles());
     }
 
     private static boolean calculateVerified(SortedSet<SourceFile> versionSourceFiles) {
@@ -430,7 +430,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return convertStringSetToString(verifiedSources);
     }
 
-    private static String calculateVerifiedPlatform(SortedSet<SourceFile> versionSourceFiles) {
+    private static String calculateVerifiedPlatforms(SortedSet<SourceFile> versionSourceFiles) {
         Set<String> verifiedPlatforms = new TreeSet<>();
         versionSourceFiles.forEach(sourceFile -> {
             Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
@@ -440,7 +440,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
                 }
             }
         });
-        // How strange that we're returning an array-like string
         return convertStringSetToString(verifiedPlatforms);
     }
 

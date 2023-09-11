@@ -901,8 +901,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflow.setLastModified(updatedWorkflowVersion.getLastModified());
             }
 
-            // Update verification information.
-            updatedWorkflowVersion.updateVerified();
             // Update file formats for the version and then the entry.
             // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
             Set<WorkflowVersion> workflowVersions = new HashSet<>();
