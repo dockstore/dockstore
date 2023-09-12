@@ -323,7 +323,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
-        // Make a list of the IDs of all Workflow-derived entries are github apps and use the given repo
+        // List of the IDs of all Workflows that are github apps and use the given repo
         List<Long> workflowIds = workflowDAO.findAllByPath("github.com/" + repository, false).stream()
             .filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML))
             .map(Workflow::getId)
