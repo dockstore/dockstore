@@ -40,13 +40,16 @@ import org.apache.commons.lang3.ObjectUtils;
  * @author xliu
  * @author dyuen
  */
-@ApiModel(value = "Tag", description = "This describes one tag associated with a container.")
+@ApiModel(value = "Tag", description = Tag.TAG_DESCRIPTION)
+@Schema(name = "Tag", description = Tag.TAG_DESCRIPTION, allOf = Version.class)
+
 @Entity
 @SuppressWarnings("checkstyle:magicnumber")
 @Table(name = "tag", uniqueConstraints = @UniqueConstraint(name = "unique_tag_names", columnNames = { "parentid", "name" }))
 
 public class Tag extends Version<Tag> implements Comparable<Tag> {
 
+    public static final String TAG_DESCRIPTION = "This describes one tag associated with a container.";
     @Column
     @JsonProperty("last_built")
     @ApiModelProperty(value = "For automated tools: The last time the container backing this tool version was built. For hosted: N/A", position = 101, dataType = "long")

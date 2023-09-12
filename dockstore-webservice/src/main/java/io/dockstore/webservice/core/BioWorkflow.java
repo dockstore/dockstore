@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -31,7 +32,8 @@ import jakarta.persistence.Table;
 /**
  * These represent actual workflows in terms of CWL, WDL, and other bioinformatics workflows
  */
-@ApiModel(value = "BioWorkflow", description = "This describes one workflow in the dockstore", parent = Workflow.class)
+@ApiModel(value = "BioWorkflow", description = BioWorkflow.BIO_WORKFLOW_DESCRIPTION, parent = Workflow.class)
+@Schema(name = BioWorkflow.OPENAPI_NAME, description = BioWorkflow.BIO_WORKFLOW_DESCRIPTION)
 @Entity
 @Table(name = "workflow")
 @NamedQueries({
@@ -50,13 +52,19 @@ import jakarta.persistence.Table;
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {
 
+    public static final String BIO_WORKFLOW_DESCRIPTION = "This describes one workflow in the dockstore";
+
+    public static final String OPENAPI_NAME = "BioWorkflow";
+
+
     @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.LAZY)
     @JsonIgnore
     @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
-    private Entry parentEntry;
+    private Entry<?, ?> parentEntry;
 
     @Column(columnDefinition = "boolean default false")
     private boolean isChecker = false;
+
 
     @Override
     public EntryType getEntryType() {
@@ -69,12 +77,14 @@ public class BioWorkflow extends Workflow {
     }
 
     @Override
-    public Entry getParentEntry() {
+    @OneToOne
+    @Schema(hidden = true)
+    public Entry<?, ?> getParentEntry() {
         return parentEntry;
     }
 
     @Override
-    public void setParentEntry(Entry parentEntry) {
+    public void setParentEntry(Entry<?, ?> parentEntry) {
         this.parentEntry = parentEntry;
     }
 
