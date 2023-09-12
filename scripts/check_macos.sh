@@ -3,7 +3,7 @@
 set -o errexit
 set -o pipefail
 set -o nounset
-# set -o xtrace
+set -o xtrace
 
 
 # Checks that  README.md and the macos github action are up to date with macos_instructions.yml
