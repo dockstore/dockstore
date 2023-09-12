@@ -65,7 +65,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -324,63 +323,65 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
-        // Find all workflows and services that are github apps and use the given repo, and make a list of their ids
-        List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).toList();
-        List<Long> workflowIds = workflows.stream().map(Workflow::getId()).toList();
+        // Make a list of the IDs of all Workflow-derived entries are github apps and use the given repo
+        List<Long> workflowIds = workflowDAO.findAllByPath("github.com/" + repository, false).stream()
+            .filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML))
+            .map(Workflow::getId)
+            .toList();
 
         // Delete the version from each workflow in a separate transaction
         // Because the Hibernate session is cleared between transactions, the number of managed entities will remain relatively small,
-        // which will prevent excessive Hibernate entity-management overhead, as happened with the prior implementation, which fetched
+        // preventing excessive Hibernate entity-management overhead, as happened with the prior implementation, which fetched
         // all workflows, versions, and source files into the session without ever clearing
 
         for (long workflowId: workflowIds) {
 
+            TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
             try {
-                TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
                 transactionHelper.transaction(() -> {
 
                     // Retrieve the workflow
-                    workflow = workflowDAO.findById(workflowId);
+                    Workflow workflow = workflowDAO.findById(workflowId);
                     if (workflow == null) {
-                        LOG.info("workflow {} no longer exists", workflowId);
+                        LOG.info("workflow no longer exists, workflowId={}", workflowId);
                         return;
                     }
 
+                    // A version should be deleted if it has the same git reference name and is not frozen
+                    Predicate<Version> shouldDeleteVersion = version -> Objects.equals(version.getName(), gitReferenceName.get()) && !version.isFrozen();
+
                     // If the default version is going to be deleted, select a new default version
-                    if (workflow.getActualDefaultVersion() != null && workflow.getActualDefaultVersion().getName().equals(gitReferenceName.get())) {
+                    Version defaultVersion = workflow.getActualDefaultVersion();
+                    if (defaultVersion != null && shouldDeleteVersion.test(defaultVersion)) {
                         Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream()
                             .filter(v -> !Objects.equals(v.getName(), gitReferenceName.get()))
                             .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
                         workflow.setActualDefaultVersion(max.orElse(null));
                     }
 
-                    // Delete all non-frozen versions that have the same git reference name and then update the file formats of the entry
-                    Predicate<WorkflowVersion> sameNameAndNotFrozen = workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen();
-                    boolean deleteVersion = workflow.getWorkflowVersions().stream().anyMatch(sameNameAndNotFrozen);
+                    // Delete all matching versions
+                    // If one or more versions were deleted, update the appropriate state
+                    if (workflow.getWorkflowVersions().removeIf(shouldDeleteVersion)) {
+                        // Update the file formats of the entry
+                        FileFormatHelper.updateEntryLevelFileFormats(workflow);
 
-                    workflow.getWorkflowVersions().removeIf(deleteVersion);
-                    FileFormatHelper.updateEntryLevelFileFormats(workflow);
+                        if (workflow.getIsPublished() && workflow.getWorkflowVersions().isEmpty()) {
+                            // Unpublish the workflow if it was published and no longer has any versions
+                            User user = GitHubHelper.findUserByGitHubUsername(tokenDAO, userDAO, username, false);
+                            publishWorkflow(workflow, false, user);
+                        } else {
+                            // Otherwise, update the public state
+                            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
+                        }
 
-                    // Unpublish the workflow if it was published and no longer has any versions
-                    if (workflow.getIsPublished() && workflow.getWorkflowVersions().isEmpty()) {
-                        User user = GitHubHelper.findUserByGitHubUsername(tokenDAO, userDAO, username, false);
-                        publishWorkflow(workflow, false, user);
-                    } else {
-                        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
-                    }
-
-                    // If we deleted a version, create a corresponding lambda event
-                    if (deleteVersion) {
-                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, true, deliveryId, workflows );
+                        // Create a lambda event that describes the deletion
+                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, true, deliveryId, computeWorkflowName(workflow));
                         lambdaEventDAO.create(lambdaEvent);
                     }
                 });
-            } catch (Exception e) {
-
-                // TODO handle fatal versus non-fatal exceptions
-                if (e instanceof CustomWebApplicationException) {
-                    continue;
-                }
+            } catch (RuntimeException ex) {
+                LOG.error(String.format("failed to delete version, workflowId=%s repository=%s gitReference=%s", workflowId, repository, gitReference), ex);
+                rethrowIfFatal(ex, transactionHelper);
             }
         }
     }
