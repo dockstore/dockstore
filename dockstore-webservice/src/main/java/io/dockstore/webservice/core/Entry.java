@@ -26,6 +26,7 @@ import io.dockstore.common.EntryType;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -89,6 +90,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore", subTypes = {Workflow.class, Tool.class})
 @SuppressWarnings("checkstyle:magicnumber")
 
 @NamedQueries({
@@ -651,6 +653,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @return versions
      */
     @JsonProperty
+    @ArraySchema(uniqueItems = true, schema = @Schema(description = "the versions of this entry", implementation = WorkflowVersion.class, oneOf = {WorkflowVersion.class, Tag.class}))
     public abstract Set<T> getWorkflowVersions();
 
     @JsonProperty
@@ -750,6 +753,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonIgnore
+    @Transient
     public abstract Event.Builder getEventBuilder();
 
     public Timestamp getDbCreateDate() {
