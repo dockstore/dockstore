@@ -1107,6 +1107,8 @@
                                 <usedDependency>io.jsonwebtoken:jjwt-impl</usedDependency>
                                 <usedDependency>io.jsonwebtoken:jjwt-api</usedDependency>
                                 <usedDependency>io.jsonwebtoken:jjwt-jackson</usedDependency>
+				<!-- used when running with assertions https://github.com/dockstore/dockstore/issues/5654  --> 
+				<usedDependency>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
