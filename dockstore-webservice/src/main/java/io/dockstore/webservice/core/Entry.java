@@ -82,7 +82,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  * <li>
  *   <ul>If the new properties or entry type should be indexed by ElasticSearch, you will probably need to modify `ElasticListener`,
  *     typically `ElasticListener.dockstoreEntryToElasticSearchObject` and/or `ElasticListener.detach` and the methods it invokes to
- *     copy properties into detached entries.
+ *     copy properties into detached entries.</ul>
  * </li>
  *
  * @author dyuen
