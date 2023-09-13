@@ -27,12 +27,12 @@ actionOnlyInformation:
         runs-on: macos-latest
         steps:
           - name: Checkout dockstore/dockstore
-            uses: actions/checkout@v3
+            uses: actions/checkout@v4
             with:
               repository: dockstore/dockstore
               path: dockstore
           - name: Checkout dockstore/dockstore-ui2
-            uses: actions/checkout@v3
+            uses: actions/checkout@v4
             with:
               repository: dockstore/dockstore-ui2
               path: dockstore-ui2
@@ -94,7 +94,7 @@ setupInformation:
     - text: (cd to where you cloned the dockstore/dockstore repo)
     - code:
         run: ./mvnw clean install
-        working-directory: dockstore # Where dockstore/dockstore was cloned by actions/checkout@v3
+        working-directory: dockstore # Where dockstore/dockstore was cloned by actions/checkout@v4
     - newLine: 1
     - text: '#### Build the UI'
     - text: (cd to where you cloned the dockstore/dockstore-ui2 repo)

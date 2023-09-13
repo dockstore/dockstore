@@ -17,12 +17,17 @@ package io.dockstore.webservice.core;
 
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
-@ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
+@ApiModel(value = "Service", description = Service.SERVICE_DESCRIPTION, parent = Workflow.class)
+@Schema(name = "Service", description = Service.SERVICE_DESCRIPTION)
+
 @Entity
 @Table(name = "service")
 @NamedQueries({
@@ -36,11 +41,17 @@ import jakarta.persistence.Table;
 })
 public class Service extends Workflow {
 
+    public static final String SERVICE_DESCRIPTION = "This describes one service in the dockstore as a special degenerate case of a workflow";
+    public static final String OPENAPI_NAME = "Service";
+
+
     public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM
     }
 
     @Override
-    public Entry getParentEntry() {
+    @OneToOne
+    @Schema(hidden = true)
+    public Entry<?, ?> getParentEntry() {
         return null;
     }
 
@@ -55,7 +66,7 @@ public class Service extends Workflow {
     }
 
     @Override
-    public void setParentEntry(Entry parentEntry) {
+    public void setParentEntry(Entry<?, ?> parentEntry) {
         throw new UnsupportedOperationException("cannot add a checker workflow to a Service");
     }
 
@@ -69,6 +80,7 @@ public class Service extends Workflow {
         throw new UnsupportedOperationException("cannot add a checker workflow to a Service");
     }
 
+    @Transient
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withService(this);
     }

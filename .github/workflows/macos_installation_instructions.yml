@@ -8,12 +8,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout dockstore/dockstore
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: dockstore/dockstore
           path: dockstore
       - name: Checkout dockstore/dockstore-ui2
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: dockstore/dockstore-ui2
           path: dockstore-ui2

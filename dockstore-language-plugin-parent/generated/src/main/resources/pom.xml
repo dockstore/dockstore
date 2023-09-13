@@ -47,6 +47,11 @@
       <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
     </repository>
     <repository>
+      <id>broad-dependencies.oicr.on.ca</id>
+      <name>broad-dependencies.oicr.on.ca</name>
+      <url>https://artifacts.oicr.on.ca/artifactory/broad-dependencies</url>
+    </repository>
+    <repository>
       <releases>
         <enabled>true</enabled>
       </releases>

@@ -30,7 +30,7 @@
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-annotations-jakarta</artifactId>
-      <version>2.2.9</version>
+      <version>2.2.15</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -381,6 +381,11 @@
       <id>artifacts.oicr.on.ca</id>
       <name>artifacts.oicr.on.ca</name>
       <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
+    </repository>
+    <repository>
+      <id>broad-dependencies.oicr.on.ca</id>
+      <name>broad-dependencies.oicr.on.ca</name>
+      <url>https://artifacts.oicr.on.ca/artifactory/broad-dependencies</url>
     </repository>
     <repository>
       <releases>
