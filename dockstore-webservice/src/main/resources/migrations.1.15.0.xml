@@ -211,6 +211,15 @@
         <addColumn tableName="version_metadata">
             <column name="verifiedplatforms" type="VARCHAR(255)"/>
         </addColumn>
+        <!--
+        Extract the verified platform for each version from the
+        sourcefile_verified table and store it as a JSON array in the new
+        verifiedPlatforms column.
+        Theoretically, there could be multiple different platforms per
+        version, but in the current database, there are no such instances.
+        If there were multiple platforms, the below code would arbrarily
+        select one and discard the rest.
+        -->
         <sql dbms="postgresql">
             UPDATE version_metadata vm
             SET verifiedPlatforms = '["' || sv.source || '"]'
