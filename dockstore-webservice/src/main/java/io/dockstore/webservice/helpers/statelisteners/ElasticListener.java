@@ -500,15 +500,7 @@ public class ElasticListener implements StateListenerInterface {
 
 
     private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
-        Set<String> platforms = new TreeSet<>();
-        workflowVersions.forEach(workflowVersion -> {
-            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-            sourceFiles.forEach(sourceFile -> {
-                Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
-                platforms.addAll(verifiedBySource.keySet());
-            });
-        });
-        return platforms;
+        return workflowVersions.stream().map(Version::getVerifiedPlatforms).flatMap(Stream::of).collect(Collectors.toSet());
     }
 
     private static List<String> getDistinctDescriptorTypeVersions(Entry entry, Set<? extends Version> workflowVersions) {

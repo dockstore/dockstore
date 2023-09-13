@@ -11041,6 +11041,12 @@ components:
           uniqueItems: true
         verified:
           type: boolean
+        verifiedPlatforms:
+          type: array
+          description: Verified platforms for the version
+          items:
+            type: string
+            description: Verified platforms for the version
         verifiedSource:
           type: string
         verifiedSources:
