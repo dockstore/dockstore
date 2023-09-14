@@ -65,7 +65,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -293,7 +292,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param deliveryId The GitHub delivery ID, used to group all lambda events created during this GitHub webhook delete
      */
     protected void githubWebhookDelete(String repository, String gitReference, String username, Long installationId, String deliveryId) {
-        // installationId could be null because the lambda hasn't been updated to propagate it yet,
+        // installationId could be null because the lambda hasn't yet been updated to propagate it,
         // or because it was intentionally omitted during development or testing
         if (installationId != null) {
             // Check if we should process the delete.
@@ -324,44 +323,69 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
-        // Find all workflows and services that are github apps and use the given repo
-        List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).toList();
+        // Create a List of the IDs of all Workflows that are github apps and use the given repo
+        List<Long> workflowIds = workflowDAO.findAllByPath("github.com/" + repository, false).stream()
+            .filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML))
+            .map(Workflow::getId)
+            .toList();
+        String commaSeparatedWorkflowIds = workflowIds.stream().map(Object::toString).collect(Collectors.joining(","));
+        LOG.info("deleting version from workflows, workflowIds={}, repository{}, gitReference={}", commaSeparatedWorkflowIds, repository, gitReference);
 
-        // When the git reference to delete is the default version, set it to the next latest version
-        workflows.forEach(workflow -> {
-            if (workflow.getActualDefaultVersion() != null && workflow.getActualDefaultVersion().getName().equals(gitReferenceName.get())) {
-                Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream()
-                        .filter(v -> !Objects.equals(v.getName(), gitReferenceName.get()))
-                        .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
-                workflow.setActualDefaultVersion(max.orElse(null));
+        // Delete the version from each workflow in a separate transaction
+        // Because the Hibernate session is cleared between transactions, the number of managed entities will remain relatively small,
+        // preventing excessive Hibernate entity-management overhead, as happened with the prior implementation, which fetched
+        // all workflows, versions, and source files into the session without ever clearing
+
+        for (long workflowId: workflowIds) {
+
+            TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
+            try {
+                transactionHelper.transaction(() -> {
+
+                    // Retrieve the workflow
+                    Workflow workflow = workflowDAO.findById(workflowId);
+                    if (workflow == null) {
+                        LOG.info("workflow no longer exists, workflowId={}", workflowId);
+                        return;
+                    }
+
+                    // A version should be deleted if it has the same git reference name and is not frozen
+                    Predicate<Version> shouldDeleteVersion = version -> Objects.equals(version.getName(), gitReferenceName.get()) && !version.isFrozen();
+
+                    // If the default version is going to be deleted, select a new default version
+                    Version defaultVersion = workflow.getActualDefaultVersion();
+                    if (defaultVersion != null && shouldDeleteVersion.test(defaultVersion)) {
+                        Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream()
+                            .filter(v -> !Objects.equals(v.getName(), gitReferenceName.get()))
+                            .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
+                        workflow.setActualDefaultVersion(max.orElse(null));
+                    }
+
+                    // Delete all matching versions
+                    // If one or more versions were deleted, update the appropriate state
+                    if (workflow.getWorkflowVersions().removeIf(shouldDeleteVersion)) {
+                        // Update the file formats of the entry
+                        FileFormatHelper.updateEntryLevelFileFormats(workflow);
+
+                        if (workflow.getIsPublished() && workflow.getWorkflowVersions().isEmpty()) {
+                            // Unpublish the workflow if it was published and no longer has any versions
+                            User user = GitHubHelper.findUserByGitHubUsername(tokenDAO, userDAO, username, false);
+                            publishWorkflow(workflow, false, user);
+                        } else {
+                            // Otherwise, update the public state
+                            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
+                        }
+
+                        // Create a lambda event that describes the deletion
+                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, true, deliveryId, computeWorkflowName(workflow));
+                        lambdaEventDAO.create(lambdaEvent);
+                    }
+                });
+            } catch (RuntimeException ex) {
+                LOG.error(String.format("failed to delete version, workflowId=%s, repository=%s, gitReference=%s", workflowId, repository, gitReference), ex);
+                rethrowIfFatal(ex, transactionHelper);
             }
-        });
-
-        // Delete all non-frozen versions that have the same git reference name and then update the file formats of the entry.
-        List<String> entryNamesWithDeletedVersions = new ArrayList<>();
-        workflows.forEach(workflow -> {
-            Predicate<WorkflowVersion> canVersionBeDeleted = workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen();
-            if (workflow.getWorkflowVersions().stream().anyMatch(canVersionBeDeleted)) {
-                entryNamesWithDeletedVersions.add(computeWorkflowName(workflow));
-            }
-            workflow.getWorkflowVersions().removeIf(canVersionBeDeleted);
-            FileFormatHelper.updateEntryLevelFileFormats(workflow);
-
-            // Unpublish the workflow if it was published and no longer has any versions
-            if (workflow.getIsPublished() && workflow.getWorkflowVersions().isEmpty()) {
-                User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
-                publishWorkflow(workflow, false, user);
-            } else {
-                PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
-            }
-        });
-
-        // Create lambda events for the entries that were affected by the DELETE lambda event
-        entryNamesWithDeletedVersions.forEach(entryName -> {
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, true, deliveryId, entryName);
-            lambdaEventDAO.create(lambdaEvent);
-        });
-
+        }
     }
 
     /**
@@ -655,10 +679,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     private void rethrowIfFatal(RuntimeException ex, TransactionHelper transactionHelper) {
         if (ex == transactionHelper.thrown()) {
-            LOG.error("Database transaction error: {} ", ex.getMessage());
+            LOG.error("rethrowing fatal database transaction exception", ex);
             throw new CustomWebApplicationException("database transaction error", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         if (isGitHubRateLimitError(ex) || isServerError(ex))  {
+            LOG.error("rethrowing fatal exception", ex);
             throw ex;
         }
     }
