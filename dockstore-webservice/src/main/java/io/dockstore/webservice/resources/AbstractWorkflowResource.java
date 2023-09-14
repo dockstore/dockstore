@@ -323,11 +323,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
-        // List of the IDs of all Workflows that are github apps and use the given repo
+        // Create a List of the IDs of all Workflows that are github apps and use the given repo
         List<Long> workflowIds = workflowDAO.findAllByPath("github.com/" + repository, false).stream()
             .filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML))
             .map(Workflow::getId)
             .toList();
+        String commaSeparatedWorkflowIds = workflowIds.stream().map(Object::toString).collect(Collectors.joining(","));
+        LOG.info("deleting version from workflows, workflowIds={}, repository{}, gitReference={}", commaSeparatedWorkflowIds, repository, gitReference);
 
         // Delete the version from each workflow in a separate transaction
         // Because the Hibernate session is cleared between transactions, the number of managed entities will remain relatively small,
@@ -380,7 +382,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     }
                 });
             } catch (RuntimeException ex) {
-                LOG.error(String.format("failed to delete version, workflowId=%s repository=%s gitReference=%s", workflowId, repository, gitReference), ex);
+                LOG.error(String.format("failed to delete version, workflowId=%s, repository=%s, gitReference=%s", workflowId, repository, gitReference), ex);
                 rethrowIfFatal(ex, transactionHelper);
             }
         }
@@ -677,10 +679,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     private void rethrowIfFatal(RuntimeException ex, TransactionHelper transactionHelper) {
         if (ex == transactionHelper.thrown()) {
-            LOG.error("Database transaction error: {} ", ex.getMessage());
+            LOG.error("rethrowing fatal database transaction exception", ex);
             throw new CustomWebApplicationException("database transaction error", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         if (isGitHubRateLimitError(ex) || isServerError(ex))  {
+            LOG.error("rethrowing fatal exception", ex);
             throw ex;
         }
     }
