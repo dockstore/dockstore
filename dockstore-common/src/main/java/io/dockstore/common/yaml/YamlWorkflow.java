@@ -115,7 +115,7 @@ public class YamlWorkflow implements Workflowish {
         this.authors = authors;
     }
 
-    public List<@AbsolutePath String> getTestParameterFiles() {
+    public List<@NotNull @AbsolutePath String> getTestParameterFiles() {
         return testParameterFiles;
     }
 
