@@ -57,6 +57,11 @@ public class Notebook extends Workflow {
     }
 
     @Override
+    public Notebook createEmptyEntry() {
+        return new Notebook();
+    }
+
+    @Override
     public EntryType getEntryType() {
         return EntryType.NOTEBOOK;
     }

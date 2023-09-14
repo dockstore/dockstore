@@ -67,6 +67,11 @@ public class BioWorkflow extends Workflow {
 
 
     @Override
+    public BioWorkflow createEmptyEntry() {
+        return new BioWorkflow();
+    }
+
+    @Override
     public EntryType getEntryType() {
         return EntryType.WORKFLOW;
     }

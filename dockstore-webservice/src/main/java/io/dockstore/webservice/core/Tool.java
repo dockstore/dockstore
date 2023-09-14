@@ -191,6 +191,11 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @Override
+    public Tool createEmptyEntry() {
+        return new Tool();
+    }
+
+    @Override
     public void setActualDefaultVersion(Tag version) {
         this.actualDefaultVersion = version;
     }

@@ -54,6 +54,11 @@ public class AppTool extends Workflow {
 
 
     @Override
+    public AppTool createEmptyEntry() {
+        return new AppTool();
+    }
+
+    @Override
     public EntryType getEntryType() {
         return EntryType.APPTOOL;
     }

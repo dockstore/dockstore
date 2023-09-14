@@ -56,6 +56,11 @@ public class Service extends Workflow {
     }
 
     @Override
+    public Service createEmptyEntry() {
+        return new Service();
+    }
+
+    @Override
     public EntryType getEntryType() {
         return EntryType.SERVICE;
     }

@@ -76,7 +76,15 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * Base class for all entries in the dockstore
+ * Base class for all entries in the dockstore.
+ * <p>
+ * When you add properties to Entry or its subclasses or create a new subclass of Entry, you might need to adjust other parts
+ * of the codebase to accommodate them:
+ * <li>
+ *   <ul>If the new properties or entry type should be indexed by ElasticSearch, you will probably need to modify `ElasticListener`,
+ *     typically `ElasticListener.dockstoreEntryToElasticSearchObject` and/or `ElasticListener.detach` and the methods it invokes to
+ *     copy properties into detached entries.</ul>
+ * </li>
  *
  * @author dyuen
  */
@@ -350,6 +358,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
     }
+
+    public abstract Entry<?, ?> createEmptyEntry();
 
     @JsonIgnore
     public abstract String getEntryPath();

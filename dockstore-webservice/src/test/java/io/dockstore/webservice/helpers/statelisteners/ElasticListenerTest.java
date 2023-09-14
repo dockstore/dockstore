@@ -128,7 +128,7 @@ class ElasticListenerTest {
     void testNoValidVersions() {
         // If there are no valid versions, the latest version id wins out
         List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
-            final Entry detachedEntry = ElasticListener.removeIrrelevantProperties(entry);
+            final Entry detachedEntry = ElasticListener.detach(entry);
             validateOnlyOneVersionHasSourceFileContent(detachedEntry, SECOND_VERSION_NAME);
         });
     }
@@ -139,31 +139,31 @@ class ElasticListenerTest {
         List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
             entry.getWorkflowVersions().clear();
             // Just make sure it doesn't throw an exception
-            ElasticListener.removeIrrelevantProperties(entry);
+            ElasticListener.detach(entry);
         });
     }
 
     @Test
     void testDefaultVersionSet() {
         bioWorkflow.setActualDefaultVersion(firstWorkflowVersion);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(bioWorkflow),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(bioWorkflow),
             FIRST_VERSION_NAME);
         bioWorkflow.setActualDefaultVersion(secondWorkflowVersion);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(bioWorkflow),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(bioWorkflow),
             SECOND_VERSION_NAME);
 
         tool.setActualDefaultVersion(firstTag);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(tool),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(tool),
             FIRST_VERSION_NAME);
         tool.setActualDefaultVersion(secondTag);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(tool),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(tool),
             SECOND_VERSION_NAME);
 
         appTool.setActualDefaultVersion(firstAppToolVersion);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(appTool),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(appTool),
             FIRST_VERSION_NAME);
         appTool.setActualDefaultVersion(secondAppToolVersion);
-        validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(appTool),
+        validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(appTool),
             SECOND_VERSION_NAME);
     }
 
@@ -173,7 +173,7 @@ class ElasticListenerTest {
         firstTag.setValid(true);
         firstAppToolVersion.setValid(true);
         List.of(bioWorkflow, tool, appTool).stream().forEach(entry -> {
-            validateOnlyOneVersionHasSourceFileContent(ElasticListener.removeIrrelevantProperties(entry),
+            validateOnlyOneVersionHasSourceFileContent(ElasticListener.detach(entry),
                 FIRST_VERSION_NAME);
 
         });

@@ -174,6 +174,9 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         workflowVersions = new TreeSet<>();
     }
 
+    @Override
+    public abstract Workflow createEmptyEntry();
+
     @JsonProperty
     @Override
     public String getGitUrl() {
