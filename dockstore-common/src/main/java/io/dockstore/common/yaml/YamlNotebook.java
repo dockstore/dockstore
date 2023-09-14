@@ -16,6 +16,7 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.EntryType;
+import io.dockstore.common.yaml.constraints.AbsolutePath;
 import io.dockstore.common.yaml.constraints.EntryName;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguage;
 import io.dockstore.common.yaml.constraints.ValidDescriptorLanguageSubclass;
@@ -154,7 +155,7 @@ public class YamlNotebook implements Workflowish {
         this.authors = authors;
     }
 
-    public List<String> getTestParameterFiles() {
+    public List<@AbsolutePath String> getTestParameterFiles() {
         return testParameterFiles;
     }
 
@@ -179,6 +180,8 @@ public class YamlNotebook implements Workflowish {
         this.otherFiles = otherFiles;
     }
 
+    @NotNull
+    @AbsolutePath
     public String getPrimaryDescriptorPath() {
         return getPath();
     }
