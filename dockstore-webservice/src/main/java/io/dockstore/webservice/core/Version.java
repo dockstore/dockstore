@@ -80,7 +80,8 @@ import org.hibernate.annotations.UpdateTimestamp;
  * @author dyuen
  */
 @Entity
-@ApiModel(value = "Version", description = "Base class for versions of entries in the Dockstore")
+@ApiModel(value = "Version", description = Version.VERSION_DESCRIPTION)
+@Schema(name = "Version", description = Version.VERSION_DESCRIPTION, subTypes = {WorkflowVersion.class, Tag.class})
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 
 // Ensure that the version requested belongs to a workflow a user has access to.
@@ -106,6 +107,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images",
         "versionEditor");
     private static final Gson GSON = new Gson();
+    public static final String VERSION_DESCRIPTION = "This describes a version of an entry in Dockstore";
 
     /**
      * re-use existing generator for backwards compatibility
@@ -129,6 +131,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parentid", nullable = false)
     @ApiModelProperty(value = "parent entry id", required = true, position = 0, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+    @Schema(implementation = Entry.class, hidden = true)
     private Entry<?, ?> parent;
 
 
@@ -265,10 +268,19 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(value = "Verified source for the version", position = 18)
     public String[] getVerifiedSources() {
-        if (this.getVersionMetadata().verifiedSource == null) {
+        return convertJsonToStringArray(getVersionMetadata().verifiedSource);
+    }
+
+    @Schema(description = "Verified platforms for the version")
+    public String[] getVerifiedPlatforms() {
+        return convertJsonToStringArray(getVersionMetadata().verifiedPlatforms);
+    }
+
+    private static String[] convertJsonToStringArray(String json) {
+        if (json == null) {
             return new String[0];
         } else {
-            return GSON.fromJson(Strings.nullToEmpty(this.getVersionMetadata().verifiedSource), String[].class);
+            return GSON.fromJson(json, String[].class);
         }
     }
 
@@ -400,6 +412,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public void updateVerified() {
         this.getVersionMetadata().verified = calculateVerified(this.getSourceFiles());
         this.getVersionMetadata().verifiedSource = calculateVerifiedSource(this.getSourceFiles());
+        this.getVersionMetadata().verifiedPlatforms = calculateVerifiedPlatforms(this.getSourceFiles());
     }
 
     private static boolean calculateVerified(SortedSet<SourceFile> versionSourceFiles) {
@@ -418,6 +431,19 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         });
         // How strange that we're returning an array-like string
         return convertStringSetToString(verifiedSources);
+    }
+
+    private static String calculateVerifiedPlatforms(SortedSet<SourceFile> versionSourceFiles) {
+        Set<String> verifiedPlatforms = new TreeSet<>();
+        versionSourceFiles.forEach(sourceFile -> {
+            Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+            for (Map.Entry<String, SourceFile.VerificationInformation> thing : verifiedBySource.entrySet()) {
+                if (thing.getValue().verified) {
+                    verifiedPlatforms.add(thing.getKey());
+                }
+            }
+        });
+        return convertStringSetToString(verifiedPlatforms);
     }
 
     private static String convertStringSetToString(Set<String> verifiedSources) {
@@ -599,6 +625,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }
 
+    @Schema(hidden = true)
     public void setParent(Entry<?, ?> parent) {
         this.parent = parent;
     }

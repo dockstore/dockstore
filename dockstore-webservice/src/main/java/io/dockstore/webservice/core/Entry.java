@@ -26,6 +26,7 @@ import io.dockstore.common.EntryType;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -75,12 +76,21 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * Base class for all entries in the dockstore
+ * Base class for all entries in the dockstore.
+ * <p>
+ * When you add properties to Entry or its subclasses or create a new subclass of Entry, you might need to adjust other parts
+ * of the codebase to accommodate them:
+ * <li>
+ *   <ul>If the new properties or entry type should be indexed by ElasticSearch, you will probably need to modify `ElasticListener`,
+ *     typically `ElasticListener.dockstoreEntryToElasticSearchObject` and/or `ElasticListener.detach` and the methods it invokes to
+ *     copy properties into detached entries.</ul>
+ * </li>
  *
  * @author dyuen
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore", subTypes = {Workflow.class, Tool.class})
 @SuppressWarnings("checkstyle:magicnumber")
 
 @NamedQueries({
@@ -348,6 +358,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
     }
+
+    public abstract Entry<?, ?> createEmptyEntry();
 
     @JsonIgnore
     public abstract String getEntryPath();
@@ -641,6 +653,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @return versions
      */
     @JsonProperty
+    @ArraySchema(uniqueItems = true, schema = @Schema(description = "the versions of this entry", implementation = WorkflowVersion.class, oneOf = {WorkflowVersion.class, Tag.class}))
     public abstract Set<T> getWorkflowVersions();
 
     @JsonProperty
@@ -740,6 +753,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonIgnore
+    @Transient
     public abstract Event.Builder getEventBuilder();
 
     public Timestamp getDbCreateDate() {

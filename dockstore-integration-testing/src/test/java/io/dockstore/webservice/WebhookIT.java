@@ -50,12 +50,12 @@ import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.Validation;
+import io.dockstore.openapi.client.model.Version.DescriptionSourceEnum;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum;
 import io.dockstore.openapi.client.model.Workflow.ModeEnum;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
-import io.dockstore.openapi.client.model.WorkflowVersion.DescriptionSourceEnum;
 import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.helpers.GitHubAppHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
@@ -1761,8 +1761,7 @@ class WebhookIT extends BaseIT {
 
     /**
      * Test that the push will fail if the .dockstore.yml contains a
-     * relative primary descriptor path, and the primary descriptor
-     * contains a relative secondary descriptor path.
+     * relative primary descriptor path, and/or relative test descriptor paths.
      */
     @Test
     void testMultiEntryRelativePrimaryDescriptorPath() {
@@ -1773,11 +1772,11 @@ class WebhookIT extends BaseIT {
         ApiException ex = shouldThrowLambdaError(() -> handleGitHubRelease(client, DockstoreTesting.MULTI_ENTRY, "refs/heads/relative-primary-descriptor-path", USER_2_USERNAME));
         assertTrue(ex.getMessage().toLowerCase().contains("could not be processed"));
         assertEquals(0, countWorkflows());
-        assertEquals(2, countTools());
+        assertEquals(0, countTools());
         List<LambdaEvent> failedLambdaEvents = usersApi.getUserGitHubEvents(0, 10).stream()
                 .filter(event -> !event.isSuccess())
                 .toList();
-        assertEquals(2, failedLambdaEvents.size(), "There should be two failed events");
+        assertEquals(4, failedLambdaEvents.size(), "There should be four failed events");
         failedLambdaEvents.forEach(event -> assertTrue(event.getMessage().toLowerCase().contains("absolute"), "Should contain the word 'absolute'"));
     }
 

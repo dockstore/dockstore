@@ -8282,9 +8282,10 @@ components:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
+      description: This describes one app tool in dockstore as a special degenerate
+        case of a workflow
     Author:
       type: object
-      description: "Non-ORCID authors for the entry, retrieved from the default version"
       properties:
         affiliation:
           type: string
@@ -8303,6 +8304,7 @@ components:
           parent_id:
             type: integer
             format: int64
+      description: This describes one workflow in the dockstore
     CLIInfo:
       type: object
       properties:
@@ -8765,201 +8767,83 @@ components:
           type: string
     DockstoreTool:
       type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        author:
-          type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
-        authors:
-          type: array
-          description: "Non-ORCID authors for the entry, retrieved from the default\
-            \ version"
-          items:
-            $ref: '#/components/schemas/Author'
-          readOnly: true
-          uniqueItems: true
-        checker_id:
-          type: integer
-          format: int64
-        conceptDoi:
-          type: string
-        custom_docker_registry_path:
-          type: string
-        customerDockerRegistryPath:
-          type: string
-          writeOnly: true
-        dbCreateDate:
-          type: integer
-          format: int64
-        dbUpdateDate:
-          type: integer
-          format: int64
-        defaultCWLTestParameterFile:
-          type: string
-        defaultVersion:
-          type: string
-        defaultWDLTestParameterFile:
-          type: string
-        default_cwl_path:
-          type: string
-        default_dockerfile_path:
-          type: string
-        default_wdl_path:
-          type: string
-        deletable:
-          type: boolean
-        description:
-          type: string
-        descriptorType:
-          type: array
-          items:
+      allOf:
+      - $ref: '#/components/schemas/Entry'
+      - type: object
+        properties:
+          custom_docker_registry_path:
             type: string
-        email:
-          type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
-        entryType:
-          $ref: '#/components/schemas/EntryType'
-        entryTypeMetadata:
-          $ref: '#/components/schemas/EntryTypeMetadata'
-        forumUrl:
-          type: string
-          maxLength: 256
-          minLength: 0
-        gitUrl:
-          type: string
-        has_checker:
-          type: boolean
-        id:
-          type: integer
-          format: int64
-        input_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        is_published:
-          type: boolean
-        labels:
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-          uniqueItems: true
-        lastBuild:
-          type: string
-          format: date-time
-        lastUpdated:
-          type: integer
-          format: int64
-        last_modified:
-          type: integer
-          format: int32
-        last_modified_date:
-          type: integer
-          format: int64
-        licenseInformation:
-          $ref: '#/components/schemas/LicenseInformation'
-        metadataFromEntry:
-          $ref: '#/components/schemas/DockstoreTool'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        mode:
-          type: string
-          enum:
-          - AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
-          - AUTO_DETECT_QUAY_TAGS_WITH_MIXED
-          - MANUAL_IMAGE_PATH
-          - HOSTED
-        name:
-          type: string
-        namespace:
-          type: string
-        orcidAuthors:
-          type: array
-          description: "ORCID authors for the entry, retrieved from the default version"
-          items:
-            $ref: '#/components/schemas/OrcidAuthor'
-          readOnly: true
-          uniqueItems: true
-        output_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        path:
-          type: string
-        private_access:
-          type: boolean
-        registry:
-          type: string
-          enum:
-          - QUAY_IO
-          - DOCKER_HUB
-          - GITLAB
-          - AMAZON_ECR
-          - SEVEN_BRIDGES
-          - GITHUB_CONTAINER_REGISTRY
-        registry_string:
-          type: string
-        starredUsers:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-          uniqueItems: true
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/Tag'
-          uniqueItems: true
-        tool_maintainer_email:
-          type: string
-        tool_path:
-          type: string
-        toolname:
-          type: string
-          maxLength: 256
-          minLength: 0
-        topic:
-          type: string
-        topicAutomatic:
-          type: string
-          description: Short description of the entry gotten automatically
-        topicId:
-          type: integer
-          format: int64
-        topicManual:
-          type: string
-          description: Short description of the entry manually updated
-        topicSelection:
-          type: string
-          description: Which topic to display to the public users
-          enum:
-          - AUTOMATIC
-          - MANUAL
-        userIdToOrcidPutCode:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/OrcidPutCode'
-          description: The presence of the put code for a userid indicates the entry
-            was exported to ORCID for the corresponding Dockstore user.
-        users:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-          uniqueItems: true
-        workflowVersions:
-          type: array
-          items:
-            $ref: '#/components/schemas/Tag'
-          uniqueItems: true
+          customerDockerRegistryPath:
+            type: string
+            writeOnly: true
+          defaultCWLTestParameterFile:
+            type: string
+          defaultWDLTestParameterFile:
+            type: string
+          default_cwl_path:
+            type: string
+          default_dockerfile_path:
+            type: string
+          default_wdl_path:
+            type: string
+          descriptorType:
+            type: array
+            items:
+              type: string
+          forumUrl:
+            type: string
+            maxLength: 256
+            minLength: 0
+          lastBuild:
+            type: string
+            format: date-time
+          metadataFromEntry:
+            $ref: '#/components/schemas/DockstoreTool'
+          mode:
+            type: string
+            enum:
+            - AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
+            - AUTO_DETECT_QUAY_TAGS_WITH_MIXED
+            - MANUAL_IMAGE_PATH
+            - HOSTED
+          name:
+            type: string
+          namespace:
+            type: string
+          path:
+            type: string
+          private_access:
+            type: boolean
+          registry:
+            type: string
+            enum:
+            - QUAY_IO
+            - DOCKER_HUB
+            - GITLAB
+            - AMAZON_ECR
+            - SEVEN_BRIDGES
+            - GITHUB_CONTAINER_REGISTRY
+          registry_string:
+            type: string
+          tags:
+            type: array
+            items:
+              $ref: '#/components/schemas/Tag'
+            uniqueItems: true
+          tool_maintainer_email:
+            type: string
+          tool_path:
+            type: string
+          toolname:
+            type: string
+            maxLength: 256
+            minLength: 0
+      description: "This describes one entry in the dockstore. Logically, this currently\
+        \ means one tuple of registry (either quay or docker hub), organization, image\
+        \ name, and toolname which can be associated with CWL and Dockerfile documents"
     Entry:
       type: object
+      description: This describes one high-level entity in the dockstore
       properties:
         aliases:
           type: object
@@ -9086,138 +8970,7 @@ components:
         workflowVersions:
           type: array
           items:
-            $ref: '#/components/schemas/Version'
-          uniqueItems: true
-    EntryObjectObject:
-      type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        author:
-          type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
-        authors:
-          type: array
-          description: "Non-ORCID authors for the entry, retrieved from the default\
-            \ version"
-          items:
-            $ref: '#/components/schemas/Author'
-          readOnly: true
-          uniqueItems: true
-        checker_id:
-          type: integer
-          format: int64
-        conceptDoi:
-          type: string
-        dbCreateDate:
-          type: integer
-          format: int64
-        dbUpdateDate:
-          type: integer
-          format: int64
-        defaultVersion:
-          type: string
-        deletable:
-          type: boolean
-        description:
-          type: string
-        email:
-          type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
-        entryType:
-          $ref: '#/components/schemas/EntryType'
-        entryTypeMetadata:
-          $ref: '#/components/schemas/EntryTypeMetadata'
-        gitUrl:
-          type: string
-        has_checker:
-          type: boolean
-        id:
-          type: integer
-          format: int64
-        input_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        is_published:
-          type: boolean
-        labels:
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-          uniqueItems: true
-        lastUpdated:
-          type: integer
-          format: int64
-        last_modified:
-          type: integer
-          format: int32
-        last_modified_date:
-          type: integer
-          format: int64
-        licenseInformation:
-          $ref: '#/components/schemas/LicenseInformation'
-        metadataFromEntry:
-          type: object
-          writeOnly: true
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        orcidAuthors:
-          type: array
-          description: "ORCID authors for the entry, retrieved from the default version"
-          items:
-            $ref: '#/components/schemas/OrcidAuthor'
-          readOnly: true
-          uniqueItems: true
-        output_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        starredUsers:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-          uniqueItems: true
-        topic:
-          type: string
-        topicAutomatic:
-          type: string
-          description: Short description of the entry gotten automatically
-        topicId:
-          type: integer
-          format: int64
-        topicManual:
-          type: string
-          description: Short description of the entry manually updated
-        topicSelection:
-          type: string
-          description: Which topic to display to the public users
-          enum:
-          - AUTOMATIC
-          - MANUAL
-        userIdToOrcidPutCode:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/OrcidPutCode'
-          description: The presence of the put code for a userid indicates the entry
-            was exported to ORCID for the corresponding Dockstore user.
-        users:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-          uniqueItems: true
-        workflowVersions:
-          type: array
-          items:
-            type: object
+            $ref: '#/components/schemas/WorkflowVersion'
           uniqueItems: true
     EntryType:
       type: string
@@ -9870,6 +9623,8 @@ components:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
+      description: This describes one notebook in the dockstore as a special degenerate
+        case of a workflow
     Notification:
       type: object
       properties:
@@ -9906,7 +9661,6 @@ components:
         is
     OrcidAuthor:
       type: object
-      description: "ORCID authors for the entry, retrieved from the default version"
       properties:
         id:
           type: integer
@@ -10221,6 +9975,8 @@ components:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
+      description: This describes one service in the dockstore as a special degenerate
+        case of a workflow
     ServiceType:
       type: object
       description: Type of a GA4GH service
@@ -10424,136 +10180,27 @@ components:
       - url
     Tag:
       type: object
-      properties:
-        author:
-          type: string
-        authors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Author'
-          uniqueItems: true
-        automated:
-          type: boolean
-        commitID:
-          type: string
-        cwl_path:
-          type: string
-        dbUpdateDate:
-          type: integer
-          format: int64
-        descriptionSource:
-          type: string
-          enum:
-          - README
-          - CUSTOM_README
-          - DESCRIPTOR
-        descriptorTypeVersionsFromSourceFiles:
-          type: array
-          items:
-            $ref: '#/components/schemas/SourceFile'
-          uniqueItems: true
-          writeOnly: true
-        dirtyBit:
-          type: boolean
-        dockerfile_path:
-          type: string
-        doiStatus:
-          type: string
-          enum:
-          - NOT_REQUESTED
-          - REQUESTED
-          - CREATED
-        doiURL:
-          type: string
-        email:
-          type: string
-        frozen:
-          type: boolean
-        hidden:
-          type: boolean
-        id:
-          type: integer
-          format: int64
-        image_id:
-          type: string
-        images:
-          type: array
-          items:
-            $ref: '#/components/schemas/Image'
-          uniqueItems: true
-        input_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        last_built:
-          type: integer
-          format: int64
-        metricsByPlatform:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Metrics'
-        name:
-          type: string
-          description: "Implementation specific, can be a quay.io or docker hub tag\
-            \ name"
-          example: latest
-        orcidAuthors:
-          type: array
-          items:
-            $ref: '#/components/schemas/OrcidAuthor'
-          uniqueItems: true
-        output_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        parent:
-          $ref: '#/components/schemas/EntryObjectObject'
-        readMePath:
-          type: string
-        reference:
-          type: string
-          description: git commit/tag/branch
-          example: master
-        referenceType:
-          type: string
-          enum:
-          - COMMIT
-          - TAG
-          - BRANCH
-          - NOT_APPLICABLE
-          - UNSET
-        size:
-          type: integer
-          format: int64
-        userFiles:
-          type: array
-          items:
+      allOf:
+      - $ref: '#/components/schemas/Version'
+      - type: object
+        properties:
+          automated:
+            type: boolean
+          cwl_path:
             type: string
-        valid:
-          type: boolean
-        validations:
-          type: array
-          items:
-            $ref: '#/components/schemas/Validation'
-          uniqueItems: true
-        verified:
-          type: boolean
-        verifiedSource:
-          type: string
-        verifiedSources:
-          type: array
-          items:
+          dockerfile_path:
             type: string
-        versionEditor:
-          $ref: '#/components/schemas/User'
-        versionMetadata:
-          $ref: '#/components/schemas/VersionMetadata'
-        wdl_path:
-          type: string
-        workingDirectory:
-          type: string
+          image_id:
+            type: string
+          last_built:
+            type: integer
+            format: int64
+          size:
+            type: integer
+            format: int64
+          wdl_path:
+            type: string
+      description: This describes one tag associated with a container.
       required:
       - name
       - reference
@@ -11293,6 +10940,7 @@ components:
           type: boolean
     Version:
       type: object
+      description: This describes a version of an entry in Dockstore
       properties:
         author:
           type: string
@@ -11366,8 +11014,6 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
-        parent:
-          $ref: '#/components/schemas/EntryObjectObject'
         readMePath:
           type: string
         reference:
@@ -11395,6 +11041,12 @@ components:
           uniqueItems: true
         verified:
           type: boolean
+        verifiedPlatforms:
+          type: array
+          description: Verified platforms for the version
+          items:
+            type: string
+            description: Verified platforms for the version
         verifiedSource:
           type: string
         verifiedSources:
@@ -11475,202 +11127,80 @@ components:
       - full_name
     Workflow:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/Entry'
+      - type: object
+        properties:
+          defaultTestParameterFilePath:
+            type: string
+          descriptorType:
+            type: string
+            enum:
+            - SMK
+            - CWL
+            - WDL
+            - gxformat2
+            - SWL
+            - NFL
+            - service
+            - jupyter
+          descriptorTypeSubclass:
+            type: string
+            enum:
+            - docker-compose
+            - helm
+            - swarm
+            - kubernetes
+            - Python
+            - R
+            - Javascript
+            - Scala
+            - Julia
+            - other
+            - n/a
+          forumUrl:
+            type: string
+            maxLength: 256
+            minLength: 0
+          full_workflow_path:
+            type: string
+          isChecker:
+            type: boolean
+          metadataFromEntry:
+            $ref: '#/components/schemas/Workflow'
+          mode:
+            type: string
+            enum:
+            - FULL
+            - STUB
+            - HOSTED
+            - DOCKSTORE_YML
+          organization:
+            type: string
+          path:
+            type: string
+          repository:
+            type: string
+          sourceControl:
+            type: string
+            enum:
+            - dockstore.org
+            - github.com
+            - bitbucket.org
+            - gitlab.com
+          source_control_provider:
+            type: string
+          workflowName:
+            type: string
+            maxLength: 256
+            minLength: 0
+          workflow_path:
+            type: string
+      description: This describes one workflow in the dockstore
       discriminator:
         propertyName: type
       properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        author:
-          type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
-        authors:
-          type: array
-          description: "Non-ORCID authors for the entry, retrieved from the default\
-            \ version"
-          items:
-            $ref: '#/components/schemas/Author'
-          readOnly: true
-          uniqueItems: true
-        checker_id:
-          type: integer
-          format: int64
-        conceptDoi:
-          type: string
-        dbCreateDate:
-          type: integer
-          format: int64
-        dbUpdateDate:
-          type: integer
-          format: int64
-        defaultTestParameterFilePath:
-          type: string
-        defaultVersion:
-          type: string
-        deletable:
-          type: boolean
-        description:
-          type: string
-        descriptorType:
-          type: string
-          enum:
-          - SMK
-          - CWL
-          - WDL
-          - gxformat2
-          - SWL
-          - NFL
-          - service
-          - jupyter
-        descriptorTypeSubclass:
-          type: string
-          enum:
-          - docker-compose
-          - helm
-          - swarm
-          - kubernetes
-          - Python
-          - R
-          - Javascript
-          - Scala
-          - Julia
-          - other
-          - n/a
-        email:
-          type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
-        entryType:
-          $ref: '#/components/schemas/EntryType'
-        entryTypeMetadata:
-          $ref: '#/components/schemas/EntryTypeMetadata'
-        forumUrl:
-          type: string
-          maxLength: 256
-          minLength: 0
-        full_workflow_path:
-          type: string
-        gitUrl:
-          type: string
-        has_checker:
-          type: boolean
-        id:
-          type: integer
-          format: int64
-        input_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        isChecker:
-          type: boolean
-        is_published:
-          type: boolean
-        labels:
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-          uniqueItems: true
-        lastUpdated:
-          type: integer
-          format: int64
-        last_modified:
-          type: integer
-          format: int32
-        last_modified_date:
-          type: integer
-          format: int64
-        licenseInformation:
-          $ref: '#/components/schemas/LicenseInformation'
-        metadataFromEntry:
-          $ref: '#/components/schemas/Workflow'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        mode:
-          type: string
-          enum:
-          - FULL
-          - STUB
-          - HOSTED
-          - DOCKSTORE_YML
-        orcidAuthors:
-          type: array
-          description: "ORCID authors for the entry, retrieved from the default version"
-          items:
-            $ref: '#/components/schemas/OrcidAuthor'
-          readOnly: true
-          uniqueItems: true
-        organization:
-          type: string
-        output_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        parentEntry:
-          $ref: '#/components/schemas/Entry'
-        path:
-          type: string
-        repository:
-          type: string
-        sourceControl:
-          type: string
-          enum:
-          - dockstore.org
-          - github.com
-          - bitbucket.org
-          - gitlab.com
-        source_control_provider:
-          type: string
-        starredUsers:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-          uniqueItems: true
-        topic:
-          type: string
-        topicAutomatic:
-          type: string
-          description: Short description of the entry gotten automatically
-        topicId:
-          type: integer
-          format: int64
-        topicManual:
-          type: string
-          description: Short description of the entry manually updated
-        topicSelection:
-          type: string
-          description: Which topic to display to the public users
-          enum:
-          - AUTOMATIC
-          - MANUAL
         type:
-          type: string
-        userIdToOrcidPutCode:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/OrcidPutCode'
-          description: The presence of the put code for a userid indicates the entry
-            was exported to ORCID for the corresponding Dockstore user.
-        users:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-          uniqueItems: true
-        workflowName:
-          type: string
-          maxLength: 256
-          minLength: 0
-        workflowVersions:
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkflowVersion'
-          uniqueItems: true
-        workflow_path:
           type: string
       required:
       - type
@@ -11683,136 +11213,27 @@ components:
       - NOTEBOOK
     WorkflowVersion:
       type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        author:
-          type: string
-        authors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Author'
-          uniqueItems: true
-        commitID:
-          type: string
-        dbUpdateDate:
-          type: integer
-          format: int64
-        descriptionSource:
-          type: string
-          enum:
-          - README
-          - CUSTOM_README
-          - DESCRIPTOR
-        descriptorTypeVersionsFromSourceFiles:
-          type: array
-          items:
-            $ref: '#/components/schemas/SourceFile'
-          uniqueItems: true
-          writeOnly: true
-        dirtyBit:
-          type: boolean
-        doiStatus:
-          type: string
-          enum:
-          - NOT_REQUESTED
-          - REQUESTED
-          - CREATED
-        doiURL:
-          type: string
-        email:
-          type: string
-        frozen:
-          type: boolean
-        hidden:
-          type: boolean
-        id:
-          type: integer
-          format: int64
-        images:
-          type: array
-          items:
-            $ref: '#/components/schemas/Image'
-          uniqueItems: true
-        input_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        kernelImagePath:
-          type: string
-          description: User-specified notebook kernel image reference
-        last_modified:
-          type: integer
-          format: int64
-        legacyVersion:
-          type: boolean
-        metricsByPlatform:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Metrics'
-        name:
-          type: string
-          description: "Implementation specific, can be a quay.io or docker hub tag\
-            \ name"
-          example: latest
-        orcidAuthors:
-          type: array
-          items:
-            $ref: '#/components/schemas/OrcidAuthor'
-          uniqueItems: true
-        output_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        parent:
-          $ref: '#/components/schemas/EntryObjectObject'
-        readMePath:
-          type: string
-        reference:
-          type: string
-          description: git commit/tag/branch
-          example: master
-        referenceType:
-          type: string
-          enum:
-          - COMMIT
-          - TAG
-          - BRANCH
-          - NOT_APPLICABLE
-          - UNSET
-        synced:
-          type: boolean
-        userFiles:
-          type: array
-          items:
+      allOf:
+      - $ref: '#/components/schemas/Version'
+      - type: object
+        properties:
+          aliases:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/Alias'
+          kernelImagePath:
             type: string
-        valid:
-          type: boolean
-        validations:
-          type: array
-          items:
-            $ref: '#/components/schemas/Validation'
-          uniqueItems: true
-        verified:
-          type: boolean
-        verifiedSource:
-          type: string
-        verifiedSources:
-          type: array
-          items:
+            description: User-specified notebook kernel image reference
+          last_modified:
+            type: integer
+            format: int64
+          legacyVersion:
+            type: boolean
+          synced:
+            type: boolean
+          workflow_path:
             type: string
-        versionEditor:
-          $ref: '#/components/schemas/User'
-        versionMetadata:
-          $ref: '#/components/schemas/VersionMetadata'
-        workflow_path:
-          type: string
-        workingDirectory:
-          type: string
+      description: This describes one workflow version associated with a workflow.
       required:
       - name
       - reference

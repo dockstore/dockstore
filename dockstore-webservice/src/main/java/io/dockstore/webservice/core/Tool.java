@@ -65,9 +65,7 @@ import org.hibernate.annotations.Filter;
  * @author xliu
  * @author dyuen
  */
-@ApiModel(value = "DockstoreTool", description =
-    "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
-        + " * associated with CWL and Dockerfile documents")
+@ApiModel(value = "DockstoreTool", description = Tool.TOOL_DESCRIPTION, parent = Entry.class)
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(name = "ukbq5vy17y4ocaist3d3r3imcus", columnNames = {"registry", "namespace", "name", "toolname"}))
 @NamedQueries({
@@ -103,12 +101,14 @@ import org.hibernate.annotations.Filter;
 
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
-@Schema(name = "DockstoreTool")
+@Schema(name = Tool.OPENAPI_NAME, description = Tool.TOOL_DESCRIPTION)
 public class Tool extends Entry<Tool, Tag> {
 
     static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";
 
     static final String DEFAULT_DESCRIPTOR_TYPE = DescriptorLanguage.CWL.toString();
+    public static final String TOOL_DESCRIPTION = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be associated with CWL and Dockerfile documents";
+    public static final String OPENAPI_NAME = "DockstoreTool";
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
@@ -188,6 +188,11 @@ public class Tool extends Entry<Tool, Tag> {
         // this.userId = userId;
         this.name = name;
         workflowVersions = new TreeSet<>();
+    }
+
+    @Override
+    public Tool createEmptyEntry() {
+        return new Tool();
     }
 
     @Override
