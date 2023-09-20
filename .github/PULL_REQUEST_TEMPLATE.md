@@ -11,8 +11,14 @@ Many tickets will likely be between these two extremes, so some judgement may be
 **Issue**
 A link to a github issue or SEAB- ticket (using that as a prefix)
 
-**Security**
+**Security and Privacy**
+
 If there are any concerns that require extra attention from the security team, highlight them here.
+
+e.g. Does this change...
+* Any user data we collect, or data location?
+* Access control, authentication or authorization?
+* Encryption features?
 
 Please make sure that you've checked the following before submitting your pull request. Thanks!
 
