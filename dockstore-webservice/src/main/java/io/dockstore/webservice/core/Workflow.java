@@ -258,6 +258,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @Override
+    @ArraySchema(uniqueItems = true, schema = @Schema(description = "the versions of this entry", implementation = WorkflowVersion.class))
     public Set<WorkflowVersion> getWorkflowVersions() {
         return this.workflowVersions;
     }

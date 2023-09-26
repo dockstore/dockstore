@@ -27,6 +27,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.ValidationConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -231,6 +232,7 @@ public class Tool extends Entry<Tool, Tag> {
     // compromise: this sucks, but setting the json property to tags allows for backwards compatibility of existing clients
     // the method name being standardized allows for simpler coding going forward
     @Override
+    @ArraySchema(uniqueItems = true, schema = @Schema(description = "the versions of this entry", implementation = Tag.class))
     public Set<Tag> getWorkflowVersions() {
         return workflowVersions;
     }
