@@ -74,7 +74,6 @@ public interface AuthenticatedResourceInterface {
 
     Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
     String FORBIDDEN_ENTRY_MESSAGE = "Forbidden: you do not have the credentials required to access this entry.";
-    String ARCHIVED_ENTRY_MESSAGE = "Forbidden: the entry is archived and cannot be modified.";
     String FORBIDDEN_ADMIN_MESSAGE = "Forbidden: you need to be an admin to perform this operation.";
     String FORBIDDEN_ID_MISMATCH_MESSAGE = "Forbidden: please check your credentials.";
 
@@ -99,6 +98,16 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
+     * Check if a user is allowed to read the specified entry.
+     * If not, throw a {@link CustomWebApplicationException}.
+     * @param user user to be checked, null if the user is not logged in
+     * @param entry entry to be checked
+     */
+    default void checkCanRead(User user, Entry<?, ?> entry) {
+        throwIf(!canRead(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    }
+
+    /**
      * Check if a non-authenticated user can read the specified entry.
      * If not, throw a {@link CustomWebApplicationException}.
      * @param entry entry to be checked
@@ -108,25 +117,13 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
-     * Check if a user is allowed to read the specified entry.
-     * If not, throw a {@link CustomWebApplicationException}.
-     * @param user user to be checked, null if the user is not logged in
-     * @param entry entry to be checked
-     */
-    default void checkCanRead(User user, Entry<?, ?> entry) {
-        if (!isPublished(entry)) {
-            checkCanExamine(user, entry);
-        }
-    }
-
-    /**
      * Check if the user is allowed to read non-public or sensitive information from the specified entry.
      * If not, throw a {@link CustomWebApplicationException}.
      * @param user user to be checked, null if the user is not logged in
      * @param entry entry to be checked
      */
     default void checkCanExamine(User user, Entry<?, ?> entry) {
-        throwIf(!isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+        throwIf(!canExamine(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     /**
@@ -136,8 +133,7 @@ public interface AuthenticatedResourceInterface {
      * @param entry entry to be checked
      */
     default void checkCanWrite(User user, Entry<?, ?> entry) {
-        throwIf(!isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
-        throwIf(isArchived(entry), ARCHIVED_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+        throwIf(!canWrite(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     /**
@@ -147,7 +143,7 @@ public interface AuthenticatedResourceInterface {
      * @param entry entry to be checked
      */
     default void checkCanShare(User user, Entry<?, ?> entry) {
-        throwIf(!isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+        throwIf(!canShare(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     /**
@@ -179,19 +175,19 @@ public interface AuthenticatedResourceInterface {
     }
 
     default boolean canRead(User user, Entry<?, ?> entry) {
-        return doesntThrow(() -> checkCanRead(user, entry));
+        return isPublished(entry) || canExamine(user, entry);
     }
 
     default boolean canExamine(User user, Entry<?, ?> entry) {
-        return doesntThrow(() -> checkCanExamine(user, entry));
+        return isOwner(user, entry);
     }
 
     default boolean canWrite(User user, Entry<?, ?> entry) {
-        return doesntThrow(() -> checkCanWrite(user, entry));
+        return isOwner(user, entry) && !isArchived(entry);
     }
 
     default boolean canShare(User user, Entry<?, ?> entry) {
-        return doesntThrow(() -> checkCanShare(user, entry));
+        return isOwner(user, entry);
     }
 
     default boolean isPublished(Entry<?, ?> entry) {
@@ -213,15 +209,6 @@ public interface AuthenticatedResourceInterface {
     static void throwIf(boolean condition, String message, int status) {
         if (condition) {
             throw new CustomWebApplicationException(message, status);
-        }
-    }
-
-    static boolean doesntThrow(Runnable r) {
-        try {
-            r.run();
-            return true;
-        } catch (CustomWebApplicationException e) {
-            return false;
         }
     }
 
