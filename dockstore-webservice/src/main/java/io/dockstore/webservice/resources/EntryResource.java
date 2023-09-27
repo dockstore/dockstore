@@ -743,7 +743,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     @Override
     public boolean canWrite(User user, Entry entry) {
-        return AuthenticatedResourceInterface.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
+        return !isReadOnly(entry) && (AuthenticatedResourceInterface.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE));
     }
 
     @Override

@@ -183,7 +183,7 @@ public interface AuthenticatedResourceInterface {
     }
 
     default boolean canWrite(User user, Entry<?, ?> entry) {
-        return isOwner(user, entry) && !isArchived(entry);
+        return !isReadOnly(entry) && isOwner(user, entry);
     }
 
     default boolean canShare(User user, Entry<?, ?> entry) {
@@ -194,7 +194,7 @@ public interface AuthenticatedResourceInterface {
         return entry != null && entry.getIsPublished();
     }
 
-    default boolean isArchived(Entry<?, ?> entry) {
+    default boolean isReadOnly(Entry<?, ?> entry) {
         return entry != null && entry.isArchived();
     }
 

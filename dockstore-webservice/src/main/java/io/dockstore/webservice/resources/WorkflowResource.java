@@ -918,7 +918,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     @Override
     public boolean canWrite(User user, Entry entry) {
-        return super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
+        return !isReadOnly(entry) && (super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE));
     }
 
     /**
