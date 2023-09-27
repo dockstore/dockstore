@@ -227,7 +227,7 @@
             WHERE vm.id = vs.versionid AND sv.id = vs.sourcefileid AND sv.verified;
         </sql>
     </changeSet>
-    <changeSet author="svonworl" id="addArchivedEntries">
+    <changeSet author="svonworl" id="addArchivedEntriesColumns">
         <addColumn tableName="tool">
             <column name="archived" type="BOOLEAN" defaultValue="false">
                 <constraints nullable="false"/>
@@ -253,5 +253,22 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+    </changeSet>
+    <changeSet author="svonworl" id="addArchivedEntriesTriggers">
+        <sql dbms="postgresql">
+            CREATE OR REPLACE FUNCTION disallow_update_of_archived_entry() RETURNS TRIGGER
+            LANGUAGE 'plpgsql' AS
+            $$ BEGIN
+                IF (OLD.archived = true AND NEW.archived = true) THEN
+                    RAISE EXCEPTION 'attempt to update archived entry';
+                END IF;
+                RETURN NEW;
+            END; $$
+            CREATE TRIGGER update_archived_tool BEFORE UPDATE ON tool FOR EACH ROW EXECUTE PROCEDURE disallow_update_of_archived_entry();
+            CREATE TRIGGER update_archived_workflow BEFORE UPDATE ON workflow FOR EACH ROW EXECUTE PROCEDURE disallow_update_of_archived_entry();
+            CREATE TRIGGER update_archived_apptool BEFORE UPDATE ON apptool FOR EACH ROW EXECUTE PROCEDURE disallow_update_of_archived_entry();
+            CREATE TRIGGER update_archived_service BEFORE UPDATE ON service FOR EACH ROW EXECUTE PROCEDURE disallow_update_of_archived_entry();
+            CREATE TRIGGER update_archived_notebook BEFORE UPDATE ON notebook FOR EACH ROW EXECUTE PROCEDURE disallow_update_of_archived_entry();
+        </sql>
     </changeSet>
 </databaseChangeLog>
