@@ -319,6 +319,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column(nullable = false)
     private boolean wasEverPublic;
 
+    @Column(nullable = false)
+    private boolean archived;
+
     @JsonIgnore
     @Column(nullable = true, columnDefinition = "varchar(32)")
     @Enumerated(EnumType.STRING)
@@ -869,6 +872,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonProperty
     public boolean isDeletable() {
         return !getWasEverPublic() && !hasChecker();
+    }
+
+    public boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(boolean archived) {
+        this.archived = archived;
     }
 
     public GitVisibility getGitVisibility() {

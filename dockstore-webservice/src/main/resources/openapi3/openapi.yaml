@@ -8849,6 +8849,8 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        archived:
+          type: boolean
         author:
           type: string
           deprecated: true
