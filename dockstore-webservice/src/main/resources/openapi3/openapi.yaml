@@ -3137,6 +3137,28 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/{id}/archive:
+    patch:
+      description: Archive an entry.
+      operationId: archiveEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully archived the entry
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{id}/categories:
     get:
       description: Get the categories that contain the published entry
@@ -3204,6 +3226,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Entry'
           description: default response
+      security:
+      - BEARER: []
+      tags:
+      - entries
+  /entries/{id}/unarchive:
+    patch:
+      description: Unarchive an entry.
+      operationId: unarchiveEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully unarchived the entry
       security:
       - BEARER: []
       tags:
@@ -9091,6 +9135,8 @@ components:
           - ADD_VERSION_TO_ENTRY
           - PUBLISH_ENTRY
           - UNPUBLISH_ENTRY
+          - ARCHIVE_ENTRY
+          - UNARCHIVE_ENTRY
         user:
           $ref: '#/components/schemas/User'
         version:

@@ -166,8 +166,16 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public <T extends Entry> void publishEvent(boolean publish, User user, T entry) {
+        createActionOnEntryEvent(publish ? EventType.PUBLISH_ENTRY : EventType.UNPUBLISH_ENTRY, user, entry);
+    }
+
+    public <T extends Entry> void archiveEvent(boolean archive, User user, T entry) {
+        createActionOnEntryEvent(archive ? EventType.ARCHIVE_ENTRY : EventType.UNARCHIVE_ENTRY, user, entry);
+    }
+
+    private <T extends Entry> void createActionOnEntryEvent(EventType type, User user, T entry) {
         final Builder builder = entry.getEventBuilder()
-            .withType(publish ? EventType.PUBLISH_ENTRY : EventType.UNPUBLISH_ENTRY)
+            .withType(type)
             .withUser(user).withInitiatorUser(user);
         final Event event = builder.build();
         create(event);
