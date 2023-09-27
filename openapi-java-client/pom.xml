@@ -233,6 +233,10 @@
                             <value>conf/log4j.properties</value>
                         </property>
                     </systemProperties>
+                    <argLine>
+                        ${argLine}
+                        -Xms512m -Xmx1500m
+                    </argLine>
                     <parallel>methods</parallel>
                     <forkMode>pertest</forkMode>
                 </configuration>
@@ -392,16 +396,6 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

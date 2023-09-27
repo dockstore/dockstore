@@ -48,9 +48,7 @@ import org.apache.commons.io.FilenameUtils;
  *
  * @author dyuen
  */
-@ApiModel(value = "WorkflowVersion", description = WorkflowVersion.WORKFLOW_VERSION_DESCRIPTION)
-@Schema(name = "WorkflowVersion", description = WorkflowVersion.WORKFLOW_VERSION_DESCRIPTION, allOf = Version.class)
-
+@ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
 @Entity
 @Table(name = "workflowversion", uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_names", columnNames = {"parentid",
     "name"}))
@@ -62,8 +60,6 @@ import org.apache.commons.io.FilenameUtils;
 
 @SuppressWarnings("checkstyle:magicnumber")
 public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion>, Aliasable {
-
-    public static final String WORKFLOW_VERSION_DESCRIPTION = "This describes one workflow version associated with a workflow.";
     @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "workflowversion_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")

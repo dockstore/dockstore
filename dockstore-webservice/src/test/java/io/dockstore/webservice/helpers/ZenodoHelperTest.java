@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import alleycats.std.map;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -16,11 +17,13 @@ import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.api.PreviewApi;
 import io.swagger.zenodo.client.model.DepositMetadata;
 import java.util.Map;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class ZenodoHelperTest {
 
     @Test
+    @Disabled("looks like sandbox is down, still listed at https://developers.zenodo.org/#testing ")
     void testBasicFunctionality() {
         ApiClient zenodoClient = new ApiClient();
         String zenodoUrlApi = "https://sandbox.zenodo.org/api";

@@ -17,17 +17,12 @@ package io.dockstore.webservice.core;
 
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 
-@ApiModel(value = "Notebook", description = Notebook.NOTEBOOK_DESCRIPTION, parent = Workflow.class)
-@Schema(name = "Notebook", description = Notebook.NOTEBOOK_DESCRIPTION)
-
+@ApiModel(value = "Notebook", description = "This describes one notebook in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
 @Table(name = "notebook")
 
@@ -46,13 +41,8 @@ import jakarta.persistence.Transient;
 
 public class Notebook extends Workflow {
 
-    public static final String NOTEBOOK_DESCRIPTION = "This describes one notebook in the dockstore as a special degenerate case of a workflow";
-    public static final String OPENAPI_NAME = "Notebook";
-
     @Override
-    @OneToOne
-    @Schema(hidden = true)
-    public Entry<?, ?> getParentEntry() {
+    public Entry getParentEntry() {
         return null;
     }
 
@@ -86,7 +76,6 @@ public class Notebook extends Workflow {
         throw new UnsupportedOperationException("cannot add a checker workflow to a Notebook");
     }
 
-    @Transient
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withNotebook(this);
     }
