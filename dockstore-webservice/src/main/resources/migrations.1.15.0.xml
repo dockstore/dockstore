@@ -256,19 +256,14 @@
     </changeSet>
     <changeSet author="svonworl" id="addArchivedEntriesTriggers">
         <sql dbms="postgresql">
-            CREATE OR REPLACE FUNCTION disallow_update_of_archived_entry() RETURNS TRIGGER
-            LANGUAGE 'plpgsql' AS
-            $$ BEGIN
-                IF (OLD.archived = true AND NEW.archived = true) THEN
-                    RAISE EXCEPTION 'attempt to update archived entry';
-                END IF;
-                RETURN NEW;
-            END; $$
-            CREATE TRIGGER update_archived_tool BEFORE UPDATE ON tool FOR EACH ROW EXECUTE PROCEDURE disallow_update_of_archived_entry();
-            CREATE TRIGGER update_archived_workflow BEFORE UPDATE ON workflow FOR EACH ROW EXECUTE PROCEDURE disallow_update_of_archived_entry();
-            CREATE TRIGGER update_archived_apptool BEFORE UPDATE ON apptool FOR EACH ROW EXECUTE PROCEDURE disallow_update_of_archived_entry();
-            CREATE TRIGGER update_archived_service BEFORE UPDATE ON service FOR EACH ROW EXECUTE PROCEDURE disallow_update_of_archived_entry();
-            CREATE TRIGGER update_archived_notebook BEFORE UPDATE ON notebook FOR EACH ROW EXECUTE PROCEDURE disallow_update_of_archived_entry();
+            CREATE OR REPLACE FUNCTION cannot_update_archived_entry()
+            RETURNS TRIGGER AS $$
+            BEGIN
+            RAISE EXCEPTION 'cannot update archived entry';
+            END
+            $$ LANGUAGE plpgsql;
+
+            CREATE TRIGGER update_archived_tool BEFORE UPDATE ON tool FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION cannot_update_archived_entry();
         </sql>
     </changeSet>
 </databaseChangeLog>
