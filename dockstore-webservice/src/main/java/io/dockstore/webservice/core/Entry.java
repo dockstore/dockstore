@@ -319,7 +319,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column(nullable = false)
     private boolean wasEverPublic;
 
-    @Column(nullable = false)
+    @Column(columnDefinition = "boolean default false", nullable = false)
     private boolean archived;
 
     @JsonIgnore
