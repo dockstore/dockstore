@@ -50,12 +50,12 @@ import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.Validation;
-import io.dockstore.openapi.client.model.Version.DescriptionSourceEnum;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum;
 import io.dockstore.openapi.client.model.Workflow.ModeEnum;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
+import io.dockstore.openapi.client.model.WorkflowVersion.DescriptionSourceEnum;
 import io.dockstore.webservice.core.EntryTypeMetadata;
 import io.dockstore.webservice.helpers.GitHubAppHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
@@ -485,7 +485,7 @@ class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         Workflow workflow = getFoobar1Workflow(client);
-        assertEquals(Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
         assertEquals(Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
         assertEquals(1, workflow.getWorkflowVersions().stream().filter(v -> v.getName().contains("0.1")).toList().size(), "Should have one version 0.1");
         assertEquals("A repo that includes .dockstore.yml", workflow.getTopicAutomatic());
@@ -500,7 +500,7 @@ class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         Workflow workflow2 = getFoobar2Workflow(client);
-        assertEquals(Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType(), "Should be a CWL workflow");
+        assertEquals(DescriptorTypeEnum.CWL, workflow2.getDescriptorType(), "Should be a CWL workflow");
         assertEquals(Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode(), "Should be type DOCKSTORE_YML");
         assertEquals(1, workflow2.getWorkflowVersions().stream().filter(v -> v.getName().contains("0.2")).toList().size(), "Should have one version 0.2");
 
@@ -1001,7 +1001,7 @@ class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
 
-        assertEquals(Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
         assertEquals(Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
         assertTrue(workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")), "Should have a 0.1 version.");
         boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(WorkflowVersion::isLegacyVersion);
@@ -1048,20 +1048,20 @@ class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
         // Ensure that new workflow is created and is what is expected
         Workflow workflow = getFoobar1Workflow(workflowsApi);
-        assertEquals(Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
         assertEquals(Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
         assertEquals(1, workflow.getWorkflowVersions().size(), "Should have one version");
         assertFalse(workflow.getWorkflowVersions().get(0).isValid(), "Should be invalid (wrong language, bad version)");
 
         workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.CWL.toString());
         Workflow updatedWorkflowAfterModifyingDescriptorType = workflowsApi.getWorkflow(workflow.getId(), "");
-        assertEquals(Workflow.DescriptorTypeEnum.CWL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType(),
+        assertEquals(DescriptorTypeEnum.CWL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType(),
             "The descriptor language should have been changed");
         assertEquals(0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size(), "The old versions should have been removed");
 
         workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.WDL.toString());
         updatedWorkflowAfterModifyingDescriptorType = workflowsApi.getWorkflow(workflow.getId(), "versions");
-        assertEquals(Workflow.DescriptorTypeEnum.WDL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType(),
+        assertEquals(DescriptorTypeEnum.WDL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType(),
             "The descriptor language should have been changed");
         assertEquals(0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size(), "The old versions should have been removed");
 
@@ -1072,7 +1072,7 @@ class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         workflow = getFoobar1Workflow(workflowsApi);
-        assertEquals(Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
         assertEquals(Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
         assertEquals(1, workflow.getWorkflowVersions().size(), "Should have one version 0.1");
         assertTrue(workflow.getWorkflowVersions().get(0).isValid(), "Should be valid");

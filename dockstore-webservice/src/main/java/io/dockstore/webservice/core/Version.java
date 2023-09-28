@@ -81,7 +81,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Entity
 @ApiModel(value = "Version", description = Version.VERSION_DESCRIPTION)
-@Schema(name = "Version", description = Version.VERSION_DESCRIPTION, subTypes = {WorkflowVersion.class, Tag.class})
+@Schema(name = "Version", description = Version.VERSION_DESCRIPTION)
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 
 // Ensure that the version requested belongs to a workflow a user has access to.

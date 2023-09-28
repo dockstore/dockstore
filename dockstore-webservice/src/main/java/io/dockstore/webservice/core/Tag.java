@@ -41,7 +41,7 @@ import org.apache.commons.lang3.ObjectUtils;
  * @author dyuen
  */
 @ApiModel(value = "Tag", description = Tag.TAG_DESCRIPTION)
-@Schema(name = "Tag", description = Tag.TAG_DESCRIPTION, allOf = Version.class)
+@Schema(name = "Tag", description = Tag.TAG_DESCRIPTION)
 
 @Entity
 @SuppressWarnings("checkstyle:magicnumber")

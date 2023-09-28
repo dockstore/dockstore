@@ -49,7 +49,7 @@ import org.apache.commons.io.FilenameUtils;
  * @author dyuen
  */
 @ApiModel(value = "WorkflowVersion", description = WorkflowVersion.WORKFLOW_VERSION_DESCRIPTION)
-@Schema(name = "WorkflowVersion", description = WorkflowVersion.WORKFLOW_VERSION_DESCRIPTION, allOf = Version.class)
+@Schema(name = "WorkflowVersion", description = WorkflowVersion.WORKFLOW_VERSION_DESCRIPTION)
 
 @Entity
 @Table(name = "workflowversion", uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_names", columnNames = {"parentid",
