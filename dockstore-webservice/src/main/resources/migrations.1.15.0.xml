@@ -227,6 +227,12 @@
             WHERE vm.id = vs.versionid AND sv.id = vs.sourcefileid AND sv.verified;
         </sql>
     </changeSet>
+    <changeSet id="updateServiceDefaultPaths" author="coverbeck">
+        <update tableName="entry_defaultpaths">
+            <column name="path" value="/.dockstore.yml"/>
+            <where>filetype = 'DOCKSTORE_SERVICE_YML' AND path = '.dockstore.yml'</where>
+        </update>
+    </changeSet>
     <changeSet author="svonworl" id="addArchivedEntriesColumns">
         <addColumn tableName="tool">
             <column name="archived" type="BOOLEAN" defaultValue="false">

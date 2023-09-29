@@ -96,7 +96,6 @@ class ExtendedTRSApiIT extends BaseIT {
         newTool.setToolname("altname");
         newTool.setPrivateAccess(false);
         newTool.setDefaultCWLTestParameterFile("/testcwl.json");
-
         DockstoreTool githubTool = containersApi.registerManual(newTool);
 
         // Refresh the workflow

@@ -18,17 +18,12 @@ package io.dockstore.webservice.core;
 
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 
-@ApiModel(value = "AppTool", description = AppTool.APPTOOL_DESCRIPTION, parent = Workflow.class)
-@Schema(name = "AppTool", description = AppTool.APPTOOL_DESCRIPTION)
-
+@ApiModel(value = "AppTool", description = "This describes one app tool in dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
 @Table(name = "apptool")
 @NamedQueries({
@@ -48,11 +43,6 @@ import jakarta.persistence.Transient;
 })
 public class AppTool extends Workflow {
 
-
-    public static final String APPTOOL_DESCRIPTION = "This describes one app tool in dockstore as a special degenerate case of a workflow";
-    public static final String OPENAPI_NAME = "AppTool";
-
-
     @Override
     public AppTool createEmptyEntry() {
         return new AppTool();
@@ -69,14 +59,12 @@ public class AppTool extends Workflow {
     }
 
     @Override
-    @OneToOne
-    @Schema(hidden = true)
-    public Entry<?, ?> getParentEntry() {
+    public Entry getParentEntry() {
         return null;
     }
 
     @Override
-    public void setParentEntry(Entry<?, ?> parentEntry) {
+    public void setParentEntry(Entry parentEntry) {
         if (parentEntry == null) {
             return;
         }
@@ -96,7 +84,6 @@ public class AppTool extends Workflow {
         throw new UnsupportedOperationException("AppTool cannot be a checker workflow");
     }
 
-    @Transient
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withAppTool(this);
     }
