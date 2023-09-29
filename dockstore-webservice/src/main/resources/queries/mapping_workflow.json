@@ -18,6 +18,13 @@
             "stopwords": [ "https", "http", "see", "from", "use", "usage", "more", "can", "reads", "website", "count" ]
           }
         },
+        "char_filter": {
+          "underscores_to_spaces": {
+            "type": "pattern_replace",
+            "pattern": "_",
+            "replacement": " "
+          }
+        },
         "analyzer": {
           "didYouMean": {
             "filter": [
@@ -40,7 +47,8 @@
               "unique_stem"
             ],
             "char_filter": [
-              "html_strip"
+              "html_strip",
+              "underscores_to_spaces"
             ]
           }
         }
