@@ -794,6 +794,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (!isAdmin(user)) {
             checkCanShare(user, workflow);
         }
+        checkNotArchived(workflow);
 
         Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());

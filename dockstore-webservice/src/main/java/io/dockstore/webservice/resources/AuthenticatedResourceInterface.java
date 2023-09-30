@@ -183,6 +183,10 @@ public interface AuthenticatedResourceInterface {
         throwIf(!isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
+    default void checkNotArchived(Entry<?, ?> entry) {
+        throwIf(entry.isArchived(), FORBIDDEN_WRITE_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    }
+
     default boolean canRead(User user, Entry<?, ?> entry) {
         return isPublished(entry) || canExamine(user, entry);
     }

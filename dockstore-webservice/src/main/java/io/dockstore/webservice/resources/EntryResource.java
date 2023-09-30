@@ -81,7 +81,6 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -265,7 +264,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return entry;
     }
 
-    @PATCH
+    @POST
     @Timed
     @UnitOfWork
     @Path("/{id}/archive")
@@ -274,28 +273,28 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public Entry archiveEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Entry to archive.", required = true) @PathParam("id") Long id) {
         Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
-        checkNotNullEntry(entry);
-        checkCanWrite(user, entry);
         updateArchived(true, user, entry);
         return entry;
     }
 
-    @PATCH
+    @POST
     @Timed
     @UnitOfWork
     @Path("/{id}/unarchive")
     @Operation(operationId = "unarchiveEntry", description = "Unarchive an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully unarchived the entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
     public Entry unarchiveEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "Entry to archive.", required = true) @PathParam("id") Long id) {
+        @ApiParam(value = "Entry to unarchive.", required = true) @PathParam("id") Long id) {
         Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
-        checkNotNullEntry(entry);
-        checkIsOwner(user, entry);
         updateArchived(false, user, entry);
         return entry;
     }
 
     private void updateArchived(boolean archive, User user, Entry<?, ?> entry) {
+        checkNotNullEntry(entry);
+        if (!isAdmin(user)) {
+            checkIsOwner(user, entry);
+        }
         if (entry.isArchived() != archive) {
             entry.setArchived(archive);
             eventDAO.archiveEvent(archive, user, entry);

@@ -3138,7 +3138,7 @@ paths:
       tags:
       - entries
   /entries/{id}/archive:
-    patch:
+    post:
       description: Archive an entry.
       operationId: archiveEntry
       parameters:
@@ -3231,7 +3231,7 @@ paths:
       tags:
       - entries
   /entries/{id}/unarchive:
-    patch:
+    post:
       description: Unarchive an entry.
       operationId: unarchiveEntry
       parameters:
