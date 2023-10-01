@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
@@ -567,12 +566,14 @@ class NotebookIT extends BaseIT {
         entriesApi.archiveEntry(id);
         shouldThrow(() -> handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME), "an archived entry should not be pushable", LAMBDA_FAILURE);
 
-        // Make sure an archived entry cannot be modified
+        // Make sure an archived entry cannot be published
         PublishRequest publishRequest = new PublishRequest();
         publishRequest.setPublish(true);
         assertFalse(workflowsApi.getWorkflow(id, null).isIsPublished());
         shouldThrow(() -> workflowsApi.publish1(id, publishRequest), "an archived entry should not be publishable", HttpStatus.SC_FORBIDDEN);
         assertFalse(workflowsApi.getWorkflow(id, null).isIsPublished());
+
+        // Make sure an archived entry cannot be modified
         assertEquals(null, workflowsApi.getWorkflow(id, null).getDefaultVersion());
         shouldThrow(() -> workflowsApi.updateDefaultVersion1(id, "simple-v1"), "an archived entry should not be modifiable", HttpStatus.SC_FORBIDDEN);
         assertEquals(null, workflowsApi.getWorkflow(id, null).getDefaultVersion());
@@ -581,13 +582,27 @@ class NotebookIT extends BaseIT {
         entriesApi.unarchiveEntry(id);
         handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME);
 
-        // Make sure an unarchived entry can be modified
+        // Make sure an unarchived entry can be published
         assertFalse(workflowsApi.getWorkflow(id, null).isIsPublished());
         workflowsApi.publish1(id, publishRequest);
         assertTrue(workflowsApi.getWorkflow(id, null).isIsPublished());
+
+        // Make sure an unarchived entry can be modified
         assertEquals(null, workflowsApi.getWorkflow(id, null).getDefaultVersion());
         workflowsApi.updateDefaultVersion1(id, "simple-v1");
         assertEquals("simple-v1", workflowsApi.getWorkflow(id, null).getDefaultVersion());
+
+        // Non-owner admins should be able to archive/unarchive an entry
+        ApiClient differentAdminApiClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        EntriesApi differentAdminEntriesApi = new EntriesApi(differentAdminApiClient);
+        differentAdminEntriesApi.archiveEntry(id);
+        differentAdminEntriesApi.unarchiveEntry(id);
+
+        // Non-owner non-admins should not be able to archive/unarchive an entry
+        ApiClient unprivilegedApiClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        EntriesApi unprivilegedEntriesApi = new EntriesApi(unprivilegedApiClient);
+        shouldThrow(() -> unprivilegedEntriesApi.archiveEntry(id), "unprivileged users should not be able to archive", HttpStatus.SC_FORBIDDEN);
+        shouldThrow(() -> unprivilegedEntriesApi.unarchiveEntry(id), "unprivileged users should not be able to unarchive", HttpStatus.SC_FORBIDDEN);
     }
 
     private Organization createTestOrganization(String name, boolean categorizer) {
