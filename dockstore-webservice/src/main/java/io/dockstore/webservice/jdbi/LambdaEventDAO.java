@@ -62,16 +62,29 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         CriteriaQuery<LambdaEvent> query = criteriaQuery();
         Root<LambdaEvent> event = query.from(LambdaEvent.class);
 
-        List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.equal(event.get("user"), user));
-        query.orderBy(cb.desc(event.get("id")));
-        query.where(predicates.toArray(new Predicate[]{}));
+        setupFindByUserQuery(user, cb, query, event);
 
         query.select(event);
+        query.orderBy(cb.desc(event.get("id")));
 
         int primitiveOffset = (offset != null) ? offset : 0;
         TypedQuery<LambdaEvent> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
         return typedQuery.getResultList();
+    }
+
+    public long countByUser(User user) {
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<LambdaEvent> event = query.from(LambdaEvent.class);
+        query.select(cb.count(event));
+        setupFindByUserQuery(user, cb, query, event);
+        return currentSession().createQuery(query).getSingleResult();
+    }
+
+    private void setupFindByUserQuery(User user, CriteriaBuilder cb, CriteriaQuery<?> query, Root<?> event) {
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(event.get("user"), user));
+        query.where(predicates.toArray(new Predicate[]{}));
     }
 
     /**
@@ -88,16 +101,29 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         CriteriaQuery<LambdaEvent> query = criteriaQuery();
         Root<LambdaEvent> event = query.from(LambdaEvent.class);
 
-        List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.equal(event.get("organization"), organization));
-        repositories.ifPresent(repos -> predicates.add(event.get("repository").in(repos)));
-        query.orderBy(cb.desc(event.get("id")));
-        query.where(predicates.toArray(new Predicate[]{}));
-
+        setupFindByOrganizationQuery(organization, repositories, cb, query, event);
         query.select(event);
+        query.orderBy(cb.desc(event.get("id")));
 
         int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
         TypedQuery<LambdaEvent> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
         return typedQuery.getResultList();
+    }
+
+    public long countByOrganization(String organization, Optional<List<String>> repositories) {
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<LambdaEvent> event = query.from(LambdaEvent.class);
+        query.select(cb.count(event));
+        setupFindByOrganizationQuery(organization, repositories, cb, query, event);
+        return currentSession().createQuery(query).getSingleResult();
+    }
+
+    private void setupFindByOrganizationQuery(String organization, Optional<List<String>> repositories, CriteriaBuilder cb,
+            CriteriaQuery<?> query, Root<?> event) {
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(event.get("organization"), organization));
+        repositories.ifPresent(repos -> predicates.add(event.get("repository").in(repos)));
+        query.where(predicates.toArray(new Predicate[]{}));
     }
 }
