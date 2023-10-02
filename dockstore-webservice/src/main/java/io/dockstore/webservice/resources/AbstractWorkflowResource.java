@@ -302,6 +302,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 // Ignore the delete event if the ref exists.
                 if (!shouldProcessDelete(gitHubSourceCodeRepo, repository, gitReference)) {
                     LOG.info("ignoring delete event, repository={}, reference={}, deliveryId={}", repository, gitReference, deliveryId);
+                    LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, false, deliveryId);
+                    lambdaEvent.setIgnored(true);
+                    lambdaEventDAO.create(lambdaEvent);
                     return;
                 }
             } finally {
@@ -430,6 +433,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Ignore the push event if the "after" hash exists and does not match the current ref head hash.
             if (!shouldProcessPush(gitHubSourceCodeRepo, repository, gitReference, afterCommit)) {
                 LOG.info("ignoring push event, repository={}, reference={}, deliveryId={}, afterCommit={}", repository, gitReference, deliveryId, afterCommit);
+                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, false, deliveryId);
+                lambdaEvent.setIgnored(true);
+                lambdaEventDAO.create(lambdaEvent);
                 return;
             }
 

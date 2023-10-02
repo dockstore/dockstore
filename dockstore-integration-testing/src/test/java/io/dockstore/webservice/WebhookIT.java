@@ -1851,6 +1851,8 @@ class WebhookIT extends BaseIT {
         // Existing tag with no "after" SHA supplied, should succeed
         handleGitHubRelease(client, repo, "refs/tags/simple-published-v1", USER_2_USERNAME);
         assertEquals(2, countVersions());
+        // There should be two ignored LambdaEvents
+        assertEquals(2, new UsersApi(webClient).getUserGitHubEvents(0, 10).stream().filter(LambdaEvent::isIgnored).count());
     }
 
     /**
@@ -1880,6 +1882,8 @@ class WebhookIT extends BaseIT {
         // Attempt to delete a version corresponding to an existing branch, should be ignored
         handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, "refs/heads/main", false);
         assertEquals(versionCount - 2, countVersions());
+        // There should be two ignored LambdaEvents
+        assertEquals(2, new UsersApi(webClient).getUserGitHubEvents(0, 10).stream().filter(LambdaEvent::isIgnored).count());
     }
 
     private void addNotebookAndVersion(String organization, String repo, String ref) {
