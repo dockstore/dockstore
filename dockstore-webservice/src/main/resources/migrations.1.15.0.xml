@@ -233,4 +233,11 @@
             <where>filetype = 'DOCKSTORE_SERVICE_YML' AND path = '.dockstore.yml'</where>
         </update>
     </changeSet>
+    <changeSet author="svonworl" id="addIgnoredPropertyToLambdaEvent">
+        <addColumn tableName="lambdaevent">
+            <column name="ignored" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
