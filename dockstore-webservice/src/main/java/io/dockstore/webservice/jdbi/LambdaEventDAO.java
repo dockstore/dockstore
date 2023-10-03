@@ -73,7 +73,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
     }
 
     /**
-     * Count lambda events filtered by a user
+     * Count lambda events filtered by a user.
      * @param user filter for lambda events
      * @return count of lambda events
      */
@@ -116,7 +116,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
     }
 
     /**
-     * Count lambda events filtered by an organization and a list of repositories
+     * Count lambda events filtered by an organization and a list of repositories.
      * @param organization organization
      * @param repositories optional list of repositories
      * @return count of lambda events
