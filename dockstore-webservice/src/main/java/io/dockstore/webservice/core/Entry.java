@@ -89,6 +89,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore")
 @SuppressWarnings("checkstyle:magicnumber")
 
 @NamedQueries({
@@ -753,6 +754,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonIgnore
+    @Transient
     public abstract Event.Builder getEventBuilder();
 
     public Timestamp getDbCreateDate() {
