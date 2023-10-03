@@ -717,6 +717,7 @@ public class DockerRepoResource
         if (!isAdmin(user)) {
             checkCanShare(user, tool);
         }
+        checkNotArchived(tool);
 
         if (tool.getIsPublished() == request.getPublish()) {
             return tool;

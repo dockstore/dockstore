@@ -176,14 +176,10 @@ public class ElasticListener implements StateListenerInterface {
      * @return Whether or not the entry is valid
      */
     private boolean checkValid(Entry<?, ?> entry, StateManagerMode command) {
-        boolean published = entry.getIsPublished();
         switch (command) {
         case PUBLISH:
         case UPDATE:
-            if (published) {
-                return true;
-            }
-            break;
+            return entry.getIsPublished();
         case DELETE:
             // Try deleting no matter what
             return true;
@@ -191,7 +187,6 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.error("Unrecognized Elasticsearch command.");
             return false;
         }
-        return false;
     }
 
     @Override
@@ -350,6 +345,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
         objectNode.put("all_authors", MAPPER.valueToTree(allAuthors));
         objectNode.put("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
+        objectNode.put("archived", entry.isArchived());
         return jsonNode;
     }
 
