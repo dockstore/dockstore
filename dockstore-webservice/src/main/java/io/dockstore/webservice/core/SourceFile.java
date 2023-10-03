@@ -263,6 +263,23 @@ public class SourceFile implements Comparable<SourceFile> {
         return dbUpdateDate;
     }
 
+    /**
+     * Determine if the specified path matches the sourcefile path.
+     * The paths will match if, after adding a leading slash when it
+     * is missing, the resulting strings are equal, case insensitive.
+     * Thus, an absolute path and an absolute path missing the leading
+     * slash will match, as will paths that are the same string,
+     * whether absolute or relative.
+     */
+    @JsonIgnore
+    public boolean isSamePath(String otherPath) {
+        return otherPath != null && toAbsolutePath(getPath()).equalsIgnoreCase(toAbsolutePath(otherPath));
+    }
+
+    private static String toAbsolutePath(String path) {
+        return path.startsWith("/") ? path : "/" + path;
+    }
+
     // removed overridden hashcode and equals, resulted in issue due to https://hibernate.atlassian.net/browse/HHH-3799
 
     @Override
