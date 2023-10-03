@@ -38,6 +38,7 @@ import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -522,6 +523,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
 
         version.getMetricsByPlatform().put(platform, aggregatedMetrics);
+        PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
         return Response.ok().entity(version.getMetricsByPlatform()).build();
     }
 

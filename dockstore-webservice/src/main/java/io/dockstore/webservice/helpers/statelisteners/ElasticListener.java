@@ -15,9 +15,13 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
+import static io.dockstore.webservice.helpers.statelisteners.ElasticListener.MetricsType.EXECUTION;
+import static io.dockstore.webservice.helpers.statelisteners.ElasticListener.MetricsType.VALIDATION;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.dockstore.common.Partner;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -33,6 +37,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -41,6 +46,7 @@ import io.openapi.model.DescriptorType;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -81,7 +87,6 @@ import org.slf4j.LoggerFactory;
  * Formerly the ElasticManager, this listens for changes that might affect elastic search
  */
 public class ElasticListener implements StateListenerInterface {
-    public static DockstoreWebserviceConfiguration config;
     public static final String TOOLS_INDEX = "tools";
     public static final String WORKFLOWS_INDEX = "workflows";
     public static final String NOTEBOOKS_INDEX = "notebooks";
@@ -89,6 +94,8 @@ public class ElasticListener implements StateListenerInterface {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
+    protected static final String EXECUTION_PARTNERS = "execution_partners";
+    protected static final String VALIDATION_PARTNERS = "validation_partners";
     private DockstoreWebserviceConfiguration.ElasticSearchConfig elasticSearchConfig;
 
     @Override
@@ -322,7 +329,6 @@ public class ElasticListener implements StateListenerInterface {
      * @throws IOException  Mapper problems
      */
     public static JsonNode dockstoreEntryToElasticSearchObject(final Entry entry) throws IOException {
-        // TODO: avoid loading all versions to calculate verified, openData and descriptor type versions
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         final boolean openData = workflowVersions.stream()
@@ -340,6 +346,8 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.put("stars_count", (long) entry.getStarredUsers().size());
         objectNode.put("verified", verified);
         objectNode.put("openData", openData);
+        objectNode.put(EXECUTION_PARTNERS, MAPPER.valueToTree(getPartnersWithExecutionMetrics(workflowVersions)));
+        objectNode.put(VALIDATION_PARTNERS, MAPPER.valueToTree(getPartnersWithValidationMetrics(workflowVersions)));
         objectNode.put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
         objectNode.put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
         objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
@@ -349,6 +357,26 @@ public class ElasticListener implements StateListenerInterface {
         return jsonNode;
     }
 
+    private static Set<Partner> getPartnersWithExecutionMetrics(Set<Version> workflowVersions) {
+        return getPartnersWithMetrics(workflowVersions, EXECUTION);
+    }
+
+    private static Set<Partner> getPartnersWithValidationMetrics(Set<Version> workflowVersions) {
+        return getPartnersWithMetrics(workflowVersions, VALIDATION);
+    }
+
+    private static Set<Partner> getPartnersWithMetrics(Set<Version> versions, MetricsType metricsType) {
+        return versions.stream()
+            .filter(WorkflowVersion.class::isInstance)
+            .map(WorkflowVersion.class::cast)
+            .map(WorkflowVersion::getMetricsByPlatform)
+            .map(Map::entrySet)
+            .flatMap(Collection::stream)
+            .filter(entry -> metricsType == EXECUTION ? entry.getValue().getExecutionStatusCount() != null : entry.getValue().getValidationStatus() != null)
+            .map(Map.Entry::getKey)
+            .filter(partner -> partner != Partner.ALL)
+            .collect(Collectors.toSet());
+    }
 
     private static List<Map<String, Object>> convertCategories(List<Category> categories) {
         return categories.stream().map(
@@ -564,5 +592,10 @@ public class ElasticListener implements StateListenerInterface {
      */
     public static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
         return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow workflow && !workflow.isIsChecker())).toList();
+    }
+
+    enum MetricsType {
+        EXECUTION,
+        VALIDATION
     }
 }
