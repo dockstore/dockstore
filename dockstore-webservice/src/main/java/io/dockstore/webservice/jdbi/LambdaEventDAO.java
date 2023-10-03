@@ -72,6 +72,11 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         return typedQuery.getResultList();
     }
 
+    /**
+     * Count lambda events filtered by a user
+     * @param user filter for lambda events
+     * @return count of lambda events
+     */
     public long countByUser(User user) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
@@ -110,6 +115,12 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         return typedQuery.getResultList();
     }
 
+    /**
+     * Count lambda events filtered by an organization and a list of repositories
+     * @param organization organization
+     * @param repositories optional list of repositories
+     * @return count of lambda events
+     */
     public long countByOrganization(String organization, Optional<List<String>> repositories) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);

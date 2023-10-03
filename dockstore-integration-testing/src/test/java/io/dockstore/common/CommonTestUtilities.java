@@ -716,10 +716,23 @@ public final class CommonTestUtilities {
         return Optional.empty();
     }
 
+    /**
+     * Call an endpoint given a jersey client and check that a total count header is returned, no auth
+     * @param jerseyClient jersey client
+     * @param path endpoint to test
+     * @param expectedValue expected total count
+     */
     public static void testXTotalCount(Client jerseyClient, String path, int expectedValue) {
         testXTotalCount(jerseyClient, path, expectedValue, null);
     }
 
+    /**
+     * Call an endpoint given a jersey client and check that a total count header is returned, with auth
+     * @param jerseyClient jersey client
+     * @param path endpoint to test
+     * @param expectedValue expected total count
+     * @param bearerToken authorization
+     */
     public static void testXTotalCount(Client jerseyClient, String path, int expectedValue, String bearerToken) {
         final Invocation.Builder request = jerseyClient.target(path).request();
         if (bearerToken != null) {
