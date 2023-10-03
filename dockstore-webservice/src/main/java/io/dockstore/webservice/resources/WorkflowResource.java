@@ -20,7 +20,6 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
-import static io.dockstore.webservice.resources.LambdaEventResource.X_TOTAL_COUNT;
 import static io.dockstore.webservice.resources.ResourceConstants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
@@ -828,7 +827,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         stripContent(workflows);
         EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
         response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(entryDAO.countAllPublished(Optional.of(filter), workflowClass)));
-        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
+        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
         return workflows;
     }
 
