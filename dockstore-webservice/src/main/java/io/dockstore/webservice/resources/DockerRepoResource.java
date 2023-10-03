@@ -796,8 +796,8 @@ public class DockerRepoResource
         List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(tools);
         stripContent(tools);
-        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished(Optional.of(filter))));
-        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
+        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(toolDAO.countAllPublished(Optional.of(filter))));
+        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
         return tools;
     }
 

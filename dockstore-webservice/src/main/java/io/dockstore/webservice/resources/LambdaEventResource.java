@@ -45,6 +45,8 @@ import org.hibernate.SessionFactory;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "lambdaEvents", description = ResourceConstants.LAMBDAEVENTS)
 public class LambdaEventResource {
+    public static final String X_TOTAL_COUNT = "X-total-count";
+    public static final String ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
     private final LambdaEventDAO lambdaEventDAO;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -73,8 +75,8 @@ public class LambdaEventResource {
         }
         final Token githubToken = githubTokens.get(0);
         final Optional<List<String>> authorizedRepos = authorizedRepos(organization, githubToken);
-        response.addHeader("X-total-count", String.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos)));
-        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos)));
+        response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
         return lambdaEventDAO.findByOrganization(organization, offset, limit, authorizedRepos);
     }
 
@@ -94,8 +96,8 @@ public class LambdaEventResource {
         if (user == null) {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
         }
-        response.addHeader("X-total-count", String.valueOf(lambdaEventDAO.countByUser(user)));
-        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
+        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByUser(user)));
+        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
         return lambdaEventDAO.findByUser(user, offset, limit);
     }
 

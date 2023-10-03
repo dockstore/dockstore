@@ -39,6 +39,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.resources.LambdaEventResource;
 import io.dropwizard.core.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
@@ -741,7 +742,7 @@ public final class CommonTestUtilities {
         Response response = request.property(ClientProperties.READ_TIMEOUT, 0).get();
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         MultivaluedMap<String, Object> headers = response.getHeaders();
-        Object xTotalCount = headers.getFirst("X-total-count");
+        Object xTotalCount = headers.getFirst(LambdaEventResource.X_TOTAL_COUNT);
         assertEquals(String.valueOf(expectedValue), xTotalCount);
     }
 
