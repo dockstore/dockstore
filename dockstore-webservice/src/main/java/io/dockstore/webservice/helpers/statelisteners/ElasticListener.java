@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers.statelisteners;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Author;
@@ -175,14 +176,10 @@ public class ElasticListener implements StateListenerInterface {
      * @return Whether or not the entry is valid
      */
     private boolean checkValid(Entry<?, ?> entry, StateManagerMode command) {
-        boolean published = entry.getIsPublished();
         switch (command) {
         case PUBLISH:
         case UPDATE:
-            if (published) {
-                return true;
-            }
-            break;
+            return entry.getIsPublished();
         case DELETE:
             // Try deleting no matter what
             return true;
@@ -190,7 +187,6 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.error("Unrecognized Elasticsearch command.");
             return false;
         }
-        return false;
     }
 
     @Override
@@ -349,6 +345,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
         objectNode.put("all_authors", MAPPER.valueToTree(allAuthors));
         objectNode.put("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
+        objectNode.put("archived", entry.isArchived());
         return jsonNode;
     }
 
@@ -424,7 +421,13 @@ public class ElasticListener implements StateListenerInterface {
             if (workflowVersion == defaultVersion) {
                 detachedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
                 SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                sourceFiles.forEach(sourceFile -> detachedVersion.addSourceFile(SourceFile.copy(sourceFile)));
+                // Copy the sourcefiles to the detached version, except for .dockstore.yml, which contains the names
+                // of all entries in the repo, thus clouding the search results for multi-entry repos
+                sourceFiles.forEach(sourceFile -> {
+                    if (sourceFile.getType() != DescriptorLanguage.FileType.DOCKSTORE_YML) {
+                        detachedVersion.addSourceFile(SourceFile.copy(sourceFile));
+                    }
+                });
             }
             detachedVersions.add(detachedVersion);
         });

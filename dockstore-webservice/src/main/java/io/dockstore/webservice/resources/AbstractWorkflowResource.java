@@ -819,6 +819,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // Check that the descriptor type and type subclass are the same as the entry to update
         checkCompatibleTypeAndSubclass(workflowToUpdate, wf);
 
+        // Check that the workflow is writable
+        checkWritability(workflowToUpdate);
+
         if (user != null) {
             workflowToUpdate.getUsers().add(user);
         }
@@ -880,6 +883,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String message = "Unknown descriptor language/type subclass" + value;
             LOG.error(message, ex);
             throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private void checkWritability(Workflow workflow) {
+        if (workflow.isArchived()) {
+            logAndThrowBadRequest(String.format("This %s cannot be updated because it is archived.", workflow.getEntryType().getTerm()));
         }
     }
 

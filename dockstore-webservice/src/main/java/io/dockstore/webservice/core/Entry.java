@@ -89,6 +89,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Schema(name = "Entry", description = "This describes one high-level entity in the dockstore")
 @SuppressWarnings("checkstyle:magicnumber")
 
 @NamedQueries({
@@ -316,6 +317,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @Column(nullable = false)
     private boolean wasEverPublic;
+
+    @Column(columnDefinition = "boolean default false", nullable = false)
+    private boolean archived;
 
     @JsonIgnore
     @Column(nullable = true, columnDefinition = "varchar(32)")
@@ -750,6 +754,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonIgnore
+    @Transient
     public abstract Event.Builder getEventBuilder();
 
     public Timestamp getDbCreateDate() {
@@ -865,6 +870,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonProperty
     public boolean isDeletable() {
         return !getWasEverPublic() && !hasChecker();
+    }
+
+    public boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(boolean archived) {
+        this.archived = archived;
     }
 
     public GitVisibility getGitVisibility() {

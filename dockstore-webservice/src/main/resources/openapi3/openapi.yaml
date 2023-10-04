@@ -3137,6 +3137,28 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/{id}/archive:
+    post:
+      description: Archive an entry.
+      operationId: archiveEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully archived the entry
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{id}/categories:
     get:
       description: Get the categories that contain the published entry
@@ -3204,6 +3226,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Entry'
           description: default response
+      security:
+      - BEARER: []
+      tags:
+      - entries
+  /entries/{id}/unarchive:
+    post:
+      description: Unarchive an entry.
+      operationId: unarchiveEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully unarchived the entry
       security:
       - BEARER: []
       tags:
@@ -8282,9 +8326,10 @@ components:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
+      description: This describes one app tool in dockstore as a special degenerate
+        case of a workflow
     Author:
       type: object
-      description: "Non-ORCID authors for the entry, retrieved from the default version"
       properties:
         affiliation:
           type: string
@@ -8303,6 +8348,7 @@ components:
           parent_id:
             type: integer
             format: int64
+      description: This describes one workflow in the dockstore
     CLIInfo:
       type: object
       properties:
@@ -8765,11 +8811,16 @@ components:
           type: string
     DockstoreTool:
       type: object
+      description: "This describes one entry in the dockstore. Logically, this currently\
+        \ means one tuple of registry (either quay or docker hub), organization, image\
+        \ name, and toolname which can be associated with CWL and Dockerfile documents"
       properties:
         aliases:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        archived:
+          type: boolean
         author:
           type: string
           deprecated: true
@@ -8960,11 +9011,14 @@ components:
           uniqueItems: true
     Entry:
       type: object
+      description: This describes one high-level entity in the dockstore
       properties:
         aliases:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        archived:
+          type: boolean
         author:
           type: string
           deprecated: true
@@ -9088,137 +9142,6 @@ components:
           items:
             $ref: '#/components/schemas/Version'
           uniqueItems: true
-    EntryObjectObject:
-      type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        author:
-          type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
-        authors:
-          type: array
-          description: "Non-ORCID authors for the entry, retrieved from the default\
-            \ version"
-          items:
-            $ref: '#/components/schemas/Author'
-          readOnly: true
-          uniqueItems: true
-        checker_id:
-          type: integer
-          format: int64
-        conceptDoi:
-          type: string
-        dbCreateDate:
-          type: integer
-          format: int64
-        dbUpdateDate:
-          type: integer
-          format: int64
-        defaultVersion:
-          type: string
-        deletable:
-          type: boolean
-        description:
-          type: string
-        email:
-          type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
-        entryType:
-          $ref: '#/components/schemas/EntryType'
-        entryTypeMetadata:
-          $ref: '#/components/schemas/EntryTypeMetadata'
-        gitUrl:
-          type: string
-        has_checker:
-          type: boolean
-        id:
-          type: integer
-          format: int64
-        input_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        is_published:
-          type: boolean
-        labels:
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-          uniqueItems: true
-        lastUpdated:
-          type: integer
-          format: int64
-        last_modified:
-          type: integer
-          format: int32
-        last_modified_date:
-          type: integer
-          format: int64
-        licenseInformation:
-          $ref: '#/components/schemas/LicenseInformation'
-        metadataFromEntry:
-          type: object
-          writeOnly: true
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        orcidAuthors:
-          type: array
-          description: "ORCID authors for the entry, retrieved from the default version"
-          items:
-            $ref: '#/components/schemas/OrcidAuthor'
-          readOnly: true
-          uniqueItems: true
-        output_file_formats:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          uniqueItems: true
-        starredUsers:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-          uniqueItems: true
-        topic:
-          type: string
-        topicAutomatic:
-          type: string
-          description: Short description of the entry gotten automatically
-        topicId:
-          type: integer
-          format: int64
-        topicManual:
-          type: string
-          description: Short description of the entry manually updated
-        topicSelection:
-          type: string
-          description: Which topic to display to the public users
-          enum:
-          - AUTOMATIC
-          - MANUAL
-        userIdToOrcidPutCode:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/OrcidPutCode'
-          description: The presence of the put code for a userid indicates the entry
-            was exported to ORCID for the corresponding Dockstore user.
-        users:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-          uniqueItems: true
-        workflowVersions:
-          type: array
-          items:
-            type: object
-          uniqueItems: true
     EntryType:
       type: string
       description: Entry type
@@ -9336,6 +9259,8 @@ components:
           - ADD_VERSION_TO_ENTRY
           - PUBLISH_ENTRY
           - UNPUBLISH_ENTRY
+          - ARCHIVE_ENTRY
+          - UNARCHIVE_ENTRY
         user:
           $ref: '#/components/schemas/User'
         version:
@@ -9873,6 +9798,8 @@ components:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
+      description: This describes one notebook in the dockstore as a special degenerate
+        case of a workflow
     Notification:
       type: object
       properties:
@@ -9909,7 +9836,6 @@ components:
         is
     OrcidAuthor:
       type: object
-      description: "ORCID authors for the entry, retrieved from the default version"
       properties:
         id:
           type: integer
@@ -10224,6 +10150,8 @@ components:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
+      description: This describes one service in the dockstore as a special degenerate
+        case of a workflow
     ServiceType:
       type: object
       description: Type of a GA4GH service
@@ -10427,6 +10355,7 @@ components:
       - url
     Tag:
       type: object
+      description: This describes one tag associated with a container.
       properties:
         author:
           type: string
@@ -10511,8 +10440,6 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
-        parent:
-          $ref: '#/components/schemas/EntryObjectObject'
         readMePath:
           type: string
         reference:
@@ -11302,6 +11229,7 @@ components:
           type: boolean
     Version:
       type: object
+      description: This describes a version of an entry in Dockstore
       properties:
         author:
           type: string
@@ -11375,8 +11303,6 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
-        parent:
-          $ref: '#/components/schemas/EntryObjectObject'
         readMePath:
           type: string
         reference:
@@ -11490,6 +11416,7 @@ components:
       - full_name
     Workflow:
       type: object
+      description: This describes one workflow in the dockstore
       discriminator:
         propertyName: type
       properties:
@@ -11497,6 +11424,8 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        archived:
+          type: boolean
         author:
           type: string
           deprecated: true
@@ -11626,8 +11555,6 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
-        parentEntry:
-          $ref: '#/components/schemas/Entry'
         path:
           type: string
         repository:
@@ -11698,6 +11625,7 @@ components:
       - NOTEBOOK
     WorkflowVersion:
       type: object
+      description: This describes one workflow version associated with a workflow.
       properties:
         aliases:
           type: object
@@ -11783,8 +11711,6 @@ components:
           items:
             $ref: '#/components/schemas/FileFormat'
           uniqueItems: true
-        parent:
-          $ref: '#/components/schemas/EntryObjectObject'
         readMePath:
           type: string
         reference:
