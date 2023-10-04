@@ -83,12 +83,16 @@ public class LambdaEvent {
     private User user;
 
     @Column(columnDefinition = "TEXT")
-    @Schema(description = "The name of the entry associated with the event. An empty string indicates an entry with no name specified")
+    @Schema(description = "The name of the entry associated with the event. An empty string indicates an entry with no name specified.")
     private String entryName;
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    @Schema(description = "The GitHub delivery ID, used to group events that belong to the same GitHub webhook invocation")
+    @Schema(description = "The GitHub delivery ID, used to group events that belong to the same GitHub webhook invocation.")
     private String deliveryId;
+
+    @Column(columnDefinition = "boolean default false", nullable = false)
+    @Schema(description = "Whether or not the event was ignored.")
+    private boolean ignored;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -191,6 +195,14 @@ public class LambdaEvent {
 
     public void setDeliveryId(String deliveryId) {
         this.deliveryId = deliveryId;
+    }
+
+    public boolean isIgnored() {
+        return ignored;
+    }
+
+    public void setIgnored(boolean ignored) {
+        this.ignored = ignored;
     }
 
     public enum LambdaEventType {

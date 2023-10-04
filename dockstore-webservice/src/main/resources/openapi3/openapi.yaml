@@ -9570,11 +9570,11 @@ components:
         deliveryId:
           type: string
           description: "The GitHub delivery ID, used to group events that belong to\
-            \ the same GitHub webhook invocation"
+            \ the same GitHub webhook invocation."
         entryName:
           type: string
           description: The name of the entry associated with the event. An empty string
-            indicates an entry with no name specified
+            indicates an entry with no name specified.
         eventDate:
           type: integer
           format: int64
@@ -9583,6 +9583,9 @@ components:
         id:
           type: integer
           format: int64
+        ignored:
+          type: boolean
+          description: Whether or not the event was ignored.
         message:
           type: string
         organization:
