@@ -15,13 +15,9 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import static io.dockstore.webservice.helpers.statelisteners.ElasticListener.MetricsType.EXECUTION;
-import static io.dockstore.webservice.helpers.statelisteners.ElasticListener.MetricsType.VALIDATION;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.dockstore.common.Partner;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -37,7 +33,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -46,7 +41,6 @@ import io.openapi.model.DescriptorType;
 import io.swagger.api.impl.ToolsImplCommon;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -346,36 +340,15 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.put("stars_count", (long) entry.getStarredUsers().size());
         objectNode.put("verified", verified);
         objectNode.put("openData", openData);
-        objectNode.put(EXECUTION_PARTNERS, MAPPER.valueToTree(getPartnersWithExecutionMetrics(workflowVersions)));
-        objectNode.put(VALIDATION_PARTNERS, MAPPER.valueToTree(getPartnersWithValidationMetrics(workflowVersions)));
-        objectNode.put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
-        objectNode.put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
-        objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
-        objectNode.put("all_authors", MAPPER.valueToTree(allAuthors));
-        objectNode.put("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
+        objectNode.set(EXECUTION_PARTNERS, MAPPER.valueToTree(entry.getExecutionPartners()));
+        objectNode.set(VALIDATION_PARTNERS, MAPPER.valueToTree(entry.getValidationPartners()));
+        objectNode.set("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        objectNode.set("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
+        objectNode.set("engine_versions", MAPPER.valueToTree(engineVersions));
+        objectNode.set("all_authors", MAPPER.valueToTree(allAuthors));
+        objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
         objectNode.put("archived", entry.isArchived());
         return jsonNode;
-    }
-
-    private static Set<Partner> getPartnersWithExecutionMetrics(Set<Version> workflowVersions) {
-        return getPartnersWithMetrics(workflowVersions, EXECUTION);
-    }
-
-    private static Set<Partner> getPartnersWithValidationMetrics(Set<Version> workflowVersions) {
-        return getPartnersWithMetrics(workflowVersions, VALIDATION);
-    }
-
-    private static Set<Partner> getPartnersWithMetrics(Set<Version> versions, MetricsType metricsType) {
-        return versions.stream()
-            .filter(WorkflowVersion.class::isInstance)
-            .map(WorkflowVersion.class::cast)
-            .map(WorkflowVersion::getMetricsByPlatform)
-            .map(Map::entrySet)
-            .flatMap(Collection::stream)
-            .filter(entry -> metricsType == EXECUTION ? entry.getValue().getExecutionStatusCount() != null : entry.getValue().getValidationStatus() != null)
-            .map(Map.Entry::getKey)
-            .filter(partner -> partner != Partner.ALL)
-            .collect(Collectors.toSet());
     }
 
     private static List<Map<String, Object>> convertCategories(List<Category> categories) {

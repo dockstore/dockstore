@@ -16,8 +16,12 @@
 
 package io.dockstore.webservice.jdbi;
 
+import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
+import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
+
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CategorySummary;
@@ -30,6 +34,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.database.PartnerMetrics;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -372,6 +377,26 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<Entry> findAllGitHubEntriesWithNoTopicAutomatic() {
         return this.currentSession().createNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic", Entry.class).list();
+    }
+
+    public Map<Long, List<Partner>> findExecutionPartners(List<Long> entryIds) {
+
+        final List<PartnerMetrics> list = (List<PartnerMetrics>)namedQuery(ENTRY_GET_EXECUTION_METRIC_PARTNERS).setParameterList("entryIds",
+                entryIds).list();
+        return partnmerMetricsToMap(list);
+    }
+
+    public Map<Long, List<Partner>> findValidationPartners(List<Long> entryIds) {
+        final List<PartnerMetrics> list = (List<PartnerMetrics>)namedQuery(ENTRY_GET_VALIDATION_METRIC_PARTNERS).setParameterList("entryIds", entryIds).list();
+        return partnmerMetricsToMap(list);
+    }
+
+    private Map<Long, List<Partner>> partnmerMetricsToMap(List<PartnerMetrics> partnerMetrics) {
+        final Map<Long, List<Partner>> map = new HashMap<>();
+        partnerMetrics.forEach(partnerMetric -> {
+            map.computeIfAbsent(partnerMetric.entryId(), v -> new ArrayList<>()).add(partnerMetric.partner());
+        });
+        return map;
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {

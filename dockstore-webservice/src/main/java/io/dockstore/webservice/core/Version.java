@@ -233,6 +233,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @MapKeyColumn(name = "platform")
     @MapKeyEnumerated(EnumType.STRING)
     @ApiModelProperty(value = "The aggregated metrics for executions of this version, grouped by platform", position = 26)
+    @BatchSize(size = 25)
     private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
 
     @Column(columnDefinition = "varchar")
