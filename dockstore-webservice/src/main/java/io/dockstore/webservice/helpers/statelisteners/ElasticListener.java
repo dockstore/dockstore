@@ -323,6 +323,7 @@ public class ElasticListener implements StateListenerInterface {
      * @throws IOException  Mapper problems
      */
     public static JsonNode dockstoreEntryToElasticSearchObject(final Entry entry) throws IOException {
+        // TODO: avoid loading all versions to calculate verified, openData and descriptor type versions
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         final boolean openData = workflowVersions.stream()
@@ -350,6 +351,7 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.put("archived", entry.isArchived());
         return jsonNode;
     }
+
 
     private static List<Map<String, Object>> convertCategories(List<Category> categories) {
         return categories.stream().map(
@@ -565,10 +567,5 @@ public class ElasticListener implements StateListenerInterface {
      */
     public static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
         return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow workflow && !workflow.isIsChecker())).toList();
-    }
-
-    enum MetricsType {
-        EXECUTION,
-        VALIDATION
     }
 }
