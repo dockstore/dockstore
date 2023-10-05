@@ -154,6 +154,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
+    @BatchSize(size = 25)
     private final SortedSet<SourceFile> sourceFiles;
 
     @Column
@@ -232,7 +233,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @MapKeyColumn(name = "platform")
     @MapKeyEnumerated(EnumType.STRING)
     @ApiModelProperty(value = "The aggregated metrics for executions of this version, grouped by platform", position = 26)
-    @BatchSize(size = 25)
     private Map<Partner, Metrics> metricsByPlatform = new EnumMap<>(Partner.class);
 
     @Column(columnDefinition = "varchar")
