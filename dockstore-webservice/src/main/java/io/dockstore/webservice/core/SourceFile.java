@@ -273,10 +273,10 @@ public class SourceFile implements Comparable<SourceFile> {
      */
     @JsonIgnore
     public boolean isSamePath(String otherPath) {
-        return otherPath != null && toAbsolutePath(getPath()).equalsIgnoreCase(toAbsolutePath(otherPath));
+        return otherPath != null && addLeadingSlash(getPath()).equalsIgnoreCase(addLeadingSlash(otherPath));
     }
 
-    private static String toAbsolutePath(String path) {
+    private static String addLeadingSlash(String path) {
         return path.startsWith("/") ? path : "/" + path;
     }
 
