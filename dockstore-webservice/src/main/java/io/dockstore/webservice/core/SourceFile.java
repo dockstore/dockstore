@@ -270,6 +270,7 @@ public class SourceFile implements Comparable<SourceFile> {
      * Thus, an absolute path and an absolute path missing the leading
      * slash will match, as will paths that are the same string,
      * whether absolute or relative.
+     * Relates to https://ucsc-cgl.atlassian.net/browse/SEAB-5945
      */
     @JsonIgnore
     public boolean isSamePath(String otherPath) {
