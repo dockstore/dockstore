@@ -35,12 +35,13 @@ public final class Constants {
         + "Several operations will be blocked until you change your username via the Accounts page.";
     public static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
 
+    private Constants() {
+        // not called
+    }
+
     public static final class NamedQueries {
         public static final String ENTRY_GET_EXECUTION_METRIC_PARTNERS = "Entry.getExecutionMetricsPartners";
         public static final String ENTRY_GET_VALIDATION_METRIC_PARTNERS = "Entry.getValidationMetricsPartners";
     }
 
-    private Constants() {
-        // not called
-    }
 }

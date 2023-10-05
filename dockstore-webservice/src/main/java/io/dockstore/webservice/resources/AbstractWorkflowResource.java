@@ -543,7 +543,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private boolean shouldProcessDelete(GitHubSourceCodeRepo gitHubSourceCodeRepo, String repository, String reference) {
         try {
             // Process the delete if the reference does not exist (there is no head commit).
-            return true || getHeadCommit(gitHubSourceCodeRepo, repository, reference) == null;
+            return getHeadCommit(gitHubSourceCodeRepo, repository, reference) == null;
         } catch (CustomWebApplicationException ex) {
             // If there's a problem determining if the delete needs processing, assume it does.
             LOG.info("CustomWebApplicationException determining whether to process delete", ex);
