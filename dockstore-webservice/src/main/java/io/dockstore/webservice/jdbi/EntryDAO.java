@@ -72,6 +72,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     final int orgIndex = 1;
     final int repoIndex = 2;
     final int entryNameIndex = 3;
+    protected static final String ENTRY_IDS = "entryIds";
 
     private Class<T> typeOfT;
 
@@ -198,7 +199,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         // run a query to determine the categories that contain the specified entries, where the result is a list of unique entry/category pairs.
         // for example, if Entry E is in categories C and D, the result would be [[E, C], [E, D]].
 
-        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds").setParameterList("entryIds", entryIds));
+        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds").setParameterList(
+                ENTRY_IDS, entryIds));
 
         // convert the list of entry/category pairs to a map (as described in the javadoc above).
         Map<Entry, List<Category>> entryToCategories = new HashMap<>();
@@ -381,21 +383,19 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public Map<Long, List<Partner>> findExecutionPartners(List<Long> entryIds) {
 
-        final List<PartnerMetrics> list = (List<PartnerMetrics>)namedQuery(ENTRY_GET_EXECUTION_METRIC_PARTNERS).setParameterList("entryIds",
+        final List<PartnerMetrics> list = (List<PartnerMetrics>)namedQuery(ENTRY_GET_EXECUTION_METRIC_PARTNERS).setParameterList(ENTRY_IDS,
                 entryIds).list();
-        return partnmerMetricsToMap(list);
+        return partnerMetricsToMap(list);
     }
 
     public Map<Long, List<Partner>> findValidationPartners(List<Long> entryIds) {
-        final List<PartnerMetrics> list = (List<PartnerMetrics>)namedQuery(ENTRY_GET_VALIDATION_METRIC_PARTNERS).setParameterList("entryIds", entryIds).list();
-        return partnmerMetricsToMap(list);
+        final List<PartnerMetrics> list = (List<PartnerMetrics>)namedQuery(ENTRY_GET_VALIDATION_METRIC_PARTNERS).setParameterList(ENTRY_IDS, entryIds).list();
+        return partnerMetricsToMap(list);
     }
 
-    private Map<Long, List<Partner>> partnmerMetricsToMap(List<PartnerMetrics> partnerMetrics) {
+    private Map<Long, List<Partner>> partnerMetricsToMap(List<PartnerMetrics> partnerMetrics) {
         final Map<Long, List<Partner>> map = new HashMap<>();
-        partnerMetrics.forEach(partnerMetric -> {
-            map.computeIfAbsent(partnerMetric.entryId(), v -> new ArrayList<>()).add(partnerMetric.partner());
-        });
+        partnerMetrics.forEach(partnerMetric -> map.computeIfAbsent(partnerMetric.entryId(), v -> new ArrayList<>()).add(partnerMetric.partner()));
         return map;
     }
 
