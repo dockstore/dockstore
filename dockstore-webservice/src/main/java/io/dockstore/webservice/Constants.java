@@ -38,4 +38,14 @@ public final class Constants {
     private Constants() {
         // not called
     }
+
+    public static final class NamedQueries {
+        public static final String ENTRY_GET_EXECUTION_METRIC_PARTNERS = "Entry.getExecutionMetricsPartners";
+        public static final String ENTRY_GET_VALIDATION_METRIC_PARTNERS = "Entry.getValidationMetricsPartners";
+
+        private NamedQueries() {
+            // not called
+        }
+    }
+
 }

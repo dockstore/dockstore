@@ -16,6 +16,9 @@
 
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
+import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -23,6 +26,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
+import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
@@ -119,7 +123,11 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
     @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
     @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
-    @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL")
+    @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL"),
+    @NamedQuery(name = ENTRY_GET_EXECUTION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.database.PartnerMetrics(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
+            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).executionStatusCount != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
+    @NamedQuery(name = ENTRY_GET_VALIDATION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.database.PartnerMetrics(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
+            + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -291,6 +299,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Transient
     @JsonIgnore
     private List<Category> categories = new ArrayList<>();
+
+    @Transient
+    @JsonIgnore
+    private List<Partner> executionPartners = new ArrayList<>();
+
+    @Transient
+    @JsonIgnore
+    private List<Partner> validationPartners = new ArrayList<>();
 
     @Column(length = TOPIC_LENGTH)
     @Schema(description = "Short description of the entry gotten automatically")
@@ -795,12 +811,43 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.userIdToOrcidPutCode = userIdToOrcidPutCode;
     }
 
+    /**
+     * Returns the list of categories that this entry and/or any of its versions belong to. This field is not eagerly populated
+     * and must be explicitly set. See {@link io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener}
+     * @return
+     */
     public List<Category> getCategories() {
         return (categories);
     }
 
     public void setCategories(List<Category> categories) {
         this.categories = categories;
+    }
+
+    /**
+     * Returns the list of partners that have execution metrics on at least one version. This field is not eagerly populated
+     * and must be explicitly set. See {@link io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener}
+     * @return
+     */
+    public List<Partner> getExecutionPartners() {
+        return executionPartners;
+    }
+
+    public void setExecutionPartners(List<Partner> executionPartners) {
+        this.executionPartners = executionPartners;
+    }
+
+    /**
+     * Returns the list of partners that have validation metrics on at least one version. This field is not eagerly populated
+     * and must be explicitly set. See {@link io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener}
+     * @return
+     */
+    public List<Partner> getValidationPartners() {
+        return validationPartners;
+    }
+
+    public void setValidationPartners(List<Partner> validationPartners) {
+        this.validationPartners = validationPartners;
     }
 
     public String getTopicAutomatic() {

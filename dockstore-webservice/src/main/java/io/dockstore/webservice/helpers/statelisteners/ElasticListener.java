@@ -81,7 +81,6 @@ import org.slf4j.LoggerFactory;
  * Formerly the ElasticManager, this listens for changes that might affect elastic search
  */
 public class ElasticListener implements StateListenerInterface {
-    public static DockstoreWebserviceConfiguration config;
     public static final String TOOLS_INDEX = "tools";
     public static final String WORKFLOWS_INDEX = "workflows";
     public static final String NOTEBOOKS_INDEX = "notebooks";
@@ -89,6 +88,8 @@ public class ElasticListener implements StateListenerInterface {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
+    protected static final String EXECUTION_PARTNERS = "execution_partners";
+    protected static final String VALIDATION_PARTNERS = "validation_partners";
     private DockstoreWebserviceConfiguration.ElasticSearchConfig elasticSearchConfig;
 
     @Override
@@ -340,11 +341,13 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.put("stars_count", (long) entry.getStarredUsers().size());
         objectNode.put("verified", verified);
         objectNode.put("openData", openData);
-        objectNode.put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
-        objectNode.put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
-        objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
-        objectNode.put("all_authors", MAPPER.valueToTree(allAuthors));
-        objectNode.put("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
+        objectNode.set(EXECUTION_PARTNERS, MAPPER.valueToTree(entry.getExecutionPartners()));
+        objectNode.set(VALIDATION_PARTNERS, MAPPER.valueToTree(entry.getValidationPartners()));
+        objectNode.set("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        objectNode.set("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
+        objectNode.set("engine_versions", MAPPER.valueToTree(engineVersions));
+        objectNode.set("all_authors", MAPPER.valueToTree(allAuthors));
+        objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
         objectNode.put("archived", entry.isArchived());
         return jsonNode;
     }
