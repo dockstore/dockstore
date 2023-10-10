@@ -16,8 +16,8 @@
 
 package io.dockstore.webservice.core;
 
-import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
-import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -146,6 +146,8 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedNativeQuery(name = "Entry.hostedWorkflowCount", query = "select (select count(*) from tool t, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = t.id) + (select count(*) from workflow w, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = w.id) as count;")})
 public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
 
+    public static final String ENTRY_GET_EXECUTION_METRIC_PARTNERS = "Entry.getExecutionMetricsPartners";
+    public static final String ENTRY_GET_VALIDATION_METRIC_PARTNERS = "Entry.getValidationMetricsPartners";
     private static final int TOPIC_LENGTH = 150;
 
     /**

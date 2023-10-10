@@ -16,8 +16,8 @@
 
 package io.dockstore.webservice.jdbi;
 
-import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
-import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
 
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
