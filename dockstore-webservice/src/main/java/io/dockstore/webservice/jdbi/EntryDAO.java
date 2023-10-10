@@ -16,8 +16,8 @@
 
 package io.dockstore.webservice.jdbi;
 
-import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
-import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
 
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
@@ -34,7 +34,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.EntryLite;
-import io.dockstore.webservice.core.database.PartnerMetrics;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -383,19 +382,19 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public Map<Long, List<Partner>> findExecutionPartners(List<Long> entryIds) {
 
-        final List<PartnerMetrics> list = (List<PartnerMetrics>)namedQuery(ENTRY_GET_EXECUTION_METRIC_PARTNERS).setParameterList(ENTRY_IDS,
+        final List<Entry.EntryIdAndPartner> list = (List<Entry.EntryIdAndPartner>)namedQuery(ENTRY_GET_EXECUTION_METRIC_PARTNERS).setParameterList(ENTRY_IDS,
                 entryIds).list();
         return partnerMetricsToMap(list);
     }
 
     public Map<Long, List<Partner>> findValidationPartners(List<Long> entryIds) {
-        final List<PartnerMetrics> list = (List<PartnerMetrics>)namedQuery(ENTRY_GET_VALIDATION_METRIC_PARTNERS).setParameterList(ENTRY_IDS, entryIds).list();
+        final List<Entry.EntryIdAndPartner> list = (List<Entry.EntryIdAndPartner>)namedQuery(ENTRY_GET_VALIDATION_METRIC_PARTNERS).setParameterList(ENTRY_IDS, entryIds).list();
         return partnerMetricsToMap(list);
     }
 
-    private Map<Long, List<Partner>> partnerMetricsToMap(List<PartnerMetrics> partnerMetrics) {
+    private Map<Long, List<Partner>> partnerMetricsToMap(List<Entry.EntryIdAndPartner> entryIdAndPartnerMetrics) {
         final Map<Long, List<Partner>> map = new HashMap<>();
-        partnerMetrics.forEach(partnerMetric -> map.computeIfAbsent(partnerMetric.entryId(), v -> new ArrayList<>()).add(partnerMetric.partner()));
+        entryIdAndPartnerMetrics.forEach(partnerMetric -> map.computeIfAbsent(partnerMetric.entryId(), v -> new ArrayList<>()).add(partnerMetric.partner()));
         return map;
     }
 

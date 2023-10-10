@@ -16,8 +16,8 @@
 
 package io.dockstore.webservice.core;
 
-import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
-import static io.dockstore.webservice.Constants.NamedQueries.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -124,9 +124,9 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
     @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
     @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL"),
-    @NamedQuery(name = ENTRY_GET_EXECUTION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.database.PartnerMetrics(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
+    @NamedQuery(name = ENTRY_GET_EXECUTION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
             + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).executionStatusCount != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)"),
-    @NamedQuery(name = ENTRY_GET_VALIDATION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.database.PartnerMetrics(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
+    @NamedQuery(name = ENTRY_GET_VALIDATION_METRIC_PARTNERS, query = "select new io.dockstore.webservice.core.Entry$EntryIdAndPartner(v.parent.id, KEY(v.metricsByPlatform)) from Version v "
             + "where KEY(v.metricsByPlatform) != io.dockstore.common.Partner.ALL and value(v.metricsByPlatform).validationStatus != null and v.parent.id in (:entryIds) group by v.parent.id, key(v.metricsByPlatform)")
 })
 // TODO: Replace this with JPA when possible
@@ -146,6 +146,8 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedNativeQuery(name = "Entry.hostedWorkflowCount", query = "select (select count(*) from tool t, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = t.id) + (select count(*) from workflow w, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = w.id) as count;")})
 public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
 
+    public static final String ENTRY_GET_EXECUTION_METRIC_PARTNERS = "Entry.getExecutionMetricsPartners";
+    public static final String ENTRY_GET_VALIDATION_METRIC_PARTNERS = "Entry.getValidationMetricsPartners";
     private static final int TOPIC_LENGTH = 150;
 
     /**
@@ -933,5 +935,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setGitVisibility(final GitVisibility gitVisibility) {
         this.gitVisibility = gitVisibility;
+    }
+
+    public record EntryIdAndPartner(long entryId, Partner partner) {
     }
 }
