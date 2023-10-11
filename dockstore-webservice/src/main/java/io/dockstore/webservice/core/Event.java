@@ -24,7 +24,6 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.sql.Timestamp;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.FilterJoinTable;
 import org.hibernate.annotations.NotFound;
 import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -67,7 +66,6 @@ public class Event {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizationId", referencedColumnName = "id", columnDefinition = "bigint")
-    @FilterJoinTable(name = "omitCategorizers", condition = ":categorizer = false")
     @ApiModelProperty(value = "Organization that the event is acting on.", position = 2)
     private Organization organization;
 
