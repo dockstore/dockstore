@@ -47,11 +47,7 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsForOrganization(long organizationId, Integer offset, Integer limit) {
-        return findEvents((cb, event) -> organizationPredicate(cb, event, Set.of(organizationId)), offset, limit, null, null);
-    }
-
-    public List<Event> findEventsForInitiatorUser(User loggedInUser, long initiatorUserId, Integer offset, Integer limit) {
-        return findEvents((cb, event) -> initiatorPredicate(cb, event, initiatorUserId), offset, limit, loggedInUser, initiatorUserId);
+        return findEvents(organizationPredicateBuilder(Set.of(organizationId)), offset, limit, null, null);
     }
 
     public long countAllEventsForOrganization(long organizationId) {
@@ -61,28 +57,32 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsByEntryIDs(User loggedInUser, Set<Long> entryIds, Integer offset, int limit) {
-        return findEvents((cb, event) -> entryPredicate(cb, event, entryIds), offset, limit, loggedInUser, null);
+        return findEvents(entryPredicateBuilder(entryIds), offset, limit, loggedInUser, null);
     }
 
     public List<Event> findAllByOrganizationIds(User loggedInUser, Set<Long> organizationIds, Integer offset, int limit) {
-        return findEvents((cb, event) -> organizationPredicate(cb, event, organizationIds), offset, limit, loggedInUser, null);
+        return findEvents(organizationPredicateBuilder(organizationIds), offset, limit, loggedInUser, null);
     }
 
     public List<Event> findAllByOrganizationIdsOrEntryIds(User loggedInUser, Set<Long> organizationIds, Set<Long> entryIds, Integer offset, int limit) {
-        return findEvents((cb, event) -> cb.or(organizationPredicate(cb, event, organizationIds), entryPredicate(cb, event, entryIds)),
+        return findEvents(orPredicateBuilder(organizationPredicateBuilder(organizationIds), entryPredicateBuilder(entryIds)),
             offset, limit, loggedInUser, null);
     }
 
-    public List<Event> findEvents(BiFunction<CriteriaBuilder, Root<Event>, Predicate> predicateCalculator, Integer offset, Integer limit, User loggedInUser, Long initiatorUserId) {
+    public List<Event> findEventsForInitiatorUser(User loggedInUser, long initiatorUserId, Integer offset, Integer limit) {
+        return findEvents(initiatorPredicateBuilder(initiatorUserId), offset, limit, loggedInUser, initiatorUserId);
+    }
+
+    private List<Event> findEvents(PredicateBuilder predicateBuilder, Integer offset, Integer limit, User loggedInUser, Long initiatorUserId) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<Event> query = cb.createQuery(Event.class);
         Root<Event> event = query.from(Event.class);
 
-        Predicate calculatedPredicate = predicateCalculator.apply(cb, event);
-        Predicate categoryPredicate = categoryPredicate(cb, event, loggedInUser, initiatorUserId);
+        Predicate specifiedPredicate = predicateBuilder.build(cb, event);
+        Predicate accessPredicate = accessPredicateBuilder(loggedInUser, initiatorUserId).build(cb, event);
 
         query.select(event);
-        query.where(cb.and(calculatedPredicate, categoryPredicate));
+        query.where(cb.and(specifiedPredicate, accessPredicate));
         query.orderBy(cb.desc(event.get("id")));
 
         int checkedOffset = Math.max(MoreObjects.firstNonNull(offset, 0), 0);
@@ -91,12 +91,12 @@ public class EventDAO extends AbstractDAO<Event> {
         return currentSession().createQuery(query).setFirstResult(checkedOffset).setMaxResults(checkedLimit).getResultList();
     }
 
-    private Predicate organizationPredicate(CriteriaBuilder cb, Root<Event> event, Set<Long> organizationIds) {
-        return event.get("organization").in(organizationIds);
+    private PredicateBuilder organizationPredicateBuilder(Set<Long> organizationIds) {
+        return (cb, event) -> event.get("organization").in(organizationIds);
     }
 
-    private Predicate entryPredicate(CriteriaBuilder cb, Root<Event> event, Set<Long> entryIds) {
-        return cb.or(
+    private PredicateBuilder entryPredicateBuilder(Set<Long> entryIds) {
+        return (cb, event) -> cb.or(
             event.get("tool").in(entryIds),
             event.get("workflow").in(entryIds),
             event.get("apptool").in(entryIds),
@@ -104,19 +104,27 @@ public class EventDAO extends AbstractDAO<Event> {
             event.get("notebook").in(entryIds));
     }
 
-    private Predicate initiatorPredicate(CriteriaBuilder cb, Root<Event> event, long initiatorUserId) {
-        return event.get("initiatorUser").in(initiatorUserId);
+    private PredicateBuilder orPredicateBuilder(PredicateBuilder a, PredicateBuilder b) {
+        return (cb, event) -> cb.or(a.build(cb, event), b.build(cb, event));
     }
 
-    private Predicate categoryPredicate(CriteriaBuilder cb, Root<Event> event, User loggedInUser, Long initiatorUserId) {
-        boolean privileged = loggedInUser != null && (loggedInUser.getIsAdmin() || loggedInUser.isCurator());
-        boolean sameUser = initiatorUserId != null && loggedInUser != null && loggedInUser.getId() == initiatorUserId;
-        if (privileged || sameUser) {
-            return cb.conjunction(); // always true
-        } else {
-            Join<Entry, Organization> join = event.join("organization", JoinType.LEFT);
-            return cb.or(cb.isFalse(join.get("categorizer")), cb.isNull(join));
-        }
+    private PredicateBuilder initiatorPredicateBuilder(long initiatorUserId) {
+        return (cb, event) -> event.get("initiatorUser").in(initiatorUserId);
+    }
+
+    private PredicateBuilder accessPredicateBuilder(User loggedInUser, Long initiatorUserId) {
+        return (cb, event) -> {
+            boolean privileged = loggedInUser != null && (loggedInUser.getIsAdmin() || loggedInUser.isCurator());
+            boolean sameUser = loggedInUser != null && initiatorUserId != null && loggedInUser.getId() == initiatorUserId;
+            if (privileged || sameUser) {
+                // Always true, full access.
+                return cb.conjunction();
+            } else {
+                // Exclude events relating to categorizer organizations.
+                Join<Entry, Organization> organization = event.join("organization", JoinType.LEFT);
+                return cb.or(cb.isFalse(organization.get("categorizer")), cb.isNull(organization));
+            }
+        };
     }
 
     public void delete(Event event) {
@@ -163,5 +171,9 @@ public class EventDAO extends AbstractDAO<Event> {
             .withUser(user).withInitiatorUser(user);
         final Event event = builder.build();
         create(event);
+    }
+
+    private interface PredicateBuilder {
+        Predicate build(CriteriaBuilder cb, Root<Event> event);
     }
 }
