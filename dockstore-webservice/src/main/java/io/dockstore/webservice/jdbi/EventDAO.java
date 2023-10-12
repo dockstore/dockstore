@@ -46,7 +46,7 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsForOrganization(long organizationId, Integer offset, Integer limit) {
-        return findEvents(organizationPredicateBuilder(Set.of(organizationId)), offset, limit, null, null);
+        return findEvents(null, organizationPredicateBuilder(Set.of(organizationId)), offset, limit);
     }
 
     public long countAllEventsForOrganization(long organizationId) {
@@ -56,29 +56,28 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsByEntryIDs(User loggedInUser, Set<Long> entryIds, Integer offset, int limit) {
-        return findEvents(entryPredicateBuilder(entryIds), offset, limit, loggedInUser, null);
+        return findEvents(loggedInUser, entryPredicateBuilder(entryIds), offset, limit);
     }
 
     public List<Event> findAllByOrganizationIds(User loggedInUser, Set<Long> organizationIds, Integer offset, int limit) {
-        return findEvents(organizationPredicateBuilder(organizationIds), offset, limit, loggedInUser, null);
+        return findEvents(loggedInUser, organizationPredicateBuilder(organizationIds), offset, limit);
     }
 
     public List<Event> findAllByOrganizationIdsOrEntryIds(User loggedInUser, Set<Long> organizationIds, Set<Long> entryIds, Integer offset, int limit) {
-        return findEvents(orPredicateBuilder(organizationPredicateBuilder(organizationIds), entryPredicateBuilder(entryIds)),
-            offset, limit, loggedInUser, null);
+        return findEvents(loggedInUser, orPredicateBuilder(organizationPredicateBuilder(organizationIds), entryPredicateBuilder(entryIds)), offset, limit);
     }
 
     public List<Event> findEventsForInitiatorUser(User loggedInUser, long initiatorUserId, Integer offset, Integer limit) {
-        return findEvents(initiatorPredicateBuilder(initiatorUserId), offset, limit, loggedInUser, initiatorUserId);
+        return findEvents(loggedInUser, initiatorPredicateBuilder(initiatorUserId), offset, limit);
     }
 
-    private List<Event> findEvents(PredicateBuilder predicateBuilder, Integer offset, Integer limit, User loggedInUser, Long initiatorUserId) {
+    private List<Event> findEvents(User loggedInUser, PredicateBuilder predicateBuilder, Integer offset, Integer limit) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<Event> query = cb.createQuery(Event.class);
         Root<Event> event = query.from(Event.class);
 
         Predicate specifiedPredicate = predicateBuilder.build(cb, event);
-        Predicate accessPredicate = accessPredicateBuilder(loggedInUser, initiatorUserId).build(cb, event);
+        Predicate accessPredicate = accessPredicateBuilder(loggedInUser).build(cb, event);
 
         query.select(event);
         query.where(cb.and(specifiedPredicate, accessPredicate));
@@ -111,18 +110,26 @@ public class EventDAO extends AbstractDAO<Event> {
         return (cb, event) -> event.get("initiatorUser").in(initiatorUserId);
     }
 
-    private PredicateBuilder accessPredicateBuilder(User loggedInUser, Long initiatorUserId) {
+    private PredicateBuilder accessPredicateBuilder(User loggedInUser) {
         return (cb, event) -> {
-            boolean privileged = loggedInUser != null && (loggedInUser.getIsAdmin() || loggedInUser.isCurator());
-            boolean sameUser = loggedInUser != null && initiatorUserId != null && loggedInUser.getId() == initiatorUserId;
-            if (privileged || sameUser) {
-                // Always true, full access.
-                return cb.conjunction();
+            // Calculate a predicate representing public access.
+            // Currently, this is all events that don't refer to a "categorizer" organization.
+            Join<Entry, Organization> organization = event.join("organization", JoinType.LEFT);
+            Predicate publicPredicate = cb.or(cb.isFalse(organization.get("categorizer")), cb.isNull(organization));
+            // Calculate a predicate representing extra access due to the user's identity.
+            Predicate extraPredicate;
+            if (loggedInUser != null && (loggedInUser.getIsAdmin() || loggedInUser.isCurator())) {
+                // Admin or curator, able to access everything.
+                extraPredicate = cb.conjunction();
+            } else if (loggedInUser != null) {
+                // Logged in, able to access events that the user initiated.
+                extraPredicate = event.get("initiatorUser").in(loggedInUser.getId());
             } else {
-                // Exclude events relating to categorizer organizations.
-                Join<Entry, Organization> organization = event.join("organization", JoinType.LEFT);
-                return cb.or(cb.isFalse(organization.get("categorizer")), cb.isNull(organization));
+                // Logged out, no extra access.
+                extraPredicate = cb.disjunction();
             }
+            // Access is the union of the two predicates.
+            return cb.or(publicPredicate, extraPredicate);
         };
     }
 
