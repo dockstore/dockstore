@@ -9368,6 +9368,7 @@ components:
       properties:
         aggregatedExecutions:
           type: array
+          deprecated: true
           description: List of aggregated executions to submit
           items:
             $ref: '#/components/schemas/Metrics'
@@ -9774,7 +9775,9 @@ components:
           type: object
           additionalProperties:
             type: object
+            deprecated: true
             description: Additional aggregated metrics
+          deprecated: true
           description: Additional aggregated metrics
         cost:
           $ref: '#/components/schemas/CostMetric'
