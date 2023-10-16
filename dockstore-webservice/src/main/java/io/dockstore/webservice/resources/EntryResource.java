@@ -274,6 +274,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @ApiParam(value = "Entry to archive.", required = true) @PathParam("id") Long id) {
         Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
         updateArchived(true, user, entry);
+        Hibernate.initialize(entry.getWorkflowVersions());
         return entry;
     }
 
@@ -287,6 +288,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         @ApiParam(value = "Entry to unarchive.", required = true) @PathParam("id") Long id) {
         Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
         updateArchived(false, user, entry);
+        Hibernate.initialize(entry.getWorkflowVersions());
         return entry;
     }
 
