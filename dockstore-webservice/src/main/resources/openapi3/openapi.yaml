@@ -647,8 +647,8 @@ paths:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/executions:
     post:
-      description: This endpoint submits individual or aggregated execution metrics
-        for a tool that was executed on a platform
+      description: This endpoint submits individual execution metrics for a tool that
+        was executed on a platform. Submitting aggregated execution metrics is deprecated.
       operationId: executionMetricsPost
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
@@ -695,7 +695,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExecutionsRequestBody'
-        description: Individual or aggregated execution metrics to submit
+        description: Individual execution metrics to submit. Submitting aggregated
+          execution metrics is deprecated.
         required: true
       responses:
         "204":
@@ -714,8 +715,8 @@ paths:
           description: The tool cannot be found to submit execution metrics.
       security:
       - BEARER: []
-      summary: Submit individual or aggregated execution metrics for a tool that was
-        executed on a platform.
+      summary: Submit individual execution metrics for a tool that was executed on
+        a platform. Submitting aggregated execution metrics is deprecated.
       tags:
       - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
