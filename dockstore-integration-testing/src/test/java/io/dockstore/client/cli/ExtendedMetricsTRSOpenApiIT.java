@@ -79,6 +79,8 @@ import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -622,6 +624,40 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(50.0, aggregatedMetrics.getAdditionalAggregatedMetrics().get("memory_utilization"), "Should be able to submit additional aggregated metrics");
     }
 
+    @Test
+    void testROCrateToRunExecution() throws IOException {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final UsersApi usersApi = new UsersApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        final String platform1 = Partner.TERRA.name();
+        final String description = "A single execution";
+
+        // Register and publish a workflow
+        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/my-workflow";
+        final String workflowVersionId = "master";
+        final String workflowExpectedS3KeyPrefixFormat = "workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv%%2Fmy-workflow/master/%s"; // This is the prefix without the file name
+
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "my-workflow", "cwl",
+                "/test.json");
+        workflow = workflowApi.refresh1(workflow.getId(), false);
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        //Retrieve Workflow run RO-crate json
+        ClassLoader classLoader = getClass().getClassLoader();
+        String path = classLoader.getResource("fixtures/sampleWorkflowROCrate.json").getPath();
+        List<RunExecution> runExecutions = convertROCrateToRunExecution(path);
+
+        //post run execution metrics
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, workflowVersionId, description);
+
+        //retrieve the posted metrics
+        List<MetricsData> metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 1);
+        MetricsData metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
+        verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
+    }
+
+
     /**
      * Checks the number of MetricsData that a version has then return the list
      * @param id
@@ -701,5 +737,22 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             executions.add(execution);
         }
         return executions;
+    }
+
+    public List<RunExecution> convertROCrateToRunExecution(String roCratePath) throws IOException {
+        try {
+            List<RunExecution> runExecutions = new ArrayList<>();
+            String roCrate = new String(Files.readAllBytes(Paths.get(roCratePath)));
+            Map<String, Object> map = GSON.fromJson(roCrate, Map.class);
+            RunExecution execution = new RunExecution();
+            execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
+            execution.setDateExecuted(Instant.now().toString());
+            execution.setAdditionalProperties(map);
+            runExecutions.add(execution);
+            return runExecutions;
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
+            throw new IOException();
+        }
     }
 }
