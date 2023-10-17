@@ -16,8 +16,12 @@
 
 package io.dockstore.webservice.jdbi;
 
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_EXECUTION_METRIC_PARTNERS;
+import static io.dockstore.webservice.core.Entry.ENTRY_GET_VALIDATION_METRIC_PARTNERS;
+
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Partner;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CategorySummary;
@@ -67,6 +71,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     final int orgIndex = 1;
     final int repoIndex = 2;
     final int entryNameIndex = 3;
+    protected static final String ENTRY_IDS = "entryIds";
 
     private Class<T> typeOfT;
 
@@ -193,7 +198,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         // run a query to determine the categories that contain the specified entries, where the result is a list of unique entry/category pairs.
         // for example, if Entry E is in categories C and D, the result would be [[E, C], [E, D]].
 
-        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds").setParameterList("entryIds", entryIds));
+        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds").setParameterList(
+                ENTRY_IDS, entryIds));
 
         // convert the list of entry/category pairs to a map (as described in the javadoc above).
         Map<Entry, List<Category>> entryToCategories = new HashMap<>();
@@ -372,6 +378,24 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<Entry> findAllGitHubEntriesWithNoTopicAutomatic() {
         return this.currentSession().createNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic", Entry.class).list();
+    }
+
+    public Map<Long, List<Partner>> findExecutionPartners(List<Long> entryIds) {
+
+        final List<Entry.EntryIdAndPartner> list = (List<Entry.EntryIdAndPartner>)namedQuery(ENTRY_GET_EXECUTION_METRIC_PARTNERS).setParameterList(ENTRY_IDS,
+                entryIds).list();
+        return partnerMetricsToMap(list);
+    }
+
+    public Map<Long, List<Partner>> findValidationPartners(List<Long> entryIds) {
+        final List<Entry.EntryIdAndPartner> list = (List<Entry.EntryIdAndPartner>)namedQuery(ENTRY_GET_VALIDATION_METRIC_PARTNERS).setParameterList(ENTRY_IDS, entryIds).list();
+        return partnerMetricsToMap(list);
+    }
+
+    private Map<Long, List<Partner>> partnerMetricsToMap(List<Entry.EntryIdAndPartner> entryIdAndPartnerMetrics) {
+        final Map<Long, List<Partner>> map = new HashMap<>();
+        entryIdAndPartnerMetrics.forEach(partnerMetric -> map.computeIfAbsent(partnerMetric.entryId(), v -> new ArrayList<>()).add(partnerMetric.partner()));
+        return map;
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {

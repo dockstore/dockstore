@@ -41,6 +41,7 @@ import io.dockstore.webservice.helpers.LambdaUrlChecker;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -250,7 +251,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = ENTRY_NOT_DELETABLE_MESSAGE)
     public Entry deleteEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Entry to delete.", required = true) @PathParam("id") Long id) {
-        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
         checkNotNullEntry(entry);
         checkCanWrite(user, entry);
         throwIf(!entry.isDeletable(), ENTRY_NOT_DELETABLE_MESSAGE, HttpStatus.SC_FORBIDDEN);
@@ -261,6 +262,47 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         ((EntryDAO)workflowDAO).delete(entry);
         LOG.info("Deleted entry {}", entry.getEntryPath());
         return entry;
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{id}/archive")
+    @Operation(operationId = "archiveEntry", description = "Archive an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully archived the entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
+    public Entry archiveEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @ApiParam(value = "Entry to archive.", required = true) @PathParam("id") Long id) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        updateArchived(true, user, entry);
+        Hibernate.initialize(entry.getWorkflowVersions());
+        return entry;
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{id}/unarchive")
+    @Operation(operationId = "unarchiveEntry", description = "Unarchive an entry.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully unarchived the entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
+    public Entry unarchiveEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @ApiParam(value = "Entry to unarchive.", required = true) @PathParam("id") Long id) {
+        Entry<?, ?> entry = toolDAO.getGenericEntryById(id);
+        updateArchived(false, user, entry);
+        Hibernate.initialize(entry.getWorkflowVersions());
+        return entry;
+    }
+
+    private void updateArchived(boolean archive, User user, Entry<?, ?> entry) {
+        checkNotNullEntry(entry);
+        if (!isAdmin(user)) {
+            checkIsOwner(user, entry);
+        }
+        if (entry.isArchived() != archive) {
+            entry.setArchived(archive);
+            eventDAO.archiveEvent(archive, user, entry);
+            PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
+            LOG.info("Set archived = {} on entry {}", archive, entry.getEntryPath());
+        }
     }
 
     @POST
@@ -743,7 +785,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     @Override
     public boolean canWrite(User user, Entry entry) {
-        return AuthenticatedResourceInterface.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
+        return isWritable(entry) && (AuthenticatedResourceInterface.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE));
     }
 
     @Override

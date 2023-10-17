@@ -18,6 +18,7 @@
 package io.dockstore.webservice.core.metrics;
 
 import io.dockstore.webservice.core.metrics.constraints.HasExecutionsOrMetrics;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -40,7 +41,8 @@ public class ExecutionsRequestBody {
 
     @NotNull
     @Valid
-    @Schema(description = "List of aggregated executions to submit")
+    @ArraySchema(arraySchema = @Schema(description = "List of aggregated executions to submit", deprecated = true))
+    @Deprecated(since = "1.15.0")
     private List<Metrics> aggregatedExecutions = new ArrayList<>();
 
     public ExecutionsRequestBody() {
@@ -62,10 +64,12 @@ public class ExecutionsRequestBody {
         this.validationExecutions = validationExecutions;
     }
 
+    @Deprecated(since = "1.15.0")
     public List<Metrics> getAggregatedExecutions() {
         return aggregatedExecutions;
     }
 
+    @Deprecated(since = "1.15.0")
     public void setAggregatedExecutions(List<Metrics> aggregatedExecutions) {
         this.aggregatedExecutions = aggregatedExecutions;
     }

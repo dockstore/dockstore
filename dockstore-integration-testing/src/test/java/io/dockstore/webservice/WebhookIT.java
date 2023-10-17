@@ -63,12 +63,16 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.WDLHandler;
+import io.dropwizard.client.JerseyClientBuilder;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
+import jakarta.ws.rs.client.Client;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -485,7 +489,7 @@ class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         Workflow workflow = getFoobar1Workflow(client);
-        assertEquals(Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
         assertEquals(Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
         assertEquals(1, workflow.getWorkflowVersions().stream().filter(v -> v.getName().contains("0.1")).toList().size(), "Should have one version 0.1");
         assertEquals("A repo that includes .dockstore.yml", workflow.getTopicAutomatic());
@@ -500,7 +504,7 @@ class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         Workflow workflow2 = getFoobar2Workflow(client);
-        assertEquals(Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType(), "Should be a CWL workflow");
+        assertEquals(DescriptorTypeEnum.CWL, workflow2.getDescriptorType(), "Should be a CWL workflow");
         assertEquals(Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode(), "Should be type DOCKSTORE_YML");
         assertEquals(1, workflow2.getWorkflowVersions().stream().filter(v -> v.getName().contains("0.2")).toList().size(), "Should have one version 0.2");
 
@@ -592,6 +596,8 @@ class WebhookIT extends BaseIT {
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 20);
         assertEquals(15, orgEvents.size(), "There should now be 15 events");
 
+        handlePaginationTesting(lambdaEventsApi);
+
         try {
             lambdaEventsApi.getLambdaEventsByOrganization("IAmMadeUp", "0", 10);
             fail("Should not reach this statement");
@@ -606,6 +612,24 @@ class WebhookIT extends BaseIT {
                 "Should have emptytestparameter version that is valid");
         testValidationUpdate(client);
         testDefaultVersion(client);
+    }
+
+    private static void handlePaginationTesting(LambdaEventsApi lambdaEventsApi) {
+        Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
+        final int expectedNumEvents = 15;
+        CommonTestUtilities.testXTotalCount(jerseyClient, String.format("http://localhost:%d/lambdaEvents/DockstoreTestUser2", SUPPORT.getLocalPort()), expectedNumEvents, CommonTestUtilities
+                .getDockstoreToken(testingPostgres, USER_2_USERNAME));
+
+        // test pagination, should  be three pages of five events and the total size should match the total count
+        Set<Long> uniqueLambdaEvents = new HashSet<>();
+        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 5).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
+        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "5", 5).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
+        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "10", 5).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
+        assertEquals(expectedNumEvents, uniqueLambdaEvents.size());
+
+        // can also get the 16 filtering by user
+        CommonTestUtilities.testXTotalCount(jerseyClient, String.format("http://localhost:%d/lambdaEvents/user/1", SUPPORT.getLocalPort()), expectedNumEvents + 1, CommonTestUtilities
+                .getDockstoreToken(testingPostgres, USER_2_USERNAME));
     }
 
     private Workflow getFoobar1Workflow(WorkflowsApi client, String... includes) {
@@ -1001,7 +1025,7 @@ class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
 
-        assertEquals(Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
         assertEquals(Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
         assertTrue(workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")), "Should have a 0.1 version.");
         boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(WorkflowVersion::isLegacyVersion);
@@ -1048,20 +1072,20 @@ class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
         // Ensure that new workflow is created and is what is expected
         Workflow workflow = getFoobar1Workflow(workflowsApi);
-        assertEquals(Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
         assertEquals(Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
         assertEquals(1, workflow.getWorkflowVersions().size(), "Should have one version");
         assertFalse(workflow.getWorkflowVersions().get(0).isValid(), "Should be invalid (wrong language, bad version)");
 
         workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.CWL.toString());
         Workflow updatedWorkflowAfterModifyingDescriptorType = workflowsApi.getWorkflow(workflow.getId(), "");
-        assertEquals(Workflow.DescriptorTypeEnum.CWL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType(),
+        assertEquals(DescriptorTypeEnum.CWL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType(),
             "The descriptor language should have been changed");
         assertEquals(0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size(), "The old versions should have been removed");
 
         workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.WDL.toString());
         updatedWorkflowAfterModifyingDescriptorType = workflowsApi.getWorkflow(workflow.getId(), "versions");
-        assertEquals(Workflow.DescriptorTypeEnum.WDL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType(),
+        assertEquals(DescriptorTypeEnum.WDL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType(),
             "The descriptor language should have been changed");
         assertEquals(0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size(), "The old versions should have been removed");
 
@@ -1072,7 +1096,7 @@ class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         workflow = getFoobar1Workflow(workflowsApi);
-        assertEquals(Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
+        assertEquals(DescriptorTypeEnum.WDL, workflow.getDescriptorType(), "Should be a WDL workflow");
         assertEquals(Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode(), "Should be type DOCKSTORE_YML");
         assertEquals(1, workflow.getWorkflowVersions().size(), "Should have one version 0.1");
         assertTrue(workflow.getWorkflowVersions().get(0).isValid(), "Should be valid");
@@ -1851,6 +1875,8 @@ class WebhookIT extends BaseIT {
         // Existing tag with no "after" SHA supplied, should succeed
         handleGitHubRelease(client, repo, "refs/tags/simple-published-v1", USER_2_USERNAME);
         assertEquals(2, countVersions());
+        // There should be two ignored LambdaEvents
+        assertEquals(2, new UsersApi(webClient).getUserGitHubEvents(0, 10).stream().filter(LambdaEvent::isIgnored).count());
     }
 
     /**
@@ -1880,6 +1906,8 @@ class WebhookIT extends BaseIT {
         // Attempt to delete a version corresponding to an existing branch, should be ignored
         handleGitHubBranchDeletion(client, existingRepo, USER_2_USERNAME, "refs/heads/main", false);
         assertEquals(versionCount - 2, countVersions());
+        // There should be two ignored LambdaEvents
+        assertEquals(2, new UsersApi(webClient).getUserGitHubEvents(0, 10).stream().filter(LambdaEvent::isIgnored).count());
     }
 
     private void addNotebookAndVersion(String organization, String repo, String ref) {

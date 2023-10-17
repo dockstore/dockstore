@@ -174,7 +174,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
     @Override
     public boolean canWrite(User user, Entry entry) {
-        return EntryVersionHelper.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE);
+        return isWritable(entry) && (EntryVersionHelper.super.canWrite(user, entry) || AuthenticatedResourceInterface.canDoAction(permissionsInterface, user, entry, Role.Action.WRITE));
     }
 
     @Override

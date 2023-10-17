@@ -261,7 +261,9 @@ public class Event {
         ADD_TO_COLLECTION,
         ADD_VERSION_TO_ENTRY,
         PUBLISH_ENTRY,
-        UNPUBLISH_ENTRY
+        UNPUBLISH_ENTRY,
+        ARCHIVE_ENTRY,
+        UNARCHIVE_ENTRY
     }
 
     public static class Builder {

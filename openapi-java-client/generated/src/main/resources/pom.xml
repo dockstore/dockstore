@@ -36,19 +36,19 @@
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-client</artifactId>
-      <version>3.0.10</version>
+      <version>3.0.11</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-multipart</artifactId>
-      <version>3.0.10</version>
+      <version>3.0.11</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
-      <version>3.0.10</version>
+      <version>3.0.11</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -90,7 +90,7 @@
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-common</artifactId>
-      <version>3.0.10</version>
+      <version>3.0.11</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

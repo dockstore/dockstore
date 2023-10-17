@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers.statelisteners;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Author;
@@ -80,7 +81,6 @@ import org.slf4j.LoggerFactory;
  * Formerly the ElasticManager, this listens for changes that might affect elastic search
  */
 public class ElasticListener implements StateListenerInterface {
-    public static DockstoreWebserviceConfiguration config;
     public static final String TOOLS_INDEX = "tools";
     public static final String WORKFLOWS_INDEX = "workflows";
     public static final String NOTEBOOKS_INDEX = "notebooks";
@@ -88,6 +88,8 @@ public class ElasticListener implements StateListenerInterface {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper().addMixIn(Version.class, Version.ElasticSearchMixin.class);
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
+    protected static final String EXECUTION_PARTNERS = "execution_partners";
+    protected static final String VALIDATION_PARTNERS = "validation_partners";
     private DockstoreWebserviceConfiguration.ElasticSearchConfig elasticSearchConfig;
 
     @Override
@@ -175,14 +177,10 @@ public class ElasticListener implements StateListenerInterface {
      * @return Whether or not the entry is valid
      */
     private boolean checkValid(Entry<?, ?> entry, StateManagerMode command) {
-        boolean published = entry.getIsPublished();
         switch (command) {
         case PUBLISH:
         case UPDATE:
-            if (published) {
-                return true;
-            }
-            break;
+            return entry.getIsPublished();
         case DELETE:
             // Try deleting no matter what
             return true;
@@ -190,7 +188,6 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.error("Unrecognized Elasticsearch command.");
             return false;
         }
-        return false;
     }
 
     @Override
@@ -344,11 +341,14 @@ public class ElasticListener implements StateListenerInterface {
         objectNode.put("stars_count", (long) entry.getStarredUsers().size());
         objectNode.put("verified", verified);
         objectNode.put("openData", openData);
-        objectNode.put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
-        objectNode.put("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
-        objectNode.put("engine_versions", MAPPER.valueToTree(engineVersions));
-        objectNode.put("all_authors", MAPPER.valueToTree(allAuthors));
-        objectNode.put("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
+        objectNode.set(EXECUTION_PARTNERS, MAPPER.valueToTree(entry.getExecutionPartners()));
+        objectNode.set(VALIDATION_PARTNERS, MAPPER.valueToTree(entry.getValidationPartners()));
+        objectNode.set("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        objectNode.set("descriptor_type_versions", MAPPER.valueToTree(descriptorTypeVersions));
+        objectNode.set("engine_versions", MAPPER.valueToTree(engineVersions));
+        objectNode.set("all_authors", MAPPER.valueToTree(allAuthors));
+        objectNode.set("categories", MAPPER.valueToTree(convertCategories(entry.getCategories())));
+        objectNode.put("archived", entry.isArchived());
         return jsonNode;
     }
 
@@ -424,7 +424,13 @@ public class ElasticListener implements StateListenerInterface {
             if (workflowVersion == defaultVersion) {
                 detachedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
                 SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                sourceFiles.forEach(sourceFile -> detachedVersion.addSourceFile(SourceFile.copy(sourceFile)));
+                // Copy the sourcefiles to the detached version, except for .dockstore.yml, which contains the names
+                // of all entries in the repo, thus clouding the search results for multi-entry repos
+                sourceFiles.forEach(sourceFile -> {
+                    if (sourceFile.getType() != DescriptorLanguage.FileType.DOCKSTORE_YML) {
+                        detachedVersion.addSourceFile(SourceFile.copy(sourceFile));
+                    }
+                });
             }
             detachedVersions.add(detachedVersion);
         });

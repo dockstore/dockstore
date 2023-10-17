@@ -302,6 +302,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 // Ignore the delete event if the ref exists.
                 if (!shouldProcessDelete(gitHubSourceCodeRepo, repository, gitReference)) {
                     LOG.info("ignoring delete event, repository={}, reference={}, deliveryId={}", repository, gitReference, deliveryId);
+                    lambdaEventDAO.create(createIgnoredEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE, deliveryId));
                     return;
                 }
             } finally {
@@ -430,6 +431,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Ignore the push event if the "after" hash exists and does not match the current ref head hash.
             if (!shouldProcessPush(gitHubSourceCodeRepo, repository, gitReference, afterCommit)) {
                 LOG.info("ignoring push event, repository={}, reference={}, deliveryId={}, afterCommit={}", repository, gitReference, deliveryId, afterCommit);
+                lambdaEventDAO.create(createIgnoredEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH, deliveryId));
                 return;
             }
 
@@ -594,6 +596,21 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private LambdaEvent createBasicEvent(String repository, String gitReference, String username, LambdaEvent.LambdaEventType type, boolean isSuccessful, String deliveryId, String entryName) {
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, type, isSuccessful, deliveryId);
         lambdaEvent.setEntryName(entryName);
+        return lambdaEvent;
+    }
+
+    /**
+     * Create a lambda event that describes an ignored event
+     * @param repository repository path
+     * @param gitReference full git reference (ex. refs/heads/master)
+     * @param username Username of GitHub user who triggered the event
+     * @param type Event type
+     * @param deliveryId The GitHub delivery ID, used to group lambda events that belong to the same GitHub webook invocation
+     */
+    private LambdaEvent createIgnoredEvent(String repository, String gitReference, String username, LambdaEvent.LambdaEventType type, String deliveryId) {
+        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, type, false, deliveryId);
+        lambdaEvent.setIgnored(true);
+        lambdaEvent.setMessage("This event was ignored because a subsequent event was processed instead.");
         return lambdaEvent;
     }
 
@@ -802,6 +819,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // Check that the descriptor type and type subclass are the same as the entry to update
         checkCompatibleTypeAndSubclass(workflowToUpdate, wf);
 
+        // Check that the workflow is writable
+        checkWritability(workflowToUpdate);
+
         if (user != null) {
             workflowToUpdate.getUsers().add(user);
         }
@@ -863,6 +883,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String message = "Unknown descriptor language/type subclass" + value;
             LOG.error(message, ex);
             throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private void checkWritability(Workflow workflow) {
+        if (workflow.isArchived()) {
+            logAndThrowBadRequest(String.format("This %s cannot be updated because it is archived.", workflow.getEntryType().getTerm()));
         }
     }
 

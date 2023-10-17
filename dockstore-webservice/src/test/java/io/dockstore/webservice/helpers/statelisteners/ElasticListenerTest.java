@@ -17,13 +17,17 @@
 
 package io.dockstore.webservice.helpers.statelisteners;
 
+import static io.dockstore.webservice.helpers.statelisteners.ElasticListener.EXECUTION_PARTNERS;
+import static io.dockstore.webservice.helpers.statelisteners.ElasticListener.VALIDATION_PARTNERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Partner;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -34,6 +38,8 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric;
+import io.dockstore.webservice.core.metrics.Metrics;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -252,6 +258,26 @@ class ElasticListenerTest {
         entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
         openDataNode = entry.get("openData");
         assertTrue(openDataNode.asBoolean());
+    }
+
+    @Test
+    void testMetrics() throws IOException {
+        assertEquals(0, firstWorkflowVersion.getMetricsByPlatform().size());
+        JsonNode entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
+        JsonNode executionPartners = entry.get(EXECUTION_PARTNERS);
+        JsonNode validationPartners = entry.get(VALIDATION_PARTNERS);
+        final ObjectMapper objectMapper = new ObjectMapper();
+        assertEquals(List.of(), objectMapper.convertValue(executionPartners, ArrayList.class));
+        assertEquals(List.of(), objectMapper.convertValue(validationPartners, ArrayList.class));
+        Metrics executionMetrics = new Metrics();
+        executionMetrics.setExecutionStatusCount(new ExecutionStatusCountMetric());
+        bioWorkflow.setExecutionPartners(List.of(Partner.AGC));
+        bioWorkflow.setValidationPartners(List.of(Partner.DNA_STACK));
+        entry = ElasticListener.dockstoreEntryToElasticSearchObject(bioWorkflow);
+        executionPartners = entry.get(EXECUTION_PARTNERS);
+        assertEquals(List.of(Partner.AGC.name()), objectMapper.convertValue(executionPartners, ArrayList.class));
+        validationPartners = entry.get(VALIDATION_PARTNERS);
+        assertEquals(List.of(Partner.DNA_STACK.name()), objectMapper.convertValue(validationPartners, ArrayList.class));
     }
 
 

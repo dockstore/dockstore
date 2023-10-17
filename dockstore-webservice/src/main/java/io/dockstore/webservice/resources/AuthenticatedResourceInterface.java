@@ -74,6 +74,7 @@ public interface AuthenticatedResourceInterface {
 
     Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
     String FORBIDDEN_ENTRY_MESSAGE = "Forbidden: you do not have the credentials required to access this entry.";
+    String FORBIDDEN_WRITE_ENTRY_MESSAGE = "Forbidden: you do not have the credentials required to modify this entry, or the entry is read-only because it is archived.";
     String FORBIDDEN_ADMIN_MESSAGE = "Forbidden: you need to be an admin to perform this operation.";
     String FORBIDDEN_ID_MISMATCH_MESSAGE = "Forbidden: please check your credentials.";
 
@@ -133,7 +134,7 @@ public interface AuthenticatedResourceInterface {
      * @param entry entry to be checked
      */
     default void checkCanWrite(User user, Entry<?, ?> entry) {
-        throwIf(!canWrite(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+        throwIf(!canWrite(user, entry), FORBIDDEN_WRITE_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
     }
 
     /**
@@ -174,8 +175,20 @@ public interface AuthenticatedResourceInterface {
         throwIf(entry == null, "Entry not found.", HttpStatus.SC_NOT_FOUND);
     }
 
+    /**
+     * Check if the specified user owns an entry.
+     * If not, throw a {@link CustomWebApplicationException}.
+     */
+    default void checkIsOwner(User user, Entry<?, ?> entry) {
+        throwIf(!isOwner(user, entry), FORBIDDEN_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    }
+
+    default void checkNotArchived(Entry<?, ?> entry) {
+        throwIf(entry.isArchived(), FORBIDDEN_WRITE_ENTRY_MESSAGE, HttpStatus.SC_FORBIDDEN);
+    }
+
     default boolean canRead(User user, Entry<?, ?> entry) {
-        return (entry != null && entry.getIsPublished()) || canExamine(user, entry);
+        return isPublished(entry) || canExamine(user, entry);
     }
 
     default boolean canExamine(User user, Entry<?, ?> entry) {
@@ -183,18 +196,26 @@ public interface AuthenticatedResourceInterface {
     }
 
     default boolean canWrite(User user, Entry<?, ?> entry) {
-        return isOwner(user, entry);
+        return isWritable(entry) && isOwner(user, entry);
     }
 
     default boolean canShare(User user, Entry<?, ?> entry) {
         return isOwner(user, entry);
     }
 
+    default boolean isPublished(Entry<?, ?> entry) {
+        return entry != null && entry.getIsPublished();
+    }
+
+    default boolean isWritable(Entry<?, ?> entry) {
+        return entry != null && !entry.isArchived();
+    }
+
     default boolean isAdmin(User user) {
         return user != null && user.getIsAdmin();
     }
 
-    static boolean isOwner(User user, Entry<?, ?> entry) {
+    default boolean isOwner(User user, Entry<?, ?> entry) {
         return user != null && entry != null && entry.getUsers().stream().anyMatch(u -> u.getId() == user.getId());
     }
 

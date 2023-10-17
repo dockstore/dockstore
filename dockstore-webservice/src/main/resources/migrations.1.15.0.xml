@@ -227,4 +227,60 @@
             WHERE vm.id = vs.versionid AND sv.id = vs.sourcefileid AND sv.verified;
         </sql>
     </changeSet>
+    <changeSet id="updateServiceDefaultPaths" author="coverbeck">
+        <update tableName="entry_defaultpaths">
+            <column name="path" value="/.dockstore.yml"/>
+            <where>filetype = 'DOCKSTORE_SERVICE_YML' AND path = '.dockstore.yml'</where>
+        </update>
+    </changeSet>
+    <changeSet author="svonworl" id="addArchivedEntriesColumns">
+        <addColumn tableName="tool">
+            <column name="archived" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="archived" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="apptool">
+            <column name="archived" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="archived" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column name="archived" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="svonworl" id="addArchivedEntriesTriggers">
+        <sql dbms="postgresql">
+            CREATE OR REPLACE FUNCTION raise_exception()
+            RETURNS TRIGGER AS $$
+            BEGIN
+            RAISE EXCEPTION 'cannot update archived entry';
+            END
+            $$ LANGUAGE plpgsql;
+
+            CREATE TRIGGER update_archived_tool BEFORE UPDATE ON tool FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION raise_exception();
+            CREATE TRIGGER update_archived_workflow BEFORE UPDATE ON workflow FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION raise_exception();
+            CREATE TRIGGER update_archived_apptool BEFORE UPDATE ON apptool FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION raise_exception();
+            CREATE TRIGGER update_archived_service BEFORE UPDATE ON service FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION raise_exception();
+            CREATE TRIGGER update_archived_notebook BEFORE UPDATE ON notebook FOR EACH ROW WHEN (OLD.archived = true AND NEW.archived = true) EXECUTE FUNCTION raise_exception();
+        </sql>
+    </changeSet>
+    <changeSet author="svonworl" id="addIgnoredPropertyToLambdaEvent">
+        <addColumn tableName="lambdaevent">
+            <column name="ignored" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

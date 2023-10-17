@@ -92,10 +92,11 @@ public class Metrics {
     @Schema(description = "Aggregated validation status metrics")
     private ValidationStatusCountMetric validationStatus;
 
+    @Deprecated(since = "1.15.0")
     @Transient // Don't persist to the database. This is meant to be used by platforms to submit additional aggregated metrics to Dockstore that aren't defined above.
     @JsonProperty
     @ApiModelProperty(value = "Additional aggregated metrics")
-    @Schema(description = "Additional aggregated metrics")
+    @Schema(description = "Additional aggregated metrics", deprecated = true)
     private Map<String, Object> additionalAggregatedMetrics;
 
     // database timestamps
@@ -172,11 +173,13 @@ public class Metrics {
         this.validationStatus = validationStatus;
     }
 
+    @Deprecated(since = "1.15.0")
     @JsonIgnore // Avoid serializing this because the field is not stored in the DB and will always be null
     public Map<String, Object> getAdditionalAggregatedMetrics() {
         return additionalAggregatedMetrics;
     }
 
+    @Deprecated(since = "1.15.0")
     @JsonProperty
     public void setAdditionalAggregatedMetrics(Map<String, Object> additionalAggregatedMetrics) {
         this.additionalAggregatedMetrics = additionalAggregatedMetrics;
