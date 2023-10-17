@@ -37,7 +37,7 @@ setuptools==62.1.0
 shellescape==3.8.1
 six==1.16.0
 typing-extensions==4.4.0
-urllib3==1.26.14
+urllib3==1.26.18
 
 
 
