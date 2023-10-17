@@ -20,14 +20,11 @@ import java.util.Set;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EventDAO extends AbstractDAO<Event> {
     public static final int MAX_LIMIT = 100;
     public static final int DEFAULT_LIMIT = 10;
     public static final String PAGINATION_RANGE = "range[1,100]";
-    private static final Logger LOG = LoggerFactory.getLogger(EventDAO.class);
 
     public EventDAO(SessionFactory factory) {
         super(factory);

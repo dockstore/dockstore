@@ -58,8 +58,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Avoid adding Swagger annotations to this, only use OpenAPI 3.0 annotations when possible.
@@ -78,7 +76,6 @@ public class EventResource {
     private static final String DESCRIPTION = "Requires authentication.";
     private final EventDAO eventDAO;
     private final UserDAO userDAO;
-    private static final Logger LOG = LoggerFactory.getLogger(EventResource.class);
 
     public EventResource(EventDAO eventDAO, UserDAO userDAO) {
         this.eventDAO = eventDAO;
@@ -102,9 +99,7 @@ public class EventResource {
                                  @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
                                  @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") Integer limit,
                                  @QueryParam("offset") @DefaultValue("0") Integer offset) {
-        LOG.error("A");
         User userWithSession = this.userDAO.findById(user.getId());
-        LOG.error("B");
         return getEventsForUser(userWithSession, userWithSession, eventSearchType, limit, offset);
     }
 
@@ -158,11 +153,8 @@ public class EventResource {
             return allByOrganizationIdsOrEntryIds;
         }
         case PROFILE -> {
-            LOG.error("0");
             List<Event> eventsByUserID = this.eventDAO.findEventsForInitiatorUser(loggedInUser, user.getId(), offset, limit);
-            LOG.error("1");
             eagerLoadEventEntries(eventsByUserID);
-            LOG.error("2");
             return eventsByUserID;
         }
         case SELF_ORGANIZATIONS -> {
