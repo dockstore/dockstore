@@ -643,7 +643,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        //Retrieve Workflow run RO-crate json
+        //Retrieve Workflow run RO-crate json. Source for this json file: https://www.researchobject.org/workflow-run-crate/profiles/workflow_run_crate
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("fixtures/sampleWorkflowROCrate.json").getPath();
         List<RunExecution> runExecutions = convertROCrateToRunExecution(path);
