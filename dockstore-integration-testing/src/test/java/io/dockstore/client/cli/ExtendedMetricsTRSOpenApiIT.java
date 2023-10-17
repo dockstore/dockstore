@@ -628,7 +628,6 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     void testROCrateToRunExecution() throws IOException {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        final UsersApi usersApi = new UsersApi(webClient);
         final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         final String platform1 = Partner.TERRA.name();
         final String description = "A single execution";
