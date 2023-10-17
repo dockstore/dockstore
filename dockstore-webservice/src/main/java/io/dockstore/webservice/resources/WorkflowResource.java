@@ -827,8 +827,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
         EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
-        response.addHeader("X-total-count", String.valueOf(entryDAO.countAllPublished(Optional.of(filter), workflowClass)));
-        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
+        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(entryDAO.countAllPublished(Optional.of(filter), workflowClass)));
+        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
         return workflows;
     }
 

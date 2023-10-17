@@ -39,12 +39,15 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.resources.LambdaEventResource;
 import io.dropwizard.core.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
 import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
@@ -207,7 +210,7 @@ public final class CommonTestUtilities {
         return parseConfig.getString(Constants.WEBSERVICE_BASE_PATH);
     }
 
-    private static String getDockstoreToken(TestingPostgres testingPostgres, String username) {
+    public static String getDockstoreToken(TestingPostgres testingPostgres, String username) {
         return "Bearer " + (testingPostgres
                 .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';", String.class));
     }
@@ -714,11 +717,32 @@ public final class CommonTestUtilities {
         return Optional.empty();
     }
 
+    /**
+     * Call an endpoint given a jersey client and check that a total count header is returned, no auth
+     * @param jerseyClient jersey client
+     * @param path endpoint to test
+     * @param expectedValue expected total count
+     */
     public static void testXTotalCount(Client jerseyClient, String path, int expectedValue) {
-        Response response = jerseyClient.target(path).request().property(ClientProperties.READ_TIMEOUT, 0).get();
+        testXTotalCount(jerseyClient, path, expectedValue, null);
+    }
+
+    /**
+     * Call an endpoint given a jersey client and check that a total count header is returned, with auth
+     * @param jerseyClient jersey client
+     * @param path endpoint to test
+     * @param expectedValue expected total count
+     * @param bearerToken authorization
+     */
+    public static void testXTotalCount(Client jerseyClient, String path, int expectedValue, String bearerToken) {
+        final Invocation.Builder request = jerseyClient.target(path).request();
+        if (bearerToken != null) {
+            request.header(HttpHeaders.AUTHORIZATION, bearerToken);
+        }
+        Response response = request.property(ClientProperties.READ_TIMEOUT, 0).get();
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         MultivaluedMap<String, Object> headers = response.getHeaders();
-        Object xTotalCount = headers.getFirst("X-total-count");
+        Object xTotalCount = headers.getFirst(LambdaEventResource.X_TOTAL_COUNT);
         assertEquals(String.valueOf(expectedValue), xTotalCount);
     }
 
