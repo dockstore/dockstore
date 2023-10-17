@@ -1,0 +1,178 @@
+//Source: https://www.researchobject.org/workflow-run-crate/profiles/workflow_run_crate
+{ "@context": "https://w3id.org/ro/crate/1.1/context",
+  "@graph": [
+    {
+      "@id": "ro-crate-metadata.json",
+      "@type": "CreativeWork",
+      "about": {"@id": "./"},
+      "conformsTo": [
+        {"@id": "https://w3id.org/ro/crate/1.1"},
+        {"@id": "https://w3id.org/workflowhub/workflow-ro-crate/1.0"}
+      ]
+    },
+    {
+      "@id": "./",
+      "@type": "Dataset",
+      "conformsTo": [
+        {"@id": "https://w3id.org/ro/wfrun/process/0.1"},
+        {"@id": "https://w3id.org/ro/wfrun/workflow/0.1"},
+        {"@id": "https://w3id.org/workflowhub/workflow-ro-crate/1.0"}
+      ],
+      "hasPart": [
+        {"@id": "Galaxy-Workflow-Hello_World.ga"},
+        {"@id": "inputs/abcdef.txt"},
+        {"@id": "outputs/Select_first_on_data_1_2.txt"},
+        {"@id": "outputs/tac_on_data_360_1.txt"}
+      ],
+      "license": {"@id": "http://spdx.org/licenses/CC0-1.0"},
+      "mainEntity": {"@id": "Galaxy-Workflow-Hello_World.ga"},
+      "mentions": {"@id": "#wfrun-5a5970ab-4375-444d-9a87-a764a66e3a47"}
+    },
+    {   "@id": "https://w3id.org/ro/wfrun/process/0.1",
+      "@type": "CreativeWork",
+      "name": "Process Run Crate",
+      "version": "0.1"
+    },
+    {   "@id": "https://w3id.org/ro/wfrun/workflow/0.1",
+      "@type": "CreativeWork",
+      "name": "Workflow Run Crate",
+      "version": "0.1"
+    },
+    {   "@id": "https://w3id.org/workflowhub/workflow-ro-crate/1.0",
+      "@type": "CreativeWork",
+      "name": "Workflow RO-Crate",
+      "version": "1.0"
+    },
+    {
+      "@id": "Galaxy-Workflow-Hello_World.ga",
+      "@type": ["File", "SoftwareSourceCode", "ComputationalWorkflow"],
+      "name": "Hello World (Galaxy Workflow)",
+      "author": {"@id": "https://orcid.org/0000-0001-9842-9718"},
+      "creator": {"@id": "https://orcid.org/0000-0001-9842-9718"},
+      "programmingLanguage": {"@id": "https://w3id.org/workflowhub/workflow-ro-crate#galaxy"},
+      "input": [
+        {"@id": "#simple_input"},
+        {"@id": "#verbose-param"}
+      ],
+      "output": [
+        {"@id": "#reversed"},
+        {"@id": "#last_lines"}
+      ]
+    },
+    {
+      "@id": "#simple_input",
+      "@type": "FormalParameter",
+      "additionalType": "File",
+      "conformsTo": {"@id": "https://bioschemas.org/profiles/FormalParameter/1.0-RELEASE"},
+      "description": "A simple set of lines in a text file",
+      "encodingFormat": [
+        "text/plain",
+        {"@id": "http://edamontology.org/format_2330"}
+      ],
+      "workExample": {"@id": "inputs/abcdef.txt"},
+      "name": "simple_input",
+      "valueRequired": "True"
+    },
+    {
+      "@id": "#verbose-param",
+      "@type": "FormalParameter",
+      "additionalType": "Boolean",
+      "conformsTo": {"@id": "https://bioschemas.org/profiles/FormalParameter/1.0-RELEASE"},
+      "description": "Increase logging output",
+      "workExample": {"@id": "#verbose-pv"},
+      "name": "verbose",
+      "valueRequired": "False"
+    },
+    {
+      "@id": "#reversed",
+      "@type": "FormalParameter",
+      "additionalType": "File",
+      "conformsTo": {"@id": "https://bioschemas.org/profiles/FormalParameter/1.0-RELEASE"},
+      "description": "All the lines, reversed",
+      "encodingFormat": [
+        "text/plain",
+        {"@id": "http://edamontology.org/format_2330"}
+      ],
+      "name": "reversed",
+      "workExample": {"@id": "outputs/tac_on_data_360_1.txt"}
+    },
+    {
+      "@id": "#last_lines",
+      "@type": "FormalParameter",
+      "additionalType": "File",
+      "conformsTo": {"@id": "https://bioschemas.org/profiles/FormalParameter/1.0-RELEASE"},
+      "description": "The last lines of workflow input are the first lines of the reversed input",
+      "encodingFormat": [
+        "text/plain",
+        {"@id": "http://edamontology.org/format_2330"}
+      ],
+      "name": "last_lines",
+      "workExample": {"@id": "outputs/Select_first_on_data_1_2.txt"}
+    },
+    {
+      "@id": "https://orcid.org/0000-0001-9842-9718",
+      "@type": "Person",
+      "name": "Stian Soiland-Reyes"
+    },
+    {
+      "@id": "https://w3id.org/workflowhub/workflow-ro-crate#galaxy",
+      "@type": "ComputerLanguage",
+      "identifier": "https://galaxyproject.org/",
+      "name": "Galaxy",
+      "url": "https://galaxyproject.org/"
+    },
+    {
+      "@id": "#wfrun-5a5970ab-4375-444d-9a87-a764a66e3a47",
+      "@type": "CreateAction",
+      "name": "Galaxy workflow run 5a5970ab-4375-444d-9a87-a764a66e3a47",
+      "endTime": "2018-09-19T17:01:07+10:00",
+      "instrument": {"@id": "Galaxy-Workflow-Hello_World.ga"},
+      "subjectOf": {"@id": "https://usegalaxy.eu/u/5dbf7f05329e49c98b31243b5f35045c/p/invocation-report-a3a1d27edb703e5c"},
+      "object": [
+        {"@id": "inputs/abcdef.txt"},
+        {"@id": "#verbose-pv"}
+      ],
+      "result": [
+        {"@id": "outputs/Select_first_on_data_1_2.txt"},
+        {"@id": "outputs/tac_on_data_360_1.txt"}
+      ]
+    },
+    {
+      "@id": "inputs/abcdef.txt",
+      "@type": "File",
+      "description": "Example input, a simple text file",
+      "encodingFormat": "text/plain",
+      "exampleOfWork": {"@id": "#simple_input"}
+    },
+    {
+      "@id": "#verbose-pv",
+      "@type": "PropertyValue",
+      "exampleOfWork": {"@id": "#verbose-param"},
+      "name": "verbose",
+      "value": "True"
+    },
+    {
+      "@id": "outputs/Select_first_on_data_1_2.txt",
+      "@type": "File",
+      "name": "Select_first_on_data_1_2 (output)",
+      "description": "Example output of the last (aka first of reversed) lines",
+      "encodingFormat": "text/plain",
+      "exampleOfWork": {"@id": "#last_lines"}
+    },
+    {
+      "@id": "outputs/tac_on_data_360_1.txt",
+      "@type": "File",
+      "name": "tac_on_data_360_1 (output)",
+      "description": "Example output of the reversed lines",
+      "encodingFormat": "text/plain",
+      "exampleOfWork": {"@id": "#reversed"}
+    },
+    {
+      "@id": "https://usegalaxy.eu/u/5dbf7f05329e49c98b31243b5f35045c/p/invocation-report-a3a1d27edb703e5c",
+      "@type": "CreativeWork",
+      "encodingFormat": "text/html",
+      "datePublished": "2021-11-18T02:02:00Z",
+      "name": "Workflow Execution Summary of Hello World"
+    }
+  ]
+}
