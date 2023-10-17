@@ -24,12 +24,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +45,8 @@ import org.hibernate.SessionFactory;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "lambdaEvents", description = ResourceConstants.LAMBDAEVENTS)
 public class LambdaEventResource {
+    public static final String X_TOTAL_COUNT = "X-total-count";
+    public static final String ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
     private final LambdaEventDAO lambdaEventDAO;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -62,7 +66,8 @@ public class LambdaEventResource {
     public List<LambdaEvent> getLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "organization", required = true) @PathParam("organization") String organization,
             @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
-            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @Context HttpServletResponse response) {
         final User authUser = userDAO.findById(user.getId());
         final List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
         if (githubTokens.isEmpty()) {
@@ -70,6 +75,8 @@ public class LambdaEventResource {
         }
         final Token githubToken = githubTokens.get(0);
         final Optional<List<String>> authorizedRepos = authorizedRepos(organization, githubToken);
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos)));
+        response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
         return lambdaEventDAO.findByOrganization(organization, offset, limit, authorizedRepos);
     }
 
@@ -83,11 +90,14 @@ public class LambdaEventResource {
     public List<LambdaEvent> getUserLambdaEvents(@Parameter(hidden = true, name = "user")@Auth User authUser,
            @PathParam("userid") long userid,
            @QueryParam("offset") @DefaultValue("0") Integer offset,
-           @QueryParam("limit") @DefaultValue("1000") Integer limit) {
+           @QueryParam("limit") @DefaultValue("1000") Integer limit,
+           @Context HttpServletResponse response) {
         final User user = userDAO.findById(userid);
         if (user == null) {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
         }
+        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByUser(user)));
+        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
         return lambdaEventDAO.findByUser(user, offset, limit);
     }
 

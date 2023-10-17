@@ -63,12 +63,16 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.NotebookDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.WDLHandler;
+import io.dropwizard.client.JerseyClientBuilder;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
+import jakarta.ws.rs.client.Client;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -592,6 +596,8 @@ class WebhookIT extends BaseIT {
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 20);
         assertEquals(15, orgEvents.size(), "There should now be 15 events");
 
+        handlePaginationTesting(lambdaEventsApi);
+
         try {
             lambdaEventsApi.getLambdaEventsByOrganization("IAmMadeUp", "0", 10);
             fail("Should not reach this statement");
@@ -606,6 +612,24 @@ class WebhookIT extends BaseIT {
                 "Should have emptytestparameter version that is valid");
         testValidationUpdate(client);
         testDefaultVersion(client);
+    }
+
+    private static void handlePaginationTesting(LambdaEventsApi lambdaEventsApi) {
+        Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
+        final int expectedNumEvents = 15;
+        CommonTestUtilities.testXTotalCount(jerseyClient, String.format("http://localhost:%d/lambdaEvents/DockstoreTestUser2", SUPPORT.getLocalPort()), expectedNumEvents, CommonTestUtilities
+                .getDockstoreToken(testingPostgres, USER_2_USERNAME));
+
+        // test pagination, should  be three pages of five events and the total size should match the total count
+        Set<Long> uniqueLambdaEvents = new HashSet<>();
+        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 5).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
+        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "5", 5).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
+        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "10", 5).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
+        assertEquals(expectedNumEvents, uniqueLambdaEvents.size());
+
+        // can also get the 16 filtering by user
+        CommonTestUtilities.testXTotalCount(jerseyClient, String.format("http://localhost:%d/lambdaEvents/user/1", SUPPORT.getLocalPort()), expectedNumEvents + 1, CommonTestUtilities
+                .getDockstoreToken(testingPostgres, USER_2_USERNAME));
     }
 
     private Workflow getFoobar1Workflow(WorkflowsApi client, String... includes) {

@@ -17,10 +17,11 @@ public class MyWorkflows {
     private WorkflowMode mode;
     private String gitUrl;
     private String description;
+    private boolean archived;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public MyWorkflows(String organization, long id, SourceControl sourceControl, boolean isPublished, String workflowName,
-            String repository, WorkflowMode workflowMode, String gitUrl, String description) {
+            String repository, WorkflowMode workflowMode, String gitUrl, String description, boolean archived) {
         this.organization = organization;
         this.id = id;
         this.sourceControl = sourceControl;
@@ -30,6 +31,7 @@ public class MyWorkflows {
         this.mode = workflowMode;
         this.gitUrl = gitUrl;
         this.description = description;
+        this.archived = archived;
     }
 
     public WorkflowMode getMode() {
@@ -66,5 +68,9 @@ public class MyWorkflows {
 
     public long getId() {
         return id;
+    }
+
+    public boolean getArchived() {
+        return archived;
     }
 }

@@ -344,8 +344,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             + PAGINATION_LIMIT, name = "limit", in = ParameterIn.QUERY, schema = @Schema(minimum = "1", maximum = "100"), required = true) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
         @Context HttpServletResponse response) {
         getOrganizationByIdOptionalAuth(user, id);
-        response.addHeader("X-total-count", String.valueOf(eventDAO.countAllEventsForOrganization(id)));
-        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
+        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(eventDAO.countAllEventsForOrganization(id)));
+        response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
         List<Event> eventsForOrganization = eventDAO.findEventsForOrganization(id, offset, limit);
         for (Event event : eventsForOrganization) {
             Hibernate.initialize(event.getInitiatorUser());
