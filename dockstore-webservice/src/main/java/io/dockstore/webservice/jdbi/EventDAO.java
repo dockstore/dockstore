@@ -111,7 +111,7 @@ public class EventDAO extends AbstractDAO<Event> {
         return (cb, event) -> {
             // Calculate a predicate representing public access.
             // Currently, this is all events that don't refer to a "categorizer" organization.
-            Join<Entry, Organization> organization = event.join("organization", JoinType.LEFT);
+            Join<Event, Organization> organization = event.join("organization", JoinType.LEFT);
             Predicate publicPredicate = cb.or(cb.isFalse(organization.get("categorizer")), cb.isNull(organization));
             // Calculate a predicate representing extra access due to the user's identity.
             Predicate extraPredicate;
