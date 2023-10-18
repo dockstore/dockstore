@@ -38,7 +38,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import cloud.localstack.ServiceName;
 import cloud.localstack.awssdkv2.TestUtils;
@@ -89,7 +88,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.http.HttpStatus;
-import org.jline.utils.Log;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -767,7 +765,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             return execution;
         } catch (IOException ex) {
             LOGGER.error(ex.getMessage());
-            fail(ex.getMessage());
+            throw ex;
         }
     }
 }
