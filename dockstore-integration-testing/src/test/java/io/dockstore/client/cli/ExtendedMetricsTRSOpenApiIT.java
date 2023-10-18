@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import cloud.localstack.ServiceName;
 import cloud.localstack.awssdkv2.TestUtils;
@@ -95,6 +96,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -115,10 +118,13 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
     private static final Gson GSON = new Gson();
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedMetricsTRSOpenApiIT.class);
+
     private static String bucketName;
     private static String s3EndpointOverride;
     private static MetricsDataS3Client metricsDataClient;
     private static S3Client s3Client;
+
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -626,6 +632,9 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(50.0, aggregatedMetrics.getAdditionalAggregatedMetrics().get("memory_utilization"), "Should be able to submit additional aggregated metrics");
     }
 
+    /**
+     * Tests that a Workflow Run RO-Crate file can be converted to a RunExecution object and get submitted.
+     */
     @Test
     void testROCrateToRunExecution() throws IOException {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -647,7 +656,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         //Retrieve Workflow run RO-crate json. Source for this json file: https://www.researchobject.org/workflow-run-crate/profiles/workflow_run_crate
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("fixtures/sampleWorkflowROCrate.json").getPath();
-        List<RunExecution> runExecutions = convertROCrateToRunExecution(path);
+        List<RunExecution> runExecutions = new ArrayList<>();
+        runExecutions.add(convertROCrateToRunExecution(path));
 
         //post run execution metrics
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, workflowVersionId, description);
@@ -740,20 +750,24 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         return executions;
     }
 
-    public List<RunExecution> convertROCrateToRunExecution(String roCratePath) throws IOException {
+    /**
+     * Converts an Workflow Run RO-Crate JSON file located in path, roCratePath, to a RunExecution object. The entire
+     * JSON file is added onto the additionalProperties field in RunExecution.
+     * @param roCratePath
+     * @return RunExecution object.
+     */
+    public RunExecution convertROCrateToRunExecution(String roCratePath) throws IOException {
         try {
-            List<RunExecution> runExecutions = new ArrayList<>();
             String roCrate = new String(Files.readAllBytes(Paths.get(roCratePath)));
             Map<String, Object> map = GSON.fromJson(roCrate, Map.class);
             RunExecution execution = new RunExecution();
             execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
             execution.setDateExecuted(Instant.now().toString());
             execution.setAdditionalProperties(map);
-            runExecutions.add(execution);
-            return runExecutions;
+            return execution;
         } catch (IOException ex) {
-            Log.error(ex.getMessage());
-            throw ex;
+            LOGGER.error(ex.getMessage());
+            fail(ex.getMessage());
         }
     }
 }
