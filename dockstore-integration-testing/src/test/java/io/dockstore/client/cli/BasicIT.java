@@ -585,7 +585,7 @@ public class BasicIT extends BaseIT {
         assertEquals(1, count, "the tool should have a default version set");
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
-                + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and actualdefaultversion is not null'",
+                + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and actualdefaultversion is not null",
             long.class);
         assertEquals(1, count2, "the tool should have any metadata set (name)");
 
