@@ -8822,11 +8822,6 @@ components:
             $ref: '#/components/schemas/Alias'
         archived:
           type: boolean
-        author:
-          type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -8871,11 +8866,6 @@ components:
           type: array
           items:
             type: string
-        email:
-          type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -9020,11 +9010,6 @@ components:
             $ref: '#/components/schemas/Alias'
         archived:
           type: boolean
-        author:
-          type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -9050,11 +9035,6 @@ components:
           type: boolean
         description:
           type: string
-        email:
-          type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -11430,11 +11410,6 @@ components:
             $ref: '#/components/schemas/Alias'
         archived:
           type: boolean
-        author:
-          type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -11487,11 +11462,6 @@ components:
           - Julia
           - other
           - n/a
-        email:
-          type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:

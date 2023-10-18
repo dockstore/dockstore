@@ -283,4 +283,19 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet author="hyunnnaye" id="removeAuthorAndEmailInEntry">
+        <sql dbms="postgresql">
+            /* delete author and email column in an entry */
+            ALTER TABLE workflow DROP COLUMN author;
+            ALTER TABLE workflow DROP COLUMN email;
+            ALTER TABLE tool DROP COLUMN author;
+            ALTER TABLE tool DROP COLUMN email;
+            ALTER TABLE apptool DROP COLUMN author;
+            ALTER TABLE apptool DROP COLUMN email;
+            ALTER TABLE notebook DROP COLUMN author;
+            ALTER TABLE notebook DROP COLUMN email;
+            ALTER TABLE service DROP COLUMN author;
+            ALTER TABLE service DROP COLUMN email;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
