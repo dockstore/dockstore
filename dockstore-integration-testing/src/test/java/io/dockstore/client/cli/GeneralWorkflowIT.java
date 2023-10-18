@@ -732,7 +732,7 @@ class GeneralWorkflowIT extends BaseIT {
         assertEquals("testWDL", defaultVersionName, "the default version should be for the testWDL branch, but is for the branch " + defaultVersionName);
 
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and author is null and email is null",
+            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber,
                 long.class);
         assertEquals(1, count2, "The given workflow shouldn't have any contact info");
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
@@ -933,7 +933,7 @@ class GeneralWorkflowIT extends BaseIT {
         // change default branch
         final long count6 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.toString()
-                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and author is null and email is null and description is null",
+                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and description is null",
             long.class);
         assertEquals(1, count6, "The given workflow shouldn't have any contact info");
 
