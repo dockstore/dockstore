@@ -86,7 +86,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
+
 import org.apache.http.HttpStatus;
+import org.jline.utils.Log;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -750,8 +753,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             runExecutions.add(execution);
             return runExecutions;
         } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-            throw new IOException();
+            Log.error(ex.getMessage());
+            throw ex;
         }
     }
 }
