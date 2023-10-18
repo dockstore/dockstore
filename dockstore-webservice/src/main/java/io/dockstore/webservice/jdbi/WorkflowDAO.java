@@ -55,7 +55,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     @Override
-    protected Root<Workflow> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
+    protected Root<Workflow> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description,
         Boolean checker, CriteriaBuilder cb, CriteriaQuery<?> q) {
         throw new UnsupportedOperationException("Only supported for BioWorkflow and Tools");
     }

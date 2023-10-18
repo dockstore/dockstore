@@ -206,7 +206,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    protected Root<Tool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+    protected Root<Tool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, Boolean checker,
         CriteriaBuilder cb, CriteriaQuery<?> q) {
 
         final Root<Tool> entryRoot = q.from(Tool.class);
