@@ -1041,7 +1041,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.pf4j</groupId>
                 <artifactId>pf4j</artifactId>
-                <version>3.2.0</version>
+                <version>3.10.0</version>
             </dependency>
             <!-- Used by cwlavro. Even though cwlavro uses 1.21, cwlavro's avro dependency uses 1.20 -->
             <dependency>
