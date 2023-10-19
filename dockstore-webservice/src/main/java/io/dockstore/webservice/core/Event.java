@@ -24,6 +24,8 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.sql.Timestamp;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
@@ -39,14 +41,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
     // workaround for https://ucsc-cgl.atlassian.net/browse/SEAB-5057
     // the clauses that look like "(e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag)))" can be removed once the version ids are consistent
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryIds", query = "SELECT e FROM Event e where ((e.tool.id in :entryIDs) OR (e.workflow.id in :entryIDs) OR (e.apptool.id in :entryIDs) OR (e.service.id in :entryIDs) OR (e.notebook.id in :entryIDs)) and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER by e.id desc"),
     @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByEntryId", query = "DELETE from Event e where e.tool.id = :entryId OR e.workflow.id = :entryId OR e.apptool.id = :entryId OR e.service.id = :entryId OR e.notebook.id = :entryId"),
     @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByOrganizationId", query = "DELETE from Event e WHERE e.organization.id = :organizationId"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByUserId", query = "SELECT e FROM Event e where e.user.id = :userId and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER BY e.id DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByInitiatorUserId", query = "SELECT e FROM Event e where e.initiatorUser.id = :initiatorUser and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER BY e.id DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryId", query = "SELECT e FROM Event e where (e.workflow.id = :entryId OR e.tool.id = :entryId OR e.apptool.id = :entryId OR e.service.id = :serviceId OR e.notebook.id = :entryId) and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER BY e.id DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllForOrganization", query = "SELECT e FROM Event e WHERE e.organization.id = :organizationId and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER BY e.id DESC"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByOrganizationIds", query = "SELECT e FROM Event e WHERE e.organization.id in :organizationIDs and (e.version is null or (e.version in (select id from WorkflowVersion) or e.version in (select id from Tag))) ORDER BY e.id DESC"),
     @NamedQuery(name = "io.dockstore.webservice.core.Event.countAllForOrganization", query = "SELECT COUNT(*) FROM Event eve WHERE eve.organization.id = :organizationId")
 })
 public class Event {
@@ -110,6 +106,7 @@ public class Event {
 
     @ManyToOne
     @JoinColumn(name = "versionId", referencedColumnName = "id")
+    @NotFound(action = NotFoundAction.IGNORE)
     @ApiModelProperty(value = "Version associated with the event.", position = 8)
     @JsonFilter(SLIM_VERSION_FILTER)
     private Version version;
