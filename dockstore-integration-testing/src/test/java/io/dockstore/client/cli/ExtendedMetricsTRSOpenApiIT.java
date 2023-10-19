@@ -755,17 +755,12 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
      * @return RunExecution object.
      */
     public RunExecution convertROCrateToRunExecution(String roCratePath) throws IOException {
-        try {
-            String roCrate = new String(Files.readAllBytes(Paths.get(roCratePath)));
-            Map<String, Object> map = GSON.fromJson(roCrate, Map.class);
-            RunExecution execution = new RunExecution();
-            execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
-            execution.setDateExecuted(Instant.now().toString());
-            execution.setAdditionalProperties(map);
-            return execution;
-        } catch (IOException ex) {
-            LOGGER.error(ex.getMessage());
-            throw ex;
-        }
+        String roCrate = new String(Files.readAllBytes(Paths.get(roCratePath)));
+        Map<String, Object> map = GSON.fromJson(roCrate, Map.class);
+        RunExecution execution = new RunExecution();
+        execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
+        execution.setDateExecuted(Instant.now().toString());
+        execution.setAdditionalProperties(map);
+        return execution;
     }
 }
