@@ -79,11 +79,14 @@ import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -91,6 +94,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -111,10 +116,13 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
     private static final Gson GSON = new Gson();
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedMetricsTRSOpenApiIT.class);
+
     private static String bucketName;
     private static String s3EndpointOverride;
     private static MetricsDataS3Client metricsDataClient;
     private static S3Client s3Client;
+
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -623,6 +631,43 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     }
 
     /**
+     * Tests that a Workflow Run RO-Crate file can be converted to a RunExecution object and get submitted.
+     */
+    @Test
+    void testROCrateToRunExecution() throws IOException {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        final String platform1 = Partner.TERRA.name();
+        final String description = "A single execution";
+
+        // Register and publish a workflow
+        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/my-workflow";
+        final String workflowVersionId = "master";
+        final String workflowExpectedS3KeyPrefixFormat = "workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv%%2Fmy-workflow/master/%s"; // This is the prefix without the file name
+
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "my-workflow", "cwl",
+                "/test.json");
+        workflow = workflowApi.refresh1(workflow.getId(), false);
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        //Retrieve Workflow run RO-crate json. Source for this json file: https://www.researchobject.org/workflow-run-crate/profiles/workflow_run_crate
+        ClassLoader classLoader = getClass().getClassLoader();
+        String path = classLoader.getResource("fixtures/sampleWorkflowROCrate.json").getPath();
+        List<RunExecution> runExecutions = new ArrayList<>();
+        runExecutions.add(convertROCrateToRunExecution(path));
+
+        //post run execution metrics
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, workflowVersionId, description);
+
+        //retrieve the posted metrics
+        List<MetricsData> metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 1);
+        MetricsData metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
+        verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
+    }
+
+
+    /**
      * Checks the number of MetricsData that a version has then return the list
      * @param id
      * @param versionId
@@ -701,5 +746,21 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             executions.add(execution);
         }
         return executions;
+    }
+
+    /**
+     * Converts an Workflow Run RO-Crate JSON file located in path, roCratePath, to a RunExecution object. The entire
+     * JSON file is added onto the additionalProperties field in RunExecution.
+     * @param roCratePath
+     * @return RunExecution object.
+     */
+    public RunExecution convertROCrateToRunExecution(String roCratePath) throws IOException {
+        String roCrate = new String(Files.readAllBytes(Paths.get(roCratePath)));
+        Map<String, Object> map = GSON.fromJson(roCrate, Map.class);
+        RunExecution execution = new RunExecution();
+        execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
+        execution.setDateExecuted(Instant.now().toString());
+        execution.setAdditionalProperties(map);
+        return execution;
     }
 }
