@@ -1959,7 +1959,7 @@ class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("update workflow set topicAutomatic=null");
 
         // Release a version with 'topic' specified in the .dockstore.yml
-        handleGitHubRelease(workflowClient, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/heads/manualTopic", USER_2_USERNAME);
+        handleGitHubRelease(workflowClient, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
         foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, null);
         assertEquals("A WDL workflow", foobar.getTopicManual());
         assertEquals(expectedTopicAutomatic, foobar.getTopicAutomatic());
@@ -1979,5 +1979,16 @@ class WebhookIT extends BaseIT {
         assertEquals("A CWL workflow", foobar2.getTopicManual());
         assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
         assertEquals(TopicSelectionEnum.MANUAL, foobar2.getTopicSelection(), "Topic selection should still be manual");
+
+        // Release a version with an empty 'topic' in the .dockstore.yml. The topicManual should be reset to null and topicSelection should be set to automatic
+        handleGitHubRelease(workflowClient, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
+        foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, null);
+        assertNull(foobar.getTopicManual());
+        assertEquals(expectedTopicAutomatic, foobar.getTopicAutomatic());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, foobar.getTopicSelection(), "Topic selection should be automatic if there's an empty string 'topic'");
+        foobar2 = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, null);
+        assertNull(foobar2.getTopicManual());
+        assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, foobar2.getTopicSelection(), "Topic selection should be automatic if there's an empty string 'topic'");
     }
 }
