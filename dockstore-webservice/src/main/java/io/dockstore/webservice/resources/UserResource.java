@@ -675,6 +675,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             workflow.setMode(myWorkflow.getMode());
             workflow.setGitUrl(myWorkflow.getGitUrl());
             workflow.setDescription(myWorkflow.getDescription());
+            workflow.setArchived(myWorkflow.getArchived());
             workflows.add(workflow);
         });
         return workflows;

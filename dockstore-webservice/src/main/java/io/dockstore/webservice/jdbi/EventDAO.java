@@ -5,16 +5,16 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Event.Builder;
 import io.dockstore.webservice.core.Event.EventType;
+import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dropwizard.hibernate.AbstractDAO;
-import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.hibernate.Session;
@@ -23,6 +23,7 @@ import org.hibernate.query.Query;
 
 public class EventDAO extends AbstractDAO<Event> {
     public static final int MAX_LIMIT = 100;
+    public static final int DEFAULT_LIMIT = 10;
     public static final String PAGINATION_RANGE = "range[1,100]";
 
     public EventDAO(SessionFactory factory) {
@@ -42,23 +43,7 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsForOrganization(long organizationId, Integer offset, Integer limit) {
-        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllForOrganization")
-                .setParameter("organizationId", organizationId)
-                .setFirstResult(offset)
-                .setMaxResults(limit);
-        return list(query);
-    }
-
-    public List<Event> findEventsForInitiatorUser(User loggedInUser, long initiatorUser, Integer offset, Integer limit) {
-        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByInitiatorUserId")
-            .setParameter("initiatorUser", initiatorUser);
-
-        //when viewing your own profile, show all events
-        if (loggedInUser != null && loggedInUser.getId() == initiatorUser) {
-            query.setFirstResult(offset).setMaxResults(limit);
-            return list(query);
-        }
-        return offsetAndLimitEvents(filterCategoryEvents(loggedInUser, query.getResultList()), offset, limit);
+        return findEvents(null, organizationPredicateBuilder(Set.of(organizationId)), offset, limit);
     }
 
     public long countAllEventsForOrganization(long organizationId) {
@@ -67,72 +52,82 @@ public class EventDAO extends AbstractDAO<Event> {
         return (Long) query.getSingleResult();
     }
 
-    private List<Event> filterCategoryEvents(User loggedInUser, List<Event> events) {
-        if (loggedInUser != null && (loggedInUser.isCurator() || loggedInUser.getIsAdmin())) {
-            return events;
-        } else {
-            List<Event> filteredEvents = new ArrayList<>();
-            events.forEach(event -> {
-                if (event.getOrganization() == null || !event.getOrganization().isCategorizer()) {
-                    filteredEvents.add(event);
-                }
-            });
-            return filteredEvents;
-        }
-    }
-
-    private List<Event> offsetAndLimitEvents(List<Event> events, Integer offset, Integer limit) {
-        return events.subList(offset, Math.min(offset + limit, events.size()));
-    }
-
     public List<Event> findEventsByEntryIDs(User loggedInUser, Set<Long> entryIds, Integer offset, int limit) {
-        int newLimit = Math.min(MAX_LIMIT, limit);
-        if (entryIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByEntryIds");
-        query.setParameterList("entryIDs", entryIds);
-        return offsetAndLimitEvents(filterCategoryEvents(loggedInUser, query.getResultList()), offset, limit);
+        return findEvents(loggedInUser, entryPredicateBuilder(entryIds), offset, limit);
     }
 
     public List<Event> findAllByOrganizationIds(User loggedInUser, Set<Long> organizationIds, Integer offset, int limit) {
-        int newLimit = Math.min(MAX_LIMIT, limit);
-        if (organizationIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIds");
-        query.setParameterList("organizationIDs", organizationIds);
-        return offsetAndLimitEvents(filterCategoryEvents(loggedInUser, query.getResultList()), offset, limit);
+        return findEvents(loggedInUser, organizationPredicateBuilder(organizationIds), offset, limit);
     }
 
     public List<Event> findAllByOrganizationIdsOrEntryIds(User loggedInUser, Set<Long> organizationIds, Set<Long> entryIds, Integer offset, int limit) {
-        int newLimit = Math.min(MAX_LIMIT, limit);
+        return findEvents(loggedInUser, orPredicateBuilder(organizationPredicateBuilder(organizationIds), entryPredicateBuilder(entryIds)), offset, limit);
+    }
 
+    public List<Event> findEventsForInitiatorUser(User loggedInUser, long initiatorUserId, Integer offset, Integer limit) {
+        return findEvents(loggedInUser, initiatorPredicateBuilder(initiatorUserId), offset, limit);
+    }
+
+    private List<Event> findEvents(User loggedInUser, PredicateBuilder predicateBuilder, Integer offset, Integer limit) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        CriteriaQuery<Event> query = criteriaQuery();
+        CriteriaQuery<Event> query = cb.createQuery(Event.class);
         Root<Event> event = query.from(Event.class);
 
-        if (organizationIds.isEmpty() && entryIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<Predicate> list = new ArrayList<>();
-        if (!organizationIds.isEmpty()) {
-            list.add(event.get("organization").in(organizationIds));
-        }
-        if (!entryIds.isEmpty()) {
-            list.add(event.get("tool").in(entryIds));
-            list.add(event.get("workflow").in(entryIds));
-            list.add(event.get("apptool").in(entryIds));
-            list.add(event.get("service").in(entryIds));
-            list.add(event.get("notebook").in(entryIds));
-        }
-        query.where(cb.or(list.toArray(new Predicate[0])));
-        query.orderBy(cb.desc(event.get("id")));
-        query.select(event);
+        Predicate specifiedPredicate = predicateBuilder.build(cb, event);
+        Predicate accessPredicate = accessPredicateBuilder(loggedInUser).build(cb, event);
 
-        int primitiveOffset = MoreObjects.firstNonNull(offset, 0);
-        TypedQuery<Event> typedQuery = currentSession().createQuery(query);
-        return offsetAndLimitEvents(filterCategoryEvents(loggedInUser, typedQuery.getResultList()), primitiveOffset, newLimit);
+        query.select(event);
+        query.where(cb.and(specifiedPredicate, accessPredicate));
+        query.orderBy(cb.desc(event.get("id")));
+
+        int checkedOffset = Math.max(MoreObjects.firstNonNull(offset, 0), 0);
+        int checkedLimit = Math.min(MoreObjects.firstNonNull(limit, DEFAULT_LIMIT), MAX_LIMIT);
+
+        return currentSession().createQuery(query).setFirstResult(checkedOffset).setMaxResults(checkedLimit).getResultList();
+    }
+
+    private PredicateBuilder organizationPredicateBuilder(Set<Long> organizationIds) {
+        return (cb, event) -> event.get("organization").in(organizationIds);
+    }
+
+    private PredicateBuilder entryPredicateBuilder(Set<Long> entryIds) {
+        return (cb, event) -> cb.or(
+            event.get("tool").in(entryIds),
+            event.get("workflow").in(entryIds),
+            event.get("apptool").in(entryIds),
+            event.get("service").in(entryIds),
+            event.get("notebook").in(entryIds));
+    }
+
+    private PredicateBuilder orPredicateBuilder(PredicateBuilder a, PredicateBuilder b) {
+        return (cb, event) -> cb.or(a.build(cb, event), b.build(cb, event));
+    }
+
+    private PredicateBuilder initiatorPredicateBuilder(long initiatorUserId) {
+        return (cb, event) -> event.get("initiatorUser").in(initiatorUserId);
+    }
+
+    private PredicateBuilder accessPredicateBuilder(User loggedInUser) {
+        return (cb, event) -> {
+            // Calculate a predicate representing public access.
+            // Currently, this is all events that don't refer to a "categorizer" organization.
+            Join<Event, Organization> organization = event.join("organization", JoinType.LEFT);
+            Predicate publicPredicate = cb.or(cb.isFalse(organization.get("categorizer")), cb.isNull(organization));
+            // Calculate a predicate representing extra access due to the user's identity.
+            Predicate extraPredicate;
+            if (loggedInUser != null && (loggedInUser.getIsAdmin() || loggedInUser.isCurator())) {
+                // Admin or curator, able to access everything.
+                extraPredicate = cb.conjunction();
+            } else if (loggedInUser != null) {
+                // Logged in, able to access events that the user initiated.
+                extraPredicate = event.get("initiatorUser").in(loggedInUser.getId());
+            } else {
+                // Logged out, no extra access.
+                extraPredicate = cb.disjunction();
+            }
+            // Access is the union of the two predicates.
+            return cb.or(publicPredicate, extraPredicate);
+        };
     }
 
     public void delete(Event event) {
@@ -179,5 +174,9 @@ public class EventDAO extends AbstractDAO<Event> {
             .withUser(user).withInitiatorUser(user);
         final Event event = builder.build();
         create(event);
+    }
+
+    private interface PredicateBuilder {
+        Predicate build(CriteriaBuilder cb, Root<Event> event);
     }
 }

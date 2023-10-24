@@ -224,6 +224,8 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setIsChecker(isIsChecker());
         targetWorkflow.setConceptDoi(getConceptDoi());
         targetWorkflow.setMode(getMode());
+        targetWorkflow.setArchived(isArchived());
+        targetWorkflow.setWasEverPublic(getWasEverPublic());
     }
 
     @Override
