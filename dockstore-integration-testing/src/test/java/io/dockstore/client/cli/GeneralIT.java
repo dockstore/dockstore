@@ -101,7 +101,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * Extra confidential integration tests, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
- * @deprecated uses swagger client classes, prefer {@link GeneralIT}
+ * @deprecated uses swagger client classes, prefer {@link OpenAPIGeneralIT}
  * @author aduncan
  */
 @Deprecated
@@ -110,7 +110,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(TestStatus.class)
 @org.junit.jupiter.api.Tag(ConfidentialTest.NAME)
 @org.junit.jupiter.api.Tag(ToolTest.NAME)
-class SwaggerGeneralIT extends GeneralWorkflowBaseIT {
+class GeneralIT extends GeneralWorkflowBaseIT {
     public static final String DOCKSTORE_TOOL_IMPORTS = "dockstore-tool-imports";
 
     private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";

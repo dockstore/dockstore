@@ -73,7 +73,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 /**
  * This test suite tests various workflow related processes.
  * Created by aduncan on 05/04/16.
- * @deprecated uses swagger client classes, prefer {@link GeneralWorkflowIT}
+ * @deprecated uses swagger client classes, prefer {@link OpenAPIGeneralWorkflowIT}
  */
 @Deprecated
 @ExtendWith(SystemStubsExtension.class)
@@ -81,7 +81,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Tag(WorkflowTest.NAME)
-class SwaggerGeneralWorkflowIT extends BaseIT {
+class GeneralWorkflowIT extends BaseIT {
 
     private static final String DUMMY_DOI = "10.foo/bar";
 

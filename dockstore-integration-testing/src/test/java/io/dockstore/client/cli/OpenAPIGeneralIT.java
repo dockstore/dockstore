@@ -55,7 +55,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Tag(ToolTest.NAME)
-class GeneralIT extends BaseIT {
+class OpenAPIGeneralIT extends BaseIT {
     private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";
 
     @SystemStub
