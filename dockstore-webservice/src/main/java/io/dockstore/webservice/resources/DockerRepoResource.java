@@ -33,6 +33,7 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -421,7 +422,8 @@ public class DockerRepoResource
 
         originalTool.setForumUrl(newTool.getForumUrl());
         originalTool.setTopicManual(newTool.getTopicManual());
-        if (!Objects.equals(originalTool.getMode(), ToolMode.HOSTED)) {
+        originalTool.setTopicAI(newTool.getTopicAI());
+        if (!Objects.equals(originalTool.getMode(), ToolMode.HOSTED) || (Objects.equals(originalTool.getMode(), ToolMode.HOSTED) && newTool.getTopicSelection() != TopicSelection.AUTOMATIC)) {
             originalTool.setTopicSelection(newTool.getTopicSelection());
         }
 
