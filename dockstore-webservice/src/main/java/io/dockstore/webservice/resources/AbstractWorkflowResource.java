@@ -828,14 +828,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         // Update the manual topic if it's not blank in the .dockstore.yml.
-        if (workflowType != Service.class) {
-            // Purposefully not clearing the manual topic when it doesn't exist.
-            if (StringUtils.isNotBlank(wf.getTopic())) {
-                workflowToUpdate.setTopicManual(wf.getTopic());
-                workflowToUpdate.setTopicSelection(TopicSelection.MANUAL);
-            } else {
-                workflowToUpdate.setTopicSelection(TopicSelection.AUTOMATIC);
-            }
+        if (workflowType != Service.class && StringUtils.isNotBlank(wf.getTopic())) {
+            // Purposefully not clearing the manual topic when it doesn't exist because another version may have set it
+            workflowToUpdate.setTopicManual(wf.getTopic());
+            workflowToUpdate.setTopicSelection(TopicSelection.MANUAL);
         }
 
         return workflowToUpdate;
