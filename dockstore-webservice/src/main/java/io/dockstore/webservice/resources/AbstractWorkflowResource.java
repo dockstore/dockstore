@@ -24,6 +24,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidAuthor;
@@ -824,6 +825,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         if (user != null) {
             workflowToUpdate.getUsers().add(user);
+        }
+
+        // Update the manual topic if it's not blank in the .dockstore.yml.
+        // Purposefully not clearing the manual topic when it doesn't exist.
+        if (StringUtils.isNotBlank(wf.getTopic())) {
+            workflowToUpdate.setTopicManual(wf.getTopic());
+            workflowToUpdate.setTopicSelection(TopicSelection.MANUAL);
+        } else {
+            workflowToUpdate.setTopicSelection(TopicSelection.AUTOMATIC);
         }
 
         return workflowToUpdate;

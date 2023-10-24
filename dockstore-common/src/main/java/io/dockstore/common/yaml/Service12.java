@@ -51,4 +51,8 @@ public class Service12 extends AbstractYamlService implements Workflowish {
     public String getReadMePath() {
         throw new UnsupportedOperationException();
     }
+
+    public String getTopic() {
+        throw new UnsupportedOperationException();
+    }
 }
