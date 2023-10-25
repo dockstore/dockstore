@@ -56,6 +56,10 @@ public class JupyterHandler implements LanguageHandlerInterface {
     public static final Set<String> REES_FILES = Set.of("environment.yml", "Pipfile", "Pipfile.lock", "requirements.txt", "setup.py", "Project.toml", "REQUIRE", "install.R", "apt.txt", "DESCRIPTION", "postBuild", "start", "runtime.txt", "default.nix", "Dockerfile");
     public static final Set<String> REES_DIRS = Set.of("/", "/binder/", "/.binder/");
 
+    private static final String DOT_DEVCONTAINER_JSON = ".devcontainer.json";
+    private static final String DOT_DEVCONTAINER_DIR = ".devcontainer";
+    private static final String DEVCONTAINER_JSON = "devcontainer.json";
+
     private static final String PYTHON = "python";
     private static final int FOUR = 4;
 
@@ -166,31 +170,30 @@ public class JupyterHandler implements LanguageHandlerInterface {
 
         // Scan for and read the devcontainer files of highest precedence
         // Relevant section of devcontainer spec: https://containers.dev/implementors/spec/#devcontainerjson
-        if (rootNames.contains(".devcontainer.json")) {
+        if (rootNames.contains(DOT_DEVCONTAINER_JSON)) {
             // Read /.devcontainer.json
-            fileReader.accept("/" + ".devcontainer.json", DOCKSTORE_NOTEBOOK_DEVCONTAINER);
-        } else if (rootNames.contains(".devcontainer")) {
-            String path = "/" + ".devcontainer";
+            fileReader.accept("/" + DOT_DEVCONTAINER_JSON, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+
+        } else if (rootNames.contains(DOT_DEVCONTAINER_DIR)) {
+            String path = "/" + DOT_DEVCONTAINER_DIR;
             Set<String> names = listFiles.apply(path);
-            if (names.contains("devcontainer.json")) {
+
+            if (names.contains(DEVCONTAINER_JSON)) {
                 // Read /.devcontainer/devcontainer.json
-                fileReader.accept(path + "/" + "devcontainer.json", DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+                fileReader.accept(path + "/" + DEVCONTAINER_JSON, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+
             } else {
                 // Scan for and read all files with path /.devcontainer/<folder>/devcontainer.json
                 names.stream().forEach(folder -> {
                     String folderPath = path + "/" + folder;
                     listFiles.apply(folderPath).stream()
-                        .filter("devcontainer.json"::equals)
+                        .filter(DEVCONTAINER_JSON::equals)
                         .forEach(name -> fileReader.accept(folderPath + "/" + name, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
                 });
             }
         }
 
         return pathsToFiles;
-    }
-
-    private Set<String> listFiles(String path, SourceCodeRepoInterface sourceCodeRepoInterface, String repositoryId, Version version) {
-        return new HashSet<>(ObjectUtils.firstNonNull(sourceCodeRepoInterface.listFiles(repositoryId, path, version.getReference()), List.of()));
     }
 
     @Override
