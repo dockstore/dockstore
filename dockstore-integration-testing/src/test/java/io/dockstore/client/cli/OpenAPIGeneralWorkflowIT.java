@@ -47,7 +47,7 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 @ExtendWith(TestStatus.class)
 @Tag(ConfidentialTest.NAME)
 @Tag(WorkflowTest.NAME)
-public class OpenAPIGeneralWorkflowIT extends BaseIT {
+class OpenAPIGeneralWorkflowIT extends BaseIT {
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
     @SystemStub
