@@ -228,6 +228,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String fileKey = file.getType().toString() + file.getAbsolutePath();
             SourceFile existingFile = existingFileMap.get(fileKey);
             if (existingFileMap.containsKey(fileKey)) {
+                existingFile.setPath(file.getPath());
                 existingFile.setContent(file.getContent());
                 existingFile.getMetadata().setTypeVersion(file.getMetadata().getTypeVersion());
             } else {
