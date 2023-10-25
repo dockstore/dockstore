@@ -221,7 +221,8 @@
             "properties": {
               "content": {
                 "type": "text",
-                "analyzer": "text_analyzer"
+                "analyzer": "text_analyzer",
+                "index_options": "offsets"
               },
               "id": {
                 "type": "long"

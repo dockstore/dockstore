@@ -159,6 +159,19 @@
       },
       "workflow_path": {
         "type": "keyword"
+      },
+      "workflowVersions" : {
+        "properties": {
+          "sourceFiles": {
+            "properties": {
+              "content": {
+                "type": "text",
+                "index_options": "offsets",
+                "analyzer": "text_analyzer"
+              }
+            }
+          }
+        }
       }
     }
   }
