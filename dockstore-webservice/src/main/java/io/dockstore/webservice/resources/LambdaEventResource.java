@@ -74,7 +74,8 @@ public class LambdaEventResource {
         response.addHeader(X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
         if (limit == null) {
-            limit = Long.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos)).intValue();
+            Integer allEventCounts = Long.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos)).intValue();
+            return lambdaEventDAO.findByOrganization(organization, offset, allEventCounts, authorizedRepos);
         }
         return lambdaEventDAO.findByOrganization(organization, offset, limit, authorizedRepos);
     }
@@ -89,7 +90,7 @@ public class LambdaEventResource {
     public List<LambdaEvent> getUserLambdaEvents(@Parameter(hidden = true, name = "user")@Auth User authUser,
            @PathParam("userid") long userid,
            @QueryParam("offset") @DefaultValue("0") Integer offset,
-           @QueryParam("limit") @DefaultValue("1000") Integer limit,
+           @QueryParam("limit") Integer limit,
            @Context HttpServletResponse response) {
         final User user = userDAO.findById(userid);
         if (user == null) {
@@ -98,7 +99,8 @@ public class LambdaEventResource {
         response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByUser(user)));
         response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
         if (limit == null) {
-            limit = Long.valueOf(lambdaEventDAO.countByUser(user)).intValue();
+            Integer allEventCounts = Long.valueOf(lambdaEventDAO.countByUser(user)).intValue();
+            return lambdaEventDAO.findByUser(user, offset, allEventCounts);
         }
         return lambdaEventDAO.findByUser(user, offset, limit);
     }
