@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ObjectUtils;
@@ -134,10 +135,16 @@ public class JupyterHandler implements LanguageHandlerInterface {
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
         Map<String, SourceFile> pathsToFiles = new HashMap<>();
 
+        // The following is a helper Consumer that will read the specified file and put it into the result Map.
+        BiConsumer<String, DescriptorLanguage.FileType> fileReader = (path, type) ->
+            sourceCodeRepoInterface.readFile(repositoryId, version, type, path)
+                .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
+
         // To avoid listing the contents of non-existent directories and generating non-cachable requests
-        // https://github.com/dockstore/dockstore/pull/5329#discussion_r1088120869
-        // we first determine the contents of '/'
-        Set<String> rootNames = new HashSet<>(ObjectUtils.firstNonNull(sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference()), List.of()));
+        // (https://github.com/dockstore/dockstore/pull/5329#discussion_r1088120869),
+        // the following code tends to list the files in the directories of interest and scan through them,
+        // rather than probing single paths.
+        Set<String> rootNames = listFiles("/", sourceCodeRepoInterface, repositoryId, version);
 
         // Read the REES configuration files
         // For each possible REES directory, check to see if it contains any REES files
@@ -145,53 +152,60 @@ public class JupyterHandler implements LanguageHandlerInterface {
             // Confirm the directory [probably] exists.
             if ("/".equals(reesDir) || rootNames.contains(reesDir.replace("/", ""))) {
                 // List the files in the directory.
-                List<String> names = sourceCodeRepoInterface.listFiles(repositoryId, reesDir, version.getReference());
-                if (names != null) {
-                    // Check each file in the directory.
-                    for (String name: names) {
-                        // If it's a REES file, read it into a SourceFile and add it to the map.
-                        if (REES_FILES.contains(name)) {
-                            sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES, reesDir + name)
-                                .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
-                        }
+                Set<String> names = listFiles(reesDir, sourceCodeRepoInterface, repositoryId, version);
+                // Check each file in the directory.
+                for (String name: names) {
+                    // If it's a REES file, read it into a SourceFile and add it to the map.
+                    if (REES_FILES.contains(name)) {
+                        fileReader.accept(reesDir + name, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES);
                     }
                 }
+                /*
+                listFiles(reesDir, sourceCodeRepoInterface, repositoryId, version).stream()
+                    .filter(REES_FILES::contains)
+                    .apply(name -> fileReader.accept(reesDir + name, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES));
+                */
             }
         }
 
         // Read the devcontainer configuration files
+        // Relevant section of devcontainer spec: 
         // Look for "/.devcontainer.json"
         if (rootNames.contains(".devcontainer.json")) {
-            sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER, "/.devcontainer.json")
-                .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
+            fileReader.accept("/" + ".devcontainer.json", DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER);
         }
         // Look for "/.devcontainer/devcontainer.json" and "/.devcontainer/<folder>/devcontainer.json"
         if (rootNames.contains(".devcontainer")) {
-            List<String> names = sourceCodeRepoInterface.listFiles(repositoryId, "/.devcontainer", version.getReference());
-            if (names != null) {
-                for (String name: names) {
-                    if ("devcontainer.json".equals(name)) {
-                        // Read "/.devcontainer/devcontainer.json"
-                        sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER, "/.devcontainer/devcontainer.json")
-                            .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
-                    } else {
-                        // Scan for and read "/.devcontainer/<folder>/devcontainer.json"
-                        String subPath = "/.devcontainer/" + name;
-                        List<String> subNames = sourceCodeRepoInterface.listFiles(repositoryId, subPath, version.getReference());
-                        if (subNames != null) {
-                            for (String subName: subNames) {
-                                if ("devcontainer.json".equals(subName)) {
-                                    sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER, subPath + "/" + subName)
-                                        .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
-                                }
-                            }
+            String path = "/" + ".devcontainer";
+            Set<String> names = listFiles(path, sourceCodeRepoInterface, repositoryId, version);
+            for (String name: names) {
+                if ("devcontainer.json".equals(name)) {
+                    // Read "/.devcontainer/devcontainer.json"
+                    fileReader.accept(path + "/" + name, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+                } else {
+                    String subPath = path + "/" + name;
+                    Set<String> subNames = listFiles(subPath, sourceCodeRepoInterface, repositoryId, version);
+                    for (String subName: subNames) {
+                        if ("devcontainer.json".equals(subName)) {
+                            // Read "/.devcontainer/<folder>/devcontainer.json"
+                            fileReader.accept(subPath + "/" + subName, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER);
                         }
                     }
+                    /*
+                    String subPath = path + "/" + name;
+                    listFiles(subPath, sourceCodeRepoInterface, repositoryId, version).stream()
+                        .filter("devcontainer.json"::equals)
+                        .forEach(subName -> fileReader.accept(subPath + "/" + subName, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+                    */
                 }
             }
         }
 
         return pathsToFiles;
+    }
+
+    private Set<String> listFiles(String path, SourceCodeRepoInterface sourceCodeRepoInterface, String repositoryId, Version version) {
+        return new HashSet<>(ObjectUtils.firstNonNull(sourceCodeRepoInterface.listFiles(repositoryId, path, version.getReference()), List.of()));
     }
 
     @Override
