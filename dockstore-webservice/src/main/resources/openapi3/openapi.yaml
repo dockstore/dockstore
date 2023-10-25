@@ -3972,7 +3972,6 @@ paths:
         schema:
           type: integer
           format: int32
-          default: 100
       responses:
         default:
           content:

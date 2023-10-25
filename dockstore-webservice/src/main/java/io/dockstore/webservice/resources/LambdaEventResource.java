@@ -1,9 +1,5 @@
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
-
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.LambdaEvent;
@@ -64,9 +60,9 @@ public class LambdaEventResource {
     @Operation(operationId = "getLambdaEventsByOrganization", description = "Get all of the Lambda Events for the given GitHub organization.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam(value = "organization", required = true) @PathParam("organization") String organization,
-            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
-            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @PathParam("organization") String organization,
+            @QueryParam("offset") @DefaultValue("0") String offset,
+            @QueryParam("limit") Integer limit,
             @Context HttpServletResponse response) {
         final User authUser = userDAO.findById(user.getId());
         final List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
@@ -77,6 +73,9 @@ public class LambdaEventResource {
         final Optional<List<String>> authorizedRepos = authorizedRepos(organization, githubToken);
         response.addHeader(X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
+        if (limit == null) {
+            limit = Long.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos)).intValue();
+        }
         return lambdaEventDAO.findByOrganization(organization, offset, limit, authorizedRepos);
     }
 
@@ -98,6 +97,9 @@ public class LambdaEventResource {
         }
         response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByUser(user)));
         response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
+        if (limit == null) {
+            limit = Long.valueOf(lambdaEventDAO.countByUser(user)).intValue();
+        }
         return lambdaEventDAO.findByUser(user, offset, limit);
     }
 
