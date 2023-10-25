@@ -15,6 +15,9 @@
 
 package io.dockstore.webservice.languages;
 
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.annotations.SerializedName;
@@ -135,7 +138,11 @@ public class JupyterHandler implements LanguageHandlerInterface {
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
         Map<String, SourceFile> pathsToFiles = new HashMap<>();
 
-        // The following is a helper Consumer that will read the specified file and put it into the result Map.
+        // The following are some helpers:
+        // listFiles reads the names of the files/directories from the specified path in the repo ref, empty if the path doesn't exist
+        Function<String, Set<String>> listFiles = path ->
+            new HashSet<>(ObjectUtils.firstNonNull(sourceCodeRepoInterface.listFiles(repositoryId, path, version.getReference()), List.of()));
+        // fileReader reads the file at the specified path in the repo ref, turns it into a sourcefile, and puts it into the result Map
         BiConsumer<String, DescriptorLanguage.FileType> fileReader = (path, type) ->
             sourceCodeRepoInterface.readFile(repositoryId, version, type, path)
                 .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
@@ -144,60 +151,38 @@ public class JupyterHandler implements LanguageHandlerInterface {
         // (https://github.com/dockstore/dockstore/pull/5329#discussion_r1088120869),
         // the following code tends to list the files in the directories of interest and scan through them,
         // rather than probing single paths.
-        Set<String> rootNames = listFiles("/", sourceCodeRepoInterface, repositoryId, version);
+        Set<String> rootNames = listFiles.apply("/");
 
         // Read the REES configuration files
         // For each possible REES directory, check to see if it contains any REES files
         for (String reesDir: REES_DIRS) {
             // Confirm the directory [probably] exists.
             if ("/".equals(reesDir) || rootNames.contains(reesDir.replace("/", ""))) {
-                // List the files in the directory.
-                Set<String> names = listFiles(reesDir, sourceCodeRepoInterface, repositoryId, version);
-                // Check each file in the directory.
-                for (String name: names) {
-                    // If it's a REES file, read it into a SourceFile and add it to the map.
-                    if (REES_FILES.contains(name)) {
-                        fileReader.accept(reesDir + name, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES);
-                    }
-                }
-                /*
-                listFiles(reesDir, sourceCodeRepoInterface, repositoryId, version).stream()
+                listFiles.apply(reesDir).stream()
                     .filter(REES_FILES::contains)
-                    .apply(name -> fileReader.accept(reesDir + name, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES));
-                */
+                    .forEach(name -> fileReader.accept(reesDir + name, DOCKSTORE_NOTEBOOK_REES));
             }
         }
 
-        // Read the devcontainer configuration files
-        // Relevant section of devcontainer spec: 
-        // Look for "/.devcontainer.json"
+        // Scan for and read the devcontainer files of highest precedence
+        // Relevant section of devcontainer spec: https://containers.dev/implementors/spec/#devcontainerjson
         if (rootNames.contains(".devcontainer.json")) {
-            fileReader.accept("/" + ".devcontainer.json", DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER);
-        }
-        // Look for "/.devcontainer/devcontainer.json" and "/.devcontainer/<folder>/devcontainer.json"
-        if (rootNames.contains(".devcontainer")) {
+            // Read /.devcontainer.json
+            fileReader.accept("/" + ".devcontainer.json", DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+        } else if (rootNames.contains(".devcontainer")) {
             String path = "/" + ".devcontainer";
-            Set<String> names = listFiles(path, sourceCodeRepoInterface, repositoryId, version);
-            for (String name: names) {
-                if ("devcontainer.json".equals(name)) {
-                    // Read "/.devcontainer/devcontainer.json"
-                    fileReader.accept(path + "/" + name, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER);
-                } else {
-                    String subPath = path + "/" + name;
-                    Set<String> subNames = listFiles(subPath, sourceCodeRepoInterface, repositoryId, version);
-                    for (String subName: subNames) {
-                        if ("devcontainer.json".equals(subName)) {
-                            // Read "/.devcontainer/<folder>/devcontainer.json"
-                            fileReader.accept(subPath + "/" + subName, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER);
-                        }
-                    }
-                    /*
-                    String subPath = path + "/" + name;
-                    listFiles(subPath, sourceCodeRepoInterface, repositoryId, version).stream()
+            Set<String> names = listFiles.apply(path);
+            if (names.contains("devcontainer.json")) {
+                // Read /.devcontainer/devcontainer.json
+                fileReader.accept(path + "/" + "devcontainer.json", DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+            } else {
+                // Scan for and read all files with path /.devcontainer/<folder>/devcontainer.json
+                names.stream().forEach(folder -> {
+                    String folderPath = path + "/" + folder;
+                    listFiles.apply(folderPath).stream()
                         .filter("devcontainer.json"::equals)
-                        .forEach(subName -> fileReader.accept(subPath + "/" + subName, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER));
-                    */
-                }
+                        .forEach(name -> fileReader.accept(folderPath + "/" + name, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+                });
             }
         }
 
