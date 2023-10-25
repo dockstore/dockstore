@@ -2532,6 +2532,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_JUPYTER
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_DEVCONTAINER
             - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
@@ -3080,6 +3081,7 @@ paths:
                   - SWL_TEST_JSON
                   - DOCKSTORE_JUPYTER
                   - DOCKSTORE_NOTEBOOK_REES
+                  - DOCKSTORE_NOTEBOOK_DEVCONTAINER
                   - DOCKSTORE_NOTEBOOK_TEST_FILE
                   - DOCKSTORE_NOTEBOOK_OTHER
                 uniqueItems: true
@@ -8274,6 +8276,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_JUPYTER
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_DEVCONTAINER
             - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
@@ -10249,6 +10252,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_JUPYTER
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_DEVCONTAINER
           - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         verifiedBySource:
@@ -11097,6 +11101,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_JUPYTER
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_DEVCONTAINER
           - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         valid:

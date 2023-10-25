@@ -139,7 +139,8 @@ public class JupyterHandler implements LanguageHandlerInterface {
         // we first determine the contents of '/'
         Set<String> rootNames = new HashSet<>(ObjectUtils.firstNonNull(sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference()), List.of()));
 
-        // For each possible REES directory:
+        // Read the REES configuration files
+        // For each possible REES directory, check to see if it contains any REES files
         for (String reesDir: REES_DIRS) {
             // Confirm the directory [probably] exists.
             if ("/".equals(reesDir) || rootNames.contains(reesDir.replace("/", ""))) {
@@ -157,6 +158,39 @@ public class JupyterHandler implements LanguageHandlerInterface {
                 }
             }
         }
+
+        // Read the devcontainer configuration files
+        // Look for "/.devcontainer.json"
+        if (rootNames.contains(".devcontainer.json")) {
+            sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER, "/.devcontainer.json")
+                .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
+        }
+        // Look for "/.devcontainer/devcontainer.json" and "/.devcontainer/<folder>/devcontainer.json"
+        if (rootNames.contains(".devcontainer")) {
+            List<String> names = sourceCodeRepoInterface.listFiles(repositoryId, "/.devcontainer", version.getReference());
+            if (names != null) {
+                for (String name: names) {
+                    if ("devcontainer.json".equals(name)) {
+                        // Read "/.devcontainer/devcontainer.json"
+                        sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER, "/.devcontainer/devcontainer.json")
+                            .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
+                    } else {
+                        // Scan for and read "/.devcontainer/<folder>/devcontainer.json"
+                        String subPath = "/.devcontainer/" + name;
+                        List<String> subNames = sourceCodeRepoInterface.listFiles(repositoryId, subPath, version.getReference());
+                        if (subNames != null) {
+                            for (String subName: subNames) {
+                                if ("devcontainer.json".equals(subName)) {
+                                    sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER, subPath + "/" + subName)
+                                        .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         return pathsToFiles;
     }
 

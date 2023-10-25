@@ -208,6 +208,36 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
+    void testRegisterRootDevcontainerNotebook() {
+        List<String> paths = registerSimpleRepoAndGetSourceFilePaths("simple", "refs/branches/root-devcontainer");
+        assertTrue(paths.contains("/.devcontainer.json"));
+    }
+
+    @Test
+    void testRegisterSubdirDevcontainerNotebook() {
+        List<String> paths = registerSimpleRepoAndGetSourceFilePaths("simple", "refs/branches/subdir-devcontainer");
+        assertTrue(paths.contains("/.devcontainer/devcontainer.json"));
+    }
+
+    @Test
+    void testRegisterSubsubdirDevcontainerNotebook() {
+        List<String> paths = registerSimpleRepoAndGetSourceFilePaths("simple", "refs/branches/subsubdir-devcontainers");
+        assertTrue(paths.contains("/.devcontainer/a/devcontainer.json"));
+        assertTrue(paths.contains("/.devcontainer/b/devcontainer.json"));
+    }
+
+    private List<String> registerSimpleRepoAndGetSourceFilePaths(String name, String ref) {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME);
+        String path = simpleRepoPath + "/" + name;
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
+        return sourceFiles.stream().map(SourceFile::getAbsolutePath).toList();
+    }
+
+    @Test
     void testUserNotebooks() {
         ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
