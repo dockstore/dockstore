@@ -214,16 +214,17 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
-    void testRegisterSubdirDevcontainerNotebook() {
+    void testRegisterDotdirDevcontainerNotebook() {
         List<String> paths = registerSimpleRepoAndGetSourceFilePaths("simple", "refs/heads/dotdir-devcontainer");
         assertTrue(paths.contains("/.devcontainer/devcontainer.json"));
     }
 
     @Test
-    void testRegisterSubsubdirDevcontainerNotebook() {
+    void testRegisterDotdirFolderDevcontainersNotebook() {
         List<String> paths = registerSimpleRepoAndGetSourceFilePaths("simple", "refs/heads/dotdir-folder-devcontainers");
         assertTrue(paths.contains("/.devcontainer/a/devcontainer.json"));
         assertTrue(paths.contains("/.devcontainer/b/devcontainer.json"));
+        assertFalse(paths.contains("/.devcontainer/c.txt"));
     }
 
     private List<String> registerSimpleRepoAndGetSourceFilePaths(String name, String ref) {
