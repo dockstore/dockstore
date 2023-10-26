@@ -245,7 +245,7 @@ class NotebookIT extends BaseIT {
     }
 
     private long countFileType(List<SourceFile> sourceFiles, DescriptorLanguage.FileType type) {
-        return sourceFiles.stream().filter(file -> file.getType().equals(type)).count();
+        return sourceFiles.stream().filter(file -> type.name().equals(file.getType().getValue())).count();
     }
 
     @Test
