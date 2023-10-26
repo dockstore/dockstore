@@ -211,21 +211,21 @@ class NotebookIT extends BaseIT {
     @Test
     void testRegisterRootDevcontainerNotebook() {
         List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/root-devcontainer-v1");
-        assertEquals(Set.of("/.devcontainer.json", "/notebook.ipynb", ".dockstore.yml"), getAbsolutePaths(files));
+        assertEquals(Set.of("/.devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"), getAbsolutePaths(files));
         assertEquals(1, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
     }
 
     @Test
     void testRegisterDotdirDevcontainerNotebook() {
         List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/dotdir-devcontainer-v1");
-        assertEquals(Set.of("/.devcontainer/devcontainer.json", "/notebook.ipynb", ".dockstore.yml"), getAbsolutePaths(files));
+        assertEquals(Set.of("/.devcontainer/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"), getAbsolutePaths(files));
         assertEquals(1, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
     }
 
     @Test
     void testRegisterDotdirFolderDevcontainersNotebook() {
         List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/dotdir-folder-devcontainers-v1");
-        assertEquals(Set.of("/.devcontainer/a/devcontainer.json", "/.devcontainer/b/devcontainer.json", "/notebook.ipynb", ".dockstore.yml"),
+        assertEquals(Set.of("/.devcontainer/a/devcontainer.json", "/.devcontainer/b/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"),
             getAbsolutePaths(files));
         assertEquals(2, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
     }
