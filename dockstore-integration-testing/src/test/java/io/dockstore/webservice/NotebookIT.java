@@ -230,6 +230,14 @@ class NotebookIT extends BaseIT {
         assertEquals(2, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
     }
 
+    @Test
+    void testRegisterAllDevcontainersNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/heads/all-devcontainers");
+        assertEquals(Set.of("/.devcontainer.json", "/.devcontainer/devcontainer.json", "/.devcontainer/a/devcontainer.json", "/.devcontainer/b/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"),
+            getAbsolutePaths(files));
+        assertEquals(4, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
     private List<SourceFile> registerSimpleRepoAndGetSourceFiles(String name, String ref) {
         ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);

@@ -157,7 +157,7 @@ public class JupyterHandler implements LanguageHandlerInterface {
         // rather than probing single paths.
         Set<String> rootNames = listFiles.apply("/");
 
-        // Read the REES configuration files
+        // Read any REES configuration files
         // For each possible REES directory, check to see if it contains any REES files
         for (String reesDir: REES_DIRS) {
             // Confirm the directory [probably] exists.
@@ -168,29 +168,31 @@ public class JupyterHandler implements LanguageHandlerInterface {
             }
         }
 
-        // Scan for and read the devcontainer files of highest precedence
+        // Read any devcontainer files
         // Relevant section of devcontainer spec: https://containers.dev/implementors/spec/#devcontainerjson
+        // Per the spec, devcontainers should be stored in one of the following locations:
+        //   /.devcontainer.json
+        //   /.devcontainer/devcontainer.json
+        //   /.devcontainer/<folder>/devcontainer.json
+        // The spec specifies a precedence, but when present, GitHub reads all of the above files, so we do, too
         if (rootNames.contains(DOT_DEVCONTAINER_JSON)) {
             // Read /.devcontainer.json
             fileReader.accept("/" + DOT_DEVCONTAINER_JSON, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
-
-        } else if (rootNames.contains(DOT_DEVCONTAINER_DIR)) {
+        }
+        if (rootNames.contains(DOT_DEVCONTAINER_DIR)) {
             String path = "/" + DOT_DEVCONTAINER_DIR;
-            Set<String> names = listFiles.apply(path);
-
-            if (names.contains(DEVCONTAINER_JSON)) {
-                // Read /.devcontainer/devcontainer.json
-                fileReader.accept(path + "/" + DEVCONTAINER_JSON, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
-
-            } else {
-                // Scan for and read all files with path /.devcontainer/<folder>/devcontainer.json
-                names.stream().forEach(folder -> {
-                    String folderPath = path + "/" + folder;
-                    listFiles.apply(folderPath).stream()
-                        .filter(DEVCONTAINER_JSON::equals)
-                        .forEach(name -> fileReader.accept(folderPath + "/" + name, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
-                });
-            }
+            listFiles.apply(path).forEach(name -> {
+                String subPath = path + "/" + name;
+                if (name.equals(DEVCONTAINER_JSON)) {
+                    // Read /.devcontainer/devcontainer.json
+                    fileReader.accept(subPath, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+                } else {
+                    if (listFiles.apply(subPath).contains(DEVCONTAINER_JSON)) {
+                        // Read /.devcontainer/<folder>/devcontainer.json
+                        fileReader.accept(subPath + "/" + DEVCONTAINER_JSON, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+                    }
+                }
+            });
         }
 
         return pathsToFiles;
