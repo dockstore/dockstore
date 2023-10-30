@@ -232,7 +232,7 @@ class NotebookIT extends BaseIT {
 
     @Test
     void testRegisterAllDevcontainersNotebook() {
-        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/heads/all-devcontainers");
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/all-devcontainers-v1");
         assertEquals(Set.of("/.devcontainer.json", "/.devcontainer/devcontainer.json", "/.devcontainer/a/devcontainer.json", "/.devcontainer/b/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"),
             getAbsolutePaths(files));
         assertEquals(4, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
