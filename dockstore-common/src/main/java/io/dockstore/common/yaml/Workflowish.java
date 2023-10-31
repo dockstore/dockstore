@@ -23,4 +23,6 @@ public interface Workflowish {
      * @return
      */
     String getReadMePath();
+
+    String getTopic();
 }

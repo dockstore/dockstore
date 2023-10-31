@@ -8986,12 +8986,14 @@ components:
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
+          maxLength: 150
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
+          maxLength: 150
         topicSelection:
           type: string
           description: Which topic to display to the public users
@@ -9124,12 +9126,14 @@ components:
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
+          maxLength: 150
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
+          maxLength: 150
         topicSelection:
           type: string
           description: Which topic to display to the public users
@@ -11596,12 +11600,14 @@ components:
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
+          maxLength: 150
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
+          maxLength: 150
         topicSelection:
           type: string
           description: Which topic to display to the public users

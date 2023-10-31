@@ -311,11 +311,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private List<Partner> validationPartners = new ArrayList<>();
 
     @Column(length = TOPIC_LENGTH)
-    @Schema(description = "Short description of the entry gotten automatically")
+    @Schema(description = "Short description of the entry gotten automatically", maxLength = TOPIC_LENGTH)
     private String topicAutomatic;
 
     @Column(length = TOPIC_LENGTH)
-    @Schema(description = "Short description of the entry manually updated")
+    @Schema(description = "Short description of the entry manually updated", maxLength = TOPIC_LENGTH)
     private String topicManual;
 
     @Column(length = TOPIC_LENGTH)
