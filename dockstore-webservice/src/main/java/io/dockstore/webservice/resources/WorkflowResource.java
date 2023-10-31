@@ -572,6 +572,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         oldWorkflow.setTopicManual(newWorkflow.getTopicManual());
         oldWorkflow.setTopicAI(newWorkflow.getTopicAI());
 
+        // Update topic selection if it's a non-hosted workflow, or if it's a hosted workflow and the new topic selection is not automatic.
+        // Hosted workflows don't have a source control thus cannot have an automatic topic.
         if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)
                 || (Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED) && newWorkflow.getTopicSelection() != TopicSelection.AUTOMATIC)) {
             oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
