@@ -1980,12 +1980,20 @@ class WebhookIT extends BaseIT {
         assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
         assertEquals(TopicSelectionEnum.MANUAL, foobar2.getTopicSelection(), "Topic selection should still be manual");
 
-        // Release a version with an empty 'topic' in the .dockstore.yml. The topicManual should be reset to null and topicSelection should be set to automatic
+        // Update topic selection to AI for workflow 'foobar'.
+        foobar.setTopicSelection(TopicSelectionEnum.AI);
+        foobar.setTopicAI("AI topic");
+        workflowClient.updateWorkflow(foobar.getId(), foobar);
+
+        // Release a version with an empty 'topic' in the .dockstore.yml. The topicManual should be reset to null and topicSelection should:
+        // - remain unchanged for workflow 'foobar' because it did not have a manual topic selection. It has an AI topic selection.
+        // - be set to AUTOMATIC for workflow 'foobar2' since it had a manual topic selection.
         handleGitHubRelease(workflowClient, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
         foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, null);
         assertNull(foobar.getTopicManual());
         assertEquals(expectedTopicAutomatic, foobar.getTopicAutomatic());
-        assertEquals(TopicSelectionEnum.AUTOMATIC, foobar.getTopicSelection(), "Topic selection should be automatic if there's an empty string 'topic'");
+        assertEquals("AI topic", foobar.getTopicAI());
+        assertEquals(TopicSelectionEnum.AI, foobar.getTopicSelection(), "Topic selection should remain the same if it was not MANUAL when there's an empty string 'topic'");
         foobar2 = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, null);
         assertNull(foobar2.getTopicManual());
         assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());

@@ -837,7 +837,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             } else {
                 // Clear manual topic if the user purposefully put an empty string
                 workflowToUpdate.setTopicManual(null);
-                workflowToUpdate.setTopicSelection(TopicSelection.AUTOMATIC);
+                // Update topic selection to automatic if it was manual
+                if (workflowToUpdate.getTopicSelection() == TopicSelection.MANUAL) {
+                    workflowToUpdate.setTopicSelection(TopicSelection.AUTOMATIC);
+                }
             }
         }
 
