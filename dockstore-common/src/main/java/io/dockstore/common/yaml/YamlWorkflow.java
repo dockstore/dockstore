@@ -41,6 +41,7 @@ public class YamlWorkflow implements Workflowish {
     private String subclass;
     private String primaryDescriptorPath;
     private String readMePath;
+    private String topic;
 
     /**
      * Change the workflow's publish-state, if set.
@@ -138,5 +139,13 @@ public class YamlWorkflow implements Workflowish {
 
     public void setReadMePath(String readMePath) {
         this.readMePath = readMePath;
+    }
+
+    public String getTopic() {
+        return this.topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 }
