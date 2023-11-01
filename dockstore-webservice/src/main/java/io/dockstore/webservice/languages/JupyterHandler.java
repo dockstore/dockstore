@@ -15,6 +15,9 @@
 
 package io.dockstore.webservice.languages;
 
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.annotations.SerializedName;
@@ -34,6 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ObjectUtils;
@@ -51,6 +55,10 @@ public class JupyterHandler implements LanguageHandlerInterface {
 
     public static final Set<String> REES_FILES = Set.of("environment.yml", "Pipfile", "Pipfile.lock", "requirements.txt", "setup.py", "Project.toml", "REQUIRE", "install.R", "apt.txt", "DESCRIPTION", "postBuild", "start", "runtime.txt", "default.nix", "Dockerfile");
     public static final Set<String> REES_DIRS = Set.of("/", "/binder/", "/.binder/");
+
+    private static final String DOT_DEVCONTAINER_JSON = ".devcontainer.json";
+    private static final String DOT_DEVCONTAINER_DIR = ".devcontainer";
+    private static final String DEVCONTAINER_JSON = "devcontainer.json";
 
     private static final String PYTHON = "python";
     private static final int FOUR = 4;
@@ -134,29 +142,59 @@ public class JupyterHandler implements LanguageHandlerInterface {
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
         Map<String, SourceFile> pathsToFiles = new HashMap<>();
 
-        // To avoid listing the contents of non-existent directories and generating non-cachable requests
-        // https://github.com/dockstore/dockstore/pull/5329#discussion_r1088120869
-        // we first determine the contents of '/'
-        Set<String> rootNames = new HashSet<>(ObjectUtils.firstNonNull(sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference()), List.of()));
+        // The following are some helpers:
+        // listFiles reads the names of the files/directories from the specified path in the repo ref, empty if the path doesn't exist
+        Function<String, Set<String>> listFiles = path ->
+            new HashSet<>(ObjectUtils.firstNonNull(sourceCodeRepoInterface.listFiles(repositoryId, path, version.getReference()), List.of()));
+        // fileReader reads the file at the specified path in the repo ref, turns it into a sourcefile, and puts it into the result Map
+        BiConsumer<String, DescriptorLanguage.FileType> fileReader = (path, type) ->
+            sourceCodeRepoInterface.readFile(repositoryId, version, type, path)
+                .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
 
-        // For each possible REES directory:
+        // To avoid listing the contents of non-existent directories and generating non-cachable requests
+        // (https://github.com/dockstore/dockstore/pull/5329#discussion_r1088120869),
+        // the following code tends to list the files in the directories of interest and scan through them,
+        // rather than probing single paths.
+        Set<String> rootNames = listFiles.apply("/");
+
+        // Read any REES configuration files
+        // For each possible REES directory, check to see if it contains any REES files
         for (String reesDir: REES_DIRS) {
             // Confirm the directory [probably] exists.
             if ("/".equals(reesDir) || rootNames.contains(reesDir.replace("/", ""))) {
-                // List the files in the directory.
-                List<String> names = sourceCodeRepoInterface.listFiles(repositoryId, reesDir, version.getReference());
-                if (names != null) {
-                    // Check each file in the directory.
-                    for (String name: names) {
-                        // If it's a REES file, read it into a SourceFile and add it to the map.
-                        if (REES_FILES.contains(name)) {
-                            sourceCodeRepoInterface.readFile(repositoryId, version, DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_REES, reesDir + name)
-                                .ifPresent(file -> pathsToFiles.put(file.getAbsolutePath(), file));
-                        }
-                    }
-                }
+                listFiles.apply(reesDir).stream()
+                    .filter(REES_FILES::contains)
+                    .forEach(name -> fileReader.accept(reesDir + name, DOCKSTORE_NOTEBOOK_REES));
             }
         }
+
+        // Read any devcontainer files
+        // Relevant section of devcontainer spec: https://containers.dev/implementors/spec/#devcontainerjson
+        // Per the spec, devcontainers should be stored in one of the following locations:
+        //   /.devcontainer.json
+        //   /.devcontainer/devcontainer.json
+        //   /.devcontainer/<folder>/devcontainer.json
+        // The spec specifies a precedence, but when present, GitHub reads all of the above files, so we do, too
+        if (rootNames.contains(DOT_DEVCONTAINER_JSON)) {
+            // Read /.devcontainer.json
+            fileReader.accept("/" + DOT_DEVCONTAINER_JSON, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+        }
+        if (rootNames.contains(DOT_DEVCONTAINER_DIR)) {
+            String path = "/" + DOT_DEVCONTAINER_DIR;
+            listFiles.apply(path).forEach(name -> {
+                String subPath = path + "/" + name;
+                if (name.equals(DEVCONTAINER_JSON)) {
+                    // Read /.devcontainer/devcontainer.json
+                    fileReader.accept(subPath, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+                } else {
+                    if (listFiles.apply(subPath).contains(DEVCONTAINER_JSON)) {
+                        // Read /.devcontainer/<folder>/devcontainer.json
+                        fileReader.accept(subPath + "/" + DEVCONTAINER_JSON, DOCKSTORE_NOTEBOOK_DEVCONTAINER);
+                    }
+                }
+            });
+        }
+
         return pathsToFiles;
     }
 

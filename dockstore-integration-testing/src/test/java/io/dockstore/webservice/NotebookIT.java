@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice;
 
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
@@ -205,6 +206,54 @@ class NotebookIT extends BaseIT {
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertFalse(notebook.getWorkflowVersions().get(0).isValid());
+    }
+
+    @Test
+    void testRegisterRootDevcontainerNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/root-devcontainer-v1");
+        assertEquals(Set.of("/.devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"), getAbsolutePaths(files));
+        assertEquals(1, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    @Test
+    void testRegisterDotdirDevcontainerNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/dotdir-devcontainer-v1");
+        assertEquals(Set.of("/.devcontainer/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"), getAbsolutePaths(files));
+        assertEquals(1, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    @Test
+    void testRegisterDotdirFolderDevcontainersNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/dotdir-folder-devcontainers-v1");
+        assertEquals(Set.of("/.devcontainer/a/devcontainer.json", "/.devcontainer/b/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"),
+            getAbsolutePaths(files));
+        assertEquals(2, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    @Test
+    void testRegisterAllDevcontainersNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/all-devcontainers-v1");
+        assertEquals(Set.of("/.devcontainer.json", "/.devcontainer/devcontainer.json", "/.devcontainer/a/devcontainer.json", "/.devcontainer/b/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"),
+            getAbsolutePaths(files));
+        assertEquals(4, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    private List<SourceFile> registerSimpleRepoAndGetSourceFiles(String name, String ref) {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME);
+        String path = simpleRepoPath + "/" + name;
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        return workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
+    }
+
+    private Set<String> getAbsolutePaths(List<SourceFile> sourceFiles) {
+        return sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet());
+    }
+
+    private long countFileType(List<SourceFile> sourceFiles, DescriptorLanguage.FileType type) {
+        return sourceFiles.stream().filter(file -> type.name().equals(file.getType().getValue())).count();
     }
 
     @Test
