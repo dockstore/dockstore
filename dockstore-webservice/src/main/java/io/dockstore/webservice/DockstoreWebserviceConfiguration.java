@@ -769,6 +769,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String elwaziImportUrl;
         private String colabImportUrl;
         private String mybinderImportUrl;
+        private String gitHubCodespaceImportUrl;
 
         private String gitHubAuthUrl;
         private String gitHubRedirectPath;
@@ -876,6 +877,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setMybinderImportUrl(String mybinderImportUrl) {
             this.mybinderImportUrl = mybinderImportUrl;
+        }
+
+        public String getGitHubCodespaceImportUrl() {
+            return gitHubCodespaceImportUrl;
+        }
+
+        public void setGitHubCodespaceImportUrl(String gitHubCodespaceImportUrl) {
+            this.gitHubCodespaceImportUrl = gitHubCodespaceImportUrl;
         }
 
         public String getGitHubAuthUrl() {
