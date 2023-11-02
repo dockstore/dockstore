@@ -8658,6 +8658,8 @@ components:
           type: string
         gitHubAuthUrl:
           type: string
+        gitHubCodespacesImportUrl:
+          type: string
         gitHubRedirectPath:
           type: string
         gitHubScope:
