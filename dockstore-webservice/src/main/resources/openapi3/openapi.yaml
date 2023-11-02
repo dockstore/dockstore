@@ -8658,7 +8658,7 @@ components:
           type: string
         gitHubAuthUrl:
           type: string
-        gitHubCodespaceImportUrl:
+        gitHubCodespacesImportUrl:
           type: string
         gitHubRedirectPath:
           type: string
