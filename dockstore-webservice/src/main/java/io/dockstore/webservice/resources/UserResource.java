@@ -23,6 +23,9 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIM
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.google.common.collect.Lists;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.HttpStatusMessageConstants;
@@ -31,6 +34,7 @@ import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.api.PrivilegeRequest;
@@ -171,6 +175,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
 
+    private static final ObjectMapper SELF_OBJECT_MAPPER = initObjectMapper();
+
     @SuppressWarnings("checkstyle:ParameterNumber")
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource,
         DockerRepoResource dockerRepoResource, CachingAuthenticator<String, User> cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
@@ -193,6 +199,19 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.client = client;
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
+    }
+
+    /**
+     * Creates an object mapper for use by
+     * @return
+     */
+    private static ObjectMapper initObjectMapper() {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        DockstoreWebserviceApplication.configureMapper(objectMapper, false);
+        final SimpleFilterProvider simpleFilterProvider = new SimpleFilterProvider();
+        simpleFilterProvider.setFailOnUnknownId(false);
+        objectMapper.setFilterProvider(simpleFilterProvider);
+        return objectMapper;
     }
 
     /**
@@ -242,14 +261,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/user")
-    @Operation(operationId = "getUser", description = "Get the logged-in user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getUser", description = "Get the logged-in user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = {@ApiResponse(responseCode = HttpStatus.SC_OK + "", content = @Content(mediaType = MediaType.APPLICATION_JSON, oneOf = @Schema(implementation = User.class)))})
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "The logged-in user", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiOperation(nickname = "getUser", value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user) {
+    public Response getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user) throws JsonProcessingException {
         User foundUser = userDAO.findById(user.getId());
         checkNotNullUser(foundUser);
         Hibernate.initialize(foundUser.getUserProfiles());
-        return foundUser;
+        return Response.ok().entity(SELF_OBJECT_MAPPER.writeValueAsString(foundUser)).build();
     }
 
     @GET

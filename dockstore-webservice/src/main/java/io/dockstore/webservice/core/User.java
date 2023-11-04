@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import static io.dockstore.webservice.DockstoreWebserviceApplication.EMAIL_FILTER;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.PUBLIC_USER_FILTER;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -99,11 +100,13 @@ import org.hibernate.annotations.UpdateTimestamp;
             + " FROM User user INNER JOIN user.userProfiles as userProfiles WHERE( KEY(userProfiles) = 'github.com' )")
 })
 @SuppressWarnings("checkstyle:magicnumber")
+@JsonFilter(PUBLIC_USER_FILTER)
 public class User implements Principal, Comparable<User>, Serializable {
 
     public static final String INDICATES_WHETHER_THIS_USER_IS_A_CURATOR = "Indicates whether this user is a curator";
     public static final String INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER = "Indicates whether this account corresponds to a platform partner";
-    public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("organizations", "entries", "starredEntries");
+    public static final SimpleBeanPropertyFilter PUBLIC_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("isAdmin", "curator");
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "enduser_id_seq")
     @SequenceGenerator(name = "enduser_id_seq", sequenceName = "enduser_id_seq", allocationSize = 1)
@@ -117,7 +120,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Column
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
-    private boolean isAdmin;
+    private Boolean isAdmin;
 
     @Column(columnDefinition = "boolean default false")
     @JsonIgnore
@@ -158,7 +161,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR, required = true, position = 11)
     @Schema(description = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR)
-    private boolean curator;
+    private Boolean curator;
 
     @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER, required = true, position = 18)
@@ -359,7 +362,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     }
 
     @JsonProperty
-    public boolean getIsAdmin() {
+    public Boolean getIsAdmin() {
         return isAdmin;
     }
 
@@ -442,7 +445,7 @@ public class User implements Principal, Comparable<User>, Serializable {
         this.userProfiles = userProfiles;
     }
 
-    public boolean isCurator() {
+    public Boolean isCurator() {
         return curator;
     }
 

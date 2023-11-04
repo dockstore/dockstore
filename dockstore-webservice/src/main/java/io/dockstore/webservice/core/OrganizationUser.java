@@ -1,7 +1,6 @@
 package io.dockstore.webservice.core;
 
 import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_ORGANIZATION_FILTER;
-import static io.dockstore.webservice.DockstoreWebserviceApplication.SLIM_USER_FILTER;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 import io.swagger.annotations.ApiModelProperty;
@@ -31,7 +30,6 @@ public class OrganizationUser implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "userId", insertable = false, updatable = false)
-    @JsonFilter(SLIM_USER_FILTER)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)

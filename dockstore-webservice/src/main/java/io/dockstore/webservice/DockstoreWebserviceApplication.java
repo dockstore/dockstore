@@ -213,7 +213,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String SLIM_WORKFLOW_FILTER = "slimWorkflowFilter";
     public static final String SLIM_VERSION_FILTER = "slimVersionFilter";
 
-    public static final String SLIM_USER_FILTER = "slimUserFilter";
+    public static final String PUBLIC_USER_FILTER = "publicUserFilter";
 
 
     private static OkHttpClient okHttpClient = null;
@@ -264,7 +264,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     @Override
     public void initialize(Bootstrap<DockstoreWebserviceConfiguration> bootstrap) {
 
-        configureMapper(bootstrap.getObjectMapper());
+        configureMapper(bootstrap.getObjectMapper(), true);
 
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
@@ -335,7 +335,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         return new Cache(cacheDir, cacheSize);
     }
 
-    private static void configureMapper(ObjectMapper objectMapper) {
+    public static void configureMapper(ObjectMapper objectMapper, boolean addFilters) {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         objectMapper.registerModule(new Hibernate5JakartaModule());
         objectMapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
@@ -346,14 +346,16 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // To convert every Date we have to RFC 3339, we can use this
         // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));
 
-        // try to set a filter
-        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(EMAIL_FILTER, new EmailPropertyFilter())
-            .addFilter(SLIM_ORGANIZATION_FILTER, Organization.SLIM_FILTER)
-            .addFilter(SLIM_USER_FILTER, User.SLIM_FILTER)
-            .addFilter(SLIM_WORKFLOW_FILTER, Workflow.SLIM_FILTER)
-            .addFilter(SLIM_COLLECTION_FILTER, Collection.SLIM_FILTER)
-            .addFilter(SLIM_VERSION_FILTER, Version.SLIM_FILTER)
-        );
+        if (addFilters) {
+            // try to set a filter
+            objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(EMAIL_FILTER, new EmailPropertyFilter())
+                    .addFilter(SLIM_ORGANIZATION_FILTER, Organization.SLIM_FILTER)
+                    .addFilter(SLIM_WORKFLOW_FILTER, Workflow.SLIM_FILTER)
+                    .addFilter(SLIM_COLLECTION_FILTER, Collection.SLIM_FILTER)
+                    .addFilter(SLIM_VERSION_FILTER, Version.SLIM_FILTER)
+                    .addFilter(PUBLIC_USER_FILTER, User.PUBLIC_FILTER)
+            );
+        }
     }
 
     public static File getFilePluginLocation(DockstoreWebserviceConfiguration configuration) {
