@@ -1,8 +1,6 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -63,10 +61,14 @@ public class LambdaEventResource {
     @Path("/{organization}")
     @Operation(operationId = "getLambdaEventsByOrganization", description = "Get all of the Lambda Events for the given GitHub organization.", security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
+    @SuppressWarnings("checkstyle:parameternumber")
     public List<LambdaEvent> getLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam(value = "organization", required = true) @PathParam("organization") String organization,
-            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
-            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @PathParam("organization") String organization,
+            @QueryParam("offset") @DefaultValue("0") String offset,
+            @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @DefaultValue("") @QueryParam("filter") String filter,
+            @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
+            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
             @Context HttpServletResponse response) {
         final User authUser = userDAO.findById(user.getId());
         final List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
@@ -75,9 +77,9 @@ public class LambdaEventResource {
         }
         final Token githubToken = githubTokens.get(0);
         final Optional<List<String>> authorizedRepos = authorizedRepos(organization, githubToken);
-        response.addHeader(X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos)));
+        response.addHeader(X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByOrganization(organization, authorizedRepos, filter)));
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, X_TOTAL_COUNT);
-        return lambdaEventDAO.findByOrganization(organization, offset, limit, authorizedRepos);
+        return lambdaEventDAO.findByOrganization(organization, offset, limit, filter, sortCol, sortOrder, authorizedRepos);
     }
 
     @GET
@@ -87,18 +89,22 @@ public class LambdaEventResource {
     @Path("/user/{userid}")
     @Operation(operationId = "getUserLambdaEvents", description = "Get all of the Lambda Events for the given user.",
             security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME))
+    @SuppressWarnings("checkstyle:parameternumber")
     public List<LambdaEvent> getUserLambdaEvents(@Parameter(hidden = true, name = "user")@Auth User authUser,
            @PathParam("userid") long userid,
            @QueryParam("offset") @DefaultValue("0") Integer offset,
            @QueryParam("limit") @DefaultValue("1000") Integer limit,
+           @DefaultValue("") @QueryParam("filter") String filter,
+           @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
+           @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
            @Context HttpServletResponse response) {
         final User user = userDAO.findById(userid);
         if (user == null) {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
         }
-        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByUser(user)));
+        response.addHeader(LambdaEventResource.X_TOTAL_COUNT, String.valueOf(lambdaEventDAO.countByUser(user, filter)));
         response.addHeader(LambdaEventResource.ACCESS_CONTROL_EXPOSE_HEADERS, LambdaEventResource.X_TOTAL_COUNT);
-        return lambdaEventDAO.findByUser(user, offset, limit);
+        return lambdaEventDAO.findByUser(user, offset, limit, filter, sortCol, sortOrder);
     }
 
     /**
