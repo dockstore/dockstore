@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * This is an object to encapsulate workflow run execution metrics data in an entity. Does not need to be stored in the database.
  */
-@Schema(name = "RunExecution", description = "Metrics of a workflow execution on a platform", allOf = AbstractRunExecution.class)
+@Schema(name = "RunExecution", description = "Metrics of a workflow execution on a platform")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class RunExecution extends AbstractRunExecution {
     @Schema(description = "Tasks that were executed during the workflow. This field is optional and the user may provide the overall workflow execution metrics instead.")
