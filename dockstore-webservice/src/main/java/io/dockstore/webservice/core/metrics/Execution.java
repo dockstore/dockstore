@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * This is an object to encapsulate execution metrics data in an entity. Does not need to be stored in the database.
  */
-@Schema(name = "Execution", description = "Metrics of a workflow execution on a platform", subTypes = { RunExecution.class, ValidationExecution.class })
+@Schema(name = "Execution", description = "Metrics of a workflow execution on a platform", subTypes = { AbstractRunExecution.class, ValidationExecution.class })
 public abstract class Execution {
 
     protected Execution() {

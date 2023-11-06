@@ -62,6 +62,7 @@ import io.dockstore.openapi.client.api.ContainersApi;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.AbstractRunExecution.ExecutionStatusEnum;
 import io.dockstore.openapi.client.model.Cost;
 import io.dockstore.openapi.client.model.CpuMetric;
 import io.dockstore.openapi.client.model.ExecutionStatusMetric;
@@ -86,7 +87,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -311,10 +311,16 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertTrue(exception.getMessage().contains("dateExecuted") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if dateExecuted is missing");
 
         // Test that malformed ExecutionTimes for RunExecution throw an exception
-        List<RunExecution> malformedExecutionTimes = List.of(
-                new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("1 second"),
-                new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("PT 1S") // Should not have space
-        );
+        List<String> malformedTimes = List.of("1 second", "PT 1S");
+        List<RunExecution> malformedExecutionTimes = malformedTimes.stream()
+                .map(malformedTime -> {
+                    RunExecution runExecution = new RunExecution();
+                    runExecution.setExecutionStatus(ExecutionStatusEnum.SUCCESSFUL);
+                    runExecution.setRunExecutionExecutionTime(malformedTime);
+                    return runExecution;
+                })
+                .toList();
+
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(malformedExecutionTimes), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if ExecutionTime is malformed");
         assertTrue(exception.getMessage().contains(EXECUTION_TIME_FORMAT_ERROR));

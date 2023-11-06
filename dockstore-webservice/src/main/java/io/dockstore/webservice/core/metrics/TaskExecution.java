@@ -19,22 +19,12 @@ package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 
 /**
- * This is an object to encapsulate workflow run execution metrics data in an entity. Does not need to be stored in the database.
+ * This is an object to encapsulate a workflow task run execution metrics data in an entity. Does not need to be stored in the database.
  */
-@Schema(name = "RunExecution", description = "Metrics of a workflow execution on a platform", allOf = AbstractRunExecution.class)
+@Schema(name = "TaskExecution", description = "Metrics of a workflow task execution on a platform", allOf = AbstractRunExecution.class)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class RunExecution extends AbstractRunExecution {
-    @Schema(description = "Tasks that were executed during the workflow. This field is optional and the user may provide the overall workflow execution metrics instead.")
-    private List<TaskExecution> taskExecutions;
+public class TaskExecution extends AbstractRunExecution {
 
-    public List<TaskExecution> getTaskExecutions() {
-        return taskExecutions;
-    }
-
-    public void setTaskExecutions(List<TaskExecution> taskExecutions) {
-        this.taskExecutions = taskExecutions;
-    }
 }
