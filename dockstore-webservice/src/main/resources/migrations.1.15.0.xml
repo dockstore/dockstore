@@ -283,4 +283,21 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addAITopic">
+        <addColumn tableName="apptool">
+            <column name="topicai" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="notebook">
+            <column name="topicai" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="topicai" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="topicai" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="topicai" type="varchar(150 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

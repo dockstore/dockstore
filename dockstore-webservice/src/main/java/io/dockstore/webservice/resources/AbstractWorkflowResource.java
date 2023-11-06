@@ -24,6 +24,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.OrcidAuthor;
@@ -227,6 +228,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String fileKey = file.getType().toString() + file.getAbsolutePath();
             SourceFile existingFile = existingFileMap.get(fileKey);
             if (existingFileMap.containsKey(fileKey)) {
+                existingFile.setPath(file.getPath());
                 existingFile.setContent(file.getContent());
                 existingFile.getMetadata().setTypeVersion(file.getMetadata().getTypeVersion());
             } else {
@@ -824,6 +826,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         if (user != null) {
             workflowToUpdate.getUsers().add(user);
+        }
+
+        // Update the manual topic if it's not blank in the .dockstore.yml.
+        // Purposefully not clearing the manual topic when it's null in the .dockstore.yml because another version may have set it
+        if (workflowType != Service.class && wf.getTopic() != null) {
+            if (StringUtils.isNotBlank(wf.getTopic())) {
+                workflowToUpdate.setTopicManual(wf.getTopic());
+                workflowToUpdate.setTopicSelection(TopicSelection.MANUAL);
+            } else {
+                // Clear manual topic if the user purposefully put an empty string
+                workflowToUpdate.setTopicManual(null);
+                // Update topic selection to automatic if it was manual
+                if (workflowToUpdate.getTopicSelection() == TopicSelection.MANUAL) {
+                    workflowToUpdate.setTopicSelection(TopicSelection.AUTOMATIC);
+                }
+            }
         }
 
         return workflowToUpdate;

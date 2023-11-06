@@ -53,6 +53,7 @@ import io.dockstore.openapi.client.model.Validation;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum;
 import io.dockstore.openapi.client.model.Workflow.ModeEnum;
+import io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.openapi.client.model.WorkflowVersion.DescriptionSourceEnum;
@@ -1932,5 +1933,70 @@ class WebhookIT extends BaseIT {
         workflowVersionDAO.create(version);
 
         transaction.commit();
+    }
+
+    /**
+     * Tests that a GitHub release updates topicManual if 'topic' is specified in the .dockstore.yml, and topicAutomatic if the repo has a description.
+     */
+    @Test
+    void testGitHubReleaseTopics() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowClient = new WorkflowsApi(webClient);
+        final String expectedTopicAutomatic = "A repo that includes .dockstore.yml";
+
+        // Add two workflows, one WDL and one CWL. This version has no 'topic' specified in the .dockstore.yml
+        handleGitHubRelease(workflowClient, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.4", USER_2_USERNAME);
+        Workflow foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, null);
+        assertNull(foobar.getTopicManual());
+        assertEquals(expectedTopicAutomatic, foobar.getTopicAutomatic());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, foobar.getTopicSelection(), "Topic selection should be automatic if there's no topic provided in the .dockstore.yml");
+        Workflow foobar2 = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, null);
+        assertNull(foobar2.getTopicManual());
+        assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, foobar.getTopicSelection(), "Topic selection should be automatic if there's no topic provided in the .dockstore.yml");
+
+        // Unset topicAutomatic to simulate a topicAutomatic change
+        testingPostgres.runUpdateStatement("update workflow set topicAutomatic=null");
+
+        // Release a version with 'topic' specified in the .dockstore.yml
+        handleGitHubRelease(workflowClient, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.8", USER_2_USERNAME);
+        foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, null);
+        assertEquals("A WDL workflow", foobar.getTopicManual());
+        assertEquals(expectedTopicAutomatic, foobar.getTopicAutomatic());
+        assertEquals(TopicSelectionEnum.MANUAL, foobar.getTopicSelection(), "Topic selection should be manual if a topic is provided in the .dockstore.yml");
+        foobar2 = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, null);
+        assertEquals("A CWL workflow", foobar2.getTopicManual());
+        assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
+        assertEquals(TopicSelectionEnum.MANUAL, foobar.getTopicSelection(), "Topic selection should be manual if a topic is provided in the .dockstore.yml");
+
+        // Release a version with no 'topic' in the .dockstore.yml. The existing topicManual should be unaffected
+        handleGitHubRelease(workflowClient, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.4", USER_2_USERNAME);
+        foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, null);
+        assertEquals("A WDL workflow", foobar.getTopicManual());
+        assertEquals(expectedTopicAutomatic, foobar.getTopicAutomatic());
+        assertEquals(TopicSelectionEnum.MANUAL, foobar.getTopicSelection(), "Topic selection should still be manual");
+        foobar2 = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, null);
+        assertEquals("A CWL workflow", foobar2.getTopicManual());
+        assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
+        assertEquals(TopicSelectionEnum.MANUAL, foobar2.getTopicSelection(), "Topic selection should still be manual");
+
+        // Update topic selection to AI for workflow 'foobar'.
+        foobar.setTopicSelection(TopicSelectionEnum.AI);
+        foobar.setTopicAI("AI topic");
+        workflowClient.updateWorkflow(foobar.getId(), foobar);
+
+        // Release a version with an empty 'topic' in the .dockstore.yml. The topicManual should be reset to null and topicSelection should:
+        // - remain unchanged for workflow 'foobar' because it did not have a manual topic selection. It has an AI topic selection.
+        // - be set to AUTOMATIC for workflow 'foobar2' since it had a manual topic selection.
+        handleGitHubRelease(workflowClient, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, "refs/tags/0.9", USER_2_USERNAME);
+        foobar = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar", WorkflowSubClass.BIOWORKFLOW, null);
+        assertNull(foobar.getTopicManual());
+        assertEquals(expectedTopicAutomatic, foobar.getTopicAutomatic());
+        assertEquals("AI topic", foobar.getTopicAI());
+        assertEquals(TopicSelectionEnum.AI, foobar.getTopicSelection(), "Topic selection should remain the same if it was not MANUAL when there's an empty string 'topic'");
+        foobar2 = workflowClient.getWorkflowByPath("github.com/" + DockstoreTesting.WORKFLOW_DOCKSTORE_YML + "/foobar2", WorkflowSubClass.BIOWORKFLOW, null);
+        assertNull(foobar2.getTopicManual());
+        assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
+        assertEquals(TopicSelectionEnum.AUTOMATIC, foobar2.getTopicSelection(), "Topic selection should be automatic if there's an empty string 'topic'");
     }
 }

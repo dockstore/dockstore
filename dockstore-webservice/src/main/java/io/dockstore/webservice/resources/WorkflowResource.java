@@ -39,6 +39,7 @@ import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidAuthor;
@@ -569,8 +570,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
         oldWorkflow.setTopicManual(newWorkflow.getTopicManual());
+        oldWorkflow.setTopicAI(newWorkflow.getTopicAI());
 
-        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) {
+        // Update topic selection if it's a non-hosted workflow, or if it's a hosted workflow and the new topic selection is not automatic.
+        // Hosted workflows don't have a source control thus cannot have an automatic topic.
+        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)
+                || (Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED) && newWorkflow.getTopicSelection() != TopicSelection.AUTOMATIC)) {
             oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
         }
 

@@ -38,6 +38,7 @@ public class YamlNotebook implements Workflowish {
     private String path;
     private String kernel;
     private String readMePath;
+    private String topic;
     private Boolean publish;
     private boolean latestTagAsDefault = false;
     private Filters filters = new Filters();
@@ -193,5 +194,13 @@ public class YamlNotebook implements Workflowish {
 
     public void setReadMePath(String readMePath) {
         this.readMePath = readMePath;
+    }
+
+    public String getTopic() {
+        return this.topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 }

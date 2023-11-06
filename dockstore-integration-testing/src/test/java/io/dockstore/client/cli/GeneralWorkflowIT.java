@@ -73,7 +73,9 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 /**
  * This test suite tests various workflow related processes.
  * Created by aduncan on 05/04/16.
+ * @deprecated uses swagger client classes, prefer {@link OpenAPIGeneralWorkflowIT}
  */
+@Deprecated
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
@@ -462,35 +464,6 @@ class GeneralWorkflowIT extends BaseIT {
             .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", String.class);
         assertEquals("/Dockstore.cwl", masterpath, "master workflow path should be the same as default workflow path, it is " + masterpath);
         assertEquals("/Dockstore.cwl", testpath, "test workflow path should be the same as default workflow path, it is " + testpath);
-    }
-
-    @Test
-    void testAddingWorkflowForumUrlAndTopic() throws ApiException {
-        // Set up webservice
-        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-
-        Workflow workflow = workflowsApi
-                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl",
-                        "test-update-workflow", DescriptorLanguage.CWL.toString(),
-                        "/test.json");
-
-        assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection(), "Should default to automatic");
-        
-        //update the forumUrl to hello.com
-        final String newTopic = "newTopic";
-        workflow.setForumUrl("hello.com");
-        workflow.setTopicManual(newTopic);
-        workflow.setTopicSelection(TopicSelectionEnum.MANUAL);
-        Workflow updatedWorkflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-
-        //check the workflow's forumUrl is hello.com
-        final String updatedForumUrl = testingPostgres
-                .runSelectStatement("select forumurl from workflow where workflowname = 'test-update-workflow'", String.class);
-        assertEquals("hello.com", updatedForumUrl, "forumUrl should be updated, it is " + updatedForumUrl);
-
-        assertEquals(newTopic, updatedWorkflow.getTopicManual());
-        assertEquals(TopicSelectionEnum.MANUAL, updatedWorkflow.getTopicSelection());
     }
 
     @Test

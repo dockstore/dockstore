@@ -28,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -102,9 +101,10 @@ import uk.org.webcompere.systemstubs.stream.SystemOut;
 
 /**
  * Extra confidential integration tests, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
- *
+ * @deprecated uses swagger client classes, prefer {@link OpenAPIGeneralIT}
  * @author aduncan
  */
+@Deprecated
 @ExtendWith(SystemStubsExtension.class)
 @ExtendWith(MuteForSuccessfulTests.class)
 @ExtendWith(TestStatus.class)
@@ -504,38 +504,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         workflowApi.publish(workflow.getId(), publishRequest);
         versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
         assertEquals(1, versionsVerified.size());
-    }
-
-    @Test
-    void testEditingHostedWorkflowTopics() {
-        final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(openApiWebClient);
-        final io.dockstore.openapi.client.model.Workflow hostedWorkflow = hostedApi.createHostedWorkflow(null, "foo", DescriptorLanguage.WDL.toString(), null, null);
-        hostedWorkflow.setTopicManual("new foo");
-        assertSame(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.MANUAL, hostedWorkflow.getTopicSelection());
-        hostedWorkflow.setTopicSelection(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.AUTOMATIC);
-        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiWebClient);
-        final io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.updateWorkflow(hostedWorkflow.getId(), hostedWorkflow);
-        // topic should change
-        assertEquals("new foo", workflow.getTopic());
-        // but should ignore selection change
-        assertEquals(io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum.MANUAL, workflow.getTopicSelection());
-    }
-
-    @Test
-    void testEditingHostedToolTopics() {
-        final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(openApiWebClient);
-        final io.dockstore.openapi.client.model.DockstoreTool hostedTool = hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "foo", DescriptorLanguage.WDL.toString(), null, null);
-        hostedTool.setTopicManual("new foo");
-        assertSame(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.MANUAL, hostedTool.getTopicSelection());
-        hostedTool.setTopicSelection(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.AUTOMATIC);
-        io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(openApiWebClient);
-        final io.dockstore.openapi.client.model.DockstoreTool dockstoreTool = containersApi.updateContainer(hostedTool.getId(), hostedTool);
-        // topic should change
-        assertEquals("new foo", dockstoreTool.getTopic());
-        // but should ignore selection change
-        assertEquals(io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum.MANUAL, dockstoreTool.getTopicSelection());
     }
 
     @Test
@@ -1360,38 +1328,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
         //check if the tag's dockerfile path have the same dockerfile path or not in the database
         final String path = getPathfromDB("dockerfilepath");
         assertEquals("/test1/Dockerfile", path, "the cwl path should be changed to /test1/Dockerfile");
-    }
-
-    /**
-     * Test to update the tool's forum and it should change the in the database
-     *
-     * @throws ApiException
-     */
-    @Test
-    void testUpdateToolForumUrlAndTopic() throws ApiException {
-        final String forumUrl = "hello.com";
-        //setup webservice and get tool api
-        ContainersApi toolsApi = setupWebService();
-
-        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
-        toolsApi.refresh(toolTest.getId());
-
-        assertEquals(TopicSelectionEnum.AUTOMATIC, toolTest.getTopicSelection(), "Should default to automatic");
-
-        //change the forumurl
-        toolTest.setForumUrl(forumUrl);
-        final String newTopic = "newTopic";
-        toolTest.setTopicManual(newTopic);
-        toolTest.setTopicSelection(TopicSelectionEnum.MANUAL);
-        DockstoreTool dockstoreTool = toolsApi.updateContainer(toolTest.getId(), toolTest);
-
-        //check the tool's forumurl is updated in the database
-        final String updatedForumUrl = testingPostgres.runSelectStatement("select forumurl from tool where id = " + toolTest.getId(), String.class);
-        assertEquals(forumUrl, updatedForumUrl, "the forumurl should be hello.com");
-
-        // check the tool's topicManual and topicSelection
-        assertEquals(newTopic, dockstoreTool.getTopicManual());
-        assertEquals(TopicSelectionEnum.MANUAL, toolTest.getTopicSelection());
     }
 
     @Test
