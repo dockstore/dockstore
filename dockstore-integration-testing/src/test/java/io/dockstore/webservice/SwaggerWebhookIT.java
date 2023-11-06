@@ -176,14 +176,14 @@ class SwaggerWebhookIT extends BaseIT {
         final String dockstoreTestUser = "DockstoreTestUser";
         assertTrue(userOrganizations.contains(dockstoreTestUser)); // User has access to only one repo in the org, DockstoreTestUser/dockstore-whalesay-2
 
-        assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size(), "No events at all works");
+        assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10, null, null, null).size(), "No events at all works");
 
         testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization, deliveryid) values ('whatevs', 'repo-no-access', 'DockstoreTestUser', '1234')");
-        assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10).size(), "Can't see event for repo with no access");
+        assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10, null, null, null).size(), "Can't see event for repo with no access");
 
         testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(message, repository, organization, deliveryid) values ('whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser', '1234')");
         final List<io.dockstore.openapi.client.model.LambdaEvent> events =
-            lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10);
+            lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10, null, null, null);
         assertEquals(1, events.size(), "Can see event for repo with access, not one without");
     }
 }

@@ -1194,10 +1194,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @QueryParam("offset") Integer offset,
-            @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+            @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @DefaultValue("") @QueryParam("filter") String filter,
+            @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
+            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder) {
         final User user = userDAO.findById(authUser.getId());
         checkNotNullUser(user);
-        return lambdaEventDAO.findByUser(user, offset, limit);
+        return lambdaEventDAO.findByUser(user, offset, limit, filter, sortCol, sortOrder);
     }
 
     @GET

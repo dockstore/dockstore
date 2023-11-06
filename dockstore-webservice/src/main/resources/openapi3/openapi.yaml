@@ -3939,6 +3939,21 @@ paths:
           type: integer
           format: int32
           default: 1000
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         default:
           content:
@@ -3973,6 +3988,21 @@ paths:
           type: integer
           format: int32
           default: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         default:
           content:
@@ -5502,6 +5532,21 @@ paths:
           type: integer
           format: int32
           default: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         "200":
           content:
