@@ -27,7 +27,7 @@ import jakarta.validation.constraints.NotNull;
 /**
  * This is an object to encapsulate workflow run execution metrics data in an entity. Does not need to be stored in the database.
  */
-@Schema(name = "AbstractRunExecution", description = "Metrics of an execution on a platform", allOf = Execution.class, subTypes = { RunExecution.class, TaskExecution.class })
+@Schema(name = "AbstractRunExecution", description = "Metrics of an execution on a platform", subTypes = { RunExecution.class, TaskExecution.class })
 public abstract class AbstractRunExecution extends Execution {
 
     @NotNull

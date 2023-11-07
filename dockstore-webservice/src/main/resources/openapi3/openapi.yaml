@@ -10162,64 +10162,18 @@ components:
           type: string
     RunExecution:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/AbstractRunExecution'
+      - type: object
+        properties:
+          taskExecutions:
+            type: array
+            description: Tasks that were executed during the workflow. This field
+              is optional and the user may provide the overall workflow execution
+              metrics instead.
+            items:
+              $ref: '#/components/schemas/TaskExecution'
       description: Metrics of a workflow execution on a platform
-      properties:
-        additionalProperties:
-          type: object
-          additionalProperties:
-            type: object
-            description: "Additional properties that aren't defined. Provide a context,\
-              \ like one from schema.org, if you want to use a specific vocabulary"
-            example:
-              '@context':
-                schema: https://schema.org
-              schema:actionStatus: CompletedActionStatus
-          description: "Additional properties that aren't defined. Provide a context,\
-            \ like one from schema.org, if you want to use a specific vocabulary"
-          example:
-            '@context':
-              schema: https://schema.org
-            schema:actionStatus: CompletedActionStatus
-        cost:
-          $ref: '#/components/schemas/Cost'
-        cpuRequirements:
-          type: integer
-          format: int32
-          description: Number of CPUs required for the execution
-          example: 2
-        dateExecuted:
-          type: string
-          description: The date and time that the execution occurred in ISO 8601 UTC
-            date format
-          example: 2023-03-31T15:06:49.888745366Z
-        executionStatus:
-          type: string
-          description: The status of the execution
-          enum:
-          - SUCCESSFUL
-          - FAILED_SEMANTIC_INVALID
-          - FAILED_RUNTIME_INVALID
-        executionTime:
-          type: string
-          description: The total time it took for the execution to complete in ISO
-            8601 duration format
-          example: PT30S
-        memoryRequirementsGB:
-          type: number
-          format: double
-          description: Memory requirements for the execution in GB
-          example: 2
-        region:
-          type: string
-          description: The region the workflow was executed in
-          example: us-central1
-        taskExecutions:
-          type: array
-          description: Tasks that were executed during the workflow. This field is
-            optional and the user may provide the overall workflow execution metrics
-            instead.
-          items:
-            $ref: '#/components/schemas/TaskExecution'
       required:
       - dateExecuted
       - executionStatus
@@ -10584,57 +10538,6 @@ components:
       type: object
       allOf:
       - $ref: '#/components/schemas/AbstractRunExecution'
-      - type: object
-        properties:
-          additionalProperties:
-            type: object
-            additionalProperties:
-              type: object
-              description: "Additional properties that aren't defined. Provide a context,\
-                \ like one from schema.org, if you want to use a specific vocabulary"
-              example:
-                '@context':
-                  schema: https://schema.org
-                schema:actionStatus: CompletedActionStatus
-            description: "Additional properties that aren't defined. Provide a context,\
-              \ like one from schema.org, if you want to use a specific vocabulary"
-            example:
-              '@context':
-                schema: https://schema.org
-              schema:actionStatus: CompletedActionStatus
-          cost:
-            $ref: '#/components/schemas/Cost'
-          cpuRequirements:
-            type: integer
-            format: int32
-            description: Number of CPUs required for the execution
-            example: 2
-          dateExecuted:
-            type: string
-            description: The date and time that the execution occurred in ISO 8601
-              UTC date format
-            example: 2023-03-31T15:06:49.888745366Z
-          executionStatus:
-            type: string
-            description: The status of the execution
-            enum:
-            - SUCCESSFUL
-            - FAILED_SEMANTIC_INVALID
-            - FAILED_RUNTIME_INVALID
-          executionTime:
-            type: string
-            description: The total time it took for the execution to complete in ISO
-              8601 duration format
-            example: PT30S
-          memoryRequirementsGB:
-            type: number
-            format: double
-            description: Memory requirements for the execution in GB
-            example: 2
-          region:
-            type: string
-            description: The region the workflow was executed in
-            example: us-central1
       description: Metrics of a workflow task execution on a platform
       required:
       - dateExecuted
