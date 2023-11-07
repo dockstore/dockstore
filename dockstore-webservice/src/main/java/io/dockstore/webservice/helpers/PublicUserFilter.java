@@ -19,19 +19,29 @@ package io.dockstore.webservice.helpers;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import com.fasterxml.jackson.databind.ser.PropertyWriter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import io.dockstore.webservice.core.User;
 
 public class PublicUserFilter extends SimpleBeanPropertyFilter {
+
+    private BeanPropertyWriter propertyWriter = new AdminCuratorPropertyWriter();
 
     @Override
     public void serializeAsField(Object pojo, JsonGenerator jgen, SerializerProvider provider, PropertyWriter writer) throws Exception {
         if (writer.getName().equals("isAdmin") || writer.getName().equals("curator")) {
-            User user = (User)pojo;
-            user.setIsAdmin(null);
-            user.setCurator(null);
+            super.serializeAsField(pojo, jgen, provider, propertyWriter);
         }
         super.serializeAsField(pojo, jgen, provider, writer);
+    }
+
+    private static class AdminCuratorPropertyWriter extends BeanPropertyWriter {
+        @Override
+        public void serializeAsField(Object bean, JsonGenerator gen, SerializerProvider prov) throws Exception {
+            gen.writeFieldName("isAdmin");
+            gen.writeBoolean(false);
+            gen.writeFieldName("curator");
+            gen.writeBoolean(false);
+        }
     }
 }
