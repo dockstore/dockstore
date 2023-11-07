@@ -178,10 +178,12 @@ class SwaggerWebhookIT extends BaseIT {
 
         assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10, null, null, null).size(), "No events at all works");
 
-        testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'whatevs', 'repo-no-access', 'DockstoreTestUser', '1234')");
+        testingPostgres.runUpdateStatement(
+                "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'whatevs', 'repo-no-access', 'DockstoreTestUser', '1234')");
         assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10, null, null, null).size(), "Can't see event for repo with no access");
 
-        testingPostgres.runUpdateStatement("INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser', '1234')");
+        testingPostgres.runUpdateStatement(
+                "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser', '1234')");
         final List<io.dockstore.openapi.client.model.LambdaEvent> events =
             lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, "0", 10, null, null, null);
         assertEquals(1, events.size(), "Can see event for repo with access, not one without");
