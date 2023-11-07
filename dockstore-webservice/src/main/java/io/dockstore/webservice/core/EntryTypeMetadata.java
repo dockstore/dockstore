@@ -27,7 +27,7 @@ public class EntryTypeMetadata {
     public static final EntryTypeMetadata APPTOOL =
         new EntryTypeMetadata(EntryType.APPTOOL, "tool", "tools", "containers", true, "", true, "tools", true, ElasticListener.TOOLS_INDEX);
     public static final EntryTypeMetadata NOTEBOOK =
-        new EntryTypeMetadata(EntryType.NOTEBOOK, "notebook", "notebooks", "notebooks", true, ToolsImplCommon.NOTEBOOK_PREFIX + "/", false, NONE, true, ElasticListener.NOTEBOOKS_INDEX);
+        new EntryTypeMetadata(EntryType.NOTEBOOK, "notebook", "notebooks", "notebooks", true, ToolsImplCommon.NOTEBOOK_PREFIX + "/", true, "notebooks", true, ElasticListener.NOTEBOOKS_INDEX);
 
     private final EntryType type;
     private final String term;
