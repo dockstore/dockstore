@@ -88,6 +88,7 @@ import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.PublicUserFilter;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
@@ -353,7 +354,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                     .addFilter(SLIM_WORKFLOW_FILTER, Workflow.SLIM_FILTER)
                     .addFilter(SLIM_COLLECTION_FILTER, Collection.SLIM_FILTER)
                     .addFilter(SLIM_VERSION_FILTER, Version.SLIM_FILTER)
-                    .addFilter(PUBLIC_USER_FILTER, User.PUBLIC_FILTER)
+                    .addFilter(PUBLIC_USER_FILTER, new PublicUserFilter())
             );
         }
     }

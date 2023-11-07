@@ -22,7 +22,6 @@ import static io.dockstore.webservice.DockstoreWebserviceApplication.PUBLIC_USER
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -105,7 +104,6 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public static final String INDICATES_WHETHER_THIS_USER_IS_A_CURATOR = "Indicates whether this user is a curator";
     public static final String INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER = "Indicates whether this account corresponds to a platform partner";
-    public static final SimpleBeanPropertyFilter PUBLIC_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("isAdmin", "curator");
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "enduser_id_seq")
@@ -120,6 +118,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Column
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
+    @Schema(nullable = true)
     private Boolean isAdmin;
 
     @Column(columnDefinition = "boolean default false")
@@ -160,7 +159,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR, required = true, position = 11)
-    @Schema(description = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR)
+    @Schema(description = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR, nullable = true)
     private Boolean curator;
 
     @Column(columnDefinition = "boolean default 'false'")
@@ -366,7 +365,7 @@ public class User implements Principal, Comparable<User>, Serializable {
         return isAdmin;
     }
 
-    public void setIsAdmin(boolean isAdmin) {
+    public void setIsAdmin(Boolean isAdmin) {
         this.isAdmin = isAdmin;
     }
 
@@ -449,7 +448,7 @@ public class User implements Principal, Comparable<User>, Serializable {
         return curator;
     }
 
-    public void setCurator(boolean curator) {
+    public void setCurator(Boolean curator) {
         this.curator = curator;
     }
 

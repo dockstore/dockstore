@@ -11010,11 +11010,13 @@ components:
         curator:
           type: boolean
           description: Indicates whether this user is a curator
+          nullable: true
         id:
           type: integer
           format: int64
         isAdmin:
           type: boolean
+          nullable: true
         name:
           type: string
         orcid:
