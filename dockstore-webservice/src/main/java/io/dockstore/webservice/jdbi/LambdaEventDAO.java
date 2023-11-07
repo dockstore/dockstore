@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EntryDAO.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LambdaEventDAO.class);
 
     public LambdaEventDAO(SessionFactory factory) {
         super(factory);
