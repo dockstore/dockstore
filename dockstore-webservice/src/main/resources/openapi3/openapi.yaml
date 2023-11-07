@@ -8321,44 +8321,6 @@ paths:
       - workflows
 components:
   schemas:
-    AbstractRunExecution:
-      type: object
-      allOf:
-      - $ref: '#/components/schemas/Execution'
-      - type: object
-        properties:
-          cost:
-            $ref: '#/components/schemas/Cost'
-          cpuRequirements:
-            type: integer
-            format: int32
-            description: Number of CPUs required for the execution
-            example: 2
-          executionStatus:
-            type: string
-            description: The status of the execution
-            enum:
-            - SUCCESSFUL
-            - FAILED_SEMANTIC_INVALID
-            - FAILED_RUNTIME_INVALID
-          executionTime:
-            type: string
-            description: The total time it took for the execution to complete in ISO
-              8601 duration format
-            example: PT30S
-          memoryRequirementsGB:
-            type: number
-            format: double
-            description: Memory requirements for the execution in GB
-            example: 2
-          region:
-            type: string
-            description: The region the workflow was executed in
-            example: us-central1
-      description: Metrics of an execution on a platform
-      required:
-      - dateExecuted
-      - executionStatus
     Alias:
       type: object
       properties:
@@ -9434,7 +9396,7 @@ components:
           type: array
           description: List of workflow run executions to submit
           items:
-            $ref: '#/components/schemas/RunExecution'
+            $ref: '#/components/schemas/RunExecutionSubmission'
         validationExecutions:
           type: array
           description: List of workflow validation executions to submit
@@ -10163,20 +10125,55 @@ components:
     RunExecution:
       type: object
       allOf:
-      - $ref: '#/components/schemas/AbstractRunExecution'
+      - $ref: '#/components/schemas/Execution'
       - type: object
         properties:
-          taskExecutions:
-            type: array
-            description: Tasks that were executed during the workflow. This field
-              is optional and the user may provide the overall workflow execution
-              metrics instead.
-            items:
-              $ref: '#/components/schemas/TaskExecution'
-      description: Metrics of a workflow execution on a platform
+          cost:
+            $ref: '#/components/schemas/Cost'
+          cpuRequirements:
+            type: integer
+            format: int32
+            description: Number of CPUs required for the execution
+            example: 2
+          executionStatus:
+            type: string
+            description: The status of the execution
+            enum:
+            - SUCCESSFUL
+            - FAILED_SEMANTIC_INVALID
+            - FAILED_RUNTIME_INVALID
+          executionTime:
+            type: string
+            description: The total time it took for the execution to complete in ISO
+              8601 duration format
+            example: PT30S
+          memoryRequirementsGB:
+            type: number
+            format: double
+            description: Memory requirements for the execution in GB
+            example: 2
+          region:
+            type: string
+            description: The region the workflow was executed in
+            example: us-central1
+      description: Metrics of an execution on a platform
       required:
       - dateExecuted
       - executionStatus
+    RunExecutionSubmission:
+      type: object
+      description: An object representing the submission of overall workflow or task
+        metrics for a workflow that was executed on a platform
+      properties:
+        taskExecutions:
+          type: array
+          description: Metrics of individual tasks that were executed during the workflow
+            execution. This field is optional and the user may provide the overall
+            workflow execution metrics instead.
+          items:
+            $ref: '#/components/schemas/RunExecution'
+        workflowExecution:
+          $ref: '#/components/schemas/RunExecution'
     Sender:
       type: object
       description: The user that triggered the event
@@ -10534,14 +10531,6 @@ components:
       required:
       - name
       - reference
-    TaskExecution:
-      type: object
-      allOf:
-      - $ref: '#/components/schemas/AbstractRunExecution'
-      description: Metrics of a workflow task execution on a platform
-      required:
-      - dateExecuted
-      - executionStatus
     Token_Auth:
       type: object
       properties:

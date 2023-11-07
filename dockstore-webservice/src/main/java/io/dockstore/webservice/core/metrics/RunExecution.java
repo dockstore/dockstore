@@ -17,24 +17,101 @@
 
 package io.dockstore.webservice.core.metrics;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.ExecutionStatus;
+import io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * This is an object to encapsulate workflow run execution metrics data in an entity. Does not need to be stored in the database.
  */
-@Schema(name = "RunExecution", description = "Metrics of a workflow execution on a platform", allOf = AbstractRunExecution.class)
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class RunExecution extends AbstractRunExecution {
-    @Schema(description = "Tasks that were executed during the workflow. This field is optional and the user may provide the overall workflow execution metrics instead.")
-    private List<TaskExecution> taskExecutions;
+@Schema(name = "RunExecution", description = "Metrics of an execution on a platform")
+public class RunExecution extends Execution {
 
-    public List<TaskExecution> getTaskExecutions() {
-        return taskExecutions;
+    @NotNull
+    @JsonProperty(required = true)
+    @Schema(description = "The status of the execution", requiredMode = RequiredMode.REQUIRED)
+    private ExecutionStatus executionStatus;
+
+    @ISO8601ExecutionTime
+    @JsonProperty
+    @Schema(description = "The total time it took for the execution to complete in ISO 8601 duration format", example = "PT30S")
+    private String executionTime;
+
+    @JsonProperty
+    @Schema(description = "Memory requirements for the execution in GB", example = "2")
+    private Double memoryRequirementsGB;
+
+    @JsonProperty
+    @Schema(description = "Number of CPUs required for the execution", example = "2")
+    private Integer cpuRequirements;
+
+    @JsonProperty
+    @Schema(description = "The cost of the execution in USD")
+    private Cost cost;
+
+    /**
+     * Recording the region because cloud services may cost different amounts in different regions.
+     * For now, the region is only recorded and is not used when aggregating the cost metric.
+     */
+    @JsonProperty
+    @Schema(description = "The region the workflow was executed in", example = "us-central1")
+    private String region;
+
+    public RunExecution() {
     }
 
-    public void setTaskExecutions(List<TaskExecution> taskExecutions) {
-        this.taskExecutions = taskExecutions;
+    public RunExecution(ExecutionStatus executionStatus) {
+        this.executionStatus = executionStatus;
+    }
+
+    public ExecutionStatus getExecutionStatus() {
+        return executionStatus;
+    }
+
+    public void setExecutionStatus(ExecutionStatus executionStatus) {
+        this.executionStatus = executionStatus;
+    }
+
+    public String getExecutionTime() {
+        return executionTime;
+    }
+
+    public void setExecutionTime(String executionTime) {
+        this.executionTime = executionTime;
+    }
+
+    public Double getMemoryRequirementsGB() {
+        return memoryRequirementsGB;
+    }
+
+    public void setMemoryRequirementsGB(Double memoryRequirementsGB) {
+        this.memoryRequirementsGB = memoryRequirementsGB;
+    }
+
+    public Integer getCpuRequirements() {
+        return cpuRequirements;
+    }
+
+    public void setCpuRequirements(Integer cpuRequirements) {
+        this.cpuRequirements = cpuRequirements;
+    }
+
+    public Cost getCost() {
+        return cost;
+    }
+
+    public void setCost(Cost cost) {
+        this.cost = cost;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
     }
 }
