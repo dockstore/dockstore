@@ -11009,14 +11009,15 @@ components:
           type: string
         curator:
           type: boolean
-          description: Indicates whether this user is a curator
-          nullable: true
+          description: Indicates whether this user is a curator. The value is always
+            false unless fetched via the /users/user endpoint for oneself)
         id:
           type: integer
           format: int64
         isAdmin:
           type: boolean
-          nullable: true
+          description: Indicates whether the user is an admin. The value is always
+            false unless fetched via the /users/user endpoint for oneself
         name:
           type: string
         orcid:

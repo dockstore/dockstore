@@ -102,7 +102,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @JsonFilter(PUBLIC_USER_FILTER)
 public class User implements Principal, Comparable<User>, Serializable {
 
-    public static final String INDICATES_WHETHER_THIS_USER_IS_A_CURATOR = "Indicates whether this user is a curator";
+    public static final String INDICATES_WHETHER_THIS_USER_IS_A_CURATOR = "Indicates whether this user is a curator. The value is always false unless fetched via the /users/user endpoint for oneself)";
     public static final String INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER = "Indicates whether this account corresponds to a platform partner";
 
     @Id
@@ -118,8 +118,8 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Column
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
-    @Schema(nullable = true)
-    private Boolean isAdmin;
+    @Schema(description = "Indicates whether the user is an admin. The value is always false unless fetched via the /users/user endpoint for oneself")
+    private boolean isAdmin;
 
     @Column(columnDefinition = "boolean default false")
     @JsonIgnore
@@ -159,8 +159,8 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR, required = true, position = 11)
-    @Schema(description = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR, nullable = true)
-    private Boolean curator;
+    @Schema(description = INDICATES_WHETHER_THIS_USER_IS_A_CURATOR)
+    private boolean curator;
 
     @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER, required = true, position = 18)
@@ -361,11 +361,11 @@ public class User implements Principal, Comparable<User>, Serializable {
     }
 
     @JsonProperty
-    public Boolean getIsAdmin() {
+    public boolean getIsAdmin() {
         return isAdmin;
     }
 
-    public void setIsAdmin(Boolean isAdmin) {
+    public void setIsAdmin(boolean isAdmin) {
         this.isAdmin = isAdmin;
     }
 
@@ -444,11 +444,11 @@ public class User implements Principal, Comparable<User>, Serializable {
         this.userProfiles = userProfiles;
     }
 
-    public Boolean isCurator() {
+    public boolean isCurator() {
         return curator;
     }
 
-    public void setCurator(Boolean curator) {
+    public void setCurator(boolean curator) {
         this.curator = curator;
     }
 
