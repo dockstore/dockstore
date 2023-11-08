@@ -184,8 +184,14 @@ class SwaggerWebhookIT extends BaseIT {
 
         testingPostgres.runUpdateStatement(
                 "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser', '1234')");
-        final List<io.dockstore.openapi.client.model.LambdaEvent> events =
+        List<io.dockstore.openapi.client.model.LambdaEvent> events =
             lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, null, null, null);
         assertEquals(1, events.size(), "Can see event for repo with access, not one without");
+
+        testingPostgres.runUpdateStatement(
+                "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'hello', 'dockstore-whalesay-2', 'DockstoreTestUser', '1235')");
+
+        events = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, "hello", null, null);
+        assertEquals(1, events.size(), "Can see event with hello message, not one with whatevs due to filter");
     }
 }

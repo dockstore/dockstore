@@ -65,7 +65,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
                     createNotNullLikeCriteria("repository", filter, cb, event), //
                     createNotNullLikeCriteria("type", filter, cb, event), //
                     createNotNullLikeCriteria("reference", filter, cb, event), //
-                    createNotNullLikeCriteria("deliveryid", filter, cb, event)
+                    createNotNullLikeCriteria("deliveryId", filter, cb, event)
                 )
             );
         }
