@@ -2,7 +2,6 @@ package io.dockstore.webservice.jdbi;
 
 import static io.dockstore.webservice.jdbi.EntryDAO.INVALID_SORTCOL_MESSAGE;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.LambdaEvent;
@@ -51,17 +50,24 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         session.flush();
     }
 
+    private Predicate createNotNullLikeCriteria(String column, String filter, CriteriaBuilder cb, Root<LambdaEvent> event) {
+        return cb.and(cb.isNotNull(event.get(column)), cb.like(cb.upper(event.get(column)), "%" + filter.toUpperCase() + "%"));
+    }
+
     private List<Predicate> processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<LambdaEvent> event) {
         List<Predicate> predicates = new ArrayList<>();
         if (!Strings.isNullOrEmpty(filter)) {
             predicates.add(
-                    // ensure we deal with null values and then do like queries on those non-null values
-                    cb.or(cb.and(cb.isNotNull(event.get("message")), cb.like(cb.upper(event.get("message")), "%" + filter.toUpperCase() + "%")), //
-                            cb.and(cb.isNotNull(event.get("githubUsername")), cb.like(cb.upper(event.get("githubUsername")), "%" + filter.toUpperCase() + "%")), //
-                            cb.and(cb.isNotNull(event.get("repository")), cb.like(cb.upper(event.get("repository")), "%" + filter.toUpperCase() + "%")), //
-                            cb.and(cb.isNotNull(event.get("type")), cb.like(cb.upper(event.get("type")), "%" + filter.toUpperCase() + "%")), //
-                            cb.and(cb.isNotNull(event.get("reference")), cb.like(cb.upper(event.get("reference")), "%" + filter.toUpperCase() + "%")), //
-                            cb.and(cb.isNotNull(event.get("deliveryId")), cb.like(cb.upper(event.get("deliveryId")), "%" + filter.toUpperCase() + "%"))));
+                // ensure we deal with null values and then do like queries on those non-null values
+                cb.or(
+                    createNotNullLikeCriteria("message", filter, cb, event), //
+                    createNotNullLikeCriteria("githubUsername", filter, cb, event), //
+                    createNotNullLikeCriteria("repository", filter, cb, event), //
+                    createNotNullLikeCriteria("type", filter, cb, event), //
+                    createNotNullLikeCriteria("reference", filter, cb, event), //
+                    createNotNullLikeCriteria("deliveryid", filter, cb, event)
+                )
+            );
         }
 
         if (!Strings.isNullOrEmpty(sortCol)) {
@@ -80,8 +86,10 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
                 Path<Object> sortPath = event.get(sortCol);
                 if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
                     query.orderBy(cb.desc(sortPath), cb.desc(event.get("id")));
-                } else {
+                } else if (!Strings.isNullOrEmpty(sortOrder) && "asc".equalsIgnoreCase(sortOrder)) {
                     query.orderBy(cb.asc(sortPath), cb.desc(event.get("id")));
+                } else {
+                    query.orderBy(cb.desc(sortPath), cb.desc(event.get("id")));
                 }
                 predicates.add(sortPath.isNotNull());
             }
@@ -153,7 +161,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
      * @param repositories
      * @return
      */
-    public List<LambdaEvent> findByOrganization(String organization, String offset, Integer limit, String filter, String sortCol, String sortOrder, Optional<List<String>> repositories) {
+    public List<LambdaEvent> findByOrganization(String organization, int offset, int limit, String filter, String sortCol, String sortOrder, Optional<List<String>> repositories) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<LambdaEvent> query = criteriaQuery();
         Root<LambdaEvent> event = query.from(LambdaEvent.class);
@@ -162,8 +170,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         setupFindByOrganizationQuery(organization, repositories, cb, query, initialPredicate, event);
         query.select(event);
 
-        int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
-        TypedQuery<LambdaEvent> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
+        TypedQuery<LambdaEvent> typedQuery = currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit);
         return typedQuery.getResultList();
     }
 

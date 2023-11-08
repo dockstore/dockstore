@@ -357,21 +357,21 @@ class WebhookIT extends BaseIT {
         // Track install event
         handleGitHubInstallation(workflowsApi, List.of(DockstoreTesting.WORKFLOW_DOCKSTORE_YML), USER_2_USERNAME);
         ++numberOfWebhookInvocations;
-        List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10, null, null, null);
+        List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.INSTALL, true); // There should be no entry name
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release 0.1 on GitHub - one new wdl workflow
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, tag01, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10, null, null, null);
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag01, foobarWorkflowName, true);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
         handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, tag02, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10, null, null, null);
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag02, foobarWorkflowName, true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag02, foobar2WorkflowName, true);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
@@ -379,7 +379,7 @@ class WebhookIT extends BaseIT {
         // Delete tag 0.2
         handleGitHubBranchDeletion(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, USER_2_USERNAME, tag02);
         ++numberOfWebhookInvocations;
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10, null, null, null);
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
         // Delete events should have the names of workflows that had a version deleted
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.DELETE, tag02, foobarWorkflowName, true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.DELETE, tag02, foobar2WorkflowName, true);
@@ -388,7 +388,7 @@ class WebhookIT extends BaseIT {
         // Release refs/heads/invalidDockstoreYml where the foobar workflow description in the .dockstore.yml is missing the 'subclass' property
         assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, branchInvalidDockstoreYml, USER_2_USERNAME));
         ++numberOfWebhookInvocations;
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10, null, null, null);
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
         // There should be two push events, one failed event for workflow 'foobar' and one successful event for workflow 'foobar2'
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchInvalidDockstoreYml, foobarWorkflowName, false);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchInvalidDockstoreYml, foobar2WorkflowName, true);
@@ -397,7 +397,7 @@ class WebhookIT extends BaseIT {
         // Release refs/heads/differentLanguagesWithSameWorkflowName where two workflows have the same workflow name
         assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTesting.WORKFLOW_DOCKSTORE_YML, branchDifferentLanguagesWithSameWorkflowName, USER_2_USERNAME));
         ++numberOfWebhookInvocations;
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 10, null, null, null);
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 10, null, null, null);
         // Should only have no entry name because the error is for the whole .dockstore.yml
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, branchDifferentLanguagesWithSameWorkflowName, null, false);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
@@ -406,7 +406,7 @@ class WebhookIT extends BaseIT {
         final String tag10 = "refs/tags/1.0";
         handleGitHubRelease(workflowsApi, DockstoreTesting.TEST_WORKFLOWS_AND_TOOLS, tag10, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 15, null, null, null);
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 15, null, null, null);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "", true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "md5sum", true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUBLISH, tag10, "", true);
@@ -416,7 +416,7 @@ class WebhookIT extends BaseIT {
         final String invalidToolNameBranch = "refs/heads/invalidToolName";
         assertThrows(ApiException.class, () -> handleGitHubRelease(workflowsApi, DockstoreTesting.TEST_WORKFLOWS_AND_TOOLS, invalidToolNameBranch, USER_2_USERNAME));
         ++numberOfWebhookInvocations;
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, "0", 15, null, null, null);
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 15, null, null, null);
         // There should be two push events, one successful event for the workflow and one failed event for the tool
         final String workflowName = "";
         final String toolName = "md5sum/with/slashes";
@@ -582,11 +582,11 @@ class WebhookIT extends BaseIT {
         assertTrue(events.stream().anyMatch(lambdaEvent -> Objects.equals(14L, lambdaEvent.getId())), "Should have event with ID 14");
 
         // Test the organization events endpoint
-        List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 20, null, null, null);
+        List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", 0, 20, null, null, null);
         assertEquals(16, orgEvents.size(), "There should be 16 events");
 
         // Test pagination
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "2", 2, null, null, null);
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", 2, 2, null, null, null);
         assertEquals(2, orgEvents.size(), "There should be 2 events (id 13 and 14)");
         assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(13L, lambdaEvent.getId())), "Should have event with ID 13");
         assertTrue(orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(14L, lambdaEvent.getId())), "Should have event with ID 14");
@@ -594,13 +594,13 @@ class WebhookIT extends BaseIT {
         // Change organization to test filter
         testingPostgres.runUpdateStatement("UPDATE lambdaevent SET repository = 'workflow-dockstore-yml', organization = 'DockstoreTestUser3' WHERE id = '1'");
 
-        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 20, null, null, null);
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", 0, 20, null, null, null);
         assertEquals(15, orgEvents.size(), "There should now be 15 events");
 
         handlePaginationTesting(lambdaEventsApi);
 
         try {
-            lambdaEventsApi.getLambdaEventsByOrganization("IAmMadeUp", "0", 10, null, null, null);
+            lambdaEventsApi.getLambdaEventsByOrganization("IAmMadeUp", 0, 10, null, null, null);
             fail("Should not reach this statement");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode(), "Should fail because user cannot access org.");
@@ -623,9 +623,9 @@ class WebhookIT extends BaseIT {
 
         // test pagination, should  be three pages of five events and the total size should match the total count
         Set<Long> uniqueLambdaEvents = new HashSet<>();
-        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 5, null, null, null).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
-        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "5", 5, null, null, null).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
-        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "10", 5, null, null, null).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
+        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", 0, 5, null, null, null).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
+        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", 5, 5, null, null, null).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
+        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", 15, 5, null, null, null).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
         assertEquals(expectedNumEvents, uniqueLambdaEvents.size());
 
         // can also get the 16 filtering by user

@@ -3982,8 +3982,9 @@ paths:
       - in: query
         name: offset
         schema:
-          type: string
-          default: "0"
+          type: integer
+          format: int32
+          default: 0
       - in: query
         name: limit
         schema:

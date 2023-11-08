@@ -64,7 +64,7 @@ public class LambdaEventResource {
     @SuppressWarnings("checkstyle:parameternumber")
     public List<LambdaEvent> getLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @PathParam("organization") String organization,
-            @QueryParam("offset") @DefaultValue("0") String offset,
+            @QueryParam("offset") @DefaultValue("0") Integer offset,
             @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
             @DefaultValue("") @QueryParam("filter") String filter,
             @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
