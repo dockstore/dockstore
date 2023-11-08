@@ -625,7 +625,7 @@ class WebhookIT extends BaseIT {
         Set<Long> uniqueLambdaEvents = new HashSet<>();
         lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", 0, 5, null, null, null).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
         lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", 5, 5, null, null, null).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
-        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", 15, 5, null, null, null).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
+        lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", 10, 5, null, null, null).stream().map(LambdaEvent::getId).forEach(uniqueLambdaEvents::add);
         assertEquals(expectedNumEvents, uniqueLambdaEvents.size());
 
         // can also get the 16 filtering by user
