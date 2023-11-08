@@ -25,14 +25,19 @@ import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-@HasExecutionsOrMetrics // TODO: remove this validator when the deprecated aggregatedExecutions is removed
+@HasExecutionsOrMetrics
 @Schema(name = "ExecutionsRequestBody", description = "Request body model for executionMetricsPost")
 public class ExecutionsRequestBody {
 
     @NotNull
     @Valid
     @Schema(description = "List of workflow run executions to submit")
-    private List<RunExecutionSubmission> runExecutions = new ArrayList<>();
+    private List<RunExecution> runExecutions = new ArrayList<>();
+
+    @NotNull
+    @Valid
+    @Schema(description = "List of task run executions to submit. Each TaskExecution represents the tasks executed during a workflow execution.")
+    private List<TaskExecutions> taskExecutions = new ArrayList<>();
 
     @NotNull
     @Valid
@@ -48,12 +53,20 @@ public class ExecutionsRequestBody {
     public ExecutionsRequestBody() {
     }
 
-    public List<RunExecutionSubmission> getRunExecutions() {
+    public List<RunExecution> getRunExecutions() {
         return runExecutions;
     }
 
-    public void setRunExecutions(List<RunExecutionSubmission> runExecutions) {
+    public void setRunExecutions(List<RunExecution> runExecutions) {
         this.runExecutions = runExecutions;
+    }
+
+    public List<TaskExecutions> getTaskExecutions() {
+        return taskExecutions;
+    }
+
+    public void setTaskExecutions(List<TaskExecutions> taskExecutions) {
+        this.taskExecutions = taskExecutions;
     }
 
     public List<ValidationExecution> getValidationExecutions() {

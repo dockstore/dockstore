@@ -9396,7 +9396,13 @@ components:
           type: array
           description: List of workflow run executions to submit
           items:
-            $ref: '#/components/schemas/RunExecutionSubmission'
+            $ref: '#/components/schemas/RunExecution'
+        taskExecutions:
+          type: array
+          description: List of task run executions to submit. Each TaskExecution represents
+            the tasks executed during a workflow execution.
+          items:
+            $ref: '#/components/schemas/TaskExecutions'
         validationExecutions:
           type: array
           description: List of workflow validation executions to submit
@@ -9405,6 +9411,7 @@ components:
       required:
       - aggregatedExecutions
       - runExecutions
+      - taskExecutions
       - validationExecutions
     ExtendedUserData:
       type: object
@@ -10160,20 +10167,6 @@ components:
       required:
       - dateExecuted
       - executionStatus
-    RunExecutionSubmission:
-      type: object
-      description: An object representing the submission of overall workflow or task
-        metrics for a workflow that was executed on a platform
-      properties:
-        taskExecutions:
-          type: array
-          description: Metrics of individual tasks that were executed during the workflow
-            execution. This field is optional and the user may provide the overall
-            workflow execution metrics instead.
-          items:
-            $ref: '#/components/schemas/RunExecution'
-        workflowExecution:
-          $ref: '#/components/schemas/RunExecution'
     Sender:
       type: object
       description: The user that triggered the event
@@ -10531,6 +10524,17 @@ components:
       required:
       - name
       - reference
+    TaskExecutions:
+      type: object
+      description: Metrics of individual tasks that were executed during the workflow
+        execution.
+      properties:
+        taskExecutions:
+          type: array
+          description: Metrics of individual tasks that were executed during the workflow
+            execution.
+          items:
+            $ref: '#/components/schemas/RunExecution'
     Token_Auth:
       type: object
       properties:

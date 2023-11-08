@@ -27,7 +27,6 @@ import static io.dockstore.webservice.core.metrics.ExecutionStatusCountMetric.Ex
 import static io.dockstore.webservice.core.metrics.ValidationExecution.ValidatorTool.MINIWDL;
 import static io.dockstore.webservice.core.metrics.constraints.HasExecutionsOrMetrics.MUST_CONTAIN_EXECUTIONS_OR_METRICS;
 import static io.dockstore.webservice.core.metrics.constraints.HasMetrics.MUST_CONTAIN_METRICS;
-import static io.dockstore.webservice.core.metrics.constraints.HasWorkflowOrTaskExecutions.MUST_CONTAIN_WORKFLOW_OR_TASK_EXECUTIONS;
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionDate.EXECUTION_DATE_FORMAT_ERROR;
 import static io.dockstore.webservice.core.metrics.constraints.ISO8601ExecutionTime.EXECUTION_TIME_FORMAT_ERROR;
 import static io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl.INVALID_PLATFORM;
@@ -71,7 +70,7 @@ import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.RunExecution;
-import io.dockstore.openapi.client.model.RunExecutionSubmission;
+import io.dockstore.openapi.client.model.TaskExecutions;
 import io.dockstore.openapi.client.model.ValidationExecution;
 import io.dockstore.openapi.client.model.ValidationStatusMetric;
 import io.dockstore.openapi.client.model.ValidatorInfo;
@@ -209,7 +208,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
         // Add workflow execution metrics for a workflow version for one platform
-        List<RunExecutionSubmission> runExecutions = createWorkflowRunExecutionSubmission(1);
+        List<RunExecution> runExecutions = createRunExecutions(1);
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, workflowVersionId, description);
         List<MetricsData> metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 1);
         MetricsData metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
@@ -217,8 +216,8 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
 
         // Add task execution metrics for a workflow version for one platform
-        RunExecutionSubmission runExecutionWithTaskExecutions = createTaskRunExecutionSubmission(2);
-        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(List.of(runExecutionWithTaskExecutions)), platform1, workflowId, workflowVersionId, description);
+        TaskExecutions taskExecutions = new TaskExecutions().taskExecutions(createRunExecutions(2));
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().taskExecutions(List.of(taskExecutions)), platform1, workflowId, workflowVersionId, description);
         metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
         metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
         verifyMetricsDataMetadata(metricsData, ownerUserId, description);
@@ -276,7 +275,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         String versionId = "master";
         String platform = Partner.TERRA.name();
         String description = "A single execution";
-        ExecutionsRequestBody goodExecutionsRequestBody = new ExecutionsRequestBody().runExecutions(createWorkflowRunExecutionSubmission(1));
+        ExecutionsRequestBody goodExecutionsRequestBody = new ExecutionsRequestBody().runExecutions(createRunExecutions(1));
 
         // Test malformed ID
         ApiException exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(goodExecutionsRequestBody, platform, "malformedId", "malformedVersionId", null));
@@ -306,28 +305,23 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertTrue(exception.getMessage().contains(INVALID_PLATFORM));
 
         // Test that the response body must contain ExecutionStatus for RunExecution
-        List<RunExecutionSubmission> runExecutions = createWorkflowRunExecutionSubmission(1);
-        runExecutions.forEach(executionSubmission -> executionSubmission.getWorkflowExecution().setExecutionStatus(null));
+        List<RunExecution> runExecutions = createRunExecutions(1);
+        runExecutions.forEach(execution -> execution.setExecutionStatus(null));
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if ExecutionStatus is missing");
         assertTrue(exception.getMessage().contains("executionStatus") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if ExecutionStatus is missing");
 
         // Test that the response body must contain dateExecuted for RunExecution
-        List<RunExecutionSubmission> runExecutionsWithMissingDate = createWorkflowRunExecutionSubmission(1);
-        runExecutionsWithMissingDate.forEach(execution -> execution.getWorkflowExecution().setDateExecuted(null));
+        List<RunExecution> runExecutionsWithMissingDate = createRunExecutions(1);
+        runExecutionsWithMissingDate.forEach(execution -> execution.setDateExecuted(null));
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutionsWithMissingDate), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if dateExecuted is missing");
         assertTrue(exception.getMessage().contains("dateExecuted") && exception.getMessage().contains("is missing"), "Should not be able to submit metrics if dateExecuted is missing");
 
-        // Test that not providing neither workflowExecution nor taskExecutions throws an error
-        exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(List.of(new RunExecutionSubmission())), platform, id, versionId, description));
-        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if neither workflowExecution nor taskExecutions were provided");
-        assertTrue(exception.getMessage().contains(MUST_CONTAIN_WORKFLOW_OR_TASK_EXECUTIONS), "Should not be able to submit metrics if neither workflowExecution nor taskExecutions were provided");
-
         // Test that malformed ExecutionTimes for RunExecution throw an exception
-        List<RunExecutionSubmission> malformedExecutionTimes = List.of(
-                new RunExecutionSubmission().workflowExecution(new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("1 second")),
-                new RunExecutionSubmission().workflowExecution(new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("PT 1S")) // Should not have space
+        List<RunExecution> malformedExecutionTimes = List.of(
+                new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("1 second"),
+                new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("PT 1S") // Should not have space
         );
 
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(malformedExecutionTimes), platform, id, versionId, description));
@@ -529,7 +523,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(HttpStatus.SC_FORBIDDEN, exception.getCode(), "Platform partner should not be able to put aggregated metrics");
 
         // Test that a platform partner can post run executions
-        List<RunExecutionSubmission> executions = createWorkflowRunExecutionSubmission(1);
+        List<RunExecution> executions = createRunExecutions(1);
         otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(executions), platform, id, versionId, "foo");
         verifyMetricsDataList(id, versionId, 1);
 
@@ -669,7 +663,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         //Retrieve Workflow run RO-crate json. Source for this json file: https://www.researchobject.org/workflow-run-crate/profiles/workflow_run_crate
         ClassLoader classLoader = getClass().getClassLoader();
         String path = classLoader.getResource("fixtures/sampleWorkflowROCrate.json").getPath();
-        List<RunExecutionSubmission> runExecutions = new ArrayList<>();
+        List<RunExecution> runExecutions = new ArrayList<>();
         runExecutions.add(convertROCrateToRunExecution(path));
 
         //post run execution metrics
@@ -722,13 +716,13 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         assertEquals(description, metricsDataMetadata.description());
     }
 
-    private void verifyRunExecutionMetricsDataContent(MetricsData metricsData, List<RunExecutionSubmission> expectedRunExecutions)
+    private void verifyRunExecutionMetricsDataContent(MetricsData metricsData, List<RunExecution> expectedRunExecutions)
             throws IOException {
         String metricsDataContent = metricsDataClient.getMetricsDataFileContent(metricsData.toolId(), metricsData.toolVersionName(), metricsData.platform(), metricsData.fileName());
         ExecutionsRequestBody executionsRequestBody = GSON.fromJson(metricsDataContent, ExecutionsRequestBody.class);
-        List<RunExecutionSubmission> s3RunExecutions = executionsRequestBody.getRunExecutions();
+        List<RunExecution> s3RunExecutions = executionsRequestBody.getRunExecutions();
         assertEquals(expectedRunExecutions.size(), s3RunExecutions.size());
-        for (RunExecutionSubmission s3RunExecution : s3RunExecutions) {
+        for (RunExecution s3RunExecution : s3RunExecutions) {
             assertTrue(expectedRunExecutions.contains(s3RunExecution));
         }
     }
@@ -744,64 +738,38 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         }
     }
 
-    public static List<RunExecutionSubmission> createWorkflowRunExecutionSubmission(int numberOfExecutions) {
-        List<RunExecutionSubmission> executions = new ArrayList<>();
+    public static List<RunExecution> createRunExecutions(int numberOfExecutions) {
+        List<RunExecution> executions = new ArrayList<>();
         for (int i = 0; i < numberOfExecutions; ++i) {
             // A successful execution that ran for 5 minutes, requires 2 CPUs and 2 GBs of memory
-            RunExecution workflowExecution = new RunExecution();
-            workflowExecution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
-            workflowExecution.setDateExecuted(Instant.now().toString());
-            workflowExecution.setExecutionTime("PT5M");
-            workflowExecution.setCpuRequirements(2);
-            workflowExecution.setMemoryRequirementsGB(2.0);
-            workflowExecution.setCost(new Cost().value(9.99));
-            workflowExecution.setRegion("us-central1");
+            RunExecution execution = new RunExecution();
+            execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
+            execution.setDateExecuted(Instant.now().toString());
+            execution.setExecutionTime("PT5M");
+            execution.setCpuRequirements(2);
+            execution.setMemoryRequirementsGB(2.0);
+            execution.setCost(new Cost().value(9.99));
+            execution.setRegion("us-central1");
             Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
-            workflowExecution.setAdditionalProperties(additionalProperties);
-            // A RunExecutionSubmission consisting of the overall workflow execution metrics
-            RunExecutionSubmission runExecutionSubmission = new RunExecutionSubmission().workflowExecution(workflowExecution);
-            executions.add(runExecutionSubmission);
+            execution.setAdditionalProperties(additionalProperties);
+            executions.add(execution);
         }
         return executions;
     }
 
     /**
-     * Creates a RunExecution object containing a list of task executions.
-     * @param numberOfTaskExecutions
-     * @return
-     */
-    public static RunExecutionSubmission createTaskRunExecutionSubmission(int numberOfTaskExecutions) {
-        List<RunExecution> taskExecutions = new ArrayList<>();
-        for (int i = 0; i < numberOfTaskExecutions; ++i) {
-            // A successful execution that ran for 5 minutes, requires 2 CPUs and 2 GBs of memory
-            RunExecution taskExecution = new RunExecution();
-            taskExecution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
-            taskExecution.setDateExecuted(Instant.now().toString());
-            taskExecution.setExecutionTime("PT5M");
-            taskExecution.setCpuRequirements(2);
-            taskExecution.setMemoryRequirementsGB(2.0);
-            taskExecution.setCost(new Cost().value(9.99));
-            taskExecution.setRegion("us-central1");
-            Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
-            taskExecution.setAdditionalProperties(additionalProperties);
-            taskExecutions.add(taskExecution);
-        }
-        return new RunExecutionSubmission().taskExecutions(taskExecutions);
-    }
-
-    /**
-     * Converts an Workflow Run RO-Crate JSON file located in path, roCratePath, to a RunExecutionSubmission object containing a workflowExecution. The entire
+     * Converts a Workflow Run RO-Crate JSON file located in path, roCratePath, to a RunExecution object. The entire
      * JSON file is added onto the additionalProperties field in RunExecution.
      * @param roCratePath
      * @return RunExecution object.
      */
-    public RunExecutionSubmission convertROCrateToRunExecution(String roCratePath) throws IOException {
+    public RunExecution convertROCrateToRunExecution(String roCratePath) throws IOException {
         String roCrate = new String(Files.readAllBytes(Paths.get(roCratePath)));
         Map<String, Object> map = GSON.fromJson(roCrate, Map.class);
-        RunExecution workflowExecution = new RunExecution();
-        workflowExecution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
-        workflowExecution.setDateExecuted(Instant.now().toString());
-        workflowExecution.setAdditionalProperties(map);
-        return new RunExecutionSubmission().workflowExecution(workflowExecution);
+        RunExecution execution = new RunExecution();
+        execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
+        execution.setDateExecuted(Instant.now().toString());
+        execution.setAdditionalProperties(map);
+        return execution;
     }
 }

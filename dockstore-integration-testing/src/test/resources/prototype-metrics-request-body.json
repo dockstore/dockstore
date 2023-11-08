@@ -1,17 +1,15 @@
 {
   "runExecutions": [
     {
-      "workflowExecution": {
-        "executionStatus": "SUCCESSFUL",
-        "dateExecuted": "2023-03-31T15:06:49.888745366Z",
-        "totalTime": "PT5m",
-        "additionalProperties": {
-          "@context": {
-            "schema": "https://schema.org"
-          },
-          "schema:actionStatus": "CompletedActionStatus",
-          "schema:totalTime": "PT5M"
-        }
+      "executionStatus": "SUCCESSFUL",
+      "dateExecuted": "2023-03-31T15:06:49.888745366Z",
+      "totalTime": "PT5m",
+      "additionalProperties": {
+        "@context": {
+          "schema": "https://schema.org"
+        },
+        "schema:actionStatus": "CompletedActionStatus",
+        "schema:totalTime": "PT5M"
       }
     }
   ]
