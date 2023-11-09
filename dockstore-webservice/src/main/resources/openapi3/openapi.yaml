@@ -3929,13 +3929,18 @@ paths:
         schema:
           type: integer
           format: int64
-      - in: query
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
         name: offset
         schema:
           type: integer
           format: int32
           default: 0
-      - in: query
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
         name: limit
         schema:
           type: integer
@@ -3979,13 +3984,18 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
         name: offset
         schema:
           type: integer
           format: int32
           default: 0
-      - in: query
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
         name: limit
         schema:
           type: integer

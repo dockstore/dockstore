@@ -60,11 +60,11 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
             predicates.add(
                 // ensure we deal with null values and then do like queries on those non-null values
                 cb.or(
-                    createNotNullLikeCriteria("message", filter, cb, event), //
-                    createNotNullLikeCriteria("githubUsername", filter, cb, event), //
-                    createNotNullLikeCriteria("repository", filter, cb, event), //
-                    createNotNullLikeCriteria("type", filter, cb, event), //
-                    createNotNullLikeCriteria("reference", filter, cb, event), //
+                    createNotNullLikeCriteria("message", filter, cb, event),
+                    createNotNullLikeCriteria("githubUsername", filter, cb, event),
+                    createNotNullLikeCriteria("repository", filter, cb, event),
+                    createNotNullLikeCriteria("type", filter, cb, event),
+                    createNotNullLikeCriteria("reference", filter, cb, event),
                     createNotNullLikeCriteria("deliveryId", filter, cb, event)
                 )
             );
@@ -84,9 +84,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
 
             } else {
                 Path<Object> sortPath = event.get(sortCol);
-                if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
-                    query.orderBy(cb.desc(sortPath), cb.desc(event.get("id")));
-                } else if (!Strings.isNullOrEmpty(sortOrder) && "asc".equalsIgnoreCase(sortOrder)) {
+                if ("asc".equalsIgnoreCase(sortOrder)) {
                     query.orderBy(cb.asc(sortPath), cb.desc(event.get("id")));
                 } else {
                     query.orderBy(cb.desc(sortPath), cb.desc(event.get("id")));
@@ -125,8 +123,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
 
         query.select(event);
 
-        int primitiveOffset = (offset != null) ? offset : 0;
-        TypedQuery<LambdaEvent> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
+        TypedQuery<LambdaEvent> typedQuery = currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit);
         return typedQuery.getResultList();
     }
 

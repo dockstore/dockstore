@@ -1,6 +1,8 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -64,8 +66,8 @@ public class LambdaEventResource {
     @SuppressWarnings("checkstyle:parameternumber")
     public List<LambdaEvent> getLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @PathParam("organization") String organization,
-            @QueryParam("offset") @DefaultValue("0") Integer offset,
-            @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @Parameter(description = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") int offset,
+            @Parameter(description = PAGINATION_LIMIT_TEXT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") int limit,
             @DefaultValue("") @QueryParam("filter") String filter,
             @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
             @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
@@ -92,8 +94,8 @@ public class LambdaEventResource {
     @SuppressWarnings("checkstyle:parameternumber")
     public List<LambdaEvent> getUserLambdaEvents(@Parameter(hidden = true, name = "user")@Auth User authUser,
            @PathParam("userid") long userid,
-           @QueryParam("offset") @DefaultValue("0") Integer offset,
-           @QueryParam("limit") @DefaultValue("1000") Integer limit,
+           @Parameter(description = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") int offset,
+           @Parameter(description = PAGINATION_LIMIT_TEXT) @QueryParam("limit") @DefaultValue("1000") int limit,
            @DefaultValue("") @QueryParam("filter") String filter,
            @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,

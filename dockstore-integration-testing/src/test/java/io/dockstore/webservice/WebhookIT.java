@@ -1999,4 +1999,41 @@ class WebhookIT extends BaseIT {
         assertEquals(expectedTopicAutomatic, foobar2.getTopicAutomatic());
         assertEquals(TopicSelectionEnum.AUTOMATIC, foobar2.getTopicSelection(), "Topic selection should be automatic if there's an empty string 'topic'");
     }
+    @Test
+    void testLambdaEvents() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        final LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
+        final List<String> userOrganizations = usersApi.getUserOrganizations("github.com");
+        assertTrue(userOrganizations.contains("dockstoretesting")); // Org user is member of
+        assertTrue(userOrganizations.contains("DockstoreTestUser2")); // The GitHub account
+        final String dockstoreTestUser = "DockstoreTestUser";
+        assertTrue(userOrganizations.contains(dockstoreTestUser)); // User has access to only one repo in the org, DockstoreTestUser/dockstore-whalesay-2
+
+        assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, null, null, null).size(), "No events at all works");
+
+        testingPostgres.runUpdateStatement(
+                "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'whatevs', 'repo-no-access', 'DockstoreTestUser', '1234')");
+        assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, null, null, null).size(), "Can't see event for repo with no access");
+
+        testingPostgres.runUpdateStatement(
+                "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser', '1234')");
+        List<io.dockstore.openapi.client.model.LambdaEvent> events =
+                lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, null, null, null);
+        assertEquals(1, events.size(), "Can see event for repo with access, not one without");
+
+        testingPostgres.runUpdateStatement(
+                "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'hello', 'dockstore-whalesay-2', 'DockstoreTestUser', '1235')");
+
+        events = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, "hello", null, null);
+        assertEquals(1, events.size(), "Can see event with hello message, not one with whatevs due to filter");
+        assertEquals("hello", events.get(0).getMessage());
+
+        try {
+            lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, null, "abcde", null); //provide an invalid sort column
+            fail("Should throw API exception");
+        } catch (ApiException e) {
+            assertEquals("Could not process query due to the invalid sortCol value.", e.getMessage());
+        }
+    }
 }

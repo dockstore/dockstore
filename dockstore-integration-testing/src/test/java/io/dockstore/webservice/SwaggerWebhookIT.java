@@ -20,7 +20,6 @@ package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BaseIT.TestStatus;
@@ -30,8 +29,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.RepositoryConstants.DockstoreTestUser2;
 import io.dockstore.common.SourceControl;
-import io.dockstore.openapi.client.api.LambdaEventsApi;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -162,36 +159,5 @@ class SwaggerWebhookIT extends BaseIT {
         assertEquals(3, usersApi.getUserEntries(10, null, WORKFLOWS_ENTRY_SEARCH_TYPE).size(),
             "User should have 3 workflows, 2 from DockstoreTestUser2 org and one from DockstoreTestUser/dockstore-whalesay-wdl");
 
-    }
-
-    @Test
-    void testLambdaEvents() {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false, testingPostgres);
-        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
-        final LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
-        final List<String> userOrganizations = usersApi.getUserOrganizations("github.com");
-        assertTrue(userOrganizations.contains("dockstoretesting")); // Org user is member of
-        assertTrue(userOrganizations.contains("DockstoreTestUser2")); // The GitHub account
-        final String dockstoreTestUser = "DockstoreTestUser";
-        assertTrue(userOrganizations.contains(dockstoreTestUser)); // User has access to only one repo in the org, DockstoreTestUser/dockstore-whalesay-2
-
-        assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, null, null, null).size(), "No events at all works");
-
-        testingPostgres.runUpdateStatement(
-                "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'whatevs', 'repo-no-access', 'DockstoreTestUser', '1234')");
-        assertEquals(0, lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, null, null, null).size(), "Can't see event for repo with no access");
-
-        testingPostgres.runUpdateStatement(
-                "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser', '1234')");
-        List<io.dockstore.openapi.client.model.LambdaEvent> events =
-            lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, null, null, null);
-        assertEquals(1, events.size(), "Can see event for repo with access, not one without");
-
-        testingPostgres.runUpdateStatement(
-                "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'hello', 'dockstore-whalesay-2', 'DockstoreTestUser', '1235')");
-
-        events = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, "hello", null, null);
-        assertEquals(1, events.size(), "Can see event with hello message, not one with whatevs due to filter");
     }
 }
