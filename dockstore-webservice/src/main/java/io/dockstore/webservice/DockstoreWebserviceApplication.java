@@ -79,6 +79,9 @@ import io.dockstore.webservice.core.metrics.ValidationStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ValidatorInfo;
 import io.dockstore.webservice.core.metrics.ValidatorVersionInfo;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
+import io.dockstore.webservice.filters.AdminPrivilegesFilter;
+import io.dockstore.webservice.filters.AuthenticatedUserFilter;
+import io.dockstore.webservice.filters.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
@@ -107,7 +110,6 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
-import io.dockstore.webservice.resources.AdminPrivilegesFilter;
 import io.dockstore.webservice.resources.AliasResource;
 import io.dockstore.webservice.resources.CategoryResource;
 import io.dockstore.webservice.resources.CloudInstanceResource;
@@ -128,7 +130,6 @@ import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.ToolTesterResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.UserResourceDockerRegistries;
-import io.dockstore.webservice.resources.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
@@ -564,6 +565,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new AdminPrivilegesFilter());
 
         environment.jersey().register(new UsernameRenameRequiredFilter());
+
+        environment.jersey().register(new AuthenticatedUserFilter());
 
         // Swagger providers
         environment.jersey().register(SwaggerSerializers.class);

@@ -102,7 +102,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @JsonFilter(PUBLIC_USER_FILTER)
 public class User implements Principal, Comparable<User>, Serializable {
 
-    public static final String INDICATES_WHETHER_THIS_USER_IS_A_CURATOR = "Indicates whether this user is a curator. The value is always false unless fetched via the /users/user endpoint for oneself)";
+    public static final String INDICATES_WHETHER_THIS_USER_IS_A_CURATOR = "Indicates whether this user is a curator. The value is always false unless requested for oneself or by an admin";
     public static final String INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER = "Indicates whether this account corresponds to a platform partner";
 
     @Id
@@ -118,7 +118,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Column
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
-    @Schema(description = "Indicates whether the user is an admin. The value is always false unless fetched via the /users/user endpoint for oneself")
+    @Schema(description = "Indicates whether the user is an admin.  The value is always false unless requested for oneself or by an admin")
     private boolean isAdmin;
 
     @Column(columnDefinition = "boolean default false")

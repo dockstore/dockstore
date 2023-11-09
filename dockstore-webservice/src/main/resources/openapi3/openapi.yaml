@@ -5367,6 +5367,23 @@ paths:
       summary: Search for ToolTester log files
       tags:
       - toolTester
+  /users:
+    get:
+      description: List all users
+      operationId: listUsers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: A list of all users
+      security:
+      - BEARER: []
+      tags:
+      - users
   /users/checkUser/{username}:
     get:
       description: Check if user with some username exists.
@@ -11010,14 +11027,14 @@ components:
         curator:
           type: boolean
           description: Indicates whether this user is a curator. The value is always
-            false unless fetched via the /users/user endpoint for oneself)
+            false unless requested for oneself or by an admin
         id:
           type: integer
           format: int64
         isAdmin:
           type: boolean
-          description: Indicates whether the user is an admin. The value is always
-            false unless fetched via the /users/user endpoint for oneself
+          description: Indicates whether the user is an admin.  The value is always
+            false unless requested for oneself or by an admin
         name:
           type: string
         orcid:

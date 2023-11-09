@@ -175,8 +175,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
 
-    private static final ObjectMapper SELF_OBJECT_MAPPER = initObjectMapper();
-
     @SuppressWarnings("checkstyle:ParameterNumber")
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource,
         DockerRepoResource dockerRepoResource, CachingAuthenticator<String, User> cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
@@ -241,6 +239,19 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
+    @RolesAllowed("admin")
+    @Operation(operationId = "listUsers",
+            description = "List all users",
+            responses = {@ApiResponse(responseCode = HttpStatus.SC_OK + "",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = User.class))), description = "A list of all users")},
+            security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public List<User> listUsers() throws JsonProcessingException {
+        return userDAO.findAll();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
     @Path("/username/{username}")
     @Operation(operationId = "listUser", description = "Get a user by username.")
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A user with the specified username", content = @Content(schema = @Schema(implementation = User.class)))
@@ -261,14 +272,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/user")
-    @Operation(operationId = "getUser", description = "Get the logged-in user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = {@ApiResponse(responseCode = HttpStatus.SC_OK + "", content = @Content(mediaType = MediaType.APPLICATION_JSON, oneOf = @Schema(implementation = User.class)))})
+    @Operation(operationId = "getUser", description = "Get the logged-in user.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "The logged-in user", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiOperation(nickname = "getUser", value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public Response getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user) throws JsonProcessingException {
+    public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         checkNotNullUser(foundUser);
         Hibernate.initialize(foundUser.getUserProfiles());
-        return Response.ok().entity(SELF_OBJECT_MAPPER.writeValueAsString(foundUser)).build();
+        return foundUser;
     }
 
     @GET

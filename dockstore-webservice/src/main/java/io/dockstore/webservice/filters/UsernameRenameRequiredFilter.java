@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 OICR and UCSC
+ * Copyright 2023 OICR and UCSC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.dockstore.webservice.resources;
+package io.dockstore.webservice.filters;
 
 import static io.dockstore.webservice.Constants.USERNAME_CHANGE_REQUIRED;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.resources.UsernameRenameRequired;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ResourceInfo;

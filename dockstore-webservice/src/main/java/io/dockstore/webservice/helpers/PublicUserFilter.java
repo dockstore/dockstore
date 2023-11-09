@@ -22,25 +22,53 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import com.fasterxml.jackson.databind.ser.PropertyWriter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import io.dockstore.webservice.core.AuthenticatedUser;
+import io.dockstore.webservice.core.User;
 
+/**
+ * A Jackson JSON filter that writes out false for the User#isAdmin and User#curator properties, if the requesting user is not an admin and does not
+ * match the user making the request.
+ */
 public class PublicUserFilter extends SimpleBeanPropertyFilter {
 
-    private BeanPropertyWriter propertyWriter = new AdminCuratorPropertyWriter();
+    protected static final String ADMIN_PROPERTY = "isAdmin";
+    protected static final String CURATOR_PROPERTY = "curator";
+    private BeanPropertyWriter maskCuratorAndAdminWriter = new MaskAdminCuratorPropertyWriter();
+
 
     @Override
     public void serializeAsField(Object pojo, JsonGenerator jgen, SerializerProvider provider, PropertyWriter writer) throws Exception {
-        if (writer.getName().equals("isAdmin") || writer.getName().equals("curator")) {
-            super.serializeAsField(pojo, jgen, provider, propertyWriter);
-        }
-        super.serializeAsField(pojo, jgen, provider, writer);
+        User user = (User)pojo;
+        super.serializeAsField(pojo, jgen, provider, getPropertyWriter(user, writer));
     }
 
-    private static class AdminCuratorPropertyWriter extends BeanPropertyWriter {
+    /**
+     * If the user being serialized is not the authenticated user, and the authenticated user is not an admin, return a new PropertyWriter
+     * that always serializes false for isAdmin and curator properties
+     * @param userToSerialize
+     * @param existingWriter
+     * @return
+     */
+    private PropertyWriter getPropertyWriter(User userToSerialize, PropertyWriter existingWriter) {
+        if ((existingWriter.getName().equals(ADMIN_PROPERTY) || existingWriter.getName().equals(CURATOR_PROPERTY)) && !showAdminAndCuratorValues(userToSerialize)) {
+            return maskCuratorAndAdminWriter;
+        }
+        return existingWriter;
+    }
+
+    private boolean showAdminAndCuratorValues(final User toSerialize) {
+        return AuthenticatedUser.getUser().map(authUser -> authUser.getId() == toSerialize.getId() || authUser.getIsAdmin()).orElse(false);
+    }
+
+    /**
+     * Writer that serializes the isAdmin and curator property values as false, regardless of their actual values.
+     */
+    private static class MaskAdminCuratorPropertyWriter extends BeanPropertyWriter {
         @Override
         public void serializeAsField(Object bean, JsonGenerator gen, SerializerProvider prov) throws Exception {
-            gen.writeFieldName("isAdmin");
+            gen.writeFieldName(ADMIN_PROPERTY);
             gen.writeBoolean(false);
-            gen.writeFieldName("curator");
+            gen.writeFieldName(CURATOR_PROPERTY);
             gen.writeBoolean(false);
         }
     }
