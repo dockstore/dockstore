@@ -21,8 +21,6 @@ import io.dockstore.webservice.core.AuthenticatedUser;
 import io.dockstore.webservice.core.User;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.container.ContainerResponseContext;
-import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 
@@ -32,7 +30,7 @@ import java.io.IOException;
  * The standard DropWizard/Jersey way to handle this is to inject the SecurityContext with @Context, but we need this information
  * in the ObjectMapper, and I couldn't figure out a way to inject there.
  */
-public class AuthenticatedUserFilter implements ContainerRequestFilter, ContainerResponseFilter {
+public class AuthenticatedUserFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         AuthenticatedUser.setUser(null);
@@ -40,11 +38,5 @@ public class AuthenticatedUserFilter implements ContainerRequestFilter, Containe
         if (securityContext != null && securityContext.getUserPrincipal() instanceof User user) {
             AuthenticatedUser.setUser(user);
         }
-    }
-
-    @Override
-    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
-        // Remove the ThreadLocal in case Jersey reuses the thread. This was suggested by SonarCloud
-        AuthenticatedUser.remove();
     }
 }

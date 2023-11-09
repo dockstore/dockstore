@@ -33,10 +33,6 @@ public final class AuthenticatedUser {
         AUTH_USER.set(user);
     }
 
-    public static void remove() {
-        AUTH_USER.remove();
-    }
-
     public static Optional<User> getUser() {
         return Optional.ofNullable(AUTH_USER.get());
     }
