@@ -24,8 +24,6 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIM
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.google.common.collect.Lists;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.HttpStatusMessageConstants;
@@ -34,7 +32,6 @@ import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.api.PrivilegeRequest;
@@ -197,19 +194,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.client = client;
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
-    }
-
-    /**
-     * Creates an object mapper for use by
-     * @return
-     */
-    private static ObjectMapper initObjectMapper() {
-        final ObjectMapper objectMapper = new ObjectMapper();
-        DockstoreWebserviceApplication.configureMapper(objectMapper, false);
-        final SimpleFilterProvider simpleFilterProvider = new SimpleFilterProvider();
-        simpleFilterProvider.setFailOnUnknownId(false);
-        objectMapper.setFilterProvider(simpleFilterProvider);
-        return objectMapper;
     }
 
     /**

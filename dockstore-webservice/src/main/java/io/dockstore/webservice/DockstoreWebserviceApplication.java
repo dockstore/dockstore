@@ -266,7 +266,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     @Override
     public void initialize(Bootstrap<DockstoreWebserviceConfiguration> bootstrap) {
 
-        configureMapper(bootstrap.getObjectMapper(), true);
+        configureMapper(bootstrap.getObjectMapper());
 
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
@@ -337,7 +337,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         return new Cache(cacheDir, cacheSize);
     }
 
-    public static void configureMapper(ObjectMapper objectMapper, boolean addFilters) {
+    public static void configureMapper(ObjectMapper objectMapper) {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         objectMapper.registerModule(new Hibernate5JakartaModule());
         objectMapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
@@ -348,16 +348,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // To convert every Date we have to RFC 3339, we can use this
         // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));
 
-        if (addFilters) {
-            // try to set a filter
-            objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(EMAIL_FILTER, new EmailPropertyFilter())
-                    .addFilter(SLIM_ORGANIZATION_FILTER, Organization.SLIM_FILTER)
-                    .addFilter(SLIM_WORKFLOW_FILTER, Workflow.SLIM_FILTER)
-                    .addFilter(SLIM_COLLECTION_FILTER, Collection.SLIM_FILTER)
-                    .addFilter(SLIM_VERSION_FILTER, Version.SLIM_FILTER)
-                    .addFilter(PUBLIC_USER_FILTER, new PublicUserFilter())
-            );
-        }
+        // try to set a filter
+        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(EMAIL_FILTER, new EmailPropertyFilter())
+            .addFilter(SLIM_ORGANIZATION_FILTER, Organization.SLIM_FILTER)
+            .addFilter(SLIM_WORKFLOW_FILTER, Workflow.SLIM_FILTER)
+            .addFilter(SLIM_COLLECTION_FILTER, Collection.SLIM_FILTER)
+            .addFilter(SLIM_VERSION_FILTER, Version.SLIM_FILTER)
+            .addFilter(PUBLIC_USER_FILTER, new PublicUserFilter())
+        );
     }
 
     public static File getFilePluginLocation(DockstoreWebserviceConfiguration configuration) {
