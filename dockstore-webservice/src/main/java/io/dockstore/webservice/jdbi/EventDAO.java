@@ -1,11 +1,16 @@
 package io.dockstore.webservice.jdbi;
 
 import com.google.common.base.MoreObjects;
+import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Event.Builder;
 import io.dockstore.webservice.core.Event.EventType;
+import io.dockstore.webservice.core.Notebook;
 import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dropwizard.hibernate.AbstractDAO;
@@ -109,24 +114,52 @@ public class EventDAO extends AbstractDAO<Event> {
 
     private PredicateBuilder accessPredicateBuilder(User loggedInUser) {
         return (cb, event) -> {
-            // Calculate a predicate representing public access.
-            // Currently, this is all events that don't refer to a "categorizer" organization.
-            Join<Event, Organization> organization = event.join("organization", JoinType.LEFT);
-            Predicate publicPredicate = cb.or(cb.isFalse(organization.get("categorizer")), cb.isNull(organization));
-            // Calculate a predicate representing extra access due to the user's identity.
-            Predicate extraPredicate;
             if (loggedInUser != null && (loggedInUser.getIsAdmin() || loggedInUser.isCurator())) {
-                // Admin or curator, able to access everything.
-                extraPredicate = cb.conjunction();
-            } else if (loggedInUser != null) {
-                // Logged in, able to access events that the user initiated.
-                extraPredicate = event.get("initiatorUser").in(loggedInUser.getId());
-            } else {
-                // Logged out, no extra access.
-                extraPredicate = cb.disjunction();
+                // An admin or curator is able to access everything.
+                return cb.conjunction();
             }
-            // Access is the union of the two predicates.
-            return cb.or(publicPredicate, extraPredicate);
+            // Calculate a predicate representing public access, which, currently, is all events that:
+            // 1) Either:
+            // a) Don't refer to an entry
+            // b) Refer to a published entry, or
+            // c) Are of type PUBLISH_ENTRY or UNPUBLISH_ENTRY or COLLECTION-related events
+            // and
+            // 2) Don't refer to a categorizer organization.
+            Join<Event, Tool> tool = event.join("tool", JoinType.LEFT);
+            Join<Event, BioWorkflow> workflow = event.join("workflow", JoinType.LEFT);
+            Join<Event, AppTool> apptool = event.join("apptool", JoinType.LEFT);
+            Join<Event, Service> service = event.join("service", JoinType.LEFT);
+            Join<Event, Notebook> notebook = event.join("notebook", JoinType.LEFT);
+            Predicate noEntryPredicate = cb.and(
+                cb.isNull(tool),
+                cb.isNull(workflow),
+                cb.isNull(apptool),
+                cb.isNull(service),
+                cb.isNull(notebook)
+            );
+            Predicate publishedEntryPredicate = cb.or(
+                cb.isTrue(tool.get("isPublished")),
+                cb.isTrue(workflow.get("isPublished")),
+                cb.isTrue(apptool.get("isPublished")),
+                cb.isTrue(service.get("isPublished")),
+                cb.isTrue(notebook.get("isPublished"))
+            );
+            Predicate typesPredicate = cb.or(event.get("type").in(Set.of(EventType.PUBLISH_ENTRY, EventType.UNPUBLISH_ENTRY, EventType.CREATE_COLLECTION, EventType.MODIFY_COLLECTION, EventType.DELETE_COLLECTION, EventType.ADD_TO_COLLECTION)));
+            Join<Event, Organization> organization = event.join("organization", JoinType.LEFT);
+            Predicate nonCategorizerPredicate = cb.or(cb.isFalse(organization.get("categorizer")), cb.isNull(organization));
+            Predicate publicPredicate = cb.and(cb.or(noEntryPredicate, publishedEntryPredicate, typesPredicate), nonCategorizerPredicate);
+
+            if (loggedInUser != null) {
+                // The logged-in user can also access events that they initiated or were the subject of.
+                return cb.or(
+                    event.get("initiatorUser").in(loggedInUser.getId()),
+                    event.get("user").in(loggedInUser.getId()),
+                    publicPredicate
+                );
+            } else {
+                // Public access.
+                return publicPredicate;
+            }
         };
     }
 
