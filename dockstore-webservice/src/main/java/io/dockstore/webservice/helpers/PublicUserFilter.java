@@ -44,13 +44,13 @@ public class PublicUserFilter extends SimpleBeanPropertyFilter {
 
     /**
      * If the user being serialized is not the authenticated user, and the authenticated user is not an admin, return a new PropertyWriter
-     * that always serializes false for isAdmin and curator properties
+     * that always serializes false for isAdmin and curator properties.
      * @param userToSerialize
      * @param existingWriter
      * @return
      */
     private PropertyWriter getPropertyWriter(User userToSerialize, PropertyWriter existingWriter) {
-        if ((existingWriter.getName().equals(ADMIN_PROPERTY) || existingWriter.getName().equals(CURATOR_PROPERTY)) && !showAdminAndCuratorValues(userToSerialize)) {
+        if ((ADMIN_PROPERTY.equals(existingWriter.getName()) || CURATOR_PROPERTY.equals(existingWriter.getName())) && !showAdminAndCuratorValues(userToSerialize)) {
             return maskCuratorAndAdminWriter;
         }
         return existingWriter;
@@ -63,7 +63,7 @@ public class PublicUserFilter extends SimpleBeanPropertyFilter {
     /**
      * Writer that serializes the isAdmin and curator property values as false, regardless of their actual values.
      */
-    private static class MaskAdminCuratorPropertyWriter extends BeanPropertyWriter {
+    private static final class MaskAdminCuratorPropertyWriter extends BeanPropertyWriter {
         @Override
         public void serializeAsField(Object bean, JsonGenerator gen, SerializerProvider prov) throws Exception {
             gen.writeFieldName(ADMIN_PROPERTY);

@@ -337,6 +337,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         return new Cache(cacheDir, cacheSize);
     }
 
+    /**
+     * Configures an ObjectMapper.
+     * @param objectMapper
+     */
     public static void configureMapper(ObjectMapper objectMapper) {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         objectMapper.registerModule(new Hibernate5JakartaModule());

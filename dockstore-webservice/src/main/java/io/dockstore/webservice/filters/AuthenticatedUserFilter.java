@@ -35,10 +35,8 @@ public class AuthenticatedUserFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext) throws IOException {
         AuthenticatedUser.setUser(null);
         final SecurityContext securityContext = requestContext.getSecurityContext();
-        if (securityContext != null) {
-            if (securityContext.getUserPrincipal() instanceof User user) {
-                AuthenticatedUser.setUser(user);
-            }
+        if (securityContext != null && securityContext.getUserPrincipal() instanceof User user) {
+            AuthenticatedUser.setUser(user);
         }
     }
 }
