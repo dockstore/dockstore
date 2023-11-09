@@ -144,7 +144,7 @@ public class EventDAO extends AbstractDAO<Event> {
                 cb.isTrue(service.get("isPublished")),
                 cb.isTrue(notebook.get("isPublished"))
             );
-            Predicate typesPredicate = cb.or(event.get("type").in(Set.of(EventType.PUBLISH_ENTRY, EventType.UNPUBLISH_ENTRY, EventType.CREATE_COLLECTION, EventType.MODIFY_COLLECTION, EventType.DELETE_COLLECTION, EventType.ADD_TO_COLLECTION)));
+            Predicate typesPredicate = cb.or(event.get("type").in(Set.of(EventType.PUBLISH_ENTRY, EventType.UNPUBLISH_ENTRY, EventType.CREATE_COLLECTION, EventType.MODIFY_COLLECTION, EventType.DELETE_COLLECTION, EventType.ADD_TO_COLLECTION, EventType.REMOVE_FROM_COLLECTION)));
             Join<Event, Organization> organization = event.join("organization", JoinType.LEFT);
             Predicate nonCategorizerPredicate = cb.or(cb.isFalse(organization.get("categorizer")), cb.isNull(organization));
             Predicate publicPredicate = cb.and(cb.or(noEntryPredicate, publishedEntryPredicate, typesPredicate), nonCategorizerPredicate);
