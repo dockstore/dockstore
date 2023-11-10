@@ -2002,7 +2002,7 @@ class WebhookIT extends BaseIT {
     @Test
     void testLambdaEvents() {
         final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        final UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        final UsersApi usersApi = new UsersApi(webClient);
         final LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
         final List<String> userOrganizations = usersApi.getUserOrganizations("github.com");
         assertTrue(userOrganizations.contains("dockstoretesting")); // Org user is member of
@@ -2018,7 +2018,7 @@ class WebhookIT extends BaseIT {
 
         testingPostgres.runUpdateStatement(
                 "INSERT INTO lambdaevent(dbcreatedate, message, repository, organization, deliveryid) values (CURRENT_TIMESTAMP, 'whatevs', 'dockstore-whalesay-2', 'DockstoreTestUser', '1234')");
-        List<io.dockstore.openapi.client.model.LambdaEvent> events =
+        List<LambdaEvent> events =
                 lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTestUser, 0, 10, null, null, null);
         assertEquals(1, events.size(), "Can see event for repo with access, not one without");
 
