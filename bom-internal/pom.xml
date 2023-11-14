@@ -77,7 +77,7 @@ POM as their parent.
         <scala.version>2.13.9</scala.version>
         <bytebuddy.version>1.14.8</bytebuddy.version>
 <!--        Cromwell versions can be found at https://broadinstitute.jfrog.io/ui/native/libs-release-local/org/broadinstitute/-->
-        <cromwell.version>84</cromwell.version>
+        <cromwell.version>85</cromwell.version>
         <jackson.version>2.15.2</jackson.version>
         <docker-client.version>3.3.0</docker-client.version>
         <system-stubs.version>2.0.1</system-stubs.version>
@@ -196,7 +196,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.typesafe</groupId>
                 <artifactId>config</artifactId>
-                <version>1.4.1</version>
+                <version>1.4.2</version>
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
@@ -221,7 +221,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.chuusai</groupId>
                 <artifactId>shapeless_2.13</artifactId>
-                <version>2.3.7</version>
+                <version>2.3.9</version>
             </dependency>
 
             <dependency>
