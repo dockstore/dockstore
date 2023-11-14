@@ -139,4 +139,23 @@ class EventResourceIT extends BaseIT {
         tags.add(tag);
         return tags;
     }
+
+    @Test
+    void testEventVisibility() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        EventsApi eventsApi = new EventsApi(client);
+
+        // confirm that there are no events visible
+        assertTrue(eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0).isEmpty());
+
+        // create some synthetic events
+        // make sure the workflow is published
+        // TODO
+
+        // unpublish the workflow
+        // related PUBLISH/UNPUBLISH events should still be visible
+        // related ADD_TO_COLLECTION event should still be visible
+        // related ADD_TAG event should not be visible
+        // TODO
+    }
 }
