@@ -420,16 +420,4 @@ class UserResourceOpenApiIT extends BaseIT {
         assertTrue(curatorUsersApi.getUser().isCurator(), "A user should be able to see if they themself is a curator");
     }
 
-    @Test
-    void testListUsers() {
-        UsersApi userApi = new UsersApi(getAnonymousOpenAPIWebClient());
-        assertEquals(HttpStatus.SC_UNAUTHORIZED, assertThrows(ApiException.class, () -> userApi.listUsers()).getCode(), "Anonymous user should not be able to list users");
-
-        final UsersApi curatorUsersApi = new UsersApi(getOpenAPIWebClient(curatorUsername, testingPostgres));
-        assertEquals(HttpStatus.SC_FORBIDDEN, assertThrows(ApiException.class, () -> curatorUsersApi.listUsers()).getCode(), "Curator should not be able to list users");
-
-        final UsersApi adminUsersApi = new UsersApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
-        final List<User> users = adminUsersApi.listUsers();
-        assertFalse(users.isEmpty(), "Admin should be able to fetch users");
-    }
 }

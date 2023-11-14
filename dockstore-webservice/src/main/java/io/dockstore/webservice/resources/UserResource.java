@@ -23,7 +23,6 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIM
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
 import io.dockstore.common.EntryType;
 import io.dockstore.common.HttpStatusMessageConstants;
@@ -218,19 +217,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (checkIncludes(include, USER_PROFILES)) {
             Hibernate.initialize(user.getUserProfiles());
         }
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @RolesAllowed("admin")
-    @Operation(operationId = "listUsers",
-            description = "List all users",
-            responses = {@ApiResponse(responseCode = HttpStatus.SC_OK + "",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = User.class))), description = "A list of all users")},
-            security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    public List<User> listUsers() throws JsonProcessingException {
-        return userDAO.findAll();
     }
 
     @GET
