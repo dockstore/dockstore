@@ -3945,7 +3945,8 @@ paths:
         schema:
           type: integer
           format: int32
-          default: 1000
+          default: 100
+          maximum: 100
       - in: query
         name: filter
         schema:
@@ -4001,6 +4002,7 @@ paths:
           type: integer
           format: int32
           default: 100
+          maximum: 100
       - in: query
         name: filter
         schema:

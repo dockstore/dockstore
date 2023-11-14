@@ -1,5 +1,6 @@
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.resources.ResourceConstants.MAX_PAGINATION_LIMIT;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
@@ -25,6 +26,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.Max;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -67,7 +69,7 @@ public class LambdaEventResource {
     public List<LambdaEvent> getLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @PathParam("organization") String organization,
             @Parameter(description = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") int offset,
-            @Parameter(description = PAGINATION_LIMIT_TEXT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") int limit,
+            @Parameter(description = PAGINATION_LIMIT_TEXT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") @Max(MAX_PAGINATION_LIMIT) int limit,
             @DefaultValue("") @QueryParam("filter") String filter,
             @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
             @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
@@ -95,7 +97,7 @@ public class LambdaEventResource {
     public List<LambdaEvent> getUserLambdaEvents(@Parameter(hidden = true, name = "user")@Auth User authUser,
            @PathParam("userid") long userid,
            @Parameter(description = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") int offset,
-           @Parameter(description = PAGINATION_LIMIT_TEXT) @QueryParam("limit") @DefaultValue("1000") int limit,
+           @Parameter(description = PAGINATION_LIMIT_TEXT) @QueryParam("limit") @DefaultValue(PAGINATION_LIMIT)  @Max(MAX_PAGINATION_LIMIT) int limit,
            @DefaultValue("") @QueryParam("filter") String filter,
            @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
