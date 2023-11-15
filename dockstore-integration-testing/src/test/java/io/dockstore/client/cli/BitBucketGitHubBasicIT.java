@@ -34,6 +34,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -75,7 +76,8 @@ class BitBucketGitHubBasicIT extends BaseIT {
     /**
      * Tests that refresh all works, also that refreshing without a quay.io token should not destroy tools
      */
-    // @Test -- Commented out, see https://ucsc-cgl.atlassian.net/browse/SEAB-6023
+    @Test
+    @Disabled("Quay.io failing, see https://ucsc-cgl.atlassian.net/browse/SEAB-6023")
     void testRefresh() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
