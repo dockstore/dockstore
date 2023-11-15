@@ -35,9 +35,8 @@ public class PublicUserFilter extends SimpleBeanPropertyFilter {
 
     @Override
     public void serializeAsField(Object pojo, JsonGenerator jgen, SerializerProvider provider, PropertyWriter writer) throws Exception {
-        User user = (User)pojo;
         final String fieldName = writer.getName();
-        if (isAdminOrCuratorProperty(fieldName) && !showAdminAndCuratorValues(user)) {
+        if (pojo instanceof User user && isAdminOrCuratorProperty(fieldName) && !showAdminAndCuratorValues(user)) {
             jgen.writeFieldName(fieldName);
             jgen.writeBoolean(false);
         } else {
