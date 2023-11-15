@@ -118,8 +118,8 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         CriteriaQuery<LambdaEvent> query = criteriaQuery();
         Root<LambdaEvent> event = query.from(LambdaEvent.class);
 
-        List<Predicate> initialPredicate = processQuery(filter, sortCol, sortOrder, cb, query, event);
-        setupFindByUserQuery(user, cb, query, initialPredicate, event);
+        List<Predicate> initialPredicates = processQuery(filter, sortCol, sortOrder, cb, query, event);
+        setupFindByUserQuery(user, cb, query, initialPredicates, event);
 
         query.select(event);
 
@@ -163,8 +163,8 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         CriteriaQuery<LambdaEvent> query = criteriaQuery();
         Root<LambdaEvent> event = query.from(LambdaEvent.class);
 
-        List<Predicate> initialPredicate = processQuery(filter, sortCol, sortOrder, cb, query, event);
-        setupFindByOrganizationQuery(organization, repositories, cb, query, initialPredicate, event);
+        List<Predicate> initialPredicates = processQuery(filter, sortCol, sortOrder, cb, query, event);
+        setupFindByOrganizationQuery(organization, repositories, cb, query, initialPredicates, event);
         query.select(event);
 
         TypedQuery<LambdaEvent> typedQuery = currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit);
