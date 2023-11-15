@@ -409,12 +409,13 @@ class UserResourceOpenApiIT extends BaseIT {
     void testAdminAndCuratorFields() throws ApiException {
         UsersApi userApi = new UsersApi(getAnonymousOpenAPIWebClient());
         final User adminUser = userApi.listUser(USER_2_USERNAME, "");
-        assertFalse(adminUser.isIsAdmin(), "Anonymous user should not be able to that user is an admin");
+        assertFalse(adminUser.isIsAdmin(), "Anonymous user should not be able to see that user is an admin");
         final User curatorUser = userApi.listUser(curatorUsername, "");
         assertFalse(curatorUser.isCurator(), "Anonymous user should not be able to see that curator is an admin");
 
         final UsersApi user2UsersApi = new UsersApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
         assertTrue(user2UsersApi.getUser().isIsAdmin(), "A user should be able to see if they themself is an admin");
+        assertTrue(user2UsersApi.listUser(curatorUsername, "").isCurator(), "An admin should be able to see another user is a curator");
 
         final UsersApi curatorUsersApi = new UsersApi(getOpenAPIWebClient(curatorUsername, testingPostgres));
         assertTrue(curatorUsersApi.getUser().isCurator(), "A user should be able to see if they themself is a curator");

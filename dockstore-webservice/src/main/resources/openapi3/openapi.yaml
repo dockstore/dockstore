@@ -5367,23 +5367,6 @@ paths:
       summary: Search for ToolTester log files
       tags:
       - toolTester
-  /users:
-    get:
-      description: List all users
-      operationId: listUsers
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-          description: A list of all users
-      security:
-      - BEARER: []
-      tags:
-      - users
   /users/checkUser/{username}:
     get:
       description: Check if user with some username exists.
