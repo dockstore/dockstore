@@ -25,7 +25,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "cpu_metric")
 @ApiModel(value = "CpuMetric", description = "This describes aggregated CPU metrics for workflow executions.")
-@Schema(name = "CpuMetric", description = "This describes aggregated CPU metrics for workflow executions.", allOf = StatisticMetric.class)
+@Schema(name = "CpuMetric", description = "This describes aggregated CPU metrics for workflow executions.")
 public class CpuStatisticMetric extends StatisticMetric {
     public CpuStatisticMetric() {
     }

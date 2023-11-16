@@ -376,21 +376,21 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         final double max = 3.0;
         final double average = 2.0;
         final int numberOfDataPointsForAverage = 3;
-        ExecutionTimeMetric executionTimeMetric = new ExecutionTimeMetric();
-        executionTimeMetric.setMinimum(min);
-        executionTimeMetric.setMaximum(max);
-        executionTimeMetric.setAverage(average);
-        executionTimeMetric.setNumberOfDataPointsForAverage(numberOfDataPointsForAverage);
-        CpuMetric cpuMetric = new CpuMetric();
-        cpuMetric.setMinimum(min);
-        cpuMetric.setMaximum(max);
-        cpuMetric.setAverage(average);
-        cpuMetric.setNumberOfDataPointsForAverage(numberOfDataPointsForAverage);
-        MemoryMetric memoryMetric = new MemoryMetric();
-        memoryMetric.setMinimum(min);
-        memoryMetric.setMaximum(max);
-        memoryMetric.setAverage(average);
-        memoryMetric.setNumberOfDataPointsForAverage(numberOfDataPointsForAverage);
+        ExecutionTimeMetric executionTimeMetric = new ExecutionTimeMetric()
+                .minimum(min)
+                .maximum(max)
+                .average(average)
+                .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
+        CpuMetric cpuMetric = new CpuMetric()
+                .minimum(min)
+                .maximum(max)
+                .average(average)
+                .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
+        MemoryMetric memoryMetric = new MemoryMetric()
+                .minimum(min)
+                .maximum(max)
+                .average(average)
+                .numberOfDataPointsForAverage(numberOfDataPointsForAverage);
         Metrics metrics = new Metrics()
                 .executionStatusCount(executionStatusMetric)
                 .executionTime(executionTimeMetric)
