@@ -8728,35 +8728,17 @@ components:
           example: 5.99
     CostMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/StatisticMetric'
+      - type: object
+        properties:
+          unit:
+            type: string
+            default: USD
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated cost metrics for workflow executions
         in USD.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          default: USD
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -8764,33 +8746,9 @@ components:
       - numberOfDataPointsForAverage
     CpuMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/StatisticMetric'
       description: This describes aggregated CPU metrics for workflow executions.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -9348,35 +9306,17 @@ components:
       - numberOfSuccessfulExecutions
     ExecutionTimeMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/StatisticMetric'
+      - type: object
+        properties:
+          unit:
+            type: string
+            default: s
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated execution time metrics in seconds for
         workflow executions.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          default: s
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -9746,35 +9686,17 @@ components:
           format: int32
     MemoryMetric:
       type: object
+      allOf:
+      - $ref: '#/components/schemas/StatisticMetric'
+      - type: object
+        properties:
+          unit:
+            type: string
+            default: GB
+            description: The unit of the data points
+            readOnly: true
       description: This describes aggregated memory metrics for workflow executions
         in GB.
-      properties:
-        average:
-          type: number
-          format: double
-          description: The average value from the data points
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for statistical metrics in this
-            webservice
-        maximum:
-          type: number
-          format: double
-          description: The maximum value from the data points
-        minimum:
-          type: number
-          format: double
-          description: The minimum value from the data points
-        numberOfDataPointsForAverage:
-          type: integer
-          format: int32
-          description: The number of data points used to calculate the average
-        unit:
-          type: string
-          default: GB
-          description: The unit of the data points
-          readOnly: true
       required:
       - average
       - maximum
@@ -10302,6 +10224,40 @@ components:
       properties:
         star:
           type: boolean
+    StatisticMetric:
+      type: object
+      description: Statistic metrics
+      properties:
+        average:
+          type: number
+          format: double
+          description: The average value from the data points
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for statistical metrics in this
+            webservice
+        maximum:
+          type: number
+          format: double
+          description: The maximum value from the data points
+        minimum:
+          type: number
+          format: double
+          description: The minimum value from the data points
+        numberOfDataPointsForAverage:
+          type: integer
+          format: int32
+          description: The number of data points used to calculate the average
+        unit:
+          type: string
+          description: The unit of the data points
+          readOnly: true
+      required:
+      - average
+      - maximum
+      - minimum
+      - numberOfDataPointsForAverage
     TRSService:
       type: object
       description: GA4GH service

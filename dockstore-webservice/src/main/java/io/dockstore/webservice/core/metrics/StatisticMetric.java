@@ -37,6 +37,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Schema(description = "Statistic metrics", subTypes = { ExecutionTimeStatisticMetric.class, CpuStatisticMetric.class, MemoryStatisticMetric.class, CostStatisticMetric.class })
 public abstract class StatisticMetric {
 
     @Id

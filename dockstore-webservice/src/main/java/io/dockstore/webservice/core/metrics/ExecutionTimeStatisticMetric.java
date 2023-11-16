@@ -30,7 +30,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "execution_time_metric")
 @ApiModel(value = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in seconds for workflow executions.")
-@Schema(name = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in seconds for workflow executions.")
+@Schema(name = "ExecutionTimeMetric", description = "This describes aggregated execution time metrics in seconds for workflow executions.", allOf = StatisticMetric.class)
 public class ExecutionTimeStatisticMetric extends StatisticMetric {
     public static final String UNIT = "s"; // Store in seconds
 

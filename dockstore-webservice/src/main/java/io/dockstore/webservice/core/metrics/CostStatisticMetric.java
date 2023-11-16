@@ -25,7 +25,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "cost_metric")
-@Schema(name = "CostMetric", description = "This describes aggregated cost metrics for workflow executions in USD.")
+@Schema(name = "CostMetric", description = "This describes aggregated cost metrics for workflow executions in USD.", allOf = StatisticMetric.class)
 public class CostStatisticMetric extends StatisticMetric {
     public static final String UNIT = "USD";
 
