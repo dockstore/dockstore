@@ -59,7 +59,6 @@ import jakarta.ws.rs.ext.Provider;
         @Tag(name = "hosted", description = ResourceConstants.HOSTED),
         @Tag(name = "users", description = ResourceConstants.USERS),
         @Tag(name = "metadata", description = ResourceConstants.METADATA)},
-    security = {@SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME)},
     servers = {@Server(url = "/api", description = "Current server when hosted on AWS"), @Server(url = "/", description = "When working locally"), @Server(url = "https://dockstore.org/api", description = "Production server"), @Server(url = "https://staging.dockstore.org/api", description = "Staging server"), @Server(url = "https://dev.dockstore.net/api", description = "Nightly build server")},
     info = @Info(description = Description.DESCRIPTION, version = "1.15.0-SNAPSHOT", title = "Dockstore API", contact = @Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = Description.TOS_LOCATION)
 )
