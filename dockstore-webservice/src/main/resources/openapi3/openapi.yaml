@@ -7290,7 +7290,6 @@ paths:
         schema:
           type: string
           enum:
-          - dockstore.org
           - github.com
           - bitbucket.org
           - gitlab.com

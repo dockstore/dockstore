@@ -2001,7 +2001,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "addWorkflow", description = "Adds a workflow for a registry and repository path with defaults set.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public BioWorkflow addWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
-        @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
+        @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH, schema = @Schema(type = "string", allowableValues = { "github.com", "bitbucket.org", "gitlab.com" })) @PathParam("gitRegistry") SourceControl gitRegistry,
         @Parameter(name = "organization", description = "Git repository organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization,
         @Parameter(name = "repositoryName", description = "Git repository name", required = true, in = ParameterIn.PATH) @PathParam("repositoryName") String repositoryName) {
         User foundUser = userDAO.findById(authUser.getId());
