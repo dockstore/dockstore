@@ -1,6 +1,7 @@
 package io.dockstore.client.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -17,6 +18,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EventsApi;
+import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Event;
 import io.swagger.client.model.Event.TypeEnum;
@@ -144,18 +146,47 @@ class EventResourceIT extends BaseIT {
     void testEventVisibility() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         EventsApi eventsApi = new EventsApi(client);
+        ContainersApi toolsApi = new ContainersApi(client);
+        OrganizationsApi organizationsApi = new OrganizationsApi(client);
+        ApiClient otherClient = getWebClient(OTHER_USERNAME, testingPostgres);
+        EventsApi otherEventsApi = new EventsApi(otherClient);
+        long creatorId = 1;
+        long entryId = 1;
+        long versionId = 6;
+        long eventId = 1234;
 
         // confirm that there are no events visible
-        assertTrue(eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0).isEmpty());
+        assertTrue(eventsApi.getUserEvents(creatorId, EventSearchType.PROFILE.toString(), 10, 0).isEmpty());
 
-        // create some synthetic events
-        // make sure the workflow is published
-        // TODO
+        // publish the entry and confirm it is published
+        toolsApi.publish(entryId, CommonTestUtilities.createPublishRequest(true));
+        assertTrue(toolsApi.getContainer(entryId, null).isIsPublished());
+
+        // create a collection and add the entry to it
+        long organizationId = OrganizationIT.createOrg(organizationsApi).getId();
+        long collectionId = organizationsApi.createCollection(organizationId, OrganizationIT.stubCollectionObject()).getId();
+        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null);
+
+        // create a synthetic "ADD_VERSION_TO_ENTRY" event
+        testingPostgres.runUpdateStatement(String.format("insert into event (id, initiatorUserId, type, toolId, versionId) values (%d, %d, '%s', %d, %d)", eventId++, creatorId, TypeEnum.ADD_VERSION_TO_ENTRY, entryId, versionId));
+
+        // at this point, there should be one event of each of the following types:
+        // PUBLISH_ENTRY, CREATE_ORG, CREATE_COLLECTION, ADD_ENTRY_TO_COLLECTION, and ADD_VERSION_TO_ENTRY event
+
+        // check event visibility to initiator and others
+        // since the entry is published, all events should be visible to everyone
+        assertEquals(5, eventsApi.getUserEvents(creatorId, EventSearchType.PROFILE.toString(), 10, 0).size());
+        assertEquals(5, otherEventsApi.getUserEvents(creatorId, EventSearchType.PROFILE.toString(), 10, 0).size());
+        assertTrue(otherEventsApi.getUserEvents(creatorId, EventSearchType.PROFILE.toString(), 10, 0).stream().anyMatch(e -> TypeEnum.ADD_VERSION_TO_ENTRY.equals(e.getType())));
 
         // unpublish the workflow
-        // related PUBLISH/UNPUBLISH events should still be visible
-        // related ADD_TO_COLLECTION event should still be visible
-        // related ADD_TAG event should not be visible
-        // TODO
+        // adds an UNPUBLISH_ENTRY event
+        toolsApi.publish(entryId, CommonTestUtilities.createPublishRequest(false));
+
+        // check event visibility to initiator and others
+        // since the entry is not published, the ADD_VERSION_TO_ENTRY event should no longer be visible to others
+        assertEquals(6, eventsApi.getUserEvents(creatorId, EventSearchType.PROFILE.toString(), 10, 0).size());
+        assertEquals(5, otherEventsApi.getUserEvents(creatorId, EventSearchType.PROFILE.toString(), 10, 0).size());
+        assertFalse(otherEventsApi.getUserEvents(creatorId, EventSearchType.PROFILE.toString(), 10, 0).stream().anyMatch(e -> TypeEnum.ADD_VERSION_TO_ENTRY.equals(e.getType())));
     }
 }
