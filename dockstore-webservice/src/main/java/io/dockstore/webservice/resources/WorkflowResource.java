@@ -161,6 +161,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
     public static final String NO_ZENDO_USER_TOKEN = "Could not get Zenodo token for user";
     public static final String SC_REGISTRY_ACCESS_MESSAGE = "User does not have access to the given source control registry.";
+    public static final String SC_HOSTED_NOT_SUPPORTED_MESSAGE = "This operation is not supported on hosted workflows.";
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
@@ -2056,6 +2057,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH, schema = @Schema(type = "string", allowableValues = { "github.com", "bitbucket.org", "gitlab.com" })) @PathParam("gitRegistry") SourceControl gitRegistry,
         @Parameter(name = "organization", description = "Git repository organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization,
         @Parameter(name = "repositoryName", description = "Git repository name", required = true, in = ParameterIn.PATH) @PathParam("repositoryName") String repositoryName) {
+        if (gitRegistry == SourceControl.DOCKSTORE) {
+            LOG.error(SC_HOSTED_NOT_SUPPORTED_MESSAGE);
+            throw new CustomWebApplicationException(SC_HOSTED_NOT_SUPPORTED_MESSAGE, HttpStatus.SC_BAD_REQUEST);
+        }
+
         User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens
