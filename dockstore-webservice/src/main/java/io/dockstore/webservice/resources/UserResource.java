@@ -229,7 +229,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Get a user by username.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User listUser(@ApiParam("Username of user to return") @PathParam("username") @NotBlank String username,
-        @Parameter(name = "include", description = USER_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = USER_INCLUDE_MESSAGE) @QueryParam("include") String include) {
+        @Parameter(name = "include", description = USER_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = USER_INCLUDE_MESSAGE) @QueryParam("include") String include,
+        // authUser isn't used here, but don't remove; needed to trigger AuthenticatedUserFilter
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> authUser) {
         @SuppressWarnings("deprecation")
         User user = userDAO.findByUsername(username);
         checkNotNullUser(user);
@@ -1194,10 +1196,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @QueryParam("offset") Integer offset,
-            @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+            @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @DefaultValue("") @QueryParam("filter") String filter,
+            @DefaultValue("dbCreateDate") @QueryParam("sortCol") String sortCol,
+            @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder) {
         final User user = userDAO.findById(authUser.getId());
         checkNotNullUser(user);
-        return lambdaEventDAO.findByUser(user, offset, limit);
+        return lambdaEventDAO.findByUser(user, offset, limit, filter, sortCol, sortOrder);
     }
 
     @GET

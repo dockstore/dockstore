@@ -30,8 +30,6 @@ servers:
 - description: Nightly build server
   url: https://dev.dockstore.net/api
   variables: {}
-security:
-- BEARER: []
 tags:
 - description: "Create, update list aliases for accessing entries"
   name: aliases
@@ -3929,18 +3927,39 @@ paths:
         schema:
           type: integer
           format: int64
-      - in: query
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
         name: offset
         schema:
           type: integer
           format: int32
           default: 0
-      - in: query
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
         name: limit
         schema:
           type: integer
           format: int32
-          default: 1000
+          default: 100
+          maximum: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         default:
           content:
@@ -3964,17 +3983,39 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
         name: offset
         schema:
-          type: string
-          default: "0"
-      - in: query
+          type: integer
+          format: int32
+          default: 0
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+          maximum: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         default:
           content:
@@ -5504,6 +5545,21 @@ paths:
           type: integer
           format: int32
           default: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         "200":
           content:
@@ -11029,12 +11085,15 @@ components:
           type: string
         curator:
           type: boolean
-          description: Indicates whether this user is a curator
+          description: Indicates whether this user is a curator. The value is always
+            false unless requested for oneself or by an admin
         id:
           type: integer
           format: int64
         isAdmin:
           type: boolean
+          description: Indicates whether the user is an admin.  The value is always
+            false unless requested for oneself or by an admin
         name:
           type: string
         orcid:

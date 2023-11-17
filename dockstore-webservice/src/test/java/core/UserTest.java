@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.FixtureUtility;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.jackson.Jackson;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,10 @@ import org.junit.jupiter.api.Test;
  */
 class UserTest {
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
+
+    static {
+        DockstoreWebserviceApplication.configureMapper(MAPPER);
+    }
 
     private User getUser() {
         final User user = new User();
