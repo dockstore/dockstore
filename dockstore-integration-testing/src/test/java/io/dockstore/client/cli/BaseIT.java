@@ -273,7 +273,7 @@ public class BaseIT {
 
 
 
-    final String curatorUsername = "curator@curator.com";
+    protected final String curatorUsername = "curator@curator.com";
 
     @BeforeAll
     public static void dropAndRecreateDB() throws Exception {

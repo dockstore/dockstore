@@ -79,6 +79,9 @@ import io.dockstore.webservice.core.metrics.ValidationStatusCountMetric;
 import io.dockstore.webservice.core.metrics.ValidatorInfo;
 import io.dockstore.webservice.core.metrics.ValidatorVersionInfo;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
+import io.dockstore.webservice.filters.AdminPrivilegesFilter;
+import io.dockstore.webservice.filters.AuthenticatedUserFilter;
+import io.dockstore.webservice.filters.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
@@ -88,6 +91,7 @@ import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.PublicUserFilter;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
@@ -106,7 +110,6 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
-import io.dockstore.webservice.resources.AdminPrivilegesFilter;
 import io.dockstore.webservice.resources.AliasResource;
 import io.dockstore.webservice.resources.CategoryResource;
 import io.dockstore.webservice.resources.CloudInstanceResource;
@@ -127,7 +130,6 @@ import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.ToolTesterResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.UserResourceDockerRegistries;
-import io.dockstore.webservice.resources.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
@@ -213,7 +215,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String SLIM_WORKFLOW_FILTER = "slimWorkflowFilter";
     public static final String SLIM_VERSION_FILTER = "slimVersionFilter";
 
-    public static final String SLIM_USER_FILTER = "slimUserFilter";
+    public static final String PUBLIC_USER_FILTER = "publicUserFilter";
 
 
     private static OkHttpClient okHttpClient = null;
@@ -335,7 +337,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         return new Cache(cacheDir, cacheSize);
     }
 
-    private static void configureMapper(ObjectMapper objectMapper) {
+    /**
+     * Configures an ObjectMapper.
+     * @param objectMapper
+     */
+    public static void configureMapper(ObjectMapper objectMapper) {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         objectMapper.registerModule(new Hibernate5JakartaModule());
         objectMapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
@@ -349,10 +355,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // try to set a filter
         objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(EMAIL_FILTER, new EmailPropertyFilter())
             .addFilter(SLIM_ORGANIZATION_FILTER, Organization.SLIM_FILTER)
-            .addFilter(SLIM_USER_FILTER, User.SLIM_FILTER)
             .addFilter(SLIM_WORKFLOW_FILTER, Workflow.SLIM_FILTER)
             .addFilter(SLIM_COLLECTION_FILTER, Collection.SLIM_FILTER)
             .addFilter(SLIM_VERSION_FILTER, Version.SLIM_FILTER)
+            .addFilter(PUBLIC_USER_FILTER, new PublicUserFilter())
         );
     }
 
@@ -561,6 +567,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new AdminPrivilegesFilter());
 
         environment.jersey().register(new UsernameRenameRequiredFilter());
+
+        environment.jersey().register(new AuthenticatedUserFilter());
 
         // Swagger providers
         environment.jersey().register(SwaggerSerializers.class);
