@@ -89,7 +89,6 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
                 } else {
                     query.orderBy(cb.desc(sortPath), cb.desc(event.get("id")));
                 }
-                predicates.add(sortPath.isNotNull());
             }
         }
         return predicates;
