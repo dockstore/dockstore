@@ -64,6 +64,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
                     createNotNullLikeCriteria("githubUsername", filter, cb, event),
                     createNotNullLikeCriteria("repository", filter, cb, event),
                     createNotNullLikeCriteria("type", filter, cb, event),
+                    createNotNullLikeCriteria("entryName", filter, cb, event),
                     createNotNullLikeCriteria("reference", filter, cb, event),
                     createNotNullLikeCriteria("deliveryId", filter, cb, event)
                 )
@@ -89,7 +90,6 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
                 } else {
                     query.orderBy(cb.desc(sortPath), cb.desc(event.get("id")));
                 }
-                predicates.add(sortPath.isNotNull());
             }
         }
         return predicates;
