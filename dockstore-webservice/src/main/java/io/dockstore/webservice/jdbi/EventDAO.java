@@ -30,6 +30,7 @@ public class EventDAO extends AbstractDAO<Event> {
     public static final int MAX_LIMIT = 100;
     public static final int DEFAULT_LIMIT = 10;
     public static final String PAGINATION_RANGE = "range[1,100]";
+    private static final String IS_PUBLISHED = "isPublished";
 
     public EventDAO(SessionFactory factory) {
         super(factory);
@@ -138,11 +139,11 @@ public class EventDAO extends AbstractDAO<Event> {
                 cb.isNull(notebook)
             );
             Predicate publishedEntryPredicate = cb.or(
-                cb.isTrue(tool.get("isPublished")),
-                cb.isTrue(workflow.get("isPublished")),
-                cb.isTrue(apptool.get("isPublished")),
-                cb.isTrue(service.get("isPublished")),
-                cb.isTrue(notebook.get("isPublished"))
+                cb.isTrue(tool.get(IS_PUBLISHED)),
+                cb.isTrue(workflow.get(IS_PUBLISHED)),
+                cb.isTrue(apptool.get(IS_PUBLISHED)),
+                cb.isTrue(service.get(IS_PUBLISHED)),
+                cb.isTrue(notebook.get(IS_PUBLISHED))
             );
             Predicate typesPredicate = cb.or(event.get("type").in(Set.of(EventType.PUBLISH_ENTRY, EventType.UNPUBLISH_ENTRY, EventType.CREATE_COLLECTION, EventType.MODIFY_COLLECTION, EventType.DELETE_COLLECTION, EventType.ADD_TO_COLLECTION, EventType.REMOVE_FROM_COLLECTION)));
             Join<Event, Organization> organization = event.join("organization", JoinType.LEFT);
