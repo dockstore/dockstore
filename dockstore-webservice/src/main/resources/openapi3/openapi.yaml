@@ -2941,6 +2941,26 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/{alias}/aliases:
+    get:
+      description: Retrieves an entry by alias.
+      operationId: getEntryByAlias
+      parameters:
+      - description: Alias
+        in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully retrieved entry
+      tags:
+      - entries
   /entries/{entryId}/exportToOrcid:
     post:
       description: Export entry to ORCID. DOI is required
