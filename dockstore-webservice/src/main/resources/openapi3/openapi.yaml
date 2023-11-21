@@ -11876,6 +11876,10 @@ components:
     WorkflowVersionPathInfo:
       type: object
       properties:
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         fullWorkflowPath:
           type: string
         tagName:
