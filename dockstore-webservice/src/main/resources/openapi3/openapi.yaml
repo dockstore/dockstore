@@ -9452,6 +9452,12 @@ components:
           description: List of workflow run executions to submit
           items:
             $ref: '#/components/schemas/RunExecution'
+        taskExecutions:
+          type: array
+          description: List of task run executions to submit. Each TaskExecution represents
+            the tasks executed during a workflow execution.
+          items:
+            $ref: '#/components/schemas/TaskExecutions'
         validationExecutions:
           type: array
           description: List of workflow validation executions to submit
@@ -9460,6 +9466,7 @@ components:
       required:
       - aggregatedExecutions
       - runExecutions
+      - taskExecutions
       - validationExecutions
     ExtendedUserData:
       type: object
@@ -10211,7 +10218,7 @@ components:
             type: string
             description: The region the workflow was executed in
             example: us-central1
-      description: Metrics of a workflow execution on a platform
+      description: Metrics of an execution on a platform
       required:
       - dateExecuted
       - executionStatus
@@ -10572,6 +10579,17 @@ components:
       required:
       - name
       - reference
+    TaskExecutions:
+      type: object
+      description: Metrics of individual tasks that were executed during the workflow
+        execution.
+      properties:
+        taskExecutions:
+          type: array
+          description: Metrics of individual tasks that were executed during the workflow
+            execution.
+          items:
+            $ref: '#/components/schemas/RunExecution'
     Token_Auth:
       type: object
       properties:

@@ -36,6 +36,11 @@ public class ExecutionsRequestBody {
 
     @NotNull
     @Valid
+    @Schema(description = "List of task run executions to submit. Each TaskExecution represents the tasks executed during a workflow execution.")
+    private List<TaskExecutions> taskExecutions = new ArrayList<>();
+
+    @NotNull
+    @Valid
     @Schema(description = "List of workflow validation executions to submit")
     private List<ValidationExecution> validationExecutions = new ArrayList<>();
 
@@ -54,6 +59,14 @@ public class ExecutionsRequestBody {
 
     public void setRunExecutions(List<RunExecution> runExecutions) {
         this.runExecutions = runExecutions;
+    }
+
+    public List<TaskExecutions> getTaskExecutions() {
+        return taskExecutions;
+    }
+
+    public void setTaskExecutions(List<TaskExecutions> taskExecutions) {
+        this.taskExecutions = taskExecutions;
     }
 
     public List<ValidationExecution> getValidationExecutions() {
