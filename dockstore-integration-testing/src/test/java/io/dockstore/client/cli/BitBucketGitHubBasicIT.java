@@ -57,6 +57,7 @@ class BitBucketGitHubBasicIT extends BaseIT {
     public final SystemOut systemOut = new SystemOut();
     @SystemStub
     public final SystemErr systemErr = new SystemErr();
+    protected static final String DOCKSTORE_TEST_USER_QUAY_NAMESPACE = "dockstoretestuser"; // Case-sensitive for quay! See SEAB-6023
 
     @BeforeEach
     @Override
@@ -82,7 +83,7 @@ class BitBucketGitHubBasicIT extends BaseIT {
 
         final long startToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         // should have 0 tools to start with
-        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", "quayandbitbucket");
+        usersApi.refreshToolsByOrganization((long)1, DOCKSTORE_TEST_USER_QUAY_NAMESPACE, "quayandbitbucket");
         // should have a certain number of tools based on github contents
         final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         assertTrue(startToolCount <= secondToolCount && secondToolCount > 1);
@@ -92,7 +93,7 @@ class BitBucketGitHubBasicIT extends BaseIT {
 
         // refresh
         try {
-            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", "quayandbitbucket");
+            usersApi.refreshToolsByOrganization((long)1, DOCKSTORE_TEST_USER_QUAY_NAMESPACE, "quayandbitbucket");
             fail("Refresh should fail");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Please add a Quay.io token"), "Should see error message since user has Quay tools but no Quay token.");
