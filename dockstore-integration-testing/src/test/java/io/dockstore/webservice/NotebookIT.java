@@ -55,6 +55,7 @@ import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.jdbi.NotebookDAO;
@@ -291,6 +292,22 @@ class NotebookIT extends BaseIT {
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertEquals("quay.io/seqware/seqware_full/1.1", notebook.getWorkflowVersions().get(0).getKernelImagePath());
+    }
+
+    @Test
+    void testUpdate() {
+        final String aiTopic = "An AI made this.";
+        final TopicSelectionEnum aiSelection = TopicSelectionEnum.AI;
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + simpleRepo, WorkflowSubClass.NOTEBOOK, "versions");
+        notebook.setTopicSelection(aiSelection);
+        notebook.setTopicAI(aiTopic);
+        workflowsApi.updateWorkflow(notebook.getId(), notebook);
+        Workflow updatedNotebook = workflowsApi.getWorkflow(notebook.getId(), null);
+        assertEquals(aiSelection, updatedNotebook.getTopicSelection());
+        assertEquals(aiTopic, updatedNotebook.getTopicAI());
     }
 
     @Test

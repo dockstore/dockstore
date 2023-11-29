@@ -72,7 +72,10 @@ public class Service extends Workflow {
 
     @Override
     public void setParentEntry(Entry<?, ?> parentEntry) {
-        throw new UnsupportedOperationException("cannot add a checker workflow to a Service");
+        if (parentEntry == null) {
+            return;
+        }
+        throw new UnsupportedOperationException("Service cannot be a checker workflow");
     }
 
     @Override
@@ -82,7 +85,10 @@ public class Service extends Workflow {
 
     @Override
     public void setIsChecker(boolean isChecker) {
-        throw new UnsupportedOperationException("cannot add a checker workflow to a Service");
+        if (!isChecker) {
+            return;
+        }
+        throw new UnsupportedOperationException("Service cannot be a checker workflow");
     }
 
     @Transient

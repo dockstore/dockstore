@@ -72,8 +72,11 @@ public class Notebook extends Workflow {
     }
 
     @Override
-    public void setParentEntry(Entry parentEntry) {
-        throw new UnsupportedOperationException("cannot add a checker workflow to a Notebook");
+    public void setParentEntry(Entry<?, ?> parentEntry) {
+        if (parentEntry == null) {
+            return;
+        }
+        throw new UnsupportedOperationException("Notebook cannot be a checker workflow");
     }
 
     @Override
@@ -83,7 +86,10 @@ public class Notebook extends Workflow {
 
     @Override
     public void setIsChecker(boolean isChecker) {
-        throw new UnsupportedOperationException("cannot add a checker workflow to a Notebook");
+        if (!isChecker) {
+            return;
+        }
+        throw new UnsupportedOperationException("Notebook cannot be a checker workflow");
     }
 
     @Transient
