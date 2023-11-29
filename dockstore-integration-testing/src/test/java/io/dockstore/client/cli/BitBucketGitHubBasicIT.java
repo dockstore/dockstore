@@ -77,7 +77,6 @@ class BitBucketGitHubBasicIT extends BaseIT {
      * Tests that refresh all works, also that refreshing without a quay.io token should not destroy tools
      */
     @Test
-    @Disabled("Quay.io failing, see https://ucsc-cgl.atlassian.net/browse/SEAB-6023")
     void testRefresh() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
