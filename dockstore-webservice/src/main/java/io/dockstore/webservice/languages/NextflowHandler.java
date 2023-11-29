@@ -636,10 +636,10 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                     continue;
                 }
                 GroovySourceAST containerAST = getFirstAstWithKeyword(processAST, "container", false);
-                String containerName = ObjectUtils.firstNonNull(
-                    getText(getFirstChild(getNextSibling(containerAST))),
-                    getText(getNextSibling(containerAST)),
-                    defaultContainer);
+                // A "container" directive parses as a "container" node followed by an ELIST sibling
+                // The first child of the ELIST contains the container name (image reference)
+                // https://www.nextflow.io/docs/latest/process.html#containeroptions
+                String containerName = ObjectUtils.firstNonNull(getText(getFirstChild(getNextSibling(containerAST))), defaultContainer);
 
                 if (containerName != null) {
                     if (containerName.startsWith("$")) { // Parameterized container name
@@ -657,27 +657,15 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     }
 
     private AST getNextSibling(AST ast) {
-        if (ast != null) {
-            return ast.getNextSibling();
-        } else {
-            return null;
-        }
+        return (ast != null) ? ast.getNextSibling() : null;
     }
 
     private AST getFirstChild(AST ast) {
-        if (ast != null) {
-            return ast.getFirstChild();
-        } else {
-            return null;
-        }
+        return (ast != null) ? ast.getFirstChild() : null;
     }
 
     private String getText(AST ast) {
-        if (ast != null) {
-            return ast.getText();
-        } else {
-            return null;
-        }
+        return (ast != null) ? ast.getText() : null;
     }
 
     /**
