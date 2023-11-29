@@ -18,7 +18,10 @@
 package io.dockstore.client.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.dockstore.client.cli.BaseIT.TestStatus;
 import io.dockstore.common.CommonTestUtilities;
@@ -28,13 +31,20 @@ import io.dockstore.common.MuteForSuccessfulTests;
 import io.dockstore.common.Registry;
 import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.ContainersApi;
+import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.HostedApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.DockstoreTool.TopicSelectionEnum;
+import io.dockstore.openapi.client.model.Entry;
+import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import org.hibernate.Session;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -163,5 +173,71 @@ class OpenAPIGeneralIT extends BaseIT {
         dockstoreTool = toolsApi.updateContainer(toolTest.getId(), toolTest);
         assertEquals("AI topic", dockstoreTool.getTopicAI());
         assertEquals(TopicSelectionEnum.AI, dockstoreTool.getTopicSelection());
+    }
+
+    /**
+     * This tests that you can retrieve tools by alias (using optional auth)
+     */
+    @Test
+    void testToolAlias() {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi containersApi = new ContainersApi(webClient);
+        EntriesApi entriesApi = new EntriesApi(webClient);
+
+        final ApiClient anonWebClient = CommonTestUtilities.getOpenAPIWebClient(false, null, testingPostgres);
+        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
+        EntriesApi anonEntriesApi = new EntriesApi(anonWebClient);
+
+        final ApiClient otherUserWebClient = CommonTestUtilities.getOpenAPIWebClient(true, OTHER_USERNAME, testingPostgres);
+        ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
+        EntriesApi otherUserEntriesApi = new EntriesApi(otherUserWebClient);
+
+        // Add tool
+        DockstoreTool tool = containersApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
+        DockstoreTool refresh = containersApi.refresh(tool.getId());
+
+        // Add alias
+        Entry entry = entriesApi.addAliases1(refresh.getId(), "foobar");
+        assertTrue(entry.getAliases().containsKey("foobar"), "Should have alias foobar");
+
+        // Check that dates are present
+        final Timestamp dbDate = testingPostgres.runSelectStatement("select dbcreatedate from entry_alias where id = " + entry.getId(), Timestamp.class);
+        assertNotNull(dbDate);
+        // Check that date looks sane
+        final Calendar instance = GregorianCalendar.getInstance();
+        instance.set(2020, Calendar.MARCH, 13);
+        assertTrue(dbDate.after(instance.getTime()));
+
+        // Can get unpublished tool by alias as owner
+        assertNotNull(entriesApi.getEntryByAlias("foobar"), "Should retrieve the tool by alias");
+
+        // Cannot get unpublished tool by alias as other user
+        try {
+            otherUserEntriesApi.getEntryByAlias("foobar");
+            fail("Should not be able to retrieve tool.");
+        } catch (ApiException ignored) {
+            assertTrue(true);
+        }
+
+        // Cannot get unpublished tool by alias as anon user
+        try {
+            anonEntriesApi.getEntryByAlias("foobar");
+            fail("Should not be able to retrieve tool.");
+        } catch (ApiException ignored) {
+            assertTrue(true);
+        }
+
+        // Publish tool
+        PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
+        containersApi.publish(refresh.getId(), publishRequest);
+
+        // Can get published tool by alias as owner
+        assertNotNull(entriesApi.getEntryByAlias("foobar"), "Should retrieve the tool by alias");
+
+        // Can get published tool by alias as other user
+        assertNotNull(otherUserEntriesApi.getEntryByAlias("foobar"), "Should retrieve the tool by alias");
+
+        // Can get published tool by alias as anon user
+        assertNotNull(anonEntriesApi.getEntryByAlias("foobar"), "Should retrieve the tool by alias");
     }
 }
