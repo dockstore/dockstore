@@ -28,6 +28,6 @@ public class HasExecutionsOrMetricsValidator implements ConstraintValidator<HasE
 
     @Override
     public boolean isValid(final ExecutionsRequestBody executionsRequestBody, final ConstraintValidatorContext context) {
-        return !executionsRequestBody.getRunExecutions().isEmpty() || !executionsRequestBody.getValidationExecutions().isEmpty() || !executionsRequestBody.getAggregatedExecutions().isEmpty();
+        return !executionsRequestBody.getRunExecutions().isEmpty() || !executionsRequestBody.getTaskExecutions().isEmpty() || !executionsRequestBody.getValidationExecutions().isEmpty() || !executionsRequestBody.getAggregatedExecutions().isEmpty();
     }
 }

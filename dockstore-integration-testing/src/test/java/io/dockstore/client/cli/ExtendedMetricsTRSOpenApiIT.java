@@ -70,6 +70,7 @@ import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.RunExecution;
+import io.dockstore.openapi.client.model.TaskExecutions;
 import io.dockstore.openapi.client.model.ValidationExecution;
 import io.dockstore.openapi.client.model.ValidationStatusMetric;
 import io.dockstore.openapi.client.model.ValidatorInfo;
@@ -206,11 +207,19 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        // Add execution metrics for a workflow version for one platform
+        // Add workflow execution metrics for a workflow version for one platform
         List<RunExecution> runExecutions = createRunExecutions(1);
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, workflowVersionId, description);
         List<MetricsData> metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 1);
         MetricsData metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
+        verifyMetricsDataMetadata(metricsData, ownerUserId, description);
+        verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
+
+        // Add task execution metrics for a workflow version for one platform
+        TaskExecutions taskExecutions = new TaskExecutions().taskExecutions(createRunExecutions(2));
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().taskExecutions(List.of(taskExecutions)), platform1, workflowId, workflowVersionId, description);
+        metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
+        metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
         verifyMetricsDataMetadata(metricsData, ownerUserId, description);
         verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
 
@@ -223,7 +232,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         validationExecution.setDateExecuted(Instant.now().toString());
         List<io.dockstore.openapi.client.model.ValidationExecution> validationExecutions = List.of(validationExecution);
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform2, workflowId, workflowVersionId, description);
-        metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
+        metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 3);
         metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform2, String.format(workflowExpectedS3KeyPrefixFormat, platform2));
         verifyMetricsDataMetadata(metricsData, ownerUserId, description);
         verifyValidationExecutionMetricsDataContent(metricsData, validationExecutions);
@@ -249,7 +258,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         metricsData = verifyMetricsDataInfo(metricsDataList, toolId, toolVersionId, platform1, String.format(toolExpectedS3KeyPrefixFormat, platform1));
         verifyMetricsDataMetadata(metricsData, ownerUserId, "");
         verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
-        assertEquals(3, getS3ObjectsFromBucket(s3Client, bucketName).size(), "There should be 3 objects, 2 for workflows and 1 for tools");
+        assertEquals(4, getS3ObjectsFromBucket(s3Client, bucketName).size(), "There should be 4 objects, 3 for workflows and 1 for tools");
     }
 
     @Test
@@ -314,6 +323,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
                 new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("1 second"),
                 new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("PT 1S") // Should not have space
         );
+
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(malformedExecutionTimes), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if ExecutionTime is malformed");
         assertTrue(exception.getMessage().contains(EXECUTION_TIME_FORMAT_ERROR));
@@ -748,7 +758,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     }
 
     /**
-     * Converts an Workflow Run RO-Crate JSON file located in path, roCratePath, to a RunExecution object. The entire
+     * Converts a Workflow Run RO-Crate JSON file located in path, roCratePath, to a RunExecution object. The entire
      * JSON file is added onto the additionalProperties field in RunExecution.
      * @param roCratePath
      * @return RunExecution object.
