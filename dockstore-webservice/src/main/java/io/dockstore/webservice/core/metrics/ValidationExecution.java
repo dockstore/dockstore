@@ -96,4 +96,10 @@ public class ValidationExecution extends Execution {
         NF_VALIDATION,
         OTHER // This is meant for validator tools that we may not know about yet, but can add in the future
     }
+
+    public void update(ValidationExecution newValidationExecution) {
+        // Can only update optional fields
+        super.update(newValidationExecution);
+        this.errorMessage = newValidationExecution.errorMessage;
+    }
 }

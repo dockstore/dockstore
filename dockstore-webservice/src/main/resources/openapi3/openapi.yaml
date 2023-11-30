@@ -717,6 +717,82 @@ paths:
         a platform. Submitting aggregated execution metrics is deprecated.
       tags:
       - extendedGA4GH
+    put:
+      description: This endpoint updates a workflow execution that was executed on
+        a platform
+      operationId: ExecutionsPut
+      parameters:
+      - description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - description: Platform that the tool was executed on
+        in: query
+        name: platform
+        required: true
+        schema:
+          type: string
+          enum:
+          - GALAXY
+          - TERRA
+          - DNA_STACK
+          - DNA_NEXUS
+          - CGC
+          - NHLBI_BIODATA_CATALYST
+          - ANVIL
+          - CAVATICA
+          - NEXTFLOW_TOWER
+          - ELWAZI
+          - AGC
+          - OTHER
+          - ALL
+      - description: Optional description about the execution metrics that are being
+          updated
+        in: query
+        name: description
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionsRequestBody'
+        description: The updated executions
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Execution updated successfully.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool cannot be found to update the execution.
+      security:
+      - BEARER: []
+      summary: Update a workflow execution that was executed on a platform
+      tags:
+      - extendedGA4GH
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
     post:
       description: Test JSON can be annotated with whether they ran correctly keyed
@@ -9335,8 +9411,13 @@ components:
           description: The date and time that the execution occurred in ISO 8601 UTC
             date format
           example: 2023-03-31T15:06:49.888745366Z
+        id:
+          type: string
+          description: User-provided ID of the execution. This ID is used to identify
+            the execution when updating the execution
       required:
       - dateExecuted
+      - id
     ExecutionStatusMetric:
       type: object
       description: Aggregated metrics about workflow execution statuses
@@ -10190,6 +10271,7 @@ components:
       required:
       - dateExecuted
       - executionStatus
+      - id
     Sender:
       type: object
       description: The user that triggered the event
@@ -10552,12 +10634,18 @@ components:
       description: Metrics of individual tasks that were executed during the workflow
         execution.
       properties:
+        id:
+          type: string
+          description: User-provided ID of the set of task executions. This ID is
+            used to identify the set of task executions when updating the execution
         taskExecutions:
           type: array
           description: Metrics of individual tasks that were executed during the workflow
             execution.
           items:
             $ref: '#/components/schemas/RunExecution'
+      required:
+      - id
     Token_Auth:
       type: object
       properties:
@@ -11196,6 +11284,7 @@ components:
       description: Metrics of a workflow validated on a platform
       required:
       - dateExecuted
+      - id
       - isValid
       - validatorTool
       - validatorToolVersion

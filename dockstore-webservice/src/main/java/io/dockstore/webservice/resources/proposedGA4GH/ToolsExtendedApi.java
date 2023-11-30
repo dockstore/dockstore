@@ -286,6 +286,50 @@ public class ToolsExtendedApi {
         return delegate.getAggregatedMetrics(id, versionId, user);
     }
 
+    @PUT
+    @UnitOfWork
+    @RolesAllowed({"curator", "admin", "platformPartner"})
+    @Path("/{id}/versions/{version_id}/executions")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
+    @ApiOperation(value = ExecutionsPut.SUMMARY, notes = ExecutionsPut.DESCRIPTION, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    @ApiResponses(value = {
+        @ApiResponse(code = HttpStatus.SC_OK, message = ExecutionsPut.OK_RESPONSE, response = Map.class),
+        @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = ExecutionsPut.NOT_FOUND_RESPONSE, response = Error.class),
+        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = ExecutionsPut.UNAUTHORIZED_RESPONSE, response = Error.class)})
+    @Operation(operationId = "ExecutionsPut", summary = ExecutionsPut.SUMMARY, description = ExecutionsPut.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+                + "", description = ExecutionsPut.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+                + "", description = ExecutionsPut.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+                + "", description = ExecutionsPut.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+    })
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public Response executionsPut(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
+        @ApiParam(value = ExecutionsPut.ID_DESCRIPTION, required = true) @Parameter(description = ExecutionsPut.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+        @ApiParam(value = ExecutionsPut.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = ExecutionsPut.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+        @ApiParam(value = ExecutionsPut.PLATFORM_DESCRIPTION, required = true) @Parameter(description = ExecutionsPut.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
+        @ApiParam(value = ExecutionsPut.DESCRIPTION_DESCRIPTION) @Parameter(description = ExecutionsPut.DESCRIPTION_DESCRIPTION, in = ParameterIn.QUERY) @QueryParam("description") String description,
+        @ApiParam(value = ExecutionsPut.EXECUTIONS_DESCRIPTION, required = true) @RequestBody(description = ExecutionsPut.EXECUTIONS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = ExecutionsRequestBody.class))) @Valid ExecutionsRequestBody executions,
+        @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        return delegate.setExecution(id, versionId, platform, user, description, executions);
+    }
+
+    private static final class ExecutionsPut {
+        public static final String SUMMARY = "Update a workflow execution that was executed on a platform";
+        public static final String DESCRIPTION = "This endpoint updates a workflow execution that was executed on a platform";
+        public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";
+        public static final String VERSION_ID_DESCRIPTION = "An identifier of the tool version for this particular tool registry, for example `v1`";
+        public static final String PLATFORM_DESCRIPTION = "Platform that the tool was executed on";
+        public static final String DESCRIPTION_DESCRIPTION = "Optional description about the execution metrics that are being updated";
+        public static final String EXECUTIONS_DESCRIPTION = "The updated executions";
+        public static final String OK_RESPONSE = "Execution updated successfully.";
+        public static final String NOT_FOUND_RESPONSE = "The tool cannot be found to update the execution.";
+        public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
+    }
+
     private static final class AggregatedMetricsPut {
         public static final String SUMMARY = "Add aggregated execution metrics for a workflow that was executed on a platform.";
         public static final String DESCRIPTION = "This endpoint adds aggregated metrics for a workflow that was executed on a platform";

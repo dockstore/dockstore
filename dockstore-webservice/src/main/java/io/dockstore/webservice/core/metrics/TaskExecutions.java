@@ -17,9 +17,13 @@
 
 package io.dockstore.webservice.core.metrics;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A wrapper class that contains a list of tasks executed during a workflow execution
@@ -27,8 +31,21 @@ import java.util.List;
 @Schema(description = "Metrics of individual tasks that were executed during the workflow execution.")
 public class TaskExecutions {
 
+    @NotEmpty
+    @JsonProperty(required = true)
+    @Schema(description = "User-provided ID of the set of task executions. This ID is used to identify the set of task executions when updating the execution", requiredMode = RequiredMode.REQUIRED)
+    private String id;
+
     @Schema(description = "Metrics of individual tasks that were executed during the workflow execution.")
     List<RunExecution> taskExecutions = new ArrayList<>();
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public List<RunExecution> getTaskExecutions() {
         return taskExecutions;
@@ -36,5 +53,15 @@ public class TaskExecutions {
 
     public void setTaskExecutions(List<RunExecution> taskExecutions) {
         this.taskExecutions = taskExecutions;
+    }
+
+    public void update(TaskExecutions newTaskExecutions) {
+        for (RunExecution newTaskExecution: newTaskExecutions.getTaskExecutions()) {
+            // Find the same task in the old TaskExecutions set using the execution ID
+            Optional<RunExecution> oldTaskExecution = this.taskExecutions.stream()
+                    .filter(taskExecution -> taskExecution.getId().equals(newTaskExecution.getId()))
+                    .findFirst();
+            oldTaskExecution.ifPresent(runExecution -> runExecution.update(newTaskExecution));
+        }
     }
 }

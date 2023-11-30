@@ -61,7 +61,7 @@ public class MetricsDataS3Client {
      * @param toolId The GA4GH Tool ID
      * @param versionName The GA4GH ToolVersion name
      * @param platform The platform that the execution metrics data is from
-     * @param fileName The file name to use. Should be the time that the data was submitted in milliseconds since epoch appended with '.json'
+     * @param fileName The file name to use. Should be the execution ID
      * @param ownerUserId The Dockstore user id of the owner (user that sent the metrics data)
      * @param description An optional description for the execution metrics data
      * @param metricsData The metrics data in JSON format
