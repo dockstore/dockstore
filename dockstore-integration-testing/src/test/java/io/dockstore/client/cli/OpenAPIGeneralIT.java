@@ -215,7 +215,7 @@ class OpenAPIGeneralIT extends BaseIT {
             otherUserEntriesApi.getEntryByAlias("foobar");
             fail("Should not be able to retrieve tool.");
         } catch (ApiException ex) {
-            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode(), "Should fail because user cannot access tool");
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode(), "Should fail because user cannot access tool");
         }
 
         // Cannot get unpublished tool by alias as anon user
@@ -223,7 +223,7 @@ class OpenAPIGeneralIT extends BaseIT {
             anonEntriesApi.getEntryByAlias("foobar");
             fail("Should not be able to retrieve tool.");
         } catch (ApiException ex) {
-            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode(), "Should fail because user cannot access tool");
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode(), "Should fail because user cannot access tool");
         }
 
         // Publish tool
