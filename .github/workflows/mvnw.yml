@@ -24,7 +24,8 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'adopt'
 
-      - name: Initialize CodeQL
+      - if: "!contains(github.ref, 'dependabot')"
+        name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
           languages: java
@@ -43,4 +44,5 @@ jobs:
         uses: dockstore/workflow-actions/.github/actions/check-license@main
 
       - name: Perform CodeQL Analysis
+        if: "!contains(github.ref, 'dependabot')"      
         uses: github/codeql-action/analyze@v2          
