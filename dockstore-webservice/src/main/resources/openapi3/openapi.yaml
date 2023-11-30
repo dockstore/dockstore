@@ -11860,8 +11860,10 @@ components:
           $ref: '#/components/schemas/EntryTypeMetadata'
         fullWorkflowPath:
           type: string
+          description: Dockstore path to workflow
         tagName:
           type: string
+          description: Name of workflow version tag
   securitySchemes:
     BEARER:
       scheme: bearer
