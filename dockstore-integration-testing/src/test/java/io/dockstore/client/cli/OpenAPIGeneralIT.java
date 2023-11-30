@@ -45,6 +45,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -185,11 +186,9 @@ class OpenAPIGeneralIT extends BaseIT {
         EntriesApi entriesApi = new EntriesApi(webClient);
 
         final ApiClient anonWebClient = CommonTestUtilities.getOpenAPIWebClient(false, null, testingPostgres);
-        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
         EntriesApi anonEntriesApi = new EntriesApi(anonWebClient);
 
         final ApiClient otherUserWebClient = CommonTestUtilities.getOpenAPIWebClient(true, OTHER_USERNAME, testingPostgres);
-        ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
         EntriesApi otherUserEntriesApi = new EntriesApi(otherUserWebClient);
 
         // Add tool
@@ -215,16 +214,16 @@ class OpenAPIGeneralIT extends BaseIT {
         try {
             otherUserEntriesApi.getEntryByAlias("foobar");
             fail("Should not be able to retrieve tool.");
-        } catch (ApiException ignored) {
-            assertTrue(true);
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode(), "Should fail because user cannot access tool");
         }
 
         // Cannot get unpublished tool by alias as anon user
         try {
             anonEntriesApi.getEntryByAlias("foobar");
             fail("Should not be able to retrieve tool.");
-        } catch (ApiException ignored) {
-            assertTrue(true);
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode(), "Should fail because user cannot access tool");
         }
 
         // Publish tool
