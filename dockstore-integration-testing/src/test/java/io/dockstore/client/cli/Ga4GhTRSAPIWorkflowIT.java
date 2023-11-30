@@ -682,7 +682,7 @@ class Ga4GhTRSAPIWorkflowIT extends BaseIT {
         }
 
         // Get workflow by alias
-        Workflow aliasWorkflow = workflowApi.getWorkflowByAlias("foobar");
+        io.dockstore.openapi.client.model.Entry aliasWorkflow = new io.dockstore.openapi.client.api.EntriesApi(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres)).getEntryByAlias("foobar");
         assertNotNull(aliasWorkflow, "Should retrieve the workflow by alias");
     }
 

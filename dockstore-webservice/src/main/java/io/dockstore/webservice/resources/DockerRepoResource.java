@@ -1214,19 +1214,4 @@ public class DockerRepoResource
         return Response.ok().entity((StreamingOutput) output -> writeStreamAsZip(sourceFiles, output, path))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("{alias}/aliases")
-    @Operation(operationId = "getToolByAlias", description = "Retrieves a tool by alias.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Retrieves a tool by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Tool.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public Tool getToolByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
-        final Tool tool = this.toolDAO.findByAlias(alias);
-        checkNotNullEntry(tool);
-        checkCanRead(user, tool);
-        return tool;
-    }
 }

@@ -1979,21 +1979,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("{alias}/aliases")
-    @Operation(operationId = "getWorkflowByAlias", description = "Retrieves a workflow by alias.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Retrieves a workflow by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Workflow.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public Workflow getWorkflowByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
-        final Workflow workflow = this.workflowDAO.findByAlias(alias);
-        checkNotNullEntry(workflow);
-        checkCanRead(user, workflow);
-        return workflow;
-    }
-
     @POST
     @Timed
     @UnitOfWork

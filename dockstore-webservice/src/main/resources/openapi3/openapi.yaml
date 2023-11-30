@@ -1975,27 +1975,6 @@ paths:
       - BEARER: []
       tags:
       - containers
-  /containers/{alias}/aliases:
-    get:
-      description: Retrieves a tool by alias.
-      operationId: getToolByAlias
-      parameters:
-      - in: path
-        name: alias
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
-          description: default response
-      security:
-      - BEARER: []
-      tags:
-      - containers
   /containers/{containerId}:
     delete:
       description: Delete a tool.
@@ -2937,6 +2916,28 @@ paths:
                 type: integer
                 format: int32
           description: Number of entries processed
+      security:
+      - BEARER: []
+      tags:
+      - entries
+  /entries/{alias}/aliases:
+    get:
+      description: Retrieves an entry by alias.
+      operationId: getEntryByAlias
+      parameters:
+      - description: Alias
+        in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully retrieved entry
       security:
       - BEARER: []
       tags:
@@ -7351,27 +7352,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-          description: default response
-      security:
-      - BEARER: []
-      tags:
-      - workflows
-  /workflows/{alias}/aliases:
-    get:
-      description: Retrieves a workflow by alias.
-      operationId: getWorkflowByAlias
-      parameters:
-      - in: path
-        name: alias
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
       - BEARER: []
@@ -11874,10 +11854,16 @@ components:
     WorkflowVersionPathInfo:
       type: object
       properties:
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         fullWorkflowPath:
           type: string
+          description: Dockstore path to workflow
         tagName:
           type: string
+          description: Name of workflow version tag
   securitySchemes:
     BEARER:
       scheme: bearer

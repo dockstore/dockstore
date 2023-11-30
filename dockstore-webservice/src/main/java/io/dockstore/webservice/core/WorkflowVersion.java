@@ -22,6 +22,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
+import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -268,18 +269,32 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "
             + "contains the Dockstore path to the workflow and the version tag name.")
     public static final class WorkflowVersionPathInfo {
-        @ApiModelProperty(value = "Dockstore path to workflow.")
+        @Schema(description = "Dockstore path to workflow")
         private final String fullWorkflowPath;
-        @ApiModelProperty(value = "Name of workflow version tag")
+        @Schema(description = "Type of the workflow")
+        private final EntryType entryType;
+        @Schema(description = "Metadata about the type of the workflow")
+        private final EntryTypeMetadata entryTypeMetadata;
+        @Schema(description = "Name of workflow version tag")
         private final String tagName;
 
-        public WorkflowVersionPathInfo(String fullWorkflowPath, String tagName) {
+        public WorkflowVersionPathInfo(String fullWorkflowPath, EntryType entryType, EntryTypeMetadata entryTypeMetadata, String tagName) {
             this.fullWorkflowPath = fullWorkflowPath;
+            this.entryType = entryType;
+            this.entryTypeMetadata = entryTypeMetadata;
             this.tagName = tagName;
         }
 
         public String getFullWorkflowPath() {
             return fullWorkflowPath;
+        }
+
+        public EntryType getEntryType() {
+            return entryType;
+        }
+
+        public EntryTypeMetadata getEntryTypeMetadata() {
+            return entryTypeMetadata;
         }
 
         public String getTagName() {

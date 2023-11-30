@@ -57,13 +57,11 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.DockstoreTool.TopicSelectionEnum;
-import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.SourceFile.TypeEnum;
@@ -72,11 +70,8 @@ import io.swagger.client.model.Tag.DoiStatusEnum;
 import io.swagger.client.model.Workflow;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -1498,75 +1493,6 @@ class GeneralIT extends GeneralWorkflowBaseIT {
             failed = true;
         }
         assertTrue(failed, "Should throw an exception when not authorized.");
-    }
-
-    /**
-     * This tests that you can retrieve tools by alias (using optional auth)
-     */
-    @Test
-    void testToolAlias() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
-        ContainersApi containersApi = new ContainersApi(webClient);
-        EntriesApi entryApi = new EntriesApi(webClient);
-
-        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
-        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
-
-        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME, testingPostgres);
-        ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
-
-        // Add tool
-        DockstoreTool tool = containersApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
-        DockstoreTool refresh = containersApi.refresh(tool.getId());
-
-        // Add alias
-        Entry entry = entryApi.addAliases(refresh.getId(), "foobar");
-        assertTrue(entry.getAliases().containsKey("foobar"), "Should have alias foobar");
-
-        // check that dates are present
-        final Timestamp dbDate = testingPostgres.runSelectStatement("select dbcreatedate from entry_alias where id = " + entry.getId(), Timestamp.class);
-        assertNotNull(dbDate);
-        // check that date looks sane
-        final Calendar instance = GregorianCalendar.getInstance();
-        instance.set(2020, Calendar.MARCH, 13);
-        assertTrue(dbDate.after(instance.getTime()));
-
-        // Get unpublished tool by alias as owner
-        DockstoreTool aliasTool = containersApi.getToolByAlias("foobar");
-        assertNotNull(aliasTool, "Should retrieve the tool by alias");
-
-        // Cannot get tool by alias as other user
-        try {
-            otherUserContainersApi.getToolByAlias("foobar");
-            fail("Should not be able to retrieve tool.");
-        } catch (ApiException ignored) {
-            assertTrue(true);
-        }
-
-        // Cannot get tool by alias as anon user
-        try {
-            anonContainersApi.getToolByAlias("foobar");
-            fail("Should not be able to retrieve tool.");
-        } catch (ApiException ignored) {
-            assertTrue(true);
-        }
-
-        // Publish tool
-        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
-        containersApi.publish(refresh.getId(), publishRequest);
-
-        // Get published tool by alias as owner
-        DockstoreTool publishedAliasTool = containersApi.getToolByAlias("foobar");
-        assertNotNull(publishedAliasTool, "Should retrieve the tool by alias");
-
-        // Cannot get tool by alias as other user
-        publishedAliasTool = otherUserContainersApi.getToolByAlias("foobar");
-        assertNotNull(publishedAliasTool, "Should retrieve the tool by alias");
-
-        // Cannot get tool by alias as anon user
-        publishedAliasTool = anonContainersApi.getToolByAlias("foobar");
-        assertNotNull(publishedAliasTool, "Should retrieve the tool by alias");
-
     }
 
     /**
