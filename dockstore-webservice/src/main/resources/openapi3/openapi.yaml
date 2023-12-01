@@ -30,8 +30,6 @@ servers:
 - description: Nightly build server
   url: https://dev.dockstore.net/api
   variables: {}
-security:
-- BEARER: []
 tags:
 - description: "Create, update list aliases for accessing entries"
   name: aliases
@@ -1977,27 +1975,6 @@ paths:
       - BEARER: []
       tags:
       - containers
-  /containers/{alias}/aliases:
-    get:
-      description: Retrieves a tool by alias.
-      operationId: getToolByAlias
-      parameters:
-      - in: path
-        name: alias
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
-          description: default response
-      security:
-      - BEARER: []
-      tags:
-      - containers
   /containers/{containerId}:
     delete:
       description: Delete a tool.
@@ -2532,6 +2509,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_JUPYTER
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_DEVCONTAINER
             - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
@@ -2942,6 +2920,28 @@ paths:
       - BEARER: []
       tags:
       - entries
+  /entries/{alias}/aliases:
+    get:
+      description: Retrieves an entry by alias.
+      operationId: getEntryByAlias
+      parameters:
+      - description: Alias
+        in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully retrieved entry
+      security:
+      - BEARER: []
+      tags:
+      - entries
   /entries/{entryId}/exportToOrcid:
     post:
       description: Export entry to ORCID. DOI is required
@@ -3080,6 +3080,7 @@ paths:
                   - SWL_TEST_JSON
                   - DOCKSTORE_JUPYTER
                   - DOCKSTORE_NOTEBOOK_REES
+                  - DOCKSTORE_NOTEBOOK_DEVCONTAINER
                   - DOCKSTORE_NOTEBOOK_TEST_FILE
                   - DOCKSTORE_NOTEBOOK_OTHER
                 uniqueItems: true
@@ -3927,18 +3928,39 @@ paths:
         schema:
           type: integer
           format: int64
-      - in: query
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
         name: offset
         schema:
           type: integer
           format: int32
           default: 0
-      - in: query
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
         name: limit
         schema:
           type: integer
           format: int32
-          default: 1000
+          default: 100
+          maximum: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         default:
           content:
@@ -3962,17 +3984,39 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
+      - description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        in: query
         name: offset
         schema:
-          type: string
-          default: "0"
-      - in: query
+          type: integer
+          format: int32
+          default: 0
+      - description: "Amount of records to return in a given page, limited to 100"
+        in: query
         name: limit
         schema:
           type: integer
           format: int32
           default: 100
+          maximum: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         default:
           content:
@@ -5502,6 +5546,21 @@ paths:
           type: integer
           format: int32
           default: 100
+      - in: query
+        name: filter
+        schema:
+          type: string
+          default: ""
+      - in: query
+        name: sortCol
+        schema:
+          type: string
+          default: dbCreateDate
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+          default: desc
       responses:
         "200":
           content:
@@ -7195,7 +7254,6 @@ paths:
         schema:
           type: string
           enum:
-          - dockstore.org
           - github.com
           - bitbucket.org
           - gitlab.com
@@ -7294,27 +7352,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-          description: default response
-      security:
-      - BEARER: []
-      tags:
-      - workflows
-  /workflows/{alias}/aliases:
-    get:
-      description: Retrieves a workflow by alias.
-      operationId: getWorkflowByAlias
-      parameters:
-      - in: path
-        name: alias
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
       - BEARER: []
@@ -8274,6 +8311,7 @@ paths:
             - SWL_TEST_JSON
             - DOCKSTORE_JUPYTER
             - DOCKSTORE_NOTEBOOK_REES
+            - DOCKSTORE_NOTEBOOK_DEVCONTAINER
             - DOCKSTORE_NOTEBOOK_TEST_FILE
             - DOCKSTORE_NOTEBOOK_OTHER
       responses:
@@ -8655,6 +8693,8 @@ components:
           type: string
         gitHubAuthUrl:
           type: string
+        gitHubCodespacesImportUrl:
+          type: string
         gitHubRedirectPath:
           type: string
         gitHubScope:
@@ -8969,21 +9009,28 @@ components:
           minLength: 0
         topic:
           type: string
+        topicAI:
+          type: string
+          description: Short description of the entry generated by AI
+          maxLength: 150
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
+          maxLength: 150
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
+          maxLength: 150
         topicSelection:
           type: string
           description: Which topic to display to the public users
           enum:
           - AUTOMATIC
           - MANUAL
+          - AI
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9092,21 +9139,28 @@ components:
           uniqueItems: true
         topic:
           type: string
+        topicAI:
+          type: string
+          description: Short description of the entry generated by AI
+          maxLength: 150
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
+          maxLength: 150
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
+          maxLength: 150
         topicSelection:
           type: string
           description: Which topic to display to the public users
           enum:
           - AUTOMATIC
           - MANUAL
+          - AI
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9358,6 +9412,12 @@ components:
           description: List of workflow run executions to submit
           items:
             $ref: '#/components/schemas/RunExecution'
+        taskExecutions:
+          type: array
+          description: List of task run executions to submit. Each TaskExecution represents
+            the tasks executed during a workflow execution.
+          items:
+            $ref: '#/components/schemas/TaskExecutions'
         validationExecutions:
           type: array
           description: List of workflow validation executions to submit
@@ -9366,6 +9426,7 @@ components:
       required:
       - aggregatedExecutions
       - runExecutions
+      - taskExecutions
       - validationExecutions
     ExtendedUserData:
       type: object
@@ -10117,7 +10178,7 @@ components:
             type: string
             description: The region the workflow was executed in
             example: us-central1
-      description: Metrics of a workflow execution on a platform
+      description: Metrics of an execution on a platform
       required:
       - dateExecuted
       - executionStatus
@@ -10229,6 +10290,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_JUPYTER
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_DEVCONTAINER
           - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         verifiedBySource:
@@ -10477,6 +10539,17 @@ components:
       required:
       - name
       - reference
+    TaskExecutions:
+      type: object
+      description: Metrics of individual tasks that were executed during the workflow
+        execution.
+      properties:
+        taskExecutions:
+          type: array
+          description: Metrics of individual tasks that were executed during the workflow
+            execution.
+          items:
+            $ref: '#/components/schemas/RunExecution'
     Token_Auth:
       type: object
       properties:
@@ -10989,12 +11062,15 @@ components:
           type: string
         curator:
           type: boolean
-          description: Indicates whether this user is a curator
+          description: Indicates whether this user is a curator. The value is always
+            false unless requested for oneself or by an admin
         id:
           type: integer
           format: int64
         isAdmin:
           type: boolean
+          description: Indicates whether the user is an admin.  The value is always
+            false unless requested for oneself or by an admin
         name:
           type: string
         orcid:
@@ -11077,6 +11153,7 @@ components:
           - SWL_TEST_JSON
           - DOCKSTORE_JUPYTER
           - DOCKSTORE_NOTEBOOK_REES
+          - DOCKSTORE_NOTEBOOK_DEVCONTAINER
           - DOCKSTORE_NOTEBOOK_TEST_FILE
           - DOCKSTORE_NOTEBOOK_OTHER
         valid:
@@ -11549,21 +11626,28 @@ components:
           uniqueItems: true
         topic:
           type: string
+        topicAI:
+          type: string
+          description: Short description of the entry generated by AI
+          maxLength: 150
         topicAutomatic:
           type: string
           description: Short description of the entry gotten automatically
+          maxLength: 150
         topicId:
           type: integer
           format: int64
         topicManual:
           type: string
           description: Short description of the entry manually updated
+          maxLength: 150
         topicSelection:
           type: string
           description: Which topic to display to the public users
           enum:
           - AUTOMATIC
           - MANUAL
+          - AI
         type:
           type: string
         userIdToOrcidPutCode:
@@ -11740,10 +11824,16 @@ components:
     WorkflowVersionPathInfo:
       type: object
       properties:
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        entryTypeMetadata:
+          $ref: '#/components/schemas/EntryTypeMetadata'
         fullWorkflowPath:
           type: string
+          description: Dockstore path to workflow
         tagName:
           type: string
+          description: Name of workflow version tag
   securitySchemes:
     BEARER:
       scheme: bearer

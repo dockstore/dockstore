@@ -138,13 +138,13 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.4.11</version>
+      <version>1.4.12</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.4.11</version>
+      <version>1.4.12</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -582,13 +582,13 @@
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
-      <version>20230227</version>
+      <version>20231013</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.broadinstitute</groupId>
       <artifactId>cromwell-wdl-transforms-draft3_2.13</artifactId>
-      <version>84</version>
+      <version>85</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -984,7 +984,7 @@
     <dependency>
       <groupId>org.pf4j</groupId>
       <artifactId>pf4j</artifactId>
-      <version>3.2.0</version>
+      <version>3.10.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

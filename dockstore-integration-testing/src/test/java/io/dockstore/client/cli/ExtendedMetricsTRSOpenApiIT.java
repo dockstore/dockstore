@@ -70,6 +70,7 @@ import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.RunExecution;
+import io.dockstore.openapi.client.model.TaskExecutions;
 import io.dockstore.openapi.client.model.ValidationExecution;
 import io.dockstore.openapi.client.model.ValidationStatusMetric;
 import io.dockstore.openapi.client.model.ValidatorInfo;
@@ -79,6 +80,8 @@ import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.metrics.ExecutionTimeStatisticMetric;
 import io.dockstore.webservice.core.metrics.MemoryStatisticMetric;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,6 +94,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -111,10 +116,13 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     private static final String DOCKSTORE_WORKFLOW_CNV_PATH = SourceControl.GITHUB + "/" + DOCKSTORE_WORKFLOW_CNV_REPO;
     private static final Gson GSON = new Gson();
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedMetricsTRSOpenApiIT.class);
+
     private static String bucketName;
     private static String s3EndpointOverride;
     private static MetricsDataS3Client metricsDataClient;
     private static S3Client s3Client;
+
 
     @SystemStub
     public final SystemOut systemOut = new SystemOut();
@@ -199,11 +207,19 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         workflow = workflowApi.refresh1(workflow.getId(), false);
         workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
 
-        // Add execution metrics for a workflow version for one platform
+        // Add workflow execution metrics for a workflow version for one platform
         List<RunExecution> runExecutions = createRunExecutions(1);
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, workflowVersionId, description);
         List<MetricsData> metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 1);
         MetricsData metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
+        verifyMetricsDataMetadata(metricsData, ownerUserId, description);
+        verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
+
+        // Add task execution metrics for a workflow version for one platform
+        TaskExecutions taskExecutions = new TaskExecutions().taskExecutions(createRunExecutions(2));
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().taskExecutions(List.of(taskExecutions)), platform1, workflowId, workflowVersionId, description);
+        metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
+        metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
         verifyMetricsDataMetadata(metricsData, ownerUserId, description);
         verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
 
@@ -216,7 +232,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         validationExecution.setDateExecuted(Instant.now().toString());
         List<io.dockstore.openapi.client.model.ValidationExecution> validationExecutions = List.of(validationExecution);
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().validationExecutions(validationExecutions), platform2, workflowId, workflowVersionId, description);
-        metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
+        metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 3);
         metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform2, String.format(workflowExpectedS3KeyPrefixFormat, platform2));
         verifyMetricsDataMetadata(metricsData, ownerUserId, description);
         verifyValidationExecutionMetricsDataContent(metricsData, validationExecutions);
@@ -242,7 +258,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         metricsData = verifyMetricsDataInfo(metricsDataList, toolId, toolVersionId, platform1, String.format(toolExpectedS3KeyPrefixFormat, platform1));
         verifyMetricsDataMetadata(metricsData, ownerUserId, "");
         verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
-        assertEquals(3, getS3ObjectsFromBucket(s3Client, bucketName).size(), "There should be 3 objects, 2 for workflows and 1 for tools");
+        assertEquals(4, getS3ObjectsFromBucket(s3Client, bucketName).size(), "There should be 4 objects, 3 for workflows and 1 for tools");
     }
 
     @Test
@@ -307,6 +323,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
                 new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("1 second"),
                 new RunExecution().executionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL).executionTime("PT 1S") // Should not have space
         );
+
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(malformedExecutionTimes), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should not be able to submit metrics if ExecutionTime is malformed");
         assertTrue(exception.getMessage().contains(EXECUTION_TIME_FORMAT_ERROR));
@@ -623,6 +640,43 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
     }
 
     /**
+     * Tests that a Workflow Run RO-Crate file can be converted to a RunExecution object and get submitted.
+     */
+    @Test
+    void testROCrateToRunExecution() throws IOException {
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        final String platform1 = Partner.TERRA.name();
+        final String description = "A single execution";
+
+        // Register and publish a workflow
+        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/my-workflow";
+        final String workflowVersionId = "master";
+        final String workflowExpectedS3KeyPrefixFormat = "workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv%%2Fmy-workflow/master/%s"; // This is the prefix without the file name
+
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "my-workflow", "cwl",
+                "/test.json");
+        workflow = workflowApi.refresh1(workflow.getId(), false);
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        //Retrieve Workflow run RO-crate json. Source for this json file: https://www.researchobject.org/workflow-run-crate/profiles/workflow_run_crate
+        ClassLoader classLoader = getClass().getClassLoader();
+        String path = classLoader.getResource("fixtures/sampleWorkflowROCrate.json").getPath();
+        List<RunExecution> runExecutions = new ArrayList<>();
+        runExecutions.add(convertROCrateToRunExecution(path));
+
+        //post run execution metrics
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(runExecutions), platform1, workflowId, workflowVersionId, description);
+
+        //retrieve the posted metrics
+        List<MetricsData> metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 1);
+        MetricsData metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
+        verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
+    }
+
+
+    /**
      * Checks the number of MetricsData that a version has then return the list
      * @param id
      * @param versionId
@@ -701,5 +755,21 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
             executions.add(execution);
         }
         return executions;
+    }
+
+    /**
+     * Converts a Workflow Run RO-Crate JSON file located in path, roCratePath, to a RunExecution object. The entire
+     * JSON file is added onto the additionalProperties field in RunExecution.
+     * @param roCratePath
+     * @return RunExecution object.
+     */
+    public RunExecution convertROCrateToRunExecution(String roCratePath) throws IOException {
+        String roCrate = new String(Files.readAllBytes(Paths.get(roCratePath)));
+        Map<String, Object> map = GSON.fromJson(roCrate, Map.class);
+        RunExecution execution = new RunExecution();
+        execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
+        execution.setDateExecuted(Instant.now().toString());
+        execution.setAdditionalProperties(map);
+        return execution;
     }
 }

@@ -39,6 +39,7 @@ import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidAuthor;
@@ -160,6 +161,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
     public static final String NO_ZENDO_USER_TOKEN = "Could not get Zenodo token for user";
     public static final String SC_REGISTRY_ACCESS_MESSAGE = "User does not have access to the given source control registry.";
+    public static final String SC_HOSTED_NOT_SUPPORTED_MESSAGE = "This operation is not supported on hosted workflows.";
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
@@ -569,8 +571,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
         oldWorkflow.setTopicManual(newWorkflow.getTopicManual());
+        oldWorkflow.setTopicAI(newWorkflow.getTopicAI());
 
-        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)) {
+        // Update topic selection if it's a non-hosted workflow, or if it's a hosted workflow and the new topic selection is not automatic.
+        // Hosted workflows don't have a source control thus cannot have an automatic topic.
+        if (!Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED)
+                || (Objects.equals(oldWorkflow.getMode(), WorkflowMode.HOSTED) && newWorkflow.getTopicSelection() != TopicSelection.AUTOMATIC)) {
             oldWorkflow.setTopicSelection(newWorkflow.getTopicSelection());
         }
 
@@ -1973,21 +1979,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("{alias}/aliases")
-    @Operation(operationId = "getWorkflowByAlias", description = "Retrieves a workflow by alias.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Retrieves a workflow by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Workflow.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public Workflow getWorkflowByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
-        final Workflow workflow = this.workflowDAO.findByAlias(alias);
-        checkNotNullEntry(workflow);
-        checkCanRead(user, workflow);
-        return workflow;
-    }
-
     @POST
     @Timed
     @UnitOfWork
@@ -2048,9 +2039,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "deleteWorkflow", description = "Delete a stubbed workflow for a registry and repository path.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public void deleteWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
-        @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
+        @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH, schema = @Schema(type = "string", allowableValues = { "github.com", "bitbucket.org", "gitlab.com" })) @PathParam("gitRegistry") SourceControl gitRegistry,
         @Parameter(name = "organization", description = "Git repository organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization,
         @Parameter(name = "repositoryName", description = "Git repository name", required = true, in = ParameterIn.PATH) @PathParam("repositoryName") String repositoryName) {
+        if (gitRegistry == SourceControl.DOCKSTORE) {
+            LOG.error(SC_HOSTED_NOT_SUPPORTED_MESSAGE);
+            throw new CustomWebApplicationException(SC_HOSTED_NOT_SUPPORTED_MESSAGE, HttpStatus.SC_BAD_REQUEST);
+        }
+
         User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens

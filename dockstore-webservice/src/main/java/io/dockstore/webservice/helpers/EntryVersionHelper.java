@@ -342,7 +342,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
         for (SourceFile file: sourceFiles) {
             if (file.getType() == fileType) {
-                boolean isPrimary = file.getPath().equalsIgnoreCase(primaryPath);
+                boolean isPrimary = file.isSamePath(primaryPath);
                 resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
             }
         }

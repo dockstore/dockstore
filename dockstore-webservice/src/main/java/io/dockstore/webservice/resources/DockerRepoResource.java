@@ -33,6 +33,7 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry.TopicSelection;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -421,7 +422,10 @@ public class DockerRepoResource
 
         originalTool.setForumUrl(newTool.getForumUrl());
         originalTool.setTopicManual(newTool.getTopicManual());
-        if (!Objects.equals(originalTool.getMode(), ToolMode.HOSTED)) {
+        originalTool.setTopicAI(newTool.getTopicAI());
+        // Update topic selection if it's a non-hosted tool, or if it's a hosted tool and the new topic selection is not automatic.
+        // Hosted tools don't have a source control thus cannot have an automatic topic.
+        if (!Objects.equals(originalTool.getMode(), ToolMode.HOSTED) || (Objects.equals(originalTool.getMode(), ToolMode.HOSTED) && newTool.getTopicSelection() != TopicSelection.AUTOMATIC)) {
             originalTool.setTopicSelection(newTool.getTopicSelection());
         }
 
@@ -1209,20 +1213,5 @@ public class DockerRepoResource
 
         return Response.ok().entity((StreamingOutput) output -> writeStreamAsZip(sourceFiles, output, path))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("{alias}/aliases")
-    @Operation(operationId = "getToolByAlias", description = "Retrieves a tool by alias.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Retrieves a tool by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Tool.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public Tool getToolByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
-        final Tool tool = this.toolDAO.findByAlias(alias);
-        checkNotNullEntry(tool);
-        checkCanRead(user, tool);
-        return tool;
     }
 }

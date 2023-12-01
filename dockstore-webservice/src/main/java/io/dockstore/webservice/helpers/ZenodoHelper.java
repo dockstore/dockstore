@@ -160,7 +160,7 @@ public final class ZenodoHelper {
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
 
-        String conceptDoiUrl = publishedDeposit.getLinks().get("conceptdoi");
+        String conceptDoiUrl = publishedDeposit.getLinks().get("parent_doi");
 
         String conceptDoi = extractDoiFromDoiUrl(conceptDoiUrl);
 

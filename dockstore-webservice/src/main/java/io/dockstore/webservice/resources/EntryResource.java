@@ -242,6 +242,20 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         topicsApi = new TopicsApi(apiClient);
     }
 
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{alias}/aliases")
+    @Operation(operationId = "getEntryByAlias", description = "Retrieves an entry by alias.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
+    public Entry getEntryByAlias(@Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+            @Parameter(description = "Alias", name = "alias", in = ParameterIn.PATH, required = true) @PathParam("alias") String alias) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryByAlias(alias);
+        checkNotNullEntry(entry);
+        checkCanRead(user, entry);
+        return entry;
+    }
+
     @DELETE
     @Timed
     @UnitOfWork

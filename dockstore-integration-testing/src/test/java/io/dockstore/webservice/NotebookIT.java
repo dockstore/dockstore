@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice;
 
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_NOTEBOOK_DEVCONTAINER;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.helpers.GitHubAppHelper.handleGitHubRelease;
@@ -54,6 +55,7 @@ import io.dockstore.openapi.client.model.PublishRequest;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.openapi.client.model.StarRequest;
 import io.dockstore.openapi.client.model.Workflow;
+import io.dockstore.openapi.client.model.Workflow.TopicSelectionEnum;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.jdbi.NotebookDAO;
@@ -208,6 +210,54 @@ class NotebookIT extends BaseIT {
     }
 
     @Test
+    void testRegisterRootDevcontainerNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/root-devcontainer-v1");
+        assertEquals(Set.of("/.devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"), getAbsolutePaths(files));
+        assertEquals(1, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    @Test
+    void testRegisterDotdirDevcontainerNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/dotdir-devcontainer-v1");
+        assertEquals(Set.of("/.devcontainer/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"), getAbsolutePaths(files));
+        assertEquals(1, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    @Test
+    void testRegisterDotdirFolderDevcontainersNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/dotdir-folder-devcontainers-v1");
+        assertEquals(Set.of("/.devcontainer/a/devcontainer.json", "/.devcontainer/b/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"),
+            getAbsolutePaths(files));
+        assertEquals(2, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    @Test
+    void testRegisterAllDevcontainersNotebook() {
+        List<SourceFile> files = registerSimpleRepoAndGetSourceFiles("simple", "refs/tags/all-devcontainers-v1");
+        assertEquals(Set.of("/.devcontainer.json", "/.devcontainer/devcontainer.json", "/.devcontainer/a/devcontainer.json", "/.devcontainer/b/devcontainer.json", "/notebook.ipynb", "/.dockstore.yml"),
+            getAbsolutePaths(files));
+        assertEquals(4, countFileType(files, DOCKSTORE_NOTEBOOK_DEVCONTAINER));
+    }
+
+    private List<SourceFile> registerSimpleRepoAndGetSourceFiles(String name, String ref) {
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        handleGitHubRelease(workflowsApi, simpleRepo, ref, USER_2_USERNAME);
+        String path = simpleRepoPath + "/" + name;
+        Workflow notebook = workflowsApi.getWorkflowByPath(path, WorkflowSubClass.NOTEBOOK, "versions");
+        WorkflowVersion version = notebook.getWorkflowVersions().get(0);
+        return workflowsApi.getWorkflowVersionsSourcefiles(notebook.getId(), version.getId(), null);
+    }
+
+    private Set<String> getAbsolutePaths(List<SourceFile> sourceFiles) {
+        return sourceFiles.stream().map(SourceFile::getAbsolutePath).collect(Collectors.toSet());
+    }
+
+    private long countFileType(List<SourceFile> sourceFiles, DescriptorLanguage.FileType type) {
+        return sourceFiles.stream().filter(file -> type.name().equals(file.getType().getValue())).count();
+    }
+
+    @Test
     void testUserNotebooks() {
         ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
@@ -242,6 +292,22 @@ class NotebookIT extends BaseIT {
         Workflow notebook = workflowsApi.getWorkflowByPath(simpleRepoPath, WorkflowSubClass.NOTEBOOK, "versions");
         assertEquals(1, notebook.getWorkflowVersions().size());
         assertEquals("quay.io/seqware/seqware_full/1.1", notebook.getWorkflowVersions().get(0).getKernelImagePath());
+    }
+
+    @Test
+    void testUpdate() {
+        final String aiTopic = "An AI made this.";
+        final TopicSelectionEnum aiSelection = TopicSelectionEnum.AI;
+        ApiClient apiClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        handleGitHubRelease(workflowsApi, simpleRepo, "refs/tags/simple-v1", USER_2_USERNAME);
+        Workflow notebook = workflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + simpleRepo, WorkflowSubClass.NOTEBOOK, "versions");
+        notebook.setTopicSelection(aiSelection);
+        notebook.setTopicAI(aiTopic);
+        workflowsApi.updateWorkflow(notebook.getId(), notebook);
+        Workflow updatedNotebook = workflowsApi.getWorkflow(notebook.getId(), null);
+        assertEquals(aiSelection, updatedNotebook.getTopicSelection());
+        assertEquals(aiTopic, updatedNotebook.getTopicAI());
     }
 
     @Test

@@ -17,11 +17,11 @@
 package io.dockstore.webservice.core;
 
 import static io.dockstore.webservice.DockstoreWebserviceApplication.EMAIL_FILTER;
+import static io.dockstore.webservice.DockstoreWebserviceApplication.PUBLIC_USER_FILTER;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -99,11 +99,12 @@ import org.hibernate.annotations.UpdateTimestamp;
             + " FROM User user INNER JOIN user.userProfiles as userProfiles WHERE( KEY(userProfiles) = 'github.com' )")
 })
 @SuppressWarnings("checkstyle:magicnumber")
+@JsonFilter(PUBLIC_USER_FILTER)
 public class User implements Principal, Comparable<User>, Serializable {
 
-    public static final String INDICATES_WHETHER_THIS_USER_IS_A_CURATOR = "Indicates whether this user is a curator";
+    public static final String INDICATES_WHETHER_THIS_USER_IS_A_CURATOR = "Indicates whether this user is a curator. The value is always false unless requested for oneself or by an admin";
     public static final String INDICATES_WHETHER_THIS_ACCOUNT_CORRESPONDS_TO_A_PLATFORM_PARTNER = "Indicates whether this account corresponds to a platform partner";
-    public static final SimpleBeanPropertyFilter SLIM_FILTER = SimpleBeanPropertyFilter.serializeAllExcept("organizations", "entries", "starredEntries");
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "enduser_id_seq")
     @SequenceGenerator(name = "enduser_id_seq", sequenceName = "enduser_id_seq", allocationSize = 1)
@@ -117,6 +118,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Column
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
+    @Schema(description = "Indicates whether the user is an admin.  The value is always false unless requested for oneself or by an admin")
     private boolean isAdmin;
 
     @Column(columnDefinition = "boolean default false")
