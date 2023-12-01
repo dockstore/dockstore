@@ -283,21 +283,6 @@
             </column>
         </addColumn>
     </changeSet>
-    <changeSet author="hyunnnaye" id="removeAuthorAndEmailInEntry">
-        <sql dbms="postgresql">
-            /* delete author and email column in an entry */
-            ALTER TABLE workflow DROP COLUMN author;
-            ALTER TABLE workflow DROP COLUMN email;
-            ALTER TABLE tool DROP COLUMN author;
-            ALTER TABLE tool DROP COLUMN email;
-            ALTER TABLE apptool DROP COLUMN author;
-            ALTER TABLE apptool DROP COLUMN email;
-            ALTER TABLE notebook DROP COLUMN author;
-            ALTER TABLE notebook DROP COLUMN email;
-            ALTER TABLE service DROP COLUMN author;
-            ALTER TABLE service DROP COLUMN email;
-        </sql>
-    </changeSet>
     <changeSet author="ktran (generated)" id="addAITopic">
         <addColumn tableName="apptool">
             <column name="topicai" type="varchar(150 BYTE)"/>
@@ -314,5 +299,17 @@
         <addColumn tableName="workflow">
             <column name="topicai" type="varchar(150 BYTE)"/>
         </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1701468587437-1">
+        <dropColumn columnName="author" tableName="apptool"/>
+        <dropColumn columnName="author" tableName="notebook"/>
+        <dropColumn columnName="author" tableName="service"/>
+        <dropColumn columnName="author" tableName="tool"/>
+        <dropColumn columnName="author" tableName="workflow"/>
+        <dropColumn columnName="email" tableName="apptool"/>
+        <dropColumn columnName="email" tableName="notebook"/>
+        <dropColumn columnName="email" tableName="service"/>
+        <dropColumn columnName="email" tableName="tool"/>
+        <dropColumn columnName="email" tableName="workflow"/>
     </changeSet>
 </databaseChangeLog>

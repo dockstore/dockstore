@@ -699,14 +699,15 @@ class GeneralWorkflowIT extends BaseIT {
         // Update workflow with version with no metadata
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testWDL");
 
-        // Assert default version is updated
+        // Assert default version is updated and no author or email is found
         long defaultVersionNumber = testingPostgres.runSelectStatement("select actualdefaultversion from workflow where organization = 'DockstoreTestUser2' and repository = 'hello-dockstore-workflow'", long.class);
         String defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
         assertEquals("testWDL", defaultVersionName, "the default version should be for the testWDL branch, but is for the branch " + defaultVersionName);
 
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "'",
-                long.class);
+                .runSelectStatement("select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and author is null and email is null",
+                        long.class);
+
         assertEquals(1, count2, "The given workflow shouldn't have any contact info");
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals("testWDL", workflow.getDefaultVersion());
@@ -716,7 +717,7 @@ class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
-        // Assert default version is updated
+        // Assert default version is updated and author and email are set
         defaultVersionNumber = testingPostgres.runSelectStatement("select actualdefaultversion from workflow where organization = 'DockstoreTestUser2' and repository = 'hello-dockstore-workflow'", long.class);
         defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
         assertEquals("testBoth", defaultVersionName, "the default version should be for the testBoth branch, but is for the branch " + defaultVersionName);
@@ -906,7 +907,7 @@ class GeneralWorkflowIT extends BaseIT {
         // change default branch
         final long count6 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.toString()
-                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and description is null",
+                    + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and author is null and email is null and description is null",
             long.class);
         assertEquals(1, count6, "The given workflow shouldn't have any contact info");
 
@@ -914,8 +915,8 @@ class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         final long count7 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where actualdefaultversion = 952 and description is null",
-            long.class);
+                "select count(*) from workflow where actualdefaultversion = 952 and author is null and email is null and description is null",
+                long.class);
         assertEquals(0, count7, "The given workflow should now have contact info and description");
 
         // restub

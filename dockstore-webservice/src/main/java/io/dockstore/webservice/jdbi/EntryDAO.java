@@ -336,7 +336,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         final HibernateCriteriaBuilder cb = currentSession().getCriteriaBuilder();
         final JpaCriteriaQuery<Long> q = cb.createQuery(Long.class);
 
-        Root<T> entryRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, checker, cb, q);
+        Root<T> entryRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
 
         q.select(cb.count(entryRoot));
         return currentSession().createQuery(q).getSingleResult();
@@ -466,7 +466,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
         final HibernateCriteriaBuilder cb = currentSession().getCriteriaBuilder();
         final JpaCriteriaQuery<T> q = cb.createQuery(typeOfT);
-        final Root<T> tRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, checker, cb, q);
+        final Root<T> tRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
         // order by id
         q.orderBy(cb.asc(tRoot.get("id")));
         TypedQuery<T> query = currentSession().createQuery(q);
@@ -476,17 +476,18 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    protected abstract Root<T> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, Boolean checker,
+    protected abstract Root<T> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, CriteriaQuery<?> q);
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    protected Predicate getWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, Boolean checker,
+    protected Predicate getWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, SourceControlConverter converter, Root<?> entryRoot) {
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
         predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
         predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));
         predicate = andLike(cb, predicate, entryRoot.get("workflowName"), Optional.ofNullable(toolname));
         predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
+        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
 
         if (descriptorLanguage != null) {
             predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
