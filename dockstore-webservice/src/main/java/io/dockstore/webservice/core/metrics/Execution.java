@@ -37,7 +37,7 @@ public abstract class Execution {
     @NotEmpty
     @JsonProperty(required = true)
     @Schema(description = "User-provided ID of the execution. This ID is used to identify the execution when updating the execution", requiredMode = RequiredMode.REQUIRED)
-    private String id;
+    private String executionId;
 
     @NotNull
     @ISO8601ExecutionDate
@@ -57,12 +57,12 @@ public abstract class Execution {
             """)
     private Map<String, Object> additionalProperties;
 
-    public String getId() {
-        return id;
+    public String getExecutionId() {
+        return executionId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setExecutionId(String executionId) {
+        this.executionId = executionId;
     }
 
     public String getDateExecuted() {

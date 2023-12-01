@@ -34,17 +34,17 @@ public class TaskExecutions {
     @NotEmpty
     @JsonProperty(required = true)
     @Schema(description = "User-provided ID of the set of task executions. This ID is used to identify the set of task executions when updating the execution", requiredMode = RequiredMode.REQUIRED)
-    private String id;
+    private String executionId;
 
     @Schema(description = "Metrics of individual tasks that were executed during the workflow execution.")
     List<RunExecution> taskExecutions = new ArrayList<>();
 
-    public String getId() {
-        return id;
+    public String getExecutionId() {
+        return executionId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setExecutionId(String executionId) {
+        this.executionId = executionId;
     }
 
     public List<RunExecution> getTaskExecutions() {
@@ -59,7 +59,7 @@ public class TaskExecutions {
         for (RunExecution newTaskExecution: newTaskExecutions.getTaskExecutions()) {
             // Find the same task in the old TaskExecutions set using the execution ID
             Optional<RunExecution> oldTaskExecution = this.taskExecutions.stream()
-                    .filter(taskExecution -> taskExecution.getId().equals(newTaskExecution.getId()))
+                    .filter(taskExecution -> taskExecution.getExecutionId().equals(newTaskExecution.getExecutionId()))
                     .findFirst();
             oldTaskExecution.ifPresent(runExecution -> runExecution.update(newTaskExecution));
         }

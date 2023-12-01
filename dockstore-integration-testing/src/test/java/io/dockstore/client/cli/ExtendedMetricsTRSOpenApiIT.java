@@ -87,6 +87,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -216,7 +217,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyRunExecutionMetricsDataContent(metricsData, runExecutions);
 
         // Add task execution metrics for a workflow version for one platform
-        TaskExecutions taskExecutions = new TaskExecutions().taskExecutions(createRunExecutions(2));
+        TaskExecutions taskExecutions = new TaskExecutions().executionId(generateExecutionId()).taskExecutions(createRunExecutions(2));
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().taskExecutions(List.of(taskExecutions)), platform1, workflowId, workflowVersionId, description);
         metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 2);
         metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
@@ -226,6 +227,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         // Send validation metrics data to S3 for the same workflow version, but different platform
         // This workflow version successfully validated with miniwdl
         ValidationExecution validationExecution = new ValidationExecution();
+        validationExecution.setExecutionId(generateExecutionId());
         validationExecution.setIsValid(true);
         validationExecution.setValidatorTool(ValidationExecution.ValidatorToolEnum.MINIWDL);
         validationExecution.setValidatorToolVersion("v1.9.1");
@@ -528,7 +530,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         verifyMetricsDataList(id, versionId, 1);
 
         // Test that a platform partner can post aggregated metrics
-        List<Metrics> aggregatedMetrics = List.of(new Metrics().executionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 5))));
+        List<Metrics> aggregatedMetrics = List.of(new Metrics().executionId(generateExecutionId()).executionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 5))));
         otherExtendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(aggregatedMetrics), platform, id, versionId, "foo");
         verifyMetricsDataList(id, versionId, 2);
     }
@@ -612,6 +614,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
         // Add execution metrics for a workflow version for one platform
         Metrics expectedAggregatedMetrics = new Metrics()
+                .executionId(generateExecutionId())
                 .executionStatusCount(new ExecutionStatusMetric().count(Map.of(SUCCESSFUL.name(), 5)))
                 .additionalAggregatedMetrics(Map.of("cpu_utilization", 50.0));
         extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(List.of(expectedAggregatedMetrics)), platform1, workflowId, workflowVersionId, description);
@@ -628,7 +631,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
 
         // Add a metric that only has additionalAggregatedMetrics because platforms may not always submit the Dockstore-defined aggregated metrics
         LocalStackTestUtilities.deleteBucketContents(s3Client, bucketName); // Clear bucket contents so it's easier to verify the contents
-        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(List.of(new Metrics().additionalAggregatedMetrics(Map.of("memory_utilization", 50.0)))), platform1, workflowId, workflowVersionId, description);
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().aggregatedExecutions(List.of(new Metrics().executionId(generateExecutionId()).additionalAggregatedMetrics(Map.of("memory_utilization", 50.0)))), platform1, workflowId, workflowVersionId, description);
         metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, 1);
         metricsData = verifyMetricsDataInfo(metricsDataList, workflowId, workflowVersionId, platform1, String.format(workflowExpectedS3KeyPrefixFormat, platform1));
         verifyMetricsDataMetadata(metricsData, ownerUserId, description);
@@ -743,6 +746,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         for (int i = 0; i < numberOfExecutions; ++i) {
             // A successful execution that ran for 5 minutes, requires 2 CPUs and 2 GBs of memory
             RunExecution execution = new RunExecution();
+            execution.setExecutionId(generateExecutionId()); // Set a random execution ID
             execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
             execution.setDateExecuted(Instant.now().toString());
             execution.setExecutionTime("PT5M");
@@ -757,6 +761,10 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         return executions;
     }
 
+    public static String generateExecutionId() {
+        return UUID.randomUUID().toString();
+    }
+
     /**
      * Converts a Workflow Run RO-Crate JSON file located in path, roCratePath, to a RunExecution object. The entire
      * JSON file is added onto the additionalProperties field in RunExecution.
@@ -767,6 +775,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         String roCrate = new String(Files.readAllBytes(Paths.get(roCratePath)));
         Map<String, Object> map = GSON.fromJson(roCrate, Map.class);
         RunExecution execution = new RunExecution();
+        execution.setExecutionId(generateExecutionId());
         execution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
         execution.setDateExecuted(Instant.now().toString());
         execution.setAdditionalProperties(map);

@@ -40,17 +40,19 @@ import io.dockstore.common.metrics.MetricsDataS3Client;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.ExtendedGa4GhApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.Cost;
 import io.dockstore.openapi.client.model.ExecutionsRequestBody;
+import io.dockstore.openapi.client.model.RunExecution;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.dropwizard.testing.ResourceHelpers;
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -119,9 +121,6 @@ public class MetricsDataS3ClientIT {
         final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         final String platform = Partner.TERRA.name();
         final String description = "A single execution";
-        // This uses the request body from a file, which is a visual JSON example of what the request body looks like
-        BufferedReader metricsRequestBodyBufferedReader = new BufferedReader(new FileReader(ResourceHelpers.resourceFilePath("prototype-metrics-request-body.json")));
-        ExecutionsRequestBody executionsRequestBody = GSON.fromJson(metricsRequestBodyBufferedReader, ExecutionsRequestBody.class);
 
         // Register and publish a workflow
         final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
@@ -133,6 +132,19 @@ public class MetricsDataS3ClientIT {
 
         // Create 1001 S3 objects by calling the endpoint that submits metrics 1001 times for a workflow version and verify that we retrieve all 1001 objects
         for (int i = 0; i < 1001; ++i) {
+            RunExecution workflowExecution = new RunExecution();
+            workflowExecution.setExecutionId(UUID.randomUUID().toString()); // Must be a different ID each time otherwise it'll overwrite the existing file
+            workflowExecution.setExecutionStatus(RunExecution.ExecutionStatusEnum.SUCCESSFUL);
+            workflowExecution.setDateExecuted(Instant.now().toString());
+            workflowExecution.setExecutionTime("PT5M");
+            workflowExecution.setCpuRequirements(2);
+            workflowExecution.setMemoryRequirementsGB(2.0);
+            workflowExecution.setCost(new Cost().value(9.99));
+            workflowExecution.setRegion("us-central1");
+            Map<String, Object> additionalProperties = Map.of("schema.org:totalTime", "PT5M");
+            workflowExecution.setAdditionalProperties(additionalProperties);
+            ExecutionsRequestBody executionsRequestBody = new ExecutionsRequestBody().runExecutions(List.of(workflowExecution));
+
             // Note that all these objects will be in the same folder because only the file name is different for each object
             extendedGa4GhApi.executionMetricsPost(executionsRequestBody, platform, workflowId, workflowVersionId, description);
         }

@@ -34,6 +34,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import java.sql.Timestamp;
 import java.util.Map;
 import org.hibernate.annotations.CreationTimestamp;
@@ -49,6 +50,14 @@ public class Metrics {
     @ApiModelProperty(value = "Implementation specific ID for the metrics in this webservice")
     @Schema(description = "Implementation specific ID for the metrics in this webservice")
     private long id;
+
+    // This is a transient field that should not be saved to the database. Its purpose is for the user to specify an ID for the execution when submitting metrics,
+    // which are then sent to S3.
+    @NotEmpty
+    @Transient
+    @JsonProperty(required = true)
+    @Schema(description = "User-provided ID of the execution. This ID is used to identify the execution when updating the execution", requiredMode = RequiredMode.REQUIRED)
+    private String executionId;
 
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
@@ -123,6 +132,16 @@ public class Metrics {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    @JsonIgnore // Avoid serializing this because the field is not stored in the DB and will always be null
+    public String getExecutionId() {
+        return executionId;
+    }
+
+    @JsonProperty
+    public void setExecutionId(String executionId) {
+        this.executionId = executionId;
     }
 
     public ExecutionStatusCountMetric getExecutionStatusCount() {

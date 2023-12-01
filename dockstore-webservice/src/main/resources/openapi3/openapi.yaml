@@ -9411,13 +9411,13 @@ components:
           description: The date and time that the execution occurred in ISO 8601 UTC
             date format
           example: 2023-03-31T15:06:49.888745366Z
-        id:
+        executionId:
           type: string
           description: User-provided ID of the execution. This ID is used to identify
             the execution when updating the execution
       required:
       - dateExecuted
-      - id
+      - executionId
     ExecutionStatusMetric:
       type: object
       description: Aggregated metrics about workflow execution statuses
@@ -9914,6 +9914,10 @@ components:
           $ref: '#/components/schemas/CostMetric'
         cpu:
           $ref: '#/components/schemas/CpuMetric'
+        executionId:
+          type: string
+          description: User-provided ID of the execution. This ID is used to identify
+            the execution when updating the execution
         executionStatusCount:
           $ref: '#/components/schemas/ExecutionStatusMetric'
         executionTime:
@@ -9927,6 +9931,7 @@ components:
         validationStatus:
           $ref: '#/components/schemas/ValidationStatusMetric'
       required:
+      - executionId
       - executionStatusCount
     Notebook:
       type: object
@@ -10270,8 +10275,8 @@ components:
       description: Metrics of an execution on a platform
       required:
       - dateExecuted
+      - executionId
       - executionStatus
-      - id
     Sender:
       type: object
       description: The user that triggered the event
@@ -10634,7 +10639,7 @@ components:
       description: Metrics of individual tasks that were executed during the workflow
         execution.
       properties:
-        id:
+        executionId:
           type: string
           description: User-provided ID of the set of task executions. This ID is
             used to identify the set of task executions when updating the execution
@@ -10645,7 +10650,7 @@ components:
           items:
             $ref: '#/components/schemas/RunExecution'
       required:
-      - id
+      - executionId
     Token_Auth:
       type: object
       properties:
@@ -11284,7 +11289,7 @@ components:
       description: Metrics of a workflow validated on a platform
       required:
       - dateExecuted
-      - id
+      - executionId
       - isValid
       - validatorTool
       - validatorToolVersion
