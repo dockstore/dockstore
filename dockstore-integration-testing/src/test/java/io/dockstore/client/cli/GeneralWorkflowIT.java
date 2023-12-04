@@ -704,9 +704,10 @@ class GeneralWorkflowIT extends BaseIT {
         String defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
         assertEquals("testWDL", defaultVersionName, "the default version should be for the testWDL branch, but is for the branch " + defaultVersionName);
 
-        final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and "+defaultVersionNumber+" not in (select versionid from version_orcidauthor) and " + defaultVersionNumber + " not in (select versionid from author)",
-                        long.class);
+        final long count2 = testingPostgres.runSelectStatement(
+                "select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and " + defaultVersionNumber
+                        + " not in (select versionid from version_orcidauthor) and " + defaultVersionNumber
+                        + " not in (select versionid from author)", long.class);
         assertEquals(1, count2, "The given workflow shouldn't have any contact info");
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals("testWDL", workflow.getDefaultVersion());
