@@ -18,7 +18,6 @@
 package io.dockstore.webservice.core.metrics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,32 +31,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
 import java.sql.Timestamp;
-import java.util.Map;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "metrics")
 @ApiModel(value = "Metrics", description = "Aggregated metrics associated with entry versions")
-@Schema(name = "Metrics", description = "Aggregated metrics associated with entry versions")
+@Schema(name = "Metrics", description = "Aggregated metrics associated with entry versions", subTypes = { AggregatedExecution.class })
 public class Metrics {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ApiModelProperty(value = "Implementation specific ID for the metrics in this webservice")
     @Schema(description = "Implementation specific ID for the metrics in this webservice")
     private long id;
-
-    // This is a transient field that should not be saved to the database. Its purpose is for the user to specify an ID for the execution when submitting metrics,
-    // which are then sent to S3.
-    @NotEmpty
-    @Transient
-    @JsonProperty(required = true)
-    @Schema(description = "User-provided ID of the execution. This ID is used to identify the execution when updating the execution", requiredMode = RequiredMode.REQUIRED)
-    private String executionId;
 
     @Valid
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
@@ -101,13 +89,6 @@ public class Metrics {
     @Schema(description = "Aggregated validation status metrics")
     private ValidationStatusCountMetric validationStatus;
 
-    @Deprecated(since = "1.15.0")
-    @Transient // Don't persist to the database. This is meant to be used by platforms to submit additional aggregated metrics to Dockstore that aren't defined above.
-    @JsonProperty
-    @ApiModelProperty(value = "Additional aggregated metrics")
-    @Schema(description = "Additional aggregated metrics", deprecated = true)
-    private Map<String, Object> additionalAggregatedMetrics;
-
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
@@ -132,16 +113,6 @@ public class Metrics {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    @JsonIgnore // Avoid serializing this because the field is not stored in the DB and will always be null
-    public String getExecutionId() {
-        return executionId;
-    }
-
-    @JsonProperty
-    public void setExecutionId(String executionId) {
-        this.executionId = executionId;
     }
 
     public ExecutionStatusCountMetric getExecutionStatusCount() {
@@ -190,18 +161,6 @@ public class Metrics {
 
     public void setValidationStatus(ValidationStatusCountMetric validationStatus) {
         this.validationStatus = validationStatus;
-    }
-
-    @Deprecated(since = "1.15.0")
-    @JsonIgnore // Avoid serializing this because the field is not stored in the DB and will always be null
-    public Map<String, Object> getAdditionalAggregatedMetrics() {
-        return additionalAggregatedMetrics;
-    }
-
-    @Deprecated(since = "1.15.0")
-    @JsonProperty
-    public void setAdditionalAggregatedMetrics(Map<String, Object> additionalAggregatedMetrics) {
-        this.additionalAggregatedMetrics = additionalAggregatedMetrics;
     }
 
     public Timestamp getDbCreateDate() {

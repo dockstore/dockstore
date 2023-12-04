@@ -34,6 +34,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.metrics.AggregatedExecution;
 import io.dockstore.webservice.core.metrics.ExecutionsRequestBody;
 import io.dockstore.webservice.core.metrics.Metrics;
 import io.dockstore.webservice.core.metrics.RunExecution;
@@ -529,7 +530,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
 
             // Each Execution is stored in its own file
-            for (Metrics aggregatedExecution: executions.getAggregatedExecutions()) {
+            for (AggregatedExecution aggregatedExecution: executions.getAggregatedExecutions()) {
                 if (!createS3ObjectForSingleAggregatedExecution(id, versionId, platform.name(), aggregatedExecution.getExecutionId(), owner.getId(), description, aggregatedExecution, metricsDataS3Client)) {
                     failedS3SubmissionExecutionIds.add(aggregatedExecution.getExecutionId());
                 }
@@ -592,7 +593,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private boolean createS3ObjectForSingleAggregatedExecution(String id, String versionId, String platform, String executionId, long ownerId, String description, Metrics aggregatedExecution, MetricsDataS3Client metricsDataS3Client) {
+    private boolean createS3ObjectForSingleAggregatedExecution(String id, String versionId, String platform, String executionId, long ownerId, String description, AggregatedExecution aggregatedExecution, MetricsDataS3Client metricsDataS3Client) {
         ExecutionsRequestBody executionsRequestBody = new ExecutionsRequestBody();
         executionsRequestBody.setAggregatedExecutions(List.of(aggregatedExecution));
         return createS3ObjectForSingleExecution(id, versionId, platform, executionId, ownerId, description, executionsRequestBody, metricsDataS3Client);

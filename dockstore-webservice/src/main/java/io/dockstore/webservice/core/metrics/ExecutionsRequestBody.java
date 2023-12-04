@@ -48,7 +48,7 @@ public class ExecutionsRequestBody {
     @Valid
     @ArraySchema(arraySchema = @Schema(description = "List of aggregated executions to submit", deprecated = true))
     @Deprecated(since = "1.15.0")
-    private List<Metrics> aggregatedExecutions = new ArrayList<>();
+    private List<AggregatedExecution> aggregatedExecutions = new ArrayList<>();
 
     public ExecutionsRequestBody() {
     }
@@ -78,12 +78,12 @@ public class ExecutionsRequestBody {
     }
 
     @Deprecated(since = "1.15.0")
-    public List<Metrics> getAggregatedExecutions() {
+    public List<AggregatedExecution> getAggregatedExecutions() {
         return aggregatedExecutions;
     }
 
     @Deprecated(since = "1.15.0")
-    public void setAggregatedExecutions(List<Metrics> aggregatedExecutions) {
+    public void setAggregatedExecutions(List<AggregatedExecution> aggregatedExecutions) {
         this.aggregatedExecutions = aggregatedExecutions;
     }
 }
