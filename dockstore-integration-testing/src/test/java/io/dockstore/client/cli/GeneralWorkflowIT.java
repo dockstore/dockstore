@@ -707,7 +707,6 @@ class GeneralWorkflowIT extends BaseIT {
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and author is null and email is null",
                         long.class);
-
         assertEquals(1, count2, "The given workflow shouldn't have any contact info");
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         assertEquals("testWDL", workflow.getDefaultVersion());
