@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.ToolPath;
@@ -27,6 +28,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.SessionFactory;
@@ -207,16 +209,21 @@ public class ToolDAO extends EntryDAO<Tool> {
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     protected Root<Tool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
-            CriteriaBuilder cb, CriteriaQuery<?> q) {
+            CriteriaBuilder cb, CriteriaQuery<?> query) {
 
-        final Root<Tool> entryRoot = q.from(Tool.class);
+        final Root<Tool> entryRoot = query.from(Tool.class);
 
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
         predicate = andLike(cb, predicate, entryRoot.get("namespace"), Optional.ofNullable(organization));
         predicate = andLike(cb, predicate, entryRoot.get("name"), Optional.ofNullable(name));
         predicate = andLike(cb, predicate, entryRoot.get("toolname"), Optional.ofNullable(toolname));
         predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
-        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
+
+        if (author != null) {
+            Subquery<Author> subQuery = getAuthorSubquery(author, cb, query);
+            predicate = addAuthorClauseToCriteriaBuilder(cb, entryRoot, subQuery);
+        }
+
         if (checker != null && checker) {
             // tools are never checker workflows
             predicate = cb.isFalse(cb.literal(true));
@@ -228,7 +235,7 @@ public class ToolDAO extends EntryDAO<Tool> {
         }
         predicate = andLike(cb, predicate, entryRoot.get("registry"), Optional.ofNullable(registry));
 
-        q.where(predicate);
+        query.where(predicate);
         return entryRoot;
     }
 }

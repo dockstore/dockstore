@@ -47,7 +47,7 @@ public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
         final SourceControlConverter converter = new SourceControlConverter();
         final Root<BioWorkflow> entryRoot = q.from(BioWorkflow.class);
 
-        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, converter, entryRoot);
+        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, converter, entryRoot, q);
 
         // its tempting to put this in EntryDAO, but something goes wrong with generics/inheritance
         if (checker != null) {
