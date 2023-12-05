@@ -292,32 +292,32 @@ public class ToolsExtendedApi {
     @Path("/{id}/versions/{version_id}/executions")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON})
-    @ApiOperation(value = ExecutionsPut.SUMMARY, notes = ExecutionsPut.DESCRIPTION, authorizations = {
+    @ApiOperation(value = ExecutionMetricsUpdate.SUMMARY, notes = ExecutionMetricsUpdate.DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     @ApiResponses(value = {
-        @ApiResponse(code = HttpStatus.SC_OK, message = ExecutionsPut.OK_RESPONSE, response = Map.class),
-        @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = ExecutionsPut.NOT_FOUND_RESPONSE, response = Error.class),
-        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = ExecutionsPut.UNAUTHORIZED_RESPONSE, response = Error.class)})
-    @Operation(operationId = "ExecutionsPut", summary = ExecutionsPut.SUMMARY, description = ExecutionsPut.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
+        @ApiResponse(code = HttpStatus.SC_OK, message = ExecutionMetricsUpdate.OK_RESPONSE, response = Map.class),
+        @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = ExecutionMetricsUpdate.NOT_FOUND_RESPONSE, response = Error.class),
+        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = ExecutionMetricsUpdate.UNAUTHORIZED_RESPONSE, response = Error.class)})
+    @Operation(operationId = "ExecutionMetricsUpdate", summary = ExecutionMetricsUpdate.SUMMARY, description = ExecutionMetricsUpdate.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.JWT_SECURITY_DEFINITION_NAME), responses = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
-                + "", description = ExecutionsPut.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
+                + "", description = ExecutionMetricsUpdate.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
-                + "", description = ExecutionsPut.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+                + "", description = ExecutionMetricsUpdate.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
-                + "", description = ExecutionsPut.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+                + "", description = ExecutionMetricsUpdate.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
     })
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public Response executionsPut(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
-        @ApiParam(value = ExecutionsPut.ID_DESCRIPTION, required = true) @Parameter(description = ExecutionsPut.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
-        @ApiParam(value = ExecutionsPut.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = ExecutionsPut.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
-        @ApiParam(value = ExecutionsPut.PLATFORM_DESCRIPTION, required = true) @Parameter(description = ExecutionsPut.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
-        @ApiParam(value = ExecutionsPut.DESCRIPTION_DESCRIPTION) @Parameter(description = ExecutionsPut.DESCRIPTION_DESCRIPTION, in = ParameterIn.QUERY) @QueryParam("description") String description,
-        @ApiParam(value = ExecutionsPut.EXECUTIONS_DESCRIPTION, required = true) @RequestBody(description = ExecutionsPut.EXECUTIONS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = ExecutionsRequestBody.class))) @Valid ExecutionsRequestBody executions,
+    public Response executionMetricsUpdate(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
+        @ApiParam(value = ExecutionMetricsUpdate.ID_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsUpdate.ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("id") String id,
+        @ApiParam(value = ExecutionMetricsUpdate.VERSION_ID_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsUpdate.VERSION_ID_DESCRIPTION, in = ParameterIn.PATH) @PathParam("version_id") String versionId,
+        @ApiParam(value = ExecutionMetricsUpdate.PLATFORM_DESCRIPTION, required = true) @Parameter(description = ExecutionMetricsUpdate.PLATFORM_DESCRIPTION, in = ParameterIn.QUERY, required = true) @QueryParam("platform") Partner platform,
+        @ApiParam(value = ExecutionMetricsUpdate.DESCRIPTION_DESCRIPTION) @Parameter(description = ExecutionMetricsUpdate.DESCRIPTION_DESCRIPTION, in = ParameterIn.QUERY) @QueryParam("description") String description,
+        @ApiParam(value = ExecutionMetricsUpdate.EXECUTIONS_DESCRIPTION, required = true) @RequestBody(description = ExecutionMetricsUpdate.EXECUTIONS_DESCRIPTION, required = true, content = @Content(schema = @Schema(implementation = ExecutionsRequestBody.class))) @Valid ExecutionsRequestBody executions,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
-        return delegate.setExecution(id, versionId, platform, user, description, executions);
+        return delegate.updateExecutionMetrics(id, versionId, platform, user, description, executions);
     }
 
-    private static final class ExecutionsPut {
+    private static final class ExecutionMetricsUpdate {
         public static final String SUMMARY = "Update a workflow execution that was executed on a platform";
         public static final String DESCRIPTION = "This endpoint updates a workflow execution that was executed on a platform";
         public static final String ID_DESCRIPTION = "A unique identifier of the tool, scoped to this registry, for example `123456`";

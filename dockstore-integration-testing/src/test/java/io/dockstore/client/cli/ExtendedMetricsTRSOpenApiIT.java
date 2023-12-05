@@ -328,7 +328,7 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
                 .validationExecutions(List.of(validationExecution))
                 .aggregatedExecutions(List.of(aggregatedExecution));
         extendedGa4GhApi.executionMetricsPost(executionsRequestBody, platform1, workflowId, workflowVersionId, description);
-        verifyMetricsDataList(workflowId, workflowVersionId, 4); // There should be 4 files, one for each execution type
+        verifyMetricsDataList(workflowId, workflowVersionId, 4); // There should be 4 files, one for each execution
     }
 
     @Test

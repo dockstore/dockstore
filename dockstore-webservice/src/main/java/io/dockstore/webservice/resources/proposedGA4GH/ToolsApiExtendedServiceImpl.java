@@ -645,7 +645,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Response setExecution(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
+    public Response updateExecutionMetrics(String id, String versionId, Partner platform, User owner, String description, ExecutionsRequestBody executions) {
         // Check that the entry and version exists
         Entry<?, ?> entry;
         try {

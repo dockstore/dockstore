@@ -720,7 +720,7 @@ paths:
     put:
       description: This endpoint updates a workflow execution that was executed on
         a platform
-      operationId: ExecutionsPut
+      operationId: ExecutionMetricsUpdate
       parameters:
       - description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`"
@@ -8442,9 +8442,7 @@ components:
             type: object
             additionalProperties:
               type: object
-              deprecated: true
               description: Additional aggregated metrics
-            deprecated: true
             description: Additional aggregated metrics
           executionId:
             type: string

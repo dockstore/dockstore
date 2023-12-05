@@ -33,10 +33,9 @@ public class AggregatedExecution extends Metrics {
     @Schema(description = "User-provided ID of the execution. This ID is used to identify the execution when updating the execution", requiredMode = RequiredMode.REQUIRED)
     private String executionId;
 
-    @Deprecated(since = "1.15.0")
     @JsonProperty
     @ApiModelProperty(value = "Additional aggregated metrics")
-    @Schema(description = "Additional aggregated metrics", deprecated = true)
+    @Schema(description = "Additional aggregated metrics")
     private Map<String, Object> additionalAggregatedMetrics;
 
     public String getExecutionId() {
@@ -47,12 +46,10 @@ public class AggregatedExecution extends Metrics {
         this.executionId = executionId;
     }
 
-    @Deprecated(since = "1.15.0")
     public Map<String, Object> getAdditionalAggregatedMetrics() {
         return additionalAggregatedMetrics;
     }
 
-    @Deprecated(since = "1.15.0")
     @JsonProperty
     public void setAdditionalAggregatedMetrics(Map<String, Object> additionalAggregatedMetrics) {
         this.additionalAggregatedMetrics = additionalAggregatedMetrics;
