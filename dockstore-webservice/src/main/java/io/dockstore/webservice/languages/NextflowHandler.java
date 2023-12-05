@@ -53,6 +53,7 @@ import java.util.stream.Stream;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.codehaus.groovy.antlr.GroovySourceAST;
@@ -635,12 +636,10 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                     continue;
                 }
                 GroovySourceAST containerAST = getFirstAstWithKeyword(processAST, "container", false);
-                String containerName;
-                if (containerAST != null) {
-                    containerName = containerAST.getNextSibling().getFirstChild().getText();
-                } else {
-                    containerName = defaultContainer;
-                }
+                // A "container" directive parses as a "container" node followed by an ELIST sibling
+                // The first child of the ELIST contains the container name (image reference)
+                // https://www.nextflow.io/docs/latest/process.html#containeroptions
+                String containerName = ObjectUtils.firstNonNull(getText(getFirstChild(getNextSibling(containerAST))), defaultContainer);
 
                 if (containerName != null) {
                     if (containerName.startsWith("$")) { // Parameterized container name
@@ -655,6 +654,18 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             LOG.warn("could not parse", e);
         }
         return map;
+    }
+
+    private AST getNextSibling(AST ast) {
+        return (ast != null) ? ast.getNextSibling() : null;
+    }
+
+    private AST getFirstChild(AST ast) {
+        return (ast != null) ? ast.getFirstChild() : null;
+    }
+
+    private String getText(AST ast) {
+        return (ast != null) ? ast.getText() : null;
     }
 
     /**
