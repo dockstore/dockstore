@@ -30,7 +30,9 @@ import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -38,6 +40,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -66,18 +69,30 @@ public class MetricsDataS3Client {
      * @param description An optional description for the execution metrics data
      * @param metricsData The metrics data in JSON format
      */
-    public void createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData) {
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public boolean createS3Object(String toolId, String versionName, String platform, String fileName, long ownerUserId, String description, String metricsData, boolean overwriteExistingObject) {
+        boolean isSuccessful = false;
         String key = generateKey(toolId, versionName, platform, fileName);
-        Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
-                ObjectMetadata.DESCRIPTION.toString(), description == null ? "" : description);
-        PutObjectRequest request = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(key)
-                .metadata(metadata)
-                .contentType(MediaType.APPLICATION_JSON)
-                .build();
-        RequestBody requestBody = RequestBody.fromString(metricsData);
-        s3.putObject(request, requestBody);
+        if (!doesKeyExistInS3(key) || overwriteExistingObject) {
+            Map<String, String> metadata = Map.of(ObjectMetadata.OWNER.toString(), String.valueOf(ownerUserId),
+                    ObjectMetadata.DESCRIPTION.toString(), description == null ? "" : description);
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .metadata(metadata)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .build();
+            RequestBody requestBody = RequestBody.fromString(metricsData);
+            try {
+                s3.putObject(request, requestBody);
+                isSuccessful = true;
+            } catch (AwsServiceException | SdkClientException exception) {
+                LOG.error("Could not put object with key {} to S3", key, exception);
+            }
+        } else {
+            LOG.error("S3 key {} already exists", key);
+        }
+        return isSuccessful;
     }
 
     /**
@@ -96,6 +111,16 @@ public class MetricsDataS3Client {
         pathList.add(URLEncoder.encode(platform, StandardCharsets.UTF_8));
         pathList.add(URLEncoder.encode(fileName, StandardCharsets.UTF_8));
         return String.join("/", pathList);
+    }
+
+    public boolean doesKeyExistInS3(String s3Key) {
+        HeadObjectRequest request = HeadObjectRequest.builder().bucket(bucketName).key(s3Key).build();
+        try {
+            s3.headObject(request);
+            return true;
+        } catch (NoSuchKeyException exception) {
+            return false;
+        }
     }
 
     /**

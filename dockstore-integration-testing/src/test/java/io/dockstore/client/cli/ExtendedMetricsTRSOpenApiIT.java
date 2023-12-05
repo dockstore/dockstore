@@ -73,6 +73,7 @@ import io.dockstore.openapi.client.model.ExecutionsRequestBody;
 import io.dockstore.openapi.client.model.MemoryMetric;
 import io.dockstore.openapi.client.model.Metrics;
 import io.dockstore.openapi.client.model.RunExecution;
+import io.dockstore.openapi.client.model.RunExecution.ExecutionStatusEnum;
 import io.dockstore.openapi.client.model.TaskExecutions;
 import io.dockstore.openapi.client.model.ValidationExecution;
 import io.dockstore.openapi.client.model.ValidationStatusMetric;
@@ -421,6 +422,46 @@ class ExtendedMetricsTRSOpenApiIT extends BaseIT {
         exception = assertThrows(ApiException.class, () -> extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody(), platform, id, versionId, description));
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, exception.getCode(), "Should throw if execution metrics not provided");
         assertTrue(exception.getMessage().contains(MUST_CONTAIN_EXECUTIONS_OR_METRICS), "Should throw if execution metrics not provided");
+    }
+
+    @Test
+    void testUpdateExecutionMetrics() {
+        // Admin user
+        final ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        final UsersApi usersApi = new UsersApi(webClient);
+        final ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        final String platform1 = Partner.TERRA.name();
+        final String description = "A single execution";
+        final Long ownerUserId = usersApi.getUser().getId();
+
+        // Register and publish a workflow
+        final String workflowId = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv/my-workflow";
+        final String workflowVersionId = "master";
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "my-workflow", "cwl",
+                "/test.json");
+        workflow = workflowApi.refresh1(workflow.getId(), false);
+        workflowApi.publish1(workflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+
+        // Add 1 workflow execution for a workflow version for one platform
+        final String executionId = generateExecutionId();
+        // A successful workflow execution
+        RunExecution workflowExecution = new RunExecution();
+        workflowExecution.setExecutionId(executionId);
+        workflowExecution.dateExecuted(Instant.now().toString());
+        workflowExecution.setExecutionStatus(ExecutionStatusEnum.SUCCESSFUL);
+        extendedGa4GhApi.executionMetricsPost(new ExecutionsRequestBody().runExecutions(List.of(workflowExecution)), platform1, workflowId, workflowVersionId, description);
+        List<MetricsData> metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 1);
+        verifyRunExecutionMetricsDataContent(metricsDataList.get(0), List.of(workflowExecution));
+
+        // Update the workflow execution so that it has execution time
+        workflowExecution.setExecutionTime("PT5M"); // 5 mins
+        workflowExecution.setExecutionStatus(ExecutionStatusEnum.FAILED_RUNTIME_INVALID); // Attempt to update the execution status. This should not be updated because it's not an optional field
+        extendedGa4GhApi.executionMetricsUpdate(new ExecutionsRequestBody().runExecutions(List.of(workflowExecution)), platform1, workflowId, workflowVersionId, description);
+        metricsDataList = verifyMetricsDataList(workflowId, workflowVersionId, platform1, ownerUserId, description, 1); // There should still be 1 file
+        RunExecution updatedWorkflowExecutionFromS3 = getExecutionsRequestBody(metricsDataList.get(0)).getRunExecutions().get(0);
+        assertEquals("PT5M", updatedWorkflowExecutionFromS3.getExecutionTime(), "Execution time should've been updated");
+        assertEquals(ExecutionStatusEnum.SUCCESSFUL, updatedWorkflowExecutionFromS3.getExecutionStatus(), "Execution status should not change");
     }
 
     @Test
