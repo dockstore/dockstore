@@ -56,7 +56,7 @@ public class Author implements Serializable {
     @ApiModelProperty(value = "Email of the author")
     private String email;
 
-    @Column(insertable = false, updatable = false)
+    @Column(insertable = false, updatable = false, nullable = false)
     private long versionid;
 
     // database timestamps
