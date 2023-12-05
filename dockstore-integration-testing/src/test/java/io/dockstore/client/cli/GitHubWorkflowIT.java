@@ -36,6 +36,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.ImageData;
+import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -521,6 +522,11 @@ class GitHubWorkflowIT extends BaseIT {
         assertEquals(1, workflow.getAuthors().size());
         assertEquals("Peter Amstutz", workflow.getAuthors().get(0).getName());
         assertEquals("peter.amstutz@curoverse.com", workflow.getAuthors().get(0).getEmail());
+
+        // check author explicitly for workflows
+        Ga4Ghv20Api ga4GhApi = new Ga4Ghv20Api(getOpenAPIWebClient(USER_2_USERNAME, testingPostgres));
+        final List<Tool> toolsViaAuthor = ga4GhApi.toolsGet(null, null, null, null, null, null, null, null, null, "Peter Amstutz", false, "0", 10);
+        assertFalse(toolsViaAuthor.isEmpty());
 
         Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
