@@ -300,4 +300,12 @@
             <column name="topicai" type="varchar(150 BYTE)"/>
         </addColumn>
     </changeSet>
+    <changeSet id="dropUnusedDbUpdateDate" author="coverbeck">
+        <dropColumn tableName="collection_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="entry_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="entry_orcidputcode" columnName="dbupdatedate"/>
+        <dropColumn tableName="organization_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="sourcefile_verified" columnName="dbupdatedate"/>
+        <dropColumn tableName="parsed_information" columnName="dbupdatedate"/>
+    </changeSet>
 </databaseChangeLog>
