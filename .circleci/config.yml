@@ -54,52 +54,51 @@ workflows:
           <<: *common_filters
           requires:
             - build
-# REMOVE THIS BEFORE SUBMITTING FOR REVIEW!
-#      - workflow-integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#          context: sonarcloud
-#      - bitbucket-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - language-parsing-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - localstack-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - tool-integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#      - regression-integration-tests:
-#          filters:
-#            branches:
-#              only:
-#                - master
-#                - /^release.*$/
-#          requires:
-#            - build
-#      - sonar-cloud:
-#          <<: *common_filters
-#          requires:
-#            - unit_test
-#            - workflow-integration-tests
-#            - bitbucket-tests
-#            - language-parsing-tests
-#            - localstack-tests
-#            - tool-integration-tests
-#            - integration-tests
-#            - regression-integration-tests
-#          context: sonarcloud
+      - workflow-integration-tests:
+          <<: *common_filters
+          requires:
+            - build
+          context: sonarcloud
+      - bitbucket-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - language-parsing-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - localstack-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - tool-integration-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - integration-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - regression-integration-tests:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release.*$/
+          requires:
+            - build
+      - sonar-cloud:
+          <<: *common_filters
+          requires:
+            - unit_test
+            - workflow-integration-tests
+            - bitbucket-tests
+            - language-parsing-tests
+            - localstack-tests
+            - tool-integration-tests
+            - integration-tests
+            - regression-integration-tests
+          context: sonarcloud
 jobs:
   regression-integration-tests:
     executor: machine_integration_test_exec

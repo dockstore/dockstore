@@ -22,11 +22,15 @@ public class ParsedInformation {
     private boolean hasHTTPImports = false;
     private boolean hasLocalImports = false;
 
-    // database timestamp -- no update timestamp because they don't work with @Embdeddable objects. SEAB-3083
     @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
     @ApiModelProperty(dataType = "long")
     @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
+
+    @Column()
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbUpdateDate;
 
     public DescriptorLanguage getDescriptorLanguage() {
         return descriptorLanguage;

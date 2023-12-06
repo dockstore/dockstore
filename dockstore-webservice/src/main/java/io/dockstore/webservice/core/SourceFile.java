@@ -343,9 +343,11 @@ public class SourceFile implements Comparable<SourceFile> {
         @Column(columnDefinition = "text")
         public String platformVersion = null;
 
-        // database timestamp -- no update timestamp because they don't work with @Embdeddable objects. SEAB-3083
+        // database timestamps
         @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
         private Timestamp dbCreateDate;
 
+        @Column()
+        private Timestamp dbUpdateDate;
     }
 }
