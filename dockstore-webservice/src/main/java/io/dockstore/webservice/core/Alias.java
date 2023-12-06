@@ -31,10 +31,8 @@ public class Alias implements Serializable {
     @Column(columnDefinition = "text")
     public String content = "";
 
-    // database timestamps
+    // database timestamp -- no update timestamp because they don't work with @Embdeddable objects. SEAB-3083
     @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
     private Timestamp dbCreateDate;
 
-    @Column()
-    private Timestamp dbUpdateDate;
 }
