@@ -302,7 +302,7 @@
     </changeSet>
     <changeSet id="dbdates" author="coverbeck">
         <addColumn tableName="fullworkflowpath">
-            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE" defaultValueComputed="now()"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>
