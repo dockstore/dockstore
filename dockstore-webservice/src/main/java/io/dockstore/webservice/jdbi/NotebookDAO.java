@@ -42,7 +42,7 @@ public class NotebookDAO extends EntryDAO<Notebook> {
         final SourceControlConverter converter = new SourceControlConverter();
         final Root<Notebook> entryRoot = q.from(Notebook.class);
 
-        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, converter, entryRoot, q);
+        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, cb, converter, entryRoot, q);
 
         // notebook is never a checker workflow
         if (checker != null && checker) {

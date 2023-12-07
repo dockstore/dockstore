@@ -493,7 +493,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         CriteriaBuilder cb, CriteriaQuery<?> q);
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    protected Predicate getWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+    protected Predicate getWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
         CriteriaBuilder cb, SourceControlConverter converter, Root<?> entryRoot, CriteriaQuery<?> query) {
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
         predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
