@@ -311,5 +311,7 @@
         <dropColumn tableName="version_metadata_orcidputcode" columnName="dbupdatedate"/>
         <dropColumn tableName="entry_alias" columnName="dbupdatedate"/>
         <dropColumn tableName="organization_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="collection_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="workflowversion_alias" columnName="dbupdatedate"/>
     </changeSet>
 </databaseChangeLog>
