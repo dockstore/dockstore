@@ -27,10 +27,7 @@ public class Language implements Serializable {
     @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
-    @Column()
-    @ApiModelProperty(dataType = "long")
-    @Schema(type = "integer", format = "int64")
-    private Timestamp dbUpdateDate;
+    // There is no dbupdatedate because it doesn't work with @Embeddable nor @ElementCollection
 
     public DescriptorLanguage getLanguage() {
         return language;
