@@ -47,6 +47,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -97,6 +98,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.SessionStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,6 +129,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static BioWorkflowDAO bioWorkflowDAO;
     private static PermissionsInterface permissionsInterface;
     private static VersionDAO versionDAO;
+    private static SessionFactory sessionFactory;
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiServiceImpl.toolDAO = toolDAO;
@@ -165,6 +169,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     public static void setVersionDAO(VersionDAO versionDAO) {
         ToolsApiServiceImpl.versionDAO = versionDAO;
+    }
+
+    public static void setSessionFactory(SessionFactory sessionFactory) {
+        ToolsApiServiceImpl.sessionFactory = sessionFactory;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
@@ -373,13 +381,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
 
-        for (Entry<?, ?> c : all) {
+        List<Long> ids = all.stream().map(Entry::getId).toList();
+        for (long entryId: ids) {
+            sessionFactory.getCurrentSession().clear();
             // if passing, for each container that matches the criteria, convert to standardised format and return
+            Entry c = toolDAO.getGenericEntryById(entryId);
             io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
             if (tool != null) {
                 results.add(tool);
             }
         }
+        SessionStatistics statistics = sessionFactory.getCurrentSession().getStatistics();
+        LOG.error("STATS collections=" + statistics.getCollectionCount() + " entities=" + statistics.getEntityCount());
 
         final String scheme = config.getExternalConfig().getScheme();
         final String hostname = config.getExternalConfig().getHostname();
