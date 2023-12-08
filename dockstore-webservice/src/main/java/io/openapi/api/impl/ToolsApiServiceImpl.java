@@ -47,7 +47,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
-import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -99,7 +98,6 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
-import org.hibernate.stat.SessionStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -381,18 +379,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
 
-        List<Long> ids = all.stream().map(Entry::getId).toList();
-        for (long entryId: ids) {
+        for (long entryId: all.stream().map(Entry::getId).toList()) {
             sessionFactory.getCurrentSession().clear();
+            Entry<?, ?> c = toolDAO.getGenericEntryById(entryId);
             // if passing, for each container that matches the criteria, convert to standardised format and return
-            Entry c = toolDAO.getGenericEntryById(entryId);
             io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
             if (tool != null) {
                 results.add(tool);
             }
         }
-        SessionStatistics statistics = sessionFactory.getCurrentSession().getStatistics();
-        LOG.error("STATS collections=" + statistics.getCollectionCount() + " entities=" + statistics.getEntityCount());
 
         final String scheme = config.getExternalConfig().getScheme();
         final String hostname = config.getExternalConfig().getHostname();
