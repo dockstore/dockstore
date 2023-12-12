@@ -7164,6 +7164,31 @@ paths:
       summary: Get a list of workflows by path.
       tags:
       - workflows
+  /workflows/path/{repository}/published:
+    get:
+      description: Do not include workflow name.
+      operationId: getAllPublishedWorkflowByPath
+      parameters:
+      - description: repository path
+        in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - BEARER: []
+      summary: Get a list of published workflows by path.
+      tags:
+      - workflows
   /workflows/published:
     get:
       description: List all published workflows.
@@ -9368,19 +9393,28 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the count metrics in this webservice
+        numberOfAbortedExecutions:
+          type: integer
+          format: int32
+          description: Number of aborted executions. An execution is aborted if it's
+            execution is stopped after it has started
+          example: 0
+          readOnly: true
         numberOfFailedExecutions:
           type: integer
           format: int32
           description: Number of failed executions. An execution may have failed because
             it was semantically or runtime invalid
+          example: 2
+          readOnly: true
         numberOfSuccessfulExecutions:
           type: integer
           format: int32
           description: Number of successful executions
+          example: 5
+          readOnly: true
       required:
       - count
-      - numberOfFailedExecutions
-      - numberOfSuccessfulExecutions
     ExecutionTimeMetric:
       type: object
       description: This describes aggregated execution time metrics in seconds for
@@ -10182,8 +10216,10 @@ components:
             description: The status of the execution
             enum:
             - SUCCESSFUL
+            - FAILED
             - FAILED_SEMANTIC_INVALID
             - FAILED_RUNTIME_INVALID
+            - ABORTED
           executionTime:
             type: string
             description: The total time it took for the execution to complete in ISO
