@@ -300,7 +300,7 @@
             <column name="topicai" type="varchar(150 BYTE)"/>
         </addColumn>
     </changeSet>
-    <changeSet author="dyuen (generated)" id="1701468587437-1">
+    <changeSet author="dyuen (generated)" id="drop-old-author-email-columns">
         <dropColumn columnName="author" tableName="apptool"/>
         <dropColumn columnName="author" tableName="notebook"/>
         <dropColumn columnName="author" tableName="service"/>
