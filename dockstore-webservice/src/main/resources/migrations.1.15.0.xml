@@ -300,4 +300,18 @@
             <column name="topicai" type="varchar(150 BYTE)"/>
         </addColumn>
     </changeSet>
+    <changeSet id="dbdates" author="coverbeck">
+        <addColumn tableName="fullworkflowpath">
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE" defaultValueComputed="now()"/>
+        </addColumn>
+        <dropColumn tableName="cloudinstance_supportedlanguages" columnName="dbupdatedate"/>
+        <dropColumn tableName="parsed_information" columnName="dbupdatedate"/>
+        <dropColumn tableName="sourcefile_verified" columnName="dbupdatedate"/>
+        <dropColumn tableName="entry_orcidputcode" columnName="dbupdatedate"/>
+        <dropColumn tableName="version_metadata_orcidputcode" columnName="dbupdatedate"/>
+        <dropColumn tableName="entry_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="organization_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="collection_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="workflowversion_alias" columnName="dbupdatedate"/>
+    </changeSet>
 </databaseChangeLog>
