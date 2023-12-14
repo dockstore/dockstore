@@ -10,7 +10,6 @@ import io.dropwizard.hibernate.AbstractDAO;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -22,8 +21,6 @@ import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
-import org.hibernate.query.sqm.NullPrecedence;
-import org.hibernate.query.sqm.tree.select.SqmSortSpecification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,17 +86,9 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
             } else {
                 Path<Object> sortPath = event.get(sortCol);
                 if ("asc".equalsIgnoreCase(sortOrder)) {
-                    Order asc = cb.asc(sortPath);
-                    if (asc instanceof SqmSortSpecification) {
-                        ((SqmSortSpecification) asc).nullPrecedence(NullPrecedence.LAST);
-                    }
-                    query.orderBy(asc, cb.desc(event.get("id")));
+                    query.orderBy(cb.asc(sortPath), cb.desc(event.get("id")));
                 } else {
-                    Order desc = cb.desc(sortPath);
-                    if (desc instanceof SqmSortSpecification) {
-                        ((SqmSortSpecification) desc).nullPrecedence(NullPrecedence.LAST);
-                    }
-                    query.orderBy(desc, cb.desc(event.get("id")));
+                    query.orderBy(cb.desc(sortPath), cb.desc(event.get("id")));
                 }
             }
         }
