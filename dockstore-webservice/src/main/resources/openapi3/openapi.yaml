@@ -8864,9 +8864,6 @@ components:
           type: boolean
         author:
           type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -8913,9 +8910,6 @@ components:
             type: string
         email:
           type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -9069,9 +9063,6 @@ components:
           type: boolean
         author:
           type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -9099,9 +9090,6 @@ components:
           type: string
         email:
           type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:
@@ -11509,9 +11497,6 @@ components:
           type: boolean
         author:
           type: string
-          deprecated: true
-          description: "This is the name of the author, retrieved from the default\
-            \ version"
         authors:
           type: array
           description: "Non-ORCID authors for the entry, retrieved from the default\
@@ -11566,9 +11551,6 @@ components:
           - n/a
         email:
           type: string
-          deprecated: true
-          description: "This is the email of the author, retrieved from the default\
-            \ version"
         entryType:
           $ref: '#/components/schemas/EntryType'
         entryTypeMetadata:

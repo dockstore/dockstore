@@ -312,4 +312,30 @@
             ALTER TABLE lambdaevent add constraint lambdaevent_entryname_notempty check (entryname &lt;&gt; '')
         </sql>
     </changeSet>
+    <changeSet author="dyuen (generated)" id="drop-old-author-email-columns">
+        <dropColumn columnName="author" tableName="apptool"/>
+        <dropColumn columnName="author" tableName="notebook"/>
+        <dropColumn columnName="author" tableName="service"/>
+        <dropColumn columnName="author" tableName="tool"/>
+        <dropColumn columnName="author" tableName="workflow"/>
+        <dropColumn columnName="email" tableName="apptool"/>
+        <dropColumn columnName="email" tableName="notebook"/>
+        <dropColumn columnName="email" tableName="service"/>
+        <dropColumn columnName="email" tableName="tool"/>
+        <dropColumn columnName="email" tableName="workflow"/>
+    </changeSet>
+    <changeSet id="dbdates" author="coverbeck">
+        <addColumn tableName="fullworkflowpath">
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE" defaultValueComputed="now()"/>
+        </addColumn>
+        <dropColumn tableName="cloudinstance_supportedlanguages" columnName="dbupdatedate"/>
+        <dropColumn tableName="parsed_information" columnName="dbupdatedate"/>
+        <dropColumn tableName="sourcefile_verified" columnName="dbupdatedate"/>
+        <dropColumn tableName="entry_orcidputcode" columnName="dbupdatedate"/>
+        <dropColumn tableName="version_metadata_orcidputcode" columnName="dbupdatedate"/>
+        <dropColumn tableName="entry_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="organization_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="collection_alias" columnName="dbupdatedate"/>
+        <dropColumn tableName="workflowversion_alias" columnName="dbupdatedate"/>
+    </changeSet>
 </databaseChangeLog>
