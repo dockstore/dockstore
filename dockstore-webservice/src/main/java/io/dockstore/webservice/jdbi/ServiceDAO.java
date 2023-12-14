@@ -46,12 +46,12 @@ public class ServiceDAO extends EntryDAO<Service> {
     @Override
     @SuppressWarnings("checkstyle:ParameterNumber")
     protected Root<Service> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
-        CriteriaBuilder cb, CriteriaQuery<?> q) {
+            CriteriaBuilder cb, CriteriaQuery<?> q) {
 
         final SourceControlConverter converter = new SourceControlConverter();
         final Root<Service> entryRoot = q.from(Service.class);
 
-        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, converter, entryRoot);
+        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, cb, converter, entryRoot, q);
 
         // apptool is never a checker workflow
         if (checker != null && checker) {
