@@ -35,6 +35,6 @@ public class Alias implements Serializable {
     @Column(updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT NOW()")
     private Timestamp dbCreateDate;
 
-    @Column()
-    private Timestamp dbUpdateDate;
+    // There is no dbupdatedate because it doesn't work with @Embeddable nor @ElementCollection
+
 }
