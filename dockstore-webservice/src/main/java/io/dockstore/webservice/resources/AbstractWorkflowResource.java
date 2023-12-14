@@ -743,11 +743,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     private String computeWorkflowName(Workflowish workflow) {
-        return workflow.getName() == null ? "" : workflow.getName();
+        return workflow.getName();
     }
 
     private String computeWorkflowName(Workflow workflow) {
-        return workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
+        return workflow.getWorkflowName();
     }
 
     private String generateMessageFromException(Exception ex) {

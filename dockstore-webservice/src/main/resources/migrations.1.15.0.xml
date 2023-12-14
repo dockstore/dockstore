@@ -300,4 +300,16 @@
             <column name="topicai" type="varchar(150 BYTE)"/>
         </addColumn>
     </changeSet>
+    <changeSet id="lambdaEntryNameConvertEmptyStringToNull" author="dyuen">
+        <update schemaName="public"
+                tableName="lambdaevent">
+            <column name="entryname"/>
+            <where>entryname = ''</where>
+        </update>
+    </changeSet>
+    <changeSet id="lambdaEntryNameNotEmptyConstraint" author="dyuen" >
+        <sql dbms="postgresql">
+            ALTER TABLE lambdaevent add constraint lambdaevent_entryname_notempty check (entryname &lt;&gt; '')
+        </sql>
+    </changeSet>
 </databaseChangeLog>
