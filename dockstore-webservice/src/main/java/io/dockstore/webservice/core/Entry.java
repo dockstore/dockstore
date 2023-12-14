@@ -159,15 +159,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
-    /**
-     * @deprecated since 1.14.0. Use authors instead.
-     */
-    @Column
-    @Deprecated(since = "1.14.0")
-    @ApiModelProperty(value = "This is the name of the author, retrieved from the default version", position = 1)
-    @Schema(description = "This is the name of the author, retrieved from the default version", deprecated = true)
-    private String author;
-
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH", position = 2)
     private String description;
@@ -190,15 +181,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonSerialize(using = EntryStarredSerializer.class)
     @BatchSize(size = 25)
     private SortedSet<User> starredUsers;
-
-    /**
-     * @deprecated since 1.14.0. Use authors instead, which can contain an email for each Author.
-     */
-    @Column
-    @Deprecated(since = "1.14.0")
-    @ApiModelProperty(value = "This is the email of the author, retrieved from the default version", position = 6)
-    @Schema(description = "This is the email of the author, retrieved from the default version", deprecated = true)
-    private String email;
 
     @Column
     @JsonProperty("is_published")
@@ -489,13 +471,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.licenseInformation = licenseInformation;
     }
 
-    /**
-     * @deprecated since 1.14.0. Use setAuthors instead.
-     */
-    @Deprecated(since = "1.14.0")
-    public void setAuthor(String newAuthor) {
-        this.author = newAuthor;
-    }
 
     public Set<Label> getLabels() {
         return labels;
@@ -529,14 +504,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public String getEmail() {
         Optional<Author> firstAuthor = this.getAuthors().stream().findFirst();
         return firstAuthor.map(Author::getEmail).orElse(null);
-    }
-
-    /**
-     * @deprecated since 1.14.0. Use setAuthors instead to set an Author with an email.
-     */
-    @Deprecated(since = "1.14.0")
-    public void setEmail(String newEmail) {
-        this.email = newEmail;
     }
 
     /**
@@ -643,17 +610,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setMetadataFromEntry(S entry) {
-        // TODO: remove the setting of author and email when those two fields are removed from this class
-        this.author = entry.getAuthor();
-        this.email = entry.getEmail();
         this.description = entry.getDescription();
         setTopicAutomatic(entry.getTopicAutomatic());
     }
 
     public void setMetadataFromVersion(Version version) {
-        // TODO: remove the setting of author and email when those two fields are removed from this class
-        this.author = version.getAuthor();
-        this.email = version.getEmail();
         this.description = version.getDescription();
     }
 

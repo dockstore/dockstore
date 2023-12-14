@@ -37,12 +37,12 @@ public class NotebookDAO extends EntryDAO<Notebook> {
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     protected Root<Notebook> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
-        CriteriaBuilder cb, CriteriaQuery<?> q) {
+            CriteriaBuilder cb, CriteriaQuery<?> q) {
 
         final SourceControlConverter converter = new SourceControlConverter();
         final Root<Notebook> entryRoot = q.from(Notebook.class);
 
-        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, converter, entryRoot);
+        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, cb, converter, entryRoot, q);
 
         // notebook is never a checker workflow
         if (checker != null && checker) {
