@@ -300,6 +300,18 @@
             <column name="topicai" type="varchar(150 BYTE)"/>
         </addColumn>
     </changeSet>
+    <changeSet author="dyuen (generated)" id="drop-old-author-email-columns">
+        <dropColumn columnName="author" tableName="apptool"/>
+        <dropColumn columnName="author" tableName="notebook"/>
+        <dropColumn columnName="author" tableName="service"/>
+        <dropColumn columnName="author" tableName="tool"/>
+        <dropColumn columnName="author" tableName="workflow"/>
+        <dropColumn columnName="email" tableName="apptool"/>
+        <dropColumn columnName="email" tableName="notebook"/>
+        <dropColumn columnName="email" tableName="service"/>
+        <dropColumn columnName="email" tableName="tool"/>
+        <dropColumn columnName="email" tableName="workflow"/>
+    </changeSet>
     <changeSet id="dbdates" author="coverbeck">
         <addColumn tableName="fullworkflowpath">
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE" defaultValueComputed="now()"/>

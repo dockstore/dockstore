@@ -42,7 +42,7 @@ public class AppToolDAO extends EntryDAO<AppTool> {
         final SourceControlConverter converter = new SourceControlConverter();
         final Root<AppTool> entryRoot = q.from(AppTool.class);
 
-        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, converter, entryRoot);
+        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, cb, converter, entryRoot, q);
 
         // apptool is never a checker workflow
         if (checker != null && checker) {
