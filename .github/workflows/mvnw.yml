@@ -26,7 +26,7 @@ jobs:
 
       - if: "!contains(github.ref, 'dependabot')"
         name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: java
 
@@ -45,4 +45,4 @@ jobs:
 
       - name: Perform CodeQL Analysis
         if: "!contains(github.ref, 'dependabot')"      
-        uses: github/codeql-action/analyze@v2          
+        uses: github/codeql-action/analyze@v3          
