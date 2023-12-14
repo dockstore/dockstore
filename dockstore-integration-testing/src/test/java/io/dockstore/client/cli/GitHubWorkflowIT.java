@@ -32,6 +32,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MuteForSuccessfulTests;
+import io.dockstore.common.RepositoryConstants.DockstoreTesting;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
@@ -574,6 +575,42 @@ class GitHubWorkflowIT extends BaseIT {
 
         List<io.dockstore.openapi.client.model.Workflow> foundWorkflows = workflowsApi.getAllWorkflowByPath(path);
         assertEquals(2, foundWorkflows.size());
+    }
+
+    /**
+     * This tests that you can get all published workflows by path (ignores workflow name)
+     */
+    @Test
+    void testGetAllPublishedWorkflowByPath() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        String path = "github.com/" + DockstoreTesting.HELLO_WORLD;
+
+        List<io.dockstore.openapi.client.model.Workflow> foundWorkflows = workflowsApi.getAllPublishedWorkflowByPath(path);
+        assertTrue(foundWorkflows.isEmpty());
+
+        // Create a published workflow, workflow1
+        io.dockstore.openapi.client.model.Workflow workflow1 = workflowsApi.manualRegister("github", DockstoreTesting.HELLO_WORLD,
+                "/hello_world.cwl", "workflow1", DescriptorType.CWL.toString(), "/test.json");
+        assertEquals(path, workflow1.getPath());
+        workflowsApi.refresh1(workflow1.getId(), false);
+        final io.dockstore.openapi.client.model.PublishRequest publishRequest = CommonTestUtilities.createOpenAPIPublishRequest(true);
+        workflowsApi.publish1(workflow1.getId(), publishRequest);
+
+        // Create a published workflow, workflow2
+        io.dockstore.openapi.client.model.Workflow workflow2 = workflowsApi.manualRegister("github", DockstoreTesting.HELLO_WORLD,
+                "/hello_world.cwl", "workflow2", DescriptorType.CWL.toString(), "/test.json");
+        assertEquals(path, workflow2.getPath());
+        workflowsApi.refresh1(workflow2.getId(), false);
+        workflowsApi.publish1(workflow2.getId(), publishRequest);
+
+        foundWorkflows = workflowsApi.getAllPublishedWorkflowByPath(path);
+        assertEquals(2, foundWorkflows.size());
+
+        // Unpublish workflow 2
+        workflowsApi.publish1(workflow1.getId(), CommonTestUtilities.createOpenAPIPublishRequest(false));
+        foundWorkflows = workflowsApi.getAllPublishedWorkflowByPath(path);
+        assertEquals(1, foundWorkflows.size()); // Should exclude the unpublished workflow
     }
 
     /**

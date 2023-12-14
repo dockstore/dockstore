@@ -9384,7 +9384,7 @@ components:
         numberOfAbortedExecutions:
           type: integer
           format: int32
-          description: Number of aborted executions. An execution is aborted if it's
+          description: Number of aborted executions. An execution is aborted if its
             execution is stopped after it has started
           example: 0
           readOnly: true

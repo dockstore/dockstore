@@ -71,7 +71,7 @@ public class ExecutionStatusCountMetric extends CountMetric<ExecutionStatusCount
     private int numberOfFailedExecutions;
 
     @Column(nullable = false)
-    @Schema(description = "Number of aborted executions. An execution is aborted if it's execution is stopped after it has started", accessMode = AccessMode.READ_ONLY, example = "0")
+    @Schema(description = "Number of aborted executions. An execution is aborted if its execution is stopped after it has started", accessMode = AccessMode.READ_ONLY, example = "0")
     private int numberOfAbortedExecutions;
 
     public ExecutionStatusCountMetric() {

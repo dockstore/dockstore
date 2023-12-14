@@ -36,6 +36,7 @@ public final class RepositoryConstants {
     }
 
     public static class DockstoreTesting {
+        public static final String HELLO_WORLD = "dockstore-testing/hello_world";
         public static final String MULTI_ENTRY = "dockstore-testing/multi-entry";
         // Repository with a large .dockstore.yml and alot of branches
         public static final String RODENT_OF_UNUSUAL_SIZE = "dockstore-testing/rodent-of-unusual-size";
