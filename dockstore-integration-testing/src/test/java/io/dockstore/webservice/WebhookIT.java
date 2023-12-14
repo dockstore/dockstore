@@ -407,9 +407,9 @@ class WebhookIT extends BaseIT {
         handleGitHubRelease(workflowsApi, DockstoreTesting.TEST_WORKFLOWS_AND_TOOLS, tag10, USER_2_USERNAME);
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 15, null, null, null);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "", true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, null, true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, tag10, "md5sum", true);
-        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUBLISH, tag10, "", true);
+        assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUBLISH, tag10, null, true);
         assertNumberOfUniqueDeliveryIds(orgEvents, numberOfWebhookInvocations);
 
         // Release refs/heads/invalidToolName. There is one successful workflow and one failed tool with an invalid name
@@ -418,7 +418,7 @@ class WebhookIT extends BaseIT {
         ++numberOfWebhookInvocations;
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization(dockstoreTesting, 0, 15, null, null, null);
         // There should be two push events, one successful event for the workflow and one failed event for the tool
-        final String workflowName = "";
+        final String workflowName = null;
         final String toolName = "md5sum/with/slashes";
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, workflowName, true);
         assertEntryNameInNewestLambdaEvent(orgEvents, LambdaEvent.TypeEnum.PUSH, invalidToolNameBranch, toolName, false);
