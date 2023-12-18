@@ -306,8 +306,6 @@
             <column name="entryname"/>
             <where>entryname = ''</where>
         </update>
-    </changeSet>
-    <changeSet id="lambdaEntryNameNotEmptyConstraint" author="dyuen" >
         <sql dbms="postgresql">
             ALTER TABLE lambdaevent add constraint lambdaevent_entryname_notempty check (entryname &lt;&gt; '')
         </sql>
