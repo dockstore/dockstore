@@ -1046,7 +1046,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.22</version>
+                <version>1.24.0</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
