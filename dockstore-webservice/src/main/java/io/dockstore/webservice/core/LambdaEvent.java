@@ -186,6 +186,10 @@ public class LambdaEvent {
     }
 
     public void setEntryName(String entryName) {
+        if (entryName != null && entryName.isBlank()) {
+            this.entryName = null;
+            return;
+        }
         this.entryName = entryName;
     }
 
